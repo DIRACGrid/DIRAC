@@ -87,9 +87,9 @@ class CodeReference:
             modulefinal = modulename
 
         lines = []
-        lines.append("%s" % modulefinal)
+        lines.append(f"{modulefinal}")
         lines.append("=" * len(modulefinal))
-        lines.append(".. automodule:: %s " % fullmodulename)
+        lines.append(f".. automodule:: {fullmodulename} ")
         lines.append("   :members:")
         lines.append("")
 
@@ -108,7 +108,7 @@ class CodeReference:
             lines.append("   :maxdepth: 1")
             lines.append("")
             for package in sorted(subpackages):
-                lines.append("   {}/{}_Module.rst".format(package, package.split("/")[-1]))
+                lines.append(f"   {package}/{package.split('/')[-1]}_Module.rst")
             lines.append("")
 
         # remove CLI etc. because we drop them earlier
@@ -121,7 +121,7 @@ class CodeReference:
             lines.append("   :maxdepth: 1")
             lines.append("")
             for module in sorted(modules):
-                lines.append("   {}.rst".format(module.split("/")[-1]))
+                lines.append(f"   {module.split('/')[-1]}.rst")
             lines.append("")
 
         writeLinesToFile(filename, lines)
@@ -131,10 +131,10 @@ class CodeReference:
         filename = classname + ".rst"
 
         lines = []
-        lines.append("%s" % classname)
+        lines.append(f"{classname}")
         lines.append("=" * len(classname))
         lines.append("")
-        lines.append(".. py:module:: %s" % fullclassname)
+        lines.append(f".. py:module:: {fullclassname}")
         lines.append("")
         lines.append("This is an empty file, because we cannot parse this file correctly or it causes problems.")
         lines.append("Please look at the source code directly")
@@ -146,10 +146,10 @@ class CodeReference:
         filename = classname + ".rst"
 
         lines = []
-        lines.append("%s" % classname)
+        lines.append(f"{classname}")
         lines.append("=" * len(classname))
 
-        lines.append(".. automodule:: %s" % fullclassname)
+        lines.append(f".. automodule:: {fullclassname}")
         if buildtype == "full":
             lines.append("   :members:")
             if not any(x in self.config.code_noInherited for x in [classname, fullclassname]):
@@ -337,7 +337,7 @@ class CodeReference:
                 lines.append("   :maxdepth: 1")
                 lines.append("")
                 for package in systemPackages:
-                    lines.append("   {}/{}_Module.rst".format(package, package.split("/")[-1]))
+                    lines.append(f"   {package}/{package.split('/')[-1]}_Module.rst")
 
                 lines.append("")
                 lines.append("=====")
@@ -348,11 +348,11 @@ class CodeReference:
                 lines.append("   :maxdepth: 1")
                 lines.append("")
                 for package in otherPackages:
-                    lines.append("   {}/{}_Module.rst".format(package, package.split("/")[-1]))
+                    lines.append(f"   {package}/{package.split('/')[-1]}_Module.rst")
 
             if modules:
                 for module in sorted(modules):
-                    lines.append("   {}.rst".format(module.split("/")[-1]))
+                    lines.append(f"   {module.split('/')[-1]}.rst")
 
             if self.config.code_add_commands_section:
                 lines.append("")

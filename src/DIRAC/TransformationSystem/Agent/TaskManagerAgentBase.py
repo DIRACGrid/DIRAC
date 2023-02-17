@@ -249,7 +249,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         elif not res["Value"]:
             self.log.verbose("No transformations found")
         else:
-            self.log.verbose("Obtained %d transformations" % len(res["Value"]))
+            self.log.verbose(f"Obtained {len(res['Value'])} transformations")
         return res
 
     #############################################################################
@@ -297,13 +297,11 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                 clients = self._getClients(ownerDN=ownerDN, ownerGroup=group)
             self._logInfo("Start processing transformation", method=method, transID=transID)
             for operation in operations:
-                self._logInfo("Executing %s" % operation, method=method, transID=transID)
+                self._logInfo(f"Executing {operation}", method=method, transID=transID)
                 startOperation = time.time()
                 res = getattr(self, operation)(transDict, clients)
                 if not res["OK"]:
-                    self._logError(
-                        "Failed to execute '{}': {}".format(operation, res["Message"]), method=method, transID=transID
-                    )
+                    self._logError(f"Failed to execute '{operation}': {res['Message']}", method=method, transID=transID)
                 self._logInfo(
                     f"Executed {operation} in {time.time() - startOperation:.1f} seconds",
                     method=method,
@@ -311,11 +309,11 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                 )
         except Exception as x:  # pylint: disable=broad-except
             self._logException(
-                "Exception executing operation %s" % operation, lException=x, method=method, transID=transID
+                f"Exception executing operation {operation}", lException=x, method=method, transID=transID
             )
         finally:
             self._logInfo(
-                "Processed transformation in %.1f seconds" % (time.time() - startTime), method=method, transID=transID
+                f"Processed transformation in {time.time() - startTime:.1f} seconds", method=method, transID=transID
             )
 
     #############################################################################
@@ -377,7 +375,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
             )
         else:
             self._logVerbose(
-                "Getting %d tasks status" % len(transformationTasks["Value"]), method=method, transID=transID
+                f"Getting {len(transformationTasks['Value'])} tasks status", method=method, transID=transID
             )
         updated = {}
         for nb, taskChunk in enumerate(
@@ -506,7 +504,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         time_stamp_older = str(datetime.datetime.utcnow() - datetime.timedelta(hours=1))
 
         res = clients["TransformationClient"].getTransformationTasks(condDict=condDict, older=time_stamp_older)
-        self._logDebug("getTransformationTasks(%s) return value:" % condDict, res, method=method, transID=transID)
+        self._logDebug(f"getTransformationTasks({condDict}) return value:", res, method=method, transID=transID)
         if not res["OK"]:
             self._logError("Failed to get Reserved tasks:", res["Message"], method=method, transID=transID)
             return res
@@ -518,7 +516,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         # Update the reserved tasks
         res = clients["TaskManager"].updateTransformationReservedTasks(reservedTasks)
         self._logDebug(
-            "updateTransformationReservedTasks(%s) return value:" % reservedTasks, res, method=method, transID=transID
+            f"updateTransformationReservedTasks({reservedTasks}) return value:", res, method=method, transID=transID
         )
         if not res["OK"]:
             self._logError(
@@ -531,7 +529,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         # For the tasks with no associated request found re-set the status of the task in the transformationDB
         if noTasks:
             self._logInfo(
-                "Resetting status of %d tasks to Created as no associated job/request found" % len(noTasks),
+                f"Resetting status of {len(noTasks)} tasks to Created as no associated job/request found",
                 method=method,
                 transID=transID,
             )
@@ -541,7 +539,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                 if not res["OK"]:
                     self._logError(
                         "Failed to update task status and ID after recovery:",
-                        "{} {}".format(taskName, res["Message"]),
+                        f"{taskName} {res['Message']}",
                         method=method,
                         transID=transID,
                     )
@@ -559,7 +557,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
             if not setTaskStatusAndWmsID["OK"]:
                 self._logError(
                     "Failed to update task status and ID after recovery:",
-                    "{} {}".format(taskName, setTaskStatusAndWmsID["Message"]),
+                    f"{taskName} {setTaskStatusAndWmsID['Message']}",
                     method=method,
                     transID=transID,
                 )
@@ -597,7 +595,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         if not tasks:
             self._logVerbose("No tasks found for submission", method=method, transID=transID)
             return tasksToSubmit
-        self._logInfo("Obtained %d tasks for submission" % len(tasks), method=method, transID=transID)
+        self._logInfo(f"Obtained {len(tasks)} tasks for submission", method=method, transID=transID)
 
         # Prepare tasks and submits them, by chunks
         chunkSize = self.maxParametricJobs if self.bulkSubmissionFlag else self.tasksPerLoop
@@ -607,9 +605,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
             )
             if not res["OK"]:
                 return res
-            self._logVerbose(
-                "Submitted %d jobs, bulkSubmissionFlag = %s" % (len(taskDictChunk), self.bulkSubmissionFlag)
-            )
+            self._logVerbose(f"Submitted {len(taskDictChunk)} jobs, bulkSubmissionFlag = {self.bulkSubmissionFlag}")
 
         return S_OK()
 
@@ -697,7 +693,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         """
         if not self.credentials:
             return S_OK()
-        resCred = Operations().getOptionsDict("/Shifter/%s" % self.credentials)
+        resCred = Operations().getOptionsDict(f"/Shifter/{self.credentials}")
         if not resCred["OK"]:
             self.log.error("Cred: Failed to find shifter credentials", self.credentials)
             return resCred

@@ -78,5 +78,5 @@ class Client(OAuth2ClientMixin):
             for def_scope in scope_to_list(self.scope):
                 if s.startswith(def_scope) and s not in allowed:
                     allowed.append(s)
-        gLogger.debug('Try to allow "%s" scope:' % scope, allowed)
+        gLogger.debug(f'Try to allow "{scope}" scope:', allowed)
         return list_to_scope(list(set(allowed)))

@@ -178,7 +178,7 @@ class DConfig:
 
     def sectionAliasName(self, alias):
         if alias not in self.sectionsAliases:
-            return S_ERROR("DConfig section alias unknown: %s" % alias)
+            return S_ERROR(f"DConfig section alias unknown: {alias}")
 
         return S_OK(self.sectionsAliases[alias])
 
@@ -443,7 +443,7 @@ class DSession(DConfig):
         searchExp = os.path.join(caDir, "*.r0")
         crlList = glob.glob(searchExp)
         if not crlList:
-            gLogger.warn("No CRL files found for %s. Abort check of CAs" % searchExp)
+            gLogger.warn(f"No CRL files found for {searchExp}. Abort check of CAs")
             return
         newestFPath = max(crlList, key=os.path.getmtime)
         newestFTime = os.path.getmtime(newestFPath)
@@ -495,12 +495,12 @@ class DSession(DConfig):
         group = retVal["Value"]
         vomsAttr = Registry.getVOMSAttributeForGroup(group)
         if not vomsAttr:
-            raise Exception("Requested adding a VOMS extension but no VOMS attribute defined for group %s" % group)
+            raise Exception(f"Requested adding a VOMS extension but no VOMS attribute defined for group {group}")
 
         result = VOMS.VOMS().setVOMSAttributes(proxy, attribute=vomsAttr, vo=Registry.getVOForGroup(group))
         if not result["OK"]:
             raise Exception(
-                "Could not add VOMS extensions to the proxy\nFailed adding VOMS attribute: %s" % result["Message"]
+                f"Could not add VOMS extensions to the proxy\nFailed adding VOMS attribute: {result['Message']}"
             )
 
         chain = result["Value"]
@@ -535,14 +535,14 @@ def guessConfigFromCS(config, section, userName, groupName):
     config.set(section, "group_name", groupName)
 
     # guess FileCatalog home directory
-    vo = gConfig.getValue("/Registry/Groups/%s/VO" % groupName)
+    vo = gConfig.getValue(f"/Registry/Groups/{groupName}/VO")
     firstLetter = userName[0]
     homeDir = f"/{vo}/user/{firstLetter}/{userName}"
 
     config.set(section, "home_dir", homeDir)
 
     # try to guess default SE DIRAC name
-    voDefaultSEName = "VO_%s_DEFAULT_SE" % vo.upper()
+    voDefaultSEName = f"VO_{vo.upper()}_DEFAULT_SE"
     voDefaultSEName = voDefaultSEName.replace(".", "_")
     voDefaultSEName = voDefaultSEName.replace("-", "_")
     try:
@@ -555,10 +555,10 @@ def guessConfigFromCS(config, section, userName, groupName):
             defaultSESite = None
             for seSite in retVal["Value"]:
                 # look for a SE with same host name
-                host = gConfig.getValue("/Resources/StorageElements/%s/AccessProtocol.1/Host" % seSite)
+                host = gConfig.getValue(f"/Resources/StorageElements/{seSite}/AccessProtocol.1/Host")
                 if host and host == voDefaultSEHost:
                     # check if SE has rw access
-                    retVal = gConfig.getOptionsDict("/Resources/StorageElements/%s" % seSite)
+                    retVal = gConfig.getOptionsDict(f"/Resources/StorageElements/{seSite}")
                     if retVal["OK"]:
                         od = retVal["Value"]
                         r = "ReadAccess"

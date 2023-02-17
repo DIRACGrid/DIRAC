@@ -69,7 +69,7 @@ class DIPStorage(StorageBase):
         failed = {}
         serviceClient = Client(url=self.url)
         for url in urls:
-            gLogger.debug("DIPStorage.exists: Determining existence of %s." % url)
+            gLogger.debug(f"DIPStorage.exists: Determining existence of {url}.")
             res = serviceClient.exists(url)
             if res["OK"]:
                 successful[url] = res["Value"]
@@ -186,7 +186,7 @@ class DIPStorage(StorageBase):
         failed = {}
         serviceClient = Client(url=self.url)
         for url in urls:
-            gLogger.debug("DIPStorage.removeFile: Attempting to remove %s." % url)
+            gLogger.debug(f"DIPStorage.removeFile: Attempting to remove {url}.")
             res = serviceClient.remove(url, "")
             if res["OK"]:
                 successful[url] = True
@@ -203,21 +203,21 @@ class DIPStorage(StorageBase):
         urls = res["Value"]
         successful = {}
         failed = {}
-        gLogger.debug("DIPStorage.isFile: Attempting to determine whether %s paths are files." % len(urls))
+        gLogger.debug(f"DIPStorage.isFile: Attempting to determine whether {len(urls)} paths are files.")
         serviceClient = Client(url=self.url)
         for url in urls:
             res = serviceClient.getMetadata(url)
             if res["OK"]:
                 if res["Value"]["Exists"]:
                     if res["Value"]["Type"] == "File":
-                        gLogger.debug("DIPStorage.isFile: Successfully obtained metadata for %s." % url)
+                        gLogger.debug(f"DIPStorage.isFile: Successfully obtained metadata for {url}.")
                         successful[url] = True
                     else:
                         successful[url] = False
                 else:
                     failed[url] = "File does not exist"
             else:
-                gLogger.error("DIPStorage.isFile: Failed to get metadata for url", "{}: {}".format(url, res["Message"]))
+                gLogger.error("DIPStorage.isFile: Failed to get metadata for url", f"{url}: {res['Message']}")
                 failed[url] = res["Message"]
         resDict = {"Failed": failed, "Successful": successful}
         return S_OK(resDict)
@@ -230,7 +230,7 @@ class DIPStorage(StorageBase):
         urls = res["Value"]
         successful = {}
         failed = {}
-        gLogger.debug("DIPStorage.getFileSize: Attempting to obtain size for %s files." % len(urls))
+        gLogger.debug(f"DIPStorage.getFileSize: Attempting to obtain size for {len(urls)} files.")
         res = self.getFileMetadata(urls)
         if not res["OK"]:
             return res
@@ -252,7 +252,7 @@ class DIPStorage(StorageBase):
         urls = res["Value"]
         successful = {}
         failed = {}
-        gLogger.debug("DIPStorage.getFileMetadata: Attempting to obtain metadata for %s files." % len(urls))
+        gLogger.debug(f"DIPStorage.getFileMetadata: Attempting to obtain metadata for {len(urls)} files.")
         serviceClient = Client(url=self.url)
         for url in urls:
             pfn = url
@@ -262,16 +262,14 @@ class DIPStorage(StorageBase):
             if res["OK"]:
                 if res["Value"]["Exists"]:
                     if res["Value"]["Type"] == "File":
-                        gLogger.debug("DIPStorage.getFileMetadata: Successfully obtained metadata for %s." % url)
+                        gLogger.debug(f"DIPStorage.getFileMetadata: Successfully obtained metadata for {url}.")
                         successful[url] = res["Value"]
                     else:
                         failed[url] = "Supplied path is not a file"
                 else:
                     failed[url] = "File does not exist"
             else:
-                gLogger.error(
-                    "DIPStorage.getFileMetadata: Failed to get metadata for url", "{}: {}".format(url, res["Message"])
-                )
+                gLogger.error("DIPStorage.getFileMetadata: Failed to get metadata for url", f"{url}: {res['Message']}")
                 failed[url] = res["Message"]
         resDict = {"Failed": failed, "Successful": successful}
         return S_OK(resDict)
@@ -289,7 +287,7 @@ class DIPStorage(StorageBase):
         urls = res["Value"]
         successful = {}
         failed = {}
-        gLogger.debug("DIPStorage.listDirectory: Attempting to list %s directories." % len(urls))
+        gLogger.debug(f"DIPStorage.listDirectory: Attempting to list {len(urls)} directories.")
         serviceClient = Client(url=self.url)
         for url in urls:
             res = serviceClient.listDirectory(url, "l")
@@ -317,23 +315,21 @@ class DIPStorage(StorageBase):
         urls = res["Value"]
         successful = {}
         failed = {}
-        gLogger.debug("DIPStorage.isDirectory: Attempting to determine whether %s paths are directories." % len(urls))
+        gLogger.debug(f"DIPStorage.isDirectory: Attempting to determine whether {len(urls)} paths are directories.")
         serviceClient = Client(url=self.url)
         for url in urls:
             res = serviceClient.getMetadata(url)
             if res["OK"]:
                 if res["Value"]["Exists"]:
                     if res["Value"]["Type"] == "Directory":
-                        gLogger.debug("DIPStorage.isDirectory: Successfully obtained metadata for %s." % url)
+                        gLogger.debug(f"DIPStorage.isDirectory: Successfully obtained metadata for {url}.")
                         successful[url] = True
                     else:
                         successful[url] = False
                 else:
                     failed[url] = "Path does not exist"
             else:
-                gLogger.error(
-                    "DIPStorage.isDirectory: Failed to get metadata for url", "{}: {}".format(url, res["Message"])
-                )
+                gLogger.error("DIPStorage.isDirectory: Failed to get metadata for url", f"{url}: {res['Message']}")
                 failed[url] = res["Message"]
         resDict = {"Failed": failed, "Successful": successful}
         return S_OK(resDict)
@@ -346,7 +342,7 @@ class DIPStorage(StorageBase):
         urls = res["Value"]
         successful = {}
         failed = {}
-        gLogger.debug("DIPStorage.isDirectory: Attempting to determine whether %s paths are directories." % len(urls))
+        gLogger.debug(f"DIPStorage.isDirectory: Attempting to determine whether {len(urls)} paths are directories.")
         serviceClient = Client(url=self.url)
         for url in urls:
             res = serviceClient.getDirectorySize(url)
@@ -365,7 +361,7 @@ class DIPStorage(StorageBase):
         urls = res["Value"]
         successful = {}
         failed = {}
-        gLogger.debug("DIPStorage.getFileMetadata: Attempting to obtain metadata for %s directories." % len(urls))
+        gLogger.debug(f"DIPStorage.getFileMetadata: Attempting to obtain metadata for {len(urls)} directories.")
         serviceClient = Client(url=self.url)
         for url in urls:
             res = serviceClient.getMetadata(url)
@@ -373,16 +369,14 @@ class DIPStorage(StorageBase):
                 if res["Value"]["Exists"]:
                     if res["Value"]["Type"] == "Directory":
                         res["Value"]["Directory"] = True
-                        gLogger.debug("DIPStorage.getFileMetadata: Successfully obtained metadata for %s." % url)
+                        gLogger.debug(f"DIPStorage.getFileMetadata: Successfully obtained metadata for {url}.")
                         successful[url] = res["Value"]
                     else:
                         failed[url] = "Supplied path is not a directory"
                 else:
                     failed[url] = "Directory does not exist"
             else:
-                gLogger.error(
-                    "DIPStorage.getFileMetadata: Failed to get metadata for url", "{}: {}".format(url, res["Message"])
-                )
+                gLogger.error("DIPStorage.getFileMetadata: Failed to get metadata for url", f"{url}: {res['Message']}")
                 failed[url] = res["Message"]
         resDict = {"Failed": failed, "Successful": successful}
         return S_OK(resDict)
@@ -395,17 +389,17 @@ class DIPStorage(StorageBase):
         urls = res["Value"]
         successful = {}
         failed = {}
-        gLogger.debug("DIPStorage.createDirectory: Attempting to create %s directories." % len(urls))
+        gLogger.debug(f"DIPStorage.createDirectory: Attempting to create {len(urls)} directories.")
         serviceClient = Client(url=self.url)
         for url in urls:
             res = serviceClient.createDirectory(url)
             if res["OK"]:
-                gLogger.debug("DIPStorage.createDirectory: Successfully created directory on storage: %s" % url)
+                gLogger.debug(f"DIPStorage.createDirectory: Successfully created directory on storage: {url}")
                 successful[url] = True
             else:
                 gLogger.error(
                     "DIPStorage.createDirectory: Failed to create directory on storage.",
-                    "{}: {}".format(url, res["Message"]),
+                    f"{url}: {res['Message']}",
                 )
                 failed[url] = res["Message"]
         resDict = {"Failed": failed, "Successful": successful}
@@ -419,7 +413,7 @@ class DIPStorage(StorageBase):
         urls = res["Value"]
         successful = {}
         failed = {}
-        gLogger.debug("DIPStorage.putDirectory: Attemping to put %s directories to remote storage." % len(urls))
+        gLogger.debug(f"DIPStorage.putDirectory: Attemping to put {len(urls)} directories to remote storage.")
         transferClient = TransferClient(self.url)
         for destDir, sourceDir in urls.items():
             tmpList = os.listdir(sourceDir)
@@ -440,17 +434,17 @@ class DIPStorage(StorageBase):
         urls = res["Value"]
         successful = {}
         failed = {}
-        gLogger.debug("DIPStorage.removeDirectory: Attempting to remove %s directories." % len(urls))
+        gLogger.debug(f"DIPStorage.removeDirectory: Attempting to remove {len(urls)} directories.")
         serviceClient = Client(url=self.url)
         for url in urls:
             res = serviceClient.removeDirectory(url, "")
             if res["OK"]:
-                gLogger.debug("DIPStorage.removeDirectory: Successfully removed directory on storage: %s" % url)
+                gLogger.debug(f"DIPStorage.removeDirectory: Successfully removed directory on storage: {url}")
                 successful[url] = {"FilesRemoved": 0, "SizeRemoved": 0}
             else:
                 gLogger.error(
                     "DIPStorage.removeDirectory: Failed to remove directory from storage.",
-                    "{}: {}".format(url, res["Message"]),
+                    f"{url}: {res['Message']}",
                 )
                 failed[url] = res["Message"]
         resDict = {"Failed": failed, "Successful": successful}
@@ -465,7 +459,7 @@ class DIPStorage(StorageBase):
 
         failed = {}
         successful = {}
-        gLogger.debug("DIPStorage.getDirectory: Attempting to get local copies of %s directories." % len(urls))
+        gLogger.debug(f"DIPStorage.getDirectory: Attempting to get local copies of {len(urls)} directories.")
         transferClient = TransferClient(self.url)
         for src_dir in urls:
             if localPath:
@@ -476,7 +470,7 @@ class DIPStorage(StorageBase):
                 os.mkdir(dest_dir)
             res = transferClient.receiveBulk(dest_dir, src_dir)
             if res["OK"]:
-                gLogger.debug("DIPStorage.getDirectory: Successfully got local copy of %s" % src_dir)
+                gLogger.debug(f"DIPStorage.getDirectory: Successfully got local copy of {src_dir}")
                 successful[src_dir] = {"Files": 0, "Size": 0}
             else:
                 gLogger.error("DIPStorage.getDirectory: Failed to get entire directory.", src_dir)

@@ -89,7 +89,7 @@ def main():
     for job in jobs:
         result = dirac.getOutputSandbox(job)
         if result["OK"]:
-            if os.path.exists("%s" % job):
+            if os.path.exists(f"{job}"):
                 lines = []
                 try:
                     lines = open(os.path.join(job, filename)).readlines()
@@ -98,7 +98,7 @@ def main():
                 for line in lines:
                     if line.count(searchstring):
                         resultDict[job] = line
-                rmtree("%s" % (job))
+                rmtree(f"{job}")
         else:
             errorList.append((job, result["Message"]))
             exitCode = 2

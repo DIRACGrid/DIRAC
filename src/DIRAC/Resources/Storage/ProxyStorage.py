@@ -44,7 +44,7 @@ class ProxyStorage(StorageBase):
                     dest_file = f"{localPath}/{fileName}"
                 else:
                     dest_file = f"{os.getcwd()}/{fileName}"
-                res = transferClient.receiveFile(dest_file, "getFile/%s" % fileName)
+                res = transferClient.receiveFile(dest_file, f"getFile/{fileName}")
                 if not res["OK"]:
                     gLogger.error("ProxyStorage.getFile: Failed to recieve file from proxy server.", res["Message"])
                     failed[src_url] = res["Message"]
@@ -84,7 +84,7 @@ class ProxyStorage(StorageBase):
         transferClient = TransferClient(client.serviceURL)
         for dest_url, src_file in urls.items():
             fileName = os.path.basename(dest_url)
-            res = transferClient.sendFile(src_file, "putFile/%s" % fileName)
+            res = transferClient.sendFile(src_file, f"putFile/{fileName}")
             if not res["OK"]:
                 gLogger.error("ProxyStorage.putFile: Failed to send file to proxy server.", res["Message"])
                 failed[dest_url] = res["Message"]
@@ -184,7 +184,7 @@ class ProxyStorage(StorageBase):
         if hasattr(self, method) and callable(getattr(self, method)):
             fcn = getattr(self, method)
         if not fcn:
-            return S_ERROR("Unable to invoke %s, it isn't a member function of ProxyStorage" % method)
+            return S_ERROR(f"Unable to invoke {method}, it isn't a member function of ProxyStorage")
         res = fcn([url])
         if not res["OK"]:
             return res

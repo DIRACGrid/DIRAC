@@ -99,7 +99,7 @@ class MQConnectionManager:
             mId = generateMessengerId(messengerType)
             if self.__addMessenger(conn, dest, mId):
                 return S_OK(mId)
-            return S_ERROR(EMQCONN, "Failed to update the connection: the messenger %s  already exists" % mId)
+            return S_ERROR(EMQCONN, f"Failed to update the connection: the messenger {mId}  already exists")
         finally:
             self.lock.release()
 
@@ -165,7 +165,7 @@ class MQConnectionManager:
             connector = self.__getConnector(conn)
 
             if not self.__removeMessenger(conn, dest, messengerId):
-                return S_ERROR(EMQCONN, "Failed to stop the connection!The messenger %s does not exist!" % messengerId)
+                return S_ERROR(EMQCONN, f"Failed to stop the connection!The messenger {messengerId} does not exist!")
             else:
                 if "consumer" in messengerId:
                     result = self.unsubscribe(connector, destination=dest, messengerId=messengerId)

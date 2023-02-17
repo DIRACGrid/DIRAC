@@ -113,7 +113,7 @@ class Modificator:
 
     def setOptionValue(self, optionPath, value):
         levelList = [level.strip() for level in optionPath.split("/") if level.strip() != ""]
-        parentPath = "/%s" % "/".join(levelList[:-1])
+        parentPath = f"/{'/'.join(levelList[:-1])}"
         optionName = List.fromChar(optionPath, "/")[-1]
         self.createSection(parentPath)
         cfg = self.__getParentCFG(optionPath)
@@ -128,7 +128,7 @@ class Modificator:
         cfg = self.cfgData
         createdSection = False
         for section in levelList:
-            currentPath += "/%s" % section
+            currentPath += f"/{section}"
             if section not in cfg.listSections():
                 cfg.createNewSection(section)
                 self.__setCommiter(currentPath)
@@ -172,7 +172,7 @@ class Modificator:
         oldName = pathList[-1]
         if parentCfg["value"].renameKey(oldName, newName):
             pathList[-1] = newName
-            self.__setCommiter("/%s" % "/".join(pathList))
+            self.__setCommiter(f"/{'/'.join(pathList)}")
             return True
         else:
             return False
@@ -184,7 +184,7 @@ class Modificator:
         pathList = List.fromChar(originalKeyPath, "/")
         originalKey = pathList[-1]
         if parentCfg["value"].copyKey(originalKey, newKey):
-            self.__setCommiter("/{}/{}".format("/".join(pathList[:-1]), newKey))
+            self.__setCommiter(f"/{'/'.join(pathList[:-1])}/{newKey}")
             return True
         return False
 

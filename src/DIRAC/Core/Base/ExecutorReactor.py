@@ -85,13 +85,13 @@ class ExecutorReactor:
             )
             if result["OK"]:
                 self.__aliveLock.alive()
-                gLogger.info("Connected to %s" % self.__mindName)
+                gLogger.info(f"Connected to {self.__mindName}")
             return result
 
         def __disconnected(self, msgClient):
             retryCount = 0
             while True:
-                gLogger.notice("Trying to reconnect to %s" % self.__mindName)
+                gLogger.notice(f"Trying to reconnect to {self.__mindName}")
                 result = self.__msgClient.connect(
                     executorTypes=list(self.__modules), maxTasks=self.__maxTasks, extraArgs=self.__extraArgs
                 )
@@ -99,12 +99,12 @@ class ExecutorReactor:
                 if result["OK"]:
                     if retryCount >= self.__reconnectRetries:
                         self.__aliveLock.alive()
-                    gLogger.notice("Reconnected to %s" % self.__mindName)
+                    gLogger.notice(f"Reconnected to {self.__mindName}")
                     return S_OK()
                 retryCount += 1
                 if retryCount == self.__reconnectRetries:
                     self.__aliveLock.alive()
-                gLogger.info("Connect error failed: %s" % result["Message"])
+                gLogger.info(f"Connect error failed: {result['Message']}")
                 gLogger.notice("Failed to reconnect. Sleeping for %d seconds" % self.__reconnectSleep)
                 time.sleep(self.__reconnectSleep)
 
@@ -155,9 +155,7 @@ class ExecutorReactor:
 
             result = self.__msgClient.createMessage(msgName)
             if not result["OK"]:
-                return self.__sendExecutorError(
-                    eType, taskId, "Can't generate {} message: {}".format(msgName, result["Message"])
-                )
+                return self.__sendExecutorError(eType, taskId, f"Can't generate {msgName} message: {result['Message']}")
             gLogger.verbose(f"Task {str(taskId)}: Sending {msgName}")
             msgObj = result["Value"]
             msgObj.taskId = taskId
@@ -177,13 +175,13 @@ class ExecutorReactor:
             try:
                 result = modInstance._ex_processTask(taskId, taskStub)
             except Exception as excp:
-                gLogger.exception("Error while processing task %s" % taskId, lException=excp)
+                gLogger.exception(f"Error while processing task {taskId}", lException=excp)
                 return S_ERROR(f"Error processing task {taskId}: {excp}")
 
             self.__storeInstance(eType, modInstance)
 
             if not result["OK"]:
-                return S_OK(("TaskError", taskStub, "Error: %s" % result["Message"]))
+                return S_OK(("TaskError", taskStub, f"Error: {result['Message']}"))
             taskStub, freezeTime, fastTrackType = result["Value"]
             if freezeTime:
                 return S_OK(("TaskFreeze", taskStub, freezeTime))
@@ -192,7 +190,7 @@ class ExecutorReactor:
                     gLogger.notice(f"Fast tracking task {taskId} to {fastTrackType}")
                     return self.__moduleProcess(fastTrackType, taskId, taskStub, fastTrackLevel + 1)
                 else:
-                    gLogger.notice("Stopping %s fast track. Sending back to the mind" % (taskId))
+                    gLogger.notice(f"Stopping {taskId} fast track. Sending back to the mind")
 
             return S_OK(("TaskDone", taskStub, True))
 
@@ -230,7 +228,7 @@ class ExecutorReactor:
             mc = self.__minds[mind]
             mc.addModule(name, exeClass)
         for mindName in self.__minds:
-            gLogger.info("Trying to connect to %s" % mindName)
+            gLogger.info(f"Trying to connect to {mindName}")
             result = self.__minds[mindName].connect()
             if not result["OK"]:
                 return result

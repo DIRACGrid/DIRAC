@@ -298,12 +298,12 @@ class TransformationClient(Client):
         """Start the transformation"""
         res = self.setTransformationParameter(transID, "Status", TransformationStatus.ACTIVE)
         if not res["OK"]:
-            gLogger.error("Failed to start transformation {}: {}".format(transID, res["Message"]))
+            gLogger.error(f"Failed to start transformation {transID}: {res['Message']}")
             return res
         else:
             res = self.setTransformationParameter(transID, "AgentType", "Automatic")
             if not res["OK"]:
-                gLogger.error("Failed to set AgentType to transformation {}: {}".format(transID, res["Message"]))
+                gLogger.error(f"Failed to set AgentType to transformation {transID}: {res['Message']}")
 
         return res
 
@@ -311,12 +311,12 @@ class TransformationClient(Client):
         """Stop the transformation"""
         res = self.setTransformationParameter(transID, "Status", TransformationStatus.STOPPED)
         if not res["OK"]:
-            gLogger.error("Failed to stop transformation {}: {}".format(transID, res["Message"]))
+            gLogger.error(f"Failed to stop transformation {transID}: {res['Message']}")
             return res
         else:
             res = self.setTransformationParameter(transID, "AgentType", "Manual")
             if not res["OK"]:
-                gLogger.error("Failed to set AgentType to transformation {}: {}".format(transID, res["Message"]))
+                gLogger.error(f"Failed to set AgentType to transformation {transID}: {res['Message']}")
 
         return res
 
@@ -413,9 +413,7 @@ class TransformationClient(Client):
                             " %d: status %s for %d files: %s" % (parentProd, oldStatus, len(lfnChunk), res["Message"]),
                         )
                 else:
-                    log.info(
-                        "Successfully moved files", ": %d files from %s to %s" % (len(lfnChunk), oldStatus, status)
-                    )
+                    log.info("Successfully moved files", f": {len(lfnChunk)} files from {oldStatus} to {status}")
 
         # If files were Assigned or Unused at the time of derivation, try and update them as jobs may have run since then
         res = self.getTransformationFiles(
@@ -568,7 +566,7 @@ class TransformationClient(Client):
             originalStatus = originalStatus["Value"]
 
             if currentStatus and currentStatus != originalStatus:
-                return S_ERROR("Status changed in the DB: %s" % originalStatus)
+                return S_ERROR(f"Status changed in the DB: {originalStatus}")
 
             transIDAsDict = {transID: [originalStatus, transformationType]}
             dictOfProposedstatus = {transID: paramValue}

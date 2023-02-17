@@ -19,9 +19,9 @@ class ComputingElementFactory:
         CEUniqueID.  If no corresponding CE is available, this is indicated.
         """
         if ceType:
-            self.log.verbose("Creating CE of type %s" % ceType)
+            self.log.verbose(f"Creating CE of type {ceType}")
         if ceName:
-            self.log.verbose("Creating CE for name %s" % ceName)
+            self.log.verbose(f"Creating CE for name {ceName}")
         ceTypeLocal = ceType if ceType else self.ceType
         ceNameLocal = ceName if ceName else ceType
         ceConfigDict = getCEConfigDict(ceNameLocal)
@@ -32,11 +32,11 @@ class ComputingElementFactory:
             error = "Can not determine CE Type"
             self.log.error(error)
             return S_ERROR(error)
-        subClassName = "%sComputingElement" % (ceTypeLocal)
+        subClassName = f"{ceTypeLocal}ComputingElement"
 
-        result = ObjectLoader().loadObject("Resources.Computing.%s" % subClassName)
+        result = ObjectLoader().loadObject(f"Resources.Computing.{subClassName}")
         if not result["OK"]:
-            self.log.error("Failed to load object", "{}: {}".format(subClassName, result["Message"]))
+            self.log.error("Failed to load object", f"{subClassName}: {result['Message']}")
             return result
 
         ceClass = result["Value"]
@@ -51,7 +51,7 @@ class ComputingElementFactory:
                 return result
 
         except Exception as x:
-            msg = "ComputingElementFactory could not instantiate %s object" % subClassName
+            msg = f"ComputingElementFactory could not instantiate {subClassName} object"
             self.log.exception()
             self.log.warn(msg, repr(x))
             return S_ERROR(repr(x))

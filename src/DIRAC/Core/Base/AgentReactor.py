@@ -80,13 +80,11 @@ class AgentReactor:
                 instanceObj = agentData["classObj"](agentName, agentData["loadName"], self.__baseAgentName)
                 result = instanceObj.am_initialize()
                 if not result["OK"]:
-                    return S_ERROR(
-                        "Error while calling initialize method of {}: {}".format(agentName, result["Message"])
-                    )
+                    return S_ERROR(f"Error while calling initialize method of {agentName}: {result['Message']}")
                 agentData["instanceObj"] = instanceObj
             except Exception as excp:
                 if not hideExceptions:
-                    gLogger.exception("Can't load agent %s" % agentName, lException=excp)
+                    gLogger.exception(f"Can't load agent {agentName}", lException=excp)
                 return S_ERROR(f"Can't load agent {agentName}: \n {excp}")
             agentPeriod = instanceObj.am_getPollingTime()
             result = self.__scheduler.addPeriodicTask(
@@ -116,7 +114,7 @@ class AgentReactor:
             result = self.setAgentModuleCyclesToExecute(aName, numCycles)
             if not result["OK"]:
                 error = "Failed to set cycles to execute"
-                gLogger.error("%s:" % error, aName)
+                gLogger.error(f"{error}:", aName)
                 break
         if error:
             return S_ERROR(error)
@@ -131,7 +129,7 @@ class AgentReactor:
             try:
                 self.__agentModules[agentName]["instanceObj"].finalize()
             except Exception as excp:
-                gLogger.exception("Failed to execute finalize for Agent: %s" % agentName, lException=excp)
+                gLogger.exception(f"Failed to execute finalize for Agent: {agentName}", lException=excp)
 
     def go(self):
         """
@@ -157,7 +155,7 @@ class AgentReactor:
         Set number of cycles to execute for a given agent (previously defined)
         """
         if agentName not in self.__agentModules:
-            return S_ERROR("%s has not been loaded" % agentName)
+            return S_ERROR(f"{agentName} has not been loaded")
         if maxCycles:
             try:
                 maxCycles += self.__agentModules[agentName]["instanceObj"].am_getCyclesDone()
@@ -181,11 +179,11 @@ class AgentReactor:
             alive = agent.am_getModuleParam("alive")
             if alive:
                 if agent.am_checkStopAgentFile():
-                    gLogger.info("Found StopAgent file for agent %s" % agentName)
+                    gLogger.info(f"Found StopAgent file for agent {agentName}")
                     alive = False
 
             if not alive:
-                gLogger.info("Stopping agent module %s" % (agentName))
+                gLogger.info(f"Stopping agent module {agentName}")
                 self.__scheduler.removeTask(self.__agentModules[agentName]["taskId"])
                 del self.__tasks[self.__agentModules[agentName]["taskId"]]
                 self.__agentModules[agentName]["running"] = False

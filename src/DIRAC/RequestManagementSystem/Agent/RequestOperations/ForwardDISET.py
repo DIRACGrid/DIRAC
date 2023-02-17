@@ -74,7 +74,7 @@ class ForwardDISET(OperationHandlerBase):
             gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "false")
 
         if not forward["OK"]:
-            self.log.error("unable to execute operation", "'{}' : {}".format(self.operation.Type, forward["Message"]))
+            self.log.error("unable to execute operation", f"'{self.operation.Type}' : {forward['Message']}")
             self.operation.Error = forward["Message"]
             return forward
         self.log.info("DISET forwarding done")

@@ -139,7 +139,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "DIRAC"
-copyright = "%s, DIRAC Project" % datetime.datetime.utcnow().year
+copyright = f"{datetime.datetime.utcnow().year}, DIRAC Project"
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

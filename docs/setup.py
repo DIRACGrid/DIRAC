@@ -11,15 +11,15 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "diracdoctool
 # Take all the packages but the scripts and tests
 ALL_PACKAGES = find_packages(where=BASE_DIR, exclude=["*test*"])
 
-PACKAGE_DIR = {"%s" % p: os.path.join(BASE_DIR, p.replace(".", "/")) for p in ALL_PACKAGES}
+PACKAGE_DIR = {f"{p}": os.path.join(BASE_DIR, p.replace(".", "/")) for p in ALL_PACKAGES}
 
 # We rename the packages so that they contain diracdoctools
-ALL_PACKAGES = ["diracdoctools.%s" % p for p in ALL_PACKAGES]
+ALL_PACKAGES = [f"diracdoctools.{p}" for p in ALL_PACKAGES]
 ALL_PACKAGES.insert(0, "diracdoctools")
 
 PACKAGE_DIR["diracdoctools"] = BASE_DIR
 # The scripts to be distributed
-SCRIPTS = glob.glob("%s/scripts/*.py" % BASE_DIR)
+SCRIPTS = glob.glob(f"{BASE_DIR}/scripts/*.py")
 
 setup(
     name="diracdoctools",

@@ -53,7 +53,7 @@ class ResourceManagementHandlerMixin:
         """
 
         if not result["OK"]:
-            self.log.error("{} : {}".format(methodName, result["Message"]))
+            self.log.error(f"{methodName} : {result['Message']}")
 
     types_insert = [str, dict]
 

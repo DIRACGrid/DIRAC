@@ -78,8 +78,8 @@ class OpenStackEndpoint(Endpoint):
         if not self.computeURL or not self.token:
             return S_ERROR("The endpoint object is not initialized")
 
-        url = "%s/flavors/detail" % self.computeURL
-        self.log.verbose("Getting flavors details on %s" % url)
+        url = f"{self.computeURL}/flavors/detail"
+        self.log.verbose(f"Getting flavors details on {url}")
 
         result = requests.get(url, headers={"X-Auth-Token": self.token}, verify=self.caPath)
 
@@ -97,7 +97,7 @@ class OpenStackEndpoint(Endpoint):
         if not self.imageURL or not self.token:
             return S_ERROR("The endpoint object is not initialized")
 
-        result = requests.get("%s/v2/images" % self.imageURL, headers={"X-Auth-Token": self.token}, verify=self.caPath)
+        result = requests.get(f"{self.imageURL}/v2/images", headers={"X-Auth-Token": self.token}, verify=self.caPath)
 
         output = json.loads(result.text)
         for image in output["images"]:
@@ -113,11 +113,11 @@ class OpenStackEndpoint(Endpoint):
         """
         try:
             result = requests.get(
-                "%s/v2.0/networks" % self.networkURL, headers={"X-Auth-Token": self.token}, verify=self.caPath
+                f"{self.networkURL}/v2.0/networks", headers={"X-Auth-Token": self.token}, verify=self.caPath
             )
             output = json.loads(result.text)
         except Exception as exc:
-            return S_ERROR("Cannot get networks: %s" % str(exc))
+            return S_ERROR(f"Cannot get networks: {str(exc)}")
 
         for network in output["networks"]:
             if network["project_id"] == self.projectID:
@@ -137,9 +137,7 @@ class OpenStackEndpoint(Endpoint):
                 nodeDict["NumberOfProcessors"] = self.parameters["NumberOfProcessors"]
                 outputDict[nodeID] = nodeDict
             else:
-                self.log.error(
-                    "Failed to create OpenStack instance", "{} {} {}".format(nvm, instanceID, result["Message"])
-                )
+                self.log.error("Failed to create OpenStack instance", f"{nvm} {instanceID} {result['Message']}")
                 break
 
         # We failed submission utterly
@@ -178,7 +176,7 @@ class OpenStackEndpoint(Endpoint):
                     return result
             imageID = self.images.get(imageName)["id"]
             if not imageID:
-                return S_ERROR("Can not get ID for the image: %s" % imageName)
+                return S_ERROR(f"Can not get ID for the image: {imageName}")
         self.parameters["ImageID"] = imageID
         if "Image" not in self.parameters:
             for image in self.images:
@@ -196,7 +194,7 @@ class OpenStackEndpoint(Endpoint):
                     return result
             flavorID = self.flavors.get(flavor)["FlavorID"]
             if not flavorID:
-                return S_ERROR("Can not get ID for the flavor: %s" % flavor)
+                return S_ERROR(f"Can not get ID for the flavor: {flavor}")
             numberOfProcessors = self.flavors.get(flavor)["NumberOfProcessors"]
         self.parameters["FlavorID"] = flavorID
         if "NumberOfProcessors" not in self.parameters:
@@ -231,7 +229,7 @@ class OpenStackEndpoint(Endpoint):
         requestDict = {
             "server": {
                 "user_data": userData,
-                "name": "DIRAC_%s" % instanceID,
+                "name": f"DIRAC_{instanceID}",
                 "imageRef": imageID,
                 "flavorRef": flavorID,
             }
@@ -250,19 +248,17 @@ class OpenStackEndpoint(Endpoint):
         # return S_ERROR()
 
         try:
-            result = requests.post(
-                "%s/servers" % self.computeURL, json=requestDict, headers=headers, verify=self.caPath
-            )
+            result = requests.post(f"{self.computeURL}/servers", json=requestDict, headers=headers, verify=self.caPath)
         except Exception as exc:
             self.log.exception("Exception creating VM")
-            return S_ERROR("Exception creating VM: %s" % str(exc))
+            return S_ERROR(f"Exception creating VM: {str(exc)}")
 
         if result.status_code in [200, 201, 202, 203, 204]:
             output = json.loads(result.text)
             nodeID = output["server"]["id"]
             return S_OK(nodeID)
         else:
-            return S_ERROR("Error creating VM: %s" % result.text)
+            return S_ERROR(f"Error creating VM: {result.text}")
 
     def getVMIDs(self):
         """Get all the VM IDs on the endpoint
@@ -277,7 +273,7 @@ class OpenStackEndpoint(Endpoint):
 
         try:
             response = requests.get(
-                "%s/servers" % self.computeURL, headers={"X-Auth-Token": self.token}, verify=self.caPath
+                f"{self.computeURL}/servers", headers={"X-Auth-Token": self.token}, verify=self.caPath
             )
         except Exception as e:
             return S_ERROR("Cannot connect to " + str(self.computeURL) + " (" + str(e) + ")")
@@ -332,7 +328,7 @@ class OpenStackEndpoint(Endpoint):
                 f"{self.computeURL}/servers/{nodeID}", headers={"X-Auth-Token": self.token}, verify=self.caPath
             )
         except Exception as e:
-            return S_ERROR("Cannot get node details for %s (" % nodeID + str(e) + ")")
+            return S_ERROR(f"Cannot get node details for {nodeID} (" + str(e) + ")")
 
         if response.status_code == 204:
             # VM stopped successfully
@@ -355,7 +351,7 @@ class OpenStackEndpoint(Endpoint):
         # Get the port of my VM
         try:
             result = requests.get(
-                "%s/v2.0/ports" % self.networkURL, headers={"X-Auth-Token": self.token}, verify=self.caPath
+                f"{self.networkURL}/v2.0/ports", headers={"X-Auth-Token": self.token}, verify=self.caPath
             )
             output = json.loads(result.text)
             portID = None
@@ -365,7 +361,7 @@ class OpenStackEndpoint(Endpoint):
                     self.vmInfo.setdefault(nodeID, {})
                     self.vmInfo[nodeID]["portID"] = portID
         except Exception as exc:
-            return S_ERROR("Cannot get ports: %s" % str(exc))
+            return S_ERROR(f"Cannot get ports: {str(exc)}")
 
         return S_OK(portID)
 
@@ -399,7 +395,7 @@ class OpenStackEndpoint(Endpoint):
         # Get an available floating IP
         try:
             result = requests.get(
-                "%s/v2.0/floatingips" % self.networkURL, headers={"X-Auth-Token": self.token}, verify=self.caPath
+                f"{self.networkURL}/v2.0/floatingips", headers={"X-Auth-Token": self.token}, verify=self.caPath
             )
             output = json.loads(result.text)
         except Exception as e:
@@ -445,15 +441,15 @@ class OpenStackEndpoint(Endpoint):
                 f"{self.computeURL}/servers/{vmID}", headers={"X-Auth-Token": self.token}, verify=self.caPath
             )
         except Exception as e:
-            return S_ERROR("Cannot get node details for %s (" % vmID + str(e) + ")")
+            return S_ERROR(f"Cannot get node details for {vmID} (" + str(e) + ")")
 
         if response.status_code == 404:
-            return S_ERROR("VM ID %s not found" % vmID)
+            return S_ERROR(f"VM ID {vmID} not found")
 
         output = json.loads(response.text)
         if response.status_code == 403:
             if "forbidden" in output:
-                return S_ERROR("Cannot get VM info: %s" % output["forbidden"].get("message"))
+                return S_ERROR(f"Cannot get VM info: {output['forbidden'].get('message')}")
             else:
                 return S_ERROR("Cannot get VM info: access forbidden")
 
@@ -506,7 +502,7 @@ class OpenStackEndpoint(Endpoint):
             # Get an available floating IP
             try:
                 result = requests.get(
-                    "%s/v2.0/floatingips" % self.networkURL, headers={"X-Auth-Token": self.token}, verify=self.caPath
+                    f"{self.networkURL}/v2.0/floatingips", headers={"X-Auth-Token": self.token}, verify=self.caPath
                 )
                 output = json.loads(result.text)
             except Exception as e:
@@ -532,9 +528,9 @@ class OpenStackEndpoint(Endpoint):
                 verify=self.caPath,
             )
         except Exception as exc:
-            return S_ERROR("Cannot disassociate floating IP: %s" % str(exc))
+            return S_ERROR(f"Cannot disassociate floating IP: {str(exc)}")
 
         if result.status_code == 200:
             return S_OK(fipID)
         else:
-            return S_ERROR("Cannot disassociate floating IP: %s" % result.text)
+            return S_ERROR(f"Cannot disassociate floating IP: {result.text}")

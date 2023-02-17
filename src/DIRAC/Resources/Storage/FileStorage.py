@@ -64,7 +64,7 @@ class FileStorage(StorageBase):
         if not res["OK"]:
             return res
         urls = res["Value"]
-        self.log.debug("FileStorage.exists: Checking the existence of %s path(s)" % len(urls))
+        self.log.debug(f"FileStorage.exists: Checking the existence of {len(urls)} path(s)")
 
         successful = {url: os.path.exists(url) for url in urls}
 
@@ -89,7 +89,7 @@ class FileStorage(StorageBase):
             return res
         urls = res["Value"]
 
-        self.log.debug("FileStorage.isFile: Determining whether %s paths are files." % len(urls))
+        self.log.debug(f"FileStorage.isFile: Determining whether {len(urls)} paths are files.")
         successful = {}
         failed = {}
 
@@ -117,7 +117,7 @@ class FileStorage(StorageBase):
             return res
         urls = res["Value"]
 
-        self.log.debug("FileStorage.getFile: Trying to download %s files." % len(urls))
+        self.log.debug(f"FileStorage.getFile: Trying to download {len(urls)} files.")
 
         failed = {}
         successful = {}
@@ -195,7 +195,7 @@ class FileStorage(StorageBase):
         if not res["OK"]:
             return res
         urls = res["Value"]
-        gLogger.debug("FileStorage.removeFile: Attempting to remove %s files." % len(urls))
+        gLogger.debug(f"FileStorage.removeFile: Attempting to remove {len(urls)} files.")
 
         failed = {}
         successful = {}
@@ -377,7 +377,7 @@ class FileStorage(StorageBase):
             return res
         urls = res["Value"]
 
-        self.log.debug("FileStorage.getDirectory: Attempting to get local copies of %s directories." % len(urls))
+        self.log.debug(f"FileStorage.getDirectory: Attempting to get local copies of {len(urls)} directories.")
 
         failed = {}
         successful = {}
@@ -436,7 +436,7 @@ class FileStorage(StorageBase):
 
         successful = {}
         failed = {}
-        self.log.debug("FileStorage.createDirectory: Attempting to create %s directories." % len(urls))
+        self.log.debug(f"FileStorage.createDirectory: Attempting to create {len(urls)} directories.")
 
         for url in urls:
             try:
@@ -468,7 +468,7 @@ class FileStorage(StorageBase):
             return res
         urls = res["Value"]
 
-        self.log.debug("FileStorage.removeDirectory: Attempting to remove %s directories." % len(urls))
+        self.log.debug(f"FileStorage.removeDirectory: Attempting to remove {len(urls)} directories.")
 
         successful = {}
         failed = {}
@@ -533,7 +533,7 @@ class FileStorage(StorageBase):
             return res
         urls = res["Value"]
 
-        self.log.debug("FileStorage.listDirectory: Attempting to list %s directories." % len(urls))
+        self.log.debug(f"FileStorage.listDirectory: Attempting to list {len(urls)} directories.")
 
         successful = {}
         failed = {}
@@ -611,7 +611,7 @@ class FileStorage(StorageBase):
             return res
         urls = res["Value"]
 
-        self.log.debug("FileStorage.getDirectorySize: Attempting to get size of %s directories." % len(urls))
+        self.log.debug(f"FileStorage.getDirectorySize: Attempting to get size of {len(urls)} directories.")
 
         failed = {}
         successful = {}

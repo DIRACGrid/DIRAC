@@ -35,7 +35,7 @@ def commandInvocation(commandTuple, pArgs=None, decisionParams=None, clients=Non
         cClass = commandTuple[1]
         commandModule = Utils.voimport("DIRAC.ResourceStatusSystem.Command." + cModule)
     except ImportError:
-        return S_ERROR("Import error for command %s." % (cModule))
+        return S_ERROR(f"Import error for command {cModule}.")
 
     if not hasattr(commandModule, cClass):
         return S_ERROR(f"{cModule} has no {cClass}")

@@ -79,7 +79,7 @@ class ExecutorMindHandler(RequestHandler):
                 10,
                 lambda: cls.log.verbose(
                     "== Internal state ==",
-                    "\n%s\n===========" % pprint.pformat(cls.__eDispatch._internals()),
+                    f"\n{pprint.pformat(cls.__eDispatch._internals())}\n===========",
                 ),
             )
         return S_OK()
@@ -171,7 +171,7 @@ class ExecutorMindHandler(RequestHandler):
         taskObj = result["Value"]
         result = self.__eDispatch.taskProcessed(self.srv_getTransportID(), msgObj.taskId, taskObj)
         if not result["OK"]:
-            gLogger.error("There was a problem processing task", "{}: {}".format(taskId, result["Message"]))
+            gLogger.error("There was a problem processing task", f"{taskId}: {result['Message']}")
         return S_OK()
 
     auth_msg_TaskFreeze = ["all"]
@@ -190,7 +190,7 @@ class ExecutorMindHandler(RequestHandler):
         taskObj = result["Value"]
         result = self.__eDispatch.freezeTask(self.srv_getTransportID(), msgObj.taskId, msgObj.freezeTime, taskObj)
         if not result["OK"]:
-            gLogger.error("There was a problem freezing task", "{}: {}".format(taskId, result["Message"]))
+            gLogger.error("There was a problem freezing task", f"{taskId}: {result['Message']}")
         return S_OK()
 
     auth_msg_TaskError = ["all"]

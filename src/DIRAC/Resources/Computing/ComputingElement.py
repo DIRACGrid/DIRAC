@@ -73,7 +73,7 @@ class ComputingElement:
         if clsName.endswith("ComputingElement"):
             self.ceType = clsName[: -len("ComputingElement")]
         else:
-            self.log.warning("%s should end with 'ComputingElement'!" % clsName)
+            self.log.warning(f"{clsName} should end with 'ComputingElement'!")
             self.ceType = clsName
 
         self.initializeParameters()
@@ -100,7 +100,7 @@ class ComputingElement:
                 return result
             os.environ["X509_USER_PROXY"] = result["Value"]
 
-        self.log.debug("Set proxy variable X509_USER_PROXY to %s" % os.environ["X509_USER_PROXY"])
+        self.log.debug(f"Set proxy variable X509_USER_PROXY to {os.environ['X509_USER_PROXY']}")
         return S_OK()
 
     def isProxyValid(self, valid=1000):
@@ -124,7 +124,7 @@ class ComputingElement:
         self.log.debug("Initializing the CE parameters")
 
         # Collect global defaults first
-        for section in ["/Resources/Computing/CEDefaults", "/Resources/Computing/%s" % self.ceType]:
+        for section in ["/Resources/Computing/CEDefaults", f"/Resources/Computing/{self.ceType}"]:
             result = gConfig.getOptionsDict(section)
 
             self.log.debug(result)
@@ -149,7 +149,7 @@ class ComputingElement:
         result = gConfig.getOptionsDict(section)
         if result["OK"] and result["Value"]:
             localSiteParameters = result["Value"]
-            self.log.debug("Local site parameters are: %s" % (localSiteParameters))
+            self.log.debug(f"Local site parameters are: {localSiteParameters}")
             for option, value in localSiteParameters.items():
                 if option == "Architecture":
                     self.ceParameters["Platform"] = value
@@ -165,7 +165,7 @@ class ComputingElement:
         """Check the sanity of the Computing Element definition"""
         for par in self.mandatoryParameters:
             if par not in self.ceParameters:
-                return S_ERROR("Missing Mandatory Parameter in Configuration: %s" % par)
+                return S_ERROR(f"Missing Mandatory Parameter in Configuration: {par}")
         return S_OK()
 
     #############################################################################
@@ -190,9 +190,9 @@ class ComputingElement:
             batchSystemName = self.ceParameters["BatchSystem"]
 
         objectLoader = ObjectLoader()
-        result = objectLoader.loadObject("Resources.Computing.BatchSystems.%s" % batchSystemName, batchSystemName)
+        result = objectLoader.loadObject(f"Resources.Computing.BatchSystems.{batchSystemName}", batchSystemName)
         if not result["OK"]:
-            self.log.error("Failed to load batch object: %s" % result["Message"])
+            self.log.error(f"Failed to load batch object: {result['Message']}")
             return result
         batchClass = result["Value"]
         batchModuleFile = result["ModuleFile"]
@@ -211,7 +211,7 @@ class ComputingElement:
         # try to get generic parameters for this type
         ceType = self.ceParameters.get("CEType")
         if ceType:
-            result = gConfig.getOptionsDict("/Resources/Computing/%s" % ceType)
+            result = gConfig.getOptionsDict(f"/Resources/Computing/{ceType}")
             if result["OK"]:
                 generalCEDict = result["Value"]
                 generalCEDict.update(self.ceParameters)
@@ -290,7 +290,7 @@ class ComputingElement:
         message += f", WaitingJobs={waitingJobs}, RunningJobs={runningJobs}"
         totalJobs = runningJobs + waitingJobs
 
-        message += ", MaxTotalJobs=%s" % (maxTotalJobs)
+        message += f", MaxTotalJobs={maxTotalJobs}"
 
         if totalJobs >= maxTotalJobs:
             self.log.verbose("Max Number of Jobs reached:", maxTotalJobs)
@@ -362,7 +362,7 @@ class ComputingElement:
         if not retVal["OK"]:
             self.log.error("Could not get payload proxy info", retVal)
             return retVal
-        self.log.verbose("Payload Proxy information:\n%s" % formatProxyInfoAsString(retVal["Value"]))
+        self.log.verbose(f"Payload Proxy information:\n{formatProxyInfoAsString(retVal['Value'])}")
 
         payloadProxyDict = retVal["Value"]
         payloadSecs = payloadProxyDict["chain"].getRemainingSecs()["Value"]
@@ -410,7 +410,7 @@ class ComputingElement:
         if pilotProxySecs <= payloadSecs:
             errorStr = "Pilot Proxy is not longer than payload Proxy"
             self.log.error(errorStr)
-            return S_ERROR("Can not renew by copy: %s" % errorStr)
+            return S_ERROR(f"Can not renew by copy: {errorStr}")
 
         # check if both proxies belong to the same user and group
         pilotDN = pilotProxyDict["chain"].getIssuerCert()["Value"].getSubjectDN()["Value"]
@@ -427,7 +427,7 @@ class ComputingElement:
         if pilotDN != payloadDN or pilotGroup != payloadGroup:
             errorStr = "Pilot Proxy and payload Proxy do not have same DN and Group"
             self.log.error(errorStr)
-            return S_ERROR("Can not renew by copy: %s" % errorStr)
+            return S_ERROR(f"Can not renew by copy: {errorStr}")
 
         if pilotProxyDict.get("hasVOMS", False):
             return pilotProxyDict["chain"].dumpAllToFile(payloadProxy)
@@ -490,14 +490,14 @@ class ComputingElement:
         """Method to submit job, should be overridden in sub-class."""
         name = "submitJob()"
         self.log.error("ComputingElement should be implemented in a subclass", name)
-        return S_ERROR("ComputingElement: %s should be implemented in a subclass" % (name))
+        return S_ERROR(f"ComputingElement: {name} should be implemented in a subclass")
 
     #############################################################################
     def getCEStatus(self):
         """Method to get dynamic job information, can be overridden in sub-class."""
         name = "getCEStatus()"
         self.log.error("ComputingElement should be implemented in a subclass", name)
-        return S_ERROR("ComputingElement: %s should be implemented in a subclass" % (name))
+        return S_ERROR(f"ComputingElement: {name} should be implemented in a subclass")
 
     #############################################################################
     def shutdown(self):
@@ -509,7 +509,7 @@ def getCEConfigDict(ceName):
     """Look into LocalSite for configuration Parameters for this CE"""
     ceConfigDict = {}
     if ceName:
-        result = gConfig.getOptionsDict("/LocalSite/%s" % ceName)
+        result = gConfig.getOptionsDict(f"/LocalSite/{ceName}")
         if result["OK"]:
             ceConfigDict = result["Value"]
     return ceConfigDict

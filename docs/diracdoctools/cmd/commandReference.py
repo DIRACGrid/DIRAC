@@ -52,7 +52,7 @@ class CommandReference:
         self.scriptDocs = {}  # Scripts docs collection
 
         if not os.path.exists(self.config.sourcePath):
-            LOG.error("%s does not exist" % self.config.sourcePath)
+            LOG.error(f"{self.config.sourcePath} does not exist")
             raise RuntimeError("Package not found")
 
     def createSectionAndIndex(self, sectionDict: dict):

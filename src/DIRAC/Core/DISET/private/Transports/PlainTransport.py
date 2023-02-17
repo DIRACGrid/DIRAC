@@ -21,7 +21,7 @@ class PlainTransport(BaseTransport):
             self.oSocket = socket.create_connection(self.stServerAddress, timeout)
         except OSError as e:
             if e.args[0] != 115:
-                return S_ERROR("Can't connect: %s" % str(e))
+                return S_ERROR(f"Can't connect: {str(e)}")
             # Connect in progress
             sel = selectors.DefaultSelector()
             sel.register(self.oSocket, selectors.EVENT_READ)
@@ -30,7 +30,7 @@ class PlainTransport(BaseTransport):
                 return S_ERROR("Connection timeout")
             errno = self.oSocket.getsockopt(socket.SOL_SOCKET, socket.SO_ERROR)
             if errno != 0:
-                return S_ERROR("Can't connect: %s" % str((errno, os.strerror(errno))))
+                return S_ERROR(f"Can't connect: {str((errno, os.strerror(errno)))}")
         self.remoteAddress = self.oSocket.getpeername()
         return S_OK(self.oSocket)
 
@@ -87,9 +87,9 @@ class PlainTransport(BaseTransport):
                 if e.errno == 11:
                     time.sleep(0.001)
                 else:
-                    return S_ERROR("Exception while reading from peer: %s" % str(e))
+                    return S_ERROR(f"Exception while reading from peer: {str(e)}")
             except Exception as e:
-                return S_ERROR("Exception while reading from peer: %s" % str(e))
+                return S_ERROR(f"Exception while reading from peer: {str(e)}")
 
     def _write(self, buf):
         sentBytes = 0
@@ -112,9 +112,9 @@ class PlainTransport(BaseTransport):
                 if e.errno == 11:
                     time.sleep(0.001)
                 else:
-                    return S_ERROR("Exception while sending to peer: %s" % str(e))
+                    return S_ERROR(f"Exception while sending to peer: {str(e)}")
             except Exception as e:
-                return S_ERROR("Error while sending: %s" % str(e))
+                return S_ERROR(f"Error while sending: {str(e)}")
         return S_OK(sentBytes)
 
 

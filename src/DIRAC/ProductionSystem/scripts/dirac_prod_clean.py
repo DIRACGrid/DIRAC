@@ -22,7 +22,7 @@ def main():
         DIRAC.gLogger.error(res["Message"])
         DIRAC.exit(1)
 
-    DIRAC.gLogger.notice("Production %s successully cleaned" % prodID)
+    DIRAC.gLogger.notice(f"Production {prodID} successully cleaned")
     DIRAC.exit(0)
 
 

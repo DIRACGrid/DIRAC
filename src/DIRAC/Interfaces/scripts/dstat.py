@@ -162,7 +162,7 @@ def main():
     Script.registerSwitch(
         "S:",
         "Status=",
-        "select job by status (comma separated list of statuses in: %s)" % ",".join(JOB_STATES),
+        f"select job by status (comma separated list of statuses in: {','.join(JOB_STATES)})",
         params.setStatus,
     )
     Script.registerSwitch("a", "StatusAll", "display jobs of any status", params.setStatusAll)

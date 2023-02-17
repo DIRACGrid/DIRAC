@@ -68,7 +68,7 @@ def main():
 
     for arg in parseArguments(args):
         if os.path.isdir(arg):
-            print("Output for job %s already retrieved, remove the output directory to redownload" % arg)
+            print(f"Output for job {arg} already retrieved, remove the output directory to redownload")
         else:
             jobs.append(arg)
 
@@ -99,9 +99,9 @@ def main():
             jobDir = os.path.join(outputDir, job)
         if result["OK"]:
             if os.path.exists(jobDir):
-                print("Job output sandbox retrieved in %s/" % (jobDir))
+                print(f"Job output sandbox retrieved in {jobDir}/")
         else:
-            if os.path.exists("%s" % jobDir):
+            if os.path.exists(f"{jobDir}"):
                 shutil.rmtree(jobDir)
             errorList.append((job, result["Message"]))
             exitCode = 2

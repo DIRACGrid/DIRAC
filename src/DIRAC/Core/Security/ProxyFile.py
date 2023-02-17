@@ -28,11 +28,11 @@ def writeToProxyFile(proxyContents, fileName=False):
         with open(fileName, "w") as fd:
             fd.write(proxyContents)
     except Exception as e:
-        return S_ERROR(DErrno.EWF, " {}: {}".format(fileName, repr(e).replace(",)", ")")))
+        return S_ERROR(DErrno.EWF, f" {fileName}: {repr(e).replace(',)', ')')}")
     try:
         os.chmod(fileName, stat.S_IRUSR | stat.S_IWUSR)
     except Exception as e:
-        return S_ERROR(DErrno.ESPF, "{}: {}".format(fileName, repr(e).replace(",)", ")")))
+        return S_ERROR(DErrno.ESPF, f"{fileName}: {repr(e).replace(',)', ')')}")
     return S_OK(fileName)
 
 
@@ -122,5 +122,5 @@ def multiProxyArgument(proxy=False):
         proxy = X509Chain()
         retVal = proxy.loadProxyFromFile(proxyLoc)
         if not retVal["OK"]:
-            return S_ERROR(DErrno.EPROXYREAD, "ProxyLocation: %s" % proxyLoc)
+            return S_ERROR(DErrno.EPROXYREAD, f"ProxyLocation: {proxyLoc}")
     return S_OK({"file": proxyLoc, "chain": proxy, "tempFile": tempFile})

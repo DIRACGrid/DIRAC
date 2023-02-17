@@ -162,7 +162,7 @@ class DowntimeCommand(Command):
             seHosts = res["Value"]
 
             if not seHosts:
-                return S_ERROR("No seHost(s) for %s" % elementName)
+                return S_ERROR(f"No seHost(s) for {elementName}")
             elementName = seHosts  # in this case it will return a list, because there might be more than one host only
 
         elif elementType in ["FTS", "FTS3"]:

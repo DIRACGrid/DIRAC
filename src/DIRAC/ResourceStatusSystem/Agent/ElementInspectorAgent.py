@@ -54,13 +54,13 @@ class ElementInspectorAgent(AgentModule):
 
         res = ObjectLoader().loadObject("DIRAC.ResourceStatusSystem.Client.ResourceStatusClient")
         if not res["OK"]:
-            self.log.error("Failed to load ResourceStatusClient class: %s" % res["Message"])
+            self.log.error(f"Failed to load ResourceStatusClient class: {res['Message']}")
             return res
         rsClass = res["Value"]
 
         res = ObjectLoader().loadObject("DIRAC.ResourceStatusSystem.Client.ResourceManagementClient")
         if not res["OK"]:
-            self.log.error("Failed to load ResourceManagementClient class: %s" % res["Message"])
+            self.log.error(f"Failed to load ResourceManagementClient class: {res['Message']}")
             return res
         rmClass = res["Value"]
 
@@ -174,9 +174,7 @@ class ElementInspectorAgent(AgentModule):
         reason = resEnforce["policyCombinedResult"]["Reason"]
 
         if oldStatus != newStatus:
-            self.log.info(
-                "{} ({}) is now {} ( {} ), before {}".format(element["name"], statusType, newStatus, reason, oldStatus)
-            )
+            self.log.info(f"{element['name']} ({statusType}) is now {newStatus} ( {reason} ), before {oldStatus}")
 
     def finalize(self):
         """graceful finalization"""

@@ -37,7 +37,7 @@ def main():
 
     result = gConfig.dumpCFGAsLocalCache(fileName, raw)
     if not result["OK"]:
-        print("Error: %s" % result["Message"])
+        print(f"Error: {result['Message']}")
         sys.exit(1)
 
     if not fileName:

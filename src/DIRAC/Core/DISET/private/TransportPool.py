@@ -98,14 +98,14 @@ class TransportPool:
             received = self.__transports[trid][0].receiveData(maxBufferSize, blockAfterKeepAlive, idleReceive)
             return received
         except KeyError:
-            return S_ERROR("No transport with id %s defined" % trid)
+            return S_ERROR(f"No transport with id {trid} defined")
 
     # Send
     def send(self, trid, msg):
         try:
             transport = self.__transports[trid][0]
         except KeyError:
-            return S_ERROR("No transport with id %s defined" % trid)
+            return S_ERROR(f"No transport with id {trid} defined")
         return transport.sendData(msg)
 
     # Send And Close
@@ -116,7 +116,7 @@ class TransportPool:
             if not result["OK"]:
                 return result
         except KeyError:
-            return S_ERROR("No transport with id %s defined" % trid)
+            return S_ERROR(f"No transport with id {trid} defined")
         finally:
             self.close(trid)
 
@@ -126,7 +126,7 @@ class TransportPool:
             if not result["OK"]:
                 return result
         except KeyError:
-            return S_ERROR("No transport with id %s defined" % trid)
+            return S_ERROR(f"No transport with id {trid} defined")
         finally:
             self.close(trid)
 
@@ -134,7 +134,7 @@ class TransportPool:
         try:
             return self.__transports[trid][0].sendKeepAlive(responseId)
         except KeyError:
-            return S_ERROR("No transport with id %s defined" % trid)
+            return S_ERROR(f"No transport with id {trid} defined")
 
     # Close
 
@@ -142,7 +142,7 @@ class TransportPool:
         try:
             self.__transports[trid][0].close()
         except KeyError:
-            return S_ERROR("No transport with id %s defined" % trid)
+            return S_ERROR(f"No transport with id {trid} defined")
         self.remove(trid)
 
     def remove(self, trid):

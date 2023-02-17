@@ -105,7 +105,7 @@ class File:
             if not isinstance(value, str):
                 raise TypeError("GUID should be a string!")
             if not checkGuid(value):
-                raise ValueError("'%s' is not a valid GUID!" % str(value))
+                raise ValueError(f"'{str(value)}' is not a valid GUID!")
         self._GUID = value
 
     @property
@@ -122,7 +122,7 @@ class File:
             if str(value).strip().upper() == "AD":
                 self._ChecksumType = "ADLER32"
             else:
-                raise ValueError("unknown checksum type: %s" % value)
+                raise ValueError(f"unknown checksum type: {value}")
         else:
             self._ChecksumType = str(value).strip().upper()
 
@@ -137,7 +137,7 @@ class File:
     def Status(self, value):
         """status setter"""
         if value not in ("Waiting", "Failed", "Done", "Scheduled"):
-            raise ValueError("Unknown Status: %s!" % str(value))
+            raise ValueError(f"Unknown Status: {str(value)}!")
 
         if value == "Done":
             self.Error = ""

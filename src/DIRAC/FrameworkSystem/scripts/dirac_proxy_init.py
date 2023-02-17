@@ -57,11 +57,11 @@ class ProxyInit:
         proxyChain = X509Chain.X509Chain()
         resultProxyChainFromFile = proxyChain.loadChainFromFile(self.__piParams.certLoc)
         if not resultProxyChainFromFile["OK"]:
-            gLogger.error("Could not load the proxy: %s" % resultProxyChainFromFile["Message"])
+            gLogger.error(f"Could not load the proxy: {resultProxyChainFromFile['Message']}")
             sys.exit(1)
         resultIssuerCert = proxyChain.getIssuerCert()
         if not resultIssuerCert["OK"]:
-            gLogger.error("Could not load the proxy: %s" % resultIssuerCert["Message"])
+            gLogger.error(f"Could not load the proxy: {resultIssuerCert['Message']}")
             sys.exit(1)
         self.__issuerCert = resultIssuerCert["Value"]
         return self.__issuerCert
@@ -104,7 +104,7 @@ class ProxyInit:
                 % resultVomsAttributes["Message"]
             )
 
-        gLogger.notice("Added VOMS attribute %s" % vomsAttr)
+        gLogger.notice(f"Added VOMS attribute {vomsAttr}")
         chain = resultVomsAttributes["Value"]
         result = chain.dumpAllToFile(self.__proxyGenerated)
         if not result["OK"]:
@@ -136,9 +136,9 @@ class ProxyInit:
                 if (
                     issuerCert.getNotAfterDate()["Value"] - datetime.timedelta(minutes=10) < expiry
                 ):  # pylint: disable=no-member
-                    gLogger.info('Proxy with DN "%s" already uploaded' % userDN)
+                    gLogger.info(f'Proxy with DN "{userDN}" already uploaded')
                     return S_OK()
-        gLogger.info("Uploading %s proxy to ProxyManager..." % userDN)
+        gLogger.info(f"Uploading {userDN} proxy to ProxyManager...")
         upParams = ProxyUpload.CLIParams()
         upParams.onTheFly = True
         upParams.proxyLifeTime = issuerCert.getRemainingSecs()["Value"] - 300  # pylint: disable=no-member
@@ -156,7 +156,7 @@ class ProxyInit:
         """Printing utilities"""
         resultProxyInfoAsAString = ProxyInfo.getProxyInfoAsString(self.__proxyGenerated)
         if not resultProxyInfoAsAString["OK"]:
-            gLogger.error("Failed to get the new proxy info: %s" % resultProxyInfoAsAString["Message"])
+            gLogger.error(f"Failed to get the new proxy info: {resultProxyInfoAsAString['Message']}")
         else:
             gLogger.notice("Proxy generated:")
             gLogger.notice(resultProxyInfoAsAString["Value"])
@@ -168,7 +168,7 @@ class ProxyInit:
                 maxDNLen = max(maxDNLen, len(userDN))
                 for group in self.__uploadedInfo[userDN]:
                     maxGroupLen = max(maxGroupLen, len(group))
-            gLogger.notice(" {} | {} | Until (GMT)".format("DN".ljust(maxDNLen), "Group".ljust(maxGroupLen)))
+            gLogger.notice(f" {'DN'.ljust(maxDNLen)} | {'Group'.ljust(maxGroupLen)} | Until (GMT)")
             for userDN in self.__uploadedInfo:
                 for group in self.__uploadedInfo[userDN]:
                     gLogger.notice(
@@ -189,7 +189,7 @@ class ProxyInit:
         searchExp = os.path.join(caDir, "*.r0")
         crlList = glob.glob(searchExp)
         if not crlList:
-            gLogger.warn("No CRL files found for %s. Abort check of CAs" % searchExp)
+            gLogger.warn(f"No CRL files found for {searchExp}. Abort check of CAs")
             return
         newestFPath = max(crlList, key=os.path.getmtime)
         newestFTime = os.path.getmtime(newestFPath)

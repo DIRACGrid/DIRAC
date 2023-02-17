@@ -21,7 +21,7 @@ class ProdValidator:
             return res
         status = res["Value"]
         if status != "New":
-            return S_ERROR("checkTransStatus failed : Invalid transformation status: %s" % status)
+            return S_ERROR(f"checkTransStatus failed : Invalid transformation status: {status}")
 
         return S_OK()
 
@@ -36,14 +36,14 @@ class ProdValidator:
             return res
         inputquery = res["Value"]
         if not inputquery:
-            return S_ERROR("No InputMetaQuery defined for transformation %s" % transID)
+            return S_ERROR(f"No InputMetaQuery defined for transformation {transID}")
 
         res = self.transClient.getTransformationMetaQuery(parentTransID, "Output")
         if not res["OK"]:
             return res
         parentoutputquery = res["Value"]
         if not parentoutputquery:
-            return S_ERROR("No OutputMetaQuery defined for parent transformation %s" % parentTransID)
+            return S_ERROR(f"No OutputMetaQuery defined for parent transformation {parentTransID}")
 
         # Check the matching between inputquery and parent outputmeta query
         # Currently very simplistic: just support expression with "=" and "in" operators
@@ -68,7 +68,7 @@ class ProdValidator:
         catalog = FileCatalog()
         res = catalog.getMetadataFields()
         if not res["OK"]:
-            gLogger.error("Error in getMetadataFields: %s" % res["Message"])
+            gLogger.error(f"Error in getMetadataFields: {res['Message']}")
             return res
         if not res["Value"]:
             gLogger.error("Error: no metadata fields defined")
@@ -89,14 +89,14 @@ class ProdValidator:
 
         for meta, value in MetaQueryDict.items():
             if meta not in MetaTypeDict:
-                msg = "Metadata %s is not defined in the Catalog" % meta
+                msg = f"Metadata {meta} is not defined in the Catalog"
                 return S_ERROR(msg)
             mtype = MetaTypeDict[meta]
             if mtype.lower() not in ["varchar(128)", "int", "float"]:
-                msg = "Metatype %s is not supported" % mtype.lower()
+                msg = f"Metatype {mtype.lower()} is not supported"
                 return S_ERROR(msg)
             if meta not in ParentMetaQueryDict:
-                msg = "Metadata %s is not in parent transformation query" % meta
+                msg = f"Metadata {meta} is not in parent transformation query"
                 return S_ERROR(msg)
             if self.compareValues(value, ParentMetaQueryDict[meta]):
                 continue
@@ -117,7 +117,7 @@ class ProdValidator:
             if isinstance(value, dict):
                 operation = list(value)[0]
                 if operation not in ["=", "in"]:
-                    msg = "Operation %s is not supported" % operation
+                    msg = f"Operation {operation} is not supported"
                     return S_ERROR(msg)
                 else:
                     if not isinstance(list(value.values())[0], list):

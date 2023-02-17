@@ -41,10 +41,10 @@ def main():
     from DIRAC.Core.Utilities.Adler import fileAdler
 
     if not os.path.exists(PFN):
-        gLogger.error("%s does not exist" % PFN)
+        gLogger.error(f"{PFN} does not exist")
         DIRAC.exit(-1)
     if not os.path.isfile(PFN):
-        gLogger.error("%s is not a file" % PFN)
+        gLogger.error(f"{PFN} is not a file")
         DIRAC.exit(-1)
 
     PFN = os.path.abspath(PFN)
@@ -68,11 +68,11 @@ def main():
     reqClient = ReqClient()
     putRequest = reqClient.putRequest(request)
     if not putRequest["OK"]:
-        gLogger.error("unable to put request '{}': {}".format(requestName, putRequest["Message"]))
+        gLogger.error(f"unable to put request '{requestName}': {putRequest['Message']}")
         DIRAC.exit(-1)
 
-    gLogger.always("Request '%s' has been put to ReqDB for execution." % requestName)
-    gLogger.always("You can monitor its status using command: 'dirac-rms-request %s'" % requestName)
+    gLogger.always(f"Request '{requestName}' has been put to ReqDB for execution.")
+    gLogger.always(f"You can monitor its status using command: 'dirac-rms-request {requestName}'")
     DIRAC.exit(0)
 
 

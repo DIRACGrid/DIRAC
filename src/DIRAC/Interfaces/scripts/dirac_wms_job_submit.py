@@ -42,15 +42,15 @@ def main():
     for sw, value in unprocessed_switches:
         if sw.lower() in ("f", "file"):
             if os.path.isfile(value):
-                print("Appending job ids to existing logfile: %s" % value)
+                print(f"Appending job ids to existing logfile: {value}")
                 if not os.access(value, os.W_OK):
-                    print("Existing logfile %s must be writable by user." % value)
+                    print(f"Existing logfile {value} must be writable by user.")
             jFile = open(value, "a")
 
     for jdl in args:
         result = dirac.submitJob(jdl)
         if result["OK"]:
-            print("JobID = %s" % (result["Value"]))
+            print(f"JobID = {result['Value']}")
             if jFile is not None:
                 # parametric jobs
                 if isinstance(result["Value"], list):

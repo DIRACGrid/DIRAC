@@ -38,7 +38,7 @@ class NotificationClient(Client):
                         m._fromAddress = fromAddress
                     result = m._send()
                 except Exception as x:
-                    self.log.warn("Sending mail failed with exception:\n%s" % (str(x)))
+                    self.log.warn(f"Sending mail failed with exception:\n{str(x)}")
 
                 if result["OK"]:
                     self.log.verbose(f"Mail sent successfully from local host to {address} with subject {subject}")

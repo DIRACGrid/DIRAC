@@ -74,11 +74,11 @@ def main():
                 if not result["OK"]:
                     gLogger.error("Could not commit configuration changes", result["Message"])
                 else:
-                    gLogger.notice("Registry changes committed for VO %s" % voName)
+                    gLogger.notice(f"Registry changes committed for VO {voName}")
             else:
                 gLogger.notice("Registry changes are not committed")
     else:
-        gLogger.notice("No changes to Registry for VO %s" % voName)
+        gLogger.notice(f"No changes to Registry for VO {voName}")
 
     result = vomsSync.getVOUserReport()
     if not result["OK"]:

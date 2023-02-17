@@ -77,36 +77,36 @@ def test_valid_properties():
 def test_StateMachine():
     """state machine"""
     op = Operation()
-    assert op.Status == "Queued", "1. wrong status %s" % op.Status
+    assert op.Status == "Queued", f"1. wrong status {op.Status}"
 
     op.addFile(File({"Status": "Waiting"}))
-    assert op.Status == "Queued", "2. wrong status %s" % op.Status
+    assert op.Status == "Queued", f"2. wrong status {op.Status}"
 
     op.addFile(File({"Status": "Scheduled"}))
-    assert op.Status == "Scheduled", "3. wrong status %s" % op.Status
+    assert op.Status == "Scheduled", f"3. wrong status {op.Status}"
 
     op.addFile(File({"Status": "Done"}))
-    assert op.Status == "Scheduled", "4. wrong status %s" % op.Status
+    assert op.Status == "Scheduled", f"4. wrong status {op.Status}"
 
     op.addFile(File({"Status": "Failed"}))
-    assert op.Status == "Scheduled", "5. wrong status %s" % op.Status
+    assert op.Status == "Scheduled", f"5. wrong status {op.Status}"
 
     op[3].Status = "Scheduled"
-    assert op.Status == "Scheduled", "6. wrong status %s" % op.Status
+    assert op.Status == "Scheduled", f"6. wrong status {op.Status}"
 
     op[0].Status = "Scheduled"
-    assert op.Status == "Scheduled", "7. wrong status %s" % op.Status
+    assert op.Status == "Scheduled", f"7. wrong status {op.Status}"
 
     op[0].Status = "Waiting"
-    assert op.Status == "Scheduled", "8. wrong status %s" % op.Status
+    assert op.Status == "Scheduled", f"8. wrong status {op.Status}"
 
     for f in op:
         f.Status = "Done"
-    assert op.Status == "Done", "9. wrong status %s" % op.Status
+    assert op.Status == "Done", f"9. wrong status {op.Status}"
 
     for f in op:
         f.Status = "Failed"
-    assert op.Status == "Failed", "9. wrong status %s" % op.Status
+    assert op.Status == "Failed", f"9. wrong status {op.Status}"
 
 
 def test_List():
@@ -123,8 +123,8 @@ def test_List():
         assert op[i] == files[i], "__getitem__ failed"
 
     for i in range(len(op)):
-        op[i] = File({"LFN": "/%s" % i})
-        assert op[i].LFN == "/%s" % i, "__setitem__ failed"
+        op[i] = File({"LFN": f"/{i}"})
+        assert op[i].LFN == f"/{i}", "__setitem__ failed"
 
     del op[0]
     assert len(op) == 4, "__delitem__ failed"

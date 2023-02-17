@@ -194,7 +194,7 @@ class RequestDB:
 
         result = getDBParameters(fullname)
         if not result["OK"]:
-            raise Exception("Cannot get database parameters: %s" % result["Message"])
+            raise Exception(f"Cannot get database parameters: {result['Message']}")
 
         dbParameters = result["Value"]
         self.dbHost = dbParameters["Host"]
@@ -248,14 +248,14 @@ class RequestDB:
 
             # No row was changed
             if not updateRet.rowcount:
-                return S_ERROR("No such request %s" % requestID)
+                return S_ERROR(f"No such request {requestID}")
 
             return S_OK()
 
         except Exception as e:
             session.rollback()
             self.log.exception("cancelRequest: unexpected exception", lException=e)
-            return S_ERROR("cancelRequest: unexpected exception %s" % e)
+            return S_ERROR(f"cancelRequest: unexpected exception {e}")
         finally:
             session.close()
 
@@ -292,7 +292,7 @@ class RequestDB:
         except Exception as e:
             session.rollback()
             self.log.exception("putRequest: unexpected exception", lException=e)
-            return S_ERROR("putRequest: unexpected exception %s" % e)
+            return S_ERROR(f"putRequest: unexpected exception {e}")
         finally:
             session.close()
 
@@ -343,17 +343,15 @@ class RequestDB:
             if reqID:
                 requestID = reqID
 
-                log.verbose("selecting request '{}'{}".format(reqID, " (Assigned)" if assigned else ""))
+                log.verbose(f"selecting request '{reqID}'{' (Assigned)' if assigned else ''}")
                 status = None
                 try:
                     status = session.query(Request._Status).filter(Request.RequestID == reqID).one()
                 except NoResultFound:
-                    return S_ERROR("getRequest: request '%s' not exists" % reqID)
+                    return S_ERROR(f"getRequest: request '{reqID}' not exists")
 
                 if status and status == "Assigned" and assigned:
-                    return S_ERROR(
-                        "getRequest: status of request '%s' is 'Assigned', request cannot be selected" % reqID
-                    )
+                    return S_ERROR(f"getRequest: status of request '{reqID}' is 'Assigned', request cannot be selected")
 
             else:
                 now = datetime.datetime.utcnow().replace(microsecond=0)
@@ -420,7 +418,7 @@ class RequestDB:
         except Exception as e:
             session.rollback()
             log.exception("getRequest: unexpected exception", lException=e)
-            return S_ERROR("getRequest: unexpected exception : %s" % e)
+            return S_ERROR(f"getRequest: unexpected exception : {e}")
         finally:
             session.close()
 
@@ -456,7 +454,7 @@ class RequestDB:
                 )
 
                 requestIDs = [ridTuple[0] for ridTuple in requestIDs]
-                log.debug("Got request ids %s" % requestIDs)
+                log.debug(f"Got request ids {requestIDs}")
 
                 requests = (
                     session.query(Request)
@@ -464,7 +462,7 @@ class RequestDB:
                     .filter(Request.RequestID.in_(requestIDs))
                     .all()
                 )
-                log.debug("Got %s Request objects " % len(requests))
+                log.debug(f"Got {len(requests)} Request objects ")
                 requestDict = {req.RequestID: req for req in requests}
             # No Waiting requests
             except NoResultFound:
@@ -483,7 +481,7 @@ class RequestDB:
         except Exception as e:
             session.rollback()
             log.exception("unexpected exception", lException=e)
-            return S_ERROR("getBulkRequest: unexpected exception : %s" % e)
+            return S_ERROR(f"getBulkRequest: unexpected exception : {e}")
         finally:
             session.close()
 
@@ -522,7 +520,7 @@ class RequestDB:
         except Exception as e:
             session.rollback()
             self.log.exception("getRequestIDsList: unexpected exception", lException=e)
-            return S_ERROR("getRequestIDsList: unexpected exception : %s" % e)
+            return S_ERROR(f"getRequestIDsList: unexpected exception : {e}")
         finally:
             session.close()
 
@@ -543,7 +541,7 @@ class RequestDB:
         except Exception as e:
             session.rollback()
             self.log.exception("deleteRequest: unexpected exception", lException=e)
-            return S_ERROR("deleteRequest: unexpected exception : %s" % e)
+            return S_ERROR(f"deleteRequest: unexpected exception : {e}")
         finally:
             session.close()
 
@@ -588,7 +586,7 @@ class RequestDB:
 
         except Exception as e:
             self.log.exception("getDBSummary: unexpected exception", lException=e)
-            return S_ERROR("getDBSummary: unexpected exception : %s" % e)
+            return S_ERROR(f"getDBSummary: unexpected exception : {e}")
         finally:
             session.close()
 
@@ -676,7 +674,7 @@ class RequestDB:
 
                 return S_OK(resultDict)
             except Exception as e:
-                return S_ERROR("Error getting the webSummary %s" % e)
+                return S_ERROR(f"Error getting the webSummary {e}")
 
             nRequests = len(requestLists)
 
@@ -703,7 +701,7 @@ class RequestDB:
         #
         except Exception as e:
             self.log.exception("getRequestSummaryWeb: unexpected exception", lException=e)
-            return S_ERROR("getRequestSummaryWeb: unexpected exception : %s" % e)
+            return S_ERROR(f"getRequestSummaryWeb: unexpected exception : {e}")
 
         finally:
             session.close()
@@ -724,7 +722,7 @@ class RequestDB:
         elif groupingAttribute == "Status":
             groupingAttribute = "Request._Status"
         else:
-            groupingAttribute = "Request.%s" % groupingAttribute
+            groupingAttribute = f"Request.{groupingAttribute}"
 
         try:
             summaryQuery = session.query(
@@ -757,13 +755,13 @@ class RequestDB:
             except NoResultFound:
                 pass
             except Exception as e:
-                return S_ERROR("Error getting the webCounters %s" % e)
+                return S_ERROR(f"Error getting the webCounters {e}")
 
             return S_OK(resultDict)
 
         except Exception as e:
             self.log.exception("getRequestSummaryWeb: unexpected exception", lException=e)
-            return S_ERROR("getRequestSummaryWeb: unexpected exception : %s" % e)
+            return S_ERROR(f"getRequestSummaryWeb: unexpected exception : {e}")
 
         finally:
             session.close()
@@ -782,7 +780,7 @@ class RequestDB:
             pass
         except Exception as e:
             self.log.exception("getDistinctValues: unexpected exception", lException=e)
-            return S_ERROR("getDistinctValues: unexpected exception : %s" % e)
+            return S_ERROR(f"getDistinctValues: unexpected exception : {e}")
 
         finally:
             session.close()
@@ -796,7 +794,7 @@ class RequestDB:
         :return: S_OK( "Successful" : { jobID1 : Request, jobID2: Request, ... }
                        "Failed" : { jobID3: "error message", ... } )
         """
-        self.log.debug("getRequestIDsForJobs: got %s jobIDs to check" % str(jobIDs))
+        self.log.debug(f"getRequestIDsForJobs: got {str(jobIDs)} jobIDs to check")
         if not jobIDs:
             return S_ERROR("Must provide jobID list as argument.")
         if isinstance(jobIDs, int):
@@ -814,7 +812,7 @@ class RequestDB:
             reqDict["Failed"] = {jobid: "Request not found" for jobid in jobIDs - set(reqDict["Successful"])}
         except Exception as e:
             self.log.exception("getRequestIDsForJobs: unexpected exception", lException=e)
-            return S_ERROR("getRequestIDsForJobs: unexpected exception : %s" % e)
+            return S_ERROR(f"getRequestIDsForJobs: unexpected exception : {e}")
         finally:
             session.close()
 
@@ -827,7 +825,7 @@ class RequestDB:
         :return: S_OK( "Successful" : { jobID1 : Request, jobID2: Request, ... }
                        "Failed" : { jobID3: "error message", ... } )
         """
-        self.log.debug("readRequestForJobs: got %s jobIDs to check" % str(jobIDs))
+        self.log.debug(f"readRequestForJobs: got {str(jobIDs)} jobIDs to check")
         if not jobIDs:
             return S_ERROR("Must provide jobID list as argument.")
         if isinstance(jobIDs, int):
@@ -853,7 +851,7 @@ class RequestDB:
             session.expunge_all()
         except Exception as e:
             self.log.exception("readRequestsForJobs: unexpected exception", lException=e)
-            return S_ERROR("readRequestsForJobs: unexpected exception : %s" % e)
+            return S_ERROR(f"readRequestsForJobs: unexpected exception : {e}")
         finally:
             session.close()
 
@@ -861,12 +859,12 @@ class RequestDB:
 
     def getRequestStatus(self, requestID):
         """get request status for a given request ID"""
-        self.log.debug("getRequestStatus: checking status for '%s' request" % requestID)
+        self.log.debug(f"getRequestStatus: checking status for '{requestID}' request")
         session = self.DBSession()
         try:
             status = session.query(Request._Status).filter(Request.RequestID == requestID).one()
         except NoResultFound:
-            return S_ERROR(errno.ENOENT, "Request %s does not exist" % requestID)
+            return S_ERROR(errno.ENOENT, f"Request {requestID} does not exist")
         finally:
             session.close()
         return S_OK(status[0])
@@ -909,7 +907,7 @@ class RequestDB:
 
         except Exception as e:
             self.log.exception("getRequestFileStatus: unexpected exception", lException=e)
-            return S_ERROR("getRequestFileStatus: unexpected exception : %s" % e)
+            return S_ERROR(f"getRequestFileStatus: unexpected exception : {e}")
         finally:
             session.close()
 
@@ -942,7 +940,7 @@ class RequestDB:
 
         except Exception as e:
             self.log.exception("getRequestInfo: unexpected exception", lException=e)
-            return S_ERROR("getRequestInfo: unexpected exception : %s" % e)
+            return S_ERROR(f"getRequestInfo: unexpected exception : {e}")
 
         finally:
             session.close()
@@ -952,10 +950,10 @@ class RequestDB:
 
         :param str requestName: request id
         """
-        self.log.debug("getDigest: will create digest for request '%s'" % requestID)
+        self.log.debug(f"getDigest: will create digest for request '{requestID}'")
         request = self.getRequest(requestID, False)
         if not request["OK"]:
-            self.log.error("getDigest: %s" % request["Message"])
+            self.log.error(f"getDigest: {request['Message']}")
             return request
         request = request["Value"]
         if not isinstance(request, Request):
@@ -975,7 +973,7 @@ class RequestDB:
         try:
             ret = session.query(Request.RequestID).filter(Request.RequestName == requestName).all()
             if not ret:
-                return S_ERROR("No such request %s" % requestName)
+                return S_ERROR(f"No such request {requestName}")
             elif len(ret) > 1:
                 return S_ERROR(f"RequestName {requestName} not unique ({len(ret)} matches)")
 
@@ -985,7 +983,7 @@ class RequestDB:
             return S_ERROR("No such request")
         except Exception as e:
             self.log.exception("getRequestIDsForName: unexpected exception", lException=e)
-            return S_ERROR("getRequestIDsForName: unexpected exception : %s" % e)
+            return S_ERROR(f"getRequestIDsForName: unexpected exception : {e}")
         finally:
             session.close()
 

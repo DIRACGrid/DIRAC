@@ -29,7 +29,7 @@ def main():
         DIRAC.gLogger.error(res["Message"])
         DIRAC.exit(-1)
 
-    print("Description for production %s:\n" % prodID)
+    print(f"Description for production {prodID}:\n")
     print(prod["Description"])
 
     DIRAC.exit(0)

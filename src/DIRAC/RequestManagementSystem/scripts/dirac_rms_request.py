@@ -96,7 +96,7 @@ def main():
                         for line in lines:
                             for job in line.split(","):
                                 jobs += [int(job.strip())]
-                        gLogger.notice("Found %d jobs in file %s" % (len(jobs), arg))
+                        gLogger.notice(f"Found {len(jobs)} jobs in file {arg}")
                     else:
                         jobs.append(int(arg))
             except TypeError:
@@ -175,7 +175,7 @@ def main():
             if os.path.exists(arg):
                 lines = open(arg).readlines()
                 requests += [reqID.strip() for line in lines for reqID in line.split(",")]
-                gLogger.notice("Found %d requests in file" % len(requests))
+                gLogger.notice(f"Found {len(requests)} requests in file")
             else:
                 requests.append(arg)
             allR = True
@@ -185,7 +185,7 @@ def main():
             gLogger.fatal("Error getting request for jobs", res["Message"])
             DIRAC.exit(2)
         if res["Value"]["Failed"]:
-            gLogger.error("No request found for jobs %s" % ",".join(sorted(str(job) for job in res["Value"]["Failed"])))
+            gLogger.error(f"No request found for jobs {','.join(sorted(str(job) for job in res['Value']['Failed']))}")
         requests = sorted(res["Value"]["Successful"].values())
         if requests:
             allR = True
@@ -200,7 +200,7 @@ def main():
             gLogger.error("Error getting requests:", res["Message"])
             DIRAC.exit(2)
         requests = [reqID for reqID, _st, updTime in res["Value"] if updTime > since and updTime <= until and reqID]
-        gLogger.notice("Obtained %d requests %s between %s and %s" % (len(requests), status, since, until))
+        gLogger.notice(f"Obtained {len(requests)} requests {status} between {since} and {until}")
     if not requests:
         gLogger.notice("No request selected....")
         Script.showHelp(exitCode=2)
@@ -231,7 +231,7 @@ def main():
 
         request = request["Value"]
         if not request:
-            gLogger.error("no such request %s" % requestID)
+            gLogger.error(f"no such request {requestID}")
             continue
         # If no operation as the targetSE, skip
         if targetSE:
@@ -267,19 +267,19 @@ def main():
             if request.Status not in ("Done", "Failed"):
                 ret = reqClient.cancelRequest(requestID)
                 if not ret["OK"]:
-                    gLogger.error("Error canceling request %s" % reqID, ret["Message"])
+                    gLogger.error(f"Error canceling request {reqID}", ret["Message"])
                 else:
-                    gLogger.notice("Request %s cancelled" % reqID)
+                    gLogger.notice(f"Request {reqID} cancelled")
             else:
                 gLogger.notice(f"Request {reqID} is in status {request.Status}, not cancelled")
 
         elif allR or recoverableRequest(request):
             okRequests.append(str(requestID))
             if reset:
-                gLogger.notice("============ Request %s =============" % requestID)
+                gLogger.notice(f"============ Request {requestID} =============")
                 ret = reqClient.resetFailedRequest(requestID, allR=allR)
                 if not ret["OK"]:
-                    gLogger.error("Error resetting request %s" % requestID, ret["Message"])
+                    gLogger.error(f"Error resetting request {requestID}", ret["Message"])
             else:
                 if len(requests) > 1:
                     gLogger.notice("\n===================================")
@@ -287,12 +287,12 @@ def main():
                 printRequest(request, status=dbStatus, full=full, verbose=verbose, terse=terse)
 
     if listJobs:
-        gLogger.notice("List of %d jobs:\n" % len(jobIDList), ",".join(str(jobID) for jobID in jobIDList))
+        gLogger.notice(f"List of {len(jobIDList)} jobs:\n", ",".join(str(jobID) for jobID in jobIDList))
 
     if status and okRequests:
         from DIRAC.Core.Utilities.List import breakListIntoChunks
 
-        gLogger.notice("\nList of %d selected requests:" % len(okRequests))
+        gLogger.notice(f"\nList of {len(okRequests)} selected requests:")
         for reqs in breakListIntoChunks(okRequests, 100):
             gLogger.notice(",".join(reqs))
 

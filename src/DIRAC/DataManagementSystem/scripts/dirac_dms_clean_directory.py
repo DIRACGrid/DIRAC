@@ -34,7 +34,7 @@ def main():
     dm = DataManager()
     retVal = 0
     for lfn in [lfn for lfn in lfns if lfn]:
-        gLogger.notice("Cleaning directory %r ... " % lfn)
+        gLogger.notice(f"Cleaning directory {lfn!r} ... ")
         result = dm.cleanLogicalDirectory(lfn)
         if not result["OK"]:
             gLogger.error("Failed to clean directory", result["Message"])

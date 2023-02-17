@@ -49,7 +49,7 @@ class HandlerManager:
         :return: list
         """
         urls = []
-        gLogger.debug("Trying to auto-discover the %s handlers for Tornado" % handlerInstance)
+        gLogger.debug(f"Trying to auto-discover the {handlerInstance} handlers for Tornado")
 
         # Look in config
         diracSystems = gConfig.getSections("/Systems")
@@ -65,7 +65,7 @@ class HandlerManager:
                                 f"/Systems/{system}/{sysInstance}/{handlerInstance}/{instName}/Port"
                             )
                             if port:
-                                newInst += ":%s" % port
+                                newInst += f":{port}"
 
                             if handlerInstance == "Services":
                                 # We search in the CS all handlers which used HTTPS as protocol

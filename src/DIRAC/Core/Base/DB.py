@@ -14,7 +14,7 @@ class DB(DIRACDB, MySQL):
 
         result = getDBParameters(fullname)
         if not result["OK"]:
-            raise RuntimeError("Cannot get database parameters: %s" % result["Message"])
+            raise RuntimeError(f"Cannot get database parameters: {result['Message']}")
 
         dbParameters = result["Value"]
         self.dbHost = dbParameters["Host"]
@@ -34,7 +34,7 @@ class DB(DIRACDB, MySQL):
         )
 
         if not self._connected:
-            raise RuntimeError("Can not connect to DB '%s', exiting..." % self.dbName)
+            raise RuntimeError(f"Can not connect to DB '{self.dbName}', exiting...")
 
         self.log.info("===================== MySQL ======================")
         self.log.info("User:           " + self.dbUser)

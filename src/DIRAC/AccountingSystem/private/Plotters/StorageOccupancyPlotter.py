@@ -81,7 +81,7 @@ class StorageOccupancyPlotter(BaseReporter):
         dataDict = plotInfo["graphDataDict"]
 
         metadata = {
-            "title": "Space grouped by %s" % reportRequest["grouping"],
+            "title": f"Space grouped by {reportRequest['grouping']}",
             "starttime": startEpoch,
             "endtime": endEpoch,
             "span": granularity,

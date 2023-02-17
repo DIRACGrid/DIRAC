@@ -27,16 +27,16 @@ print("SET AUTOCOMMIT = 0;")
 print("START TRANSACTION;")
 
 for uId in config.users:
-    print("INSERT INTO FC_Users (UserName) values ('%s');" % (uId))
+    print(f"INSERT INTO FC_Users (UserName) values ('{uId}');")
 
 for gId in config.groups:
-    print("INSERT INTO FC_Groups (GroupName) values ('%s');" % (gId))
+    print(f"INSERT INTO FC_Groups (GroupName) values ('{gId}');")
 
 for se in config.storageElements:
-    print("INSERT INTO FC_StorageElements (SEName) values ('%s');" % (se))
+    print(f"INSERT INTO FC_StorageElements (SEName) values ('{se}');")
 
 for st in config.status:
-    print("INSERT INTO FC_Statuses (Status) values ('%s');" % (st))
+    print(f"INSERT INTO FC_Statuses (Status) values ('{st}');")
 
 
 def proc_insert_dir(parent_id, child_name, UID, GID, Mode, Status):
@@ -53,11 +53,10 @@ def proc_insert_dir(parent_id, child_name, UID, GID, Mode, Status):
 
     if parent_id:
         print(
-            """INSERT INTO FC_DirectoryClosure(ParentID, ChildID, depth)
+            f"""INSERT INTO FC_DirectoryClosure(ParentID, ChildID, depth)
        SELECT p.ParentID, @dir_id, p.depth + 1
        FROM FC_DirectoryClosure p
-       WHERE p.ChildID = %s;"""
-            % parent_id
+       WHERE p.ChildID = {parent_id};"""
         )
 
 
@@ -102,7 +101,7 @@ def loop(index, cur, parentId):
         uid = random.randint(1, len(config.users))
         gid = random.randint(1, len(config.groups))
         next = cur + [i]
-        dirName = "/%s" % ("/".join(map(str, next)))
+        dirName = f"/{'/'.join(map(str, next))}"
         myDirId = dirId
         proc_insert_dir(parentId, dirName, uid, gid, 755, 1)
 
@@ -117,10 +116,10 @@ def loop(index, cur, parentId):
         # generate files
         if nbFiles:
             for f in range(nbFiles):
-                filename = "%s.txt" % (f)
+                filename = f"{f}.txt"
                 size = random.randint(1, 1000)
                 statusid = 2
-                guid = "%s" % fileId
+                guid = f"{fileId}"
                 checksum = guid
                 proc_insert_file(myDirId, size, uid, gid, statusid, filename, guid, checksum, checksumType, mode)
 

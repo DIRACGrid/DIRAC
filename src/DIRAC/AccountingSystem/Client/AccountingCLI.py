@@ -34,17 +34,17 @@ class AccountingCLI(CLI):
         """
         gLogger.info("Trying to connect to server")
         self.connected = False
-        self.prompt = "(%s)> " % colorize("Not connected", "red")
+        self.prompt = f"({colorize('Not connected', 'red')})> "
         acClient = DataStoreClient()
         retVal = acClient.ping()
         if retVal["OK"]:
-            self.prompt = "(%s)> " % colorize("Connected", "green")
+            self.prompt = f"({colorize('Connected', 'green')})> "
             self.connected = True
 
     def printComment(self, comment):
         commentList = comment.split("\n")
         for commentLine in commentList[:-1]:
-            print("# %s" % commentLine.strip())
+            print(f"# {commentLine.strip()}")
 
     def showTraceback(self):
         import traceback
@@ -72,20 +72,20 @@ class AccountingCLI(CLI):
             # Try to import the type
             try:
                 typeModule = __import__(
-                    "DIRAC.AccountingSystem.Client.Types.%s" % typeName, globals(), locals(), typeName
+                    f"DIRAC.AccountingSystem.Client.Types.{typeName}", globals(), locals(), typeName
                 )
                 typeClass = getattr(typeModule, typeName)
             except Exception as e:
                 gLogger.error(f"Can't load type {typeName}: {str(e)}")
                 return
-            gLogger.info("Loaded type %s" % typeClass.__name__)
+            gLogger.info(f"Loaded type {typeClass.__name__}")
             typeDef = typeClass().getDefinition()
             acClient = DataStoreClient()
             retVal = acClient.registerType(*typeDef)
             if retVal["OK"]:
                 gLogger.info("Type registered successfully")
             else:
-                gLogger.error("Error: %s" % retVal["Message"])
+                gLogger.error(f"Error: {retVal['Message']}")
         except Exception:
             self.showTraceback()
 
@@ -106,20 +106,20 @@ class AccountingCLI(CLI):
             # Try to import the type
             try:
                 typeModule = __import__(
-                    "DIRAC.AccountingSystem.Client.Types.%s" % typeName, globals(), locals(), typeName
+                    f"DIRAC.AccountingSystem.Client.Types.{typeName}", globals(), locals(), typeName
                 )
                 typeClass = getattr(typeModule, typeName)
             except Exception as e:
                 gLogger.error(f"Can't load type {typeName}: {str(e)}")
                 return
-            gLogger.info("Loaded type %s" % typeClass.__name__)
+            gLogger.info(f"Loaded type {typeClass.__name__}")
             typeDef = typeClass().getDefinition()
             acClient = DataStoreClient()
             retVal = acClient.setBucketsLength(typeDef[0], typeDef[3])
             if retVal["OK"]:
                 gLogger.info("Type registered successfully")
             else:
-                gLogger.error("Error: %s" % retVal["Message"])
+                gLogger.error(f"Error: {retVal['Message']}")
         except Exception:
             self.showTraceback()
 
@@ -140,20 +140,20 @@ class AccountingCLI(CLI):
             # Try to import the type
             try:
                 typeModule = __import__(
-                    "DIRAC.AccountingSystem.Client.Types.%s" % typeName, globals(), locals(), typeName
+                    f"DIRAC.AccountingSystem.Client.Types.{typeName}", globals(), locals(), typeName
                 )
                 typeClass = getattr(typeModule, typeName)
             except Exception as e:
                 gLogger.error(f"Can't load type {typeName}: {str(e)}")
                 return
-            gLogger.info("Loaded type %s" % typeClass.__name__)
+            gLogger.info(f"Loaded type {typeClass.__name__}")
             typeDef = typeClass().getDefinition()
             acClient = DataStoreClient()
             retVal = acClient.regenerateBuckets(typeDef[0])
             if retVal["OK"]:
                 gLogger.info("Buckets recalculated!")
             else:
-                gLogger.error("Error: %s" % retVal["Message"])
+                gLogger.error(f"Error: {retVal['Message']}")
         except Exception:
             self.showTraceback()
 
@@ -169,7 +169,7 @@ class AccountingCLI(CLI):
             print(retVal)
 
             if not retVal["OK"]:
-                gLogger.error("Error: %s" % retVal["Message"])
+                gLogger.error(f"Error: {retVal['Message']}")
                 return
             for typeList in retVal["Value"]:
                 print(typeList[0])
@@ -194,7 +194,7 @@ class AccountingCLI(CLI):
                 return
             while True:
                 choice = input(
-                    "Are you completely sure you want to delete type %s and all it's data? yes/no [no]: " % typeName
+                    f"Are you completely sure you want to delete type {typeName} and all it's data? yes/no [no]: "
                 )
                 choice = choice.lower()
                 if choice in ("yes", "y"):
@@ -205,7 +205,7 @@ class AccountingCLI(CLI):
             acClient = DataStoreClient()
             retVal = acClient.deleteType(typeName)
             if not retVal["OK"]:
-                gLogger.error("Error: %s" % retVal["Message"])
+                gLogger.error(f"Error: {retVal['Message']}")
                 return
             print("Hope you meant it, because it's done")
         except Exception:
@@ -220,7 +220,7 @@ class AccountingCLI(CLI):
             acClient = DataStoreClient()
             retVal = acClient.compactDB()
             if not retVal["OK"]:
-                gLogger.error("Error: %s" % retVal["Message"])
+                gLogger.error(f"Error: {retVal['Message']}")
                 return
             gLogger.info("Done")
         except Exception:

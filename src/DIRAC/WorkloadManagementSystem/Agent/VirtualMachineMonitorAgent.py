@@ -18,7 +18,7 @@ class VirtualMachineMonitorAgent(AgentModule):
         if not self.runningPod:
             return S_ERROR("/LocalSite/RunningPod is not defined")
         # Variables coming from the vm
-        imgPath = "/Cloud/%s" % self.runningPod
+        imgPath = f"/Cloud/{self.runningPod}"
         for csOption, csDefault, varName in (
             ("LoadAverageTimespan", 60, "vmLoadAvgTimespan"),
             ("HaltPeriod", 600, "haltPeriod"),
@@ -28,14 +28,14 @@ class VirtualMachineMonitorAgent(AgentModule):
             path = f"{imgPath}/{csOption}"
             value = self.op.getValue(path, csDefault)
             if not value > 0:
-                return S_ERROR("%s has an incorrect value, must be > 0" % path)
+                return S_ERROR(f"{path} has an incorrect value, must be > 0")
             setattr(self, varName, value)
 
         for csOption, csDefault, varName in (("JobWrappersLocation", "/scratch", "vmJobWrappersLocation"),):
             path = f"{imgPath}/{csOption}"
             value = gConfig.getValue(path, csDefault)
             if not value:
-                return S_ERROR("%s points to an empty string, cannot be!" % path)
+                return S_ERROR(f"{path} points to an empty string, cannot be!")
             setattr(self, varName, value)
 
         self.haltBeforeMargin = max(self.haltBeforeMargin, int(self.am_getPollingTime()) + 5)
@@ -43,16 +43,16 @@ class VirtualMachineMonitorAgent(AgentModule):
         self.heartBeatPeriod = max(self.heartBeatPeriod, int(self.am_getPollingTime()) + 5)
 
         self.log.info("** VM Info **")
-        self.log.info("Name                  : %s" % self.runningPod)
+        self.log.info(f"Name                  : {self.runningPod}")
         self.log.info("Load Avg Timespan     : %d" % self.vmLoadAvgTimespan)
-        self.log.info("Job wrappers location : %s" % self.vmJobWrappersLocation)
+        self.log.info(f"Job wrappers location : {self.vmJobWrappersLocation}")
         self.log.info("Halt Period           : %d" % self.haltPeriod)
         self.log.info("Halt Before Margin    : %d" % self.haltBeforeMargin)
         self.log.info("HeartBeat Period      : %d" % self.heartBeatPeriod)
         if self.vmID:
-            self.log.info("DIRAC ID              : %s" % self.vmID)
+            self.log.info(f"DIRAC ID              : {self.vmID}")
         if self.uniqueID:
-            self.log.info("Unique ID             : %s" % self.uniqueID)
+            self.log.info(f"Unique ID             : {self.uniqueID}")
         self.log.info("*************")
         return S_OK()
 
@@ -76,7 +76,7 @@ class VirtualMachineMonitorAgent(AgentModule):
         self.op = Operations.Operations()
         # Init vars
         self.runningPod = gConfig.getValue("/LocalSite/RunningPod")
-        self.log.info("Running pod name of the image is %s" % self.runningPod)
+        self.log.info(f"Running pod name of the image is {self.runningPod}")
         self.vmID = gConfig.getValue("/LocalSite/VMID")
 
         self.__loadHistory = []
@@ -95,7 +95,7 @@ class VirtualMachineMonitorAgent(AgentModule):
             # Warning! On different clouds interface name may be different(eth, ens, ...)
             if "eth" in iface or "ens" in iface:
                 self.ipAddress = netData[iface]["ip"]
-                self.log.info("IP Address is %s" % self.ipAddress)
+                self.log.info(f"IP Address is {self.ipAddress}")
                 break
 
         # Declare instance running
@@ -136,7 +136,7 @@ class VirtualMachineMonitorAgent(AgentModule):
         while len(self.__loadHistory) > numRequiredSamples:
             self.__loadHistory.pop(0)
         self.log.info("Load averaged over %d seconds" % self.vmLoadAvgTimespan)
-        self.log.info(" %d/%s required samples to average load" % (len(self.__loadHistory), numRequiredSamples))
+        self.log.info(f" {len(self.__loadHistory)}/{numRequiredSamples} required samples to average load")
         avgLoad = 0
         for f in self.__loadHistory:
             avgLoad += f[0]
@@ -145,7 +145,7 @@ class VirtualMachineMonitorAgent(AgentModule):
     def __getNumJobWrappers(self):
         if not os.path.isdir(self.vmJobWrappersLocation):
             return 0
-        self.log.info("VM job wrappers path: %s" % self.vmJobWrappersLocation)
+        self.log.info(f"VM job wrappers path: {self.vmJobWrappersLocation}")
         jdlList = glob.glob(os.path.join(self.vmJobWrappersLocation, "*.jdl"))
         jdlList += glob.glob(os.path.join(self.vmJobWrappersLocation, "*", "*.jdl"))
         return len(jdlList)
@@ -191,7 +191,7 @@ class VirtualMachineMonitorAgent(AgentModule):
 
         # Halt only if JobAgent is not running any longer
         jobAgentRunning = self.__isJobAgentRunning()
-        self.log.info("JobAgent running: %s" % jobAgentRunning)
+        self.log.info(f"JobAgent running: {jobAgentRunning}")
         if uptime % self.haltPeriod + self.haltBeforeMargin > self.haltPeriod:
             if not jobAgentRunning:
                 self.log.info("JobAgent not running, stopping instance")

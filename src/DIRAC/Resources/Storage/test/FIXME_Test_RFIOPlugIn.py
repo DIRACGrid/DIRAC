@@ -128,7 +128,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         srcFile = "/etc/group"
         numberOfFiles = 5
         sizeOfLocalFile = getSize(srcFile)
-        print("Creating local directory: %s" % localDir)
+        print(f"Creating local directory: {localDir}")
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(numberOfFiles):
@@ -140,7 +140,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         # Now remove the remove directory
         removeDirRes = self.storage.removeDirectory(remoteDir)
         # Clean up the locally created directory
-        print("Removing local directory: %s" % localDir)
+        print(f"Removing local directory: {localDir}")
         localFiles = os.listdir(localDir)
         for fileName in localFiles:
             fullPath = f"{localDir}/{fileName}"
@@ -174,7 +174,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         srcFile = "/etc/group"
         numberOfFiles = 5
         sizeOfLocalFile = getSize(srcFile)
-        print("Creating local directory: %s" % localDir)
+        print(f"Creating local directory: {localDir}")
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(numberOfFiles):
@@ -188,7 +188,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         # Now remove the remove directory
         removeDirRes = self.storage.removeDirectory(remoteDir)
         # Clean up the locally created directory
-        print("Removing local directory: %s" % localDir)
+        print(f"Removing local directory: {localDir}")
         localFiles = os.listdir(localDir)
         for fileName in localFiles:
             fullPath = f"{localDir}/{fileName}"
@@ -228,7 +228,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         srcFile = "/etc/group"
         numberOfFiles = 5
         sizeOfLocalFile = getSize(srcFile)
-        print("Creating local directory: %s" % localDir)
+        print(f"Creating local directory: {localDir}")
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(numberOfFiles):
@@ -242,7 +242,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         # Now remove the remove directory
         removeDirRes = self.storage.removeDirectory(remoteDir)
         # Clean up the locally created directory
-        print("Removing local directory: %s" % localDir)
+        print(f"Removing local directory: {localDir}")
         localFiles = os.listdir(localDir)
         for fileName in localFiles:
             fullPath = f"{localDir}/{fileName}"
@@ -282,7 +282,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         srcFile = "/etc/group"
         numberOfFiles = 5
         sizeOfLocalFile = getSize(srcFile)
-        print("Creating local directory: %s" % localDir)
+        print(f"Creating local directory: {localDir}")
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(numberOfFiles):
@@ -296,7 +296,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         # Now remove the remove directory
         removeDirRes = self.storage.removeDirectory(remoteDir)
         # Clean up the locally created directory
-        print("Removing local directory: %s" % localDir)
+        print(f"Removing local directory: {localDir}")
         localFiles = os.listdir(localDir)
         for fileName in localFiles:
             fullPath = f"{localDir}/{fileName}"
@@ -337,7 +337,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         srcFile = "/etc/group"
         numberOfFiles = 5
         sizeOfLocalFile = getSize(srcFile)
-        print("Creating local directory: %s" % localDir)
+        print(f"Creating local directory: {localDir}")
         if not os.path.exists(localDir):
             os.mkdir(localDir)
         for i in range(numberOfFiles):
@@ -347,7 +347,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         dirTuple = (localDir, remoteDir)
         putDirRes = self.storage.putDirectory(dirTuple)
         # Clean up the locally created directory
-        print("Removing local directory: %s" % localDir)
+        print(f"Removing local directory: {localDir}")
         localFiles = os.listdir(localDir)
         for fileName in localFiles:
             fullPath = f"{localDir}/{fileName}"
@@ -359,7 +359,7 @@ class DirectoryTestCase(StoragePlugInTestCase):
         # Now remove the remove directory
         removeDirRes = self.storage.removeDirectory(remoteDir)
         # Clean up the locally created directory
-        print("Removing local directory: %s" % localDir)
+        print(f"Removing local directory: {localDir}")
         localFiles = os.listdir(localDir)
         for fileName in localFiles:
             fullPath = f"{localDir}/{fileName}"
@@ -395,7 +395,7 @@ class FileTestCase(StoragePlugInTestCase):
         # First test that we are able to determine whether the file sizes of the transfer don't match
         srcFile = "/etc/group"
         fileSize = 10  # This is a made up value
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         destFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileTuple = (srcFile, destFile, fileSize)
         failedPutFileRes = self.storage.putFile(fileTuple)
@@ -464,7 +464,7 @@ class FileTestCase(StoragePlugInTestCase):
         # First upload a file to the storage
         srcFile = "/etc/group"
         fileSize = getSize(srcFile)
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         destFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileTuple = (srcFile, destFile, fileSize)
         putFileRes = self.storage.putFile(fileTuple)
@@ -497,7 +497,7 @@ class FileTestCase(StoragePlugInTestCase):
         # First upload a file to the storage
         srcFile = "/etc/group"
         fileSize = getSize(srcFile)
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         destFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileTuple = (srcFile, destFile, fileSize)
         putFileRes = self.storage.putFile(fileTuple)
@@ -532,7 +532,7 @@ class FileTestCase(StoragePlugInTestCase):
         # First upload a file to the storage
         srcFile = "/etc/group"
         fileSize = getSize(srcFile)
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         destFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileTuple = (srcFile, destFile, fileSize)
         putFileRes = self.storage.putFile(fileTuple)
@@ -578,7 +578,7 @@ class FileTestCase(StoragePlugInTestCase):
         # First upload a file to the storage
         srcFile = "/etc/group"
         fileSize = getSize(srcFile)
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         destFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileTuple = (srcFile, destFile, fileSize)
         putFileRes = self.storage.putFile(fileTuple)
@@ -621,7 +621,7 @@ class FileTestCase(StoragePlugInTestCase):
         # First upload a file to the storage
         srcFile = "/etc/group"
         fileSize = getSize(srcFile)
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         destFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileTuple = (srcFile, destFile, fileSize)
         putFileRes = self.storage.putFile(fileTuple)
@@ -660,7 +660,7 @@ class FileTestCase(StoragePlugInTestCase):
         # First upload a file to the storage
         srcFile = "/etc/group"
         fileSize = getSize(srcFile)
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         destFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileTuple = (srcFile, destFile, fileSize)
         putFileRes = self.storage.putFile(fileTuple)

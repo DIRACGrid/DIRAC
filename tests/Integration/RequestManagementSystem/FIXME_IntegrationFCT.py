@@ -104,11 +104,11 @@ class FullChainTest:
         """get list of files in user domain"""
         files = []
         for i in range(10):
-            fname = "/tmp/testUserFile-%s" % i
+            fname = f"/tmp/testUserFile-{i}"
             if userGroup == "dteam_user":
-                lfn = "/lhcb/user/{}/{}/{}".format(userName[0], userName, fname.split("/")[-1])
+                lfn = f"/lhcb/user/{userName[0]}/{userName}/{fname.split('/')[-1]}"
             else:
-                lfn = "/lhcb/certification/test/rmsdms/%s" % fname.split("/")[-1]
+                lfn = f"/lhcb/certification/test/rmsdms/{fname.split('/')[-1]}"
             fh = open(fname, "w+")
             for i in range(100):
                 fh.write(str(random.randint(0, i)))
@@ -128,21 +128,21 @@ class FullChainTest:
         req.OwnerDN = userDN
         req.OwnerGroup = userGroup
 
-        gLogger.always("putRequest: request '%s'" % req.RequestName)
+        gLogger.always(f"putRequest: request '{req.RequestName}'")
         for op in req:
             gLogger.always(f"putRequest: => {op.Order} {op.Type} {op.TargetSE}")
             for f in op:
-                gLogger.always("putRequest: ===> file %s" % f.LFN)
+                gLogger.always(f"putRequest: ===> file {f.LFN}")
 
         reqClient = ReqClient()
 
         delete = reqClient.deleteRequest(req.RequestName)
         if not delete["OK"]:
-            gLogger.error("putRequest: %s" % delete["Message"])
+            gLogger.error(f"putRequest: {delete['Message']}")
             return delete
         put = reqClient.putRequest(req)
         if not put["OK"]:
-            gLogger.error("putRequest: %s" % put["Message"])
+            gLogger.error(f"putRequest: {put['Message']}")
         return put
 
 
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     targetSE1 = sys.argv[3]
     targetSE2 = sys.argv[4]
 
-    gLogger.always("will use '%s' group" % userGroup)
+    gLogger.always(f"will use '{userGroup}' group")
 
     admin = DiracAdmin()
 
@@ -165,7 +165,7 @@ if __name__ == "__main__":
         gLogger.error(userName["Message"])
         sys.exit(-1)
     userName = userName["Value"]
-    gLogger.always("current user is '%s'" % userName)
+    gLogger.always(f"current user is '{userName}'")
 
     userGroups = getGroupsForUser(userName)
     if not userGroups["OK"]:
@@ -182,7 +182,7 @@ if __name__ == "__main__":
         gLogger.error(userDN["Message"])
         sys.exit(-1)
     userDN = userDN["Value"][0]
-    gLogger.always("userDN is %s" % userDN)
+    gLogger.always(f"userDN is {userDN}")
 
     fct = FullChainTest()
     put = fct.putRequest(userName, userDN, userGroup, sourceSE, targetSE1, targetSE2)

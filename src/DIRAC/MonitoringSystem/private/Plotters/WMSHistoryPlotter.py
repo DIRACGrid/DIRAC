@@ -49,7 +49,7 @@ class WMSHistoryPlotter(BasePlotter):
         :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
         """
         metadata = {
-            "title": "Jobs by %s" % reportRequest["grouping"],
+            "title": f"Jobs by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -94,7 +94,7 @@ class WMSHistoryPlotter(BasePlotter):
         :return S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
         """
         metadata = {
-            "title": "Reschedules by %s" % reportRequest["grouping"],
+            "title": f"Reschedules by {reportRequest['grouping']}",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],
             "span": plotInfo["granularity"],
@@ -138,7 +138,7 @@ class WMSHistoryPlotter(BasePlotter):
         :return S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
         """
         metadata = {
-            "title": "Average Number of Jobs by %s" % reportRequest["grouping"],
+            "title": f"Average Number of Jobs by {reportRequest['grouping']}",
             "ylabel": "Jobs",
             "starttime": reportRequest["startTime"],
             "endtime": reportRequest["endTime"],

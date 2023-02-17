@@ -64,7 +64,7 @@ class SummarizeLogsAgent(AgentModule):
 
         # loop over the tables
         for element in ("Site", "Resource", "Node"):
-            self.log.info("Summarizing %s" % element)
+            self.log.info(f"Summarizing {element}")
 
             # get all logs to be summarized
             selectLogElements = self._summarizeLogs(element)
@@ -246,7 +246,7 @@ class SummarizeLogsAgent(AgentModule):
         :return: S_OK / S_ERROR
         """
         toRemove = datetime.utcnow().replace(microsecond=0) - timedelta(days=30 * months)
-        self.log.info("Removing history entries", "older than %s" % toRemove)
+        self.log.info("Removing history entries", f"older than {toRemove}")
 
         deleteResult = self.rsClient.deleteStatusElement(
             element, "History", meta={"older": ["DateEffective", toRemove]}

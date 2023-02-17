@@ -78,7 +78,7 @@ class StageRequestAgent(AgentModule):
         if seReplicas:
             gLogger.info("StageRequest.submitStageRequests: Completing partially Staged Tasks")
         for storageElement, seReplicaIDs in seReplicas.items():
-            gLogger.debug("Staging at %s:" % storageElement, seReplicaIDs)
+            gLogger.debug(f"Staging at {storageElement}:", seReplicaIDs)
             self._issuePrestageRequests(storageElement, seReplicaIDs, allReplicaInfo)
 
         # Check Waiting Replicas and select those found Online and all other Replicas from the same Tasks
@@ -105,9 +105,9 @@ class StageRequestAgent(AgentModule):
             seReplicas.setdefault(storageElement, []).extend(seReplicaIDs)
         allReplicaInfo.update(res["Value"]["AllReplicaInfo"])
 
-        gLogger.info("StageRequest.submitStageRequests: Obtained %s replicas for staging." % len(allReplicaInfo))
+        gLogger.info(f"StageRequest.submitStageRequests: Obtained {len(allReplicaInfo)} replicas for staging.")
         for storageElement, seReplicaIDs in seReplicas.items():
-            gLogger.debug("Staging at %s:" % storageElement, seReplicaIDs)
+            gLogger.debug(f"Staging at {storageElement}:", seReplicaIDs)
             self._issuePrestageRequests(storageElement, seReplicaIDs, allReplicaInfo)
         return S_OK()
 
@@ -160,7 +160,7 @@ class StageRequestAgent(AgentModule):
         if not len(allReplicaInfo):
             gLogger.info("StageRequest._getOnlineReplicas: There were no Waiting replicas found")
             return res
-        gLogger.info("StageRequest._getOnlineReplicas: Obtained %s replicas Waiting for staging." % len(allReplicaInfo))
+        gLogger.info(f"StageRequest._getOnlineReplicas: Obtained {len(allReplicaInfo)} replicas Waiting for staging.")
         replicasToStage = []
         for storageElement, seReplicaIDs in res["Value"]["SEReplicas"].items():
             if not self.__usage(storageElement) < self.__cache(storageElement):
@@ -175,7 +175,7 @@ class StageRequestAgent(AgentModule):
             if not res["OK"]:
                 gLogger.error(
                     "StageRequest._getOnlineReplicas: Failed to check Replica Metadata",
-                    "({}): {}".format(storageElement, res["Message"]),
+                    f"({storageElement}): {res['Message']}",
                 )
             else:
                 # keep only Online Replicas
@@ -208,9 +208,7 @@ class StageRequestAgent(AgentModule):
         if not len(allReplicaInfo):
             gLogger.info("StageRequest._getOfflineReplicas: There were no Offline replicas found")
             return res
-        gLogger.info(
-            "StageRequest._getOfflineReplicas: Obtained %s replicas Offline for staging." % len(allReplicaInfo)
-        )
+        gLogger.info(f"StageRequest._getOfflineReplicas: Obtained {len(allReplicaInfo)} replicas Offline for staging.")
         replicasToStage = []
         for storageElement, seReplicaIDs in res["Value"]["SEReplicas"].items():
             if not self.__usage(storageElement) < self.__cache(storageElement):
@@ -328,7 +326,7 @@ class StageRequestAgent(AgentModule):
             gLogger.debug("StageRequest.__getStagedReplicas: No Waiting replicas found to process.")
         else:
             gLogger.debug(
-                "StageRequest.__getStagedReplicas: Obtained %s Waiting replicas(s) to process." % len(res["Value"])
+                f"StageRequest.__getStagedReplicas: Obtained {len(res['Value'])} Waiting replicas(s) to process."
             )
 
         return self.__sortBySE(res["Value"])
@@ -346,7 +344,7 @@ class StageRequestAgent(AgentModule):
             gLogger.debug("StageRequest.__getWaitingReplicas: No Waiting replicas found to process.")
         else:
             gLogger.debug(
-                "StageRequest.__getWaitingReplicas: Obtained %s Waiting replicas(s) to process." % len(res["Value"])
+                f"StageRequest.__getWaitingReplicas: Obtained {len(res['Value'])} Waiting replicas(s) to process."
             )
 
         return self.__sortBySE(res["Value"])
@@ -364,7 +362,7 @@ class StageRequestAgent(AgentModule):
             gLogger.debug("StageRequest.__getOfflineReplicas: No Waiting replicas found to process.")
         else:
             gLogger.debug(
-                "StageRequest.__getOfflineReplicas: Obtained %s Waiting replicas(s) to process." % len(res["Value"])
+                f"StageRequest.__getOfflineReplicas: Obtained {len(res['Value'])} Waiting replicas(s) to process."
             )
 
         return self.__sortBySE(res["Value"])
@@ -401,7 +399,7 @@ class StageRequestAgent(AgentModule):
             if not res["OK"]:
                 gLogger.error(
                     "StageRequest.__addAssociatedReplicas: Failed to check Replica Metadata",
-                    "({}): {}".format(storageElement, res["Message"]),
+                    f"({storageElement}): {res['Message']}",
                 )
             else:
                 # keep all Replicas (Online and Offline)
@@ -434,7 +432,7 @@ class StageRequestAgent(AgentModule):
             )
             totalSize += size
 
-        gLogger.info("StageRequest.__addAssociatedReplicas: Obtained %s GB for staging." % totalSize)
+        gLogger.info(f"StageRequest.__addAssociatedReplicas: Obtained {totalSize} GB for staging.")
 
         return S_OK({"SEReplicas": seReplicas, "AllReplicaInfo": allReplicaInfo})
 
@@ -493,13 +491,13 @@ class StageRequestAgent(AgentModule):
 
         # Update the states of the replicas in the database #TODO Sent status to integrity DB
         if terminalReplicaIDs:
-            gLogger.info("StageRequest.__checkIntegrity: %s replicas are terminally failed." % len(terminalReplicaIDs))
+            gLogger.info(f"StageRequest.__checkIntegrity: {len(terminalReplicaIDs)} replicas are terminally failed.")
             res = self.stagerClient.updateReplicaFailure(terminalReplicaIDs)
             if not res["OK"]:
                 gLogger.error("StageRequest.__checkIntegrity: Failed to update replica failures.", res["Message"])
         if onlineReplicaIDs:
-            gLogger.info("StageRequest.__checkIntegrity: %s replicas found Online." % len(onlineReplicaIDs))
+            gLogger.info(f"StageRequest.__checkIntegrity: {len(onlineReplicaIDs)} replicas found Online.")
         if offlineReplicaIDs:
-            gLogger.info("StageRequest.__checkIntegrity: %s replicas found Offline." % len(offlineReplicaIDs))
+            gLogger.info(f"StageRequest.__checkIntegrity: {len(offlineReplicaIDs)} replicas found Offline.")
             res = self.stagerClient.updateReplicaStatus(offlineReplicaIDs, "Offline")
         return S_OK({"Online": onlineReplicaIDs, "Offline": offlineReplicaIDs})

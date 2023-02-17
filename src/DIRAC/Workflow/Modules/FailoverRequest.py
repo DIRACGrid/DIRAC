@@ -43,7 +43,7 @@ class FailoverRequest(ModuleBase):
         if not self._checkWFAndStepStatus(noPrint=True):
             for lfn in self.inputDataList:
                 if lfn not in filesInFileReport:
-                    self.log.info("Forcing status to 'Unused' due to workflow failure for: %s" % (lfn))
+                    self.log.info(f"Forcing status to 'Unused' due to workflow failure for: {lfn}")
                     # Set the force flag in case the file was in a terminal status
                     self.fileReport.force = True
                     self.fileReport.setFileStatus(int(self.production_id), lfn, TransformationFilesStatus.UNUSED)
@@ -51,7 +51,7 @@ class FailoverRequest(ModuleBase):
             filesInFileReport = self.fileReport.getFiles()
             for lfn in self.inputDataList:
                 if lfn not in filesInFileReport:
-                    self.log.verbose("No status populated for input data %s, setting to 'Processed'" % lfn)
+                    self.log.verbose(f"No status populated for input data {lfn}, setting to 'Processed'")
                     self.fileReport.setFileStatus(int(self.production_id), lfn, TransformationFilesStatus.PROCESSED)
 
         result = self.fileReport.commit()
@@ -60,7 +60,7 @@ class FailoverRequest(ModuleBase):
             self.log.error("Trying again before populating request with file report information")
             result = self.fileReport.generateForwardDISET()
             if not result["OK"]:
-                self.log.warn("Could not generate Operation for file report with result:\n%s" % (result["Value"]))
+                self.log.warn(f"Could not generate Operation for file report with result:\n{result['Value']}")
             else:
                 if result["Value"] is None:
                     self.log.info("Files correctly reported to TransformationDB")

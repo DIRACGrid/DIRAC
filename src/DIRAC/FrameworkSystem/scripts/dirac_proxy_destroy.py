@@ -83,7 +83,7 @@ def mapVoToGroups(voname):
 
     vo_dict = Registry.getGroupsForVO(voname)
     if not vo_dict["OK"]:
-        raise RuntimeError("Could not retrieve groups for vo %s." % voname)
+        raise RuntimeError(f"Could not retrieve groups for vo {voname}.")
 
     return set(vo_dict["Value"])
 
@@ -97,9 +97,9 @@ def deleteRemoteProxy(userdn, vogroup):
     retVal = rpcClient.deleteProxyBundle([(userdn, vogroup)])
 
     if retVal["OK"]:
-        gLogger.notice("Deleted proxy for %s." % vogroup)
+        gLogger.notice(f"Deleted proxy for {vogroup}.")
     else:
-        gLogger.error("Failed to delete proxy for %s." % vogroup)
+        gLogger.error(f"Failed to delete proxy for {vogroup}.")
 
 
 def deleteLocalProxy(proxyLoc):
@@ -131,7 +131,7 @@ def run():
     proxyLoc = Locations.getDefaultProxyLocation()
 
     if not os.path.exists(proxyLoc):
-        gLogger.error("No local proxy found in %s, exiting." % proxyLoc)
+        gLogger.error(f"No local proxy found in {proxyLoc}, exiting.")
         return 1
 
     result = ProxyInfo.getProxyInfo(proxyLoc, True)
@@ -175,7 +175,7 @@ def main():
         retval = run()
         DIRAC.exit(retval)
     except RuntimeError as rtError:
-        gLogger.error("Operation failed: %s" % str(rtError))
+        gLogger.error(f"Operation failed: {str(rtError)}")
     DIRAC.exit(1)
 
 

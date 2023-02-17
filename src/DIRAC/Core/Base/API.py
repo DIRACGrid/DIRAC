@@ -35,7 +35,7 @@ def _printFormattedDictList(dictList, fields, uniqueField, orderBy):
             orderDict[orderValue] = []
         orderDict[orderValue].append(myDict[uniqueField])
         dictFields[myDict[uniqueField]] = myDict
-    headString = "%s" % fields[0].ljust(fieldWidths[fields[0]] + 5)
+    headString = f"{fields[0].ljust(fieldWidths[fields[0]] + 5)}"
     for field in fields[1:]:
         headString = f"{headString} {field.ljust(fieldWidths[field] + 5)}"
     print(headString)
@@ -43,7 +43,7 @@ def _printFormattedDictList(dictList, fields, uniqueField, orderBy):
         uniqueFields = orderDict[orderValue]
         for uniqueField in sorted(uniqueFields):
             myDict = dictFields[uniqueField]
-            outStr = "%s" % str(myDict[fields[0]]).ljust(fieldWidths[fields[0]] + 5)
+            outStr = f"{str(myDict[fields[0]]).ljust(fieldWidths[fields[0]] + 5)}"
             for field in fields[1:]:
                 outStr = f"{outStr} {str(myDict[field]).ljust(fieldWidths[field] + 5)}"
             print(outStr)
@@ -136,7 +136,7 @@ class API:
                 return S_OK()
         elif site in self._siteSet:
             return S_OK()
-        return self._reportError("Specified site %s is not in list of defined sites" % str(site))
+        return self._reportError(f"Specified site {str(site)} is not in list of defined sites")
 
     #############################################################################
 
@@ -177,15 +177,10 @@ class API:
         for key in kwargs:
             if kwargs[key]:
                 arguments.append(f"{key} = {kwargs[key]} ( {type(kwargs[key])} )")
-        finalReport = """Problem with {}.{}() call:
-Arguments: {}
-Message: {}
-""".format(
-            className,
-            methodName,
-            "/".join(arguments),
-            message,
-        )
+        finalReport = f"""Problem with {className}.{methodName}() call:
+Arguments: {'/'.join(arguments)}
+Message: {message}
+"""
         if methodName in self.errorDict:
             tmp = self.errorDict[methodName]
             tmp.append(finalReport)

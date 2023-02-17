@@ -27,14 +27,14 @@ class BaseSecurity:
             if ckLoc:
                 self._secCertLoc = ckLoc[0]
             else:
-                self._secCertLoc = "%s/etc/grid-security/servercert.pem" % DIRAC.rootPath
+                self._secCertLoc = f"{DIRAC.rootPath}/etc/grid-security/servercert.pem"
         if serverKey:
             self._secKeyLoc = serverKey
         else:
             if ckLoc:
                 self._secKeyLoc = ckLoc[1]
             else:
-                self._secKeyLoc = "%s/etc/grid-security/serverkey.pem" % DIRAC.rootPath
+                self._secKeyLoc = f"{DIRAC.rootPath}/etc/grid-security/serverkey.pem"
         self._secRunningFromTrustedHost = gConfig.getValue("/DIRAC/VOPolicy/MyProxyTrustedHost", "True").lower() in (
             "y",
             "yes",
@@ -81,10 +81,8 @@ class BaseSecurity:
         if not credDict["isProxy"]:
             return S_ERROR(DErrno.EX509, "chain does not contain a proxy")
         if not credDict["validDN"]:
-            return S_ERROR(DErrno.EDISET, "DN %s is not known in dirac" % credDict["subject"])
+            return S_ERROR(DErrno.EDISET, f"DN {credDict['subject']} is not known in dirac")
         if not credDict["validGroup"]:
-            return S_ERROR(
-                DErrno.EDISET, "Group {} is invalid for DN {}".format(credDict["group"], credDict["subject"])
-            )
-        mpUsername = "{}:{}".format(credDict["group"], credDict["username"])
+            return S_ERROR(DErrno.EDISET, f"Group {credDict['group']} is invalid for DN {credDict['subject']}")
+        mpUsername = f"{credDict['group']}:{credDict['username']}"
         return S_OK(mpUsername)

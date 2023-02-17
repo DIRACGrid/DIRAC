@@ -182,7 +182,7 @@ def add_time_to_title(begin, end, metadata={}):
     begin_tuple = time.localtime(begin)
     end_tuple = time.localtime(end)
     added_title = "%i %s from " % (int((end - begin) / time_slice), format_name)
-    added_title += time.strftime("%s to" % format_str, begin_tuple)
+    added_title += time.strftime(f"{format_str} to", begin_tuple)
     if time_slice < 86400:
         add_utc = " UTC"
     else:
@@ -384,7 +384,7 @@ def pretty_float(num):
         try:
             retval = format % float(num)
         except Exception:
-            raise Exception("Unable to convert %s into a float." % (str(num)))
+            raise Exception(f"Unable to convert {str(num)} into a float.")
         return retval
 
 

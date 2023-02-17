@@ -27,7 +27,7 @@ def executeRabbitmqctl(arg, *argv):
     timeOut = 30
     result = Subprocess.systemCall(timeout=timeOut, cmdSeq=command)
     if not result["OK"]:
-        return S_ERROR(errno.EPERM, "%r failed to launch" % command)
+        return S_ERROR(errno.EPERM, f"{command!r} failed to launch")
     errorcode, cmd_out, cmd_err = result["Value"]
     if errorcode:
         # No idea what errno code should be used here.
@@ -107,8 +107,8 @@ def setUsersPermissions(users):
         if ret["OK"]:
             successful[u] = ret["Value"]
         else:
-            print("Problem with permissions:%s" % ret["Message"])
-            failed[u] = "Permission not set because of:%s" % ret["Message"]
+            print(f"Problem with permissions:{ret['Message']}")
+            failed[u] = f"Permission not set because of:{ret['Message']}"
     return S_OK({"Successful": successful, "Failed": failed})
 
 
@@ -120,7 +120,7 @@ def addUsersWithoutPasswords(users):
         if ret["OK"]:
             successful[u] = ret["Value"]
         else:
-            print("Problem with adding user:%s" % ret["Message"])
+            print(f"Problem with adding user:{ret['Message']}")
             failed[u] = "User not added"
     return S_OK({"Successful": successful, "Failed": failed})
 
@@ -134,7 +134,7 @@ def addUsers(users):
         if ret["OK"]:
             successful[u] = ret["Value"]
         else:
-            print("Problem with adding user:%s" % ret["Message"])
+            print(f"Problem with adding user:{ret['Message']}")
             failed[u] = "User not added"
     return S_OK({"Successful": successful, "Failed": failed})
 
@@ -148,6 +148,6 @@ def deleteUsers(users):
         if ret["OK"]:
             successful[u] = ret["Value"]
         else:
-            print("Problem with adding user:%s" % ret["Message"])
+            print(f"Problem with adding user:{ret['Message']}")
             failed[u] = "User not added"
     return S_OK({"Successful": successful, "Failed": failed})

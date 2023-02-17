@@ -83,7 +83,7 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
 
         # Get session from cookie
         if not self.server.db.getSessionByUserCode(userCode):
-            raise OAuth2Error("Session with %s user code is expired." % userCode)
+            raise OAuth2Error(f"Session with {userCode} user code is expired.")
         return None
 
     def create_authorization_response(self, redirect_uri, user):
@@ -100,7 +100,7 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
                 "server error",
                 theme="error",
                 body=result["Message"],
-                info="Failed to read %s authorization session." % self.request.data["user_code"],
+                info=f"Failed to read {self.request.data['user_code']} authorization session.",
             )
         data = result["Value"]
         data.update(dict(user_id=user["ID"], uri=self.request.uri, username=user["username"], scope=self.request.scope))
@@ -111,7 +111,7 @@ class DeviceCodeGrant(_DeviceCodeGrant, AuthorizationEndpointMixin):
                 "server error",
                 theme="error",
                 body=result["Message"],
-                info="Failed to save %s authorization session status." % self.request.data["user_code"],
+                info=f"Failed to save {self.request.data['user_code']} authorization session status.",
             )
 
         # Notify user that authorization completed.

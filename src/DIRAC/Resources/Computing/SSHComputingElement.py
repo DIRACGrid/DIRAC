@@ -125,9 +125,9 @@ class SSH:
         self.sshType = parameters.get("SSHType", "ssh")
 
         if self.port:
-            self.options += " -p %s" % self.port
+            self.options += f" -p {self.port}"
         if self.key:
-            self.options += " -i %s" % self.key
+            self.options += f" -i {self.key}"
         self.options = self.options.strip()
 
         self.log = gLogger.getSubLogger("SSH")
@@ -174,7 +174,7 @@ class SSH:
             result = shellCall(timeout, command)
             #      print ( "!!! SSH command: %s returned %s\n" % (command, result) )
             if result["Value"][0] == 255:
-                return S_ERROR((-1, "Cannot connect to host %s" % self.host, ""))
+                return S_ERROR((-1, f"Cannot connect to host {self.host}", ""))
             return result
 
     def sshCall(self, timeout, cmdSeq):
@@ -213,9 +213,9 @@ class SSH:
                 pattern,
                 command,
             )
-        self.log.debug("SSH command: %s" % command)
+        self.log.debug(f"SSH command: {command}")
         result = self.__ssh_call(command, timeout)
-        self.log.debug("SSH command result %s" % str(result))
+        self.log.debug(f"SSH command result {str(result)}")
         if not result["OK"]:
             return result
 
@@ -274,7 +274,7 @@ class SSH:
                     postUploadCommand,
                 )
         else:
-            finalCat = "| cat > %s" % localFile
+            finalCat = f"| cat > {localFile}"
             if localFile.lower() == "memory":
                 finalCat = ""
             if self.sshTunnel:
@@ -299,7 +299,7 @@ class SSH:
                     finalCat,
                 )
 
-        self.log.debug("SSH copy command: %s" % command)
+        self.log.debug(f"SSH copy command: {command}")
         return self.__ssh_call(command, timeout)
 
 
@@ -419,18 +419,18 @@ class SSHComputingElement(ComputingElement):
         )
         nDirs = len(dirTuple)
         cmd = "mkdir -p %s; " * nDirs % dirTuple
-        cmd = "bash -c '%s'" % cmd
-        self.log.verbose("Creating working directories on %s" % self.ceParameters["SSHHost"])
+        cmd = f"bash -c '{cmd}'"
+        self.log.verbose(f"Creating working directories on {self.ceParameters['SSHHost']}")
         result = ssh.sshCall(30, cmd)
         if not result["OK"]:
-            self.log.error("Failed creating working directories", "(%s)" % result["Message"][1])
+            self.log.error("Failed creating working directories", f"({result['Message'][1]})")
             return result
         status, output, _error = result["Value"]
         if status == -1:
             self.log.error("Timeout while creating directories")
             return S_ERROR(errno.ETIME, "Timeout while creating directories")
         if "cannot" in output:
-            self.log.error("Failed to create directories", "(%s)" % output)
+            self.log.error("Failed to create directories", f"({output})")
             return S_ERROR(errno.EACCES, "Failed to create directories")
 
         # Upload the control script now
@@ -439,20 +439,18 @@ class SSHComputingElement(ComputingElement):
             self.log.warn("Failed generating control script")
             return result
         localScript = result["Value"]
-        self.log.verbose(
-            "Uploading {} script to {}".format(self.batchSystem.__class__.__name__, self.ceParameters["SSHHost"])
-        )
-        remoteScript = "%s/execute_batch" % self.sharedArea
-        result = ssh.scpCall(30, localScript, remoteScript, postUploadCommand="chmod +x %s" % remoteScript)
+        self.log.verbose(f"Uploading {self.batchSystem.__class__.__name__} script to {self.ceParameters['SSHHost']}")
+        remoteScript = f"{self.sharedArea}/execute_batch"
+        result = ssh.scpCall(30, localScript, remoteScript, postUploadCommand=f"chmod +x {remoteScript}")
         if not result["OK"]:
-            self.log.warn("Failed uploading control script: %s" % result["Message"][1])
+            self.log.warn(f"Failed uploading control script: {result['Message'][1]}")
             return result
         status, output, _error = result["Value"]
         if status != 0:
             if status == -1:
                 self.log.warn("Timeout while uploading control script")
                 return S_ERROR("Timeout while uploading control script")
-            self.log.warn("Failed uploading control script: %s" % output)
+            self.log.warn(f"Failed uploading control script: {output}")
             return S_ERROR("Failed uploading control script")
 
         # Delete the generated control script locally
@@ -471,7 +469,7 @@ class SSHComputingElement(ComputingElement):
         """
         # Get the batch system module to use
         batchSystemDir = os.path.join(os.path.dirname(DIRAC.__file__), "Resources", "Computing", "BatchSystems")
-        batchSystemScript = os.path.join(batchSystemDir, "%s.py" % self.batchSystem.__class__.__name__)
+        batchSystemScript = os.path.join(batchSystemDir, f"{self.batchSystem.__class__.__name__}.py")
 
         # Get the executeBatch.py content: an str variable composed of code content that has to be extracted
         # The control script is generated from the batch system module and this variable
@@ -484,7 +482,7 @@ class SSHComputingElement(ComputingElement):
         except OSError:
             return S_ERROR("IO Error trying to generate control script")
 
-        return S_OK("%s" % controlScript)
+        return S_OK(f"{controlScript}")
 
     def __executeHostCommand(self, command, options, ssh=None, host=None):
         if not ssh:
@@ -509,11 +507,11 @@ class SSHComputingElement(ComputingElement):
             % (self.sharedArea, options, self.sharedArea, options, self.sharedArea, options)
         )
 
-        self.log.verbose("CE submission command: %s" % cmd)
+        self.log.verbose(f"CE submission command: {cmd}")
 
         result = ssh.sshCall(120, cmd)
         if not result["OK"]:
-            self.log.error("%s CE job submission failed" % self.ceType, result["Message"])
+            self.log.error(f"{self.ceType} CE job submission failed", result["Message"])
             return result
 
         sshStatus = result["Value"][0]
@@ -528,7 +526,7 @@ class SSHComputingElement(ComputingElement):
                 output = output[index + 42 :]
             except Exception:
                 self.log.exception("Invalid output from remote command", output)
-                return S_ERROR("Invalid output from remote command: %s" % output)
+                return S_ERROR(f"Invalid output from remote command: {output}")
             try:
                 output = unquote(output)
                 result = json.loads(output)
@@ -568,7 +566,7 @@ class SSHComputingElement(ComputingElement):
         ssh = SSH(host=host, parameters=self.ceParameters)
         # Copy the executable
         submitFile = os.path.join(self.executableArea, os.path.basename(executableFile))
-        result = ssh.scpCall(30, executableFile, submitFile, postUploadCommand="chmod +x %s" % submitFile)
+        result = ssh.scpCall(30, executableFile, submitFile, postUploadCommand=f"chmod +x {submitFile}")
         if not result["OK"]:
             return result
 
@@ -605,7 +603,7 @@ class SSHComputingElement(ComputingElement):
 
         result = resultCommand["Value"]
         if result["Status"] != 0:
-            return S_ERROR("Failed job submission: %s" % result["Message"])
+            return S_ERROR(f"Failed job submission: {result['Message']}")
         else:
             batchIDs = result["Jobs"]
             if batchIDs:
@@ -649,10 +647,10 @@ class SSHComputingElement(ComputingElement):
 
         result = resultCommand["Value"]
         if result["Status"] != 0:
-            return S_ERROR("Failed job kill: %s" % result["Message"])
+            return S_ERROR(f"Failed job kill: {result['Message']}")
 
         if result["Failed"]:
-            return S_ERROR("%d jobs failed killing" % len(result["Failed"]))
+            return S_ERROR(f"{len(result['Failed'])} jobs failed killing")
 
         return S_OK(len(result["Successful"]))
 
@@ -664,7 +662,7 @@ class SSHComputingElement(ComputingElement):
 
         result = resultCommand["Value"]
         if result["Status"] != 0:
-            return S_ERROR("Failed to get CE status: %s" % result["Message"])
+            return S_ERROR(f"Failed to get CE status: {result['Message']}")
 
         return S_OK(result)
 
@@ -709,7 +707,7 @@ class SSHComputingElement(ComputingElement):
 
             result = resultCommand["Value"]
             if result["Status"] != 0:
-                return S_ERROR("Failed to get job status: %s" % result["Message"])
+                return S_ERROR(f"Failed to get job status: {result['Message']}")
 
             for stamp in result["Jobs"]:
                 resultDict[jobDict[stamp]] = result["Jobs"][stamp]
@@ -751,7 +749,7 @@ class SSHComputingElement(ComputingElement):
 
             result = resultCommand["Value"]
             if result["Status"] != 0:
-                return S_ERROR("Failed to get job output files: %s" % result["Message"])
+                return S_ERROR(f"Failed to get job output files: {result['Message']}")
 
             if "OutputTemplate" in result:
                 self.outputTemplate = result["OutputTemplate"]

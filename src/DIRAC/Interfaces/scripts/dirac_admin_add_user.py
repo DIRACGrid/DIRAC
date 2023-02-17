@@ -80,7 +80,7 @@ def main():
     for prop in args:
         pl = prop.split("=")
         if len(pl) < 2:
-            errorList.append(("in arguments", "Property %s has to include a '=' to separate name from value" % prop))
+            errorList.append(("in arguments", f"Property {prop} has to include a '=' to separate name from value"))
             exitCode = 255
         else:
             pName = pl[0]
@@ -89,7 +89,7 @@ def main():
             userProps[pName] = pValue
 
     if not diracAdmin.csModifyUser(userName, userProps, createIfNonExistant=True)["OK"]:
-        errorList.append(("add user", "Cannot register user %s" % userName))
+        errorList.append(("add user", f"Cannot register user {userName}"))
         exitCode = 255
     else:
         result = diracAdmin.csCommitChanges()

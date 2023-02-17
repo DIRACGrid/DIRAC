@@ -112,17 +112,17 @@ def prepare_seObj_fixture(seName, protocolSection, prepare_local_testDir):
 
     pluginProtocol = specSE.protocolOptions[0]["Protocol"]
     if pluginProtocol in specSE.localAccessProtocolList:
-        print("Using specific SE with %s only for reading" % protocolSection)
+        print(f"Using specific SE with {protocolSection} only for reading")
         readSE = specSE
     else:
-        print("Plugin %s is not available for read. Use a generic SE" % protocolSection)
+        print(f"Plugin {protocolSection} is not available for read. Use a generic SE")
         readSE = genericSE
 
     if pluginProtocol in specSE.localWriteProtocolList:
-        print("Using specific SE with %s only for writing" % protocolSection)
+        print(f"Using specific SE with {protocolSection} only for writing")
         writeSE = specSE
     else:
-        print("Plugin %s is not available for write. Use a generic SE" % protocolSection)
+        print(f"Plugin {protocolSection} is not available for write. Use a generic SE")
         writeSE = genericSE
 
     # Make sure we are testing the specific plugin at least for one

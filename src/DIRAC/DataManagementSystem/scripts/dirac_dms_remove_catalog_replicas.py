@@ -56,7 +56,7 @@ def main():
     for lfn in sorted(res["Value"]["Failed"]):
         message = res["Value"]["Failed"][lfn]
         print(f"Failed to remove {storageElementName} replica of {lfn}: {message}")
-    print("Successfully remove %d catalog replicas at %s" % (len(res["Value"]["Successful"]), storageElementName))
+    print(f"Successfully remove {len(res['Value']['Successful'])} catalog replicas at {storageElementName}")
 
 
 if __name__ == "__main__":

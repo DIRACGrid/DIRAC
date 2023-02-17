@@ -32,7 +32,7 @@ class SGEResourceUsage(ResourceUsage):
         """Returns S_OK with a dictionary containing the entries CPU, CPULimit,
         WallClock, WallClockLimit, and Unit for current slot.
         """
-        cmd = "qstat -f -j %s" % (self.jobID)
+        cmd = f"qstat -f -j {self.jobID}"
         result = runCommand(cmd)
         if not result["OK"]:
             return result
@@ -62,7 +62,7 @@ class SGEResourceUsage(ResourceUsage):
                     if not cpu or newcpu > cpu:
                         cpu = newcpu
                 except ValueError:
-                    self.log.warn('Problem parsing "%s" for CPU consumed' % line)
+                    self.log.warn(f'Problem parsing "{line}" for CPU consumed')
             if re.search("hard resource_list.*cpu.*", line):
                 match = re.search(r"_cpu=(\d*)", line)
                 if match:
@@ -85,7 +85,7 @@ class SGEResourceUsage(ResourceUsage):
             missed = [key for key, val in consumed.items() if val is None]
             msg = "Could not determine parameter"
             self.log.warn("Could not determine parameter", ",".join(missed))
-            self.log.debug("This is the stdout from the batch system call\n%s" % (result["Value"]))
+            self.log.debug(f"This is the stdout from the batch system call\n{result['Value']}")
         else:
             self.log.debug("TimeLeft counters complete:", str(consumed))
 
@@ -104,7 +104,7 @@ class SGEResourceUsage(ResourceUsage):
             return S_OK(consumed)
         else:
             msg = "Could not determine necessary parameters"
-            self.log.info(msg, ":\nThis is the stdout from the batch system call\n%s" % (result["Value"]))
+            self.log.info(msg, f":\nThis is the stdout from the batch system call\n{result['Value']}")
             retVal = S_ERROR(msg)
             retVal["Value"] = consumed
             return retVal
@@ -112,7 +112,7 @@ class SGEResourceUsage(ResourceUsage):
 
 def _getCPUScalingFactor():
     host = socket.getfqdn()
-    cmd = "qconf -se %s" % host
+    cmd = f"qconf -se {host}"
     result = runCommand(cmd)
     if not result["OK"]:
         return None

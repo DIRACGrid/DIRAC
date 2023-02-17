@@ -131,7 +131,7 @@ def test_deleteWMSIndex():
     assert result["OK"], result["Message"]
 
     today = time.strftime("%Y-%m-%d")
-    indexName = "{}-{}".format(result["Value"], today)
+    indexName = f"{result['Value']}-{today}"
     res = monitoringDB.deleteIndex(indexName)
     assert res["OK"]
 

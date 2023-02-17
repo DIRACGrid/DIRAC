@@ -26,7 +26,7 @@ class DataCache:
         for graphName in os.listdir(self.graphsLocation):
             if graphName.find(".png") > 0:
                 graphLocation = f"{self.graphsLocation}/{graphName}"
-                gLogger.verbose("Purging %s" % graphLocation)
+                gLogger.verbose(f"Purging {graphLocation}")
                 os.unlink(graphLocation)
 
     def purgeExpired(self):
@@ -60,9 +60,9 @@ class DataCache:
                 return retVal
             plotDict = retVal["Value"]
             if plotDict["plot"]:
-                plotDict["plot"] = "%s.png" % reportHash
+                plotDict["plot"] = f"{reportHash}.png"
             if plotDict["thumbnail"]:
-                plotDict["thumbnail"] = "%s.thb.png" % reportHash
+                plotDict["thumbnail"] = f"{reportHash}.thb.png"
             self.__graphCache.add(reportHash, self.__graphLifeTime, plotDict)
         return S_OK(plotDict)
 

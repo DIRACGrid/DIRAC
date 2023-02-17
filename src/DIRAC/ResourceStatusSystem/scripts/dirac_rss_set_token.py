@@ -48,7 +48,7 @@ def parseSwitches():
     Script.parseCommandLine(ignoreErrors=True)
     args = Script.getPositionalArgs()
     if args:
-        gLogger.error("Found the following positional args '%s', but we only accept switches" % args)
+        gLogger.error(f"Found the following positional args '{args}', but we only accept switches")
         gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
@@ -63,12 +63,12 @@ def parseSwitches():
 
     for key in ("element", "name", "reason"):
         if key not in switches:
-            gLogger.error("%s Switch missing" % key)
+            gLogger.error(f"{key} Switch missing")
             gLogger.error("Please, check documentation above")
             Script.showHelp(exitCode=1)
 
     if not switches["element"] in ("Site", "Resource", "Node"):
-        gLogger.error("Found %s as element switch" % switches["element"])
+        gLogger.error(f"Found {switches['element']} as element switch")
         gLogger.error("Please, check documentation above")
         Script.showHelp(exitCode=1)
 
@@ -137,7 +137,7 @@ def setToken(user):
     for statusType, tokenOwner in elements:
         # If a user different than the one issuing the command and RSS
         if tokenOwner != user and tokenOwner != "rs_svc":
-            gLogger.info("{}({}) belongs to the user: {}".format(switchDict["name"], statusType, tokenOwner))
+            gLogger.info(f"{switchDict['name']}({statusType}) belongs to the user: {tokenOwner}")
 
         # does the job
         result = rssClient.modifyStatusElement(
@@ -158,9 +158,9 @@ def setToken(user):
         elif newTokenOwner == "rs_svc":
             msg = "(released)"
         else:
-            msg = "(aquired from %s)" % tokenOwner
+            msg = f"(aquired from {tokenOwner})"
 
-        gLogger.info("name:{}, VO:{} statusType:{} {}".format(switchDict["name"], switchDict["VO"], statusType, msg))
+        gLogger.info(f"name:{switchDict['name']}, VO:{switchDict['VO']} statusType:{statusType} {msg}")
     return S_OK()
 
 

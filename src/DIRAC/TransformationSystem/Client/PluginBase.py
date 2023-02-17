@@ -28,7 +28,7 @@ class PluginBase:
     def run(self):
         """this is a wrapper to invoke the plugin (self._%s()" % self.plugin)"""
         try:
-            evalString = "self._%s()" % self.plugin
+            evalString = f"self._{self.plugin}()"
             return eval(evalString)  # pylint: disable=eval-used
         except AttributeError as x:
             if re.search(self.plugin, str(x)):

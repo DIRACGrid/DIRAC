@@ -50,7 +50,7 @@ class FreeDiskSpacePolicy(PolicyBase):
         for key in ["Total", "Free"]:
             if key not in commandResult:
                 result["Status"] = "Error"
-                result["Reason"] = "Key %s missing" % key
+                result["Reason"] = f"Key {key} missing"
                 return S_OK(result)
 
         free = float(commandResult["Free"])

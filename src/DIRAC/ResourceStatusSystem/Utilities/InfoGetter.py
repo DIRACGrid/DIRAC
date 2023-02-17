@@ -19,7 +19,7 @@ def getPoliciesThatApply(decisionParams):
     # InfoGetter is being called from SiteInspector Agent
 
     decisionParams = _sanitizedecisionParams(decisionParams)
-    gLogger.debug("Sanitized decisionParams: %s" % str(decisionParams))
+    gLogger.debug(f"Sanitized decisionParams: {str(decisionParams)}")
 
     policiesThatApply = []
 
@@ -28,7 +28,7 @@ def getPoliciesThatApply(decisionParams):
     if not policiesConfig["OK"]:
         return policiesConfig
     policiesConfig = policiesConfig["Value"]
-    gLogger.debug("All policies: %s" % str(policiesConfig))
+    gLogger.debug(f"All policies: {str(policiesConfig)}")
 
     # Each policy, has the following format
     # <policyName>
@@ -67,9 +67,9 @@ def getPoliciesThatApply(decisionParams):
         if policyMatch and _filterPolicies(decisionParams, policyMatchParams):
             policiesThatApply.append((policyName, policyType, policyConfigParams))
 
-    gLogger.debug("policies that apply (before post-processing): %s" % str(policiesThatApply))
+    gLogger.debug(f"policies that apply (before post-processing): {str(policiesThatApply)}")
     policiesThatApply = postProcessingPolicyList(policiesThatApply)
-    gLogger.debug("policies that apply (after post-processing): %s" % str(policiesThatApply))
+    gLogger.debug(f"policies that apply (after post-processing): {str(policiesThatApply)}")
 
     policiesToBeLoaded = []
     # Gets policies parameters from code.
@@ -197,7 +197,7 @@ def _getComputingElementsByDomainName(targetDomain=None):
 
     unknownDomains = list(set(targetDomain) - set(domainNames))
     if unknownDomains:
-        gLogger.warn("Domains %s belong to the policy parameters but not to the CS domains" % unknownDomains)
+        gLogger.warn(f"Domains {unknownDomains} belong to the policy parameters but not to the CS domains")
 
     knownDomains = list(set(domainNames) & set(targetDomain))
     if not knownDomains:
@@ -205,7 +205,7 @@ def _getComputingElementsByDomainName(targetDomain=None):
         return S_OK([])
 
     for domainName in knownDomains:
-        gLogger.info("Fetching the list of Computing Elements belonging to domain %s" % domainName)
+        gLogger.info(f"Fetching the list of Computing Elements belonging to domain {domainName}")
         domainSites = gConfig.getSections(f"{_basePath}/{domainName}")
         if not domainSites["OK"]:
             return domainSites
@@ -222,7 +222,7 @@ def _getComputingElementsByDomainName(targetDomain=None):
 
     # Remove duplicated ( just in case )
     ces = list(set(ces))
-    gLogger.info("List of CEs: %s" % str(ces))
+    gLogger.info(f"List of CEs: {str(ces)}")
 
     return S_OK(ces)
 

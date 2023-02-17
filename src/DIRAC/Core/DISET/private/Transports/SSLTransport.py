@@ -61,7 +61,7 @@ def checkSanity(urlTuple, kwargs):
             return S_ERROR("No proxy found")
         elif not os.path.isfile(certFile):
             gLogger.error("Proxy file does not exist", certFile)
-            return S_ERROR("%s proxy file does not exist" % certFile)
+            return S_ERROR(f"{certFile} proxy file does not exist")
 
     # For certs always check CA's. For clients skipServerIdentityCheck
     if "skipCACheck" not in kwargs or not kwargs["skipCACheck"]:
@@ -85,8 +85,8 @@ def checkSanity(urlTuple, kwargs):
 
     retVal = certObj.hasExpired()
     if not retVal["OK"]:
-        gLogger.error("Can't verify proxy or certificate file", "{}:{}".format(certFile, retVal["Message"]))
-        return S_ERROR("Can't verify file {}:{}".format(certFile, retVal["Message"]))
+        gLogger.error("Can't verify proxy or certificate file", f"{certFile}:{retVal['Message']}")
+        return S_ERROR(f"Can't verify file {certFile}:{retVal['Message']}")
     else:
         if retVal["Value"]:
             notAfter = certObj.getNotAfterDate()

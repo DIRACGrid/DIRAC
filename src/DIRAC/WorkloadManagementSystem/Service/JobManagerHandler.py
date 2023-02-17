@@ -61,7 +61,7 @@ class JobManagerHandlerMixin:
             cls.pilotAgentsDB = result["Value"](parentLogger=cls.log)
 
         except RuntimeError as excp:
-            return S_ERROR("Can't connect to DB: %s" % excp)
+            return S_ERROR(f"Can't connect to DB: {excp}")
 
         cls.pilotsLoggingDB = None
         enablePilotsLogging = Operations().getValue("/Services/JobMonitoring/usePilotsLoggingFlag", False)
@@ -72,7 +72,7 @@ class JobManagerHandlerMixin:
                     return result
                 cls.pilotsLoggingDB = result["Value"](parentLogger=cls.log)
             except RuntimeError as excp:
-                return S_ERROR("Can't connect to DB: %s" % excp)
+                return S_ERROR(f"Can't connect to DB: {excp}")
 
         cls.msgClient = MessageClient("WorkloadManagement/OptimizationMind")
         result = cls.msgClient.connect(JobManager=True)
@@ -109,7 +109,7 @@ class JobManagerHandlerMixin:
         if not result["OK"]:
             self.log.error("Cannot send Optimize message", result["Message"])
             return
-        self.log.info("Optimize msg sent", "for %s jobs" % len(jids))
+        self.log.info("Optimize msg sent", f"for {len(jids)} jobs")
 
     ###########################################################################
     types_getMaxParametricJobs = []
@@ -146,9 +146,9 @@ class JobManagerHandlerMixin:
         # jobDesc is JDL for now
         jobDesc = jobDesc.strip()
         if jobDesc[0] != "[":
-            jobDesc = "[%s" % jobDesc
+            jobDesc = f"[{jobDesc}"
         if jobDesc[-1] != "]":
-            jobDesc = "%s]" % jobDesc
+            jobDesc = f"{jobDesc}]"
 
         # Check if the job is a parametric one
         jobClassAd = ClassAd(jobDesc)
@@ -236,7 +236,7 @@ class JobManagerHandlerMixin:
         """
         jobList = self.__getJobList(jobIDs)
         if not jobList:
-            self.log.error("Issue with __getJobList", ": invalid job specification %s" % str(jobIDs))
+            self.log.error("Issue with __getJobList", f": invalid job specification {str(jobIDs)}")
             return S_ERROR(EWMSSUBM, "Invalid job specification: " + str(jobIDs))
 
         validJobList, _invalidJobList, _nonauthJobList, _ownerJobList = self.jobPolicy.evaluateJobRights(
@@ -387,12 +387,12 @@ class JobManagerHandlerMixin:
         error_count = 0
 
         if validJobList:
-            self.log.verbose("Removing jobs", "(n=%d)" % len(validJobList))
+            self.log.verbose("Removing jobs", f"(n={len(validJobList)})")
             result = self.jobDB.removeJobFromDB(validJobList)
             if not result["OK"]:
-                self.log.error("Failed to remove jobs from JobDB", "(n=%d)" % len(validJobList))
+                self.log.error("Failed to remove jobs from JobDB", f"(n={len(validJobList)})")
             else:
-                self.log.info("Removed jobs from JobDB", "(n=%d)" % len(validJobList))
+                self.log.info("Removed jobs from JobDB", f"(n={len(validJobList)})")
 
             for jobID in validJobList:
                 resultTQ = self.taskQueueDB.deleteJob(jobID)
@@ -404,9 +404,9 @@ class JobManagerHandlerMixin:
 
             result = self.jobLoggingDB.deleteJob(validJobList)
             if not result["OK"]:
-                self.log.error("Failed to remove jobs from JobLoggingDB", "(n=%d)" % len(validJobList))
+                self.log.error("Failed to remove jobs from JobLoggingDB", f"(n={len(validJobList)})")
             else:
-                self.log.info("Removed jobs from JobLoggingDB", "(n=%d)" % len(validJobList))
+                self.log.info("Removed jobs from JobLoggingDB", f"(n={len(validJobList)})")
 
             if count > 0 or error_count > 0:
                 self.log.info("Removed jobs from DB", "(%d jobs with %d errors)" % (count, error_count))
@@ -414,16 +414,16 @@ class JobManagerHandlerMixin:
         if invalidJobList or nonauthJobList:
             self.log.error(
                 "Jobs can not be removed",
-                ": %d invalid and %d in nonauthJobList" % (len(invalidJobList), len(nonauthJobList)),
+                f": {len(invalidJobList)} invalid and {len(nonauthJobList)} in nonauthJobList",
             )
             errMsg = "Some jobs failed removal"
             res = S_ERROR()
             if invalidJobList:
-                self.log.debug("Invalid jobs: %s" % ",".join(str(ij) for ij in invalidJobList))
+                self.log.debug(f"Invalid jobs: {','.join(str(ij) for ij in invalidJobList)}")
                 res["InvalidJobIDs"] = invalidJobList
                 errMsg += ": invalid jobs"
             if nonauthJobList:
-                self.log.debug("nonauthJobList jobs: %s" % ",".join(str(nj) for nj in nonauthJobList))
+                self.log.debug(f"nonauthJobList jobs: {','.join(str(nj) for nj in nonauthJobList)}")
                 res["NonauthorizedJobIDs"] = nonauthJobList
                 errMsg += ": non-authorized jobs"
             res["Message"] = errMsg

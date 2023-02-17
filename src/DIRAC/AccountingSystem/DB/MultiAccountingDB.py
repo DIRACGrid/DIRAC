@@ -21,7 +21,7 @@ class MultiAccountingDB:
         types = self.__allDBs[self.__defaultDB].getRegisteredTypes()
         result = gConfig.getOptionsDict(self.__csPath)
         if not result["OK"]:
-            gLogger.verbose("No extra databases defined", "in %s" % self.__csPath)
+            gLogger.verbose("No extra databases defined", f"in {self.__csPath}")
             return
         validTypes = TypeLoader().getTypes()
         opts = result["Value"]
@@ -35,8 +35,8 @@ class MultiAccountingDB:
             if dbName not in self.__allDBs:
                 fields = dbName.split("/")
                 if len(fields) == 1:
-                    dbName = "Accounting/%s" % dbName
-                gLogger.notice("Creating DB", "%s" % dbName)
+                    dbName = f"Accounting/{dbName}"
+                gLogger.notice("Creating DB", f"{dbName}")
                 self.__allDBs[dbName] = AccountingDB(dbName, readOnly=self.__readOnly)
             self.__dbByType[acType] = dbName
 

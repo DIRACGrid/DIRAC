@@ -60,24 +60,24 @@ def ClientSelector(disetClient, *args, **kwargs):  # We use same interface as RP
 
     try:
         serviceName = args[0]
-        sLog.debug("Trying to autodetect client for %s" % serviceName)
+        sLog.debug(f"Trying to autodetect client for {serviceName}")
 
         # If we are not already given a URL, resolve it
         if serviceName.startswith(("http", "dip")):
             completeUrl = serviceName
         else:
             completeUrl = getServiceURL(serviceName)
-            sLog.debug("URL resolved: %s" % completeUrl)
+            sLog.debug(f"URL resolved: {completeUrl}")
 
         if completeUrl.startswith("http"):
-            sLog.debug("Using HTTPS for service %s" % serviceName)
+            sLog.debug(f"Using HTTPS for service {serviceName}")
             rpc = tornadoClient(*args, **kwargs)
         else:
             rpc = disetClient(*args, **kwargs)
     except Exception as e:  # pylint: disable=broad-except
         # If anything went wrong in the resolution, we return default RPCClient
         # So the behaviour is exactly the same as before implementation of Tornado
-        sLog.warn("Could not select DISET or Tornado client", "%s" % repr(e))
+        sLog.warn("Could not select DISET or Tornado client", f"{repr(e)}")
         rpc = disetClient(*args, **kwargs)
     return rpc
 

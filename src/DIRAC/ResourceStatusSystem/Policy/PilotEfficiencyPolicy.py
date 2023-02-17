@@ -61,5 +61,5 @@ class PilotEfficiencyPolicy(PolicyBase):
         else:
             result["Status"] = "Active"
 
-        result["Reason"] = "Pilots Efficiency of %.2f" % efficiency
+        result["Reason"] = f"Pilots Efficiency of {efficiency:.2f}"
         return S_OK(result)

@@ -141,7 +141,7 @@ class StateMachine:
             self.state = result["Value"]
             # If the StateMachine does not accept the candidate, return error message
         else:
-            return S_ERROR("setState: %r is not a valid state" % candidateState)
+            return S_ERROR(f"setState: {candidateState!r} is not a valid state")
 
         return S_OK(self.state)
 
@@ -176,7 +176,7 @@ class StateMachine:
         :return: S_OK(nextState) || S_ERROR
         """
         if candidateState not in self.states:
-            return S_ERROR("getNextState: %r is not a valid state" % candidateState)
+            return S_ERROR(f"getNextState: {candidateState!r} is not a valid state")
 
         # FIXME: do we need this anymore ?
         if self.state is None:

@@ -92,7 +92,7 @@ def deprecated(reason, onlyOnce=False):
             """
             # fail calling the function if environment variable is set
             if os.environ.get("DIRAC_DEPRECATED_FAIL", None):
-                raise NotImplementedError("ERROR: using deprecated function or class: %s" % reason)
+                raise NotImplementedError(f"ERROR: using deprecated function or class: {reason}")
             # Get the details of the deprecated object
             if clsName:
                 objName = clsName

@@ -37,7 +37,7 @@ class DataIntegrityClient(Client):
             errStr = "DataIntegrityClient.setFileProblematic: Supplied file info must be list or a single LFN."
             gLogger.error(errStr)
             return S_ERROR(errStr)
-        gLogger.info("DataIntegrityClient.setFileProblematic: Attempting to update %s files." % len(lfns))
+        gLogger.info(f"DataIntegrityClient.setFileProblematic: Attempting to update {len(lfns)} files.")
         fileMetadata = {}
         for lfn in lfns:
             fileMetadata[lfn] = {"Prognosis": reason, "LFN": lfn, "PFN": "", "SE": ""}
@@ -79,7 +79,7 @@ class DataIntegrityClient(Client):
             )
             gLogger.error(errStr)
             return S_ERROR(errStr)
-        gLogger.info("DataIntegrityClient.setReplicaProblematic: Attempting to update %s replicas." % len(replicaTuple))
+        gLogger.info(f"DataIntegrityClient.setReplicaProblematic: Attempting to update {len(replicaTuple)} replicas.")
         replicaDict = {}
         for lfn, pfn, se, reason in replicaTuple:
             replicaDict[lfn] = {"Prognosis": reason, "LFN": lfn, "PFN": pfn, "SE": se}

@@ -34,7 +34,7 @@ class SystemAdministratorClientCLI(CLI):
         # Check if Port is given
         self.host = None
         self.port = None
-        self.prompt = "[%s]> " % colorize("no host", "yellow")
+        self.prompt = f"[{colorize('no host', 'yellow')}]> "
         if host:
             self.__setHost(host)
         self.cwd = ""
@@ -44,7 +44,7 @@ class SystemAdministratorClientCLI(CLI):
 
         # store history
         histfilename = os.path.basename(sys.argv[0])
-        historyFile = os.path.expanduser("~/.dirac/%s.history" % histfilename[0:-3])
+        historyFile = os.path.expanduser(f"~/.dirac/{histfilename[0:-3]}.history")
         mkDir(os.path.dirname(historyFile))
         if os.path.isfile(historyFile):
             readline.read_history_file(historyFile)
@@ -58,14 +58,14 @@ class SystemAdministratorClientCLI(CLI):
             self.port = hostList[1]
         else:
             self.port = None
-        gLogger.notice("Pinging %s..." % self.host)
+        gLogger.notice(f"Pinging {self.host}...")
         result = self.__getClient().ping()
         if result["OK"]:
             colorHost = colorize(host, "green")
         else:
-            self._errMsg("Could not connect to {}: {}".format(self.host, result["Message"]))
+            self._errMsg(f"Could not connect to {self.host}: {result['Message']}")
             colorHost = colorize(host, "red")
-        self.prompt = "[%s]> " % colorHost
+        self.prompt = f"[{colorHost}]> "
 
     def __getClient(self):
         return SystemAdministratorClient(self.host, self.port)
@@ -109,9 +109,9 @@ class SystemAdministratorClientCLI(CLI):
         project = args[0]
         result = self.__getClient().setProject(project)
         if not result["OK"]:
-            self._errMsg("Cannot set project: %s" % result["Message"])
+            self._errMsg(f"Cannot set project: {result['Message']}")
         else:
-            gLogger.notice("Project set to %s" % project)
+            gLogger.notice(f"Project set to {project}")
 
     def do_show(self, args):
         """
@@ -182,7 +182,7 @@ class SystemAdministratorClientCLI(CLI):
             if not result["OK"]:
                 self._errMsg(result["Message"])
             else:
-                gLogger.notice("Current project is %s" % result["Value"])
+                gLogger.notice(f"Current project is {result['Value']}")
         elif option == "status":
             client = SystemAdministratorClient(self.host, self.port)
             result = client.getOverallStatus()
@@ -259,7 +259,7 @@ class SystemAdministratorClientCLI(CLI):
                 gLogger.notice("")
                 gLogger.notice("Setup:", result["Value"]["Setup"])
                 for e, v in result["Value"]["Extensions"].items():
-                    gLogger.notice("%s version" % e, v)
+                    gLogger.notice(f"{e} version", v)
                 gLogger.notice("")
         elif option == "host":
             client = SystemAdministratorClient(self.host, self.port)
@@ -278,7 +278,7 @@ class SystemAdministratorClientCLI(CLI):
                         extensions = parameter[1].split(",")
                         for extension in extensions:
                             extensionName, extensionVersion = extension.split(":")
-                            records.append(["%sVersion" % extensionName, str(extensionVersion)])
+                            records.append([f"{extensionName}Version", str(extensionVersion)])
                     else:
                         records.append([parameter[0], str(parameter[1])])
 
@@ -287,7 +287,7 @@ class SystemAdministratorClientCLI(CLI):
             client = ComponentMonitoringClient()
             result = client.getHosts({}, False, False)
             if not result["OK"]:
-                self._errMsg("Error retrieving the list of hosts: %s" % (result["Message"]))
+                self._errMsg(f"Error retrieving the list of hosts: {result['Message']}")
             else:
                 hostList = result["Value"]
                 gLogger.notice("")
@@ -486,7 +486,7 @@ class SystemAdministratorClientCLI(CLI):
         client = ComponentMonitoringClient()
         result = client.getInstallations(installationFilter, componentFilter, hostFilter, True)
         if not result["OK"]:
-            self._errMsg("Could not retrieve the installations: %s" % (result["Message"]))
+            self._errMsg(f"Could not retrieve the installations: {result['Message']}")
             installations = None
         else:
             installations = result["Value"]
@@ -634,10 +634,10 @@ class SystemAdministratorClientCLI(CLI):
 
             result = client.getAvailableDatabases()
             if not result["OK"]:
-                self._errMsg("Can not get database list: %s" % result["Message"])
+                self._errMsg(f"Can not get database list: {result['Message']}")
                 return
             if database not in result["Value"]:
-                self._errMsg("Unknown database %s: " % database)
+                self._errMsg(f"Unknown database {database}: ")
                 return
             system = result["Value"][database]["System"]
             dbType = result["Value"][database]["Type"]
@@ -647,8 +647,8 @@ class SystemAdministratorClientCLI(CLI):
                 return
             instance = gConfig.getValue(f"/DIRAC/Setups/{setup}/{system}", "")
             if not instance:
-                self._errMsg("No instance defined for system %s" % system)
-                self._errMsg("\tAdd new instance with 'add instance %s <instance_name>'" % system)
+                self._errMsg(f"No instance defined for system {system}")
+                self._errMsg(f"\tAdd new instance with 'add instance {system} <instance_name>'")
                 return
 
             if dbType == "MySQL":
@@ -793,14 +793,14 @@ class SystemAdministratorClientCLI(CLI):
                     "DB", system, "InstalledComponentsDB", cpu=cpu, hostname=hostname
                 )
                 if not result["OK"]:
-                    self._errMsg("Error registering installation into database: %s" % result["Message"])
+                    self._errMsg(f"Error registering installation into database: {result['Message']}")
                     return
 
             result = MonitoringUtilities.monitorInstallation(
                 option, system, component, module, cpu=cpu, hostname=hostname
             )
             if not result["OK"]:
-                self._errMsg("Error registering installation into database: %s" % result["Message"])
+                self._errMsg(f"Error registering installation into database: {result['Message']}")
                 return
         else:
             gLogger.notice("Unknown option:", option)
@@ -855,7 +855,7 @@ class SystemAdministratorClientCLI(CLI):
             if not result["OK"]:
                 self._errMsg(result["Message"])
             else:
-                gLogger.notice("Successfully uninstalled %s" % (component))
+                gLogger.notice(f"Successfully uninstalled {component}")
         elif option == "host":
             del argss[0]
             if not argss:
@@ -887,7 +887,7 @@ class SystemAdministratorClientCLI(CLI):
                         if not result["OK"]:
                             self._errMsg(result["Message"])
                         else:
-                            gLogger.notice("Host %s was successfully removed" % hostname)
+                            gLogger.notice(f"Host {hostname} was successfully removed")
         else:
             if option == "-f":
                 force = True
@@ -1145,7 +1145,7 @@ class SystemAdministratorClientCLI(CLI):
           exec <cmd> [<arguments>]
         """
         client = SystemAdministratorClient(self.host, self.port)
-        command = "cd %s;" % self.cwd + args
+        command = f"cd {self.cwd};" + args
         result = client.executeCommand(command)
         if not result["OK"]:
             self._errMsg(result["Message"])
@@ -1266,7 +1266,7 @@ class SystemAdministratorClientCLI(CLI):
                 setupName = argss[0]
                 del argss[0]
             else:
-                self._errMsg("Invalid option %s" % option)
+                self._errMsg(f"Invalid option {option}")
                 return
 
         client = SystemAdministratorIntegrator()
@@ -1287,7 +1287,7 @@ class SystemAdministratorClientCLI(CLI):
                 result = resultAll["Value"][host]
                 if not result["OK"]:
                     if debug:
-                        self._errMsg("Host {}: {}".format(host, result["Message"]))
+                        self._errMsg(f"Host {host}: {result['Message']}")
                     continue
                 rDict = result["Value"]
                 for compType in rDict:

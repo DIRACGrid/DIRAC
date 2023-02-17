@@ -31,19 +31,19 @@ print("End job", jobNumber, time.time())
 
 
 def _stopJob(nJob):
-    with open("stop_job_%s" % nJob, "w") as stopFile:
+    with open(f"stop_job_{nJob}", "w") as stopFile:
         stopFile.write("Stop")
     time.sleep(0.3)
-    if os.path.isfile("stop_job_%s" % nJob):
-        os.remove("stop_job_%s" % nJob)
+    if os.path.isfile(f"stop_job_{nJob}"):
+        os.remove(f"stop_job_{nJob}")
 
 
 @pytest.fixture
 def createAndDelete():
     for i in range(6):
-        with open("testPoolCEJob_%s.py" % i, "w") as execFile:
+        with open(f"testPoolCEJob_{i}.py", "w") as execFile:
             execFile.write(jobScript % i)
-        os.chmod("testPoolCEJob_%s.py" % i, 0o755)
+        os.chmod(f"testPoolCEJob_{i}.py", 0o755)
 
     yield createAndDelete
 
@@ -59,7 +59,7 @@ def createAndDelete():
     # this will also stop the futures unless they are already stopped!
     for i in range(6):
         try:
-            os.remove("testPoolCEJob_%s.py" % i)
+            os.remove(f"testPoolCEJob_{i}.py")
         except OSError:
             pass
 

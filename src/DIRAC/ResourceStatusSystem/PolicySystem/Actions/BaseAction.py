@@ -37,11 +37,11 @@ class BaseAction:
         self.singlePolicyResults = singlePolicyResults
         self.clients = clients
         self.log = gLogger.getSubLogger(self.__class__.__name__)
-        self.log.verbose("Running %s action" % self.__class__.__name__)
+        self.log.verbose(f"Running {self.__class__.__name__} action")
 
     def run(self):
         """
         Method to be over written by the real actions
         """
 
-        self.log.warn("%s: you may want to overwrite this method" % self.actionName)
+        self.log.warn(f"{self.actionName}: you may want to overwrite this method")

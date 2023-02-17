@@ -93,8 +93,8 @@ def main():
     hasRun = False
     isDirty = False
     for i in resultList:
-        if not cfg.isSection("Resources/Sites/%s" % i):
-            gLogger.error("Subsection /Resources/Sites/%s does not exists" % i)
+        if not cfg.isSection(f"Resources/Sites/{i}"):
+            gLogger.error(f"Subsection /Resources/Sites/{i} does not exists")
             continue
         hasRun = True
         if SORTBYNAME:

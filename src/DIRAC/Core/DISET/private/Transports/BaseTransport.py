@@ -154,7 +154,7 @@ class BaseTransport:
             else:
                 return S_ERROR("Connection seems stalled. Closing...")
         except Exception as e:
-            return S_ERROR("Exception while reading from peer: %s" % str(e))
+            return S_ERROR(f"Exception while reading from peer: {str(e)}")
 
     def _write(self, buf):
         return S_OK(self.oSocket.send(buf))
@@ -175,7 +175,7 @@ class BaseTransport:
                         return result
                     sentBytes = result["Value"]
                 except Exception as e:
-                    return S_ERROR("Exception while sending data: %s" % e)
+                    return S_ERROR(f"Exception while sending data: {e}")
                 if sentBytes == 0:
                     return S_ERROR("Connection closed by peer")
                 packSentBytes += sentBytes
@@ -210,7 +210,7 @@ class BaseTransport:
                 isKeepAlive = self.byteStream.find(BaseTransport.keepAliveMagic, 0, keepAliveMagicLen) == 0
                 # Over the limit?
                 if maxBufferSize and len(self.byteStream) > maxBufferSize and iSeparatorPosition == -1:
-                    return S_ERROR("Read limit exceeded (%s chars)" % maxBufferSize)
+                    return S_ERROR(f"Read limit exceeded ({maxBufferSize} chars)")
             # Keep alive magic!
             if isKeepAlive:
                 gLogger.debug("Received keep alive header")
@@ -241,7 +241,7 @@ class BaseTransport:
                     readSize += len(rcvData)
                     pkgMem.write(rcvData)
                     if maxBufferSize and readSize > maxBufferSize:
-                        return S_ERROR("Read limit exceeded (%s chars)" % maxBufferSize)
+                        return S_ERROR(f"Read limit exceeded ({maxBufferSize} chars)")
                 # Data is here! take it out from the bytestream, dencode and return
                 if readSize == pkgSize:
                     data = pkgMem.getvalue()
@@ -253,30 +253,30 @@ class BaseTransport:
             try:
                 data = MixedEncode.decode(data)[0]
             except Exception as e:
-                return S_ERROR("Could not decode received data: %s" % str(e))
+                return S_ERROR(f"Could not decode received data: {str(e)}")
             if idleReceive:
                 self.receivedMessages.append(data)
                 return S_OK()
             return data
         except Exception as e:
             gLogger.exception("Network error while receiving data")
-            return S_ERROR("Network error while receiving data: %s" % str(e))
+            return S_ERROR(f"Network error while receiving data: {str(e)}")
 
     def __processKeepAlive(self, maxBufferSize, blockAfterKeepAlive=True):
         gLogger.debug("Received Keep Alive")
         # Next message down the stream will be the ka data
         result = self.receiveData(maxBufferSize, blockAfterKeepAlive=False)
         if not result["OK"]:
-            gLogger.debug("Error while receiving keep alive: %s" % result["Message"])
+            gLogger.debug(f"Error while receiving keep alive: {result['Message']}")
             return result
         # Is it a valid ka?
         kaData = result["Value"]
         for reqField in ("id", "kaping"):
             if reqField not in kaData:
-                errMsg = "Invalid keep alive, missing %s" % reqField
+                errMsg = f"Invalid keep alive, missing {reqField}"
                 gLogger.debug(errMsg)
                 return S_ERROR(errMsg)
-        gLogger.debug("Received keep alive id %s" % kaData)
+        gLogger.debug(f"Received keep alive id {kaData}")
         # Need to check if it's one of the keep alives we sent or one started from the other side
         if kaData["kaping"]:
             # This is a keep alive PING. Let's send the PONG
@@ -319,7 +319,7 @@ class BaseTransport:
         peerCreds = self.getConnectingCredentials()
         address = self.getRemoteAddress()
         if "username" in peerCreds:
-            peerId = "[{}:{}]".format(peerCreds["group"], peerCreds["username"])
+            peerId = f"[{peerCreds['group']}:{peerCreds['username']}]"
         else:
             peerId = ""
         if address[0].find(":") > -1:

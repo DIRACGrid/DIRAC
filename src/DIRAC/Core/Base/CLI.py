@@ -63,7 +63,7 @@ class CLI(cmd.Cmd):
         :param str errMsg: error message string
         :return: nothing
         """
-        gLogger.error("{} {}".format(colorize("[ERROR]", "red"), errMsg))
+        gLogger.error(f"{colorize('[ERROR]', 'red')} {errMsg}")
 
     def emptyline(self):
         pass
@@ -98,13 +98,13 @@ class CLI(cmd.Cmd):
         argss = args.split()
         fname = argss[0]
         if not os.path.exists(fname):
-            print("Error: File not found %s" % fname)
+            print(f"Error: File not found {fname}")
             return
         with open(fname) as input_cmd:
             contents = input_cmd.readlines()
         for line in contents:
             try:
-                gLogger.notice("\n--> Executing %s\n" % line)
+                gLogger.notice(f"\n--> Executing {line}\n")
                 self.onecmd(line)
             except Exception as error:
                 self._errMsg(str(error))
@@ -113,9 +113,9 @@ class CLI(cmd.Cmd):
 
     def printPair(self, key, value, separator=":"):
         valueList = value.split("\n")
-        print("{}{}{} {}".format(key, " " * (self.indentSpace - len(key)), separator, valueList[0].strip()))
+        print(f"{key}{' ' * (self.indentSpace - len(key))}{separator} {valueList[0].strip()}")
         for valueLine in valueList[1:-1]:
-            print("{}  {}".format(" " * self.indentSpace, valueLine.strip()))
+            print(f"{' ' * self.indentSpace}  {valueLine.strip()}")
 
     def do_help(self, args):
         """
@@ -133,8 +133,8 @@ class CLI(cmd.Cmd):
         else:
             command = args.split()[0].strip()
             try:
-                obj = getattr(self, "do_%s" % command)
+                obj = getattr(self, f"do_{command}")
             except Exception:
-                print("There's no such %s command" % command)
+                print(f"There's no such {command} command")
                 return
             self.printPair(command, obj.__doc__[1:])

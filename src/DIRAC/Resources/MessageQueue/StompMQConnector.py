@@ -110,7 +110,7 @@ class StompMQConnector(MQConnector):
                 }
 
             else:
-                return S_ERROR(EMQCONN, "Invalid SSL version provided: %s" % sslVersion)
+                return S_ERROR(EMQCONN, f"Invalid SSL version provided: {sslVersion}")
 
         try:
             # Get IP addresses of brokers
@@ -127,14 +127,14 @@ class StompMQConnector(MQConnector):
                 host_and_ports.append((sockaddr[0], sockaddr[1]))
 
             connectionArgs.update({"host_and_ports": host_and_ports})
-            log.debug("Connection args: %s" % str(connectionArgs))
+            log.debug(f"Connection args: {str(connectionArgs)}")
             self.connection = stomp.Connection(**connectionArgs)
             if sslArgs:
                 self.connection.set_ssl(**sslArgs)
 
         except Exception as e:
             log.debug("Failed setting up connection", repr(e))
-            return S_ERROR(EMQCONN, "Failed to setup connection: %s" % e)
+            return S_ERROR(EMQCONN, f"Failed to setup connection: {e}")
 
         return S_OK("Setup successful")
 
@@ -169,7 +169,7 @@ class StompMQConnector(MQConnector):
                 self.connection.send(body=json.dumps(message), destination=destination)
         except Exception as e:
             log.debug("Failed to send message", repr(e))
-            return S_ERROR(EMQUKN, "Failed to send message: %s" % repr(e))
+            return S_ERROR(EMQUKN, f"Failed to send message: {repr(e)}")
 
         return S_OK("Message sent successfully")
 
@@ -197,12 +197,12 @@ class StompMQConnector(MQConnector):
                         remoteIP = self.connection.transport.socket.getpeername()[0]
                     except Exception:
                         pass
-                    log.info("MQ Connected to %s" % remoteIP)
-                    return S_OK("Connected to %s" % remoteIP)
+                    log.info(f"MQ Connected to {remoteIP}")
+                    return S_OK(f"Connected to {remoteIP}")
                 else:
                     log.warn("Not connected")
             except Exception as e:
-                log.error("Failed to connect: %s" % repr(e))
+                log.error(f"Failed to connect: {repr(e)}")
 
             # Wait a bit before retrying
             time.sleep(5)
@@ -225,7 +225,7 @@ class StompMQConnector(MQConnector):
             log.info("Disconnected from broker")
         except Exception as e:
             log.error("Failed to disconnect from broker", repr(e))
-            return S_ERROR(EMQUKN, "Failed to disconnect from broker %s" % repr(e))
+            return S_ERROR(EMQUKN, f"Failed to disconnect from broker {repr(e)}")
 
         return S_OK("Successfully disconnected from broker")
 
@@ -253,8 +253,8 @@ class StompMQConnector(MQConnector):
             self.connection.set_listener("StompListener", listener)
             self.connection.subscribe(destination=dest, id=mId, ack=ack, headers=headers)
         except Exception as e:
-            log.error("Failed to subscribe: %s" % e)
-            return S_ERROR(EMQUKN, "Failed to subscribe to broker: %s" % repr(e))
+            log.error(f"Failed to subscribe: {e}")
+            return S_ERROR(EMQUKN, f"Failed to subscribe to broker: {repr(e)}")
 
         return S_OK("Subscription successful")
 
@@ -268,7 +268,7 @@ class StompMQConnector(MQConnector):
             self.connection.unsubscribe(destination=dest, id=mId)
         except Exception as e:
             log.error("Failed to unsubscribe", repr(e))
-            return S_ERROR(EMQUKN, "Failed to unsubscribe: %s" % repr(e))
+            return S_ERROR(EMQUKN, f"Failed to unsubscribe: {repr(e)}")
 
         return S_OK("Successfully unsubscribed from all destinations")
 
@@ -334,7 +334,7 @@ class StompListener(stomp.ConnectionListener):
                 if res["OK"]:
                     self.log.info("Reconnection successful to broker")
                 else:
-                    self.log.error("Error reconnectiong broker", "%s" % res)
+                    self.log.error("Error reconnectiong broker", f"{res}")
 
             except Exception as e:
-                self.log.error("Unexpected error while calling reconnect callback: %s" % e)
+                self.log.error(f"Unexpected error while calling reconnect callback: {e}")

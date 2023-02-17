@@ -202,12 +202,12 @@ class InputData(OptimizerExecutor):
         startTime = time.time()
         dm = self.__getDataManager(vo)
         if dm is None:
-            return S_ERROR("Failed to instantiate DataManager for vo %s" % vo)
+            return S_ERROR(f"Failed to instantiate DataManager for vo {vo}")
         else:
             # This will return already active replicas, excluding banned SEs, and
             # removing tape replicas if there are disk replicas
             result = dm.getReplicasForJobs(lfns)
-        self.jobLog.verbose("Catalog replicas lookup time", "%.2f seconds " % (time.time() - startTime))
+        self.jobLog.verbose("Catalog replicas lookup time", f"{time.time() - startTime:.2f} seconds ")
         if not result["OK"]:
             self.log.warn(result["Message"])
             return result
@@ -237,10 +237,10 @@ class InputData(OptimizerExecutor):
             vo = manifest.getOption("VirtualOrganization")
             fc = self.__getFileCatalog(vo)
             if fc is None:
-                return S_ERROR("Failed to instantiate FileCatalog for vo %s" % vo)
+                return S_ERROR(f"Failed to instantiate FileCatalog for vo {vo}")
             else:
                 guidDict = fc.getFileMetadata(lfns)
-            self.jobLog.info("Catalog Metadata Lookup Time", "%.2f seconds " % (time.time() - startTime))
+            self.jobLog.info("Catalog Metadata Lookup Time", f"{time.time() - startTime:.2f} seconds ")
 
             if not guidDict["OK"]:
                 self.log.warn(guidDict["Message"])
@@ -258,7 +258,7 @@ class InputData(OptimizerExecutor):
         resolvedData = {}
         resolvedData["Value"] = guidDict
         resolvedData["SiteCandidates"] = siteCandidates
-        self.jobLog.debug("Storing:\n%s" % pprint.pformat(resolvedData))
+        self.jobLog.debug(f"Storing:\n{pprint.pformat(resolvedData)}")
         result = self.storeOptimizerParam(self.ex_getProperty("optimizerName"), resolvedData)
         if not result["OK"]:
             self.log.warn(result["Message"])
@@ -279,7 +279,7 @@ class InputData(OptimizerExecutor):
         okReplicas = replicaDict["Successful"]
         for lfn in okReplicas:
             if not okReplicas[lfn]:
-                badLFNs.append("LFN:%s -> No replicas available" % (lfn))
+                badLFNs.append(f"LFN:{lfn} -> No replicas available")
 
         if "Failed" in replicaDict:
             errorReplicas = replicaDict["Failed"]
@@ -288,7 +288,7 @@ class InputData(OptimizerExecutor):
 
         if badLFNs:
             errorMsg = "\n".join(badLFNs)
-            self.jobLog.info("Found a number of problematic LFN(s)", "%d\n: %s" % (len(badLFNs), errorMsg))
+            self.jobLog.info("Found a number of problematic LFN(s)", f"{len(badLFNs)}\n: {errorMsg}")
             result = self.storeOptimizerParam(self.ex_getProperty("optimizerName"), errorMsg)
             if not result["OK"]:
                 self.log.error("Failed to set job parameter", result["Message"])
@@ -331,7 +331,7 @@ class InputData(OptimizerExecutor):
             for seName in replicas:
                 result = self.__getSitesForSE(seName)
                 if not result["OK"]:
-                    self.jobLog.warn("Could not get sites for SE", "{}: {}".format(seName, result["Message"]))
+                    self.jobLog.warn("Could not get sites for SE", f"{seName}: {result['Message']}")
                     return result
                 siteSet.update(result["Value"])
             lfnSEs[lfn] = siteSet
@@ -361,7 +361,7 @@ class InputData(OptimizerExecutor):
                 if seName not in seDict:
                     result = self.__getSitesForSE(seName)
                     if not result["OK"]:
-                        self.jobLog.warn("Could not get sites for SE", "{}: {}".format(seName, result["Message"]))
+                        self.jobLog.warn("Could not get sites for SE", f"{seName}: {result['Message']}")
                         continue
                     siteList = result["Value"]
                     seObj = StorageElement(seName, vo=vo)
@@ -411,13 +411,13 @@ class InputData(OptimizerExecutor):
         startTime = time.time()
         dm = self.__getDataManager(vo)
         if dm is None:
-            return S_ERROR("Failed to instantiate DataManager for vo %s" % vo)
+            return S_ERROR(f"Failed to instantiate DataManager for vo {vo}")
 
         # This will return already active replicas, excluding banned SEs, and
         # removing tape replicas if there are disk replicas
 
         result = dm.getReplicasForJobs(inputSandbox)
-        self.jobLog.verbose("Catalog replicas lookup time", "%.2f seconds " % (time.time() - startTime))
+        self.jobLog.verbose("Catalog replicas lookup time", f"{time.time() - startTime:.2f} seconds ")
         if not result["OK"]:
             self.log.warn(result["Message"])
             return result

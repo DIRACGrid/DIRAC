@@ -102,10 +102,10 @@ def main():
 
     res = resourceStatus.getElementStatus(ses, "StorageElement")
     if not res["OK"]:
-        gLogger.error("Storage Element %s does not exist" % ses)
+        gLogger.error(f"Storage Element {ses} does not exist")
         DIRAC.exit(-1)
 
-    reason = "Forced with dirac-admin-ban-se by %s" % userName
+    reason = f"Forced with dirac-admin-ban-se by {userName}"
 
     for se, seOptions in res["Value"].items():
         resW = resC = resR = {"OK": False}
@@ -125,9 +125,9 @@ def main():
                 resR = resourceStatus.setElementStatus(se, "StorageElement", "ReadAccess", "Banned", reason, userName)
                 # res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "InActive" )
                 if not resR["OK"]:
-                    gLogger.error("Failed to update %s read access to Banned" % se)
+                    gLogger.error(f"Failed to update {se} read access to Banned")
                 else:
-                    gLogger.notice("Successfully updated %s read access to Banned" % se)
+                    gLogger.notice(f"Successfully updated {se} read access to Banned")
                     readBanned.append(se)
 
         # Eventually, we will get rid of the notion of InActive, as we always write Banned.
@@ -145,9 +145,9 @@ def main():
                 resW = resourceStatus.setElementStatus(se, "StorageElement", "WriteAccess", "Banned", reason, userName)
                 # res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "InActive" )
                 if not resW["OK"]:
-                    gLogger.error("Failed to update %s write access to Banned" % se)
+                    gLogger.error(f"Failed to update {se} write access to Banned")
                 else:
-                    gLogger.notice("Successfully updated %s write access to Banned" % se)
+                    gLogger.notice(f"Successfully updated {se} write access to Banned")
                     writeBanned.append(se)
 
         # Eventually, we will get rid of the notion of InActive, as we always write Banned.
@@ -165,9 +165,9 @@ def main():
                 resC = resourceStatus.setElementStatus(se, "StorageElement", "CheckAccess", "Banned", reason, userName)
                 # res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
                 if not resC["OK"]:
-                    gLogger.error("Failed to update %s check access to Banned" % se)
+                    gLogger.error(f"Failed to update {se} check access to Banned")
                 else:
-                    gLogger.notice("Successfully updated %s check access to Banned" % se)
+                    gLogger.notice(f"Successfully updated {se} check access to Banned")
                     checkBanned.append(se)
 
         # Eventually, we will get rid of the notion of InActive, as we always write Banned.
@@ -185,9 +185,9 @@ def main():
                 resC = resourceStatus.setElementStatus(se, "StorageElement", "RemoveAccess", "Banned", reason, userName)
                 # res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
                 if not resC["OK"]:
-                    gLogger.error("Failed to update %s remove access to Banned" % se)
+                    gLogger.error(f"Failed to update {se} remove access to Banned")
                 else:
-                    gLogger.notice("Successfully updated %s remove access to Banned" % se)
+                    gLogger.notice(f"Successfully updated {se} remove access to Banned")
                     removeBanned.append(se)
 
         if not (resR["OK"] or resW["OK"] or resC["OK"]):
@@ -201,34 +201,34 @@ def main():
         gLogger.notice("Email is muted by script switch")
         DIRAC.exit(0)
 
-    subject = "%s storage elements banned for use" % len(writeBanned + readBanned + checkBanned + removeBanned)
+    subject = f"{len(writeBanned + readBanned + checkBanned + removeBanned)} storage elements banned for use"
     addressPath = "EMail/Production"
     address = Operations().getValue(addressPath, "")
 
     body = ""
     if read:
-        body = "%s\n\nThe following storage elements were banned for reading:" % body
+        body = f"{body}\n\nThe following storage elements were banned for reading:"
         for se in readBanned:
             body = f"{body}\n{se}"
     if write:
-        body = "%s\n\nThe following storage elements were banned for writing:" % body
+        body = f"{body}\n\nThe following storage elements were banned for writing:"
         for se in writeBanned:
             body = f"{body}\n{se}"
     if check:
-        body = "%s\n\nThe following storage elements were banned for check access:" % body
+        body = f"{body}\n\nThe following storage elements were banned for check access:"
         for se in checkBanned:
             body = f"{body}\n{se}"
     if remove:
-        body = "%s\n\nThe following storage elements were banned for remove access:" % body
+        body = f"{body}\n\nThe following storage elements were banned for remove access:"
         for se in removeBanned:
             body = f"{body}\n{se}"
 
     if not address:
-        gLogger.notice("'%s' not defined in Operations, can not send Mail\n" % addressPath, body)
+        gLogger.notice(f"'{addressPath}' not defined in Operations, can not send Mail\n", body)
         DIRAC.exit(0)
 
     res = diracAdmin.sendMail(address, subject, body)
-    gLogger.notice("Notifying %s" % address)
+    gLogger.notice(f"Notifying {address}")
     if res["OK"]:
         gLogger.notice(res["Value"])
     else:

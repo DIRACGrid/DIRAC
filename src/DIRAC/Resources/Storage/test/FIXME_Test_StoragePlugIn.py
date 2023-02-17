@@ -345,7 +345,7 @@ class FileTestCase(StoragePlugInTestCase):
         # Make sure that we can actually upload a file properly
         srcFile = "/etc/group"
         srcFileSize = getSize(srcFile)
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         destFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileDict = {destFile: srcFile}
         putFileRes = self.storage.putFile(fileDict)
@@ -370,7 +370,7 @@ class FileTestCase(StoragePlugInTestCase):
         # First upload a file to the storage
         srcFile = "/etc/group"
         srcFileSize = getSize(srcFile)
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         remoteFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileDict = {remoteFile: srcFile}
         putFileRes = self.storage.putFile(fileDict)
@@ -400,7 +400,7 @@ class FileTestCase(StoragePlugInTestCase):
         # First upload a file to the storage
         srcFile = "/etc/group"
         srcFileSize = getSize(srcFile)
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         remoteFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileDict = {remoteFile: srcFile}
         putFileRes = self.storage.putFile(fileDict)
@@ -434,7 +434,7 @@ class FileTestCase(StoragePlugInTestCase):
         # First upload a file to the storage
         srcFile = "/etc/group"
         srcFileSize = getSize(srcFile)
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         remoteFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileDict = {remoteFile: srcFile}
         putFileRes = self.storage.putFile(fileDict)
@@ -471,7 +471,7 @@ class FileTestCase(StoragePlugInTestCase):
         # First upload a file to the storage
         srcFile = "/etc/group"
         srcFileSize = getSize(srcFile)
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         remoteFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileDict = {remoteFile: srcFile}
         putFileRes = self.storage.putFile(fileDict)
@@ -519,7 +519,7 @@ class FileTestCase(StoragePlugInTestCase):
         # First upload a file to the storage
         srcFile = "/etc/group"
         srcFileSize = getSize(srcFile)
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         remoteFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileDict = {remoteFile: srcFile}
         putFileRes = self.storage.putFile(fileDict)
@@ -564,7 +564,7 @@ class FileTestCase(StoragePlugInTestCase):
         # First upload a file to the storage
         srcFile = "/etc/group"
         srcFileSize = getSize(srcFile)
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         remoteFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileDict = {remoteFile: srcFile}
         putFileRes = self.storage.putFile(fileDict)
@@ -600,7 +600,7 @@ class FileTestCase(StoragePlugInTestCase):
         # First upload a file to the storage
         srcFile = "/etc/group"
         srcFileSize = getSize(srcFile)
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         remoteFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileDict = {remoteFile: srcFile}
         putFileRes = self.storage.putFile(fileDict)
@@ -636,7 +636,7 @@ class FileTestCase(StoragePlugInTestCase):
         # First upload a file to the storage
         srcFile = "/etc/group"
         srcFileSize = getSize(srcFile)
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         remoteFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileDict = {remoteFile: srcFile}
         putFileRes = self.storage.putFile(fileDict)
@@ -675,7 +675,7 @@ class FileTestCase(StoragePlugInTestCase):
         # First upload a file to the storage
         srcFile = "/etc/group"
         srcFileSize = getSize(srcFile)
-        testFileName = "testFile.%s" % time.time()
+        testFileName = f"testFile.{time.time()}"
         remoteFile = self.storage.getCurrentURL(testFileName)["Value"]
         fileDict = {remoteFile: srcFile}
         putFileRes = self.storage.putFile(fileDict)
@@ -687,7 +687,7 @@ class FileTestCase(StoragePlugInTestCase):
                 srmID = prestageRes["Value"]["Successful"][remoteFile]
         # Take a quick break to allow the SRM to realise the file is available
         sleepTime = 10
-        print("Sleeping for %s seconds" % sleepTime)
+        print(f"Sleeping for {sleepTime} seconds")
         time.sleep(sleepTime)
         # Check that we can monitor the stage request
         prestageStatusRes = self.storage.prestageFileStatus({remoteFile: srmID})

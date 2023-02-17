@@ -38,11 +38,11 @@ class Devloader(metaclass=DIRACSingleton):
 
         for stuff in self.__stuffToClose:
             try:
-                self.__log.always("Closing %s" % stuff)
+                self.__log.always(f"Closing {stuff}")
                 sys.stdout.flush()
                 stuff.close()
             except Exception:
-                gLogger.exception("Could not close %s" % stuff)
+                gLogger.exception(f"Could not close {stuff}")
 
         python = sys.executable
         os.execl(python, python, *sys.argv)
@@ -84,5 +84,5 @@ class Devloader(metaclass=DIRACSingleton):
             self.__modifyTimes[path] = modified
             return
         if self.__modifyTimes[path] != modified:
-            self.__log.always("File system changed (%s). Restarting..." % (path))
+            self.__log.always(f"File system changed ({path}). Restarting...")
             self.__restart()

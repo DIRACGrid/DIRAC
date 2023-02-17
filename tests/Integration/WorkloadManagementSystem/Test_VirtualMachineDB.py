@@ -27,7 +27,7 @@ class VirtualMachineDBInstanceTests(unittest.TestCase):
         self.__db = VirtualMachineDB()
         # Start by clearing the database so we don't get any surprises
         for vmTable in VirtualMachineDB.tablesDesc:
-            res = self.__db._query("DELETE FROM `%s`" % vmTable)
+            res = self.__db._query(f"DELETE FROM `{vmTable}`")
             self.assertTrue(res["OK"])
         # Now create our test instances
         res = self.__db.insertInstance(self.INST_UUID, self.INST_IMAGE, self.INST_NAME, self.INST_EP, self.INST_POD)

@@ -43,7 +43,7 @@ def getSEHosts(seName):
 
     seParameters = getSEParameters(seName)
     if not seParameters["OK"]:
-        gLogger.warn("Could not get SE parameters", "SE: %s" % seName)
+        gLogger.warn("Could not get SE parameters", f"SE: {seName}")
         return seParameters
 
     return S_OK([parameters["Host"] for parameters in seParameters["Value"]])
@@ -67,12 +67,12 @@ def getStorageElementsHosts(seNames=None):
         try:
             seHost = getSEHosts(seName)
             if not seHost["OK"]:
-                gLogger.warn("Could not get SE Host", "SE: %s" % seName)
+                gLogger.warn("Could not get SE Host", f"SE: {seName}")
                 continue
             if seHost["Value"]:
                 seHosts.extend(seHost["Value"])
         except Exception as excp:  # pylint: disable=broad-except
-            gLogger.error("Failed to get SE %s information (SE skipped) " % seName)
+            gLogger.error(f"Failed to get SE {seName} information (SE skipped) ")
             gLogger.exception("Operation finished  with exception: ", lException=excp)
     return S_OK(list(set(seHosts)))
 

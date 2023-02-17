@@ -14,16 +14,16 @@ def _updateFromRemoteLocation(serviceClient):
     """
     Refresh the configuration
     """
-    gLogger.debug("", "Trying to refresh from %s" % serviceClient.serverURL)
+    gLogger.debug("", f"Trying to refresh from {serviceClient.serverURL}")
     localVersion = gConfigurationData.getVersion()
     retVal = serviceClient.getCompressedDataIfNewer(localVersion)
     if retVal["OK"]:
         dataDict = retVal["Value"]
         newestVersion = dataDict["newestVersion"]
         if localVersion < newestVersion:
-            gLogger.debug("New version available", "Updating to version %s..." % newestVersion)
+            gLogger.debug("New version available", f"Updating to version {newestVersion}...")
             gConfigurationData.loadRemoteCFGFromCompressedMem(dataDict["data"])
-            gLogger.debug("Updated to version %s" % gConfigurationData.getVersion())
+            gLogger.debug(f"Updated to version {gConfigurationData.getVersion()}")
             gEventDispatcher.triggerEvent("CSNewVersion", newestVersion, threaded=True)
         return S_OK()
     return retVal
@@ -129,17 +129,17 @@ class RefresherBase:
         elif fromMaster:
             masterServer = gConfigurationData.getMasterServer()
             initialServerList = [masterServer]
-            gLogger.debug("Refreshing from master %s" % masterServer)
+            gLogger.debug(f"Refreshing from master {masterServer}")
         else:
             initialServerList = gConfigurationData.getServers()
-            gLogger.debug("Refreshing from list %s" % str(initialServerList))
+            gLogger.debug(f"Refreshing from list {str(initialServerList)}")
 
         # If no servers in the initial list, we are supposed to use the local configuration only
         if not initialServerList:
             return S_OK()
 
         randomServerList = List.randomize(initialServerList)
-        gLogger.debug("Randomized server list is %s" % ", ".join(randomServerList))
+        gLogger.debug(f"Randomized server list is {', '.join(randomServerList)}")
 
         for sServer in randomServerList:
             from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
@@ -155,9 +155,7 @@ class RefresherBase:
                 return dRetVal
             else:
                 updatingErrorsList.append(dRetVal["Message"])
-                gLogger.warn(
-                    "Can't update from server", "Error while updating from {}: {}".format(sServer, dRetVal["Message"])
-                )
+                gLogger.warn("Can't update from server", f"Error while updating from {sServer}: {dRetVal['Message']}")
                 if dRetVal["Message"].find("Insane environment") > -1:
                     break
         return S_ERROR("Reason(s):\n\t%s" % "\n\t".join(List.uniqueElements(updatingErrorsList)))

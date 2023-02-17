@@ -41,13 +41,13 @@ class CacheFeederAgent(AgentModule):
 
         res = ObjectLoader().loadObject("DIRAC.ResourceStatusSystem.Client.ResourceStatusClient")
         if not res["OK"]:
-            self.log.error("Failed to load ResourceStatusClient class: %s" % res["Message"])
+            self.log.error(f"Failed to load ResourceStatusClient class: {res['Message']}")
             return res
         rsClass = res["Value"]
 
         res = ObjectLoader().loadObject("DIRAC.ResourceStatusSystem.Client.ResourceManagementClient")
         if not res["OK"]:
-            self.log.error("Failed to load ResourceManagementClient class: %s" % res["Message"])
+            self.log.error(f"Failed to load ResourceManagementClient class: {res['Message']}")
             return res
         rmClass = res["Value"]
 
@@ -103,11 +103,11 @@ class CacheFeederAgent(AgentModule):
         commandName = list(commandDict)[0]
         commandArgs = commandDict[commandName]
 
-        commandTuple = ("%sCommand" % commandModule, "%sCommand" % commandName)
+        commandTuple = (f"{commandModule}Command", f"{commandName}Command")
         commandObject = self.cCaller.commandInvocation(commandTuple, pArgs=commandArgs, clients=self.clients)
 
         if not commandObject["OK"]:
-            self.log.error("Error initializing %s" % commandName)
+            self.log.error(f"Error initializing {commandName}")
             return commandObject
         commandObject = commandObject["Value"]
 
@@ -122,7 +122,7 @@ class CacheFeederAgent(AgentModule):
         """Just executes, via `loadCommand`, the commands in self.commands one after the other"""
 
         for commandModule, commandList in self.commands.items():
-            self.log.info("%s module initialization" % commandModule)
+            self.log.info(f"{commandModule} module initialization")
 
             for commandDict in commandList:
                 commandObject = self.loadCommand(commandModule, commandDict)
@@ -134,7 +134,7 @@ class CacheFeederAgent(AgentModule):
                 try:
                     results = commandObject.doCommand()
                     if not results["OK"]:
-                        self.log.error("Failed to execute command", "{}: {}".format(commandModule, results["Message"]))
+                        self.log.error("Failed to execute command", f"{commandModule}: {results['Message']}")
                         continue
                     results = results["Value"]
                     if not results:
@@ -143,6 +143,6 @@ class CacheFeederAgent(AgentModule):
                     self.log.verbose("Command OK Results")
                     self.log.verbose(results)
                 except Exception as excp:  # pylint: disable=broad-except
-                    self.log.exception("Failed to execute command, with exception: %s" % commandModule, lException=excp)
+                    self.log.exception(f"Failed to execute command, with exception: {commandModule}", lException=excp)
 
         return S_OK()

@@ -47,7 +47,7 @@ class VirtualMachineCLI(CLI):
 
         result = getVMTypeConfig(self.site, self.endpoint)
         if not result["OK"]:
-            print("ERROR: can not get the cloud endpoint configuration \n%s" % result["Message"])
+            print(f"ERROR: can not get the cloud endpoint configuration \n{result['Message']}")
             return
         ceDict = result["Value"]
         if not self.project:
@@ -115,7 +115,7 @@ class VirtualMachineCLI(CLI):
 
         result = ce.getVMIDs()
         if not result["OK"]:
-            print("ERROR: %s" % result["Message"])
+            print(f"ERROR: {result['Message']}")
         else:
             print("\n".join(result["Value"]))
 
@@ -139,7 +139,7 @@ class VirtualMachineCLI(CLI):
         result = ce.getVMInfo(vmID)
 
         if not result["OK"]:
-            print("ERROR: %s" % result["Message"])
+            print(f"ERROR: {result['Message']}")
         else:
             pprint.pprint(result["Value"])
 
@@ -190,7 +190,7 @@ class VirtualMachineCLI(CLI):
         result = ce.getVMStatus(vmID)
 
         if not result["OK"]:
-            print("ERROR: %s" % result["Message"])
+            print(f"ERROR: {result['Message']}")
         else:
             print(result["Value"]["status"])
 
@@ -206,7 +206,7 @@ class VirtualMachineCLI(CLI):
         result = ce.assignFloatingIP(vmID)
 
         if not result["OK"]:
-            print("ERROR: %s" % result["Message"])
+            print(f"ERROR: {result['Message']}")
         else:
             print(result["Value"])
 
@@ -247,7 +247,7 @@ class VirtualMachineCLI(CLI):
         result = ce.createInstance(diracVMID)
 
         if not result["OK"]:
-            print("ERROR: %s" % result["Message"])
+            print(f"ERROR: {result['Message']}")
         else:
             print(result["Value"])
 
@@ -264,6 +264,6 @@ class VirtualMachineCLI(CLI):
         result = ce.stopVM(vmID)
 
         if not result["OK"]:
-            print("ERROR: %s" % result["Message"])
+            print(f"ERROR: {result['Message']}")
         else:
             print("VM stopped")

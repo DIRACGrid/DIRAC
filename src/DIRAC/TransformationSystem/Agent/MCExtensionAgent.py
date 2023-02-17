@@ -37,11 +37,9 @@ class MCExtensionAgent(AgentModule):
     def initialize(self):
         """Sets defaults"""
 
-        gLogger.info("Will consider the following transformation types: %s" % str(self.transformationTypes))
-        gLogger.info("Will create a maximum of %s tasks per iteration" % self.maxIterationTasks)
-        gLogger.info(
-            "Will not submit tasks for transformations with failure rate greater than %s%%" % (self.maxFailRate)
-        )
+        gLogger.info(f"Will consider the following transformation types: {str(self.transformationTypes)}")
+        gLogger.info(f"Will create a maximum of {self.maxIterationTasks} tasks per iteration")
+        gLogger.info(f"Will not submit tasks for transformations with failure rate greater than {self.maxFailRate}%")
         gLogger.info("Will not submit tasks for transformations with more than %d waiting jobs" % self.maxWaitingJobs)
 
         return S_OK()
@@ -70,7 +68,7 @@ class MCExtensionAgent(AgentModule):
         res = self.transClient.getTransformationTaskStats(transID)
         if not res["OK"]:
             if res["Message"] != "No records found":
-                gLogger.error("Failed to get task statistics", "{} {}".format(transID, res["Message"]))
+                gLogger.error("Failed to get task statistics", f"{transID} {res['Message']}")
                 return res
             else:
                 statusDict = {}
@@ -88,7 +86,7 @@ class MCExtensionAgent(AgentModule):
         # Extend the transformation by the determined number of tasks
         res = self.transClient.extendTransformation(transID, numberOfTasks)
         if not res["OK"]:
-            gLogger.error("Failed to extend transformation", "{} {}".format(transID, res["Message"]))
+            gLogger.error("Failed to extend transformation", f"{transID} {res['Message']}")
             return res
         gLogger.info("Successfully extended transformation %d by %d tasks" % (transID, numberOfTasks))
         return S_OK()

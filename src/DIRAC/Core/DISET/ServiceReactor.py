@@ -76,7 +76,7 @@ class ServiceReactor:
 
         # Loop again to include the GW in case there is one (included in the __init__)
         for serviceName in self.__services:
-            gLogger.info("Initializing %s" % serviceName)
+            gLogger.info(f"Initializing {serviceName}")
             result = self.__services[serviceName].initialize()
             if not result["OK"]:
                 return result
@@ -99,7 +99,7 @@ class ServiceReactor:
             protocol = svcCfg.getProtocol()
             port = svcCfg.getPort()
             if not port:
-                return S_ERROR("No port defined for service %s" % serviceName)
+                return S_ERROR(f"No port defined for service {serviceName}")
             if protocol not in gProtocolDict:
                 return S_ERROR(f"Protocol {protocol} is not known for service {serviceName}")
             self.__listeningConnections[serviceName] = {"port": port, "protocol": protocol}
@@ -113,13 +113,11 @@ class ServiceReactor:
                     if kw == "timeout":
                         value = int(value)
                     transportArgs[kw] = value
-            gLogger.verbose("Initializing %s transport" % protocol, svcCfg.getURL())
+            gLogger.verbose(f"Initializing {protocol} transport", svcCfg.getURL())
             transport = gProtocolDict[protocol]["transport"](("", port), bServerMode=True, **transportArgs)
             retVal = transport.initAsServer()
             if not retVal["OK"]:
-                return S_ERROR(
-                    "Cannot start listening connection for service {}: {}".format(serviceName, retVal["Message"])
-                )
+                return S_ERROR(f"Cannot start listening connection for service {serviceName}: {retVal['Message']}")
             self.__listeningConnections[serviceName]["transport"] = transport
             self.__listeningConnections[serviceName]["socket"] = transport.getSocket()
         return S_OK()
@@ -149,7 +147,7 @@ class ServiceReactor:
             self.__closeListeningConnections()
             return result
         for svcName in self.__listeningConnections:
-            gLogger.always("Listening at %s" % self.__services[svcName].getConfig().getURL())
+            gLogger.always(f"Listening at {self.__services[svcName].getConfig().getURL()}")
 
         isMultiProcessingAllowed = False
         for svcName in self.__listeningConnections:
@@ -226,7 +224,7 @@ class ServiceReactor:
             # Is it banned?
             clientIP = clientTransport.getRemoteAddress()[0]
             if clientIP in Registry.getBannedIPs():
-                gLogger.warn("Client connected from banned ip %s" % clientIP)
+                gLogger.warn(f"Client connected from banned ip {clientIP}")
                 clientTransport.close()
                 continue
             # Handle connection

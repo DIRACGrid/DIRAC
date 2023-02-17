@@ -138,12 +138,12 @@ class DIRACCAProxyProvider(ProxyProvider):
         try:
             userNIDs = [self.fields2nid[f.split("=")[0]] for f in userDN.lstrip("/").split("/")]
         except (ValueError, KeyError) as e:
-            return S_ERROR("Unknown DN field in used DN: %s" % e)
+            return S_ERROR(f"Unknown DN field in used DN: {e}")
         nidOrder = [self.fields2nid[f] for f in self.dnList]
         for index, nid in enumerate(userNIDs):
             if nid not in nidOrder:
                 return S_ERROR(
-                    '"%s" field not found in order.' % self.nid2defField.get(nid, min(self.nid2fields[nid], key=len))
+                    f'"{self.nid2defField.get(nid, min(self.nid2fields[nid], key=len))}" field not found in order.'
                 )
             if index > nidOrder.index(nid):
                 return S_ERROR("Bad DNs order")
@@ -169,21 +169,19 @@ class DIRACCAProxyProvider(ProxyProvider):
 
         for field, values in dnInfoDict.items():
             nid = self.fields2nid[field]
-            err = 'Current DN is invalid, "%s" field' % field
+            err = f'Current DN is invalid, "{field}" field'
             if nid not in self.supplied + self.match + self.optional:
-                return S_ERROR("%s is not found for current CA." % err)
+                return S_ERROR(f"{err} is not found for current CA.")
             if nid in self.match and not self.dnInfoDictCA[field] == values:
-                return S_ERROR(
-                    "{} must be /{}={}.".format(err, field, ("/%s=" % field).joing(self.dnInfoDictCA[field]))
-                )
+                return S_ERROR(f"{err} must be /{field}={('/%s=' % field).joing(self.dnInfoDictCA[field])}.")
             if nid in self.maxDict:
                 rangeMax = list(range(min(len(values), len(self.maxDict[nid]))))
                 if any([True if len(values[i]) > self.maxDict[nid][i] else False for i in rangeMax]):
-                    return S_ERROR("{} values must be less then {}.".format(err, ", ".join(self.maxDict[nid])))
+                    return S_ERROR(f"{err} values must be less then {', '.join(self.maxDict[nid])}.")
             if nid in self.minDict:
                 rangeMin = list(range(min(len(values), len(self.minDict[nid]))))
                 if any([True if len(values[i]) < self.minDict[nid][i] else False for i in rangeMin]):
-                    return S_ERROR("{} values must be more then {}.".format(err, ", ".join(self.minDict[nid])))
+                    return S_ERROR(f"{err} values must be more then {', '.join(self.minDict[nid])}.")
 
             result = self.__fillX509Name(field, values)
             if not result["OK"]:
@@ -246,14 +244,14 @@ class DIRACCAProxyProvider(ProxyProvider):
                     if field in self.dnInfoDictCA:
                         values = self.dnInfoDictCA[field]
                 if not values:
-                    return S_ERROR('Not found "%s" match DN in CA' % field)
+                    return S_ERROR(f'Not found "{field}" match DN in CA')
             for field in self.nid2fields[nid]:
                 if kwargs.get(field):
                     values = kwargs[field] if isinstance(kwargs[field], list) else [kwargs[field]]
             if not values and nid in self.supplied:
                 # Search default value
                 if nid not in self.nid2defField:
-                    return S_ERROR('No values set for "%s" DN' % min(self.nid2fields[nid], key=len))
+                    return S_ERROR(f'No values set for "{min(self.nid2fields[nid], key=len)}" DN')
                 values = self.parameters[nid]
 
             result = self.__fillX509Name(field, values)
@@ -330,7 +328,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         dnInfoDict = collections.OrderedDict()
         for f, v in [f.split("=") for f in dn.lstrip("/").split("/")]:
             if not v:
-                return S_ERROR('No value set for "%s"' % f)
+                return S_ERROR(f'No value set for "{f}"')
             if f not in dnInfoDict:
                 dnInfoDict[f] = [v]
             else:
@@ -359,7 +357,7 @@ class DIRACCAProxyProvider(ProxyProvider):
                     )
                     == 1
                 ):
-                    return S_ERROR('Cannot set "%s" field.' % field)
+                    return S_ERROR(f'Cannot set "{field}" field.')
         return S_OK()
 
     def __createCertM2Crypto(self):

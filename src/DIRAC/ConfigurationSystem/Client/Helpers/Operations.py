@@ -155,13 +155,13 @@ class Operations:
                 pass
 
     def __getSearchPaths(self):
-        paths = ["/Operations/Defaults", "/Operations/%s" % self.__setup]
+        paths = ["/Operations/Defaults", f"/Operations/{self.__setup}"]
         if not self.__vo:
             globalVO = CSGlobals.getVO()
             if not globalVO:
                 return paths
             self.__vo = CSGlobals.getVO()
-        paths.append("/Operations/%s/Defaults" % self.__vo)
+        paths.append(f"/Operations/{self.__vo}/Defaults")
         paths.append(f"/Operations/{self.__vo}/{self.__setup}")
         return paths
 
@@ -172,10 +172,10 @@ class Operations:
         cacheCFG = self.__getCache()
         section = cacheCFG.getRecursive(sectionPath)
         if not section:
-            return S_ERROR(ESECTION, "%s in Operations does not exist" % sectionPath)
+            return S_ERROR(ESECTION, f"{sectionPath} in Operations does not exist")
         sectionCFG = section["value"]
         if isinstance(sectionCFG, str):
-            return S_ERROR("%s in Operations is not a section" % sectionPath)
+            return S_ERROR(f"{sectionPath} in Operations is not a section")
         return S_OK(sectionCFG)
 
     def getSections(self, sectionPath, listOrdered=False):

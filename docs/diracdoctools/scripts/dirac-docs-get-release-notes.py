@@ -77,7 +77,7 @@ def githubSetup(GITHUBTOKEN=""):
         except ImportError:
             raise ImportError(G_ERROR)
     if GITHUBTOKEN:
-        SESSION.headers.update({"Accept": "application/vnd.github.v3+json", "Authorization": "token %s " % GITHUBTOKEN})
+        SESSION.headers.update({"Accept": "application/vnd.github.v3+json", "Authorization": f"token {GITHUBTOKEN} "})
 
 
 def gitlabSetup(GITLABTOKEN=""):
@@ -428,7 +428,7 @@ class GithubInterface:
             self.owner = repos[0]
             self.repo = repos[1]
         else:
-            raise RuntimeError("Cannot parse repo option: %s" % repo)
+            raise RuntimeError(f"Cannot parse repo option: {repo}")
 
         for var, val in sorted(vars(parsed).items()):
             log.info("Using options: %s = %s", var, pformat(val))
@@ -442,7 +442,7 @@ class GithubInterface:
         log = LOGGER.getChild("GitHub")
         options = dict(self._options)
         options["action"] = action
-        ghURL = "https://api.github.com/repos/%(owner)s/%(repo)s/%(action)s" % options
+        ghURL = f"https://api.github.com/repos/{options['owner']}/{options['repo']}/{options['action']}"
         log.debug("Calling: %s", ghURL)
         return ghURL
 
@@ -456,7 +456,7 @@ class GithubInterface:
 
     def getGitlabPRs(self, state="opened"):
         """Get PRs in the gitlab repository."""
-        glURL = self._gitlab("merge_requests?state=%s" % state)
+        glURL = self._gitlab(f"merge_requests?state={state}")
         return req2Json(glURL)
 
     def getGithubPRs(self, state="open", mergedOnly=False, perPage=100):
@@ -506,7 +506,7 @@ class GithubInterface:
         # Get all tags
         tags = req2Json(url=self._github("tags"))
         if isinstance(tags, dict) and "Not Found" in tags.get("message"):
-            raise RuntimeError("Package not found: %s" % str(self))
+            raise RuntimeError(f"Package not found: {str(self)}")
 
         if sinceTag:
             for tag in tags:
@@ -514,7 +514,7 @@ class GithubInterface:
                     latestTag = tag
                     break
             else:
-                raise ValueError("Tag %s not found" % sinceTag)
+                raise ValueError(f"Tag {sinceTag} not found")
         else:
             sortedTags = sorted(tags, key=lambda tag: LooseVersion(tag["name"]), reverse=True)
             latestTag = sortedTags[0]
@@ -523,7 +523,7 @@ class GithubInterface:
 
         # Use the sha of the commit to finally retrieve the date
         latestTagCommitSha = latestTag["commit"]["sha"]
-        commitInfo = req2Json(url=self._github("git/commits/%s" % latestTagCommitSha))
+        commitInfo = req2Json(url=self._github(f"git/commits/{latestTagCommitSha}"))
 
         startDate = dateutil.parser.isoparse(commitInfo["committer"]["date"])
 
@@ -615,16 +615,16 @@ class GithubInterface:
         # CAUTION: no [tag] will be written
         if not prs:
             if headerMessage:
-                releaseNotes += "%s\n\n" % headerMessage
+                releaseNotes += f"{headerMessage}\n\n"
             if footerMessage:
-                releaseNotes += "%s\n" % footerMessage
+                releaseNotes += f"{footerMessage}\n"
             return releaseNotes
 
         prMarker = "#" if self.useGithub else "!"
         for baseBranch, pr in prs.items():
-            releaseNotes += "[%s]\n\n" % baseBranch
+            releaseNotes += f"[{baseBranch}]\n\n"
             if headerMessage:
-                releaseNotes += "%s\n\n" % headerMessage
+                releaseNotes += f"{headerMessage}\n\n"
             systemChangesDict = defaultdict(list)
             for prid, content in pr.items():
                 notes = content["comment"]
@@ -641,13 +641,13 @@ class GithubInterface:
 
             for system, changes in systemChangesDict.items():
                 if system:
-                    releaseNotes += "*%s\n\n" % system
+                    releaseNotes += f"*{system}\n\n"
                 releaseNotes += "\n".join(changes)
                 releaseNotes += "\n\n"
             releaseNotes += "\n"
 
             if footerMessage:
-                releaseNotes += "\n%s\n" % footerMessage
+                releaseNotes += f"\n{footerMessage}\n"
 
         return releaseNotes
 

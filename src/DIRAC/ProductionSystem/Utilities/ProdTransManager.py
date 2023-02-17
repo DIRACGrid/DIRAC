@@ -18,7 +18,7 @@ class ProdTransManager:
 
         :param list transIDs: a list of Transformation IDs
         """
-        gLogger.notice("Deleting transformations %s from the TS" % transIDs)
+        gLogger.notice(f"Deleting transformations {transIDs} from the TS")
 
         for transID in transIDs:
             res = self.transClient.deleteTransformation(transID)
@@ -36,7 +36,7 @@ class ProdTransManager:
         if res["OK"]:
             transList = res["Value"]
 
-        gLogger.notice("Deleting production transformations %s from the TS" % transList)
+        gLogger.notice(f"Deleting production transformations {transList} from the TS")
 
         for trans in transList:
             transID = trans["TransformationID"]

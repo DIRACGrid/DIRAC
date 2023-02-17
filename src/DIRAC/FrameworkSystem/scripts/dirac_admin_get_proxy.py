@@ -57,7 +57,7 @@ class Params:
             fields = [f.strip() for f in arg.split(":")]
             self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
         except Exception:
-            gLogger.notice("Can't parse %s time! Is it a HH:MM?" % arg)
+            gLogger.notice(f"Can't parse {arg} time! Is it a HH:MM?")
             return S_ERROR("Can't parse time argument")
         return S_OK()
 
@@ -112,11 +112,11 @@ def main():
         userName = userDN
         retVal = Registry.getDNForUsername(userName)
         if not retVal["OK"]:
-            gLogger.notice("Cannot discover DN for username {}\n\t{}".format(userName, retVal["Message"]))
+            gLogger.notice(f"Cannot discover DN for username {userName}\n\t{retVal['Message']}")
             DIRAC.exit(2)
         DNList = retVal["Value"]
         if len(DNList) > 1:
-            gLogger.notice("Username %s has more than one DN registered" % userName)
+            gLogger.notice(f"Username {userName} has more than one DN registered")
             ind = 0
             for dn in DNList:
                 gLogger.notice("%d %s" % (ind, dn))
@@ -134,7 +134,7 @@ def main():
         if not userName:
             result = Registry.getUsernameForDN(userDN)
             if not result["OK"]:
-                gLogger.notice("DN '%s' is not registered in DIRAC" % userDN)
+                gLogger.notice(f"DN '{userDN}' is not registered in DIRAC")
                 DIRAC.exit(2)
             userName = result["Value"]
         params.proxyPath = f"{os.getcwd()}/proxy.{userName}.{userGroup}"
@@ -152,14 +152,14 @@ def main():
             userDN, userGroup, limited=params.limited, requiredTimeLeft=params.proxyLifeTime
         )
     if not result["OK"]:
-        gLogger.notice("Proxy file cannot be retrieved: %s" % result["Message"])
+        gLogger.notice(f"Proxy file cannot be retrieved: {result['Message']}")
         DIRAC.exit(2)
     chain = result["Value"]
     result = chain.dumpAllToFile(params.proxyPath)
     if not result["OK"]:
-        gLogger.notice("Proxy file cannot be written to {}: {}".format(params.proxyPath, result["Message"]))
+        gLogger.notice(f"Proxy file cannot be written to {params.proxyPath}: {result['Message']}")
         DIRAC.exit(2)
-    gLogger.notice("Proxy downloaded to %s" % params.proxyPath)
+    gLogger.notice(f"Proxy downloaded to {params.proxyPath}")
     DIRAC.exit(0)
 
 

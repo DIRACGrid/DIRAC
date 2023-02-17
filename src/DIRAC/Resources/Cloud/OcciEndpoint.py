@@ -112,16 +112,16 @@ class OcciEndpoint(Endpoint):
         try:
             keystoneURL = result.headers["www-authenticate"][14:-1]
         except BaseException:
-            return S_ERROR("Failed to find Keystone URL in %s" % result.headers["www-authenticate"])
+            return S_ERROR(f"Failed to find Keystone URL in {result.headers['www-authenticate']}")
 
         return S_OK(keystoneURL)
 
     def __getSchemaDefinitions(self):
         try:
-            response = self.session.get("%s/-/" % self.serviceUrl, headers={"Accept": "text/plain,text/occi"})
+            response = self.session.get(f"{self.serviceUrl}/-/", headers={"Accept": "text/plain,text/occi"})
 
         except Exception as exc:
-            return S_ERROR("Failed to get schema definition: %s" % str(exc))
+            return S_ERROR(f"Failed to get schema definition: {str(exc)}")
 
         if response.status_code != 200:
             return S_ERROR("Failed to get schema definition", response.text)
@@ -151,7 +151,7 @@ class OcciEndpoint(Endpoint):
                         location = tmp
 
                 if className is None:
-                    return S_ERROR("Failed to get schema definition:", "no class for category %s" % categoryName)
+                    return S_ERROR("Failed to get schema definition:", f"no class for category {categoryName}")
                 self.scheme.setdefault(className, {})
                 self.scheme[className][categoryName] = {}
                 if scheme is not None:
@@ -199,7 +199,7 @@ class OcciEndpoint(Endpoint):
         result = self.__getSchemaDefinitions()
         if not result["OK"]:
             return result
-        self.computeUrl = "%s/compute/" % (self.serviceUrl)
+        self.computeUrl = f"{self.serviceUrl}/compute/"
         return S_OK()
 
     def createInstances(self, vmsToSubmit):
@@ -226,7 +226,7 @@ class OcciEndpoint(Endpoint):
 
         # We failed submission utterly
         if not outputDict:
-            return S_ERROR("No VM submitted: %s" % message)
+            return S_ERROR(f"No VM submitted: {message}")
 
         return S_OK(outputDict)
 
@@ -282,12 +282,12 @@ class OcciEndpoint(Endpoint):
         for cat in ["user_data", imageID, flavor]:
             item = self.__renderCategory(cat, "mixin")
             if item is None:
-                return S_ERROR("Category %s not defined in the scheme" % cat)
+                return S_ERROR(f"Category {cat} not defined in the scheme")
             data += item
-        data += 'X-OCCI-Attribute: occi.core.id="%s"\n' % str(uuid.uuid4())
-        data += 'X-OCCI-Attribute: occi.core.title="%s"\n' % instanceID
-        data += 'X-OCCI-Attribute: occi.compute.hostname="%s"\n' % instanceID
-        data += 'X-OCCI-Attribute: org.openstack.compute.user_data="%s"' % base64.b64encode(userData)
+        data += f'X-OCCI-Attribute: occi.core.id="{str(uuid.uuid4())}"\n'
+        data += f'X-OCCI-Attribute: occi.core.title="{instanceID}"\n'
+        data += f'X-OCCI-Attribute: occi.compute.hostname="{instanceID}"\n'
+        data += f'X-OCCI-Attribute: org.openstack.compute.user_data="{base64.b64encode(userData)}"'
         # data += 'X-OCCI-Attribute: org.openstack.credentials.publickey.data="ssh-rsa ' + sshPublicKey + ' vmdirac"'
 
         del self.authArgs["data"]
@@ -301,7 +301,7 @@ class OcciEndpoint(Endpoint):
             nodeID = result.text.split()[-1]
             return S_OK((nodeID, None))
 
-        return S_ERROR("Failed VM creation: %s" % result.text)
+        return S_ERROR(f"Failed VM creation: {result.text}")
 
     def getVMIDs(self):
         """Get all the VM IDs on the endpoint
@@ -336,7 +336,7 @@ class OcciEndpoint(Endpoint):
         try:
             response = self.session.get(url)
         except Exception as e:
-            return S_ERROR("Cannot get node details for %s (" % nodeID + str(e) + ")")
+            return S_ERROR(f"Cannot get node details for {nodeID} (" + str(e) + ")")
 
         status = "Unknown"
         for item in response.text.split("\n"):
@@ -350,7 +350,7 @@ class OcciEndpoint(Endpoint):
         :param str networkName: network name
         :return: S_OK|S_ERROR network object in case of S_OK
         """
-        networkUrl = "%s/network/" % self.serviceUrl
+        networkUrl = f"{self.serviceUrl}/network/"
         try:
             response = self.session.get(networkUrl)
         except Exception as e:
@@ -402,7 +402,7 @@ class OcciEndpoint(Endpoint):
         try:
             response = self.session.delete(url)
         except Exception as e:
-            return S_ERROR("Cannot delete node %s (" % nodeID + str(e) + ")")
+            return S_ERROR(f"Cannot delete node {nodeID} (" + str(e) + ")")
 
         if response.status_code == 200:
             return S_OK(response.text)
@@ -437,12 +437,12 @@ class OcciEndpoint(Endpoint):
             'Category: networkinterface;scheme="http://schemas.ogf.org/occi/infrastructure#";'
             'class="kind";location="/link/networkinterface/";title="networkinterface link"\n'
         )
-        data += 'X-OCCI-Attribute: occi.core.source="%s"\n' % nodeRef
+        data += f'X-OCCI-Attribute: occi.core.source="{nodeRef}"\n'
         data += f'X-OCCI-Attribute: occi.core.target="{self.serviceUrl}/network/{network}"\n'
-        data += 'X-OCCI-Attribute: occi.core.id="%s"' % networkInterfaceID
+        data += f'X-OCCI-Attribute: occi.core.id="{networkInterfaceID}"'
 
         headers["Content-Length"] = str(len(data))
-        result = self.session.post("%s/link/networkinterface/" % self.serviceUrl, headers=headers, data=data)
+        result = self.session.post(f"{self.serviceUrl}/link/networkinterface/", headers=headers, data=data)
 
         if result.status_code != 201:
             return S_ERROR(result.text)

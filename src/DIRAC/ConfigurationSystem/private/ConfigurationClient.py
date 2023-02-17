@@ -136,7 +136,7 @@ class ConfigurationClient:
 
         if optionValue is None:
             return S_ERROR(
-                "Path %s does not exist or it's not an option" % optionPath,
+                f"Path {optionPath} does not exist or it's not an option",
                 callStack=["ConfigurationClient.getOption"],
             )
 
@@ -195,7 +195,7 @@ class ConfigurationClient:
         if isinstance(sectionList, list):
             return S_OK(sectionList)
         else:
-            return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
+            return S_ERROR(f"Path {sectionPath} does not exist or it's not a section")
 
     def getOptions(self, sectionPath, listOrdered=True):
         """Get configuration options
@@ -210,7 +210,7 @@ class ConfigurationClient:
         if isinstance(optionList, list):
             return S_OK(optionList)
         else:
-            return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
+            return S_ERROR(f"Path {sectionPath} does not exist or it's not a section")
 
     def getOptionsDict(self, sectionPath):
         """Get configuration options in dictionary
@@ -227,7 +227,7 @@ class ConfigurationClient:
                 optionsDict[option] = gConfigurationData.extractOptionFromCFG(f"{sectionPath}/{option}")
             return S_OK(optionsDict)
         else:
-            return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
+            return S_ERROR(f"Path {sectionPath} does not exist or it's not a section")
 
     def getOptionsDictRecursively(self, sectionPath):
         """Get configuration options in dictionary recursively
@@ -237,7 +237,7 @@ class ConfigurationClient:
         :return: S_OK(dict)/S_ERROR()
         """
         if not gConfigurationData.mergedCFG.isSection(sectionPath):
-            return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
+            return S_ERROR(f"Path {sectionPath} does not exist or it's not a section")
         return S_OK(gConfigurationData.mergedCFG.getAsDict(sectionPath))
 
     def getConfigurationTree(self, root="", *filters):
@@ -272,7 +272,7 @@ class ConfigurationClient:
             # get options of current root
             options = self.getOptionsDict(root)
             if not options["OK"]:
-                return S_ERROR("getOptionsDict() failed with message: %s" % options["Message"])
+                return S_ERROR(f"getOptionsDict() failed with message: {options['Message']}")
 
             for key, value in options["Value"].items():
                 path = cfgPath(root, key)
@@ -288,13 +288,13 @@ class ConfigurationClient:
             # get subsections of the root
             sections = self.getSections(root)
             if not sections["OK"]:
-                return S_ERROR("getSections() failed with message: %s" % sections["Message"])
+                return S_ERROR(f"getSections() failed with message: {sections['Message']}")
 
             # recursively go through subsections and get their subsections
             for section in sections["Value"]:
                 subtree = self.getConfigurationTree(f"{root}/{section}", *filters)
                 if not subtree["OK"]:
-                    return S_ERROR("getConfigurationTree() failed with message: %s" % sections["Message"])
+                    return S_ERROR(f"getConfigurationTree() failed with message: {sections['Message']}")
                 result.update(subtree["Value"])
 
         return S_OK(result)

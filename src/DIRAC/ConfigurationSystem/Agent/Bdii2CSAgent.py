@@ -86,7 +86,7 @@ class Bdii2CSAgent(AgentModule):
                         self.voName.append(vomsVO)
 
         if self.voName:
-            self.log.info("Agent will manage VO(s) %s" % self.voName)
+            self.log.info(f"Agent will manage VO(s) {self.voName}")
         else:
             self.log.fatal("VirtualOrganization option not defined for agent")
             return S_ERROR()
@@ -167,14 +167,14 @@ class Bdii2CSAgent(AgentModule):
                     body += ceString
 
             if siteDict:
-                body = "\nWe are glad to inform You about new CE(s) possibly suitable for %s:\n" % vo + body
+                body = f"\nWe are glad to inform You about new CE(s) possibly suitable for {vo}:\n" + body
                 body += "\n\nTo suppress information about CE add its name to BannedCEs list.\n"
-                body += "Add new Sites/CEs for vo %s with the command:\n" % vo
-                body += "dirac-admin-add-resources --vo %s --ce\n" % vo
+                body += f"Add new Sites/CEs for vo {vo} with the command:\n"
+                body += f"dirac-admin-add-resources --vo {vo} --ce\n"
 
             if unknownCEs:
                 body += "\n\n"
-                body += "There is no (longer) information about the following CEs for the %s VO.\n" % vo
+                body += f"There is no (longer) information about the following CEs for the {vo} VO.\n"
                 body += "\n".join(sorted(unknownCEs))
                 body += "\n\n"
 
@@ -207,7 +207,7 @@ class Bdii2CSAgent(AgentModule):
             if resultAlt["OK"]:
                 totalResult["Value"].update(resultAlt["Value"])
             else:
-                self.log.error("Failed getting information from %s " % bdii, resultAlt["Message"])
+                self.log.error(f"Failed getting information from {bdii} ", resultAlt["Message"])
                 message = (message + "\n" + resultAlt["Message"]).strip()
 
         if mainResult["OK"]:
@@ -264,7 +264,7 @@ class Bdii2CSAgent(AgentModule):
             for ce in ces:
                 res = getCESiteMapping(ce)
                 if not res["OK"]:
-                    self.log.error("Failed to get DIRAC site name for ce", "{}: {}".format(ce, res["Message"]))
+                    self.log.error("Failed to get DIRAC site name for ce", f"{ce}: {res['Message']}")
                     continue
                 # if the ce is not in the CS the returned value will be empty
                 if ce in res["Value"]:
@@ -315,7 +315,7 @@ class Bdii2CSAgent(AgentModule):
                 if not result["OK"]:
                     self.log.error("Error while committing to CS", result["Message"])
                 else:
-                    self.log.info("Successfully committed %d changes to CS" % len(changeList))
+                    self.log.info(f"Successfully committed {len(changeList)} changes to CS")
                 return result
         else:
             self.log.info("No changes found")

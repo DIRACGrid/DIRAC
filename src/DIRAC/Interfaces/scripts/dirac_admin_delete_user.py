@@ -26,7 +26,7 @@ def main():
     exitCode = 0
     errorList = []
 
-    choice = input("Are you sure you want to delete user/s %s? yes/no [no]: " % ", ".join(args))
+    choice = input(f"Are you sure you want to delete user/s {', '.join(args)}? yes/no [no]: ")
     choice = choice.lower()
     if choice not in ("yes", "y"):
         print("Delete aborted")
@@ -34,7 +34,7 @@ def main():
 
     for user in args:
         if not diracAdmin.csDeleteUser(user):
-            errorList.append(("delete user", "Cannot delete user %s" % user))
+            errorList.append(("delete user", f"Cannot delete user {user}"))
             exitCode = 255
 
     if not exitCode:

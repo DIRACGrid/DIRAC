@@ -41,21 +41,21 @@ class RssConfiguration:
         Gets from <pathToRSSConfiguration>/Config the value of State
         """
 
-        return self.opsHelper.getValue("%s/Config/State" % _rssConfigPath, default)
+        return self.opsHelper.getValue(f"{_rssConfigPath}/Config/State", default)
 
     def getConfigCache(self, default=300):
         """
         Gets from <pathToRSSConfiguration>/Config the value of Cache
         """
 
-        return self.opsHelper.getValue("%s/Config/Cache" % _rssConfigPath, default)
+        return self.opsHelper.getValue(f"{_rssConfigPath}/Config/Cache", default)
 
     def getConfigFromAddress(self, default=None):
         """
         Gets from <pathToRSSConfiguration>/Config the value of FromAddress
         """
 
-        return self.opsHelper.getValue("%s/Config/FromAddress" % _rssConfigPath, default)
+        return self.opsHelper.getValue(f"{_rssConfigPath}/Config/FromAddress", default)
 
     def getConfigStatusType(self, elementType=None):
         """
@@ -65,7 +65,7 @@ class RssConfiguration:
 
         _DEFAULTS = ("all",)
 
-        res = self.opsHelper.getOptionsDict("%s/Config/StatusTypes" % _rssConfigPath)
+        res = self.opsHelper.getOptionsDict(f"{_rssConfigPath}/Config/StatusTypes")
 
         if res["OK"]:
             if elementType in res["Value"]:
@@ -82,7 +82,7 @@ def getPolicies():
     Returns from the OperationsHelper: <_rssConfigPath>/Policies
     """
 
-    return Utils.getCSTree("%s/Policies" % _rssConfigPath)
+    return Utils.getCSTree(f"{_rssConfigPath}/Policies")
 
 
 def getPolicyActions():
@@ -90,7 +90,7 @@ def getPolicyActions():
     Returns from the OperationsHelper: <_rssConfigPath>/PolicyActions
     """
 
-    return Utils.getCSTree("%s/PolicyActions" % _rssConfigPath)
+    return Utils.getCSTree(f"{_rssConfigPath}/PolicyActions")
 
 
 def getnotificationGroups():
@@ -98,7 +98,7 @@ def getnotificationGroups():
     Returns from the OperationsHelper: <_rssConfigPath>/PolicyActions
     """
 
-    return Utils.getCSTree("%s/Config" % _rssConfigPath)
+    return Utils.getCSTree(f"{_rssConfigPath}/Config")
 
 
 def getNotifications():
@@ -106,7 +106,7 @@ def getNotifications():
     Returns from the OperationsHelper: <_rssConfigPath>/Notification
     """
 
-    return Utils.getCSTree("%s/Notification" % _rssConfigPath)
+    return Utils.getCSTree(f"{_rssConfigPath}/Notification")
 
 
 def getValidElements():

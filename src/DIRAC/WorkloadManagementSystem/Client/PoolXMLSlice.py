@@ -48,14 +48,14 @@ class PoolXMLSlice:
             self.log.verbose(xmlSlice)
             with open(poolXMLCatName, "w") as poolSlice:
                 poolSlice.write(xmlSlice)
-            self.log.info("POOL XML Catalogue slice written to %s" % (poolXMLCatName))
+            self.log.info(f"POOL XML Catalogue slice written to {poolXMLCatName}")
             try:
                 # Temporary solution to the problem of storing the SE in the Pool XML slice
-                with open("%s.temp" % (poolXMLCatName), "w") as poolSlice_temp:
+                with open(f"{poolXMLCatName}.temp", "w") as poolSlice_temp:
                     xmlSlice = poolXMLCat.toXML(True)
                     poolSlice_temp.write(xmlSlice)
             except Exception as x:
-                self.log.warn("Attempted to write catalog also to %s.temp but this failed" % (poolXMLCatName))
+                self.log.warn(f"Attempted to write catalog also to {poolXMLCatName}.temp but this failed")
         except Exception as x:
             self.log.error(str(x))
             return S_ERROR("Exception during construction of POOL XML slice")

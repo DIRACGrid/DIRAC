@@ -118,7 +118,7 @@ def main():
                     maxDNLen = max(maxDNLen, len(userDN))
                     for group in uploadedInfo[userDN]:
                         maxGroupLen = max(maxGroupLen, len(group))
-                gLogger.notice(" {} | {} | Until (GMT)".format("DN".ljust(maxDNLen), "Group".ljust(maxGroupLen)))
+                gLogger.notice(f" {'DN'.ljust(maxDNLen)} | {'Group'.ljust(maxGroupLen)} | Until (GMT)")
                 for userDN in uploadedInfo:
                     for group in uploadedInfo[userDN]:
                         gLogger.notice(
@@ -134,7 +134,7 @@ def main():
         if infoDict["secondsLeft"] == 0:
             invalidProxy("Proxy is expired")
         if params.csEnabled and not infoDict["validGroup"]:
-            invalidProxy("Group %s is not valid" % infoDict["group"])
+            invalidProxy(f"Group {infoDict['group']} is not valid")
         if "hasVOMS" in infoDict and infoDict["hasVOMS"]:
             requiredVOMS = Registry.getVOMSAttributeForGroup(infoDict["group"])
             if "VOMS" not in infoDict or not infoDict["VOMS"]:
@@ -148,7 +148,7 @@ def main():
                 )
             result = VOMS.VOMS().getVOMSProxyInfo(infoDict["chain"], "actimeleft")
             if not result["OK"]:
-                invalidProxy("Cannot determine life time of VOMS attributes: %s" % result["Message"])
+                invalidProxy(f"Cannot determine life time of VOMS attributes: {result['Message']}")
             if int(result["Value"].strip()) == 0:
                 invalidProxy("VOMS attributes are expired")
 

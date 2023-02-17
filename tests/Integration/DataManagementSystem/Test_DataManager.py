@@ -50,7 +50,7 @@ try:
     if not vo:
         raise ValueError("Proxy has no VO")
 
-    DESTINATION_PATH = "/%s/test/unit-test/DataManager/" % vo
+    DESTINATION_PATH = f"/{vo}/test/unit-test/DataManager/"
 
 except Exception as e:  # pylint: disable=broad-except
     print(repr(e))
@@ -88,7 +88,7 @@ def test_putAndRegister(dm, tempFile):
         "\n\n#########################################################"
         "################\n\n\t\t\tPut and register test\n"
     )
-    lfn = os.path.join(DESTINATION_PATH, "putAndRegister/testFile.%s" % time.time())
+    lfn = os.path.join(DESTINATION_PATH, f"putAndRegister/testFile.{time.time()}")
     diracSE = "SE-1"
     putRes = dm.putAndRegister(lfn, tempFile, diracSE)
     removeRes = dm.removeFile(lfn)
@@ -103,7 +103,7 @@ def test_putAndRegisterReplicate(dm, tempFile):
     print(
         "\n\n#########################################################" "################\n\n\t\t\tReplication test\n"
     )
-    lfn = os.path.join(DESTINATION_PATH, "putAndRegisterReplicate/testFile.%s" % time.time())
+    lfn = os.path.join(DESTINATION_PATH, f"putAndRegisterReplicate/testFile.{time.time()}")
     diracSE = "SE-1"
     putRes = dm.putAndRegister(lfn, tempFile, diracSE)
     replicateRes = dm.replicateAndRegister(lfn, "SE-2")  # ,sourceSE='',destPath='',localCache='')
@@ -121,7 +121,7 @@ def test_putAndRegisterGetReplicaMetadata(dm, tempFile):
     print(
         "\n\n#########################################################" "################\n\n\t\t\tGet metadata test\n"
     )
-    lfn = os.path.join(DESTINATION_PATH, "putAndRegisterGetReplicaMetadata/testFile.%s" % time.time())
+    lfn = os.path.join(DESTINATION_PATH, f"putAndRegisterGetReplicaMetadata/testFile.{time.time()}")
     diracSE = "SE-1"
     putRes = dm.putAndRegister(lfn, tempFile, diracSE)
     metadataRes = dm.getReplicaMetadata(lfn, diracSE)
@@ -143,7 +143,7 @@ def test_putAndRegsiterGetAccessUrl(dm, tempFile):
         "\n\n#########################################################"
         "################\n\n\t\t\tGet Access Url test\n"
     )
-    lfn = os.path.join(DESTINATION_PATH, "putAndRegisterGetAccessUrl/testFile.%s" % time.time())
+    lfn = os.path.join(DESTINATION_PATH, f"putAndRegisterGetAccessUrl/testFile.{time.time()}")
     diracSE = "SE-1"
     putRes = dm.putAndRegister(lfn, tempFile, diracSE)
     getAccessUrlRes = dm.getReplicaAccessUrl(lfn, diracSE)
@@ -159,7 +159,7 @@ def test_putAndRegisterRemoveReplica(dm, tempFile):
         "\n\n#########################################################"
         "################\n\n\t\t\tRemove replica test\n"
     )
-    lfn = os.path.join(DESTINATION_PATH, "putAndRegisterRemoveReplica/testFile.%s" % time.time())
+    lfn = os.path.join(DESTINATION_PATH, f"putAndRegisterRemoveReplica/testFile.{time.time()}")
     diracSE = "SE-1"
     putRes = dm.putAndRegister(lfn, tempFile, diracSE)
     removeReplicaRes = dm.removeReplica(diracSE, lfn)
@@ -174,8 +174,8 @@ def test_putAndRegisterRemoveReplica(dm, tempFile):
 
 
 def test_registerFile(dm, tempFile):
-    lfn = os.path.join(DESTINATION_PATH, "registerFile/testFile.%s" % time.time())
-    physicalFile = "srm://host:port/srm/managerv2?SFN=/sa/path%s" % lfn
+    lfn = os.path.join(DESTINATION_PATH, f"registerFile/testFile.{time.time()}")
+    physicalFile = f"srm://host:port/srm/managerv2?SFN=/sa/path{lfn}"
     fileSize = 10000
     storageElementName = "SE-1"
     fileGuid = makeGuid()
@@ -193,8 +193,8 @@ def test_registerReplica(dm, tempFile):
         "\n\n#########################################################"
         "################\n\n\t\t\tRegister replica test\n"
     )
-    lfn = os.path.join(DESTINATION_PATH, "registerReplica/testFile.%s" % time.time())
-    physicalFile = "srm://host:port/srm/managerv2?SFN=/sa/path%s" % lfn
+    lfn = os.path.join(DESTINATION_PATH, f"registerReplica/testFile.{time.time()}")
+    physicalFile = f"srm://host:port/srm/managerv2?SFN=/sa/path{lfn}"
     fileSize = 10000
     storageElementName = "SE-1"
     fileGuid = makeGuid()
@@ -213,7 +213,7 @@ def test_registerReplica(dm, tempFile):
 
 def test_putAndRegisterGet(dm, tempFile):
     print("\n\n#########################################################" "################\n\n\t\t\tGet file test\n")
-    lfn = os.path.join(DESTINATION_PATH, "putAndRegisterGet/testFile.%s" % time.time())
+    lfn = os.path.join(DESTINATION_PATH, f"putAndRegisterGet/testFile.{time.time()}")
     diracSE = "SE-1"
     putRes = dm.putAndRegister(lfn, tempFile, diracSE)
     getRes = dm.getFile(lfn)
@@ -229,7 +229,7 @@ def test_putAndRegisterGet(dm, tempFile):
 
 
 def test_cleanDirectory(dm, tempFile, fc):
-    lfn = os.path.join(DESTINATION_PATH, "cleanDirectory/testFile.%s" % time.time())
+    lfn = os.path.join(DESTINATION_PATH, f"cleanDirectory/testFile.{time.time()}")
     diracSE = "SE-1"
     putRes = dm.putAndRegister(lfn, tempFile, diracSE)
     assertResult(putRes, lfn)
@@ -242,7 +242,7 @@ def test_cleanDirectory(dm, tempFile, fc):
     assert cleanRes["OK"], cleanRes.get("Message", "All OK")
     assertIsDir(fc.isDirectory(folderLFN), False)
 
-    baseFolder = "/%s/test" % vo
+    baseFolder = f"/{vo}/test"
     assertIsDir(fc.isDirectory(baseFolder), True)
     cleanRes = dm.cleanLogicalDirectory(baseFolder)
     assert cleanRes["OK"], cleanRes.get("Message", "All OK")

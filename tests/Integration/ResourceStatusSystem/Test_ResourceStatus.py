@@ -105,7 +105,7 @@ def test_addAndRemove(rssClient: ResourceStatusClient):
     assert res["Value"][0][0] == "TestSite1234"
     assert res["Value"][0][1] == "statusType"
     assert res["Value"][0][2] == "Active"
-    print("inserted lastCheckTime and DateEffective: {}, {}".format(res["Value"][0][7], res["Value"][0][4]))
+    print(f"inserted lastCheckTime and DateEffective: {res['Value'][0][7]}, {res['Value'][0][4]}")
 
     # try to select the previously entered element from the Log table (it should NOT be there)
     res = rssClient.selectStatusElement("Site", "Log", "TestSite1234")
@@ -138,7 +138,7 @@ def test_addAndRemove(rssClient: ResourceStatusClient):
     assert res["Value"][0][0] == "TestName1234"
     assert res["Value"][0][1] == "statusType"
     assert res["Value"][0][2] == "Banned"
-    print("inserted lastCheckTime and DateEffective: {}, {}".format(res["Value"][0][7], res["Value"][0][4]))
+    print(f"inserted lastCheckTime and DateEffective: {res['Value'][0][7]}, {res['Value'][0][4]}")
 
     # try to select the previously entered element from the Log table (now it should be there)
     res = rssClient.selectStatusElement("Resource", "Log", "TestName1234")
@@ -182,7 +182,7 @@ def test_addAndRemove(rssClient: ResourceStatusClient):
     assert res["Value"][0][0] == "TestName1234"
     assert res["Value"][0][1] == "statusType"
     assert res["Value"][0][2] == "Active"
-    print("inserted lastCheckTime and DateEffective: {}, {}".format(res["Value"][0][7], res["Value"][0][4]))
+    print(f"inserted lastCheckTime and DateEffective: {res['Value'][0][7]}, {res['Value'][0][4]}")
 
     # try to select the previously entered element from the Log table (now it should be there)
     res = rssClient.selectStatusElement("Resource", "Log", "TestName1234")
@@ -207,7 +207,7 @@ def test_addAndRemove(rssClient: ResourceStatusClient):
     assert res["Value"][0][0] == "TestName1234"
     assert res["Value"][0][1] == "statusType"
     assert res["Value"][0][2] == "Probing"
-    print("inserted lastCheckTime and DateEffective: {}, {}".format(res["Value"][0][7], res["Value"][0][4]))
+    print(f"inserted lastCheckTime and DateEffective: {res['Value'][0][7]}, {res['Value'][0][4]}")
 
     # try to select the previously entered element from the Log table (now it should be there)
     res = rssClient.selectStatusElement("Resource", "Log", "TestName1234")
@@ -245,7 +245,7 @@ def test_addAndRemove(rssClient: ResourceStatusClient):
     assert res["Value"][0][1] == "statusType"
     assert res["Value"][0][2] == "Probing"
     assert res["Value"][0][3] == "a new reason"
-    print("inserted lastCheckTime and DateEffective: {}, {}".format(res["Value"][0][7], res["Value"][0][4]))
+    print(f"inserted lastCheckTime and DateEffective: {res['Value'][0][7]}, {res['Value'][0][4]}")
     assert res["Value"][0][7] != res["Value"][0][4]
 
     # try to select the previously entered element from the Log table (now it should be there)

@@ -14,7 +14,7 @@ from DIRAC.Interfaces.API.Dirac import Dirac
 import os
 
 if len(sys.argv) < 2:
-    print("Usage %s <jobName>" % sys.argv[0])
+    print(f"Usage {sys.argv[0]} <jobName>")
     sys.exit(1)
 
 jobName = sys.argv[1]
@@ -23,9 +23,9 @@ finalStatus = ["Done", "Failed"]
 
 dirac = Dirac()
 
-idstr = open("%s/jobIdList.txt" % jobName).readlines()
+idstr = open(f"{jobName}/jobIdList.txt").readlines()
 ids = map(int, idstr)
-print("found %s jobs" % (len(ids)))
+print(f"found {len(ids)} jobs")
 
 res = dirac.getJobSummary(ids)
 if not res["OK"]:

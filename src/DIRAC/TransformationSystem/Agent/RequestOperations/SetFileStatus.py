@@ -28,7 +28,7 @@ class SetFileStatus(OperationHandlerBase):
         """It expects to find the arguments for tc.setFileStatusForTransformation in operation.Arguments"""
         try:
             setFileStatusDict = DEncode.decode(self.operation.Arguments)[0]
-            self.log.debug("decoded filStatusDict=%s" % str(setFileStatusDict))
+            self.log.debug(f"decoded filStatusDict={str(setFileStatusDict)}")
         except ValueError as error:
             self.log.exception(error)
             self.operation.Error = str(error)
@@ -41,7 +41,7 @@ class SetFileStatus(OperationHandlerBase):
         )
 
         if not setStatus["OK"]:
-            errorStr = "failed to change status: %s" % setStatus["Message"]
+            errorStr = f"failed to change status: {setStatus['Message']}"
             self.operation.Error = errorStr
             self.log.warn(errorStr)
             return S_ERROR(self.operation.Error)

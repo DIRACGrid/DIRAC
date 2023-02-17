@@ -164,7 +164,7 @@ class WorkflowTasks(TaskBase):
                 "Production ID",
             )
         oJob.setType(jobType)
-        self._logVerbose("Adding default transformation group of %s" % (transGroup), transID=transID, method=method)
+        self._logVerbose(f"Adding default transformation group of {transGroup}", transID=transID, method=method)
         oJob.setJobGroup(transGroup)
 
         clinicPath = self._checkSickTransformations(transID)
@@ -205,7 +205,7 @@ class WorkflowTasks(TaskBase):
             if inputData:
                 if isinstance(inputData, str):
                     inputData = inputData.replace(" ", "").split(";")
-                self._logVerbose("Setting input data to %s" % inputData, transID=transID, method=method)
+                self._logVerbose(f"Setting input data to {inputData}", transID=transID, method=method)
                 seqDict["InputData"] = inputData
             elif paramSeqDict.get("InputData") is not None:
                 self._logError("Invalid mixture of jobs with and without input data")
@@ -252,7 +252,7 @@ class WorkflowTasks(TaskBase):
                 return res
 
         if taskDict:
-            self._logInfo("Prepared %d tasks" % len(taskDict), transID=transID, method=method, reftime=startTime)
+            self._logInfo(f"Prepared {len(taskDict)} tasks", transID=transID, method=method, reftime=startTime)
 
         taskDict["BulkJobObject"] = oJob
         return S_OK(taskDict)
@@ -296,9 +296,7 @@ class WorkflowTasks(TaskBase):
                 # Update the template with common information
                 self._logVerbose(f"Job owner:group to {owner}:{ownerGroup}", transID=transID, method=method)
                 transGroup = str(transID).zfill(8)
-                self._logVerbose(
-                    "Adding default transformation group of %s" % (transGroup), transID=transID, method=method
-                )
+                self._logVerbose(f"Adding default transformation group of {transGroup}", transID=transID, method=method)
                 oJobTemplate.setJobGroup(transGroup)
                 if oJobTemplate.workflow.findParameter("PRODUCTION_ID"):
                     oJobTemplate._setParamValue("PRODUCTION_ID", str(transID).zfill(8))
@@ -315,7 +313,7 @@ class WorkflowTasks(TaskBase):
             # Now create the job from the template
             oJob = copy.deepcopy(oJobTemplate)
             constructedName = self._transTaskName(transID, taskID)
-            self._logVerbose("Setting task name to %s" % constructedName, transID=transID, method=method)
+            self._logVerbose(f"Setting task name to {constructedName}", transID=transID, method=method)
             oJob.setName(constructedName)
             oJob._setParamValue("JOB_ID", str(taskID).zfill(8))
             inputData = None
@@ -336,7 +334,7 @@ class WorkflowTasks(TaskBase):
                 self._logDebug("Setting Site: ", str(sites), transID=transID, method=method)
                 res = oJob.setDestination(sites)
                 if not res["OK"]:
-                    self._logError("Could not set the site: %s" % res["Message"], transID=transID, method=method)
+                    self._logError(f"Could not set the site: {res['Message']}", transID=transID, method=method)
                     paramsDict["TaskObject"] = ""
                     continue
 
@@ -362,11 +360,11 @@ class WorkflowTasks(TaskBase):
             paramsDict["TaskObject"] = oJob
         if taskDict:
             self._logVerbose(
-                "Average getOutputData time: %.1f per task" % (getOutputDataTiming / len(taskDict)),
+                f"Average getOutputData time: {getOutputDataTiming / len(taskDict):.1f} per task",
                 transID=transID,
                 method=method,
             )
-            self._logInfo("Prepared %d tasks" % len(taskDict), transID=transID, method=method, reftime=startTime)
+            self._logInfo(f"Prepared {len(taskDict)} tasks", transID=transID, method=method, reftime=startTime)
         return S_OK(taskDict)
 
     #############################################################################
@@ -409,10 +407,10 @@ class WorkflowTasks(TaskBase):
         inputData = paramsDict.get("InputData")
         transID = paramsDict["TransformationID"]
         if inputData:
-            self._logVerbose("Setting input data to %s" % inputData, transID=transID, method="_handleInputs")
+            self._logVerbose(f"Setting input data to {inputData}", transID=transID, method="_handleInputs")
             res = oJob.setInputData(inputData)
             if not res["OK"]:
-                self._logError("Could not set the inputs: %s" % res["Message"], transID=transID, method="_handleInputs")
+                self._logError(f"Could not set the inputs: {res['Message']}", transID=transID, method="_handleInputs")
 
     def _handleRest(self, oJob, paramsDict):
         """add as JDL parameters all the other parameters that are not for inputs or destination"""
@@ -466,7 +464,7 @@ class WorkflowTasks(TaskBase):
             self._logException(f"Failed to import 'TaskManagerPlugin' {plugin}: {e}", method=method)
             return S_ERROR()
         try:
-            plugin_o = getattr(plugModule, "TaskManagerPlugin")("%s" % plugin, operationsHelper=self.opsH)
+            plugin_o = getattr(plugModule, "TaskManagerPlugin")(f"{plugin}", operationsHelper=self.opsH)
             return S_OK(plugin_o)
         except AttributeError as e:
             self._logException(f"Failed to create {plugin}(): {e}.", method=method)

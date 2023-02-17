@@ -32,7 +32,7 @@ def mockComponentSection(*_args, **kwargs):
 def mockURLSection(*_args, **kwargs):
     """Mock the PathFinder.getSystemURLSection to return individual componentSections."""
     system = kwargs.get("system")
-    return "/Systems/%s/Production/URLs/" % system
+    return f"/Systems/{system}/Production/URLs/"
 
 
 class TestComponentSupervisionAgent(unittest.TestCase):
@@ -617,14 +617,16 @@ class TestComponentSupervisionAgent(unittest.TestCase):
         port = ["", "1001", "1002", theTornadoPort]
         urls, tempurls, newurls = [], [], []
         for i in [1, 2]:
-            urls.append("%(prot)s://%(host)s:%(port)s/Sys/Serv%(i)s" % dict(i=i, host=host, port=port[i], prot=prot[i]))
+            urls.append(
+                f"{dict(i=i, host=host, port=port[i], prot=prot[i])['prot']}://{dict(i=i, host=host, port=port[i], prot=prot[i])['host']}:{dict(i=i, host=host, port=port[i], prot=prot[i])['port']}/Sys/Serv{dict(i=i, host=host, port=port[i], prot=prot[i])['i']}"
+            )
         for i in [1]:
             tempurls.append(
-                "%(prot)s://%(host)s:%(port)s/Sys/Serv%(i)s" % dict(i=i, host=host, port=port[i], prot=prot[i])
+                f"{dict(i=i, host=host, port=port[i], prot=prot[i])['prot']}://{dict(i=i, host=host, port=port[i], prot=prot[i])['host']}:{dict(i=i, host=host, port=port[i], prot=prot[i])['port']}/Sys/Serv{dict(i=i, host=host, port=port[i], prot=prot[i])['i']}"
             )
         for i in [1, 3]:
             newurls.append(
-                "%(prot)s://%(host)s:%(port)s/Sys/Serv%(i)s" % dict(i=i, host=host, port=port[i], prot=prot[i])
+                f"{dict(i=i, host=host, port=port[i], prot=prot[i])['prot']}://{dict(i=i, host=host, port=port[i], prot=prot[i])['host']}:{dict(i=i, host=host, port=port[i], prot=prot[i])['port']}/Sys/Serv{dict(i=i, host=host, port=port[i], prot=prot[i])['i']}"
             )
 
         def gVal(*args, **_kwargs):
@@ -640,7 +642,7 @@ class TestComponentSupervisionAgent(unittest.TestCase):
             if "Protocol" in args[0]:
                 return "https" if "Serv3" in args[0] else args[1]
             else:
-                assert False, "Unknown config option requested %s" % args[0]
+                assert False, f"Unknown config option requested {args[0]}"
 
         gConfigMock = MagicMock()
         gConfigMock.getValue.side_effect = gVal

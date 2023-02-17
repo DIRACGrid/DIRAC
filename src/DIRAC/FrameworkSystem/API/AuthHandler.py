@@ -239,7 +239,7 @@ class AuthHandler(TornadoREST):
                     "session is expired.",
                     theme="warning",
                     body=result.get("Message"),
-                    info="Seems device code flow authorization session %s expired." % user_code,
+                    info=f"Seems device code flow authorization session {user_code} expired.",
                 )
             session = result["Value"]
             # Get original request from session
@@ -247,7 +247,7 @@ class AuthHandler(TornadoREST):
             req.setQueryArguments(id=session["id"], user_code=user_code)
 
             # Save session to cookie and redirect to authorization endpoint
-            authURL = "{}?{}".format(req.path.replace("device", "authorization"), req.query)
+            authURL = f"{req.path.replace('device', 'authorization')}?{req.query}"
             return self.server.handle_response(302, {}, [("Location", authURL)], session)
 
         # If received a request without a user code, then send a form to enter the user code
@@ -331,7 +331,7 @@ class AuthHandler(TornadoREST):
                     "session is expired.",
                     theme="warning",
                     state=400,
-                    info="Seems %s session is expired, please, try again." % state,
+                    info=f"Seems {state} session is expired, please, try again.",
                 ),
                 delSession=True,
             )
@@ -343,7 +343,7 @@ class AuthHandler(TornadoREST):
                     "session is expired.",
                     theme="warning",
                     state=400,
-                    info="Seems %s session is expired, please, try again." % state,
+                    info=f"Seems {state} session is expired, please, try again.",
                 ),
                 delSession=True,
             )
@@ -363,7 +363,7 @@ class AuthHandler(TornadoREST):
 
         if not sessionWithExtIdP.get("authed"):
             # Parse result of the second authentication flow
-            self.log.info("%s session, parsing authorization response:\n" % state, self.request.uri)
+            self.log.info(f"{state} session, parsing authorization response:\n", self.request.uri)
 
             result = self.server.parseIdPAuthorizationResponse(self.request, sessionWithExtIdP)
             if not result["OK"]:
@@ -435,7 +435,7 @@ class AuthHandler(TornadoREST):
         username = extSession["authed"]["username"]
         # Requested arguments in first request
         provider = firstRequest.provider
-        self.log.debug("Next groups has been found for %s:" % username, ", ".join(firstRequest.groups))
+        self.log.debug(f"Next groups has been found for {username}:", ", ".join(firstRequest.groups))
 
         # Researche Group
         result = getGroupsForUser(username)
@@ -458,7 +458,7 @@ class AuthHandler(TornadoREST):
                 delSession=True,
             )
 
-        self.log.debug("The state of %s user groups has been checked:" % username, pprint.pformat(validGroups))
+        self.log.debug(f"The state of {username} user groups has been checked:", pprint.pformat(validGroups))
 
         # If group already defined in first request, just return it
         if firstRequest.groups:
@@ -466,7 +466,7 @@ class AuthHandler(TornadoREST):
 
         # If not and we found only one valid group, apply this group
         if len(validGroups) == 1:
-            firstRequest.addScopes(["g:%s" % validGroups[0]])
+            firstRequest.addScopes([f"g:{validGroups[0]}"])
             return extSession["authed"], firstRequest
 
         # Else give user chanse to choose group in browser

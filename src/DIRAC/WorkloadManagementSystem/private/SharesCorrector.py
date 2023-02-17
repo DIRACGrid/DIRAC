@@ -27,39 +27,39 @@ class SharesCorrector:
             return result
         data = result["Value"]
         if fullCN not in data:
-            return S_ERROR("Can't find corrector %s" % fullCN)
+            return S_ERROR(f"Can't find corrector {fullCN}")
         return S_OK(data[fullCN])
 
     def instantiateRequiredCorrectors(self):
         correctorsToStart = self.__getCSValue("ShareCorrectorsToStart", [])
         self.__correctorsOrder = correctorsToStart
-        self.__log.info("Correctors requested: %s" % ", ".join(correctorsToStart))
+        self.__log.info(f"Correctors requested: {', '.join(correctorsToStart)}")
         for corrector in self.__shareCorrectors:
             if corrector not in correctorsToStart:
-                self.__log.info("Stopping corrector %s" % corrector)
+                self.__log.info(f"Stopping corrector {corrector}")
                 del self.__shareCorrectors[corrector]
         for corrector in correctorsToStart:
             if corrector not in self.__shareCorrectors:
-                self.__log.info("Starting corrector %s" % corrector)
+                self.__log.info(f"Starting corrector {corrector}")
                 result = self.__opsHelper.getSections(f"{self.__baseCS}/{corrector}")
                 if not result["OK"]:
                     self.__log.error(
                         "Cannot get list of correctors to instantiate",
-                        " for corrector type {}: {}".format(corrector, result["Message"]),
+                        f" for corrector type {corrector}: {result['Message']}",
                     )
                     continue
                 groupCorrectors = result["Value"]
                 self.__shareCorrectors[corrector] = {}
                 result = self.__getCorrectorClass(corrector)
                 if not result["OK"]:
-                    self.__log.error("Cannot instantiate corrector", "{} {}".format(corrector, result["Message"]))
+                    self.__log.error("Cannot instantiate corrector", f"{corrector} {result['Message']}")
                     continue
                 correctorClass = result["Value"]
                 for groupCor in groupCorrectors:
                     groupPath = f"{corrector}/{groupCor}/Group"
                     groupToCorrect = self.__getCSValue(groupPath, "")
                     if groupToCorrect:
-                        groupKey = "gr:%s" % groupToCorrect
+                        groupKey = f"gr:{groupToCorrect}"
                     else:
                         groupKey = "global"
                     self.__log.info(f"Instantiating group corrector {groupCor} ({groupToCorrect}) of type {corrector}")
@@ -92,7 +92,7 @@ class SharesCorrector:
 
     def correctShares(self, shareDict, group=""):
         if group:
-            groupKey = "gr:%s" % group
+            groupKey = f"gr:{group}"
         else:
             groupKey = "global"
         for corrector in self.__shareCorrectors:

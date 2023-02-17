@@ -66,7 +66,7 @@ def dli():
 @pytest.fixture
 def osPathExists(mocker):
     osPathMock = MagicMock(return_value=True)
-    mocker.patch("%s.os.path.exists" % MODULE_NAME, new=osPathMock)
+    mocker.patch(f"{MODULE_NAME}.os.path.exists", new=osPathMock)
     return osPathMock
 
 

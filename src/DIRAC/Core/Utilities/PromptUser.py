@@ -16,11 +16,11 @@ def promptUser(message, choices=[], default="n", logger=None):
         return S_ERROR("The default value is not a valid choice")
     choiceString = ""
     if choices and default:
-        choiceString = "/".join(choices).replace(default, "[%s]" % default)
+        choiceString = "/".join(choices).replace(default, f"[{default}]")
     elif choices and (not default):
         choiceString = "/".join(choices)
     elif (not choices) and (default):
-        choiceString = "[%s]" % default
+        choiceString = f"[{default}]"
 
     while True:
         if choiceString:
@@ -28,7 +28,7 @@ def promptUser(message, choices=[], default="n", logger=None):
         elif default:
             logger.notice(f"{message} {default} :")
         else:
-            logger.notice("%s :" % message)
+            logger.notice(f"{message} :")
         response = input("")
         if (not response) and (default):
             return S_OK(default)

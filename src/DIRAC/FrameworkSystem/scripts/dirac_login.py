@@ -192,7 +192,7 @@ class Params:
         if self.response == "proxy" and self.response not in self.scopes:
             self.scopes.append(self.response)
         if self.lifetime:
-            self.scopes.append("lifetime:%s" % (int(self.lifetime or 12) * 3600))
+            self.scopes.append(f"lifetime:{int(self.lifetime or 12) * 3600}")
         idpObj.scope = "+".join(self.scopes) if self.scopes else ""
 
         # Submit Device authorisation flow

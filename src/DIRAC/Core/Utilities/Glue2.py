@@ -58,10 +58,10 @@ def getGlue2CEInfo(vo, host=None):
             sLog.debug(f"Policy {policyID} does not point to computing information")
             continue
         sLog.verbose(f"{siteName} policy {policyID} pointing to {shareID} ")
-        sLog.debug("Policy values:\n%s" % pformat(policyValues))
-        shareFilter += "(GLUE2ShareID=%s)" % shareID
+        sLog.debug(f"Policy values:\n{pformat(policyValues)}")
+        shareFilter += f"(GLUE2ShareID={shareID})"
 
-    filt = "(&(objectClass=GLUE2Share)(|%s))" % shareFilter
+    filt = f"(&(objectClass=GLUE2Share)(|{shareFilter}))"
     shareRes = ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
     if not shareRes["OK"]:
         sLog.error("Could not get share information", shareRes["Message"])
@@ -73,16 +73,16 @@ def getGlue2CEInfo(vo, host=None):
         if "GLUE2ComputingShare" not in shareInfo["objectClass"]:
             sLog.debug(f"Share {shareID!r} is not a ComputingShare: \n{pformat(shareInfo)}")
             continue
-        sLog.debug("Found computing share:\n%s" % pformat(shareInfo))
+        sLog.debug(f"Found computing share:\n{pformat(shareInfo)}")
         siteName = shareInfo["attr"]["dn"].split("GLUE2DomainID=")[1].split(",", 1)[0]
         shareInfoLists.setdefault(siteName, []).append(shareInfo["attr"])
 
     siteInfo = __getGlue2ShareInfo(host, shareInfoLists)
     if not siteInfo["OK"]:
-        sLog.error("Could not get CE info for", "{}: {}".format(shareID, siteInfo["Message"]))
+        sLog.error("Could not get CE info for", f"{shareID}: {siteInfo['Message']}")
         return siteInfo
     siteDict = siteInfo["Value"]
-    sLog.debug("Found Sites:\n%s" % pformat(siteDict))
+    sLog.debug(f"Found Sites:\n{pformat(siteDict)}")
     sitesWithoutShares = set(siteDict) - listOfSitesWithPolicies
     if sitesWithoutShares:
         sLog.error("Found some sites without any shares", pformat(sitesWithoutShares))
@@ -251,7 +251,7 @@ def __getGlue2ShareInfo(host, shareInfoLists):
                     exeInfo = dict(exeInfo)  # silence pylint about tuples
                     managerName = exeInfo.pop("MANAGER", "").split(" ", 1)[0].rsplit(":", 1)[1]
                     managerName = managerName.capitalize() if managerName == "condor" else managerName
-                    queueName = "nordugrid-{}-{}".format(managerName, shareInfoDict["GLUE2ComputingShareMappingQueue"])
+                    queueName = f"nordugrid-{managerName}-{shareInfoDict['GLUE2ComputingShareMappingQueue']}"
                     ceName = shareInfoDict["GLUE2ShareID"].split("ComputingShare:")[1].split(":")[0]
                     cesDict.setdefault(ceName, {})
                     existingQueues = dict(cesDict[ceName].get("Queues", {}))
@@ -276,13 +276,13 @@ def __getGlue2ExecutionEnvironmentInfo(host, executionEnvironments):
     for exeEnvs in breakListIntoChunks(executionEnvironments, 1000):
         exeFilter = ""
         for execEnv in exeEnvs:
-            exeFilter += "(GLUE2ResourceID=%s)" % execEnv
-        filt = "(&(objectClass=GLUE2ExecutionEnvironment)(|%s))" % exeFilter
+            exeFilter += f"(GLUE2ResourceID={execEnv})"
+        filt = f"(&(objectClass=GLUE2ExecutionEnvironment)(|{exeFilter}))"
         response = ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
         if not response["OK"]:
             return response
         if not response["Value"]:
-            sLog.error("No information found for %s" % executionEnvironments)
+            sLog.error(f"No information found for {executionEnvironments}")
             continue
         listOfValues += response["Value"]
     if not listOfValues:

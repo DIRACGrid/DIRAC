@@ -142,7 +142,7 @@ class FTS3Job(JSerializable):
             self.status = "Failed"
             return S_ERROR(errno.ESRCH, f"FTSGUID {self.ftsGUID} not found on {self.ftsServer}")
         except FTS3ClientException as e:
-            return S_ERROR("Error getting the job status %s" % e)
+            return S_ERROR(f"Error getting the job status {e}")
 
         now = datetime.datetime.utcnow().replace(microsecond=0)
         self.lastMonitor = now
@@ -237,7 +237,7 @@ class FTS3Job(JSerializable):
         except NotFound:
             return S_ERROR(errno.ESRCH, f"FTSGUID {self.ftsGUID} not found on {self.ftsServer}")
         except FTS3ClientException as e:
-            return S_ERROR("Error canceling the job %s" % e)
+            return S_ERROR(f"Error canceling the job {e}")
 
     @staticmethod
     def __fetchSpaceToken(seName, vo):
@@ -312,7 +312,7 @@ class FTS3Job(JSerializable):
         # Check if it is a multiHop transfer
         if self.multiHopSE:
             if len(allLFNs) != 1:
-                log.debug("Multihop job has %s files while only 1 allowed" % len(allLFNs))
+                log.debug(f"Multihop job has {len(allLFNs)} files while only 1 allowed")
                 return S_ERROR(errno.E2BIG, "Trying multihop job with more than one file !")
             allHops = [(self.sourceSE, self.multiHopSE), (self.multiHopSE, self.targetSE)]
             isMultiHop = True
@@ -388,7 +388,7 @@ class FTS3Job(JSerializable):
                 # This test is important, because multiple files would result in the source
                 # being deleted !
                 if len(allLFNs) != 1:
-                    log.debug("Multihop job has %s files while only 1 allowed" % len(allLFNs))
+                    log.debug(f"Multihop job has {len(allLFNs)} files while only 1 allowed")
                     return S_ERROR(errno.E2BIG, "Trying multihop job with more than one file !")
 
                 res = srcSE.getURL(allSrcDstSURLs, protocol=srcSE.localStageProtocolList)
@@ -405,14 +405,14 @@ class FTS3Job(JSerializable):
 
             for ftsFile in self.filesToSubmit:
                 if ftsFile.lfn in failedLFNs:
-                    log.debug("Not preparing transfer for file %s" % ftsFile.lfn)
+                    log.debug(f"Not preparing transfer for file {ftsFile.lfn}")
                     continue
 
                 sourceSURL, targetSURL = allSrcDstSURLs[ftsFile.lfn]
                 stageURL = allStageURLs.get(ftsFile.lfn)
 
                 if sourceSURL == targetSURL:
-                    log.error("sourceSURL equals to targetSURL", "%s" % ftsFile.lfn)
+                    log.error("sourceSURL equals to targetSURL", f"{ftsFile.lfn}")
                     ftsFile.error = "sourceSURL equals to targetSURL"
                     ftsFile.status = "Defunct"
                     continue
@@ -433,7 +433,7 @@ class FTS3Job(JSerializable):
                 if stageURL:
                     # We do not set a fileID in the metadata
                     # such that we do not update the DB when monitoring
-                    stageTrans_metadata = {"desc": "PreStage %s" % ftsFileID}
+                    stageTrans_metadata = {"desc": f"PreStage {ftsFileID}"}
 
                     # If we use an activity, also set it as file metadata
                     # for WLCG monitoring purposes
@@ -444,7 +444,7 @@ class FTS3Job(JSerializable):
                     stageTrans = fts3.new_transfer(
                         stageURL,
                         stageURL,
-                        checksum="ADLER32:%s" % ftsFile.checksum,
+                        checksum=f"ADLER32:{ftsFile.checksum}",
                         filesize=ftsFile.size,
                         metadata=stageTrans_metadata,
                         activity=self.activity,
@@ -454,9 +454,9 @@ class FTS3Job(JSerializable):
                 # If it is the last hop only, we set the fileID metadata
                 # for monitoring
                 if hopId == nbOfHops:
-                    trans_metadata = {"desc": "Transfer %s" % ftsFileID, "fileID": ftsFileID}
+                    trans_metadata = {"desc": f"Transfer {ftsFileID}", "fileID": ftsFileID}
                 else:
-                    trans_metadata = {"desc": "MultiHop %s" % ftsFileID}
+                    trans_metadata = {"desc": f"MultiHop {ftsFileID}"}
 
                 # If we use an activity, also set it as file metadata
                 # for WLCG monitoring purposes
@@ -472,7 +472,7 @@ class FTS3Job(JSerializable):
                 trans = fts3.new_transfer(
                     sourceSURL,
                     targetSURL,
-                    checksum="ADLER32:%s" % ftsFile.checksum.lower(),
+                    checksum=f"ADLER32:{ftsFile.checksum.lower()}",
                     filesize=ftsFile.size,
                     metadata=trans_metadata,
                     activity=self.activity,
@@ -605,16 +605,16 @@ class FTS3Job(JSerializable):
 
         for ftsFile in self.filesToSubmit:
             if ftsFile.lfn in failedLFNs:
-                log.debug("Not preparing transfer for file %s" % ftsFile.lfn)
+                log.debug(f"Not preparing transfer for file {ftsFile.lfn}")
                 continue
 
             sourceSURL = targetSURL = allTargetSURLs[ftsFile.lfn]
             ftsFileID = getattr(ftsFile, "fileID")
-            trans_metadata = {"desc": "Stage %s" % ftsFileID, "fileID": ftsFileID}
+            trans_metadata = {"desc": f"Stage {ftsFileID}", "fileID": ftsFileID}
             trans = fts3.new_transfer(
                 sourceSURL,
                 targetSURL,
-                checksum="ADLER32:%s" % ftsFile.checksum,
+                checksum=f"ADLER32:{ftsFile.checksum}",
                 filesize=ftsFile.size,
                 metadata=trans_metadata,
                 activity=self.activity,
@@ -709,7 +709,7 @@ class FTS3Job(JSerializable):
 
         try:
             self.ftsGUID = fts3.submit(context, job)
-            log.info("Got GUID %s" % self.ftsGUID)
+            log.info(f"Got GUID {self.ftsGUID}")
 
             # Only increase the amount of attempt
             # if we succeeded in submitting -> no ! Why did I do that ??
@@ -737,7 +737,7 @@ class FTS3Job(JSerializable):
 
         except FTS3ClientException as e:
             log.exception("Error at submission", repr(e))
-            return S_ERROR("Error at submission: %s" % e)
+            return S_ERROR(f"Error at submission: {e}")
 
         return S_OK(fileIDsInTheJob)
 

@@ -55,9 +55,9 @@ class GOCDB2CSAgent(AgentModule):
             if optionValue:
                 result = functionCall(self)  # pylint: disable=too-many-function-args
                 if not result["OK"]:
-                    self.log.error("{}() failed with message: {}".format(functionCall.__name__, result["Message"]))
+                    self.log.error(f"{functionCall.__name__}() failed with message: {result['Message']}")
                 else:
-                    self.log.info("Successfully executed %s" % functionCall.__name__)
+                    self.log.info(f"Successfully executed {functionCall.__name__}")
 
         return S_OK()
 
@@ -72,21 +72,21 @@ class GOCDB2CSAgent(AgentModule):
         # get endpoints
         result = self.__getPerfSONAREndpoints()
         if not result["OK"]:
-            log.error("__getPerfSONAREndpoints() failed with message: %s" % result["Message"])
+            log.error(f"__getPerfSONAREndpoints() failed with message: {result['Message']}")
             return S_ERROR("Unable to fetch perfSONAR endpoints from GOCDB.")
         endpointList = result["Value"]
 
         # add DIRAC site name
         result = self.__addDIRACSiteName(endpointList)
         if not result["OK"]:
-            log.error("__addDIRACSiteName() failed with message: %s" % result["Message"])
+            log.error(f"__addDIRACSiteName() failed with message: {result['Message']}")
             return S_ERROR("Unable to extend the list with DIRAC site names.")
         extendedEndpointList = result["Value"]
 
         # prepare dictionary with new configuration
         result = self.__preparePerfSONARConfiguration(extendedEndpointList)
         if not result["OK"]:
-            log.error("__preparePerfSONARConfiguration() failed with message: %s" % result["Message"])
+            log.error(f"__preparePerfSONARConfiguration() failed with message: {result['Message']}")
             return S_ERROR("Unable to prepare a new perfSONAR configuration.")
         finalConfiguration = result["Value"]
 
@@ -110,16 +110,16 @@ class GOCDB2CSAgent(AgentModule):
         # get perfSONAR endpoints (latency and bandwidth) form GOCDB
         endpointList = []
         for endpointType in ["Latency", "Bandwidth"]:
-            result = self.GOCDBClient.getServiceEndpointInfo("service_type", "net.perfSONAR.%s" % endpointType)
+            result = self.GOCDBClient.getServiceEndpointInfo("service_type", f"net.perfSONAR.{endpointType}")
 
             if not result["OK"]:
-                log.error("getServiceEndpointInfo() failed with message: %s" % result["Message"])
-                return S_ERROR("Could not fetch %s endpoints from GOCDB" % endpointType.lower())
+                log.error(f"getServiceEndpointInfo() failed with message: {result['Message']}")
+                return S_ERROR(f"Could not fetch {endpointType.lower()} endpoints from GOCDB")
 
-            log.debug("Number of {} endpoints: {}".format(endpointType.lower(), len(result["Value"])))
+            log.debug(f"Number of {endpointType.lower()} endpoints: {len(result['Value'])}")
             endpointList.extend(result["Value"])
 
-        log.debug("Number of perfSONAR endpoints: %s" % len(endpointList))
+        log.debug(f"Number of perfSONAR endpoints: {len(endpointList)}")
         log.debug("End function.")
         return S_OK(endpointList)
 
@@ -157,7 +157,7 @@ class GOCDB2CSAgent(AgentModule):
         for option in options:
             result = gConfig.getConfigurationTree(rootPath, extPath + "/", "/" + option)
             if not result["OK"]:
-                log.error("getConfigurationTree() failed with message: %s" % result["Message"])
+                log.error(f"getConfigurationTree() failed with message: {result['Message']}")
                 return S_ERROR("Unable to fetch perfSONAR endpoints from CS.")
             currentConfiguration.update(result["Value"])
 
@@ -175,10 +175,10 @@ class GOCDB2CSAgent(AgentModule):
 
         # inform what will be changed
         if addedEndpoints > 0:
-            self.log.info("%s new perfSONAR endpoints will be added to the configuration" % addedEndpoints)
+            self.log.info(f"{addedEndpoints} new perfSONAR endpoints will be added to the configuration")
 
         if disabledEndpoints > 0:
-            self.log.info("%s old perfSONAR endpoints will be disable in the configuration" % disabledEndpoints)
+            self.log.info(f"{disabledEndpoints} old perfSONAR endpoints will be disable in the configuration")
 
         if addedEndpoints == 0 and disabledEndpoints == 0:
             self.log.info("perfSONAR configuration is up-to-date")
@@ -201,7 +201,7 @@ class GOCDB2CSAgent(AgentModule):
         # get site name dictionary
         result = getDIRACGOCDictionary()
         if not result["OK"]:
-            log.error("getDIRACGOCDictionary() failed with message: %s" % result["Message"])
+            log.error(f"getDIRACGOCDictionary() failed with message: {result['Message']}")
             return S_ERROR("Could not get site name dictionary")
 
         # reverse the dictionary (assume 1 to 1 relation)
@@ -214,7 +214,7 @@ class GOCDB2CSAgent(AgentModule):
             try:
                 entry["DIRACSITENAME"] = GOCDIRACDict[entry["SITENAME"]]
             except KeyError:
-                self.log.warn("No dictionary entry for %s. " % entry["SITENAME"])
+                self.log.warn(f"No dictionary entry for {entry['SITENAME']}. ")
                 entry["DIRACSITENAME"] = None
             outputList.append(entry)
 
@@ -244,27 +244,27 @@ class GOCDB2CSAgent(AgentModule):
             try:
                 result = self.csAPI.createSection(section)
                 if not result["OK"]:
-                    log.error("createSection() failed with message: %s" % result["Message"])
+                    log.error(f"createSection() failed with message: {result['Message']}")
             except Exception as e:
-                log.error("Exception in createSection(): %s" % repr(e).replace(",)", ")"))
+                log.error(f"Exception in createSection(): {repr(e).replace(',)', ')')}")
 
             if value is not None:
                 try:
                     result = self.csAPI.setOption(path, value)
                     if not result["OK"]:
-                        log.error("setOption() failed with message: %s" % result["Message"])
+                        log.error(f"setOption() failed with message: {result['Message']}")
                 except Exception as e:
-                    log.error("Exception in setOption(): %s" % repr(e).replace(",)", ")"))
+                    log.error(f"Exception in setOption(): {repr(e).replace(',)', ')')}")
 
         # delete elements in the configuration
         for path in delElements:
             result = self.csAPI.delOption(path)
             if not result["OK"]:
-                log.warn("delOption() failed with message: %s" % result["Message"])
+                log.warn(f"delOption() failed with message: {result['Message']}")
 
                 result = self.csAPI.delSection(path)
                 if not result["OK"]:
-                    log.warn("delSection() failed with message: %s" % result["Message"])
+                    log.warn(f"delSection() failed with message: {result['Message']}")
 
         if self.dryRun:
             log.info("Dry Run: CS won't be updated")
@@ -273,7 +273,7 @@ class GOCDB2CSAgent(AgentModule):
             # update configuration stored by CS
             result = self.csAPI.commit()
             if not result["OK"]:
-                log.error("commit() failed with message: %s" % result["Message"])
+                log.error(f"commit() failed with message: {result['Message']}")
                 return S_ERROR("Could not commit changes to CS.")
             else:
                 log.info("Committed changes to CS")

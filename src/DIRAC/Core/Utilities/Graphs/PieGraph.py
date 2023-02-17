@@ -162,7 +162,7 @@ class PieGraph(PlotBase):
 
         def my_display(x):
             if x > 100 * self.min_amount:
-                return "%.1f" % x + "%"
+                return f"{x:.1f}" + "%"
             else:
                 return ""
 

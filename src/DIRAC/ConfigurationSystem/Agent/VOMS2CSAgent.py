@@ -110,9 +110,7 @@ class VOMS2CSAgent(AgentModule):
                 proxyUserGroup=voAdminGroup,
             )
             if not result["OK"]:
-                self.log.error(
-                    "Failed to perform VOMS to CS synchronization:", "VO {}: {}".format(vo, result["Message"])
-                )
+                self.log.error("Failed to perform VOMS to CS synchronization:", f"VO {vo}: {result['Message']}")
                 continue
             resultDict = result["Value"]
             newUsers = resultDict.get("NewUsers", [])
@@ -130,7 +128,7 @@ class VOMS2CSAgent(AgentModule):
 
             if csapi.csModified:
                 # We have accumulated all the changes, commit them now
-                self.log.info("There are changes to the CS ready to be committed", "for VO %s" % vo)
+                self.log.info("There are changes to the CS ready to be committed", f"for VO {vo}")
                 if self.dryRun:
                     self.log.info("Dry Run: CS won't be updated")
                     csapi.showDiff()
@@ -139,9 +137,9 @@ class VOMS2CSAgent(AgentModule):
                     if not result["OK"]:
                         self.log.error("Could not commit configuration changes", result["Message"])
                         return result
-                    self.log.notice("Configuration committed", "for VO %s" % vo)
+                    self.log.notice("Configuration committed", f"for VO {vo}")
             else:
-                self.log.info("No changes to the CS recorded at this cycle", "for VO %s" % vo)
+                self.log.info("No changes to the CS recorded at this cycle", f"for VO {vo}")
 
             # Add user home directory in the file catalog
             if self.makeFCEntry and newUsers:
@@ -153,19 +151,19 @@ class VOMS2CSAgent(AgentModule):
                     proxyUserGroup=voAdminGroup,
                 )
                 if not result["OK"]:
-                    self.log.error("Failed to create user home directories:", "VO {}: {}".format(vo, result["Message"]))
+                    self.log.error("Failed to create user home directories:", f"VO {vo}: {result['Message']}")
                 else:
                     for user in result["Value"]["Failed"]:
                         self.log.error(
                             "Failed to create home directory",
-                            "user: {}, operation: {}".format(user, result["Value"]["Failed"][user]),
+                            f"user: {user}, operation: {result['Value']['Failed'][user]}",
                         )
                         adminMessages["Errors"].append(
                             "Failed to create home directory for user %s: operation %s"
                             % (user, result["Value"]["Failed"][user])
                         )
                     for user in result["Value"]["Successful"]:
-                        adminMessages["Info"].append("Created home directory for user %s" % user)
+                        adminMessages["Info"].append(f"Created home directory for user {user}")
 
             if voChanged or self.detailedReport:
                 mailMsg = ""
@@ -198,7 +196,7 @@ class VOMS2CSAgent(AgentModule):
     @executeWithUserProxy
     def __addHomeDirectory(self, vo, newUsers):
         fc = FileCatalog(vo=vo)
-        defaultVOGroup = getVOOption(vo, "DefaultGroup", "%s_user" % vo)
+        defaultVOGroup = getVOOption(vo, "DefaultGroup", f"{vo}_user")
 
         failed = {}
         successful = {}

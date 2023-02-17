@@ -61,7 +61,7 @@ class ObjectLoader(metaclass=DIRACSingleton):
             impName = modName
             if rootModule:
                 impName = f"{rootModule}.{impName}"
-            gLogger.debug("Trying to load %s" % impName)
+            gLogger.debug(f"Trying to load {impName}")
             result = recurseImport(impName, hideExceptions=hideExceptions)
             if not result["OK"]:
                 return result
@@ -86,7 +86,7 @@ class ObjectLoader(metaclass=DIRACSingleton):
         if not result["OK"]:
             return result
         if not result["Value"]:
-            return S_ERROR(DErrno.EIMPERR, "No module %s found" % importString)
+            return S_ERROR(DErrno.EIMPERR, f"No module {importString} found")
         return S_OK(result["Value"][1])
 
     def loadObject(self, importString, objName=False, hideExceptions=False):
@@ -124,7 +124,7 @@ class ObjectLoader(metaclass=DIRACSingleton):
             impPath = modulePath
             if rootModule:
                 impPath = f"{rootModule}.{impPath}"
-            gLogger.debug("Trying to load %s" % impPath)
+            gLogger.debug(f"Trying to load {impPath}")
 
             result = recurseImport(impPath)
             if not result["OK"]:
@@ -207,7 +207,7 @@ def loadObjects(path, reFilter=None, parentClass=None):
         try:
             # Where parentModule can be DIRAC, pathList is something like [ "AccountingSystem", "Client", "Types" ]
             # And the python class name is.. well, the python class name
-            objPythonPath = "{}.{}.{}".format(parentModule, ".".join(pathList), pythonClassName)
+            objPythonPath = f"{parentModule}.{'.'.join(pathList)}.{pythonClassName}"
             objModule = __import__(objPythonPath, globals(), locals(), pythonClassName)
             objClass = getattr(objModule, pythonClassName)
         except Exception as e:
@@ -218,7 +218,7 @@ def loadObjects(path, reFilter=None, parentClass=None):
         if parentClass and not issubclass(objClass, parentClass):
             gLogger.warn(f"{objClass} is not a subclass of {parentClass}. Skipping")
             continue
-        gLogger.debug("Loaded %s" % objPythonPath)
+        gLogger.debug(f"Loaded {objPythonPath}")
         loadedObjects[pythonClassName] = objClass
 
     return loadedObjects

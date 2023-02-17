@@ -37,7 +37,7 @@ def main():
             [
                 __doc__.split("\n")[1],
                 "Usage:",
-                "  %s lfn... [local_dir]" % Script.scriptName,
+                f"  {Script.scriptName} lfn... [local_dir]",
                 "Arguments:",
                 " lfn:          file to download",
                 " local_dir:   destination directory",
@@ -95,7 +95,7 @@ def main():
                     newLFNs.append((lfn, localDir))
                     continue
                 exitCode = -1
-                print("Error: Invalid path: '%s'" % lfn)
+                print(f"Error: Invalid path: '{lfn}'")
                 continue
 
             retVal = catalog.findFilesByMetadata({}, lfn)
@@ -120,7 +120,7 @@ def main():
         ret = dirac.getFile(lfn, localDir)
         if not ret["OK"]:
             exitCode = -3
-            print("Error: %s" % ret["Message"])
+            print(f"Error: {ret['Message']}")
 
     DIRAC.exit(exitCode)
 

@@ -212,7 +212,7 @@ class ModuleBase:
         """
 
         if not status:
-            status = "%s correctly finalized" % str(self.__class__)
+            status = f"{str(self.__class__)} correctly finalized"
 
         raise GracefulTermination(status)
 
@@ -337,7 +337,7 @@ class ModuleBase:
                     ):
                         stepInputData.append(outputF["outputDataName"])
                 except KeyError:
-                    raise RuntimeError("Can't find output of step %s" % previousStep)
+                    raise RuntimeError(f"Can't find output of step {previousStep}")
 
             return stepInputData
 
@@ -383,8 +383,8 @@ class ModuleBase:
         if not self.workflowStatus["OK"] or not self.stepStatus["OK"]:
             if not noPrint:
                 self.log.info("Skip this module, failure detected in a previous step :")
-                self.log.info("Workflow status : %s" % (self.workflowStatus))
-                self.log.info("Step Status : %s" % (self.stepStatus))
+                self.log.info(f"Workflow status : {self.workflowStatus}")
+                self.log.info(f"Step Status : {self.stepStatus}")
             return False
         else:
             return True
@@ -511,7 +511,7 @@ class ModuleBase:
                 notPresentFiles.append(fileName)
 
         if notPresentFiles:
-            self.log.error("Output data file list %s does not exist locally" % notPresentFiles)
+            self.log.error(f"Output data file list {notPresentFiles} does not exist locally")
             raise os.error
 
     #############################################################################
@@ -521,7 +521,7 @@ class ModuleBase:
         reportRequest = None
         result = self.jobReport.generateForwardDISET()
         if not result["OK"]:
-            self.log.warn("Could not generate Operation for job report with result:\n%s" % (result))
+            self.log.warn(f"Could not generate Operation for job report with result:\n{result}")
         else:
             reportRequest = result["Value"]
         if reportRequest:
@@ -540,7 +540,7 @@ class ModuleBase:
         if len(self.request):
             isValid = RequestValidator().validate(self.request)
             if not isValid["OK"]:
-                raise RuntimeError("Failover request is not valid: %s" % isValid["Message"])
+                raise RuntimeError(f"Failover request is not valid: {isValid['Message']}")
             else:
                 requestJSON = self.request.toJSON()
                 if requestJSON["OK"]:
@@ -552,10 +552,10 @@ class ModuleBase:
                     jsonFile = open(fname, "w")
                     jsonFile.write(request_string)
                     jsonFile.close()
-                    self.log.info("Created file containing failover request %s" % fname)
+                    self.log.info(f"Created file containing failover request {fname}")
                     result = self.request.getDigest()
                     if result["OK"]:
-                        self.log.info("Digest of the request: %s" % result["Value"])
+                        self.log.info(f"Digest of the request: {result['Value']}")
                     else:
                         self.log.error("No digest? That's not sooo important, anyway:", result["Message"])
                 else:

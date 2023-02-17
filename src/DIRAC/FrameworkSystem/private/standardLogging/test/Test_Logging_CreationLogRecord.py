@@ -76,6 +76,6 @@ def test_showStack():
 
         # clean the log to remove unecessary information
         logstring = cleaningLog(capturedBackend.getvalue())
-        assert logstring == "Framework%s DEBUG: \n" % logInfo
+        assert logstring == f"Framework{logInfo} DEBUG: \n"
         capturedBackend.truncate(0)
         capturedBackend.seek(0)

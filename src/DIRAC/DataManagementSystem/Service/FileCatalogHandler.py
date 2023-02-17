@@ -393,7 +393,7 @@ class FileCatalogHandlerMixin:
         elif metaType.lower() == "-f":
             return self.fileCatalogDB.fmeta.addMetadataField(fieldName, fieldType, self.getRemoteCredentials())
         else:
-            return S_ERROR("Unknown metadata type %s" % metaType)
+            return S_ERROR(f"Unknown metadata type {metaType}")
 
     types_deleteMetadataField = [str]
 
@@ -674,7 +674,7 @@ class FileCatalogHandler(FileCatalogHandlerMixin, RequestHandler):
 
         except Exception as e:
             self.log.exception("Exception while sending seDump", repr(e))
-            return S_ERROR("Exception while sending seDump: %s" % repr(e))
+            return S_ERROR(f"Exception while sending seDump: {repr(e)}")
         finally:
             if csvOutput is not None:
                 csvOutput.close()

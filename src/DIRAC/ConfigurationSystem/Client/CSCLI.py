@@ -29,14 +29,14 @@ def _showTraceback():
 def _printComment(comment):
     commentList = comment.split("\n")
     for commentLine in commentList[:-1]:
-        print("# %s" % commentLine.strip())
+        print(f"# {commentLine.strip()}")
 
 
 def _appendExtensionIfMissing(filename):
     dotPosition = filename.rfind(".")
     if dotPosition > -1:
         filename = filename[:dotPosition]
-    return "%s.cfg" % filename
+    return f"{filename}.cfg"
 
 
 class CSCLI(CLI):
@@ -56,7 +56,7 @@ class CSCLI(CLI):
         self.backupFilename = "dataChanges"
         # store history
         histfilename = os.path.basename(sys.argv[0])
-        historyFile = os.path.expanduser("~/.dirac/%s.history" % histfilename[0:-3])
+        historyFile = os.path.expanduser(f"~/.dirac/{histfilename[0:-3]}.history")
         mkDir(os.path.dirname(historyFile))
         if os.path.isfile(historyFile):
             readline.read_history_file(historyFile)
@@ -83,11 +83,11 @@ class CSCLI(CLI):
         self.writeEnabled = writeEnabled
         if connected:
             if writeEnabled:
-                self.prompt = "({})-{}> ".format(self.masterURL, colorize("Connected", "green"))
+                self.prompt = f"({self.masterURL})-{colorize('Connected', 'green')}> "
             else:
-                self.prompt = "({})-{}> ".format(self.masterURL, colorize("Connected (RO)", "yellow"))
+                self.prompt = f"({self.masterURL})-{colorize('Connected (RO)', 'yellow')}> "
         else:
-            self.prompt = "({})-{}> ".format(self.masterURL, colorize("Disconnected", "red"))
+            self.prompt = f"({self.masterURL})-{colorize('Disconnected', 'red')}> "
 
     def do_quit(self, dummy):
         """
@@ -99,7 +99,7 @@ class CSCLI(CLI):
         if self.modifiedData:
             print("Changes are about to be written to file for later use.")
             self.do_writeToFile(self.backupFilename)
-            print("Changes written to %s.cfg" % self.backupFilename)
+            print(f"Changes written to {self.backupFilename}.cfg")
         sys.exit(0)
 
     def _setStatus(self, connected=True):
@@ -114,11 +114,11 @@ class CSCLI(CLI):
                 else:
                     self._setConnected(True, False)
             else:
-                print("Server returned an error: %s" % retVal["Message"])
+                print(f"Server returned an error: {retVal['Message']}")
                 self._setConnected(True, False)
 
     def _tryConnection(self):
-        print("Trying connection to %s" % self.masterURL)
+        print(f"Trying connection to {self.masterURL}")
         try:
             self.rpcClient = ConfigurationClient(url=self.masterURL)
             self._setStatus()
@@ -161,11 +161,11 @@ class CSCLI(CLI):
             else:
                 baseSection = "/"
             if not self.modificator.existsSection(baseSection):
-                print("Section %s does not exist" % baseSection)
+                print(f"Section {baseSection} does not exist")
                 return
             sectionList = self.modificator.getSections(baseSection)
             if not sectionList:
-                print("Section %s is empty" % baseSection)
+                print(f"Section {baseSection} is empty")
                 return
             for section in sectionList:
                 section = f"{baseSection}/{section}"
@@ -187,11 +187,11 @@ class CSCLI(CLI):
                 print("Which section?")
                 return
             if not self.modificator.existsSection(section):
-                print("Section %s does not exist" % section)
+                print(f"Section {section} does not exist")
                 return
             optionsList = self.modificator.getOptions(section)
             if not optionsList:
-                print("Section %s has no options" % section)
+                print(f"Section {section} has no options")
                 return
             for option in optionsList:
                 _printComment(self.modificator.getComment(f"{section}/{option}"))
@@ -217,7 +217,7 @@ class CSCLI(CLI):
                 _printComment(self.modificator.getComment(optionPath))
                 self.printPair(option, self.modificator.getValue(optionPath), "=")
             else:
-                print("Option %s does not exist" % optionPath)
+                print(f"Option {optionPath} does not exist")
         except Exception:
             _showTraceback()
 
@@ -247,14 +247,14 @@ class CSCLI(CLI):
             choice = input("Do you really want to send changes to server? yes/no [no]: ")
             choice = choice.lower()
             if choice in ("yes", "y"):
-                print("Uploading changes to %s (It may take some seconds)..." % self.masterURL)
+                print(f"Uploading changes to {self.masterURL} (It may take some seconds)...")
                 response = self.modificator.commit()
                 if response["OK"]:
                     self.modifiedData = False
                     print("Data sent to server.")
                     self.modificator.loadFromRemote()
                 else:
-                    print("Error sending data, server said: %s" % response["Message"])
+                    print(f"Error sending data, server said: {response['Message']}")
                 return
             else:
                 print("Commit aborted")
@@ -298,7 +298,7 @@ class CSCLI(CLI):
                 print("Must specify option to delete")
                 return
             optionPath = argsList[0].strip()
-            choice = input("Are you sure you want to delete %s? yes/no [no]: " % optionPath)
+            choice = input(f"Are you sure you want to delete {optionPath}? yes/no [no]: ")
             choice = choice.lower()
             if choice in ("yes", "y", "true"):
                 if self.modificator.removeOption(optionPath):
@@ -308,7 +308,7 @@ class CSCLI(CLI):
             else:
                 print("Aborting removal.")
         except Exception as x:
-            print("Error removing option, %s" % str(x))
+            print(f"Error removing option, {str(x)}")
 
     def do_removeSection(self, args):
         """
@@ -322,7 +322,7 @@ class CSCLI(CLI):
                 print("Must specify section to delete")
                 return
             section = argsList[0].strip()
-            choice = input("Are you sure you want to delete %s? yes/no [no]: " % section)
+            choice = input(f"Are you sure you want to delete {section}? yes/no [no]: ")
             choice = choice.lower()
             if choice in ("yes", "y", "true"):
                 if self.modificator.removeSection(section):
@@ -332,7 +332,7 @@ class CSCLI(CLI):
             else:
                 print("Aborting removal.")
         except Exception as x:
-            print("Error removing section, %s" % str(x))
+            print(f"Error removing section, {str(x)}")
 
     def do_setComment(self, args):
         """
@@ -433,7 +433,7 @@ class CSCLI(CLI):
             if len(argsList) > 0:
                 limit = int(argsList[0])
             history = self.modificator.getHistory(limit)
-            print("%s recent commits:" % limit)
+            print(f"{limit} recent commits:")
             for entry in history:
                 self.printPair(entry[0], entry[1], "@")
         except Exception:
@@ -495,7 +495,7 @@ class CSCLI(CLI):
                 print("What version to rollback?")
                 return
             version = " ".join(argsList[0:2])
-            choice = input("Do you really want to rollback to version %s? yes/no [no]: " % version)
+            choice = input(f"Do you really want to rollback to version {version}? yes/no [no]: ")
             choice = choice.lower()
             if choice in ("yes", "y"):
                 response = self.modificator.rollbackToVersion(version)
@@ -504,7 +504,7 @@ class CSCLI(CLI):
                     print("Rolled back.")
                     self.modificator.loadFromRemote()
                 else:
-                    print("Error sending data, server said: %s" % response["Message"])
+                    print(f"Error sending data, server said: {response['Message']}")
         except Exception:
             _showTraceback()
 

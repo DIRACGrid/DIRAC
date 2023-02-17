@@ -258,7 +258,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
 
             if not res["OK"]:
                 _msg = f"Error updating Element ({elementName},{statusType},{status})"
-                gLogger.warn("RSS: %s" % _msg)
+                gLogger.warn(f"RSS: {_msg}")
 
             return res
 
@@ -278,7 +278,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
         # If we are here it is because elementType is either 'StorageElement' or 'Catalog'
         statuses = self.rssConfig.getConfigStatusType(elementType)
         if statusType not in statuses:
-            gLogger.error("%s is not a valid statusType" % statusType)
+            gLogger.error(f"{statusType} is not a valid statusType")
             return S_ERROR(f"{statusType} is not a valid statusType: {statuses}")
 
         if elementType == "StorageElement":
@@ -294,7 +294,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
 
         res = csAPI.commitChanges()
         if not res["OK"]:
-            gLogger.warn("CS: %s" % res["Message"])
+            gLogger.warn(f"CS: {res['Message']}")
 
         return res
 

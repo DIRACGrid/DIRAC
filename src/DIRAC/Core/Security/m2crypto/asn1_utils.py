@@ -353,4 +353,4 @@ def retrieveExtension(m2Cert, extensionOID):
             return extension["extnValue"]
 
     # If we are here, it means that we could not find the expected extension.
-    raise LookupError("Could not find extension with OID %s" % extensionOID)
+    raise LookupError(f"Could not find extension with OID {extensionOID}")

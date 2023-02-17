@@ -48,7 +48,7 @@ class SecurityFileLog(threading.Thread):
                 )
             else:
                 fd = open(logFile, "a")
-            fd.write("%s\n" % ", ".join([str(item) for item in secMsg]))
+            fd.write(f"{', '.join([str(item) for item in secMsg])}\n")
             fd.close()
 
     def __launchCleaningOldLogFiles(self):
@@ -64,7 +64,7 @@ class SecurityFileLog(threading.Thread):
 
     def __unlinkOldLog(self, filePath):
         try:
-            gLogger.info("Unlinking file %s" % filePath)
+            gLogger.info(f"Unlinking file {filePath}")
             os.unlink(filePath)
         except Exception as e:
             gLogger.error("Can't unlink old log file", f"{filePath}: {str(e)}")
@@ -73,9 +73,9 @@ class SecurityFileLog(threading.Thread):
 
     def __zipOldLog(self, filePath):
         try:
-            gLogger.info("Compressing file %s" % filePath)
+            gLogger.info(f"Compressing file {filePath}")
             with open(filePath, "rb") as f_in:
-                with gzip.open("%s.gz" % filePath, "wb") as f_out:
+                with gzip.open(f"{filePath}.gz", "wb") as f_out:
                     shutil.copyfileobj(f_in, f_out)
         except Exception:
             gLogger.exception("Can't compress old log file", filePath)
@@ -91,7 +91,7 @@ class SecurityFileLog(threading.Thread):
                 numEntries += 1
                 numEntriesSubDir = self.__walkOldLogs(entryPath, nowEpoch, reLog, executionInSecs, functor)
                 if numEntriesSubDir == 0:
-                    gLogger.info("Removing dir %s" % entryPath)
+                    gLogger.info(f"Removing dir {entryPath}")
                     try:
                         os.rmdir(entryPath)
                         numEntries -= 1

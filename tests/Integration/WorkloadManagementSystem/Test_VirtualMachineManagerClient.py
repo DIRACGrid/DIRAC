@@ -32,7 +32,7 @@ class VirtualMachineManagerTests(unittest.TestCase):
         # Create a test instance
         self.__inst_uuid = str(uuid.uuid4())
         self.__inst_image = "ClientImage"
-        self.__inst_name = "ClientInst-%s" % self.__inst_uuid
+        self.__inst_name = f"ClientInst-{self.__inst_uuid}"
         self.__inst_ep = "UKI-CLOUD::testcloud.cloud"
         self.__inst_pod = "clientvo"
         res = self.__client.insertInstance(

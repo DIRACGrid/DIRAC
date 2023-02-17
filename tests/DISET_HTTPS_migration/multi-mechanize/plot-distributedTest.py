@@ -46,7 +46,7 @@ def get_results():
     for i in range(1, count + 1):
         fileName = f"{file}.{i}.txt"
         with open(fileName) as content:
-            print("reading %s" % fileName)
+            print(f"reading {fileName}")
             lines = content.read().split("\n")[1:-1]
             result = [line.split(",") for line in lines]
             results.append(result)
@@ -57,7 +57,7 @@ def get_results():
 def get_server_stats():
     print("Please specify location to file with server stats:")
     serverStatFile = "/tmp/results.txt"  # raw_input()
-    print("Loading %s" % serverStatFile)
+    print(f"Loading {serverStatFile}")
 
     serverStats = dict()
     with open(serverStatFile) as content_file:
@@ -115,7 +115,7 @@ def process_data(results, serverStats):
             RAM.append(RAM[-1])
             loadAvg.append(loadAvg[-1])
 
-            print("ERROR - Some values missing for CPU and Memory usage [try to load for time=%s]" % t)
+            print(f"ERROR - Some values missing for CPU and Memory usage [try to load for time={t}]")
 
     return (time, requestTime, CPU, RAM, reqPerSec, errorRate, loadAvg)
 

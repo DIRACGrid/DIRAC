@@ -455,7 +455,7 @@ class ResourceManagementDB(SQLAlchemyDB):
                 elif isinstance(columnValue, str):
                     select = select.filter(column_a == columnValue)
                 else:
-                    self.log.error("type(columnValue) == %s" % type(columnValue))
+                    self.log.error(f"type(columnValue) == {type(columnValue)}")
 
             res = select.first()  # the selection is done via primaryKeys only
             if not res:  # if not there, let's insert it
@@ -482,6 +482,6 @@ class ResourceManagementDB(SQLAlchemyDB):
         except exc.SQLAlchemyError as e:
             session.rollback()
             self.log.exception("addOrModify: unexpected exception", lException=e)
-            return S_ERROR("addOrModify: unexpected exception %s" % e)
+            return S_ERROR(f"addOrModify: unexpected exception {e}")
         finally:
             session.close()

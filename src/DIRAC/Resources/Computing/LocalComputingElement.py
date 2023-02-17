@@ -141,11 +141,11 @@ class LocalComputingElement(ComputingElement):
         self.log.verbose("Creating working directories")
         result = systemCall(30, cmdTuple)
         if not result["OK"]:
-            self.log.error("Failed creating working directories", "(%s)" % result["Message"][1])
+            self.log.error("Failed creating working directories", f"({result['Message'][1]})")
             return result
         status, output, error = result["Value"]
         if status != 0:
-            self.log.error("Failed to create directories", "(%s)" % error)
+            self.log.error("Failed to create directories", f"({error})")
             return S_ERROR(errno.EACCES, "Failed to create directories")
 
         return S_OK()
@@ -278,14 +278,14 @@ class LocalComputingElement(ComputingElement):
             tempDir = localDir
 
         try:
-            localOut = os.path.join(tempDir, "%s.out" % jobStamp)
-            localErr = os.path.join(tempDir, "%s.err" % jobStamp)
+            localOut = os.path.join(tempDir, f"{jobStamp}.out")
+            localErr = os.path.join(tempDir, f"{jobStamp}.err")
             if os.path.exists(outputFile):
                 shutil.copy(outputFile, localOut)
             if os.path.exists(errorFile):
                 shutil.copy(errorFile, localErr)
         except Exception as x:
-            return S_ERROR("Failed to get output files: %s" % str(x))
+            return S_ERROR(f"Failed to get output files: {str(x)}")
 
         open(localOut, "a").close()
         open(localErr, "a").close()
@@ -321,7 +321,7 @@ class LocalComputingElement(ComputingElement):
             }
             result = self.batchSystem.getJobOutputFiles(**batchDict)
             if result["Status"] != 0:
-                return S_ERROR("Failed to get job output files: %s" % result["Message"])
+                return S_ERROR(f"Failed to get job output files: {result['Message']}")
 
             output = result["Jobs"][jobStamp]["Output"]
             error = result["Jobs"][jobStamp]["Error"]

@@ -115,7 +115,7 @@ class DirectoryTreeBase:
 
         if not dirDict:
             self.removeDir(path)
-            return S_ERROR("Failed to create directory %s" % path)
+            return S_ERROR(f"Failed to create directory {path}")
         return S_OK(dirID)
 
     #####################################################################
@@ -277,7 +277,7 @@ class DirectoryTreeBase:
                 return result
             dirID = result["Value"]
             if not dirID:
-                return S_ERROR("%s: not found" % str(path))
+                return S_ERROR(f"{str(path)}: not found")
             return S_OK(dirID)
         else:
             return S_OK(path)
@@ -556,7 +556,7 @@ class DirectoryTreeBase:
 
         dirListString = ",".join([str(dir) for dir in dirs])
 
-        req = "SELECT COUNT( DirID ) FROM FC_Files USE INDEX (DirID) WHERE DirID IN ( %s )" % dirListString
+        req = f"SELECT COUNT( DirID ) FROM FC_Files USE INDEX (DirID) WHERE DirID IN ( {dirListString} )"
         result = self.db._query(req)
         if not result["OK"]:
             return result
@@ -893,7 +893,7 @@ class DirectoryTreeBase:
         for path in lfns:
             if path == "/":
                 req = "SELECT SUM(Size),COUNT(*) FROM FC_Files"
-                reqDir = "SELECT count(*) FROM %s" % treeTable
+                reqDir = f"SELECT count(*) FROM {treeTable}"
             else:
                 result = self.findDir(path)
                 if not result["OK"]:
@@ -1008,7 +1008,7 @@ class DirectoryTreeBase:
                     return result
                 subDirString = result["Value"]
                 req = "SELECT S.SEName, D.SESize, D.SEFiles FROM FC_DirectoryUsage as D, FC_StorageElements as S"
-                req += " JOIN (%s) AS F" % subDirString
+                req += f" JOIN ({subDirString}) AS F"
                 req += " WHERE S.SEID=D.SEID AND D.DirID=F.DirID"
 
             result = self.db._query(req, conn=connection)
@@ -1127,7 +1127,7 @@ class DirectoryTreeBase:
             return result
 
         dirIDs = [x[0] for x in result["Value"]]
-        gLogger.verbose("Starting rebuilding Directory Usage, number of visible directories %d" % len(dirIDs))
+        gLogger.verbose(f"Starting rebuilding Directory Usage, number of visible directories {len(dirIDs)}")
 
         insertFields = ["DirID", "SEID", "SESize", "SEFiles", "LastUpdate"]
         insertCount = 0
@@ -1179,7 +1179,7 @@ class DirectoryTreeBase:
                         seSize,
                         seFiles,
                     )
-                    req += " WHERE DirID=%s AND SEID=0" % dirID
+                    req += f" WHERE DirID={dirID} AND SEID=0"
                     result = self.db._update(req)
                     if not result["OK"]:
                         return result
@@ -1260,13 +1260,13 @@ class DirectoryTreeBase:
             return res
         resultDict["Empty Directories"] = res["Value"][0][0]
 
-        req = "SELECT COUNT(DirID) FROM %s WHERE DirID NOT IN ( SELECT DirID FROM FC_DirectoryInfo )" % treeTable
+        req = f"SELECT COUNT(DirID) FROM {treeTable} WHERE DirID NOT IN ( SELECT DirID FROM FC_DirectoryInfo )"
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["DirTree w/o DirInfo"] = res["Value"][0][0]
 
-        req = "SELECT COUNT(DirID) FROM FC_DirectoryInfo WHERE DirID NOT IN ( SELECT DirID FROM %s )" % treeTable
+        req = f"SELECT COUNT(DirID) FROM FC_DirectoryInfo WHERE DirID NOT IN ( SELECT DirID FROM {treeTable} )"
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res

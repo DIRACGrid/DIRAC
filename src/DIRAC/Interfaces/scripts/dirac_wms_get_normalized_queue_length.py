@@ -30,7 +30,7 @@ def main():
         normCPU = queueNormalizedCPU(ceUniqueID)
 
         if not normCPU["OK"]:
-            print("ERROR %s:" % ceUniqueID, normCPU["Message"])
+            print(f"ERROR {ceUniqueID}:", normCPU["Message"])
             exitCode = 2
             continue
         print(ceUniqueID, normCPU["Value"])

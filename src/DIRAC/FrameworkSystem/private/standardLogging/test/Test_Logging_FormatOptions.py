@@ -325,6 +325,6 @@ def test_showFormatOptionsPropag():
     capturedBackend.seek(0)
 
     threadID = str(_thread.get_ident())
-    expectedLog = "Framework [%s] NOTICE: me\nss\nage\n" % threadID
+    expectedLog = f"Framework [{threadID}] NOTICE: me\nss\nage\n"
 
     assert expectedLog == logstring

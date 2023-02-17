@@ -43,21 +43,21 @@ class PolicyCaller:
         """
 
         if "module" not in policyDict:
-            return S_ERROR("Malformed policyDict %s" % policyDict)
+            return S_ERROR(f"Malformed policyDict {policyDict}")
         pModuleName = policyDict["module"]
 
         if "command" not in policyDict:
-            return S_ERROR("Malformed policyDict %s" % policyDict)
+            return S_ERROR(f"Malformed policyDict {policyDict}")
         pCommand = policyDict["command"]
 
         if "args" not in policyDict:
-            return S_ERROR("Malformed policyDict %s" % policyDict)
+            return S_ERROR(f"Malformed policyDict {policyDict}")
         pArgs = policyDict["args"]
 
         try:
-            policyModule = Utils.voimport("DIRAC.ResourceStatusSystem.Policy.%s" % pModuleName)
+            policyModule = Utils.voimport(f"DIRAC.ResourceStatusSystem.Policy.{pModuleName}")
         except ImportError:
-            return S_ERROR("Unable to import DIRAC.ResourceStatusSystem.Policy.%s" % pModuleName)
+            return S_ERROR(f"Unable to import DIRAC.ResourceStatusSystem.Policy.{pModuleName}")
 
         if not hasattr(policyModule, pModuleName):
             return S_ERROR(f"{policyModule} has no attibute {pModuleName}")

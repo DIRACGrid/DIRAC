@@ -104,7 +104,7 @@ def clearDirectory(se, local_path, target_path):
         for fn in files:
             filesToRemove.append(os.path.join(target_path, root.replace(local_path, "").strip("/"), fn))
 
-    print("CHRIS WILL REMOVE %s" % filesToRemove)
+    print(f"CHRIS WILL REMOVE {filesToRemove}")
     res = se.removeFile(filesToRemove)
     if not res["OK"]:
         print("basicTest.clearDirectory: Workflow folder maybe not empty")
@@ -212,7 +212,7 @@ def test_uploadDirectory_shouldFail(setuptest):
     assert res["OK"]
     assert set(res["Value"]["Failed"]) == set(putDir)
 
-    print("CHRIS uploadDir %s" % res)
+    print(f"CHRIS uploadDir {res}")
     # Need to sleep for echo to update ?
     # time.sleep(1)
 

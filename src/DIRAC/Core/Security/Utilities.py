@@ -76,7 +76,7 @@ def generateCAFile(location=None):
                     continue
                 fd.write(chain.dumpAllToString()["Value"])
 
-        gLogger.info("CAs used from: %s" % str(fn))
+        gLogger.info(f"CAs used from: {str(fn)}")
         return S_OK(fn)
     except OSError as err:
         gLogger.warn(err)

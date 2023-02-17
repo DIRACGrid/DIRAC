@@ -46,7 +46,7 @@ try:
     if not vo:
         raise ValueError("Proxy has no VO")
 
-    LFN_PATH = "/%s/test/unit-test/StorageElement/" % vo
+    LFN_PATH = f"/{vo}/test/unit-test/StorageElement/"
 
 except Exception as e:  # pylint: disable=broad-except
     print(repr(e))
@@ -66,7 +66,7 @@ def assertResult(res, lfn, sub="Successful"):
     """Check if lfn is in Successful or Failed, given by sub."""
     assert res["OK"], res.get("Message", "All OK")
     assert sub in res["Value"]
-    assert res["Value"][sub], "Did not find %r in result" % sub
+    assert res["Value"][sub], f"Did not find {sub!r} in result"
     assert lfn in res["Value"][sub]
     assert "Files" in res["Value"][sub][lfn]
     assert "Size" in res["Value"][sub][lfn]

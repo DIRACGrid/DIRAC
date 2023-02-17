@@ -20,7 +20,7 @@ def main():
 
     p12 = args[0]
     if not os.path.isfile(p12):
-        gLogger.fatal("%s does not exist." % p12)
+        gLogger.fatal(f"{p12} does not exist.")
         sys.exit(1)
 
     globus = os.path.join(os.environ["HOME"], ".globus")
