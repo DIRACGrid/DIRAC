@@ -75,7 +75,7 @@ class AREXComputingElement(ARCComputingElement):
         self.proxyTimeLeftBeforeRenewal = self.ceParameters.get(
             "ProxyTimeLeftBeforeRenewal", self.proxyTimeLeftBeforeRenewal
         )
-        self.arcRESTTimeout = self.ceParameters.get("ARCRESTTimeout", self.arcRESTTimeout)
+        self.arcRESTTimeout = float(self.ceParameters.get("ARCRESTTimeout", self.arcRESTTimeout))
 
         # Build the URL based on the CEName, the port and the REST version
         service_url = os.path.join("https://", "%s:%s" % (self.ceName, self.port))
