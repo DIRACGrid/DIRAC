@@ -456,10 +456,10 @@ Queue stamp in %(pilotStampList)s
             # FIXME: condor_history does only support j for autoformat from 8.5.3,
             # format adds whitespace for each field This will return a list of 1245 75 3
             # needs to concatenate the first two with a dot
-            condorHistCall = "condor_history {} {} -af ClusterId ProcId JobStatus".format(
-                self.remoteScheddOptions,
-                " ".join(_condorIDs),
-            ).split()
+            condorHistCall = ["condor_history"]
+            condorHistCall.extend(self.remoteScheddOptions.strip().split(" "))
+            condorHistCall.extend(_condorIDs)
+            condorHistCall.extend(["-af", "ClusterId", "ProcId", "JobStatus"])
 
             self._treatCondorHistory(condorHistCall, qList)
 
