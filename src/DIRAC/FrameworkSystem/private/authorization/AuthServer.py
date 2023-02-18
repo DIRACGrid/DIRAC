@@ -439,8 +439,8 @@ class AuthServer(_AuthorizationServer):
         # Find identity provider for group
         groupProvider = getIdPForGroup(request.group) if request.groups else None
 
-        # If requested access token for group that is not registered in any identity provider
-        # or the requested provider does not match the group return error
+        # If access token is requested for a group that is not registered in any identity provider
+        # or the requested provider does not match the group, return error
         if request.group and not groupProvider and "proxy" not in request.scope:
             raise Exception(f"The {request.group} group belongs to the VO that is not tied to any Identity Provider.")
 

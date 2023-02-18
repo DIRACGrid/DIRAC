@@ -252,7 +252,7 @@ class TokenManagerHandler(TornadoService):
                                 result["Value"],
                             )
                             return result
-                # Not found any token associated with the found user ID
+                # Did not find any token associated with the found user ID
                 err.append(result.get("Message", f"No token found for {uid}"))
         # Collect all errors when trying to get a token, or if no user ID is registered
         return S_ERROR("; ".join(err or [f"No user ID found for {username}"]))
