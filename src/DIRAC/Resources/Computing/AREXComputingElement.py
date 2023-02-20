@@ -226,6 +226,7 @@ class AREXComputingElement(ARCComputingElement):
         :param str jobID: ARC job ID
         :return: delegation ID
         """
+        params = {"action": "delegations"}
         query = self._urlJoin("jobs")
 
         # Submit the POST request to get the delegation
@@ -234,6 +235,7 @@ class AREXComputingElement(ARCComputingElement):
             query,
             data=json.dumps(jobsJson),
             headers=self.headers,
+            params=params,
             timeout=self.arcRESTTimeout,
         )
 
@@ -244,8 +246,11 @@ class AREXComputingElement(ARCComputingElement):
         if "delegation_id" not in responseDelegation["job"]:
             return S_ERROR(f"Cannot find the Delegation ID for Job {arcJobID}")
 
-        delegationID = responseDelegation["job"]["delegation_id"][0]
-        return S_OK(delegationID)
+        delegationIDs = responseDelegation["job"]["delegation_id"]
+        # Documentation says "Array", but a single string is returned if there is only one
+        if not isinstance(delegationIDs, list):
+            delegationIDs = [delegationIDs]
+        return S_OK(delegationIDs[0])
 
     #############################################################################
 
@@ -528,7 +533,10 @@ class AREXComputingElement(ARCComputingElement):
             if not res["OK"]:
                 continue
 
-            timeLeft = proxy.getRemainingSecs()
+            timeLeftRes = proxy.getRemainingSecs()
+            if not timeLeftRes["OK"]:
+                continue
+            timeLeft = timeLeftRes["Value"]
             if timeLeft < self.proxyTimeLeftBeforeRenewal:
                 self.log.debug(
                     "Renewing proxy for job",
