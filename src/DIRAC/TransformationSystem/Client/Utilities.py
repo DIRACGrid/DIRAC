@@ -51,7 +51,9 @@ class PluginUtilities:
         self.dmsHelper = DMSHelpers()
 
         self.plugin = plugin
-        self.transID = str(transID) if transID else "None"
+        # Keep transID an int as this is the type expected by service !!!!
+        self.transID = transID
+        self.transIDStr = str(transID) if transID else "None"
         self.params = {}
         self.groupSize = 0
         self.maxFiles = 0
@@ -59,14 +61,14 @@ class PluginUtilities:
         self.transString = ""
         self.debug = debug
 
-        self.log = gLogger.getSubLogger(self.plugin + self.transID)
+        self.log = gLogger.getSubLogger(self.plugin + self.transIDStr)
         # FIXME: This doesn't work (yet) but should soon, will allow scripts to get the context
         self.log.showHeaders(True)
 
     def logVerbose(self, message, param=""):
         """logger helper"""
         if self.debug:
-            log = gLogger.getSubLogger(self.plugin + " (V)" + self.transID)
+            log = gLogger.getSubLogger(self.plugin + " (V)" + self.transIDStr)
             log.info(message, param)
         else:
             self.log.verbose(message, param)
@@ -94,8 +96,9 @@ class PluginUtilities:
     def setParameters(self, params):
         """Set the transformation parameters and extract transID"""
         self.params = params
-        self.transID = str(params["TransformationID"])
-        self.log = gLogger.getSubLogger(self.plugin + self.transID)
+        self.transID = params["TransformationID"]
+        self.transIDStr = str(self.transID) if self.transID else "None"
+        self.log = gLogger.getSubLogger(self.plugin + self.transIDStr)
 
     # @timeThis
     def groupByReplicas(self, files, status):
