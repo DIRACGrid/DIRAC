@@ -55,14 +55,17 @@ class RegisterReplica(DMSRequestOperationsBase):
         # # loop over files
         registerOperations = {}
         successReplicas = 0
+
+        targetSE = self.operation.targetSEList[0]
+        replicaTuples = [(opFile.LFN, opFile.PFN, targetSE) for opFile in waitingFiles]
+
+        registerReplica = self.dm.registerReplica(replicaTuples, catalogs)
+
         for opFile in waitingFiles:
             # # get LFN
             lfn = opFile.LFN
             # # and others
-            targetSE = self.operation.targetSEList[0]
-            replicaTuple = (lfn, opFile.PFN, targetSE)
-            # # call ReplicaManager
-            registerReplica = self.dm.registerReplica(replicaTuple, catalogs)
+
             # # check results
             if not registerReplica["OK"] or lfn in registerReplica["Value"]["Failed"]:
                 # There have been some errors
