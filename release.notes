@@ -1,3 +1,32 @@
+[v8.0.15]
+
+*Resources
+
+FIX: (#6831) Update AREX delegation renewal
+FIX: (#6827) Fix AREX ARCRESTTimeout
+FIX: (#6815) fix account parameter in SSHBatchCE
+
+*TransformationSystem
+
+FIX: (#6825) keep transID an int in utilities
+
+*DataManagementSystem
+
+FIX: (#6818) specify the same column in order_by and distinct in FTS3DB.getNonFinishedOperations
+CHANGE: (#6794) Speed up ReplicateAndRegister operation
+
+*Core
+
+FIX: (#6809) don't use matplotlib deprecated methods
+
+*Tests
+
+NEW: (#6808) Integration test for StorageElementHandler and FileHelper
+
+*Docs
+
+FIX: (#6800) Removed Google forum from docs
+
 [v8.0.14]
 
 *Core
