@@ -28,6 +28,31 @@ exclude = [
     '/tests/'
 ]
 
+[tool.pylint.basic]
+
+# We mostly have CamelCase, with a few differences.
+# In tests we have quite some snake_case, mostly due to pytest
+# We can instruct pylint to understand both, but the problem is that it
+# will stick to one style per file (i.e if the first variable is snake,
+# all the following must be snake)
+# It's not quite the case yet...
+# For the time being, I wrote the regex that matches best our code.
+# (except for the services with their export_ and types_ ...)
+# We will see about tests later...
+# See https://pylint.readthedocs.io/en/latest/user_guide/messages/convention/invalid-name.html#multiple-naming-styles-for-custom-regular-expressions
+
+# Camel case with capital letter first
+class-rgx = '([A-Z][a-z]*)+$'
+module-rgx = '([A-Z][a-z]*)+$'
+
+# Attributes, variables, functions and methods
+# are camelCase, but can start with one or two understcore
+attr-rgx = '(?:_*[a-z]+([A-Z][a-z]*)*)$'
+variable-rgx = '(?:_*[a-z]+([A-Z][a-z]*)*)$'
+function-rgx = '(?:_*[a-z]+([A-Z][a-z]*)*)$'
+method-rgx = '(?:_*[a-z]+([A-Z][a-z]*)*)$'
+
+argument-naming-style = "camelCase"
 
 [tool.pylint.main]
 # Files or directories to be skipped. They should be base names, not paths.
