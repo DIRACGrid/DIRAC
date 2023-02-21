@@ -1,3 +1,23 @@
+[v8.1.0a8]
+
+*Resources
+
+FIX: (#6832) Update AREX delegation renewal
+FIX: (#6830) Fix AREX ARCRESTTimeout
+FIX: (#6817) fix account parameter in SSHBatchCE
+
+*TransformationSystem
+
+FIX: (#6829) keep transID an int in utilities
+
+*DataManagementSystem
+
+FIX: (#6819) specify the same column in order_by and distinct in FTS3DB.getNonFinishedOperations
+
+*Tests
+
+NEW: (#6812) Integration test for StorageElementHandler and FileHelper
+
 [v8.1.0a7]
 
 *Core
