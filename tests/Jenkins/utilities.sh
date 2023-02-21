@@ -122,7 +122,7 @@ findServices(){
       ServicestoSearch=' '
     fi
   else
-    ServicestoExclude='notExcluding'
+    ServicestoExclude=' '
   fi
 
   if ! cd "${SERVERINSTALLDIR}" -ne 0; then
@@ -132,7 +132,7 @@ findServices(){
   if [[ -n "${ServicestoExclude}" ]]; then
     python -m DIRAC.Core.Utilities.Extensions findServices | grep -v "${ServicestoExclude}" > services
   else
-    python -m DIRAC.Core.Utilities.Extensions findServices | grep "${ServicestoSearch}"> services
+    python -m DIRAC.Core.Utilities.Extensions findServices | grep "${ServicestoSearch}" > services
   fi
 
   echo "found $(wc -l services)"
@@ -668,7 +668,7 @@ diracServices(){
   echo '==> [diracServices]'
 
   # Ignore tornado services
-  local services=$(cut -d '.' -f 1 < services | grep -v Tornado | grep -v TokenManager | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
+  local services=$(cut -d '.' -f 1 < services | grep -v TokenManager | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'

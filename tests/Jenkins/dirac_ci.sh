@@ -217,6 +217,13 @@ fullInstallDIRAC() {
   fi
 
   findServices 'FrameworkSystem'
+  # construct the list with a mix of Tornado and DISET services
+  grep 'Tornado' services > tornadoServices
+  grep -v 'Tornado' services > disetServices  # WARNING: there might be some exeptions
+  more tornadoServices | sed s/Tornado//g > tornadoServicesWithoutTornado
+  comm -1 -3 <(sort tornadoServicesWithoutTornado) <(sort disetServices) >> tornadoServices
+  mv tornadoServices services
+  #
   if ! diracServices; then
     echo "ERROR: diracServices failed" >&2
     exit 1
@@ -263,6 +270,13 @@ fullInstallDIRAC() {
 
   # services (not looking for FrameworkSystem already installed)
   findServices 'exclude' 'FrameworkSystem'
+  # construct the list with a mix of Tornado and DISET services
+  grep 'Tornado' services > tornadoServices
+  grep -v 'Tornado' services > disetServices  # WARNING: there might be some exeptions
+  more tornadoServices | sed s/Tornado//g > tornadoServicesWithoutTornado
+  comm -1 -3 <(sort tornadoServicesWithoutTornado) <(sort disetServices) >> tornadoServices
+  mv tornadoServices services
+  #
   if ! diracServices; then
     echo "ERROR: diracServices failed" >&2
     exit 1
