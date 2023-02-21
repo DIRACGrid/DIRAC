@@ -8,7 +8,7 @@ from DIRAC.Core.Utilities.Extensions import extensionsByPriority, recurseImport
 
 
 class ModuleLoader:
-    def __init__(self, importLocation, sectionFinder, superClass, csSuffix=False, moduleSuffix=False):
+    def __init__(self, importLocation, sectionFinder, superClass=False, csSuffix=False, moduleSuffix=False):
         self.__modules = {}
         self.__loadedModules = {}
         self.__superClass = superClass
@@ -177,7 +177,7 @@ class ModuleLoader:
                 gLogger.exception(f"{location} module does not have a {module} class!")
                 return S_ERROR(f"Cannot load {module}")
             # Check if it's subclass
-            if not issubclass(modClass, self.__superClass):
+            if self.__superClass and not issubclass(modClass, self.__superClass):
                 return S_ERROR(f"{loadName} has to inherit from {self.__superClass.__name__}")
             self.__loadedModules[loadName] = {"classObj": modClass, "moduleObj": modObj}
             # End of loading of 'loadName' module

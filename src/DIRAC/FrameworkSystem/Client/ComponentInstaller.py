@@ -90,6 +90,7 @@ from DIRAC.Core.Security.Properties import (
     SERVICE_ADMINISTRATOR,
     TRUSTED_HOST,
 )
+from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.Core.Utilities.Extensions import (
     extensionsByPriority,
     findAgents,
@@ -1263,7 +1264,7 @@ class ComponentInstaller:
         if componentType == "agent":
             loader = ModuleLoader("Agent", PathFinder.getAgentSection, AgentModule)
         elif componentType == "service":
-            loader = ModuleLoader("Service", PathFinder.getServiceSection, RequestHandler, moduleSuffix="Handler")
+            loader = ModuleLoader("Service", PathFinder.getServiceSection, False, moduleSuffix="Handler")
         elif componentType == "executor":
             loader = ModuleLoader("Executor", PathFinder.getExecutorSection, ExecutorModule)
         else:
