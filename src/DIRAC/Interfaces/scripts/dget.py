@@ -16,6 +16,7 @@ from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache
 from DIRAC.Core.Base.Script import Script
 from DIRAC import gLogger
 
+
 class Params:
     def __init__(self):
         self.recursive = False

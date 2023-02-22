@@ -113,7 +113,9 @@ def main():
         if not retVal["OK"]:
             gLogger.error("Error:", retVal["Message"])
         if retVal["Value"] == "NO DEFAULT":
-            gLogger.error("Error: No default SE specified, please set default SE or specify SE on command line using -D option")
+            gLogger.error(
+                "Error: No default SE specified, please set default SE or specify SE on command line using -D option"
+            )
             DIRAC.exit(-1)
         se = retVal["Value"]
 

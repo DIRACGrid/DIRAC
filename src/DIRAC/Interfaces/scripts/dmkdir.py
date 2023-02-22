@@ -17,6 +17,7 @@ from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache
 from DIRAC.Core.Base.Script import Script
 from DIRAC import gLogger
 
+
 @Script()
 def main():
     configCache = ConfigCache()
