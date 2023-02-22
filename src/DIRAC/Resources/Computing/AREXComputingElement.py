@@ -543,6 +543,7 @@ class AREXComputingElement(ARCComputingElement):
                     f"{arcJob} whose proxy expires at {timeLeft}",
                 )
                 # Proxy needs to be renewed - try to renew it
+                # First, get a new CSR from the delegation
                 params = {"action": "renew"}
                 query = self._urlJoin(os.path.join("delegations", delegationID))
 
@@ -552,11 +553,21 @@ class AREXComputingElement(ARCComputingElement):
                     params=params,
                     timeout=self.arcRESTTimeout,
                 )
+
                 if response.ok:
-                    self.log.debug("Proxy successfully renewed", f"for job {arcJob}")
+                    # Then, sign and upload the certificate
+                    result = self.__uploadCertificate(delegationID, response.text)
+                    if result["OK"]:
+                        self.log.debug("Proxy successfully renewed", f"for job {arcJob}")
+                    else:
+                        self.log.debug(
+                            "Proxy not renewed, failed to send renewed proxy",
+                            f"for job {arcJob} with delegation {delegationID}:",
+                            result["Message"],
+                        )
                 else:
                     self.log.debug(
-                        "Proxy not renewed",
+                        "Proxy not renewed, failed to get CSR",
                         f"for job {arcJob} with delegation {delegationID}",
                     )
             else:  # No need to renew. Proxy is long enough
