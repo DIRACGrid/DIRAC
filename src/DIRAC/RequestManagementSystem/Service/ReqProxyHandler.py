@@ -167,10 +167,10 @@ class ReqProxyHandler(RequestHandler):
     types_putRequest = [str]
 
     def export_putRequest(self, requestJSON):
-        """forward request from local RequestDB to central RequestManager
+        """Dump the request in a local cache for later forwarding
 
         :param self: self reference
-        :param str requestType: request type
+        :param str requestJSON: json dump of the request
         """
 
         requestDict = json.loads(requestJSON)
@@ -189,21 +189,13 @@ class ReqProxyHandler(RequestHandler):
         if not forwardable["OK"]:
             gLogger.warn("putRequest: ", f"{forwardable['Message']}")
 
-        setRequest = self.requestManager().putRequest(requestJSON)
-        if not setRequest["OK"]:
-            gLogger.error(
-                "setRequest: unable to set request", f"'{requestName}' @ RequestManager: {setRequest['Message']}"
-            )
-            # # put request to the request file cache
-            save = self.__saveRequest(requestName, requestJSON)
-            if not save["OK"]:
-                gLogger.error("setRequest: unable to save request to the cache", save["Message"])
-                return save
-            gLogger.info("setRequest: ", f"{requestName} is saved to {save['Value']} file")
-            return S_OK({"set": False, "saved": True})
-
-        gLogger.info("setRequest: ", f"request '{requestName}' has been set to the ReqManager")
-        return S_OK({"set": True, "saved": False})
+        # # put request to the request file cache
+        save = self.__saveRequest(requestName, requestJSON)
+        if not save["OK"]:
+            gLogger.error("setRequest: unable to save request to the cache", save["Message"])
+            return save
+        gLogger.info("setRequest: ", f"{requestName} is saved to {save['Value']} file")
+        return S_OK({"set": False, "saved": True})
 
     @staticmethod
     def __forwardable(requestDict):
