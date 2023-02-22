@@ -572,7 +572,7 @@ class AREXComputingElement(ARCComputingElement):
                     else:
                         self.log.debug(
                             "Proxy not renewed, failed to send renewed proxy",
-                            "for job %s with delegation %s: %s" % (arcJob, delegationID, res["Message"]),
+                            "for job %s with delegation %s: %s" % (arcJob, delegationID, result["Message"]),
                         )
                 else:
                     self.log.debug(
