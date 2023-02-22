@@ -71,7 +71,6 @@ def main():
         lfns.update(lfnSet)
 
     from DIRAC.Interfaces.API.Dirac import Dirac
-    from DIRAC import gLogger
     from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
     from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
