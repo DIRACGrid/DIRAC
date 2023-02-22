@@ -60,7 +60,7 @@ def main():
             if lfn in result["Value"]["Failed"]:
                 gLogger.error("Error:", result["Value"]["Failed"][lfn])
         except Exception as x:
-            print("Exception:", str(x))
+            gLogger.error("Exception:", str(x))
 
 
 if __name__ == "__main__":

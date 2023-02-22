@@ -3,6 +3,7 @@
   Retrieve logging information for a DIRAC job
 """
 import DIRAC
+from DIRAC import gLogger
 from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache
 from DIRAC.Interfaces.Utilities.DCommands import ArrayFormatter
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
@@ -44,13 +45,13 @@ def main():
     for job in jobs:
         result = monitoring.getJobLoggingInfo(job)
         if result["OK"]:
-            print(af.listFormat(result["Value"], headers, sort=headers.index("Time")))
+            gLogger.notice(af.listFormat(result["Value"], headers, sort=headers.index("Time")))
         else:
             errors.append(result["Message"])
             exitCode = 2
 
     for error in errors:
-        print("ERROR:", error)
+        gLogger.error("ERROR:", error)
 
     DIRAC.exit(exitCode)
 

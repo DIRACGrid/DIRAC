@@ -46,7 +46,7 @@ def main():
             session.setCwd(arg)
             session.write()
     else:
-        print(f'Error: "{arg}" not a valid directory')
+        gLogger.error(f'Error: "{arg}" not a valid directory')
         DIRAC.exit(-1)
 
 

@@ -3,6 +3,7 @@
 print DCommands session environment variables
 """
 import DIRAC
+from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Interfaces.Utilities.DCommands import DSession
 from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache
@@ -26,10 +27,10 @@ def main():
     if not args:
         retVal = session.listEnv()
         if not retVal["OK"]:
-            print("Error:", retVal["Message"])
+            gLogger.error("Error:", retVal["Message"])
             DIRAC.exit(-1)
         for o, v in retVal["Value"]:
-            print(o + "=" + v)
+            gLogger.notice(o + "=" + v)
         DIRAC.exit(0)
 
     section, option = arg.split(".") if "." in (arg := args[0]) else (None, arg)
@@ -37,10 +38,10 @@ def main():
     result = session.get(section, option) if section else session.getEnv(option)
 
     if not result["OK"]:
-        print("Error:", result["Message"])
+        gLogger.error("Error:", result["Message"])
         DIRAC.exit(-1)
 
-    print(result["Value"])
+    gLogger.notice(result["Value"])
 
 
 if __name__ == "__main__":

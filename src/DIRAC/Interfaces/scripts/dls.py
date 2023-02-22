@@ -13,7 +13,7 @@ import os
 import sys
 import getopt
 
-from DIRAC import S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.Script import Script
 
 from DIRAC.Interfaces.Utilities.DCommands import DSession
@@ -183,7 +183,7 @@ def main():
                         for se, entry in result["Value"]["Successful"][path].items():
                             replicas.append(se.ljust(15) + " " + entry)
                     else:
-                        print("Replicas: ", result)  # [ 'Message' ]
+                        gLogger.notice("Replicas: ", result)  # [ 'Message' ]
             except Exception as x:
                 replicas.append("replicas failed:" + str(x))
             return tuple(replicas)
@@ -224,8 +224,8 @@ def main():
                 try:
                     optlist, arguments = getopt.getopt(argss, short_opts, long_opts)
                 except getopt.GetoptError as e:
-                    print(str(e))
-                    print(self.do_ls.__doc__)
+                    gLogger.notice(str(e))
+                    gLogger.notice(self.do_ls.__doc__)
                     return
                 # Duplicated options are allowed: later options have precedence, e.g.,
                 # '-ltSt' will be order by time
@@ -276,7 +276,7 @@ def main():
             # Check if the target path is a file
             result = self.fc.isFile(path)
             if not result["OK"]:
-                print("Error: can not verify path")
+                gLogger.error("Error: can not verify path")
                 return
             elif path in result["Value"]["Successful"] and result["Value"]["Successful"][path]:
                 result = self.fc.getFileMetadata(path)
@@ -291,10 +291,10 @@ def main():
 
             result = self.fc.isDirectory(path)
             if not result["OK"]:
-                print("Error: can not verify path")
+                gLogger.error("Error: can not verify path")
                 return
             elif path not in result["Value"]["Successful"] or not result["Value"]["Successful"][path]:
-                print(f'Error: "{path}" doesn\'t exist')
+                gLogger.error(f'Error: "{path}" doesn\'t exist')
                 return
 
             # Get directory contents now
@@ -305,8 +305,6 @@ def main():
                     if result["Value"]["Successful"]:
                         for entry in result["Value"]["Successful"][path]["Files"]:
                             fname = entry.split("/")[-1]
-                            # print(entry, fname)
-                            # fname = entry.replace( self.cwd,'' ).replace( '/','' )
                             if long:
                                 fileDict = result["Value"]["Successful"][path]["Files"][entry]["MetaData"]
                                 if fileDict:
@@ -316,8 +314,6 @@ def main():
                                 dList.addSimpleFile(fname)
                         for entry in result["Value"]["Successful"][path]["SubDirs"]:
                             dname = entry.split("/")[-1]
-                            # print(entry, dname)
-                            # dname = entry.replace( self.cwd,'' ).replace( '/','' )
                             if long:
                                 dirDict = result["Value"]["Successful"][path]["SubDirs"][entry]
                                 if dirDict:
@@ -332,9 +328,9 @@ def main():
                         else:
                             dList.printOrdered()
                 else:
-                    print("Error:", result["Message"])
+                    gLogger.error("Error:", result["Message"])
             except Exception as x:
-                print("Error:", str(x))
+                gLogger.error("Error:", str(x))
 
     session = DSession()
 
@@ -392,8 +388,8 @@ def main():
                 optstr = optstr + "-t "
 
         except getopt.GetoptError as e:
-            print(str(e))
-            print(fccli.do_ls.__doc__)
+            gLogger.error(str(e))
+            gLogger.notice(fccli.do_ls.__doc__)
             exit(1)
 
     for p in pathFromArguments(session, args):

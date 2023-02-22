@@ -8,7 +8,7 @@ Examples:
 import os
 
 import DIRAC
-from DIRAC import S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Interfaces.Utilities.DCommands import DSession
 from DIRAC.Interfaces.Utilities.DCommands import DCatalog
@@ -54,7 +54,7 @@ def main():
     catalog = DCatalog()
 
     if not args and not lfnFileName:
-        print(f"Error: No argument provided\n{Script.scriptName}:")
+        gLogger.error(f"Error: No argument provided\n{Script.scriptName}:")
         Script.showHelp(exitCode=-1)
 
     lfns = set()
@@ -63,7 +63,7 @@ def main():
 
     if lfnFileName:
         if not os.path.exists(lfnFileName):
-            print(f"Error: non-existent file {lfnFileName}:")
+            gLogger.error(f"Error: non-existent file {lfnFileName}:")
             DIRAC.exit(-1)
         lfnFile = open(lfnFileName)
         lfnList = lfnFile.readlines()
@@ -91,7 +91,7 @@ def main():
             if result["OK"]:
                 goodCounter += 1
             else:
-                print("ERROR:", result["Message"])
+                gLogger.error("ERROR:", result["Message"])
                 badCounter += 1
                 exitCode = 3
         else:

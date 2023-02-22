@@ -20,7 +20,7 @@ Examples
     $ drepl -D SOME-DESTINATION-SE-disk ./some_lfn_file
 """
 import DIRAC
-from DIRAC import S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.Script import Script
 
 from DIRAC.Interfaces.Utilities.DCommands import DSession
@@ -98,7 +98,7 @@ def main():
             ret = dirac.replicateFile(lfn, dst, srcopt)
 
             if not ret["OK"]:
-                print(f"Error: {lfn} -> {dst}:", ret["Message"])
+                gLogger.error(f"Error: {lfn} -> {dst}:", ret["Message"])
                 exitCode = -2
 
     DIRAC.exit(exitCode)

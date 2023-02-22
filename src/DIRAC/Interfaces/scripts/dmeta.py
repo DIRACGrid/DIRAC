@@ -15,7 +15,7 @@ Examples:
       $ dmeta rm ./some_lfn_file some_meta",
 """
 import DIRAC
-from DIRAC import S_OK
+from DIRAC import S_OK, gLogger
 
 from DIRAC.Interfaces.Utilities.DCommands import DSession
 from DIRAC.Interfaces.Utilities.DCommands import DCatalog
@@ -39,7 +39,7 @@ class DMetaAdd(DMetaCommand):
             metadict[name] = value
         result = self.fcClient.setMetadataBulk({lfn: metadict})
         if not result["OK"]:
-            print("Error:", result["Message"])
+            gLogger.error("Error:", result["Message"])
 
 
 class DMetaRm(DMetaCommand):
@@ -49,7 +49,7 @@ class DMetaRm(DMetaCommand):
     def run(self, lfn, metas):
         result = self.fcClient.removeMetadata({lfn: metas})
         if not result["OK"]:
-            print("Error:", result["Message"])
+            gLogger.error("Error:", result["Message"])
 
 
 class DMetaList(DMetaCommand):
@@ -60,17 +60,17 @@ class DMetaList(DMetaCommand):
         retVal = self.catalog.getMeta(lfn)
 
         if not retVal["OK"]:
-            print("Error:", retVal["Message"])
+            gLogger.error("Error:", retVal["Message"])
             DIRAC.exit(-1)
         metadict = retVal["Value"]
 
         if not metas:
             for k, v in metadict.items():
-                print(k + "=" + str(v))
+                gLogger.notice(k + "=" + str(v))
         else:
             for meta in metas:
                 if meta in metadict.keys():
-                    print(meta + "=" + metadict[meta])
+                    gLogger.notice(meta + "=" + metadict[meta])
 
 
 from DIRAC.Core.Base.Script import Script
@@ -84,7 +84,7 @@ def main():
             self.listIndex = False
 
         def setIndex(self, arg):
-            print("Setting index:", arg)
+            gLogger.notice("Setting index:", arg)
             self.index = arg
             return S_OK()
 
@@ -140,11 +140,11 @@ def main():
                 elif mtype.lower() == "metaset":
                     rtype = "MetaSet"
                 else:
-                    print(f"Error: illegal metadata type {mtype}")
+                    gLogger.error(f"Error: illegal metadata type {mtype}")
                     DIRAC.exit(-1)
                 res = fc.addMetadataField(meta, rtype, fdType)
                 if not res["OK"]:
-                    print(res["Message"])
+                    gLogger.error(res["Message"])
                     DIRAC.exit(-1)
         DIRAC.exit(0)
 
@@ -159,14 +159,14 @@ def main():
     }
 
     if len(args) < 2:
-        print(f"Error: Not enough arguments provided\n{Script.scriptName}:")
+        gLogger.error(f"Error: Not enough arguments provided\n{Script.scriptName}:")
         Script.showHelp(exitCode=-1)
 
     command = args[0]
 
     if command not in meta_commands.keys():
-        print(f'Error: Unknown dmeta command "{command}"')
-        print(f"{Script.scriptName}:")
+        gLogger.error(f'Error: Unknown dmeta command "{command}"')
+        gLogger.notice(f"{Script.scriptName}:")
         Script.showHelp(exitCode=-1)
 
     command = meta_commands[command]

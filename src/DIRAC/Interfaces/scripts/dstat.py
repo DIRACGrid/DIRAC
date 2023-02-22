@@ -8,6 +8,7 @@
 import datetime
 
 from DIRAC import exit as DIRACExit, S_OK, S_ERROR
+from DIRAC import gLogger
 from DIRAC.Interfaces.Utilities.DCommands import DSession
 from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache
 from DIRAC.Interfaces.Utilities.DCommands import ArrayFormatter
@@ -226,7 +227,7 @@ def main():
         )
 
         if not result["OK"]:
-            print("Error:", result["Message"])
+            gLogger.error("Error:", result["Message"])
             DIRACExit(-1)
 
         jobs = result["Value"]
@@ -234,7 +235,7 @@ def main():
     try:
         jobs = [int(job) for job in jobs]
     except Exception as x:
-        print("Expected integer for jobID")
+        gLogger.error("ERROR: Expected integer for jobID")
         exitCode = 2
         DIRACExit(exitCode)
 
@@ -245,7 +246,7 @@ def main():
     for chunk in chunks(jobs, 1000):
         result = getJobSummary(chunk)
         if not result["OK"]:
-            print("ERROR:", result["Message"])
+            gLogger.error("ERROR:", result["Message"])
             DIRACExit(2)
 
         # filter on job statuses
@@ -261,7 +262,7 @@ def main():
 
     af = ArrayFormatter(params.getFmt())
 
-    print(af.dictFormat(summaries, ["JobID"] + params.getFields(), sort="JobID"))
+    gLogger.notice(af.dictFormat(summaries, ["JobID"] + params.getFields(), sort="JobID"))
 
     DIRACExit(exitCode)
 
