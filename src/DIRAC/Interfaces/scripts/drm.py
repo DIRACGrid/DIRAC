@@ -79,7 +79,7 @@ def main():
 
     nLfns = len(lfns)
     if nLfns > 1:
-        gLogger.notice("Removing %d objects" % nLfns)
+        gLogger.notice(f"Removing {nLfns} objects")
 
     exitCode = 0
     goodCounter = 0
@@ -108,13 +108,13 @@ def main():
             else:
                 goodCounter += 1
                 if goodCounter % 10 == 0:
-                    gLogger.notice("%d files removed" % goodCounter)
+                    gLogger.notice(f"{goodCounter} files removed")
                     if badCounter:
-                        gLogger.notice("%d files failed removal" % badCounter)
+                        gLogger.notice(f"{badCounter} files failed removal")
 
-    gLogger.notice("\n%d object(s) removed in total" % goodCounter)
+    gLogger.notice(f"\n{goodCounter} object(s) removed in total")
     if badCounter:
-        gLogger.notice("%d object(s) failed removal in total" % badCounter)
+        gLogger.notice(f"{badCounter} object(s) failed removal in total")
 
     DIRAC.exit(exitCode)
 

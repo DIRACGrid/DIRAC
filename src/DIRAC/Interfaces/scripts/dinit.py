@@ -70,7 +70,7 @@ def main():
     try:
         session.checkProxyOrInit()
     except Exception as e:
-        gLogger.error("Error:", e)
+        gLogger.error(f"Error: {e}")
         DIRAC.exit(-1)
 
     retVal = session.proxyInfo()

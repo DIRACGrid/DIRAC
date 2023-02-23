@@ -66,11 +66,11 @@ class DMetaList(DMetaCommand):
 
         if not metas:
             for k, v in metadict.items():
-                gLogger.notice(k + "=" + str(v))
+                gLogger.notice(f"{k} = {v}")
         else:
             for meta in metas:
                 if meta in metadict.keys():
-                    gLogger.notice(meta + "=" + metadict[meta])
+                    gLogger.notice(f"{meta} = {metadict[meta]}")
 
 
 from DIRAC.Core.Base.Script import Script
@@ -84,7 +84,7 @@ def main():
             self.listIndex = False
 
         def setIndex(self, arg):
-            gLogger.notice("Setting index:", arg)
+            gLogger.notice(f"Setting index: {arg}")
             self.index = arg
             return S_OK()
 
