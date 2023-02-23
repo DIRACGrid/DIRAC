@@ -169,7 +169,7 @@ class FTS3Agent(AgentModule):
 
             log.debug(f"UserDN {userDN}")
 
-            # Chose a meaningfull proxy name for easier debugging
+            # Chose a meaningful proxy name for easier debugging
             srvName = parse.urlparse(ftsServer).netloc.split(":")[0]
             proxyFile = os.path.join(
                 self.workDirectory, f"{int(time.time())}_{username}_{group}_{srvName}_{threadID}.pem"
