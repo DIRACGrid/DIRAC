@@ -87,7 +87,7 @@ def main():
             action = "killed"
             if params.getDelete():
                 action = "deleted"
-            gLogger.notice(action, "job", job)
+            gLogger.notice(f"{action} job {job}")
 
     for error in errors:
         gLogger.error("ERROR:", error)
