@@ -64,7 +64,7 @@ def main():
                 DIRAC.exit(-1)
             gLogger.notice(f"[{s}]")
             for o, v in retVal["Value"]:
-                gLogger.notice(o, "=", v)
+                gLogger.notice(f"{o} = {v}")
         DIRAC.exit(0)
 
     for arg in args:
