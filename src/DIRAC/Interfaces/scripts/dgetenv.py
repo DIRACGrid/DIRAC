@@ -30,7 +30,7 @@ def main():
             gLogger.error("Error:", retVal["Message"])
             DIRAC.exit(-1)
         for o, v in retVal["Value"]:
-            gLogger.notice(o + "=" + v)
+            gLogger.notice(f"{o} = {v}")
         DIRAC.exit(0)
 
     section, option = arg.split(".") if "." in (arg := args[0]) else (None, arg)
