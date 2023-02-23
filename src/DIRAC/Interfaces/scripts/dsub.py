@@ -502,7 +502,7 @@ def main():
             errorList.append(str(e))
 
     for error in errorList:
-        gLogger.error("ERROR %s: %s" % error)
+        gLogger.error(f"ERROR: {error}")
 
     DIRACexit(exitCode)
 
