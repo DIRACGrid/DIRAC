@@ -425,7 +425,7 @@ class AuthHandler(TornadoREST):
         :param dict extSession: ended authorized external IdP session
 
         :return: -- will return (None, response) to provide error or group selector
-                    will return (grant_user, request) to continue authorization with choosed group
+                    will return (grant_user, request) to continue authorization with chosen group
         """
         # Base DIRAC client auth session
         firstRequest = createOAuth2Request(extSession["firstRequest"])
