@@ -13,6 +13,8 @@ It is in charge of submitting and monitoring all the transfers. It can be duplic
 
 """
 import errno
+import os
+from urllib import parse
 import time
 
 # from threading import current_thread
@@ -108,6 +110,8 @@ class FTS3Agent(AgentModule):
         # name that will be used in DB for assignment tag
         self.assignmentTag = gethostname().split(".")[0]
 
+        self.workDirectory = self.am_getWorkDirectory()
+
         res = self.__readConf()
 
         # We multiply by two because of the two threadPools
@@ -165,13 +169,19 @@ class FTS3Agent(AgentModule):
 
             log.debug(f"UserDN {userDN}")
 
+            # Chose a meaningfull proxy name for easier debugging
+            srvName = parse.urlparse(ftsServer).netloc.split(":")[0]
+            proxyFile = os.path.join(
+                self.workDirectory, f"{int(time.time())}_{username}_{group}_{srvName}_{threadID}.pem"
+            )
+
             # We dump the proxy to a file.
             # It has to have a lifetime of self.proxyLifetime
             # Because the FTS3 servers cache it for 2/3rd of the lifetime
             # we should make our cache a bit less than 2/3rd of the lifetime
             cacheTime = int(2 * self.proxyLifetime / 3) - 600
             res = gProxyManager.downloadVOMSProxyToFile(
-                userDN, group, requiredTimeLeft=self.proxyLifetime, cacheTime=cacheTime
+                userDN, group, requiredTimeLeft=self.proxyLifetime, cacheTime=cacheTime, filePath=proxyFile
             )
             if not res["OK"]:
                 return res
