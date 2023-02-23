@@ -90,7 +90,7 @@ def main():
             if isinstance(ret, list):
                 gLogger.notice(f"[{section}]")
                 for o, v in ret:
-                    gLogger.notice(o, "=", v)
+                    gLogger.notice(f"{o} = {v}")
             else:
                 gLogger.notice(option, "=", ret)
 
