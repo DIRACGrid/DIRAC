@@ -92,7 +92,7 @@ def main():
                 for o, v in ret:
                     gLogger.notice(f"{o} = {v}")
             else:
-                gLogger.notice(option, "=", ret)
+                gLogger.notice(f"{option} = {ret}")
 
     if modified:
         dconfig.write()
