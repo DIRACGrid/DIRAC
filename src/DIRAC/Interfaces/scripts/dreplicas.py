@@ -33,7 +33,7 @@ def main():
         ret = returnSingleResult(catalog.catalog.getReplicas(lfn))
         if ret["OK"]:
             replicas = ret["Value"]
-            gLogger.notice(lfn + ":")
+            gLogger.notice(f"{lfn}:")
             for se, path in replicas.items():
                 gLogger.notice("  ", f"{se} {path}")
         else:
