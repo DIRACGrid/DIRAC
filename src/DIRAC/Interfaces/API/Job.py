@@ -805,6 +805,30 @@ class Job(API):
         return S_OK()
 
     #############################################################################
+    def setPriority(self, priority):
+        """Helper function.
+
+        Sets the job priority in the range 1-10.
+        Priorities 1-9 are matched probabilistically with higher numbers being more likely.
+        Priority 10 jobs are always started before lower priority jobs from the same user.
+
+        Example usage:
+
+        >>> job = Job()
+        >>> job.setPriority(5)
+
+        :param priority: Job priority
+        :type priority: int
+        """
+        if not isinstance(priority, int):
+            return self._reportError("Expected int for priority", **{"priority": priority})
+
+        self.priority = priority
+        description = "User Job Priority"
+        self._addParameter(self.workflow, "Priority", "JDL", priority, description)
+        return S_OK()
+
+    #############################################################################
     def setLogLevel(self, logLevel):
         """Helper function.
 
