@@ -35,7 +35,7 @@ def main():
             replicas = ret["Value"]
             gLogger.notice(lfn + ":")
             for se, path in replicas.items():
-                gLogger.notice("  ", se, path)
+                gLogger.notice("  ", f"{se} {path}")
         else:
             gLogger.error(f"Error: {lfn}:", ret["Message"])
             exitCode = -2
