@@ -437,6 +437,10 @@ class AuthHandler(TornadoREST):
         provider = firstRequest.provider
         self.log.debug("The following groups found", f"for {username}: {', '.join(firstRequest.groups)}")
 
+        # If group is already defined in the first request, just return it as it was already validated
+        if firstRequest.groups:
+            return extSession["authed"], firstRequest
+
         # Look for DIRAC groups valid for the user
         result = getGroupsForUser(username)
         if not result["OK"]:
@@ -459,10 +463,6 @@ class AuthHandler(TornadoREST):
             )
 
         self.log.debug(f"The state of {username} user groups has been checked:", pprint.pformat(validGroups))
-
-        # If group already defined in first request, just return it
-        if firstRequest.groups:
-            return extSession["authed"], firstRequest
 
         # If not and we found only one valid group, apply this group
         if len(validGroups) == 1:
