@@ -127,10 +127,11 @@ fts3Operation_mapper = mapper_registry.map_imperatively(
         ),
         "ftsJobs": relationship(
             FTS3Job,
-            lazy="subquery",  # Immediately load the entirety of the object,
+            lazy="selectin",  # Immediately load the entirety of the object,
             # but use a subquery to do it
             # This is to avoid the cartesian product between the three tables.
-            # https://docs.sqlalchemy.org/en/latest/orm/loading_relationships.html#subquery-eager-loading
+            # https://docs.sqlalchemy.org/en/20/orm/queryguide/relationships.html#selectin-eager-loading
+            # We use selectin and not subquery because of https://github.com/DIRACGrid/DIRAC/issues/6814
             cascade="all, delete-orphan",  # if a File is removed from the list,
             # remove it from the DB
             passive_deletes=True,  # used together with cascade='all, delete-orphan'
