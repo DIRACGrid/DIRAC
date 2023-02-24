@@ -28,7 +28,7 @@ from DIRAC.Core.Base.Script import Script
 def main():
     fcType = None
     catalog = None
-    Script.registerSwitch("f:", "file-catalog=", f"   Catalog client type to use (default {fcType})")
+    Script.registerSwitch("f:", "file-catalog=", f"   Catalog to use (default - Catalog defined for the users' VO)")
     Script.parseCommandLine(ignoreErrors=False)
 
     from DIRAC import exit as dexit
