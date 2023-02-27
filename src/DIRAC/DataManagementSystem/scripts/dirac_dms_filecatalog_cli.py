@@ -20,52 +20,75 @@ Example:
 
   FC:/>
 """
-import sys
 
 from DIRAC.Core.Base.Script import Script
 
 
 @Script()
 def main():
-    fcType = "FileCatalog"
-    Script.registerSwitch("f:", "file-catalog=", f"   Catalog client type to use (default {fcType})")
+    fcType = None
+    catalog = None
+    Script.registerSwitch("f:", "file-catalog=", f"   Catalog to use (default - Catalog defined for the users' VO)")
     Script.parseCommandLine(ignoreErrors=False)
 
-    from DIRAC import gConfig, exit as dexit
-    from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
-
-    fcType = gConfig.getValue("/LocalSite/FileCatalog", "")
-
-    res = gConfig.getSections("/Resources/FileCatalogs", listOrdered=True)
-    if not res["OK"]:
-        dexit(1)
-    fcList = res["Value"]
-    if not fcType:
-        if res["OK"]:
-            fcType = res["Value"][0]
+    from DIRAC import exit as dexit
 
     for switch in Script.getUnprocessedSwitches():
         if switch[0].lower() == "f" or switch[0].lower() == "file-catalog":
             fcType = switch[1]
 
     if not fcType:
-        print("No file catalog given and defaults could not be obtained")
-        sys.exit(1)
+        # A particular catalog is not specified, try to instantiate the catalog container
+        from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+
+        catalog = FileCatalog()
+        if not catalog.valid:
+            print("Failed to create the FileCatalog container. Try to use a specific catalog with -f option")
+            dexit(-1)
+        result = catalog.getMasterCatalogNames()
+        if not result["OK"]:
+            print("Failed to get the Master catalog name for the FileCatalog container")
+            dexit(-1)
+        masterCatalog = result["Value"][0]
+        readCatalogs = [c[0] for c in catalog.getReadCatalogs()]
+        writeCatalogs = [c[0] for c in catalog.getWriteCatalogs()]
+        allCatalogs = list(set([masterCatalog] + readCatalogs + writeCatalogs))
+
+        if len(allCatalogs) == 1:
+            # If we have a single catalog in the container, let's use this catalog directly
+            fcType = allCatalogs[0]
+            catalog = None
+        else:
+            print(
+                "\nStarting FileCatalog container console. \n"
+                "Note that you will access several catalogs at the same time:"
+            )
+            print(f"   {masterCatalog} - Master")
+            for cat in allCatalogs:
+                if cat != masterCatalog:
+                    cTypes = ["Write"] if cat in writeCatalogs else []
+                    cTypes.extend(["Read"] if cat in readCatalogs else [])
+                    print(f"   {cat} - {'-'.join(cTypes)}")
+            print("If you want to work with a single catalog, specify it with the -f option\n")
+
+    if fcType:
+        # We have to use a specific File Catalog, create it now
+        from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
+
+        result = FileCatalogFactory().createCatalog(fcType)
+        if not result["OK"]:
+            print(result["Message"])
+            dexit(-1)
+        catalog = result["Value"]
+        print(f"Starting {fcType} console")
 
     from DIRAC.DataManagementSystem.Client.FileCatalogClientCLI import FileCatalogClientCLI
 
-    result = FileCatalogFactory().createCatalog(fcType)
-    if not result["OK"]:
-        print(result["Message"])
-        if fcList:
-            print("Possible choices are:")
-            for fc in fcList:
-                print(" " * 5, fc)
-        sys.exit(1)
-    print(f"Starting {fcType} client")
-    catalog = result["Value"]
-    cli = FileCatalogClientCLI(catalog)
-    cli.cmdloop()
+    if catalog:
+        cli = FileCatalogClientCLI(catalog)
+        cli.cmdloop()
+    else:
+        print(f"Failed to access the catalog {fcType if fcType else 'container'}")
 
 
 if __name__ == "__main__":
