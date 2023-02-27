@@ -27,6 +27,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.TimeUtilities import second, toEpochMilliSeconds
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
@@ -214,6 +215,10 @@ class SiteDirector(AgentModule):
         if cesOption and "any" not in [ce.lower() for ce in cesOption]:
             ces = cesOption
 
+        tags = self.am_getOption("Tags", [])
+        if not tags:
+            tags = None
+
         self.log.always("VO:", self.vo)
         if self.voGroups:
             self.log.always("Group(s):", self.voGroups)
@@ -223,7 +228,9 @@ class SiteDirector(AgentModule):
         self.log.always("PilotDN:", self.pilotDN)
         self.log.always("PilotGroup:", self.pilotGroup)
 
-        result = self.resourcesModule.getQueues(community=self.vo, siteList=siteNames, ceList=ces, ceTypeList=ceTypes)
+        result = self.resourcesModule.getQueues(
+            community=self.vo, siteList=siteNames, ceList=ces, ceTypeList=ceTypes, tags=tags
+        )
         if not result["OK"]:
             return result
         result = getQueuesResolved(
@@ -434,6 +441,13 @@ class SiteDirector(AgentModule):
             lifetime_secs = result["Value"]
             ce.setProxy(proxy, lifetime_secs)
 
+            # Get valid token if needed
+            if "Token" in ce.ceParameters.get("Tag", []):
+                result = self.__getPilotToken()
+                if not result["OK"]:
+                    return result
+                ce.setToken(result["Value"], 3500)
+
             # now really submitting
             res = self._submitPilotsToQueue(pilotsToSubmit, ce, queueName)
             if not res["OK"]:
@@ -448,6 +462,23 @@ class SiteDirector(AgentModule):
         self.log.info("Total number of pilots submitted in this cycle", f"{self.totalSubmittedPilots}")
 
         return S_OK()
+
+    def __getPilotToken(self):
+        """Get the token corresponding to the pilot user identity
+
+        :return: S_OK/S_ERROR, Token object as Value
+        """
+
+        result = Registry.getUsernameForDN(self.pilotDN)
+        if not result["OK"]:
+            return result
+        username = result["Value"]
+        result = gTokenManager.getToken(
+            username=username,
+            userGroup=self.pilotGroup,
+            requiredTimeLeft=3600,
+        )
+        return result
 
     def _ifAndWhereToSubmit(self):
         """Return a tuple that says if and where to submit pilots:
@@ -1204,6 +1235,13 @@ class SiteDirector(AgentModule):
         if not result["OK"]:
             ce.setProxy(proxy, 23300)
 
+        # Get valid token if needed
+        if "Token" in ce.ceParameters.get("Tag", []):
+            result = self.__getPilotToken()
+            if not result["OK"]:
+                return result
+            ce.setToken(result["Value"], 3500)
+
         result = ce.getJobStatus(stampedPilotRefs)
         if not result["OK"]:
             self.log.error("Failed to get pilots status from CE", f"{ceName}: {result['Message']}")
@@ -1306,11 +1344,11 @@ class SiteDirector(AgentModule):
             pA.setStartTime(pilotDict[pRef]["SubmissionTime"])
             retVal = Registry.getUsernameForDN(pilotDict[pRef]["OwnerDN"])
             if not retVal["OK"]:
-                userName = "unknown"
+                username = "unknown"
                 self.log.error("Can't determine username for dn", pilotDict[pRef]["OwnerDN"])
             else:
-                userName = retVal["Value"]
-            pA.setValueByKey("User", userName)
+                username = retVal["Value"]
+            pA.setValueByKey("User", username)
             pA.setValueByKey("UserGroup", pilotDict[pRef]["OwnerGroup"])
             result = getCESiteMapping(pilotDict[pRef]["DestinationSite"])
             if result["OK"] and result["Value"]:

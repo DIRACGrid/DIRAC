@@ -93,6 +93,15 @@ class AREXComputingElement(ARCComputingElement):
 
     #############################################################################
 
+    def setToken(self, token, valid):
+        """Set the token and update the headers
+
+        :param token: OAuth2Token object or dictionary containing token structure
+        :param int valid: validity period in seconds
+        """
+        super().setToken(token, valid)
+        self.headers["Authorization"] = "Bearer " + self.token["access_token"]
+
     def _arcToDiracID(self, arcJobID):
         """Convert an ARC jobID into a DIRAC jobID.
         Example: 1234 becomes https://<ce>:<port>/arex/1234
@@ -750,7 +759,7 @@ class AREXComputingElement(ARCComputingElement):
         if ":::" in jobID:
             jobRef, stamp = jobID.split(":::")
         else:
-            return S_ERROR(f"DIRAC stamp not defined for {jobRef}")
+            return S_ERROR(f"DIRAC stamp not defined for {jobID}")
         job = self._DiracToArcID(jobRef)
 
         # Get the list of available outputs

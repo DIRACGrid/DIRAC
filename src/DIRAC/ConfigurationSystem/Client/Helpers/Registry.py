@@ -163,23 +163,23 @@ def findDefaultGroupForDN(dn):
     return findDefaultGroupForUser(result["Value"])
 
 
-def findDefaultGroupForUser(userName):
+def findDefaultGroupForUser(username):
     """Get default group for user
 
-    :param str userName: user name
+    :param str username: user name
 
     :return: S_OK(str)/S_ERROR()
     """
-    defGroups = getUserOption(userName, "DefaultGroup", [])
+    defGroups = getUserOption(username, "DefaultGroup", [])
     defGroups += gConfig.getValue(f"{gBaseRegistrySection}/DefaultGroup", ["user"])
-    result = getGroupsForUser(userName)
+    result = getGroupsForUser(username)
     if not result["OK"]:
         return result
     userGroups = result["Value"]
     for group in defGroups:
         if group in userGroups:
             return S_OK(group)
-    return S_OK(userGroups[0]) if userGroups else S_ERROR(f"User {userName} has no groups")
+    return S_OK(userGroups[0]) if userGroups else S_ERROR(f"User {username} has no groups")
 
 
 def getAllUsers():
@@ -349,16 +349,16 @@ def hostHasProperties(hostName, propList):
     return __matchProps(propList, getPropertiesForHost(hostName))
 
 
-def getUserOption(userName, optName, defaultValue=""):
+def getUserOption(username, optName, defaultValue=""):
     """Get user option
 
-    :param str userName: user name
+    :param str username: user name
     :param str optName: option name
     :param defaultValue: default value
 
     :return: defaultValue or str
     """
-    return gConfig.getValue(f"{gBaseRegistrySection}/Users/{userName}/{optName}", defaultValue)
+    return gConfig.getValue(f"{gBaseRegistrySection}/Users/{username}/{optName}", defaultValue)
 
 
 def getGroupOption(groupName, optName, defaultValue=""):
@@ -430,7 +430,7 @@ def getIdPForGroup(group):
 
     :return: str
     """
-    return getVOOption(getVOForGroup(group), "IdP")
+    return getVOOption(getVOForGroup(group), "IdProvider")
 
 
 def getDefaultVOMSAttribute():
