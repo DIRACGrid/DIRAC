@@ -2,7 +2,6 @@
 """
 from authlib.oauth2.rfc6749.util import scope_to_list
 
-from DIRAC import S_OK
 from DIRAC.Resources.IdProvider.OAuth2IdProvider import OAuth2IdProvider
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup, getGroupOption
 
@@ -21,4 +20,4 @@ class CheckInIdProvider(OAuth2IdProvider):
                 getVOForGroup(group),
                 group.split("_")[1],
             )
-        return S_OK(scope_to_list(idPScope))
+        return scope_to_list(idPScope)

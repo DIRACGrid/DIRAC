@@ -190,7 +190,7 @@ class TokenManagerHandler(TornadoService):
             * LimitedDelegation <- permits downloading only limited tokens
             * PrivateLimitedDelegation <- permits downloading only limited tokens for one self
 
-        :paarm username: user name
+        :param username: user name
         :param userGroup: user group
         :param scope: requested scope
         :param audience: requested audience
@@ -210,14 +210,14 @@ class TokenManagerHandler(TornadoService):
             return result
         idpObj = result["Value"]
 
-        if userGroup and (result := idpObj.getGroupScopes(userGroup))["OK"]:
+        if userGroup and (result := idpObj.getGroupScopes(userGroup)):
             # What scope correspond to the requested group?
-            scope = list(set((scope or []) + result["Value"]))
+            scope = list(set((scope or []) + result))
 
         # Set the scope
         idpObj.scope = " ".join(scope)
 
-        # Let's check if there are corresponding tokens in the cache
+        # Let's check if there is a corresponding token in the cache
         cacheKey = (username, idpObj.scope, audience, identityProvider)
         if self.__tokensCache.exists(cacheKey, requiredTimeLeft):
             # Well we have a fresh record containing a Token object
@@ -225,23 +225,9 @@ class TokenManagerHandler(TornadoService):
             # Let's check if the access token is fresh
             if not token.is_expired(requiredTimeLeft):
                 return S_OK(token)
-            # It seems that it is no longer valid for us, but whether there is a refresh token?
-            if token.get("refresh_token"):
-                # Okay, so we can try to refresh tokens
-                if (result := idpObj.refreshToken(token["refresh_token"]))["OK"]:
-                    # caching new tokens
-                    self.__tokensCache.add(
-                        cacheKey,
-                        result["Value"].get_claim("exp", "refresh_token") or self.DEFAULT_RT_EXPIRATION_TIME,
-                        result["Value"],
-                    )
-                    return result
-                self.log.verbose(f"Failed to get token with cached tokens: {result['Message']}")
-                # Let's try to revoke broken token
-                idpObj.revokeToken(token["refresh_token"])
 
         err = []
-        # The cache did not help, so let's make an exchange token
+        # No luck so far, let's refresh the token stored in the database
         result = Registry.getDNForUsername(username)
         if not result["OK"]:
             return result
@@ -256,8 +242,8 @@ class TokenManagerHandler(TornadoService):
                     idpObj.token = result["Value"]
                     result = self.__checkProperties(dn, userGroup)
                     if result["OK"]:
-                        # exchange token with requested scope
-                        result = idpObj.exchangeToken()
+                        # refresh token with requested scope
+                        result = idpObj.refreshToken()
                         if result["OK"]:
                             # caching new tokens
                             self.__tokensCache.add(
@@ -266,8 +252,8 @@ class TokenManagerHandler(TornadoService):
                                 result["Value"],
                             )
                             return result
-                # Not find any token associated with the found user ID
-                err.append(result.get("Message", f"No token found for {uid}."))
+                # Did not find any token associated with the found user ID
+                err.append(result.get("Message", f"No token found for {uid}"))
         # Collect all errors when trying to get a token, or if no user ID is registered
         return S_ERROR("; ".join(err or [f"No user ID found for {username}"]))
 

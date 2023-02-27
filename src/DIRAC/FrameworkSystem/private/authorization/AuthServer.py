@@ -121,7 +121,7 @@ class AuthServer(_AuthorizationServer):
 
         :param client: instance of the IdP client
         :param grant_type: authorization grant type (unused)
-        :param str user: user identificator
+        :param str user: user identifier
         :param str scope: requested scope
         :param expires_in: when the token should expire (unused)
         :param bool include_refresh_token: to include refresh token (unused)
@@ -280,7 +280,7 @@ class AuthServer(_AuthorizationServer):
         :return: S_OK(dict)/S_ERROR()
         """
         providerName = session.pop("Provider")
-        sLog.debug(f"Try to parse authentification response from {providerName}:\n", pprint.pformat(response))
+        sLog.debug(f"Try to parse authentication response from {providerName}:\n", pprint.pformat(response))
         # Parse response
         result = self.idps.getIdProvider(providerName)
         if not result["OK"]:
@@ -295,10 +295,10 @@ class AuthServer(_AuthorizationServer):
         credDict, payload = result["Value"]
 
         sLog.debug("Read profile:", pprint.pformat(credDict))
-        # Is ID registred?
+        # Is ID registered?
         result = getUsernameForDN(credDict["DN"])
         if not result["OK"]:
-            comment = f"ID {credDict['ID']} is not registred in DIRAC. "
+            comment = f"ID {credDict['ID']} is not registered in DIRAC. "
             payload.update(idpObj.getUserProfile().get("Value", {}))
             result = self.__registerNewUser(providerName, payload)
 
@@ -426,7 +426,7 @@ class AuthServer(_AuthorizationServer):
             )
 
     def validateIdentityProvider(self, request, provider):
-        """Check if identity provider registred in DIRAC
+        """Check if identity provider registered in DIRAC
 
         :param object request: request
         :param str provider: provider name
@@ -439,12 +439,12 @@ class AuthServer(_AuthorizationServer):
         # Find identity provider for group
         groupProvider = getIdPForGroup(request.group) if request.groups else None
 
-        # If requested access token for group that is not registred in any identity provider
-        # or the requested provider does not match the group return error
+        # If access token is requested for a group that is not registered in any identity provider
+        # or the requested provider does not match the group, return error
         if request.group and not groupProvider and "proxy" not in request.scope:
             raise Exception(f"The {request.group} group belongs to the VO that is not tied to any Identity Provider.")
 
-        sLog.debug(f"Check if {request.provider} identity provider registred in DIRAC..")
+        sLog.debug(f"Check if {request.provider} identity provider registered in DIRAC...")
         # Research supported IdPs
         result = getProvidersForInstance("Id")
         if not result["OK"]:

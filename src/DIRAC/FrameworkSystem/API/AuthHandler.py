@@ -417,12 +417,12 @@ class AuthHandler(TornadoREST):
         return self.server.create_token_response(self.request)
 
     def __researchDIRACGroup(self, extSession, chooseScope, state):
-        """Research DIRAC groups for authorized user
+        """Look for DIRAC groups of a user already authorized by an Identity Provider
 
         :param dict extSession: ended authorized external IdP session
 
         :return: -- will return (None, response) to provide error or group selector
-                    will return (grant_user, request) to contionue authorization with choosed group
+                    will return (grant_user, request) to continue authorization with chosen group
         """
         # Base DIRAC client auth session
         firstRequest = createOAuth2Request(extSession["firstRequest"])
@@ -432,9 +432,13 @@ class AuthHandler(TornadoREST):
         username = extSession["authed"]["username"]
         # Requested arguments in first request
         provider = firstRequest.provider
-        self.log.debug(f"Next groups has been found for {username}:", ", ".join(firstRequest.groups))
+        self.log.debug("The following groups found", f"for {username}: {', '.join(firstRequest.groups)}")
 
-        # Researche Group
+        # If group is already defined in the first request, just return it as it was already validated
+        if firstRequest.groups:
+            return extSession["authed"], firstRequest
+
+        # Look for DIRAC groups valid for the user
         result = getGroupsForUser(username)
         if not result["OK"]:
             return None, self.server.handle_response(
@@ -457,16 +461,12 @@ class AuthHandler(TornadoREST):
 
         self.log.debug(f"The state of {username} user groups has been checked:", pprint.pformat(validGroups))
 
-        # If group already defined in first request, just return it
-        if firstRequest.groups:
-            return extSession["authed"], firstRequest
-
         # If not and we found only one valid group, apply this group
         if len(validGroups) == 1:
             firstRequest.addScopes([f"g:{validGroups[0]}"])
             return extSession["authed"], firstRequest
 
-        # Else give user chanse to choose group in browser
+        # Else give user a chance to choose a group in the browser
         with dom.div(cls="row mt-5 justify-content-md-center align-items-center") as tag:
             for group in sorted(validGroups):
                 vo, gr = group.split("_")
