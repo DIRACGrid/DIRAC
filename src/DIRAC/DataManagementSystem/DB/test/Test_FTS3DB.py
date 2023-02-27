@@ -9,7 +9,7 @@ from DIRAC.DataManagementSystem.DB import FTS3DB
 from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3TransferOperation, FTS3StagingOperation
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
-
+import DIRAC.DataManagementSystem.DB.test.FTS3TestUtils as baseTestModule
 
 gLogger.setLevel("DEBUG")
 
@@ -189,3 +189,9 @@ def test_raceCondition(fts3db):
     activeJobs = res["Value"]
     activeJobIDs = [op.jobID for op in activeJobs]
     assert activeJobIDs == [1, 6]
+
+
+@pytest.mark.parametrize("baseTest", baseTestModule.allBaseTests)
+def test_all_common_tests(fts3db, baseTest):
+    """Run all the tests in the FTS3TestUtils."""
+    baseTest(fts3db, fts3db)
