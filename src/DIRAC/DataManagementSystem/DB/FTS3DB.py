@@ -687,12 +687,11 @@ class FTS3DB:
 
         session = self.dbSession(expire_on_commit=False)
 
+        fromDate = datetime.datetime.utcnow() - datetime.timedelta(days=deleteDelay)
         try:
             ftsOps = (
                 session.query(FTS3Operation.operationID)
-                .filter(
-                    FTS3Operation.lastUpdate < (func.date_sub(utc_timestamp(), text("INTERVAL %d DAY" % deleteDelay)))
-                )
+                .filter(FTS3Operation.lastUpdate < fromDate)
                 .filter(FTS3Operation.status.in_(FTS3Operation.FINAL_STATES))
                 .limit(limit)
             )
