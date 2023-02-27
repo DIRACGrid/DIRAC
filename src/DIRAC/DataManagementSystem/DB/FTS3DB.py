@@ -310,7 +310,7 @@ class FTS3DB:
             ftsJobsQuery = (
                 session.query(FTS3Job)
                 .join(FTS3Operation)
-                .filter(~FTS3Job.status.in_(FTS3Job.FINAL_STATES))
+                .filter(FTS3Job.status.in_(FTS3Job.NON_FINAL_STATES))
                 .filter(FTS3Job.assignment.is_(None))
                 .filter(FTS3Operation.assignment.is_(None))
             )
