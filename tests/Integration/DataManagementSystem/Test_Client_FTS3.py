@@ -3,9 +3,6 @@
 
     It supposes that the DB is present, and that the service is running
 """
-import unittest
-import time
-import sys
 import pytest
 
 import DIRAC
@@ -14,8 +11,6 @@ DIRAC.initialize()  # Initialize configuration
 
 import DIRAC.DataManagementSystem.DB.test.FTS3TestUtils as baseTestModule
 from DIRAC.DataManagementSystem.Client.FTS3Client import FTS3Client
-from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3TransferOperation, FTS3StagingOperation
-from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB

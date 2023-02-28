@@ -219,12 +219,16 @@ fullInstallDIRAC() {
   dirac-restart-component Tornado Tornado ${DEBUG}
 
   findServices 'FrameworkSystem'
-  # construct the list with a mix of Tornado and DISET services
-  grep 'Tornado' services > tornadoServices
-  grep -v 'Tornado' services > disetServices  # WARNING: there might be some exeptions
-  more tornadoServices | sed s/Tornado//g > tornadoServicesWithoutTornado
-  comm -1 -3 <(sort tornadoServicesWithoutTornado) <(sort disetServices) >> tornadoServices
-  mv tornadoServices services
+  grep -v 'Tornado' services > disetServices
+  if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
+    mv disetServices services
+  else
+    # construct the list with a mix of Tornado and DISET services
+    grep 'Tornado' services > tornadoServices
+    more tornadoServices | sed s/Tornado//g > tornadoServicesWithoutTornado
+    comm -1 -3 <(sort tornadoServicesWithoutTornado) <(sort disetServices) >> tornadoServices
+    mv tornadoServices services
+  fi
   #
   if ! diracServices; then
     echo "ERROR: diracServices failed" >&2
@@ -248,6 +252,7 @@ fullInstallDIRAC() {
 
   echo "==> Restarting Framework services"
   dirac-restart-component Framework '*' ${DEBUG}
+  dirac-restart-component Tornado Tornado ${DEBUG}
 
   #Now all the rest
 
@@ -272,13 +277,18 @@ fullInstallDIRAC() {
 
   # services (not looking for FrameworkSystem already installed)
   findServices 'exclude' 'FrameworkSystem'
-  # construct the list with a mix of Tornado and DISET services
-  grep 'Tornado' services > tornadoServices
-  grep -v 'Tornado' services > disetServices  # WARNING: there might be some exeptions
-  more tornadoServices | sed s/Tornado//g > tornadoServicesWithoutTornado
-  comm -1 -3 <(sort tornadoServicesWithoutTornado) <(sort disetServices) >> tornadoServices
-  mv tornadoServices services
-  #
+
+  grep -v 'Tornado' services > disetServices
+  if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
+    mv disetServices services
+  else
+    # construct the list with a mix of Tornado and DISET services
+    grep 'Tornado' services > tornadoServices
+    more tornadoServices | sed s/Tornado//g > tornadoServicesWithoutTornado
+    comm -1 -3 <(sort tornadoServicesWithoutTornado) <(sort disetServices) >> tornadoServices
+    mv tornadoServices services
+  fi
+
   if ! diracServices; then
     echo "ERROR: diracServices failed" >&2
     exit 1
@@ -296,14 +306,19 @@ fullInstallDIRAC() {
   #fix the SandboxStore and other stuff
   python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-server.py" dirac-JenkinsSetup "${DEBUG}"
 
+  echo "==> Restarting Tornado Tornado"
+  dirac-restart-component Tornado Tornado ${DEBUG}
+
   echo "==> Restarting WorkloadManagement SandboxStore"
   dirac-restart-component WorkloadManagement SandboxStore ${DEBUG}
 
   echo "==> Restarting WorkloadManagement Matcher"
   dirac-restart-component WorkloadManagement Matcher ${DEBUG}
 
-  echo "==> Restarting DataManagement FileCatalog"
-  dirac-restart-component DataManagement FileCatalog ${DEBUG}
+  if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
+    echo "==> Restarting DataManagement FileCatalog"
+    dirac-restart-component DataManagement FileCatalog ${DEBUG}
+  fi
 
   echo "==> Restarting DataManagement MultiVOFileCatalog"
   dirac-restart-component DataManagement MultiVOFileCatalog ${DEBUG}
@@ -311,14 +326,12 @@ fullInstallDIRAC() {
   echo "==> Restarting Configuration Server"
   dirac-restart-component Configuration Server ${DEBUG}
 
-  echo "==> Restarting ResourceStatus ResourceStatus"
-  dirac-restart-component ResourceStatus ResourceStatus ${DEBUG}
-
-  echo "==> Restarting ResourceStatus ResourceManagement"
-  dirac-restart-component ResourceStatus ResourceManagement ${DEBUG}
-
-  echo "==> Restarting ResourceStatus Publisher"
-  dirac-restart-component ResourceStatus Publisher ${DEBUG}
+  if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
+    echo "==> Restarting ResourceStatus *"
+    dirac-restart-component ResourceStatus ResourceStatus ${DEBUG}
+    dirac-restart-component ResourceStatus ResourceManagement ${DEBUG}
+    dirac-restart-component ResourceStatus Publisher ${DEBUG}
+  fi
 
   echo "==> Restarting DataManagement StorageElement(s)"
   dirac-restart-component DataManagement SE-1 ${DEBUG}
@@ -353,14 +366,19 @@ fullInstallDIRAC() {
     exit 1
   fi
 
-  echo "==> Restarting WorkloadManagement JobManager"
-  dirac-restart-component WorkloadManagement JobManager ${DEBUG}
+  if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
+    echo "==> Restarting WorkloadManagement JobManager"
+    dirac-restart-component WorkloadManagement JobManager ${DEBUG}
+  fi
 
   echo 'Content of etc/Production.cfg:'
   cat "${SERVERINSTALLDIR}/etc/Production.cfg"
 
   echo "==> Restarting Configuration Server"
   dirac-restart-component Configuration Server ${DEBUG}
+
+  echo "==> Restarting Tornado Tornado"
+  dirac-restart-component Tornado Tornado ${DEBUG}
 
 }
 

@@ -609,12 +609,12 @@ diracUserAndGroup() {
 
 diracProxies() {
   echo '==> [diracProxies]'
-  # User proxy, should be uploaded anyway
+  # User proxy
   if ! dirac-login -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" -T 72 "${DEBUG}"; then
     echo 'ERROR: dirac-login failed' >&2
     exit 1
   fi
-  # group proxy, will be uploaded explicitly
+  # group proxy
   if ! dirac-login prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" -T 72 "${DEBUG}"; then
     echo 'ERROR: dirac-login failed' >&2
     exit 1

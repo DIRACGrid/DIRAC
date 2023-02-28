@@ -14,7 +14,7 @@ set -x
 source CONFIG
 
 # shellcheck disable=SC2034
-CSURL=dips://$SERVER_HOST:9135/Configuration/Server
+CSURL=https://$SERVER_HOST:9135/Configuration/Server
 
 echo -e "*** $(date -u) **** Getting the tests ****\n"
 
