@@ -12,7 +12,10 @@ It is in charge of submitting and monitoring all the transfers. It can be duplic
   :caption: FTS3Agent options
 
 """
+import datetime
 import errno
+import os
+from urllib import parse
 import time
 
 # from threading import current_thread
@@ -51,6 +54,10 @@ PROXY_LIFETIME = 43200  # 12 hours
 # which maximizes the possibility of race condition
 # when running multiple agents, we rather do it in steps
 JOB_MONITORING_BATCH_SIZE = 20
+
+# We do not monitor a job more often
+# than MONITORING_DELAY in minutes
+MONITORING_DELAY = 10
 
 
 class FTS3Agent(AgentModule):
@@ -107,6 +114,8 @@ class FTS3Agent(AgentModule):
 
         # name that will be used in DB for assignment tag
         self.assignmentTag = gethostname().split(".")[0]
+
+        self.workDirectory = self.am_getWorkDirectory()
 
         res = self.__readConf()
 
@@ -165,13 +174,19 @@ class FTS3Agent(AgentModule):
 
             log.debug(f"UserDN {userDN}")
 
+            # Chose a meaningful proxy name for easier debugging
+            srvName = parse.urlparse(ftsServer).netloc.split(":")[0]
+            proxyFile = os.path.join(
+                self.workDirectory, f"{int(time.time())}_{username}_{group}_{srvName}_{threadID}.pem"
+            )
+
             # We dump the proxy to a file.
             # It has to have a lifetime of self.proxyLifetime
             # Because the FTS3 servers cache it for 2/3rd of the lifetime
             # we should make our cache a bit less than 2/3rd of the lifetime
             cacheTime = int(2 * self.proxyLifetime / 3) - 600
             res = gProxyManager.downloadVOMSProxyToFile(
-                userDN, group, requiredTimeLeft=self.proxyLifetime, cacheTime=cacheTime
+                userDN, group, requiredTimeLeft=self.proxyLifetime, cacheTime=cacheTime, filePath=proxyFile
             )
             if not res["OK"]:
                 return res
@@ -289,18 +304,29 @@ class FTS3Agent(AgentModule):
         if mod:
             nbOfLoops += 1
 
+        # Not only is it pointless to monitor right after submission
+        # but also we would end up fetching multiple time the same job otherwise
+        # as we call getActiveJobs by batch
+        lastMonitor = datetime.datetime.utcnow() - datetime.timedelta(minutes=MONITORING_DELAY)
+
         log.debug("Getting active jobs")
 
         for loopId in range(nbOfLoops):
             log.info("Getting next batch of jobs to monitor", f"{loopId}/{nbOfLoops}")
             # get jobs from DB
-            res = self.fts3db.getActiveJobs(limit=JOB_MONITORING_BATCH_SIZE, jobAssignmentTag=self.assignmentTag)
+            res = self.fts3db.getActiveJobs(
+                limit=JOB_MONITORING_BATCH_SIZE, lastMonitor=lastMonitor, jobAssignmentTag=self.assignmentTag
+            )
 
             if not res["OK"]:
                 log.error("Could not retrieve ftsJobs from the DB", res)
                 return res
 
             activeJobs = res["Value"]
+            if not activeJobs:
+                log.info("No more jobs to monitor")
+                break
+
             log.info("Jobs queued for monitoring", len(activeJobs))
 
             # We store here the AsyncResult object on which we are going to wait

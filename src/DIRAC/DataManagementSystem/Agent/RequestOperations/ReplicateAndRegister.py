@@ -184,6 +184,35 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         if self.rmsMonitoring:
             self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
 
+        sourceSE = self.operation.SourceSE if self.operation.SourceSE else None
+        if sourceSE:
+            # check sourceSE for read
+            bannedSource = self.checkSEsRSS(sourceSE, "ReadAccess")
+            if not bannedSource["OK"]:
+                if self.rmsMonitoring:
+                    for status in ["Attempted", "Failed"]:
+                        self.rmsMonitoringReporter.addRecord(self.createRMSRecord(status, len(self.operation)))
+                    self.rmsMonitoringReporter.commit()
+                return bannedSource
+
+            if bannedSource["Value"]:
+                self.operation.Error = f"SourceSE {sourceSE} is banned for reading"
+                self.log.info(self.operation.Error)
+                return S_OK(self.operation.Error)
+
+        # check targetSEs for write
+        bannedTargets = self.checkSEsRSS()
+        if not bannedTargets["OK"]:
+            if self.rmsMonitoring:
+                for status in ["Attempted", "Failed"]:
+                    self.rmsMonitoringReporter.addRecord(self.createRMSRecord(status, len(self.operation)))
+                self.rmsMonitoringReporter.commit()
+            return bannedTargets
+
+        if bannedTargets["Value"]:
+            self.operation.Error = f"{','.join(bannedTargets['Value'])} targets are banned for writing"
+            return S_OK(self.operation.Error)
+
         # # check replicas first
         checkReplicas = self.__checkReplicas()
         if not checkReplicas["OK"]:
@@ -480,36 +509,6 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
     def dmTransfer(self, fromFTS=False):
         """replicate and register using dataManager"""
-        # # get waiting files. If none just return
-        # # source SE
-        sourceSE = self.operation.SourceSE if self.operation.SourceSE else None
-        if sourceSE:
-            # # check source se for read
-            bannedSource = self.checkSEsRSS(sourceSE, "ReadAccess")
-            if not bannedSource["OK"]:
-                if self.rmsMonitoring:
-                    for status in ["Attempted", "Failed"]:
-                        self.rmsMonitoringReporter.addRecord(self.createRMSRecord(status, len(self.operation)))
-                    self.rmsMonitoringReporter.commit()
-                return bannedSource
-
-            if bannedSource["Value"]:
-                self.operation.Error = f"SourceSE {sourceSE} is banned for reading"
-                self.log.info(self.operation.Error)
-                return S_OK(self.operation.Error)
-
-        # # check targetSEs for write
-        bannedTargets = self.checkSEsRSS()
-        if not bannedTargets["OK"]:
-            if self.rmsMonitoring:
-                for status in ["Attempted", "Failed"]:
-                    self.rmsMonitoringReporter.addRecord(self.createRMSRecord(status, len(self.operation)))
-                self.rmsMonitoringReporter.commit()
-            return bannedTargets
-
-        if bannedTargets["Value"]:
-            self.operation.Error = f"{','.join(bannedTargets['Value'])} targets are banned for writing"
-            return S_OK(self.operation.Error)
 
         # Can continue now
         self.log.verbose("No targets banned for writing")
