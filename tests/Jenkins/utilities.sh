@@ -668,7 +668,7 @@ diracServices(){
   echo '==> [diracServices]'
 
   # Ignore tornado services
-  local services=$(cut -d '.' -f 1 < services | grep -v TokenManager | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
+  local services=$(cut -d '.' -f 1 < services | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
@@ -678,6 +678,10 @@ diracServices(){
     echo "==> calling dirac-install-component $serv ${DEBUG}"
     if ! dirac-install-component "$serv" "${DEBUG}"; then
       echo 'ERROR: dirac-install-component failed' >&2
+      exit 1
+    fi
+    if ! dirac-restart-component Tornado Tornado "${DEBUG}"; then
+      echo 'ERROR: could not restart Tornado' >&2
       exit 1
     fi
   done

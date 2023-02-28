@@ -216,6 +216,8 @@ fullInstallDIRAC() {
     exit 1
   fi
 
+  dirac-restart-component Tornado Tornado ${DEBUG}
+
   findServices 'FrameworkSystem'
   # construct the list with a mix of Tornado and DISET services
   grep 'Tornado' services > tornadoServices

@@ -849,7 +849,7 @@ class ComponentInstaller:
                     cfg.setOption(
                         # Strip "Tornado" from the beginning of component name if present
                         cfgPath(urlsPath, component[len("Tornado") if component.startswith("Tornado") else 0 :]),
-                        f"https://{self.host}:{port}/{system}/{component[len('Tornado') if component.startswith('Tornado') else 0 :]}",
+                        f"https://{self.host}:{port}/{system}/{component}",
                     )
                 else:
                     cfg.setOption(
