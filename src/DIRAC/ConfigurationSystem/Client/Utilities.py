@@ -450,72 +450,7 @@ def getElasticDBParameters(fullname):
     cs_path = getDatabaseSection(fullname)
     parameters = {}
 
-    # Check mandatory parameters first: Password, User
-    result = gConfig.getOption(cs_path + "/Password")
-    if not result["OK"]:
-        # No individual password found, try at the common place
-        result = gConfig.getOption("/Systems/NoSQLDatabases/Password")
-        if not result["OK"]:
-            return S_ERROR("Failed to get the configuration parameter: Password.")
-    dbPass = result["Value"]
-    parameters["Password"] = dbPass
-
-    result = gConfig.getOption(cs_path + "/User")
-    if not result["OK"]:
-        # No individual user name found, try at the common place
-        result = gConfig.getOption("/Systems/NoSQLDatabases/User")
-        if not result["OK"]:
-            return S_ERROR("Failed to get the configuration parameter: User.")
-    dbUser = result["Value"]
-    parameters["User"] = dbUser
-
-    # Check optional parameters: Host, Port, SSL, CRT, ca_certs, client_key, client_cert
-    result = gConfig.getOption(cs_path + "/Host")
-    if not result["OK"]:
-        # No host name found, try at the common place
-        result = gConfig.getOption("/Systems/NoSQLDatabases/Host")
-        if not result["OK"]:
-            gLogger.warn("Failed to get the configuration parameter: Host. Using localhost")
-            dbHost = "localhost"
-        else:
-            dbHost = result["Value"]
-    else:
-        dbHost = result["Value"]
-    # Check if the host is the local one and then set it to 'localhost' to use
-    # a socket connection
-    if dbHost != "localhost":
-        localHostName = socket.getfqdn()
-        if localHostName == dbHost:
-            dbHost = "localhost"
-    parameters["Host"] = dbHost
-
-    # Elasticsearch standard port
-    result = gConfig.getOption(cs_path + "/Port")
-    if not result["OK"]:
-        # No individual port number found, try at the common place
-        result = gConfig.getOption("/Systems/NoSQLDatabases/Port")
-        if not result["OK"]:
-            gLogger.debug("No configuration parameter set for Port, assuming URL points to right location")
-            dbPort = None
-        else:
-            dbPort = int(result["Value"])
-    else:
-        dbPort = int(result["Value"])
-    parameters["Port"] = dbPort
-
-    result = gConfig.getOption(cs_path + "/SSL")
-    if not result["OK"]:
-        # No SSL option found, try at the common place
-        result = gConfig.getOption("/Systems/NoSQLDatabases/SSL")
-        if not result["OK"]:
-            gLogger.debug("Failed to get the configuration parameter: SSL. Assuming SSL is needed")
-            ssl = True
-        else:
-            ssl = False if result["Value"].lower() in ("false", "no", "n") else True
-    else:
-        ssl = False if result["Value"].lower() in ("false", "no", "n") else True
-    parameters["SSL"] = ssl
-
+    # Check if connection is through certificates and get certificate parameters
     # Elasticsearch use certs
     result = gConfig.getOption(cs_path + "/CRT")
     if not result["OK"]:
@@ -571,6 +506,76 @@ def getElasticDBParameters(fullname):
     else:
         client_cert = result["Value"]
     parameters["client_cert"] = client_cert
+
+    # If connection is not through certificates get: Password, User
+    if parameters["CRT"]:
+        parameters["Password"] = None
+        parameters["User"] = None
+    else:
+        result = gConfig.getOption(cs_path + "/Password")
+        if not result["OK"]:
+            # No individual password found, try at the common place
+            result = gConfig.getOption("/Systems/NoSQLDatabases/Password")
+            if not result["OK"]:
+                return S_ERROR("Failed to get the configuration parameter: Password.")
+        dbPass = result["Value"]
+        parameters["Password"] = dbPass
+
+        result = gConfig.getOption(cs_path + "/User")
+        if not result["OK"]:
+            # No individual user name found, try at the common place
+            result = gConfig.getOption("/Systems/NoSQLDatabases/User")
+            if not result["OK"]:
+                return S_ERROR("Failed to get the configuration parameter: User.")
+        dbUser = result["Value"]
+        parameters["User"] = dbUser
+
+    # Check optional parameters: Host, Port, SSL
+    result = gConfig.getOption(cs_path + "/Host")
+    if not result["OK"]:
+        # No host name found, try at the common place
+        result = gConfig.getOption("/Systems/NoSQLDatabases/Host")
+        if not result["OK"]:
+            gLogger.warn("Failed to get the configuration parameter: Host. Using localhost")
+            dbHost = "localhost"
+        else:
+            dbHost = result["Value"]
+    else:
+        dbHost = result["Value"]
+    # Check if the host is the local one and then set it to 'localhost' to use
+    # a socket connection
+    if dbHost != "localhost":
+        localHostName = socket.getfqdn()
+        if localHostName == dbHost:
+            dbHost = "localhost"
+    parameters["Host"] = dbHost
+
+    # Elasticsearch standard port
+    result = gConfig.getOption(cs_path + "/Port")
+    if not result["OK"]:
+        # No individual port number found, try at the common place
+        result = gConfig.getOption("/Systems/NoSQLDatabases/Port")
+        if not result["OK"]:
+            gLogger.debug("No configuration parameter set for Port, assuming URL points to right location")
+            dbPort = None
+        else:
+            dbPort = int(result["Value"])
+    else:
+        dbPort = int(result["Value"])
+    parameters["Port"] = dbPort
+
+    result = gConfig.getOption(cs_path + "/SSL")
+    if not result["OK"]:
+        # No SSL option found, try at the common place
+        result = gConfig.getOption("/Systems/NoSQLDatabases/SSL")
+        if not result["OK"]:
+            gLogger.debug("Failed to get the configuration parameter: SSL. Assuming SSL is needed")
+            ssl = True
+        else:
+            ssl = False if result["Value"].lower() in ("false", "no", "n") else True
+    else:
+        ssl = False if result["Value"].lower() in ("false", "no", "n") else True
+    parameters["SSL"] = ssl
 
     return S_OK(parameters)
 
