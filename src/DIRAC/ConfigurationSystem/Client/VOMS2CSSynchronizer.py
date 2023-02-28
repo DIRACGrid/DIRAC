@@ -273,7 +273,7 @@ class VOMS2CSSynchronizer:
                 # We have a real new user
                 if not diracName:
                     if nickName:
-                        newDiracName = nickName
+                        newDiracName = nickName.strip()
                     else:
                         newDiracName = self.getUserName(dn)
 
