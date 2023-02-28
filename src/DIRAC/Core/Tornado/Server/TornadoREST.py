@@ -4,13 +4,9 @@ It directly inherits from :py:class:`tornado.web.RequestHandler`
 """
 
 import os
-import inspect
 from tornado.escape import json_decode
 from tornado.web import url as TornadoURL
-from urllib.parse import unquote
-from functools import partial
 
-from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Tornado.Server.private.BaseRequestHandler import *
 
@@ -355,4 +351,4 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
                 # Wrap argument with annotated type
                 keywordArguments[name] = _type(value) if _type else value
 
-        return (positionalArguments, keywordArguments)
+        return positionalArguments, keywordArguments
