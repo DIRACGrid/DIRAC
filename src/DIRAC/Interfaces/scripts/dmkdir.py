@@ -15,6 +15,7 @@ from DIRAC.Interfaces.Utilities.DCommands import pathFromArguments
 from DIRAC.Interfaces.Utilities.DCommands import createCatalog
 from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache
 from DIRAC.Core.Base.Script import Script
+from DIRAC import gLogger
 
 
 @Script()
@@ -33,9 +34,9 @@ def main():
     if result["OK"]:
         if result["Value"]["Failed"]:
             for p in result["Value"]["Failed"]:
-                print(f'ERROR - "{p}":', result["Value"]["Failed"][p])
+                gLogger.error(f'"{p}":', result["Value"]["Failed"][p])
     else:
-        print("ERROR:", result["Message"])
+        gLogger.error(result["Message"])
 
 
 if __name__ == "__main__":

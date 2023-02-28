@@ -8,7 +8,7 @@ Examples:
 import os
 
 import DIRAC
-from DIRAC import S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Interfaces.Utilities.DCommands import DSession
 from DIRAC.Interfaces.Utilities.DCommands import DCatalog
@@ -54,7 +54,7 @@ def main():
     catalog = DCatalog()
 
     if not args and not lfnFileName:
-        print(f"Error: No argument provided\n{Script.scriptName}:")
+        gLogger.error(f"No argument provided\n{Script.scriptName}:")
         Script.showHelp(exitCode=-1)
 
     lfns = set()
@@ -63,7 +63,7 @@ def main():
 
     if lfnFileName:
         if not os.path.exists(lfnFileName):
-            print(f"Error: non-existent file {lfnFileName}:")
+            gLogger.error(f"non-existent file {lfnFileName}:")
             DIRAC.exit(-1)
         lfnFile = open(lfnFileName)
         lfnList = lfnFile.readlines()
@@ -71,7 +71,6 @@ def main():
         lfns.update(lfnSet)
 
     from DIRAC.Interfaces.API.Dirac import Dirac
-    from DIRAC import gLogger
     from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
     from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
@@ -80,7 +79,7 @@ def main():
 
     nLfns = len(lfns)
     if nLfns > 1:
-        gLogger.notice("Removing %d objects" % nLfns)
+        gLogger.notice(f"Removing {nLfns} objects")
 
     exitCode = 0
     goodCounter = 0
@@ -91,7 +90,7 @@ def main():
             if result["OK"]:
                 goodCounter += 1
             else:
-                print("ERROR:", result["Message"])
+                gLogger.error(result["Message"])
                 badCounter += 1
                 exitCode = 3
         else:
@@ -103,19 +102,19 @@ def main():
                 if "No such file or directory" == result["Message"]:
                     gLogger.notice(f"{lfn} no such file")
                 else:
-                    gLogger.error(f"ERROR {lfn}: {result['Message']}")
+                    gLogger.error(f"{lfn}: {result['Message']}")
                     badCounter += 1
                     exitCode = 2
             else:
                 goodCounter += 1
                 if goodCounter % 10 == 0:
-                    gLogger.notice("%d files removed" % goodCounter)
+                    gLogger.notice(f"{goodCounter} files removed")
                     if badCounter:
-                        gLogger.notice("%d files failed removal" % badCounter)
+                        gLogger.notice(f"{badCounter} files failed removal")
 
-    gLogger.notice("\n%d object(s) removed in total" % goodCounter)
+    gLogger.notice(f"\n{goodCounter} object(s) removed in total")
     if badCounter:
-        gLogger.notice("%d object(s) failed removal in total" % badCounter)
+        gLogger.notice(f"{badCounter} object(s) failed removal in total")
 
     DIRAC.exit(exitCode)
 

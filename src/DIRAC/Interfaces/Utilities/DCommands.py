@@ -157,10 +157,10 @@ class DConfig:
             os.mkdir(self.configDir)
             os.chmod(self.configDir, stat.S_IRWXU)
         elif not os.path.isdir(self.configDir):
-            print(f'Error: "{self.configDir}" config dir is not a directory')
+            gLogger.error(f'"{self.configDir}" config dir is not a directory')
             DIRAC.exit(-1)
         elif not os.stat(self.configDir).st_mode != stat.S_IRWXU:
-            print(f'Error: "{self.configDir}" config dir doesn\'t have correct permissions')
+            gLogger.error(f'"{self.configDir}" config dir doesn\'t have correct permissions')
             DIRAC.exit(-1)
         if os.path.isfile(self.configPath):
             self.config.read(self.configPath)
@@ -319,7 +319,7 @@ class DSession(DConfig):
         profileName = profileName or oldProfileName or self.origin.defaultProfile()
         retVal = self.origin.sectionAliasName(profileName)
         if not retVal["OK"]:
-            print("Error:", retVal["Message"])
+            gLogger.error(retVal["Message"])
             DIRAC.exit(-1)
         self.profileName = retVal["Value"]
 
@@ -458,11 +458,9 @@ class DSession(DConfig):
         gLogger.notice("Your CRLs appear to be outdated; attempting to update them...")
         bdc = BundleDeliveryClient()
         res = bdc.syncCAs()
-        print(res)
         if not res["OK"]:
             gLogger.error("Failed to update CAs", res["Message"])
         res = bdc.syncCRLs()
-        print(res)
         if not res["OK"]:
             gLogger.error("Failed to update CRLs", res["Message"])
         # Continue even if the update failed...
@@ -580,7 +578,7 @@ def guessConfigFromCS(config, section, userName, groupName):
 def sessionFromProxy(config=DConfig(), sessionDir=None):
     proxyPath = _getProxyLocation()
     if not proxyPath:
-        print("No proxy found")
+        gLogger.error("No proxy found")
         return None
 
     retVal = _getProxyInfo(proxyPath)
@@ -620,7 +618,7 @@ def sessionFromProxy(config=DConfig(), sessionDir=None):
 def getDNFromProxy():
     proxyPath = _getProxyLocation()
     if not proxyPath:
-        print("No proxy found")
+        gLogger.error("No proxy found")
         return None
 
     retVal = _getProxyInfo(proxyPath)

@@ -3,6 +3,7 @@
   Kill or delete DIRAC job
 """
 import DIRAC
+from DIRAC import gLogger
 from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Interfaces.Utilities.DCommands import DSession
@@ -66,11 +67,11 @@ def main():
             monitoring = JobMonitoringClient()
             result = monitoring.getJobs({"Owner": userName})
             if not result["OK"]:
-                print("ERROR:", result["Message"])
+                gLogger.error(result["Message"])
             else:
                 jobs += map(int, result["Value"])
         else:
-            print("ERROR:", result["Message"])
+            gLogger.error(result["Message"])
 
     errors = []
     for job in jobs:
@@ -86,10 +87,10 @@ def main():
             action = "killed"
             if params.getDelete():
                 action = "deleted"
-            print(action, "job", job)
+            gLogger.notice(f"{action} job {job}")
 
     for error in errors:
-        print("ERROR:", error)
+        gLogger.error(str(error))
 
     DIRAC.exit(exitCode)
 

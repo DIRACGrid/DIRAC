@@ -3,7 +3,7 @@
   Retrieve output sandbox for a DIRAC job
 """
 import DIRAC
-from DIRAC import S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache
 from DIRAC.Core.Base.Script import Script
 
@@ -126,7 +126,7 @@ def main():
             result = dirac.selectJobs(jobGroup=jobGroup, date=jobDate, status=s)
             if not result["OK"]:
                 if not "No jobs selected" in result["Message"]:
-                    print("Error:", result["Message"])
+                    gLogger.error(result["Message"])
                     exitCode = 2
             else:
                 args += result["Value"]
@@ -137,7 +137,7 @@ def main():
 
     for arg in args:
         if os.path.isdir(os.path.join(outputDir, arg)) and not params.getNoJobDir():
-            print(f"Output for job {arg} already retrieved, remove the output directory to redownload")
+            gLogger.notice(f"Output for job {arg} already retrieved, remove the output directory to redownload")
         else:
             jobs.append(arg)
 
@@ -179,14 +179,14 @@ def main():
                     exitCode = 2
 
         for error in errors:
-            print("ERROR:", error)
+            gLogger.error(error)
 
         if params.getVerbose():
             for j, d in inputs.items():
                 if "osb" in d:
-                    print(f"{j}: OutputSandbox", d["osb"])
+                    gLogger.notice(f"{j}: OutputSandbox", d["osb"])
                 if "data" in d:
-                    print(f"{j}: OutputData", d["data"])
+                    gLogger.notice(f"{j}: OutputData", d["data"])
 
     DIRAC.exit(exitCode)
 

@@ -3,6 +3,7 @@
 Print list replicas for files in the FileCatalog
 """
 import DIRAC
+from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Interfaces.Utilities.DCommands import DSession
@@ -32,11 +33,11 @@ def main():
         ret = returnSingleResult(catalog.catalog.getReplicas(lfn))
         if ret["OK"]:
             replicas = ret["Value"]
-            print(lfn + ":")
+            gLogger.notice(f"{lfn}:")
             for se, path in replicas.items():
-                print("  ", se, path)
+                gLogger.notice("  ", f"{se} {path}")
         else:
-            print(f"Error: {lfn}:", ret["Message"])
+            gLogger.error(f"{lfn}:", ret["Message"])
             exitCode = -2
 
     DIRAC.exit(exitCode)

@@ -9,7 +9,7 @@ import sys
 import re
 import tempfile
 
-from DIRAC import S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC import exit as DIRACexit
 from DIRAC.Interfaces.Utilities.DCommands import pathFromArgument
 from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache
@@ -410,9 +410,9 @@ def main():
     if cmd is None:
         # get executable script from stdin
         if sys.stdin.isatty():
-            print("\nThe executable is not given")
-            print("Type in the executable script lines, finish with ^D")
-            print("or exit job submission with ^C\n")
+            gLogger.notice("\nThe executable is not given")
+            gLogger.notice("Type in the executable script lines, finish with ^D")
+            gLogger.notice("or exit job submission with ^C\n")
 
         lines = sys.stdin.readlines()
 
@@ -453,7 +453,7 @@ def main():
         uploadExec = params.getForceExecUpload() or not cmd.startswith("/")
         if uploadExec:
             if not os.path.isfile(cmd):
-                print(f'ERROR: executable file "{cmd}" not found')
+                gLogger.error(f'Executable file "{cmd}" not found')
                 DIRACexit(2)
 
             classAdAppendToInputSandbox(classAdJob, cmd)
@@ -468,9 +468,9 @@ def main():
     classAdJobs = params.parameterizeClassAd(classAdJob)
 
     if params.getVerbose():
-        print("JDL:")
+        gLogger.notice("JDL:")
         for p in params.parameterizeClassAd(classAdJob):
-            print(p.asJDL())
+            gLogger.notice(p.asJDL())
 
     jobIDs = []
 
@@ -488,20 +488,20 @@ def main():
 
     if jobIDs:
         if params.getVerbose():
-            print(
+            gLogger.notice(
                 "JobID:",
             )
-        print(",".join(map(str, jobIDs)))
+        gLogger.notice(",".join(map(str, jobIDs)))
 
     # remove temporary generated files, if any
     for f in tempFiles:
         try:
             os.unlink(f)
-        except Exception as e:
-            errorList.append(str(e))
+        except Exception as err:
+            errorList.append(err)
 
     for error in errorList:
-        print("ERROR %s: %s" % error)
+        gLogger.error(f"{error}")
 
     DIRACexit(exitCode)
 

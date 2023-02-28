@@ -8,7 +8,7 @@ on the command line.
 import os
 
 import DIRAC
-from DIRAC import S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Interfaces.Utilities.DCommands import DSession
 from DIRAC.Interfaces.Utilities.DCommands import DCatalog
@@ -76,7 +76,7 @@ def main():
     dirac = Dirac()
 
     if len(args) < 1:
-        print(f"Error: No argument provided\n{Script.scriptName}:")
+        gLogger.error(f"No argument provided\n{Script.scriptName}:")
         Script.showHelp(exitCode=-1)
 
     # local file
@@ -97,7 +97,7 @@ def main():
                 pairs.append((lp, os.path.join(lfn, os.path.basename(lp))))
         else:
             if len(localPaths) > 1:
-                print("Error: Destination LFN must be a directory when registering multiple local files")
+                gLogger.error("Destination LFN must be a directory when registering multiple local files")
                 DIRAC.exit(-1)
 
             # lfn filename replace local filename
@@ -111,9 +111,11 @@ def main():
         # use "NO DEFAULT" to distinguish no default SE set from all
         # other error cases
         if not retVal["OK"]:
-            print("Error:", retVal["Message"])
+            gLogger.error(retVal["Message"])
         if retVal["Value"] == "NO DEFAULT":
-            print("Error: No default SE specified, please set default SE or specify SE on command line using -D option")
+            gLogger.error(
+                "No default SE specified, please set default SE or specify SE on command line using -D option"
+            )
             DIRAC.exit(-1)
         se = retVal["Value"]
 
@@ -136,7 +138,7 @@ def main():
 
         if not ret["OK"]:
             exitCode = -2
-            print(f"Error: {lfn}:", ret["Message"])
+            gLogger.error(f"{lfn}:", ret["Message"])
 
     DIRAC.exit(exitCode)
 

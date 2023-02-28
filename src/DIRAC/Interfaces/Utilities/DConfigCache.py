@@ -6,6 +6,7 @@ import time
 import pickle
 import tempfile
 
+from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
@@ -75,4 +76,4 @@ class ConfigCache:
                 with open(self.configCacheName, "rb") as fh:
                     gConfigurationData.mergedCFG = pickle.load(fh)
             except:
-                print("Warning: Cache corrupt or unreadable")
+                gLogger.error("Cache corrupt or unreadable")
