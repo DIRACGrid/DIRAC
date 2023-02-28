@@ -120,7 +120,7 @@ def main():
         ret = dirac.getFile(lfn, localDir)
         if not ret["OK"]:
             exitCode = -3
-            gLogger.error(ret['Message'])
+            gLogger.error(ret["Message"])
 
     DIRAC.exit(exitCode)
 

@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 """
 Change current DIRAC File Catalog working directory
