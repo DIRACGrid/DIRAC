@@ -465,52 +465,50 @@ def getElasticDBParameters(fullname):
         certs = result["Value"]
     parameters["CRT"] = certs
 
-    # Elasticsearch ca_certs
-    result = gConfig.getOption(cs_path + "/ca_certs")
-    if not result["OK"]:
-        # No CA certificate found, try at the common place
-        result = gConfig.getOption("/Systems/NoSQLDatabases/ca_certs")
-        if not result["OK"]:
-            gLogger.debug("Failed to get the configuration parameter: ca_certs. Using None")
-            ca_certs = None
-        else:
-            ca_certs = result["Value"]
-    else:
-        ca_certs = result["Value"]
-    parameters["ca_certs"] = ca_certs
-
-    # Elasticsearch client_key
-    result = gConfig.getOption(cs_path + "/client_key")
-    if not result["OK"]:
-        # No client private key found, try at the common place
-        result = gConfig.getOption("/Systems/NoSQLDatabases/client_key")
-        if not result["OK"]:
-            gLogger.debug("Failed to get the configuration parameter: client_key. Using None")
-            client_key = None
-        else:
-            client_key = result["Value"]
-    else:
-        client_key = result["Value"]
-    parameters["client_key"] = client_key
-
-    # Elasticsearch client_cert
-    result = gConfig.getOption(cs_path + "/client_cert")
-    if not result["OK"]:
-        # No cient certificate found, try at the common place
-        result = gConfig.getOption("/Systems/NoSQLDatabases/client_cert")
-        if not result["OK"]:
-            gLogger.debug("Failed to get the configuration parameter: client_cert. Using None")
-            client_cert = None
-        else:
-            client_cert = result["Value"]
-    else:
-        client_cert = result["Value"]
-    parameters["client_cert"] = client_cert
-
-    # If connection is not through certificates get: Password, User
+    # If connection is through certificates get the mandatory parameters: ca_certs, client_key, client_cert
     if parameters["CRT"]:
         parameters["Password"] = None
         parameters["User"] = None
+
+        # Elasticsearch ca_certs
+        result = gConfig.getOption(cs_path + "/ca_certs")
+        if not result["OK"]:
+            # No CA certificate found, try at the common place
+            result = gConfig.getOption("/Systems/NoSQLDatabases/ca_certs")
+            if not result["OK"]:
+                return S_ERROR("Failed to get the configuration parameter: ca_certs.")
+            else:
+                ca_certs = result["Value"]
+        else:
+            ca_certs = result["Value"]
+        parameters["ca_certs"] = ca_certs
+
+        # Elasticsearch client_key
+        result = gConfig.getOption(cs_path + "/client_key")
+        if not result["OK"]:
+            # No client private key found, try at the common place
+            result = gConfig.getOption("/Systems/NoSQLDatabases/client_key")
+            if not result["OK"]:
+                return S_ERROR("Failed to get the configuration parameter: client_key.")
+            else:
+                client_key = result["Value"]
+        else:
+            client_key = result["Value"]
+        parameters["client_key"] = client_key
+
+        # Elasticsearch client_cert
+        result = gConfig.getOption(cs_path + "/client_cert")
+        if not result["OK"]:
+            # No cient certificate found, try at the common place
+            result = gConfig.getOption("/Systems/NoSQLDatabases/client_cert")
+            if not result["OK"]:
+                return S_ERROR("Failed to get the configuration parameter: client_cert.")
+            else:
+                client_cert = result["Value"]
+        else:
+            client_cert = result["Value"]
+        parameters["client_cert"] = client_cert
+    # If connection is not through certificates get the mandatory parameters: Password, User
     else:
         result = gConfig.getOption(cs_path + "/Password")
         if not result["OK"]:
