@@ -25,8 +25,8 @@ class ComponentMonitoringHandlerMixin:
 
         try:
             ComponentMonitoringHandler.db = InstalledComponentsDB()
-        except Exception as e:
-            gLogger.error("Could not connect to the database", f": {e}")
+        except Exception:
+            gLogger.exception()
             return S_ERROR("Could not connect to the database")
 
         return S_OK("Initialization went well")
