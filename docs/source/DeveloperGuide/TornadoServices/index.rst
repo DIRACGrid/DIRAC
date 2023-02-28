@@ -337,7 +337,7 @@ Install a service
 
 Initial install: first modify one config (with port and so on) before running ``tornado-install``
 
-``dirac-install-tornado-service`` is your friend. This will install a runit component running ``tornado-start-all``.
+``dirac-install-component`` is your friend. This will install a runit component running ``tornado-start-all``.
 Nothing is ready yet to install specific tornado service, like the master CS.
 
 Migrate from dips to https

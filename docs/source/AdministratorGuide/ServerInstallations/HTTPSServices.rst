@@ -63,12 +63,12 @@ This procedure is to be used if you are want to serve a new service with HTTPs.
 Case 1: you do NOT run the equivalent DISET service
 ---------------------------------------------------
 
-This is the most trivial case. Just run ``dirac-install-tornado-service`` with the service you are interested in. This will install an ``runit`` component running ``tornado-start-all``.
+This is the most trivial case. Just run ``dirac-install-component`` with the service you are interested in. This will install an ``runit`` component running ``tornado-start-all``.
 
 Case 2: you run the equivalent DISET service
 --------------------------------------------
 
-Because the CS already contains the handler definition for DISET, ``dirac-install-tornado-service`` will not modify it. Thus, you have to update it yourself, before running the command, otherwise ``tornado-start-all`` will not find any service to run, and the installation will be shown as failed.
+Because the CS already contains the handler definition for DISET, you have to update it yourself, before running the command, otherwise ``tornado-start-all`` will not find any service to run, and the installation will be shown as failed.
 
 Procedure:
 
@@ -140,7 +140,7 @@ And you need to change it to::
   }
 
 
-#. Run ``dirac-install-tornado-service`` or restart the tornado component if already running.
+#. Run ``dirac-install-component`` or restart the tornado component if already running.
 
 .. note::
   This means that from now on, the DISET service cannot be restarted anymore, as its configuration would be wrong.
@@ -166,7 +166,7 @@ In any case, do not forget to update the URL of the service you just installed, 
 Adding more tornado instances on a different machine
 ====================================================
 
-Simply use ``dirac-install-tornado-service`` with no arguments on the new machine.
+Simply use ``dirac-install-component`` with no arguments on the new machine.
 
 
 MasterCS special case

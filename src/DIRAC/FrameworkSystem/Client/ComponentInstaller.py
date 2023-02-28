@@ -824,22 +824,18 @@ class ComponentInstaller:
 
         sectionPath = cfgPath("Systems", system, compInstance, sectionName)
         cfg = self.__getCfg(sectionPath)
-        # Strip "Tornado" from the beginning of component name if present
-        cfg.createNewSection(
-            cfgPath(sectionPath, component[len("Tornado") if component.startswith("Tornado") else 0 :]), "", compCfg
-        )
+        cfg.createNewSection(cfgPath(sectionPath, component), "", compCfg)
 
         for option, value in specialOptions.items():
-            # Strip "Tornado" from the beginning of component name if present
             cfg.setOption(
-                cfgPath(sectionPath, component[len("Tornado") if component.startswith("Tornado") else 0 :], option),
+                cfgPath(sectionPath, component, option),
                 value,
             )
 
         # Add the service URL
         if componentType == "service":
             port = compCfg.getOption("Port", 0)
-            protocol = compCfg.getOption("Protocol", "https")
+            protocol = compCfg.getOption("Protocol", "dips")
             if (port or protocol == "https") and self.host:
                 urlsPath = cfgPath("Systems", system, compInstance, "URLs")
                 cfg.createNewSection(urlsPath)
@@ -1705,7 +1701,7 @@ exec svlogd .
 
     def installComponent(self, componentType, system, component, extensions, componentModule="", checkModule=True):
         """
-        Install runit directory for the specified component
+        DIPS services: install runit directory for the specified component
         """
         # Check if the component is already installed
         runitCompDir = os.path.join(self.runitDir, system, component)
@@ -1758,7 +1754,7 @@ exec svlogd .
             for var in bashSection:
                 bashVars = f"{bashVars}\nexport {var}={bashSection[var]}"
 
-        # Now do the actual installation
+        # Now do the actual installation (for DIPS)
         try:
             componentCfg = os.path.join(self.linkedRootPath, "etc", f"{system}_{component}.cfg")
             if not os.path.exists(componentCfg):

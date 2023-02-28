@@ -61,8 +61,7 @@ class LocalConfiguration:
     def __getAbsolutePath(self, optionPath):
         if optionPath[0] == "/":
             return optionPath
-        else:
-            return f"{self.currentSectionPath}/{optionPath}"
+        return f"{self.currentSectionPath}/{optionPath}"
 
     def addMandatoryEntry(self, optionPath):
         """
