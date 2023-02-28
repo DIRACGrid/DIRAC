@@ -76,4 +76,4 @@ class ConfigCache:
                 with open(self.configCacheName, "rb") as fh:
                     gConfigurationData.mergedCFG = pickle.load(fh)
             except:
-                gLogger.error("Error: Cache corrupt or unreadable")
+                gLogger.error("Cache corrupt or unreadable")

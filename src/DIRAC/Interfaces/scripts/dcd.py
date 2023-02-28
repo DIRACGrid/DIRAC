@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 """
 Change current DIRAC File Catalog working directory
@@ -31,7 +32,7 @@ def main():
     session = DSession()
 
     if len(args) > 1:
-        gLogger.notice(f"Error: too many arguments provided\n{Script.scriptName}:")
+        gLogger.notice(f"Too many arguments provided\n{Script.scriptName}:")
         Script.showHelp(exitCode=-1)
 
     if len(args):
@@ -46,7 +47,7 @@ def main():
             session.setCwd(arg)
             session.write()
     else:
-        gLogger.error(f'Error: "{arg}" not a valid directory')
+        gLogger.error(f'"{arg}" not a valid directory')
         DIRAC.exit(-1)
 
 

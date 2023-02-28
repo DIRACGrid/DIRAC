@@ -30,9 +30,9 @@ def main():
     if result["OK"]:
         if result["Value"]["Failed"]:
             for p in result["Value"]["Failed"]:
-                gLogger.error(f'ERROR - "{p}":', result["Value"]["Failed"][p])
+                gLogger.error(f'"{p}":', result["Value"]["Failed"][p])
     else:
-        gLogger.error("ERROR:", result["Message"])
+        gLogger.error(result["Message"])
 
 
 if __name__ == "__main__":

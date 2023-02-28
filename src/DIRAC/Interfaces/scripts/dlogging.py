@@ -51,7 +51,7 @@ def main():
             exitCode = 2
 
     for error in errors:
-        gLogger.error("ERROR:", error)
+        gLogger.error(error)
 
     DIRAC.exit(exitCode)
 

@@ -7,8 +7,7 @@ Examples:
     $ dconfig (lists contents of ~/dirac/dcommands.conf)
 """
 import DIRAC
-from DIRAC import gLogger
-from DIRAC import S_OK
+from DIRAC import gLogger, S_OK
 from DIRAC.Core.Base.Script import Script
 
 from DIRAC.Interfaces.Utilities.DCommands import (
@@ -60,7 +59,7 @@ def main():
         for s in sections:
             retVal = dconfig.get(s, None)
             if not retVal["OK"]:
-                gLogger.error("Error:", retVal["Message"])
+                gLogger.error(retVal["Message"])
                 DIRAC.exit(-1)
             gLogger.notice(f"[{s}]")
             for o, v in retVal["Value"]:
@@ -84,7 +83,7 @@ def main():
         else:
             retVal = dconfig.get(section, option)
             if not retVal["OK"]:
-                gLogger.error("Error:", retVal["Message"])
+                gLogger.error(retVal["Message"])
                 DIRAC.exit(-1)
             ret = retVal["Value"]
             if isinstance(ret, list):

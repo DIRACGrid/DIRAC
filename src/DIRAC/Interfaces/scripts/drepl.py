@@ -98,7 +98,7 @@ def main():
             ret = dirac.replicateFile(lfn, dst, srcopt)
 
             if not ret["OK"]:
-                gLogger.error(f"Error: {lfn} -> {dst}:", ret["Message"])
+                gLogger.error(f"{lfn} -> {dst}:", ret["Message"])
                 exitCode = -2
 
     DIRAC.exit(exitCode)

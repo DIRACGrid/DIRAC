@@ -55,22 +55,22 @@ def main():
         ConfigCache(forceRefresh=True).cacheConfig()
 
         if not retVal["OK"]:
-            gLogger.error("Error:", retVal["Message"])
+            gLogger.error(retVal["Message"])
             DIRAC.exit(-1)
         session = sessionFromProxy()
     else:
         session = DSession(profile)
 
     if not session:
-        gLogger.error("Error: Session couldn't be initialized")
+        gLogger.error("Session couldn't be initialized")
         DIRAC.exit(-1)
 
     session.write()
 
     try:
         session.checkProxyOrInit()
-    except Exception as e:
-        gLogger.error(f"Error: {e}")
+    except Exception as err:
+        gLogger.exception(err)
         DIRAC.exit(-1)
 
     retVal = session.proxyInfo()

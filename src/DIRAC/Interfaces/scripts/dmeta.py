@@ -39,7 +39,7 @@ class DMetaAdd(DMetaCommand):
             metadict[name] = value
         result = self.fcClient.setMetadataBulk({lfn: metadict})
         if not result["OK"]:
-            gLogger.error("Error:", result["Message"])
+            gLogger.error(result["Message"])
 
 
 class DMetaRm(DMetaCommand):
@@ -49,7 +49,7 @@ class DMetaRm(DMetaCommand):
     def run(self, lfn, metas):
         result = self.fcClient.removeMetadata({lfn: metas})
         if not result["OK"]:
-            gLogger.error("Error:", result["Message"])
+            gLogger.error(result["Message"])
 
 
 class DMetaList(DMetaCommand):
@@ -60,7 +60,7 @@ class DMetaList(DMetaCommand):
         retVal = self.catalog.getMeta(lfn)
 
         if not retVal["OK"]:
-            gLogger.error("Error:", retVal["Message"])
+            gLogger.error(retVal["Message"])
             DIRAC.exit(-1)
         metadict = retVal["Value"]
 
@@ -165,7 +165,7 @@ def main():
     command = args[0]
 
     if command not in meta_commands.keys():
-        gLogger.error(f'Error: Unknown dmeta command "{command}"')
+        gLogger.error(f'Unknown dmeta command "{command}"')
         gLogger.notice(f"{Script.scriptName}:")
         Script.showHelp(exitCode=-1)
 

@@ -27,7 +27,7 @@ def main():
     if not args:
         retVal = session.listEnv()
         if not retVal["OK"]:
-            gLogger.error("Error:", retVal["Message"])
+            gLogger.error(retVal["Message"])
             DIRAC.exit(-1)
         for o, v in retVal["Value"]:
             gLogger.notice(f"{o} = {v}")
@@ -38,7 +38,7 @@ def main():
     result = session.get(section, option) if section else session.getEnv(option)
 
     if not result["OK"]:
-        gLogger.error("Error:", result["Message"])
+        gLogger.error(result["Message"])
         DIRAC.exit(-1)
 
     gLogger.notice(result["Value"])

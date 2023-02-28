@@ -126,7 +126,7 @@ def main():
             result = dirac.selectJobs(jobGroup=jobGroup, date=jobDate, status=s)
             if not result["OK"]:
                 if not "No jobs selected" in result["Message"]:
-                    gLogger.error("Error:", result["Message"])
+                    gLogger.error(result["Message"])
                     exitCode = 2
             else:
                 args += result["Value"]
@@ -179,7 +179,7 @@ def main():
                     exitCode = 2
 
         for error in errors:
-            gLogger.error("ERROR:", error)
+            gLogger.error(error)
 
         if params.getVerbose():
             for j, d in inputs.items():

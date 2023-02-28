@@ -67,11 +67,11 @@ def main():
             monitoring = JobMonitoringClient()
             result = monitoring.getJobs({"Owner": userName})
             if not result["OK"]:
-                gLogger.error("ERROR:", result["Message"])
+                gLogger.error(result["Message"])
             else:
                 jobs += map(int, result["Value"])
         else:
-            gLogger.error("ERROR:", result["Message"])
+            gLogger.error(result["Message"])
 
     errors = []
     for job in jobs:
@@ -90,7 +90,7 @@ def main():
             gLogger.notice(f"{action} job {job}")
 
     for error in errors:
-        gLogger.error("ERROR:", error)
+        gLogger.error(str(error))
 
     DIRAC.exit(exitCode)
 

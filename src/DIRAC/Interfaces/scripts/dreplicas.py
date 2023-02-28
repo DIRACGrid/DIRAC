@@ -37,7 +37,7 @@ def main():
             for se, path in replicas.items():
                 gLogger.notice("  ", f"{se} {path}")
         else:
-            gLogger.error(f"Error: {lfn}:", ret["Message"])
+            gLogger.error(f"{lfn}:", ret["Message"])
             exitCode = -2
 
     DIRAC.exit(exitCode)

@@ -227,7 +227,7 @@ def main():
         )
 
         if not result["OK"]:
-            gLogger.error("Error:", result["Message"])
+            gLogger.error(result["Message"])
             DIRACExit(-1)
 
         jobs = result["Value"]
@@ -235,7 +235,7 @@ def main():
     try:
         jobs = [int(job) for job in jobs]
     except Exception as x:
-        gLogger.error("ERROR: Expected integer for jobID")
+        gLogger.error("Expected integer for jobID")
         exitCode = 2
         DIRACExit(exitCode)
 
@@ -246,7 +246,7 @@ def main():
     for chunk in chunks(jobs, 1000):
         result = getJobSummary(chunk)
         if not result["OK"]:
-            gLogger.error("ERROR:", result["Message"])
+            gLogger.error(result["Message"])
             DIRACExit(2)
 
         # filter on job statuses

@@ -54,7 +54,7 @@ def main():
     catalog = DCatalog()
 
     if not args and not lfnFileName:
-        gLogger.error(f"Error: No argument provided\n{Script.scriptName}:")
+        gLogger.error(f"No argument provided\n{Script.scriptName}:")
         Script.showHelp(exitCode=-1)
 
     lfns = set()
@@ -63,7 +63,7 @@ def main():
 
     if lfnFileName:
         if not os.path.exists(lfnFileName):
-            gLogger.error(f"Error: non-existent file {lfnFileName}:")
+            gLogger.error(f"non-existent file {lfnFileName}:")
             DIRAC.exit(-1)
         lfnFile = open(lfnFileName)
         lfnList = lfnFile.readlines()
@@ -90,7 +90,7 @@ def main():
             if result["OK"]:
                 goodCounter += 1
             else:
-                gLogger.error("ERROR:", result["Message"])
+                gLogger.error(result["Message"])
                 badCounter += 1
                 exitCode = 3
         else:
@@ -102,7 +102,7 @@ def main():
                 if "No such file or directory" == result["Message"]:
                     gLogger.notice(f"{lfn} no such file")
                 else:
-                    gLogger.error(f"ERROR {lfn}: {result['Message']}")
+                    gLogger.error(f"{lfn}: {result['Message']}")
                     badCounter += 1
                     exitCode = 2
             else:

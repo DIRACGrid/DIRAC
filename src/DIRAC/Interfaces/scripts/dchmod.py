@@ -10,8 +10,7 @@ from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache
 from DIRAC.Interfaces.Utilities.DCommands import DSession
 from DIRAC.Interfaces.Utilities.DCommands import pathFromArgument
 from DIRAC.Core.Base.Script import Script
-from DIRAC import gLogger
-from DIRAC import S_OK
+from DIRAC import gLogger, S_OK
 
 
 class Params:
@@ -55,12 +54,12 @@ def main():
             pathDict = {lfn: int(mode, base=8)}
             result = fc.changePathMode(pathDict, params.recursive)
             if not result["OK"]:
-                gLogger.error("Error:", result["Message"])
+                gLogger.error(result["Message"])
                 break
             if lfn in result["Value"]["Failed"]:
-                gLogger.error("Error:", result["Value"]["Failed"][lfn])
-        except Exception as x:
-            gLogger.error("Exception:", str(x))
+                gLogger.error(result["Value"]["Failed"][lfn])
+        except Exception as err:
+            gLogger.exception(err)
 
 
 if __name__ == "__main__":

@@ -9,9 +9,8 @@ import sys
 import re
 import tempfile
 
-from DIRAC import S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC import exit as DIRACexit
-from DIRAC import gLogger
 from DIRAC.Interfaces.Utilities.DCommands import pathFromArgument
 from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache
 from DIRAC.Interfaces.Utilities.DCommands import DSession
@@ -454,7 +453,7 @@ def main():
         uploadExec = params.getForceExecUpload() or not cmd.startswith("/")
         if uploadExec:
             if not os.path.isfile(cmd):
-                gLogger.error(f'ERROR: executable file "{cmd}" not found')
+                gLogger.error(f'Executable file "{cmd}" not found')
                 DIRACexit(2)
 
             classAdAppendToInputSandbox(classAdJob, cmd)
@@ -498,11 +497,11 @@ def main():
     for f in tempFiles:
         try:
             os.unlink(f)
-        except Exception as e:
-            errorList.append(str(e))
+        except Exception as err:
+            errorList.append(err)
 
     for error in errorList:
-        gLogger.error(f"ERROR: {error}")
+        gLogger.error(f"{error}")
 
     DIRACexit(exitCode)
 

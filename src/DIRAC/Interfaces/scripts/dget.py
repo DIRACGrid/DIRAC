@@ -64,7 +64,7 @@ def main():
     dirac = Dirac()
 
     if len(args) < 1:
-        gLogger.error("Error: Not enough arguments provided:")
+        gLogger.error("Not enough arguments provided:")
         Script.showHelp()
         DIRAC.exit(-1)
 
@@ -80,7 +80,7 @@ def main():
         lfns = [(pathFromArgument(session, lfn), localDir) for lfn in args[:-1]]
 
         if not os.path.isdir(localDir):
-            gLogger.error("Error: Destination local path must be a directory")
+            gLogger.error("Destination local path must be a directory")
             DIRAC.exit(-1)
 
     exitCode = 0
@@ -95,14 +95,14 @@ def main():
                     newLFNs.append((lfn, localDir))
                     continue
                 exitCode = -1
-                gLogger.error(f"Error: Invalid path: '{lfn}'")
+                gLogger.error(f"Invalid path: '{lfn}'")
                 continue
 
             retVal = catalog.findFilesByMetadata({}, lfn)
 
             if not retVal["OK"]:
                 exitCode = -2
-                gLogger.error("Error:", retVal["Message"])
+                gLogger.error(retVal["Message"])
                 continue
 
             # compute new local destination for subtree files
@@ -120,7 +120,7 @@ def main():
         ret = dirac.getFile(lfn, localDir)
         if not ret["OK"]:
             exitCode = -3
-            gLogger.error(f"Error: {ret['Message']}")
+            gLogger.error(ret['Message'])
 
     DIRAC.exit(exitCode)
 

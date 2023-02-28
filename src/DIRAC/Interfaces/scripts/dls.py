@@ -276,7 +276,7 @@ def main():
             # Check if the target path is a file
             result = self.fc.isFile(path)
             if not result["OK"]:
-                gLogger.error("Error: can not verify path")
+                gLogger.error("Can not verify path")
                 return
             elif path in result["Value"]["Successful"] and result["Value"]["Successful"][path]:
                 result = self.fc.getFileMetadata(path)
@@ -291,10 +291,10 @@ def main():
 
             result = self.fc.isDirectory(path)
             if not result["OK"]:
-                gLogger.error("Error: can not verify path")
+                gLogger.error("Can not verify path")
                 return
             elif path not in result["Value"]["Successful"] or not result["Value"]["Successful"][path]:
-                gLogger.error(f'Error: "{path}" doesn\'t exist')
+                gLogger.error(f'"{path}" doesn\'t exist')
                 return
 
             # Get directory contents now
@@ -328,9 +328,9 @@ def main():
                         else:
                             dList.printOrdered()
                 else:
-                    gLogger.error("Error:", result["Message"])
-            except Exception as x:
-                gLogger.error("Error:", str(x))
+                    gLogger.error(result["Message"])
+            except Exception as err:
+                gLogger.exception(err)
 
     session = DSession()
 
