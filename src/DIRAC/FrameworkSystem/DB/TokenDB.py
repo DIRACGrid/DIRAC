@@ -21,7 +21,7 @@ Model = declarative_base()
 
 
 class Token(Model, OAuth2TokenMixin):
-    """This class describe token fields"""
+    """This class describes token fields"""
 
     __tablename__ = "Token"
     __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
@@ -30,8 +30,8 @@ class Token(Model, OAuth2TokenMixin):
     # https://stackoverflow.com/questions/1827063/mysql-error-key-specification-without-a-key-length
     id = Column(Integer, autoincrement=True, primary_key=True)  # Unique token ID
     kid = Column(String(255))  # Unique secret key ID for token encryption
-    user_id = Column(String(255))  # User identificator that registred in an identity provider, token owner
-    provider = Column(String(255))  # Provider name registred in DIRAC
+    user_id = Column(String(255))  # User identifier registered in an identity provider, token owner
+    provider = Column(String(255))  # Provider name registered in DIRAC
     expires_at = Column(Integer, nullable=False, default=0)  # When the access token is expired
     access_token = Column(Text, nullable=False)
     refresh_token = Column(Text, nullable=False)
@@ -101,7 +101,7 @@ class TokenDB(SQLAlchemyDB):
         :return: S_OK(list)/S_ERROR() -- return old tokens that should be revoked.
         """
         if not token["refresh_token"]:
-            return S_ERROR("Cannot store absent refresh token.")
+            return S_ERROR("Cannot store token without a refresh token.")
 
         # Let's collect the necessary attributes of the token
         token["user_id"] = userID
