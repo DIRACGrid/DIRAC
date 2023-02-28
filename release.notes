@@ -1,3 +1,58 @@
+[v8.1.0a9]
+
+*ConfigurationSystem
+
+FIX: (#6868) VOMS2CSAgent: strip whitespaces from DN entried and nickname
+NEW: (#6865) Resources helper - getQueues() - can select queues by Tag values also
+
+*FrameworkSystem
+
+FIX: (#6865) TokenManager - use refreshToken flow to generate access tokens from the stored refresh tokens
+
+*WorkloadManagement
+
+NEW: (#6865) SiteDirector enabled to select queues by tags
+NEW: (#6865) SiteDirector sets up tokens for ComputingElements configured with the Token tag
+
+*Resources
+
+NEW: (#6865) HTCondorComputingElement, ARC(6)ComputingElement and AREXComputingElement enabled to for job operations with tokens
+FIX: (#6842) Complete AREX renewal
+
+*DataManagementSystem
+
+NEW: (#6863) ReplicateAndRegister FTS mode also checks the SE status
+NEW: (#6863) add a delay in monitoring in the FTS3Agent
+NEW: (#6860) dirac-dms-filecatalog-cli - use the default VO FileCatalog if not explicitly specified
+CHANGE: (#6835) Speed up ReplicateAndRegister operation
+
+*dashboards/PilotSubmissions
+
+FIX: (#6858) efficiency plots now use heatmaps
+FIX: (#6858) index patterns are now environment agnostic
+
+*dashboards/ServiceMonitoring
+
+FIX: (#6858) index patterns are now environment agnostic
+
+*dashboards/AgentMonitoring
+
+FIX: (#6858) index patterns are now environment agnostic
+
+*dashboards/PilotsHistory
+
+FIX: (#6858) style of plots
+FIX: (#6858) index patterns are now environment agnostic
+
+*Interfaces
+
+NEW: (#6853) Add setPriority to Job API
+FIX: (#6849) removed print statements and replaced with gLogger as appropriate as requested in #6746
+
+*RequestManagementSystem
+
+CHANGE: (#6848) ReqProxy does not attempt a direct forward to central ReqManager
+
 [v8.1.0a8]
 
 *Resources
