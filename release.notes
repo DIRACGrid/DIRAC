@@ -1,3 +1,9 @@
+[v8.1.0a10]
+
+*Tests
+
+CHANGE: (#6861) factorize FTS3 tests
+
 [v8.1.0a9]
 
 *ConfigurationSystem
