@@ -74,8 +74,8 @@ Requirements
 
 - Grid host certificates in pem format;
 - At least one of the servers of the installation must have updated CAs and CRLs files; if you want to install
-   the standard Grid CAs you can follow the instructions at https://wiki.egi.eu/wiki/EGI_IGTF_Release. They
-   are usally installed /etc/grid-security/certificates. You may also need to install the ``fetch-crl`` package,
+   the standard Grid CAs you can follow the instructions at https://docs.egi.eu/providers/operations-manuals/howto01_using_igtf_ca_distribution/.
+   They are usally installed /etc/grid-security/certificates. You may also need to install the ``fetch-crl`` package,
    and run the ``fetch-crl`` command once installed.
 - If gLite third party services are needed (for example, for the pilot job submission via WMS
   or for data transfer using FTS) gLite User Interface must be installed and the environment set up
@@ -256,7 +256,7 @@ be taken based on the Python version you wish to install.
         VirtualOrganization = Name of your VO
         #  Site name
         SiteName = DIRAC.HostName.ch
-        #  Setup name (every installation can have multiple setups, but give a name to the first one)
+        #  Setup name
         Setup = MyDIRAC-Production
         #  Default name of system instances
         InstanceName = Production
@@ -306,6 +306,7 @@ be taken based on the Python version you wish to install.
         Systems += StorageManagement
         Systems += Transformation
         Systems += WorkloadManagement
+        Systems += Tornado
         #
         # List of DataBases to be installed (what's here is a list for a basic installation)
         Databases = InstalledComponentsDB
@@ -319,9 +320,9 @@ be taken based on the Python version you wish to install.
         # Host = dirac.cern.ch
         #  List of Services to be installed (what's here is a list for a basic installation)
         Services  = Configuration/Server
-        Services += Framework/ComponentMonitoring
+        Services += Framework/TornadoComponentMonitoring
         Services += Framework/SystemAdministrator
-        Services += ResourceStatus/ResourceStatus
+        Services += ResourceStatus/TornadoResourceStatus
         #  Flag determining whether the Web Portal will be installed
         WebPortal = yes
         #
@@ -365,11 +366,10 @@ of the status of running DIRAC services, e.g.::
                                 Name : Runit    Uptime    PID
                 Configuration_Server : Run          41    30268
        Framework_SystemAdministrator : Run          21    30339
-       Framework_ComponentMonitoring : Run          11    30340
-       ResourceStatus_ResourceStatus : Run           9    30341
+                     Tornado_Tornado : Run          11    30340
 
 
-Now the basic services - Configuration, SystemAdministrator, ComponentMonitoring and ResourceStatus - are installed,
+Now the basic services - Configuration, SystemAdministrator, TornadoComponentMonitoring and TornadoResourceStatus - are installed,
 or at least their DBs should be installed, and their services up and running.
 
 There are anyway a couple more steps that should be done to fully activate the ComponentMonitoring and the ResourceStatus.
@@ -436,8 +436,8 @@ operation is the registration of the new host in the already functional Configur
         UseServerCertificate = yes
         #  Configuration Server URL (This should point to the URL of at least one valid Configuration
         #  Service in your installation, for the primary server it should not used)
-        ConfigurationServer = dips://myprimaryserver.name:9135/Configuration/Server
-        ConfigurationServer += dips://localhost:9135/Configuration/Server
+        ConfigurationServer = https://myprimaryserver.name:9135/Configuration/Server
+        ConfigurationServer += https://localhost:8443/Tornado/Tornado
         #  Configuration Name
         ConfigurationName = MyConfiguration
 
@@ -511,7 +511,7 @@ To install the DIRAC Client, follow the procedure described in the User Guide.
 
 - Install services and agents, for example::
 
-    $ install service WorkloadManagement JobMonitoring
+    $ install service WorkloadManagement TornadoJobMonitoring
     $ install agent Configuration Bdii2CSAgent
 
 Note that all the necessary commands above can be collected in a text file and the whole installation can be

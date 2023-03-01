@@ -78,7 +78,7 @@ EOL
 if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
   dirac-restart-component DataManagement S3Gateway "$DEBUG"
 else
-  dirac-restart-component Tornado Tornado
+  dirac-restart-component Tornado Tornado "$DEBUG"
 fi
 
 echo -e "*** $(date -u) **** DONE Adding S3-INDIRECT SERVER CONFIGURATION"
