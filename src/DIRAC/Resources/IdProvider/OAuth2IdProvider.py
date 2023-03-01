@@ -173,9 +173,7 @@ class OAuth2IdProvider(OAuth2Session):
         self._initialize()
         self.metadata_fetch_last = time.time() - self.METADATA_REFRESH_RATE
         self.log.debug(
-            f'"{self.name}" OAuth2 IdP initialization done:',
-            "\nclient_id: %s\nclient_secret: %s\nmetadata:\n%s"
-            % (self.client_id, self.client_secret, pprint.pformat(self.metadata)),
+            f'"{self.name}" OAuth2 IdP initialization done:', f"\nmetadata:\n{pprint.pformat(self.metadata)}"
         )
 
     def _initialize(self):
