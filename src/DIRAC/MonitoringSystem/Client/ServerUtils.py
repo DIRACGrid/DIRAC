@@ -3,14 +3,14 @@ This module is used to create an appropriate object which can be used to insert 
 It always try to insert the records directly. In case of failure the monitoring client is used...
 """
 
-from DIRAC.Core.Utilities.ServerUtils import getDBOrClient
+from DIRAC.Core.Base.Client import Client
+from DIRAC.MonitoringSystem.DB.MonitoringDB import gMonitoringDB
 
 
 def getMonitoringDB():
-    serverName = "Monitoring/Monitoring"
-    MonitoringDB = None
     try:
-        from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
+        if gMonitoringDB and gMonitoringDB._connected:
+            return gMonitoringDB
     except Exception:
         pass
-    return getDBOrClient(MonitoringDB, serverName)
+    return Client(url="Monitoring/Monitoring")

@@ -49,7 +49,6 @@ class MonitoringDB(ElasticDB):
         try:
             section = getDatabaseSection("Monitoring/MonitoringDB")
             indexPrefix = gConfig.getValue(f"{section}/IndexPrefix", CSGlobals.getSetup()).lower()
-
             # Connecting to the ES cluster
             super().__init__(dbname=name.split("/")[1], fullName=name, indexPrefix=indexPrefix)
         except RuntimeError as ex:
@@ -532,3 +531,9 @@ class MonitoringDB(ElasticDB):
             condDict["endTime"] = calendar.timegm(time.gmtime()) * 1000
 
         return self.__getRawData(typeName, condDict)
+
+
+try:
+    gMonitoringDB = MonitoringDB()
+except:
+    gMonitoringDB = None
