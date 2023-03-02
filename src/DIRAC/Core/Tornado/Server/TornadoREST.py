@@ -4,11 +4,15 @@ It directly inherits from :py:class:`tornado.web.RequestHandler`
 """
 
 import os
+import inspect
+from functools import partial
+from urllib.parse import unquote
+
 from tornado.escape import json_decode
 from tornado.web import url as TornadoURL
 
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Tornado.Server.private.BaseRequestHandler import *
+from DIRAC.Core.Tornado.Server.private.BaseRequestHandler import BaseRequestHandler, set_attribute
 
 # decorator to determine the path to access the target method
 location = partial(set_attribute, "location")
