@@ -109,14 +109,12 @@ class BaseReporter(DBUtils):
     def _averageConsolidation(self, total, count):
         if count == 0:
             return 0
-        else:
-            return float(total) / float(count)
+        return float(total) / float(count)
 
     def _efficiencyConsolidation(self, total, count):
         if count == 0:
             return 0
-        else:
-            return (float(total) / float(count)) * 100.0
+        return (float(total) / float(count)) * 100.0
 
     def generate(self, reportRequest):
         reportRequest["groupingFields"] = self._translateGrouping(reportRequest["grouping"])
@@ -279,8 +277,7 @@ class BaseReporter(DBUtils):
         if len(groupingFields[1]) == 1:
             # If there's only one field, then we send the sql representation in pos 0
             return groupingFields[0]
-        else:
-            return "CONCAT( %s )" % ", ".join(["%s, '-'" % sqlRep for sqlRep in groupingFields[0]])
+        return "CONCAT( %s )" % ", ".join(["%s, '-'" % sqlRep for sqlRep in groupingFields[0]])
 
     def _findSuitableRateUnit(self, dataDict, maxValue, unit):
         return self._findUnitMagic(dataDict, maxValue, unit, self._RATE_UNITS)
@@ -297,7 +294,7 @@ class BaseReporter(DBUtils):
         else:
             unitList = selectedUnits[unit]
             unitIndex = -1
-            for unitName, unitDivFactor, unitThreshold in unitList:
+            for _unitName, unitDivFactor, unitThreshold in unitList:
                 unitIndex += 1
                 if maxValue / unitDivFactor < unitThreshold:
                     break
