@@ -272,7 +272,7 @@ fullInstallDIRAC() {
 
   #fix the DBs (for the FileCatalog and MultiVOFileCatalog)
   diracDFCDB
-  diracMVDFCDB
+  # diracMVDFCDB
   python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-dbs.py" "${DEBUG}"
 
   # services (not looking for FrameworkSystem already installed)
@@ -294,12 +294,12 @@ fullInstallDIRAC() {
     exit 1
   fi
 
-  # install an additional FileCatalog service for multi VO metadata tests
-  echo "==> calling dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB ${DEBUG}"
-  if ! dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB "${DEBUG}"; then
-      echo 'ERROR: dirac-install-component failed' >&2
-      exit 1
-  fi
+  # # install an additional FileCatalog service for multi VO metadata tests
+  # echo "==> calling dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB ${DEBUG}"
+  # if ! dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB "${DEBUG}"; then
+  #     echo 'ERROR: dirac-install-component failed' >&2
+  #     exit 1
+  # fi
   #fix the DFC services options
   python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-services.py" "${DEBUG}"
 
@@ -320,8 +320,8 @@ fullInstallDIRAC() {
     dirac-restart-component DataManagement FileCatalog ${DEBUG}
   fi
 
-  echo "==> Restarting DataManagement MultiVOFileCatalog"
-  dirac-restart-component DataManagement MultiVOFileCatalog ${DEBUG}
+  # echo "==> Restarting DataManagement MultiVOFileCatalog"
+  # dirac-restart-component DataManagement MultiVOFileCatalog ${DEBUG}
 
   echo "==> Restarting Configuration Server"
   dirac-restart-component Configuration Server ${DEBUG}

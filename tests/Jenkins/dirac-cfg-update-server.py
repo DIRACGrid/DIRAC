@@ -105,15 +105,15 @@ csAPI.setOption("Resources/FileCatalogs/TSCatalog/AccessType", "Write")
 csAPI.setOption("Resources/FileCatalogs/TSCatalog/Status", "Active")
 csAPI.setOption("Resources/FileCatalogs/TSCatalog/CatalogURL", "Transformation/TransformationManager")
 
-res = csAPI.createSection("Resources/FileCatalogs/MultiVOFileCatalog")
-if not res["OK"]:
-    print(res["Message"])
-    sys.exit(1)
+# res = csAPI.createSection("Resources/FileCatalogs/MultiVOFileCatalog")
+# if not res["OK"]:
+#     print(res["Message"])
+#     sys.exit(1)
 
-csAPI.setOption("Resources/FileCatalogs/MultiVOFileCatalog/CatalogType", "FileCatalog")
-csAPI.setOption("Resources/FileCatalogs/MultiVOFileCatalog/AccessType", "Read-Write")
-csAPI.setOption("Resources/FileCatalogs/MultiVOFileCatalog/Status", "Active")
-csAPI.setOption("Resources/FileCatalogs/MultiVOFileCatalog/CatalogURL", "DataManagement/MultiVOFileCatalog")
+# csAPI.setOption("Resources/FileCatalogs/MultiVOFileCatalog/CatalogType", "FileCatalog")
+# csAPI.setOption("Resources/FileCatalogs/MultiVOFileCatalog/AccessType", "Read-Write")
+# csAPI.setOption("Resources/FileCatalogs/MultiVOFileCatalog/Status", "Active")
+# csAPI.setOption("Resources/FileCatalogs/MultiVOFileCatalog/CatalogURL", "DataManagement/MultiVOFileCatalog")
 
 # Now setting up the following option:
 #     Resources
@@ -430,7 +430,8 @@ res = csAPI.createSection("Operations/Defaults/Services/Catalogs/CatalogList")
 if not res["OK"]:
     print(res["Message"])
     sys.exit(1)
-csAPI.setOption("Operations/Defaults/Services/Catalogs/CatalogList", "FileCatalog, TSCatalog, MultiVOFileCatalog")
+csAPI.setOption("Operations/Defaults/Services/Catalogs/CatalogList", "FileCatalog, TSCatalog")
+# csAPI.setOption("Operations/Defaults/Services/Catalogs/CatalogList", "FileCatalog, TSCatalog, MultiVOFileCatalog")
 
 
 # Adding DataManagement section of Operations

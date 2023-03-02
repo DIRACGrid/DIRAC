@@ -804,16 +804,16 @@ diracDFCDB(){
 }
 
 # Drop, then manually install the DFC for MultiVOFileCatalog
-diracMVDFCDB(){
-  echo '==> [diracMVDFCDB]'
+# diracMVDFCDB(){
+#   echo '==> [diracMVDFCDB]'
 
-  SRC_ROOT="$(python -c 'import os; import DIRAC; print(os.path.dirname(DIRAC.__file__))')"
-  cp "${SRC_ROOT}/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql" "${SRC_ROOT}/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
-  sed -i 's/FileCatalogDB/MultiVOFileCatalogDB/g' "${SRC_ROOT}/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
-  mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" -e "DROP DATABASE IF EXISTS MultiVOFileCatalogDB;"
-  mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" < "${SRC_ROOT}/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
-  rm "${SRC_ROOT}/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
-}
+#   SRC_ROOT="$(python -c 'import os; import DIRAC; print(os.path.dirname(DIRAC.__file__))')"
+#   cp "${SRC_ROOT}/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql" "${SRC_ROOT}/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
+#   sed -i 's/FileCatalogDB/MultiVOFileCatalogDB/g' "${SRC_ROOT}/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
+#   mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" -e "DROP DATABASE IF EXISTS MultiVOFileCatalogDB;"
+#   mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" < "${SRC_ROOT}/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
+#   rm "${SRC_ROOT}/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
+# }
 
 dropDBs(){
   echo '==> [dropDBs]'
