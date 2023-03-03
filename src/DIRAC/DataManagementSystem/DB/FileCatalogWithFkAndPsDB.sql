@@ -903,47 +903,38 @@ BEGIN
     RESIGNAL;
   END;
 
-  START TRANSACTION;
-
- -- Store the name of the tmp table once for all
-
-  SET @tmpTableName = CONCAT('tmpDirUsageDelRep_',CONNECTION_ID());
-
-  -- We create the table if it does not exist
-  SET @sql = CONCAT('CREATE TEMPORARY TABLE IF NOT EXISTS ',@tmpTableName ,' (DirID INT, SEID INT, t_size BIGINT UNSIGNED, t_file INT, INDEX(DirID))');
-
-  PREPARE stmt FROM @sql;
-  EXECUTE stmt;
-  DEALLOCATE PREPARE stmt;
-
-  -- Insert into it the values we will have to substract later on
-  SET @sql = CONCAT('INSERT INTO ', @tmpTableName, '(DirID, SEID, t_size, t_file) SELECT d1.DirID, d1.SEID, SUM(f.Size) as t_size, count(*) as t_file
-  FROM FC_DirectoryUsage d1, FC_Files f, FC_Replicas r
-  WHERE r.FileID = f.FileID AND f.DirID = d1.DirID AND r.SEID = d1.SEID AND f.FileID IN (', file_ids, ') GROUP BY d1.DirID, d1.SEID');
-
-  PREPARE stmt FROM @sql;
-  EXECUTE stmt;
-  DEALLOCATE PREPARE stmt;
-
-  -- perform the update
-  SET @sql = CONCAT('UPDATE FC_DirectoryUsage d, ',@tmpTableName,' t set d.`SESize` = d.`SESize` - t.t_size, d.`SEFiles` = d.`SEFiles` - t.t_file where d.DirID = t.DirID and d.`SEID`= t.SEID');
-
-  PREPARE stmt FROM @sql;
-  EXECUTE stmt;
-  DEALLOCATE PREPARE stmt;
+    START TRANSACTION;
 
 
+  SET @sql = CONCAT('UPDATE FC_DirectoryUsage d,
+                      (SELECT d1.DirID, d1.SEID, SUM(f.Size) as t_size, count(*) as t_file
+                        FROM FC_DirectoryUsage d1, FC_Files f, FC_Replicas r
+                        WHERE r.FileID = f.FileID
+                        AND f.DirID = d1.DirID
+                        AND r.SEID = d1.SEID
+                        AND f.FileID IN (', file_ids, ')
+                        GROUP BY d1.DirID, d1.SEID ) t
+                     SET d.SESize = d.SESize - t.t_size,
+                         d.SEFiles = d.SEFiles - t.t_file
+                     WHERE d.DirID = t.DirID
+                     AND d.SEID = t.SEID');
 
-  -- delete the entries from the temporary table
-  SET @sql = CONCAT('DELETE t FROM ',@tmpTableName, ' t JOIN FC_Files f ON t.DirID = f.DirID where f.FileID IN (', file_ids, ')');
+  -- This is buggy in case we remove two files that have a replica on the same SE
+  --
+  --   SET @sql = CONCAT('UPDATE FC_DirectoryUsage d, FC_Files f, FC_Replicas r
+  --                     SET d.SESize = d.SESize - f.Size, d.SEFiles = d.SEFiles - 1
+  --                     WHERE r.FileID = f.FileID
+  --                     AND f.DirID = d.DirID
+  --                     AND r.SEID = d.SEID
+  --                     AND f.FileID IN (', file_ids, ')');
 
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
 
 
-  -- delete the entry from the FC_Replicas table
-  SET @sql = CONCAT('DELETE FROM FC_Replicas WHERE FileID IN (', file_ids, ')');
+
+  SET @sql = CONCAT('DELETE FROM FC_Replicas  WHERE FileID IN (', file_ids, ')');
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
@@ -966,60 +957,39 @@ CREATE PROCEDURE ps_delete_files
 (IN  file_ids MEDIUMTEXT)
 BEGIN
 
+
   DECLARE exit handler for sqlexception
     BEGIN
     ROLLBACK;
     RESIGNAL;
   END;
 
-   START TRANSACTION;
+  START TRANSACTION;
 
-   -- Store the name of the tmp table once for all
+  SET @sql = CONCAT('UPDATE FC_DirectoryUsage d,
+                                  (SELECT d1.DirID, SUM(f.Size) as t_size, count(*) as t_file
+                                  FROM FC_DirectoryList d1, FC_Files f
+                                  where f.DirID = d1.DirID
+                                  AND f.FileID IN (', file_ids, ')
+                                  GROUP BY d1.DirID ) t
+                     SET d.SESize = d.SESize - t.t_size,
+                         d.SEFiles = d.SEFiles - t.t_file
+                     WHERE d.DirID = t.DirID
+                     AND d.SEID = 1' );
 
-   SET @tmpTableName = CONCAT('tmpDirUsageDelFile_',CONNECTION_ID());
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
 
-   -- We create the table if it does not exist
-   SET @sql = CONCAT('CREATE TEMPORARY TABLE IF NOT EXISTS ',@tmpTableName ,' (DirID INT, t_size BIGINT UNSIGNED, t_file INT, INDEX(DirID))');
+  SET @sql = CONCAT('DELETE FROM FC_Files  WHERE FileID IN (', file_ids, ')');
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
 
-   PREPARE stmt FROM @sql;
-   EXECUTE stmt;
-   DEALLOCATE PREPARE stmt;
+  COMMIT;
 
+  SELECT 0, 'OK';
 
-   -- Insert into it the values we will have to substract later on
-   SET @sql = CONCAT('INSERT INTO ', @tmpTableName, '(DirID,t_size, t_file) SELECT d1.DirID, SUM(f.Size) as t_size, count(*) as t_file
-   FROM FC_DirectoryList d1, FC_Files f
-   WHERE f.DirID = d1.DirID AND f.FileID IN (', file_ids, ') GROUP BY d1.DirID');
-
-   PREPARE stmt FROM @sql;
-   EXECUTE stmt;
-   DEALLOCATE PREPARE stmt;
-
-   -- perform the update
-   SET @sql = CONCAT('UPDATE FC_DirectoryUsage d, ',@tmpTableName,' t set d.`SESize` = d.`SESize` - t.t_size, d.`SEFiles` = d.`SEFiles` - t.t_file where d.DirID = t.DirID and d.`SEID`= 1');
-
-   PREPARE stmt FROM @sql;
-   EXECUTE stmt;
-   DEALLOCATE PREPARE stmt;
-
-
-
-   -- delete the entries from the temporary table
-   SET @sql = CONCAT('DELETE t FROM ',@tmpTableName, ' t JOIN FC_Files f ON t.DirID = f.DirID where f.FileID IN (', file_ids, ')');
-
-   PREPARE stmt FROM @sql;
-   EXECUTE stmt;
-   DEALLOCATE PREPARE stmt;
-
-
-   -- delete the entry from the File table
-   SET @sql = CONCAT('DELETE FROM FC_Files WHERE FileID IN (', file_ids, ')');
-   PREPARE stmt FROM @sql;
-   EXECUTE stmt;
-   DEALLOCATE PREPARE stmt;
-
-   COMMIT;
-   SELECT 0, 'OK';
 END //
 DELIMITER ;
 
