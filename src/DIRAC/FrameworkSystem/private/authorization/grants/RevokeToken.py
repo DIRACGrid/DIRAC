@@ -30,7 +30,7 @@ class RevocationEndpoint(_RevocationEndpoint):
 
         :param dict token: token dict
         """
-        result = self.server.idps.getIdProviderForToken(token["access_token"])
+        result = self.server.idps.getIdProviderFromToken(token["access_token"])
         if not result["OK"]:
             raise OAuth2Error(result["Message"])
         if result["OK"]:

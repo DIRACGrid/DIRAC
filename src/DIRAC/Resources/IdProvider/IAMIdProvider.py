@@ -16,5 +16,13 @@ class IAMIdProvider(OAuth2IdProvider):
         """
         idPScope = getGroupOption(group, "IdPRole")
         if not idPScope:
-            idPScope = f"wlcg.groups:/{getVOForGroup(group)}/{group.split('_')[1]}"
+            vo = getVOForGroup(group)
+            if not vo:
+                return []
+
+            groupElements = group.split("_")
+            if len(groupElements) < 2:
+                return []
+
+            idPScope = f"wlcg.groups:/{vo}/{groupElements[1]}"
         return scope_to_list(idPScope)

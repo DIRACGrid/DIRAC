@@ -55,6 +55,7 @@ jobs:
             gitpython \
             packaging \
             pyyaml \
+            requests \
             typer
     - name: Prepare environment
       run: ./integration_tests.py prepare-environment ${{ matrix.ARGS }}
