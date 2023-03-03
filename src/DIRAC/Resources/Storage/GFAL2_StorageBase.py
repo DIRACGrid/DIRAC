@@ -558,7 +558,11 @@ class GFAL2_StorageBase(StorageBase):
             # gfal2 needs a protocol to copy local which is 'file:'
             if not dest_file.startswith("file://"):
                 dest = "file://%s" % os.path.abspath(dest_file)
-            self.ctx.filecopy(params, str(src_url), str(dest))
+            # We can remove the context manager when https://its.cern.ch/jira/browse/DMC-1371
+            # is solved
+            # The problem is gfal2 not respecting the parameter timeout
+            with setGfalSetting(self.ctx, "HTTP PLUGIN", "OPERATION_TIMEOUT", params.timeout):
+                self.ctx.filecopy(params, str(src_url), str(dest))
             if useChecksum:
                 # gfal2 did a checksum check, so we should be good
                 return S_OK(remoteSize)
