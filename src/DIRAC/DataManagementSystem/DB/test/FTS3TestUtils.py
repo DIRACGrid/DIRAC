@@ -342,5 +342,88 @@ def base_test_job_monitoring_solve_racecondition(fts3db, fts3Client):
     assert not filesToSubmit
 
 
+def base_test_delete_operations(fts3db, fts3Client):
+    """Test operation removals"""
+    op1 = generateOperation("Transfer", 2, ["Target1"])
+
+    res = fts3Client.persistOperation(op1)
+    opID1 = res["Value"]
+
+    # Create two other operations, to test the limit feature
+    op2 = generateOperation("Transfer", 2, ["Target2"])
+    res = fts3Client.persistOperation(op2)
+    opID2 = res["Value"]
+
+    op3 = generateOperation("Transfer", 2, ["Target3"])
+    res = fts3Client.persistOperation(op3)
+    opID3 = res["Value"]
+
+    # Now, call delete, and make sure that operation is not delete
+    # Ops is not in a final state, and delay is not passed
+    res = fts3db.deleteFinalOperations()
+    assert res["OK"]
+
+    res = fts3Client.getOperation(opID1)
+    assert res["OK"]
+    op1 = res["Value"]
+
+    # Try again with no delay, but still not final state
+    res = fts3db.deleteFinalOperations(deleteDelay=0)
+    assert res["OK"]
+
+    res = fts3Client.getOperation(opID1)
+    assert res["OK"]
+    op1 = res["Value"]
+
+    # Set the final status
+    op1.status = "Finished"
+    res = fts3Client.persistOperation(op1)
+    assert res["OK"]
+
+    # Now try to delete again.
+    # It should still not work because of the delay
+    res = fts3db.deleteFinalOperations()
+    assert res["OK"]
+
+    res = fts3Client.getOperation(opID1)
+    assert res["OK"]
+    op1 = res["Value"]
+
+    # Finally, it should work, with no delay and a final status
+    res = fts3db.deleteFinalOperations(deleteDelay=0)
+    assert res["OK"]
+
+    res = fts3Client.getOperation(opID1)
+    assert not res["OK"]
+
+    # op2 and op3 should still be here though !
+
+    res = fts3Client.getOperation(opID2)
+    assert res["OK"]
+    op2 = res["Value"]
+    res = fts3Client.getOperation(opID3)
+    assert res["OK"]
+    op3 = res["Value"]
+
+    # Set them both to a final status
+    op2.status = "Finished"
+    res = fts3Client.persistOperation(op2)
+    assert res["OK"]
+    op3.status = "Finished"
+    res = fts3Client.persistOperation(op3)
+    assert res["OK"]
+
+    # Now try to delete, but only one
+    res = fts3db.deleteFinalOperations(limit=1, deleteDelay=0)
+    assert res["OK"]
+
+    # Now only op2 or op3 should be here
+
+    res2 = fts3Client.getOperation(opID2)
+    res3 = fts3Client.getOperation(opID3)
+
+    assert res2["OK"] ^ res3["OK"]
+
+
 # All base tests defined in this module
 allBaseTests = [test_func for testName, test_func in globals().items() if testName.startswith("base_test")]
