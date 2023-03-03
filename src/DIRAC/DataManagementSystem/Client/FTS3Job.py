@@ -45,6 +45,9 @@ class FTS3Job(JSerializable):
     ]
 
     FINAL_STATES = ["Canceled", "Failed", "Finished", "Finisheddirty"]
+
+    # This field is only used for optimizing sql queries (`in`` instead of `not in`)
+    NON_FINAL_STATES = list(set(ALL_STATES) - set(FINAL_STATES))
     INIT_STATE = "Submitted"
 
     # END states
