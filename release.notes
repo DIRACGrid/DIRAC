@@ -1,3 +1,68 @@
+[v8.0.16]
+
+*Resources
+
+FIX: (#6881) add workaround for https timeout when dowloading file
+FIX: (#6839) Complete AREX renewal
+NEW: (#6803) HTCondorComputingElement, ARC(6)ComputingElement and AREXComputingElement enabled to for job operations with tokens
+
+*MonitoringSystem
+
+CHANGE: (#6870) introduce gMonitoringDB global instance
+
+*ConfigurationSystem
+
+FIX: (#6867) VOMS2CSAgent: strip whitespaces from DN entried and nickname
+NEW: (#6803) Resources helper - getQueues() - can select queues by Tag values also
+
+*DataManagementSystem
+
+CHANGE: (#6864) FTS3DB uses `in` instead of `not in` for some query
+CHANGE: (#6864) FTS3DB removal of operations uses python datetime instead of mysql builtin
+CHANGE: (#6859) refactor (DFC): rewrite the file/replica deletion stored procedure as they were in 5.6
+NEW: (#6855) dirac-dms-filecatalog-cli - use the default VO FileCatalog if not explicitly specified
+NEW: (#6854) ReplicateAndRegister FTS mode also checks the SE status
+NEW: (#6854) add a delay in monitoring in the FTS3Agent
+
+*Tests
+
+CHANGE: (#6856) factorize FTS3 tests
+
+*Interfaces
+
+NEW: (#6852) Add setPriority to Job API
+
+*RequestManagementSystem
+
+CHANGE: (#6847) ReqProxy does not attempt a direct forward to central ReqManager
+
+*dashboards/PilotSubmissions
+
+FIX: (#6845) efficiency plots now use heatmaps
+FIX: (#6845) index patterns are now environment agnostic
+
+*dashboards/ServiceMonitoring
+
+FIX: (#6845) index patterns are now environment agnostic
+
+*dashboards/AgentMonitoring
+
+FIX: (#6845) index patterns are now environment agnostic
+
+*dashboards/PilotsHistory
+
+FIX: (#6845) style of plots
+FIX: (#6845) index patterns are now environment agnostic
+
+*FrameworkSystem
+
+FIX: (#6803) TokenManager - use refreshToken flow to generate access tokens from the stored refresh tokens
+
+*WorkloadManagement
+
+NEW: (#6803) SiteDirector enabled to select queues by tags
+NEW: (#6803) SiteDirector sets up tokens for ComputingElements configured with the Token tag
+
 [v8.0.15]
 
 *Resources
