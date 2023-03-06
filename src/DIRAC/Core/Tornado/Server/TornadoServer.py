@@ -176,6 +176,12 @@ class TornadoServer:
         Starts the tornado server when ready.
         This method never returns.
         """
+
+        # If we are running with python3, Tornado will use asyncio,
+        # and we have to convince it to let us run in a different thread
+        # This statement must be placed before setting PeriodicCallback
+        asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
+
         # If there is no services loaded:
         if not self.__calculateAppSettings():
             raise Exception("There is no services loaded, please check your configuration")
@@ -208,10 +214,6 @@ class TornadoServer:
             tornado.ioloop.PeriodicCallback(
                 self.__reportToMonitoring(self.__elapsedTime), self.__monitoringLoopDelay * 1000
             ).start()
-
-        # If we are running with python3, Tornado will use asyncio,
-        # and we have to convince it to let us run in a different thread
-        asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
 
         for port, app in self.__appsSettings.items():
             sLog.debug(" - %s" % "\n - ".join([f"{k} = {ssl_options[k]}" for k in ssl_options]))
