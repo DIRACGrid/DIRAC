@@ -470,16 +470,7 @@ class SiteDirector(AgentModule):
 
         :return: S_OK/S_ERROR, Token object as Value
         """
-
-        result = Registry.getUsernameForDN(self.pilotDN)
-        if not result["OK"]:
-            return result
-        username = result["Value"]
-        result = gTokenManager.getToken(
-            username=username,
-            userGroup=self.pilotGroup,
-            requiredTimeLeft=3600,
-        )
+        result = gTokenManager.getToken(userGroup=self.pilotGroup, requiredTimeLeft=600)
         return result
 
     def _ifAndWhereToSubmit(self):
