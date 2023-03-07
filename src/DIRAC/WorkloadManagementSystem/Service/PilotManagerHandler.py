@@ -14,7 +14,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, 
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import (
     getPilotCE,
-    getPilotProxy,
+    setPilotCredentials,
     getPilotRef,
     killPilotsInQueues,
 )
@@ -135,12 +135,9 @@ class PilotManagerHandler(RequestHandler):
         if not hasattr(ce, "getJobOutput"):
             return S_ERROR(f"Pilot output not available for {pilotDict['GridType']} CEs")
 
-        result = getPilotProxy(pilotDict)
+        result = setPilotCredentials(ce, pilotDict)
         if not result["OK"]:
             return result
-
-        proxy = result["Value"]
-        ce.setProxy(proxy)
 
         result = getPilotRef(pilotReference, pilotDict)
         if not result["OK"]:
@@ -213,12 +210,10 @@ class PilotManagerHandler(RequestHandler):
             self.log.info("Pilot logging not available for", f"{pilotDict['GridType']} CEs")
             return S_ERROR(f"Pilot logging not available for {pilotDict['GridType']} CEs")
 
-        result = getPilotProxy(pilotDict)
+        # Set proxy or token for the CE
+        result = setPilotCredentials(ce, pilotDict)
         if not result["OK"]:
             return result
-
-        proxy = result["Value"]
-        ce.setProxy(proxy)
 
         result = getPilotRef(pilotReference, pilotDict)
         if not result["OK"]:
