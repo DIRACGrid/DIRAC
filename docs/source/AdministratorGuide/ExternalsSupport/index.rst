@@ -9,7 +9,7 @@ OS
 
 DIRAC needs `DIRACOS <https://github.com/DIRACGrid/DIRACOS2/releases>`_ for its dependencies. DIRACOS includes all dependencies (except for glibc), including Python and Grid middleware.
 
-DIRAC *client* installation is supported for all x86_64 Linux installations using `DIRACOS <https://github.com/DIRACGrid/DIRACOS2/releases>`_. This includes installations made by the pilots.
+DIRAC *client* installation is supported for all x86_64, aarch64, ppc64le Linux and Darwin installations using `DIRACOS <https://github.com/DIRACGrid/DIRACOS2/releases>`_. This includes installations made by the pilots.
 
 DIRAC *server* installation is supported for *most* x86_64 Linux installations using `DIRACOS <https://github.com/DIRACGrid/DIRACOS2/releases>`_. Other architectures and platforms may work as a server installation, however this is on a best effort basis and is not regularly tested.
 
@@ -44,7 +44,7 @@ ElasticSearch versions
 
 ElasticSearch is an optional dependency for DIRAC servers installations. Supported versions:
 
-- 7.x
+- 7.x up until 7.13
 - OpenDistro and OpenSearch releases "compatible" with the above ElasticSearch versions.
 
 ElasticSearch server is not shipped with DIRAC. You are responsible of its administration.
