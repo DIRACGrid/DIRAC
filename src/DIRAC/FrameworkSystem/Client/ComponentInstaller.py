@@ -55,6 +55,7 @@ import re
 import shutil
 import stat
 import subprocess
+import textwrap
 import time
 from collections import defaultdict
 
@@ -673,7 +674,6 @@ class ComponentInstaller:
         specialOptions={},
         overwrite=False,
         addDefaultOptions=True,
-        addTornado=False,
     ):
         """
         Add the section with the component options to the CS
@@ -719,10 +719,9 @@ class ComponentInstaller:
         resultAddToCFG = self._addCfgToCS(compCfg)
         if not resultAddToCFG["OK"]:
             return resultAddToCFG
-        if addTornado:
-            resultAddToCFG = self.addTornadoOptionsToCS(gConfig_o)
-            if not resultAddToCFG["OK"]:
-                return resultAddToCFG
+        resultAddToCFG = self.addTornadoOptionsToCS(gConfig_o)
+        if not resultAddToCFG["OK"]:
+            return resultAddToCFG
 
         if componentType == "executor":
             # Is it a container ?
@@ -942,8 +941,7 @@ class ComponentInstaller:
 
         system = systemName.replace("System", "")
         gLogger.notice(
-            "Adding %s system as %s self.instance for %s self.setup to dirac.cfg and CS"
-            % (system, compInstance, mySetup)
+            f"Adding {system} system as {compInstance} self.instance for {mySetup} self.setup to dirac.cfg and CS"
         )
 
         cfg = self.__getCfg(cfgPath("DIRAC", "Setups", mySetup), system, compInstance)
@@ -1540,9 +1538,7 @@ class ComponentInstaller:
             for system, service in setupServices:
                 addTornado = bool(service.startswith("Tornado"))
 
-                if not self.addDefaultOptionsToCS(
-                    None, "service", system, service, extensions, overwrite=True, addTornado=addTornado
-                )["OK"]:
+                if not self.addDefaultOptionsToCS(None, "service", system, service, extensions, overwrite=True)["OK"]:
                     # If we are not allowed to write to the central CS, add the configuration to the local file
                     gLogger.warn(
                         "Can't write to central CS, so adding to the specific component CFG",
@@ -1554,12 +1550,10 @@ class ComponentInstaller:
 
                 if addTornado:
                     gLogger.notice("Installing Tornado")
-                    res = self.installTornado()
-                    if not res["OK"]:
+                    if not (res := self.installTornado())["OK"]:
                         return res
 
-                    res = self.setupTornadoService(system, service)
-                    if not res["OK"]:
+                    if not (res := self.setupTornadoService(system, service))["OK"]:
                         return res
 
                     self.runsvctrlComponent("Tornado", "Tornado", "t")
@@ -1635,22 +1629,19 @@ class ComponentInstaller:
         # 3.- Then installed requested services
         for system, service in setupServices:
             if not bool(service.startswith("Tornado")):
-                result = self.setupComponent("service", system, service, extensions)
-                if not result["OK"]:
+                if not (result := self.setupComponent("service", system, service, extensions))["OK"]:
                     gLogger.error(result["Message"])
                     continue
 
         # 4.- Now the agents
         for system, agent in setupAgents:
-            result = self.setupComponent("agent", system, agent, extensions)
-            if not result["OK"]:
+            if not (result := self.setupComponent("agent", system, agent, extensions))["OK"]:
                 gLogger.error(result["Message"])
                 continue
 
         # 5.- Now the executors
         for system, executor in setupExecutors:
-            result = self.setupComponent("executor", system, executor, extensions)
-            if not result["OK"]:
+            if not (result := self.setupComponent("executor", system, executor, extensions))["OK"]:
                 gLogger.error(result["Message"])
                 continue
 
@@ -1679,22 +1670,26 @@ class ComponentInstaller:
         logConfigFile = os.path.join(logDir, "config")
         with open(logConfigFile, "w") as fd:
             fd.write(
-                """s10000000
-  n20
-  """
+                textwrap.dedent(
+                    """
+                    s10000000
+                    n20
+                    """
+                )
             )
 
         logRunFile = os.path.join(logDir, "run")
         with open(logRunFile, "w") as fd:
             fd.write(
-                """#!/bin/bash
+                textwrap.dedent(
+                    f"""#!/bin/bash
 
-rcfile=%(bashrc)s
-[[ -e $rcfile ]] && source ${rcfile}
-#
-exec svlogd .
-  """
-                % {"bashrc": os.path.join(self.instancePath, "bashrc")}
+                    rcfile={os.path.join(self.instancePath, "bashrc")}
+                    [[ -e ${{rcfile}} ]] && source ${{rcfile}}
+                    #
+                    exec svlogd .
+                    """
+                )
             )
 
         os.chmod(logRunFile, self.gDefaultPerms)
@@ -1767,42 +1762,38 @@ exec svlogd .
                 # Special case for tornado-based master CS
                 if system == "Configuration" and component == "Server":
                     fd.write(
-                        f"""#!/bin/bash
+                        textwrap.dedent(
+                            f"""#!/bin/bash
 
-    rcfile={os.path.join(self.instancePath, 'bashrc')}
-    [[ -e $rcfile ]] && source ${{rcfile}}
-    #
-    export DIRAC_USE_TORNADO_IOLOOP=Yes
-    exec 2>&1
-    #
-    [ "service" = "agent" ] && renice 20 -p $$
-    #
-    #
-    exec tornado-start-CS -ddd
-        """
+                            rcfile={os.path.join(self.instancePath, 'bashrc')}
+                            [[ -e ${{rcfile}} ]] && source ${{rcfile}}
+                            #
+                            export DIRAC_USE_TORNADO_IOLOOP=Yes
+                            exec 2>&1
+                            #
+                            [ "service" = "agent" ] && renice 20 -p $$
+                            #
+                            #
+                            exec tornado-start-CS -ddd
+                            """
+                        )
                     )
                 else:
                     fd.write(
-                        """#!/bin/bash
+                        textwrap.dedent(
+                            f"""#!/bin/bash
 
-    rcfile=%(bashrc)s
-    [[ -e $rcfile ]] && source ${rcfile}
-    #
-    exec 2>&1
-    #
-    [[ "%(componentType)s" = "agent" ]] && renice 20 -p $$
-    #%(bashVariables)s
-    #
-    exec dirac-%(componentType)s %(system)s/%(component)s --cfg %(componentCfg)s < /dev/null
-        """
-                        % {
-                            "bashrc": os.path.join(self.instancePath, "bashrc"),
-                            "bashVariables": bashVars,
-                            "componentType": componentType.replace("-", "_"),
-                            "system": system,
-                            "component": component,
-                            "componentCfg": componentCfg,
-                        }
+                            rcfile={os.path.join(self.instancePath, "bashrc")}
+                            [[ -e ${{rcfile}} ]] && source ${{rcfile}}
+                            #
+                            exec 2>&1
+                            #
+                            [[ "{componentType.replace("-", "_")}" = "agent" ]] && renice 20 -p $$
+                            #{bashVars}
+                            #
+                            exec dirac-{componentType.replace("-", "_")} {system}/{component} --cfg {componentCfg} < /dev/null
+                        """
+                        )
                     )
 
             os.chmod(runFile, self.gDefaultPerms)
@@ -1815,12 +1806,13 @@ exec svlogd .
                 controlDir = self.runitDir.replace("runit", "control")
                 with open(stopFile, "w") as fd:
                     fd.write(
-                        """#!/bin/bash
+                        textwrap.dedent(
+                            f"""#!/bin/bash
 
-echo %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
-touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
-"""
-                        % {"controlDir": controlDir, "system": system, "component": component, "type": cTypeLower}
+                            echo {controlDir}/{system}/{component}/stop_{cTypeLower}
+                            touch {controlDir}/{system}/{component}/stop_{cTypeLower}
+                            """
+                        )
                     )
 
                 os.chmod(stopFile, self.gDefaultPerms)
@@ -1980,15 +1972,17 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
                 runFile = os.path.join(runitWebAppDir, "run")
                 with open(runFile, "w") as fd:
                     fd.write(
-                        f"""#!/bin/bash
+                        textwrap.dedent(
+                            f"""#!/bin/bash
 
-rcfile={os.path.join(self.instancePath, 'bashrc')}
-[[ -e $rcfile ]] && source $rcfile
-#
-exec 2>&1
-#
-exec dirac-webapp-run -p < /dev/null
-  """
+                            rcfile={os.path.join(self.instancePath, 'bashrc')}
+                            [[ -e $rcfile ]] && source $rcfile
+                            #
+                            exec 2>&1
+                            #
+                            exec dirac-webapp-run -p < /dev/null
+                            """
+                        )
                     )
 
                 os.chmod(runFile, self.gDefaultPerms)
@@ -2395,16 +2389,19 @@ exec dirac-webapp-run -p < /dev/null
             runFile = os.path.join(runitCompDir, "run")
             with open(runFile, "w") as fd:
                 fd.write(
-                    f"""#!/bin/bash
-rcfile={os.path.join(self.instancePath, 'bashrc')}
-[ -e $rcfile ] && source $rcfile
-#
-export DIRAC_USE_TORNADO_IOLOOP=Yes
-exec 2>&1
-#
-#
-exec tornado-start-all
-"""
+                    textwrap.dedent(
+                        f"""#!/bin/bash
+
+                        rcfile={os.path.join(self.instancePath, 'bashrc')}
+                        [ -e $rcfile ] && source $rcfile
+                        #
+                        export DIRAC_USE_TORNADO_IOLOOP=Yes
+                        exec 2>&1
+                        #
+                        #
+                        exec tornado-start-all
+                        """
+                    )
                 )
 
             os.chmod(runFile, self.gDefaultPerms)

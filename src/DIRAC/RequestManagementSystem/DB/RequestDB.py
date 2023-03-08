@@ -17,36 +17,36 @@
 
     db holding Request, Operation and File
 """
+import datetime
 import errno
 import random
 
-import datetime
-
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload, registry
-from sqlalchemy.sql import update
 from sqlalchemy import (
-    create_engine,
-    func,
-    Table,
-    Column,
-    MetaData,
-    ForeignKey,
-    Integer,
-    String,
-    DateTime,
-    Enum,
     TEXT,
     BigInteger,
+    Column,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    create_engine,
     distinct,
+    func,
 )
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import backref, joinedload, registry, relationship, sessionmaker
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql import update
 
 # # from DIRAC
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.Client.Operation import Operation
-from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
+from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.Request import Request
 
 # Metadata instance that is used to bind the engine, Object and tables
 metadata = MetaData()
@@ -230,7 +230,7 @@ class RequestDB:
         """create tables"""
         try:
             metadata.create_all(self.engine)
-        except Exception as e:
+        except SQLAlchemyError as e:
             return S_ERROR(e)
         return S_OK()
 

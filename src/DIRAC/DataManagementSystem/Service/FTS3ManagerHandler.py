@@ -208,5 +208,3 @@ class FTS3ManagerHandlerMixin:
 
 class FTS3ManagerHandler(FTS3ManagerHandlerMixin, RequestHandler):
     """DISET handler for FTS3Manager"""
-
-    pass
