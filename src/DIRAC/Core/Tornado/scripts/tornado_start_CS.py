@@ -35,7 +35,6 @@ def main():
     localCfg = Script.localCfg
     localCfg.addMandatoryEntry("/DIRAC/Setup")
     localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
-    localCfg.addDefaultEntry("LogLevel", "INFO")
     localCfg.addDefaultEntry("LogColor", True)
     resultDict = localCfg.loadUserData()
     if not resultDict["OK"]:

@@ -50,8 +50,8 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         for level in levels:
             logging.addLevelName(levels[level], level)
 
-        # root Logger level is set to NOTICE by default
-        self._logger.setLevel(LogLevels.NOTICE)
+        # root Logger level is set to INFO by default
+        self._logger.setLevel(LogLevels.INFO)
 
         # initialization of the UTC time
         # Actually, time.gmtime is equal to UTC time: it has its DST flag to 0 which means there is no clock advance
