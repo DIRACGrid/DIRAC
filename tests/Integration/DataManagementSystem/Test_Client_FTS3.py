@@ -41,6 +41,7 @@ def test_cancelNotFoundJob(fts3db, fts3Client):
     Note: this test is not in the common tests because SQLte does not play nice with
     multiple table update, which is what is done in cancelNonExistingJob
     """
+    fts3db.createTables()
 
     op = baseTestModule.generateOperation("Transfer", 4, ["Target1"])
 
