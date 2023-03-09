@@ -50,8 +50,8 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         for level in levels:
             logging.addLevelName(levels[level], level)
 
-        # root Logger level is set to NOTICE by default
-        self._logger.setLevel(LogLevels.NOTICE)
+        # root Logger level is set to INFO by default
+        self._logger.setLevel(LogLevels.INFO)
 
         # initialization of the UTC time
         # Actually, time.gmtime is equal to UTC time: it has its DST flag to 0 which means there is no clock advance
@@ -116,13 +116,44 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
                 for handler in handlersToRemove:
                     self._logger.removeHandler(handler)
 
-                levelName = gConfig.getValue(f"{cfgPath}/LogLevel", None)
+                levelName = self.__getLogLevelFromCFG(cfgPath)
                 if levelName is not None:
                     self.setLevel(levelName)
 
                 LoggingRoot.__configuredLogging = True
         finally:
             self._lockConfig.release()
+
+    def __getLogLevelFromCFG(self, cfgPath):
+        """
+        Get the logging level from the cfg, following this order:
+
+        * cfgPath/LogLevel
+        * Operations/<setup/vo>/Logging/Default<Agents/Services>LogLevel
+        * Operations/<setup/vo>/Logging/DefaultLogLevel
+
+        :param str cfgPath: configuration path
+        """
+        # We have to put the import line here to avoid a dependancy loop
+        from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+        from DIRAC import gConfig
+
+        # Search desired log level in the component
+        logLevel = gConfig.getValue(f"{cfgPath}/LogLevel")
+        if not logLevel:
+            # get the second last string representing the component type in the configuration
+            # example : 'Agents', 'Services'
+            component = cfgPath.split("/")[-2]
+
+            operation = Operations()
+            # Search desired logLevel in the operation section according to the
+            # component type
+            logLevel = operation.getValue(f"Logging/Default{component}LogLevel")
+            if not logLevel:
+                # Search desired logLevel in the operation section
+                logLevel = operation.getValue("Logging/DefaultLogLevel")
+
+        return logLevel
 
     def __getBackendsFromCFG(self, cfgPath):
         """
@@ -135,14 +166,14 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
         from DIRAC import gConfig
 
-        # get the second last string representing the component type in the configuration
-        # example : 'Agents', 'Services'
-        component = cfgPath.split("/")[-2]
-        operation = Operations()
-
         # Search desired backends in the component
         backends = gConfig.getValue(f"{cfgPath}/LogBackends", [])
         if not backends:
+            # get the second last string representing the component type in the configuration
+            # example : 'Agents', 'Services'
+            component = cfgPath.split("/")[-2]
+
+            operation = Operations()
             # Search desired backends in the operation section according to the
             # component type
             backends = operation.getValue(f"Logging/Default{component}Backends", [])
