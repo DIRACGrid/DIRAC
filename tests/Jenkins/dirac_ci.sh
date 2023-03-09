@@ -165,7 +165,7 @@ fullInstallDIRAC() {
 
   killRunsv
 
-  # basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed
+  # basic install, with only the master CS and few other services running (and their DBs)
   if ! installSite; then
     echo "ERROR: installSite failed" >&2
     exit 1
@@ -255,6 +255,14 @@ fullInstallDIRAC() {
   dirac-restart-component Tornado Tornado ${DEBUG}
 
   #Now all the rest
+
+  # slave CS
+  if [[ "${TEST_HTTPS:-Yes}" = "Yes" ]]; then
+    if ! dirac-install-component Configuration TornadoConfiguration "${DEBUG}"; then
+      echo 'ERROR: dirac-install-component failed' >&2
+      exit 1
+    fi
+  fi
 
   #DBs (not looking for FrameworkSystem ones, already installed)
   findDatabases 'exclude' 'FrameworkSystem'
