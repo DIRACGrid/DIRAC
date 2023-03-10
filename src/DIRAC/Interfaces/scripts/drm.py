@@ -54,7 +54,7 @@ class Params:
 
 @Script()
 def main():
-
+    """where all the action is"""
     configCache = ConfigCache()
     options = Params()
     options.registerCLISwitches()
