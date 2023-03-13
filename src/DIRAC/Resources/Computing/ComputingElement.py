@@ -91,20 +91,13 @@ class ComputingElement:
 
     def _prepareProxy(self):
         """Set the environment variable X509_USER_PROXY"""
-        if not self.proxy:
-            result = getProxyInfo()
-            if not result["OK"]:
-                return S_ERROR("No proxy available")
-            if "path" in result["Value"]:
-                os.environ["X509_USER_PROXY"] = result["Value"]["path"]
-                return S_OK()
-        else:
+        if self.proxy:
             result = gProxyManager.dumpProxyToFile(self.proxy, requiredTimeLeft=self.minProxyTime)
             if not result["OK"]:
                 return result
             os.environ["X509_USER_PROXY"] = result["Value"]
 
-        self.log.debug(f"Set proxy variable X509_USER_PROXY to {os.environ['X509_USER_PROXY']}")
+            self.log.debug(f"Set proxy variable X509_USER_PROXY to {os.environ['X509_USER_PROXY']}")
         return S_OK()
 
     def isProxyValid(self, valid=1000):

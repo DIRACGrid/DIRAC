@@ -356,11 +356,12 @@ class AREXComputingElement(ARCComputingElement):
             return S_ERROR("REST interface not initialised. Cannot kill jobs.")
 
         # Get a proxy
-        result = self._prepareProxy()
-        if not result["OK"]:
-            self.log.error("Failed to set up proxy", result["Message"])
-            return result
-        self.session.cert = Locations.getProxyLocation()
+        if self.proxy:
+            result = self._prepareProxy()
+            if not result["OK"]:
+                self.log.error("Failed to set up proxy", result["Message"])
+                return result
+            self.session.cert = Locations.getProxyLocation()
 
         # List of jobs in json format for the REST query
         jobsJson = {"job": [{"id": job} for job in arcJobList]}
@@ -393,11 +394,12 @@ class AREXComputingElement(ARCComputingElement):
         self.log.verbose("Executable file path:", executableFile)
 
         # Get a proxy
-        result = self._prepareProxy()
-        if not result["OK"]:
-            self.log.error("Failed to set up proxy", result["Message"])
-            return result
-        self.session.cert = Locations.getProxyLocation()
+        if self.proxy:
+            result = self._prepareProxy()
+            if not result["OK"]:
+                self.log.error("Failed to set up proxy", result["Message"])
+                return result
+            self.session.cert = Locations.getProxyLocation()
 
         # Get a "delegation" and use the same delegation for all the jobs
         delegation = ""
@@ -476,11 +478,12 @@ class AREXComputingElement(ARCComputingElement):
             return S_ERROR("REST interface not initialised. Cannot get CE status.")
 
         # Get a proxy
-        result = self._prepareProxy()
-        if not result["OK"]:
-            self.log.error("Failed to set up proxy", result["Message"])
-            return result
-        self.session.cert = Locations.getProxyLocation()
+        if self.proxy:
+            result = self._prepareProxy()
+            if not result["OK"]:
+                self.log.error("Failed to set up proxy", result["Message"])
+                return result
+            self.session.cert = Locations.getProxyLocation()
 
         # Try to find out which VO we are running for.
         # Essential now for REST interface.
@@ -597,11 +600,12 @@ class AREXComputingElement(ARCComputingElement):
             return S_ERROR("REST interface not initialised. Cannot get job status.")
 
         # Get a proxy
-        result = self._prepareProxy()
-        if not result["OK"]:
-            self.log.error("AREXComputingElement: failed to set up proxy", result["Message"])
-            return result
-        self.session.cert = Locations.getProxyLocation()
+        if self.proxy:
+            result = self._prepareProxy()
+            if not result["OK"]:
+                self.log.error("AREXComputingElement: failed to set up proxy", result["Message"])
+                return result
+            self.session.cert = Locations.getProxyLocation()
 
         if not isinstance(jobIDList, list):
             jobIDList = [jobIDList]
@@ -688,11 +692,12 @@ class AREXComputingElement(ARCComputingElement):
             return S_ERROR("REST interface not initialised. Cannot get job output.")
 
         # Get a proxy
-        result = self._prepareProxy()
-        if not result["OK"]:
-            self.log.error("AREXComputingElement: failed to set up proxy", result["Message"])
-            return result
-        self.session.cert = Locations.getProxyLocation()
+        if self.proxy:
+            result = self._prepareProxy()
+            if not result["OK"]:
+                self.log.error("AREXComputingElement: failed to set up proxy", result["Message"])
+                return result
+            self.session.cert = Locations.getProxyLocation()
 
         # Extract stamp from the Job ID
         if ":::" in jobID:
@@ -749,11 +754,12 @@ class AREXComputingElement(ARCComputingElement):
             return S_ERROR("REST interface not initialised. Cannot get job output.")
 
         # Get a proxy
-        result = self._prepareProxy()
-        if not result["OK"]:
-            self.log.error("AREXComputingElement: failed to set up proxy", result["Message"])
-            return result
-        self.session.cert = Locations.getProxyLocation()
+        if self.proxy:
+            result = self._prepareProxy()
+            if not result["OK"]:
+                self.log.error("AREXComputingElement: failed to set up proxy", result["Message"])
+                return result
+            self.session.cert = Locations.getProxyLocation()
 
         # Extract stamp from the Job ID
         if ":::" in jobID:
