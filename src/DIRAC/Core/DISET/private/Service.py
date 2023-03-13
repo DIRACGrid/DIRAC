@@ -555,7 +555,15 @@ class Service:
             response = handlerObj._rh_executeAction(proposalTuple)
             if not response["OK"]:
                 return response
+            retVal = response["Value"][0]
             if self.activityMonitoring:
+                _actionType, actionName = proposalTuple[1]
+                retStatus = "Unknown"
+                if isReturnStructure(retVal):
+                    if retVal["OK"]:
+                        retStatus = "OK"
+                    else:
+                        retStatus = "ERROR"
                 self.activityMonitoringReporter.addRecord(
                     {
                         "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
@@ -563,9 +571,12 @@ class Service:
                         "ServiceName": "_".join(self._name.split("/")),
                         "Location": self._cfg.getURL(),
                         "ResponseTime": response["Value"][1],
+                        "MethodName": actionName,
+                        "Protocol": "dips",
+                        "Status": retStatus,
                     }
                 )
-            return response["Value"][0]
+            return retVal
         except Exception as e:
             gLogger.exception("Exception while executing handler action")
             return S_ERROR(f"Server error while executing action: {str(e)}")
