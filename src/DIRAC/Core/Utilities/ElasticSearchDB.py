@@ -6,6 +6,7 @@ It is used to query Elasticsearch instances.
 import copy
 import functools
 import json
+import time
 from datetime import datetime, timedelta
 from urllib import parse as urlparse
 
@@ -15,7 +16,7 @@ try:
     from opensearch_dsl import A, Q, Search
     from opensearchpy import OpenSearch as Elasticsearch
     from opensearchpy.exceptions import ConnectionError as ElasticConnectionError
-    from opensearchpy.exceptions import NotFoundError, RequestError, TransportError
+    from opensearchpy.exceptions import NotFoundError, RequestError, TransportError, ConflictError
     from opensearchpy.helpers import BulkIndexError, bulk
 except ImportError:
     from elasticsearch_dsl import Search, Q, A
@@ -25,6 +26,7 @@ except ImportError:
         TransportError,
         NotFoundError,
         RequestError,
+        ConflictError,
     )
     from elasticsearch.helpers import BulkIndexError, bulk
 
@@ -76,7 +78,7 @@ def generateDocs(data, withTimeStamp=True):
                 sLog.error("Wrong timestamp", e)
                 doc["timestamp"] = int(TimeUtilities.toEpochMilliSeconds())
 
-        sLog.debug(f"yielding {doc}")
+        sLog.debug("yielding", doc)
         yield doc
 
 
@@ -265,9 +267,15 @@ class ElasticSearchDB:
         """
         sLog.debug(f"Updating document {docID} in index {index}")
         try:
-            return S_OK(self.client.update(index, docID, body))
+            self.client.update(index, docID, body)
+        except ConflictError:
+            # updates are rather "heavy" operations from ES point of view, needing seqNo to be updated.
+            # Not ideal, but we just wait and retry.
+            time.sleep(1)
+            self.client.update(index, docID, body, params={"retry_on_conflict": 3})
         except RequestError as re:
             return S_ERROR(re)
+        return S_OK()
 
     @ifConnected
     def deleteDoc(self, index: str, docID: str):
