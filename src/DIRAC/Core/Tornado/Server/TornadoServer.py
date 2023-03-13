@@ -176,6 +176,12 @@ class TornadoServer:
         Starts the tornado server when ready.
         This method never returns.
         """
+
+        # If we are running with python3, Tornado will use asyncio,
+        # and we have to convince it to let us run in a different thread
+        # This statement must be placed before setting PeriodicCallback
+        asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
+
         # If there is no services loaded:
         if not self.__calculateAppSettings():
             raise Exception("There is no services loaded, please check your configuration")
@@ -205,13 +211,7 @@ class TornadoServer:
             self.__report = self.__startReportToMonitoringLoop()
             # Response time
             # Starting monitoring, IOLoop waiting time in ms, __monitoringLoopDelay is defined in seconds
-            tornado.ioloop.PeriodicCallback(
-                self.__reportToMonitoring(self.__elapsedTime), self.__monitoringLoopDelay * 1000
-            ).start()
-
-        # If we are running with python3, Tornado will use asyncio,
-        # and we have to convince it to let us run in a different thread
-        asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
+            tornado.ioloop.PeriodicCallback(self.__reportToMonitoring, self.__monitoringLoopDelay * 1000).start()
 
         for port, app in self.__appsSettings.items():
             sLog.debug(" - %s" % "\n - ".join([f"{k} = {ssl_options[k]}" for k in ssl_options]))
@@ -233,7 +233,7 @@ class TornadoServer:
 
         tornado.ioloop.IOLoop.current().start()
 
-    def __reportToMonitoring(self, responseTime):
+    def __reportToMonitoring(self):
         """
         Periodically reports to Monitoring
         """
@@ -248,12 +248,23 @@ class TornadoServer:
                 "ServiceName": "Tornado",
                 "MemoryUsage": self.__report[2],
                 "CpuPercentage": percentage,
-                "ResponseTime": responseTime,
             }
         )
         self.activityMonitoringReporter.commit()
         # Save memory usage and save realtime/CPU time for next call
         self.__report = self.__startReportToMonitoringLoop()
+
+        # For each handler,
+        for urlSpec in self.handlerManager.getHandlersDict().values():
+            # If there is more than one URL, it's
+            # most likely something that inherit from TornadoREST
+            # so don't even try to monitor...
+            if len(urlSpec["URLs"]) > 1:
+                continue
+            handler = urlSpec["URLs"][0].handler_class
+            # If there is a Monitoring reporter, call commit on it
+            if getattr(handler, "activityMonitoringReporter", None):
+                handler.activityMonitoringReporter.commit()
 
     def __startReportToMonitoringLoop(self):
         """

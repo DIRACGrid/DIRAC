@@ -20,9 +20,11 @@ from tornado.ioloop import IOLoop
 import DIRAC
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Utilities.JEncode import decode, encode
+from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
@@ -475,6 +477,12 @@ class BaseRequestHandler(RequestHandler):
 
             cls.initializeHandler(cls._componentInfoDict)
 
+            cls.activityMonitoringReporter = None
+            if "Monitoring" in Operations().getMonitoringBackends(monitoringType="ServiceMonitoring"):
+                from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+
+                cls.activityMonitoringReporter = MonitoringReporter(monitoringType="ServiceMonitoring")
+
             cls.__init_done = True
 
             return S_OK()
@@ -662,16 +670,20 @@ class BaseRequestHandler(RequestHandler):
         Called after the end of HTTP request.
         Log the request duration
         """
-        elapsedTime = 1000.0 * self.request.request_time()
+        elapsedTime = self.request.request_time()
+
         credentials = self.srv_getFormattedRemoteCredentials()
 
         argsString = f"OK {self._status_code}"
+        monitoringRetStatus = "Unknown"
         # Finish with DIRAC result
         if isReturnStructure(self.__result):
             if self.__result["OK"]:
                 argsString = "OK"
+                monitoringRetStatus = "OK"
             else:
                 argsString = f"ERROR: {self.__result['Message']}"
+                monitoringRetStatus = "ERROR"
                 if callStack := self.__result.pop("CallStack", None):
                     argsString += "\n" + "".join(callStack)
         # If bad HTTP status code
@@ -679,8 +691,24 @@ class BaseRequestHandler(RequestHandler):
             argsString = f"ERROR {self._status_code}: {self._reason}"
 
         self.log.notice(
-            "Returning response", f"{credentials} {self._fullComponentName} ({elapsedTime:.2f} ms) {argsString}"
+            "Returning response",
+            f"{credentials} {self._fullComponentName} ({1000.0 * elapsedTime:.2f} ms) {argsString}",
         )
+
+        if self.activityMonitoringReporter:
+            record = {
+                "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
+                "Host": Network.getFQDN(),
+                "ServiceName": "_".join(self._fullComponentName.split("/")),
+                "Location": self.request.uri,
+                "ResponseTime": elapsedTime,
+                # Take the method name from the POST call
+                "MethodName": self.request.arguments.get("method", ["Unknown"])[0],
+                "Protocol": "https",
+                "Status": monitoringRetStatus,
+            }
+
+            self.activityMonitoringReporter.addRecord(record)
 
     def _gatherPeerCredentials(self, grants: list = None) -> dict:
         """Return a dictionary designed to work with the :py:class:`AuthManager <DIRAC.Core.DISET.AuthManager.AuthManager>`,
