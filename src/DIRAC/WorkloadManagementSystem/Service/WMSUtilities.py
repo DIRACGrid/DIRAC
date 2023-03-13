@@ -6,8 +6,9 @@ import shutil
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 
 
@@ -49,7 +50,11 @@ def getPilotCE(pilotDict):
 
 
 def getPilotProxy(pilotDict):
-    """Get a proxy bound to a pilot"""
+    """Get a proxy bound to a pilot
+
+    :param dict pilotDict: pilot parameters
+    :return: S_OK/S_ERROR with proxy as Value
+    """
     owner = pilotDict["OwnerDN"]
     group = pilotDict["OwnerGroup"]
 
@@ -60,6 +65,47 @@ def getPilotProxy(pilotDict):
         return S_ERROR("Failed to get the pilot's owner proxy")
     proxy = result["Value"]
     return S_OK(proxy)
+
+
+def getPilotToken(pilotDict):
+    """Get a token corresponding to the pilot
+
+    :param dict pilotDict: pilot parameters
+    :return: S_OK/S_ERROR with token as Value
+    """
+    ownerDN = pilotDict["OwnerDN"]
+    group = pilotDict["OwnerGroup"]
+
+    result = getUsernameForDN(ownerDN)
+    if not result["OK"]:
+        return result
+    username = result["Value"]
+    result = gTokenManager.getToken(
+        username=username,
+        userGroup=group,
+        requiredTimeLeft=3600,
+    )
+    return result
+
+
+def setPilotCredentials(ce, pilotDict):
+    """Instrument the given CE with proxy or token
+
+    :param obj ce:  CE object
+    :param pilotDict: pilot parameter dictionary
+    :return: S_OK/S_ERROR
+    """
+    if "Token" in ce.ceParameters.get("Tag", []):
+        result = getPilotToken(pilotDict)
+        if not result["OK"]:
+            return result
+        ce.setToken(result["Value"], 3500)
+    else:
+        result = getPilotProxy(pilotDict)
+        if not result["OK"]:
+            return result
+        ce.setProxy(result["Value"])
+    return S_OK()
 
 
 def getPilotRef(pilotReference, pilotDict):
