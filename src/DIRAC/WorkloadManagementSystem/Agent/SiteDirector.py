@@ -714,9 +714,8 @@ class SiteDirector(AgentModule):
         :param str queue: queue where to submit
 
         :return: S_OK/S_ERROR.
-                 If S_OK, returns tuple with (pilotsToSubmit, pilotList, stampDict)
+                 If S_OK, returns tuple with (pilotList, stampDict)
                  where
-                   pilotsToSubmit is the pilots still to submit (maybe 0)
                    pilotsList is the list of pilots submitted
                    stampDict is a dict of timestamps of pilots submission
         :rtype: dict
@@ -752,7 +751,7 @@ class SiteDirector(AgentModule):
                     "Failed",
                 )
                 if not result["OK"]:
-                    return result
+                    self.log.error("Failure submitting Accounting report", result["Message"])
 
             if self.sendSubmissionMonitoring:
                 result = self.sendPilotSubmissionMonitoring(
@@ -764,7 +763,7 @@ class SiteDirector(AgentModule):
                     "Failed",
                 )
                 if not result["OK"]:
-                    return result
+                    self.log.error("Failure submitting Monitoring report", result["Message"])
 
             self.failedQueues[queue] += 1
             return submitResult
@@ -788,7 +787,7 @@ class SiteDirector(AgentModule):
                 "Succeeded",
             )
             if not result["OK"]:
-                return result
+                self.log.error("Failure submitting Accounting report", result["Message"])
 
         if self.sendSubmissionMonitoring:
             result = self.sendPilotSubmissionMonitoring(
@@ -800,7 +799,7 @@ class SiteDirector(AgentModule):
                 "Succeeded",
             )
             if not result["OK"]:
-                return result
+                self.log.error("Failure submitting Monitoring report", result["Message"])
 
         return S_OK((pilotList, stampDict))
 
