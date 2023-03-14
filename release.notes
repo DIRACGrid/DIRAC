@@ -1,3 +1,44 @@
+[v8.0.17]
+
+*Interfaces
+
+FIX: (#6899) make -F (file) option work for drm command. This fixes #6896
+
+*FrameworkSystem
+
+CHANGE: (#6891) Default log level is INFO
+NEW: (#6891) Define global configuration options for log level
+
+*Resources
+
+CHANGE: (#6890) (AREX)ComputingElement - use proxy only if it is set up
+
+*WorkloadManagement
+
+NEW: (#6890) Enable PilotManager to manage pilots with tokens
+
+Thank you for writing the text to appear in the release notes. It will show up
+exactly as it appears between the two bold lines
+Please follow the template:
+
+*Production System
+
+CHANGE: (#6889) change column types in ProductionDB from VARCHAR(255) to LONGTEXT
+
+*Core
+
+FIX: (#6886) Tornado PeriodicCallbacks are actually called
+FEAT: (#6886) Tornado Handlers report to ActivityMonitor
+FEAT: (#6886) Activity Monitoring reports useful information
+
+*ConfigurationSystem
+
+FIX: (#6871) Fix the connection to ES database when using certificates
+
+*MonitoringSystem
+
+FIX: (#6802) while updating ES documents, wait and retry on ConflictError
+
 [v8.0.16]
 
 *Resources
