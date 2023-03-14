@@ -5,14 +5,14 @@ It directly inherits from :py:class:`tornado.web.RequestHandler`
 
 import os
 import inspect
+from functools import partial
+from urllib.parse import unquote
+
 from tornado.escape import json_decode
 from tornado.web import url as TornadoURL
-from urllib.parse import unquote
-from functools import partial
 
-from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Tornado.Server.private.BaseRequestHandler import *
+from DIRAC.Core.Tornado.Server.private.BaseRequestHandler import BaseRequestHandler, set_attribute
 
 # decorator to determine the path to access the target method
 location = partial(set_attribute, "location")
@@ -171,7 +171,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
         """
         urls = []
         # Look for methods that are exported
-        for prefix in [cls.METHOD_PREFIX] if cls.METHOD_PREFIX else cls.SUPPORTED_METHODS:
+        for prefix in [cls.METHOD_PREFIX] if cls.METHOD_PREFIX else [f"{pref}_" for pref in cls.SUPPORTED_METHODS]:
             prefix = prefix.lower()
             for mName, mObj in inspect.getmembers(cls, lambda x: callable(x) and x.__name__.startswith(prefix)):
                 methodName = mName[len(prefix) :]
@@ -341,4 +341,4 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
                 # Wrap argument with annotated type
                 keywordArguments[name] = _type(value) if _type else value
 
-        return (positionalArguments, keywordArguments)
+        return positionalArguments, keywordArguments
