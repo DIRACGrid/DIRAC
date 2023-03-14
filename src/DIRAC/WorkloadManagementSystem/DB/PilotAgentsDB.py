@@ -17,18 +17,18 @@
     getGroupedPilotSummary()
 
 """
-import threading
 import datetime
 import decimal
+import threading
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Base.DB import DB
 import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
-from DIRAC.Core.Utilities import DErrno
+from DIRAC import S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getUsernameForDN, getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername, getVOForGroup
-from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC.Core.Base.DB import DB
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.MySQL import _quotedList
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 
@@ -113,11 +113,7 @@ class PilotAgentsDB(DB):
 
         set_string = ",".join(setList)
         req = "UPDATE PilotAgents SET " + set_string + f" WHERE PilotJobReference='{pilotRef}'"
-        result = self._update(req, conn=conn)
-        if not result["OK"]:
-            return result
-
-        return S_OK()
+        return self._update(req, conn=conn)
 
     # ###########################################################################################
     # FIXME: this can't work ATM because of how the DB table is made. Maybe it would be useful later.
@@ -434,19 +430,17 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             result = self._query(req)
             if not result["OK"]:
                 return 0
-            else:
-                if result["Value"]:
-                    return int(result["Value"][0][0])
-                return 0
-        else:
-            refString = ",".join(["'" + ref + "'" for ref in pilotRef])
-            req = f"SELECT PilotID from PilotAgents WHERE PilotJobReference in ( {refString} )"
-            result = self._query(req)
-            if not result["OK"]:
-                return []
             if result["Value"]:
-                return [x[0] for x in result["Value"]]
+                return int(result["Value"][0][0])
+            return 0
+        refString = ",".join(["'" + ref + "'" for ref in pilotRef])
+        req = f"SELECT PilotID from PilotAgents WHERE PilotJobReference in ( {refString} )"
+        result = self._query(req)
+        if not result["OK"]:
             return []
+        if result["Value"]:
+            return [x[0] for x in result["Value"]]
+        return []
 
     ##########################################################################################
     def setJobForPilot(self, jobID, pilotRef, site=None, updateStatus=True):
@@ -723,14 +717,12 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         if total > 10:
             if eff < 25.0:
                 return "Bad"
-            elif eff < 60.0:
+            if eff < 60.0:
                 return "Poor"
-            elif eff < 85.0:
+            if eff < 85.0:
                 return "Fair"
-            else:
-                return "Good"
-        else:
-            return "Idle"
+            return "Good"
+        return "Idle"
 
     def getPilotSummaryWeb(self, selectDict, sortList, startItem, maxItems):
         """Get summary of the pilot jobs status by CE/site in a standard structure"""
@@ -861,26 +853,26 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
 
         records = []
         siteSumDict = {}
-        for site in resultDict:
+        for site, ces in resultDict.items():
             sumDict = {}
             for state in allStateNames:
                 if state not in sumDict:
                     sumDict[state] = 0
             sumDict["Total"] = 0
-            for ce in resultDict[site]:
+            for ce in ces:
                 itemList = [site, ce]
                 total = 0
                 for state in allStateNames:
-                    itemList.append(resultDict[site][ce][state])
-                    sumDict[state] += resultDict[site][ce][state]
+                    itemList.append(ces[ce][state])
+                    sumDict[state] += ces[ce][state]
                     if state == PilotStatus.DONE:
-                        done = resultDict[site][ce][state]
+                        done = ces[ce][state]
                     if state == "Done_Empty":
-                        empty = resultDict[site][ce][state]
+                        empty = ces[ce][state]
                     if state == PilotStatus.ABORTED:
-                        aborted = resultDict[site][ce][state]
+                        aborted = ces[ce][state]
                     if state != "Aborted_Hour" and state != "Done_Empty":
-                        total += resultDict[site][ce][state]
+                        total += ces[ce][state]
 
                 sumDict["Total"] += total
                 # Add the total number of pilots seen in the last day
@@ -915,10 +907,10 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
                 else:
                     itemList.append("Idle")
 
-                if len(resultDict[site]) == 1 or expand_site:
+                if len(ces) == 1 or expand_site:
                     records.append(itemList)
 
-            if len(resultDict[site]) > 1 and not expand_site:
+            if len(ces) > 1 and not expand_site:
                 itemList = [site, "Multiple"]
                 for state in allStateNames + ["Total"]:
                     if state in sumDict:
@@ -1210,7 +1202,7 @@ class PivotedPilotSummaryTable:
 
         self._columns += self.pstates  # MySQL._query() does not give us column names, sadly.
 
-    def buildSQL(self, selectDict=None):
+    def buildSQL(self):
         """
         Build an SQL query to create a table with all status counts in one row, ("pivoted")
         grouped by columns in the column list.
