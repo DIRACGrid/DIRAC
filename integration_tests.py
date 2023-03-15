@@ -650,7 +650,17 @@ def _prepare_iam_instance():
     issuer = f"http://localhost:{IAM_PORT}"
 
     typer.secho("Getting an IAM admin token", fg=c.GREEN)
-    tokens = _get_iam_token(issuer, IAM_ADMIN_USER, IAM_ADMIN_PASSWORD, IAM_INIT_CLIENT_ID, IAM_INIT_CLIENT_SECRET)
+
+    # It sometimes takes a while for IAM to be ready so wait for a while if needed
+    for _ in range(10):
+        try:
+            tokens = _get_iam_token(
+                issuer, IAM_ADMIN_USER, IAM_ADMIN_PASSWORD, IAM_INIT_CLIENT_ID, IAM_INIT_CLIENT_SECRET
+            )
+            break
+        except requests.ConnectionError:
+            time.sleep(10)
+
     admin_access_token = tokens.get("access_token")
 
     typer.secho("Creating IAM clients", fg=c.GREEN)
