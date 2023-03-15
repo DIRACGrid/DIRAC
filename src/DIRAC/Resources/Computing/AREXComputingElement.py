@@ -376,32 +376,6 @@ class AREXComputingElement(ARCComputingElement):
             self.log.verbose("Input correctly uploaded", fileToSubmit)
         return S_OK()
 
-    def _killJob(self, arcJobList):
-        """Kill the specified jobs
-
-        :param list arcJobList: list of ARC Job IDs
-        """
-        result = self._checkSession()
-        if not result["OK"]:
-            self.log.error("Cannot kill jobs", result["Message"])
-            return result
-
-        # List of jobs in json format for the REST query
-        jobsJson = {"job": [{"id": job} for job in arcJobList]}
-
-        # Prepare the command
-        params = {"action": "kill"}
-        query = self._urlJoin("jobs")
-
-        # Killing jobs should be fast
-        result = self._request("post", query, params=params, data=json.dumps(jobsJson))
-        if not result["OK"]:
-            self.log.error("Failed to kill all these jobs.", result["Message"])
-            return S_ERROR("Failed to kill all these jobs")
-
-        self.log.debug("Successfully deleted jobs")
-        return S_OK()
-
     def submitJob(self, executableFile, proxy, numberOfJobs=1, inputs=None, outputs=None):
         """Method to submit job
         Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
@@ -469,11 +443,82 @@ class AREXComputingElement(ARCComputingElement):
 
         :param list jobIDList: list of DIRAC Job IDs
         """
+        if not isinstance(jobIDList, list):
+            jobIDList = [jobIDList]
         self.log.debug("Killing jobs", ",".join(jobIDList))
 
-        # List of jobs in json format for the REST query
-        jList = [self._DiracToArcID(job) for job in jobIDList]
+        # Convert DIRAC jobs to ARC jobs
+        # DIRAC Jobs might be stored with a DIRAC stamp (":::XXXXX") that should be removed
+        jList = [self._DiracToArcID(job.split(":::")[0]) for job in jobIDList]
         return self._killJob(jList)
+
+    def _killJob(self, arcJobList):
+        """Kill the specified jobs
+
+        :param list arcJobList: list of ARC Job IDs
+        """
+        result = self._checkSession()
+        if not result["OK"]:
+            self.log.error("Cannot kill jobs", result["Message"])
+            return result
+
+        # List of jobs in json format for the REST query
+        jobsJson = {"job": [{"id": job} for job in arcJobList]}
+
+        # Prepare the command
+        params = {"action": "kill"}
+        query = self._urlJoin("jobs")
+
+        # Killing jobs should be fast
+        result = self._request("post", query, params=params, data=json.dumps(jobsJson))
+        if not result["OK"]:
+            self.log.error("Failed to kill all these jobs.", result["Message"])
+            return S_ERROR("Failed to kill all these jobs")
+
+        self.log.debug("Successfully deleted jobs")
+        return S_OK()
+
+    #############################################################################
+
+    def cleanJob(self, jobIDList):
+        """Clean files related to the specified jobs
+
+        :param list jobIDList: list of DIRAC Job IDs
+        """
+        if not isinstance(jobIDList, list):
+            jobIDList = [jobIDList]
+        self.log.debug("Cleaning jobs", ",".join(jobIDList))
+
+        # Convert DIRAC jobs to ARC jobs
+        # DIRAC Jobs might be stored with a DIRAC stamp (":::XXXXX") that should be removed
+        jList = [self._DiracToArcID(job.split(":::")[0]) for job in jobIDList]
+        return self._cleanJob(jList)
+
+    def _cleanJob(self, arcJobList):
+        """Clean files related to the specified jobs
+
+        :param list jobIDList: list of ARC Job IDs
+        """
+        result = self._checkSession()
+        if not result["OK"]:
+            self.log.error("Cannot clean jobs", result["Message"])
+            return result
+
+        # List of jobs in json format for the REST query
+        jobsJson = {"job": [{"id": job} for job in arcJobList]}
+
+        # Prepare the command
+        params = {"action": "clean"}
+        query = self._urlJoin("jobs")
+
+        # Cleaning jobs
+        result = self._request("post", query, params=params, data=json.dumps(jobsJson))
+        if not result["OK"]:
+            self.log.error("Failed to clean all these jobs.", result["Message"])
+            return S_ERROR("Failed to clean all these jobs")
+
+        self.log.debug("Successfully cleaned jobs")
+        return S_OK()
 
     #############################################################################
 
@@ -613,14 +658,10 @@ class AREXComputingElement(ARCComputingElement):
         if not isinstance(jobIDList, list):
             jobIDList = [jobIDList]
 
-        # Jobs are stored with a DIRAC stamp (":::XXXXX") appended
-        jobList = []
-        for j in jobIDList:
-            job = j.split(":::")[0]
-            jobList.append(job)
-
-        self.log.debug("Getting status of jobs : %s" % jobList)
-        arcJobsJson = {"job": [{"id": self._DiracToArcID(job)} for job in jobList]}
+        self.log.debug("Getting status of jobs:", jobIDList)
+        # Convert DIRAC jobs to ARC jobs and encapsulate them in a dictionary for the REST query
+        # DIRAC Jobs might be stored with a DIRAC stamp (":::XXXXX") that should be removed
+        arcJobsJson = {"job": [{"id": self._DiracToArcID(job.split(":::")[0])} for job in jobIDList]}
 
         # Prepare the command
         params = {"action": "status"}
@@ -688,12 +729,8 @@ class AREXComputingElement(ARCComputingElement):
             self.log.error("Cannot get job logging info", result["Message"])
             return result
 
-        # Extract stamp from the Job ID
-        if ":::" in jobID:
-            jobID = jobID.split(":::")[0]
-
         # Prepare the command: Get output files
-        arcJob = self._DiracToArcID(jobID)
+        arcJob = self._DiracToArcID(jobID.split(":::")[0])
         query = self._urlJoin(os.path.join("jobs", arcJob, "diagnose", "errors"))
 
         # Submit the GET request to retrieve outputs
@@ -759,9 +796,9 @@ class AREXComputingElement(ARCComputingElement):
         remoteOutputs = result["Value"]
         self.log.debug("Outputs to get are", remoteOutputs)
 
-        # We assume that workingDirectory exists
         if not workingDirectory:
             if "WorkingDirectory" in self.ceParameters:
+                # We assume that workingDirectory exists
                 workingDirectory = os.path.join(self.ceParameters["WorkingDirectory"], job)
             else:
                 workingDirectory = job
