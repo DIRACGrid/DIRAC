@@ -8,7 +8,7 @@ Configuration for the AREXComputingElement submission can be done via the config
 It inherits from the :mod:`~DIRAC.Resources.Computing.ARCComputingElement` configuration parameters.
 Below, you can find a list of parameters specific to the AREX CE.
 
-ARCRESTTimeout:
+Timeout:
    Duration in seconds before declaring a timeout exception.
 
 Port:
@@ -46,7 +46,7 @@ class AREXComputingElement(ARCComputingElement):
         # Time left before proxy renewal: 3 hours is a good default
         self.proxyTimeLeftBeforeRenewal = 10800
         # Timeout
-        self.arcRESTTimeout = 5.0
+        self.timeout = 5.0
         # Request session
         self.session = None
         self.headers = {}
@@ -65,11 +65,10 @@ class AREXComputingElement(ARCComputingElement):
         # Get options from the ceParameters dictionary
         self.port = self.ceParameters.get("Port", self.port)
         self.restVersion = self.ceParameters.get("RESTVersion", self.restVersion)
-
         self.proxyTimeLeftBeforeRenewal = self.ceParameters.get(
             "ProxyTimeLeftBeforeRenewal", self.proxyTimeLeftBeforeRenewal
         )
-        self.arcRESTTimeout = float(self.ceParameters.get("ARCRESTTimeout", self.arcRESTTimeout))
+        self.timeout = float(self.ceParameters.get("Timeout", self.timeout))
 
         # Build the URL based on the CEName, the port and the REST version
         service_url = os.path.join("https://", f"{self.ceName}:{self.port}")
@@ -128,12 +127,64 @@ class AREXComputingElement(ARCComputingElement):
         self.log.warn("Identifier already in REST format?", diracJobID)
         return diracJobID
 
+    #############################################################################
+
     def _urlJoin(self, command):
         """Add the command to the base URL.
 
         :param str command: command to execute
         """
         return os.path.join(self.base_url, command)
+
+    def _request(self, method, query, params=None, data=None, headers=None, timeout=None):
+        """Perform a request and properly handle the results/exceptions.
+
+        :param str method: "post", "get", "put"
+        :param str query: query to submit
+        :param dict/str params: parameters of the query
+        :param dict headers: headers of the query
+        :param int timeout: timeout value
+        :return: response
+        """
+        if not headers:
+            headers = self.headers
+        if not timeout:
+            timeout = self.timeout
+
+        if method.upper() not in ["GET", "POST", "PUT"]:
+            return S_ERROR("The request method is unknown")
+
+        try:
+            response = self.session.request(
+                method,
+                query,
+                headers=headers,
+                params=params,
+                data=data,
+                timeout=timeout,
+            )
+            if not response.ok:
+                return S_ERROR(f"Response: {response.status_code} - {response.reason}")
+            return S_OK(response)
+        except requests.Timeout as e:
+            return S_ERROR(f"Request timed out, consider increasing the Timeout value: {e}")
+        except requests.ConnectionError as e:
+            return S_ERROR(f"Connection failed, consider checking the state of the CE: {e}")
+        except requests.RequestException as e:
+            return S_ERROR(f"Request exception: {e}")
+
+    def _checkSession(self):
+        """Check that the session exists and carries a valid proxy."""
+        if not self.session:
+            return S_ERROR("REST interface not initialised.")
+
+        # Get a proxy
+        result = self._prepareProxy()
+        if not result["OK"]:
+            self.log.error("Failed to set up proxy", result["Message"])
+            return result
+        self.session.cert = Locations.getProxyLocation()
+        return S_OK()
 
     #############################################################################
 
@@ -149,14 +200,11 @@ class AREXComputingElement(ARCComputingElement):
         query = self._urlJoin("delegations")
 
         # Submit a POST request
-        response = self.session.post(
-            query,
-            headers=self.headers,
-            params=params,
-            timeout=self.arcRESTTimeout,
-        )
-        if not response.ok:
-            return S_ERROR(f"Failed to get a delegation ID: {response.status_code} {response.reason}")
+        result = self._request("post", query, params=params)
+        if not result["OK"]:
+            self.log.error("Failed to get a delegation ID.", result["Message"])
+            return S_ERROR("Failed to get a delegation ID")
+        response = result["Value"]
 
         # Extract delegationID from response
         delegationURL = response.headers.get("location", "")
@@ -188,17 +236,10 @@ class AREXComputingElement(ARCComputingElement):
             return S_ERROR("Problem with the Certificate Signing Request")
 
         # Submit the certificate
-        response = self.session.put(
-            query,
-            data=result["Value"],
-            headers=headers,
-            timeout=self.arcRESTTimeout,
-        )
-        if not response.ok:
-            return S_ERROR(
-                "Issue while interacting with the delegation",
-                f"{response.status_code} - {response.reason}",
-            )
+        result = self._request("put", query, data=result["Value"], headers=headers)
+        if not result["OK"]:
+            self.log.error("Issue while interacting with the delegation.", result["Message"])
+            return S_ERROR("Issue while interacting with the delegation")
 
         return S_OK()
 
@@ -240,16 +281,11 @@ class AREXComputingElement(ARCComputingElement):
 
         # Submit the POST request to get the delegation
         jobsJson = {"job": [{"id": arcJobID}]}
-        response = self.session.post(
-            query,
-            data=json.dumps(jobsJson),
-            headers=self.headers,
-            params=params,
-            timeout=self.arcRESTTimeout,
-        )
-
-        if not response.ok:
-            return S_ERROR("Issue while interacting with the delegation", f"{response.status_code} - {response.reason}")
+        result = self._request("post", query, params=params, data=json.dumps(jobsJson))
+        if not result["OK"]:
+            self.log.error("Issue while interacting with the delegation.", result["Message"])
+            return S_ERROR("Issue while interacting with the delegation")
+        response = result["Value"]
 
         responseDelegation = response.json()
         if "delegation_id" not in responseDelegation["job"]:
@@ -285,19 +321,11 @@ class AREXComputingElement(ARCComputingElement):
         self.log.debug("DIRAC stamp for job", f"is {diracStamp}")
 
         # Submit the POST request
-        response = self.session.post(
-            query,
-            data=xrslString,
-            headers=self.headers,
-            params=params,
-            timeout=self.arcRESTTimeout,
-        )
-        if not response.ok:
-            self.log.warn(
-                "Failed to submit job",
-                f"to CE {self.ceHost} with error - {response.status_code} - and messages : {response.reason}",
-            )
+        result = self._request("post", query, params=params, data=xrslString)
+        if not result["OK"]:
+            self.log.error("Failed to submit job.", result["Message"])
             return S_ERROR("Failed to submit job")
+        response = result["Value"]
 
         responseJob = response.json()["job"]
         if responseJob["status-code"] > "400":
@@ -334,11 +362,9 @@ class AREXComputingElement(ARCComputingElement):
                 content = f.read()
 
             # Submit the PUT request
-            response = self.session.put(
-                queryExecutable, data=content, headers=self.headers, timeout=self.arcRESTTimeout
-            )
-            if not response.ok:
-                self.log.error("Input not uploaded:", fileToSubmit)
+            result = self._request("put", queryExecutable, data=content)
+            if not result["OK"]:
+                self.log.error("Input not uploaded", f"{fileToSubmit}: {result['Message']}")
                 return S_ERROR(f"Input not uploaded: {fileToSubmit}")
 
             self.log.verbose("Input correctly uploaded", fileToSubmit)
@@ -349,16 +375,10 @@ class AREXComputingElement(ARCComputingElement):
 
         :param list arcJobList: list of ARC Job IDs
         """
-        if not self.session:
-            return S_ERROR("REST interface not initialised. Cannot kill jobs.")
-
-        # Get a proxy
-        if self.proxy:
-            result = self._prepareProxy()
-            if not result["OK"]:
-                self.log.error("Failed to set up proxy", result["Message"])
-                return result
-            self.session.cert = Locations.getProxyLocation()
+        result = self._checkSession()
+        if not result["OK"]:
+            self.log.error("Cannot kill jobs", result["Message"])
+            return result
 
         # List of jobs in json format for the REST query
         jobsJson = {"job": [{"id": job} for job in arcJobList]}
@@ -368,15 +388,10 @@ class AREXComputingElement(ARCComputingElement):
         query = self._urlJoin("jobs")
 
         # Killing jobs should be fast
-        response = self.session.post(
-            query,
-            data=json.dumps(jobsJson),
-            headers=self.headers,
-            params=params,
-            timeout=self.arcRESTTimeout,
-        )
-        if not response.ok:
-            return S_ERROR(f"Failed to kill all these jobs: {response.status_code} {response.reason}")
+        result = self._request("post", query, params=params, data=json.dumps(jobsJson))
+        if not result["OK"]:
+            self.log.error("Failed to kill all these jobs.", result["Message"])
+            return S_ERROR("Failed to kill all these jobs")
 
         self.log.debug("Successfully deleted jobs")
         return S_OK()
@@ -386,17 +401,12 @@ class AREXComputingElement(ARCComputingElement):
         Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
         And none of our supported batch systems have a "-" in their name
         """
-        if not self.session:
-            return S_ERROR("REST interface not initialised. Cannot submit jobs.")
-        self.log.verbose("Executable file path:", executableFile)
+        result = self._checkSession()
+        if not result["OK"]:
+            self.log.error("Cannot submit jobs", result["Message"])
+            return result
 
-        # Get a proxy
-        if self.proxy:
-            result = self._prepareProxy()
-            if not result["OK"]:
-                self.log.error("Failed to set up proxy", result["Message"])
-                return result
-            self.session.cert = Locations.getProxyLocation()
+        self.log.verbose(f"Executable file path: {executableFile}")
 
         # Get a "delegation" and use the same delegation for all the jobs
         delegation = ""
@@ -422,7 +432,6 @@ class AREXComputingElement(ARCComputingElement):
         for _ in range(numberOfJobs):
             result = self._getArcJobID(executableFile, inputs, outputs, executables, delegation)
             if not result["OK"]:
-                self.log.error(result["Message"])
                 break
             arcJobID, diracStamp = result["Value"]
 
@@ -430,7 +439,7 @@ class AREXComputingElement(ARCComputingElement):
             # Here we also upload the executable, other executable files and inputs.
             result = self._uploadJobDependencies(arcJobID, executableFile, inputs, executables)
             if not result["OK"]:
-                return result
+                break
 
             jobID = self._arcToDiracID(arcJobID)
             batchIDList.append(jobID)
@@ -471,16 +480,10 @@ class AREXComputingElement(ARCComputingElement):
         states and parameters. Hopefully this function weeds out everything except the relevant
         queue.
         """
-        if not self.session:
-            return S_ERROR("REST interface not initialised. Cannot get CE status.")
-
-        # Get a proxy
-        if self.proxy:
-            result = self._prepareProxy()
-            if not result["OK"]:
-                self.log.error("Failed to set up proxy", result["Message"])
-                return result
-            self.session.cert = Locations.getProxyLocation()
+        result = self._checkSession()
+        if not result["OK"]:
+            self.log.error("Cannot get CE Status", result["Message"])
+            return result
 
         # Try to find out which VO we are running for.
         # Essential now for REST interface.
@@ -492,10 +495,11 @@ class AREXComputingElement(ARCComputingElement):
         query = self._urlJoin("info")
 
         # Submit the GET request
-        response = self.session.get(query, headers=self.headers, params=params, timeout=self.arcRESTTimeout)
-        if not response.ok:
-            res = S_ERROR(f"Unknown failure for CE {self.ceHost}. Is the CE down?")
-            return res
+        result = self._request("get", query, params=params)
+        if not result["OK"]:
+            self.log.error("Failed getting the status of the CE.", result["Message"])
+            return S_ERROR("Failed getting the status of the CE")
+        response = result["Value"]
         ceData = response.json()
 
         # Look only in the relevant section out of the headache
@@ -508,7 +512,7 @@ class AREXComputingElement(ARCComputingElement):
         result["SubmittedJobs"] = 0
 
         magic = self.arcQueue + "_" + vo.lower()
-        for _, qi in enumerate(queueInfo):
+        for qi in queueInfo:
             if qi["ID"].endswith(magic):
                 result["RunningJobs"] = int(qi["RunningJobs"])
                 result["WaitingJobs"] = int(qi["WaitingJobs"])
@@ -537,53 +541,55 @@ class AREXComputingElement(ARCComputingElement):
             query = self._urlJoin(os.path.join("delegations", delegationID))
 
             # Submit the POST request to get the proxy
-            response = self.session.post(query, headers=self.headers, params=params, timeout=self.arcRESTTimeout)
+            result = self._request("post", query, params=params)
+            if not result["OK"]:
+                self.log.debug("Could not get a proxy for", f"job {arcJob}: {result['Message']}")
+                continue
+            response = result["Value"]
+
             proxy = X509Chain()
-            res = proxy.loadChainFromString(response.text)
+            result = proxy.loadChainFromString(response.text)
+            if not result["OK"]:
+                continue
 
             # Now test and renew the proxy
-            if not res["OK"]:
+            result = proxy.getRemainingSecs()
+            if not result["OK"]:
+                continue
+            timeLeft = result["Value"]
+
+            if timeLeft >= self.proxyTimeLeftBeforeRenewal:
+                # No need to renew. Proxy is long enough
                 continue
 
-            timeLeftRes = proxy.getRemainingSecs()
-            if not timeLeftRes["OK"]:
-                continue
-            timeLeft = timeLeftRes["Value"]
-            if timeLeft < self.proxyTimeLeftBeforeRenewal:
+            self.log.debug(
+                "Renewing proxy for job",
+                f"{arcJob} whose proxy expires at {timeLeft}",
+            )
+            # Proxy needs to be renewed - try to renew it
+            # First, get a new CSR from the delegation
+            params = {"action": "renew"}
+            query = self._urlJoin(os.path.join("delegations", delegationID))
+            result = self._request("post", query, params=params)
+
+            if not response.ok:
                 self.log.debug(
-                    "Renewing proxy for job",
-                    f"{arcJob} whose proxy expires at {timeLeft}",
+                    "Proxy not renewed, failed to get CSR",
+                    f"for job {arcJob} with delegation {delegationID}",
                 )
-                # Proxy needs to be renewed - try to renew it
-                # First, get a new CSR from the delegation
-                params = {"action": "renew"}
-                query = self._urlJoin(os.path.join("delegations", delegationID))
-
-                response = self.session.post(
-                    query,
-                    headers=self.headers,
-                    params=params,
-                    timeout=self.arcRESTTimeout,
-                )
-
-                if response.ok:
-                    # Then, sign and upload the certificate
-                    result = self.__uploadCertificate(delegationID, response.text)
-                    if result["OK"]:
-                        self.log.debug("Proxy successfully renewed", f"for job {arcJob}")
-                    else:
-                        self.log.debug(
-                            "Proxy not renewed, failed to send renewed proxy",
-                            f"for job {arcJob} with delegation {delegationID}:",
-                            result["Message"],
-                        )
-                else:
-                    self.log.debug(
-                        "Proxy not renewed, failed to get CSR",
-                        f"for job {arcJob} with delegation {delegationID}",
-                    )
-            else:  # No need to renew. Proxy is long enough
                 continue
+
+            # Then, sign and upload the certificate
+            result = self.__uploadCertificate(delegationID, response.text)
+            if not result["OK"]:
+                self.log.debug(
+                    "Proxy not renewed, failed to send renewed proxy",
+                    f"for job {arcJob} with delegation {delegationID}: {result['Message']}",
+                )
+                continue
+
+            self.log.debug("Proxy successfully renewed", f"for job {arcJob}")
+
         return S_OK()
 
     #############################################################################
@@ -593,16 +599,10 @@ class AREXComputingElement(ARCComputingElement):
 
         :param list jobIDList: list of DIRAC Job ID, followed by the DIRAC stamp.
         """
-        if not self.session:
-            return S_ERROR("REST interface not initialised. Cannot get job status.")
-
-        # Get a proxy
-        if self.proxy:
-            result = self._prepareProxy()
-            if not result["OK"]:
-                self.log.error("AREXComputingElement: failed to set up proxy", result["Message"])
-                return result
-            self.session.cert = Locations.getProxyLocation()
+        result = self._checkSession()
+        if not result["OK"]:
+            self.log.error("Cannot get status of the jobs", result["Message"])
+            return result
 
         if not isinstance(jobIDList, list):
             jobIDList = [jobIDList]
@@ -621,19 +621,11 @@ class AREXComputingElement(ARCComputingElement):
         query = self._urlJoin("jobs")
 
         # Submit the POST request to get status of the jobs
-        response = self.session.post(
-            query,
-            data=json.dumps(arcJobsJson),
-            headers=self.headers,
-            params=params,
-            timeout=self.arcRESTTimeout,
-        )
-        if not response.ok:
-            self.log.info(
-                "Failed getting the status of the jobs",
-                f"{response.status_code} - {response.reason}",
-            )
+        result = self._request("post", query, params=params, data=json.dumps(arcJobsJson))
+        if not result["OK"]:
+            self.log.error("Failed getting the status of the jobs.", result["Message"])
             return S_ERROR("Failed getting the status of the jobs")
+        response = result["Value"]
 
         resultDict = {}
         jobsToRenew = []
@@ -685,16 +677,10 @@ class AREXComputingElement(ARCComputingElement):
         :param str jobID: DIRAC JobID followed by the DIRAC stamp.
         :return: string representing the logging info of a given jobID
         """
-        if not self.session:
-            return S_ERROR("REST interface not initialised. Cannot get job output.")
-
-        # Get a proxy
-        if self.proxy:
-            result = self._prepareProxy()
-            if not result["OK"]:
-                self.log.error("AREXComputingElement: failed to set up proxy", result["Message"])
-                return result
-            self.session.cert = Locations.getProxyLocation()
+        result = self._checkSession()
+        if not result["OK"]:
+            self.log.error("Cannot get job logging info", result["Message"])
+            return result
 
         # Extract stamp from the Job ID
         if ":::" in jobID:
@@ -706,10 +692,11 @@ class AREXComputingElement(ARCComputingElement):
 
         # Submit the GET request to retrieve outputs
         self.log.debug(f"Retrieving logging info for {jobID}")
-        response = self.session.get(query, headers=self.headers, timeout=self.arcRESTTimeout)
-        if not response.ok:
-            self.log.error("Error downloading logging info", f"for {jobID}: {response.status_code} {response.reason}")
+        result = self._request("get", query)
+        if not result["OK"]:
+            self.log.error("Failed to retrieve logging info for", f"{jobID}: {result['Message']}")
             return S_ERROR(f"Failed to retrieve logging info for {jobID}")
+        response = result["Value"]
         loggingInfo = response.text
 
         return S_OK(loggingInfo)
@@ -727,11 +714,11 @@ class AREXComputingElement(ARCComputingElement):
 
         # Submit the GET request to retrieve the names of the outputs
         self.log.debug(f"Retrieving the names of the outputs for {jobID}")
-        response = self.session.get(query, headers=self.headers, timeout=self.arcRESTTimeout)
-
-        if not response.ok:
-            self.log.error("Error getting available outputs", f"for {jobID}: {response.status_code} {response.reason}")
+        result = self._request("get", query)
+        if not result["OK"]:
+            self.log.error("Failed to retrieve at least some outputs", f"for {jobID}: {result['Message']}")
             return S_ERROR(f"Failed to retrieve at least some outputs for {jobID}")
+        response = result["Value"]
 
         if not response.text:
             return S_ERROR(f"There is no output for job {jobID}")
@@ -747,16 +734,10 @@ class AREXComputingElement(ARCComputingElement):
         :param str workingDirectory: name of the directory containing the retrieved outputs.
         :return: content of stdout and stderr
         """
-        if not self.session:
-            return S_ERROR("REST interface not initialised. Cannot get job output.")
-
-        # Get a proxy
-        if self.proxy:
-            result = self._prepareProxy()
-            if not result["OK"]:
-                self.log.error("AREXComputingElement: failed to set up proxy", result["Message"])
-                return result
-            self.session.cert = Locations.getProxyLocation()
+        result = self._checkSession()
+        if not result["OK"]:
+            self.log.error("Cannot get job outputs", result["Message"])
+            return result
 
         # Extract stamp from the Job ID
         if ":::" in jobID:
@@ -787,12 +768,11 @@ class AREXComputingElement(ARCComputingElement):
             query = self._urlJoin(os.path.join("jobs", job, "session", remoteOutput))
 
             # Submit the GET request to retrieve outputs
-            response = self.session.get(query, headers=self.headers, timeout=self.arcRESTTimeout)
-            if not response.ok:
-                self.log.error(
-                    "Error downloading", f"{remoteOutput} for {job}: {response.status_code} {response.reason}"
-                )
-                return S_ERROR(f"Failed to retrieve at least some output for {jobID}")
+            result = self._request("get", query)
+            if not result["OK"]:
+                self.log.error("Error downloading", f"{remoteOutput} for {job}: {result['Message']}")
+                return S_ERROR(f"Error downloading {remoteOutput} for {jobID}")
+            response = result["Value"]
             outputContent = response.text
 
             if remoteOutput == f"{stamp}.out":
