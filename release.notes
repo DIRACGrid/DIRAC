@@ -1,3 +1,59 @@
+[v8.1.0a11]
+
+*Resources
+
+FIX: (#6913) better handle exceptions in AREXCE
+CHANGE: (#6902) (AREX)ComputingElement - use proxy only if it is set up
+FIX: (#6883) add workaround for https timeout when dowloading file
+
+*WorkloadManagementSystem
+
+FIX: (#6913) config helper error message
+FIX: (#6907) SiteDirector: failure in submitting Accounting or Monitoring report only prints an error
+
+*MonitoringSystem
+
+FIX: (#6904) while updating ES documents, wait and retry on ConflictError
+CHANGE: (#6875) introduce gMonitoringDB global instance
+
+*Interfaces
+
+FIX: (#6903) make -F (file) option work for drm command. This fixes #6896
+
+*WorkloadManagement
+
+NEW: (#6902) Enable PilotManager to manage pilots with tokens
+
+*Core
+
+FIX: (#6901) Tornado PeriodicCallbacks are actually called
+FEAT: (#6901) Tornado Handlers report to ActivityMonitor
+FEAT: (#6901) Activity Monitoring reports useful information
+FIX: (#6874) TornadoREST - fix the error in resolution of exposed methods
+
+Thank you for writing the text to appear in the release notes. It will show up
+exactly as it appears between the two bold lines
+Please follow the template:
+
+*Production System
+
+CHANGE: (#6898) change column types in ProductionDB from VARCHAR(255) to LONGTEXT
+
+*FrameworkSystem
+
+CHANGE: (#6897) Default log level is INFO
+NEW: (#6897) Define global configuration options for log level
+
+*ConfigurationSystem
+
+FIX: (#6888) Fix the connection to ES database when using certificates
+
+*DataManagementSystem
+
+CHANGE: (#6884) refactor (DFC): rewrite the file/replica deletion stored procedure as they were in 5.6
+CHANGE: (#6880) FTS3DB uses `in` instead of `not in` for some query
+CHANGE: (#6880) FTS3DB removal of operations uses python datetime instead of mysql builtin
+
 [v8.1.0a10]
 
 *Tests
