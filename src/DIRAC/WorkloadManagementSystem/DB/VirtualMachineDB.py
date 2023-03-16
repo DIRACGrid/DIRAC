@@ -1165,3 +1165,9 @@ class VirtualMachineDB(DB):
             return ret
 
         return S_ERROR(reason)
+
+
+try:
+    gVirtualMachineDB = VirtualMachineDB()
+except:
+    gVirtualMachineDB = None

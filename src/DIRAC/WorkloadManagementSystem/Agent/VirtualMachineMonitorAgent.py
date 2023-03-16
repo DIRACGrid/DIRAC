@@ -10,7 +10,7 @@ from DIRAC import S_OK, S_ERROR, gConfig, rootPath
 from DIRAC.ConfigurationSystem.Client.Helpers import Operations
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import List, Network
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils import virtualMachineDB
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils import getVirtualMachineDB
 
 
 class VirtualMachineMonitorAgent(AgentModule):
@@ -61,7 +61,7 @@ class VirtualMachineMonitorAgent(AgentModule):
         retries = 3
         sleepTime = 30
         for i in range(retries):
-            result = virtualMachineDB.declareInstanceRunning(self.uniqueID, self.ipAddress)
+            result = self.virtualMachineDB.declareInstanceRunning(self.uniqueID, self.ipAddress)
             if result["OK"]:
                 self.log.info("Declared instance running")
                 return result
@@ -87,6 +87,7 @@ class VirtualMachineMonitorAgent(AgentModule):
         self.heartBeatPeriod = None
         self.am_setOption("MaxCycles", 0)
         self.am_setOption("PollingTime", 60)
+        self.virtualMachineDB = getVirtualMachineDB()
 
         # Discover net address
         self.ipAddress = None
@@ -100,7 +101,7 @@ class VirtualMachineMonitorAgent(AgentModule):
 
         # Declare instance running
         self.uniqueID = ""
-        result = virtualMachineDB.getUniqueIDByName(self.vmID)
+        result = self.virtualMachineDB.getUniqueIDByName(self.vmID)
         if result["OK"]:
             self.uniqueID = result["Value"]
         result = self.__declareInstanceRunning()
@@ -169,7 +170,7 @@ class VirtualMachineMonitorAgent(AgentModule):
         if uptime % self.heartBeatPeriod <= self.am_getPollingTime():
             # Heartbeat time!
             self.log.info("Sending hearbeat...")
-            result = virtualMachineDB.instanceIDHeartBeat(
+            result = self.virtualMachineDB.instanceIDHeartBeat(
                 self.uniqueID,
                 avgLoad,
                 numJobs,
@@ -223,7 +224,7 @@ class VirtualMachineMonitorAgent(AgentModule):
         retries = 3
         sleepTime = 10
         for i in range(retries):
-            result = virtualMachineDB.declareInstanceHalting(self.uniqueID, avgLoad)
+            result = self.virtualMachineDB.declareInstanceHalting(self.uniqueID, avgLoad)
             if result["OK"]:
                 self.log.info("Declared instance halting")
                 break

@@ -10,7 +10,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry, Resources
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.Core.Utilities.List import fromChar
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils import getPilotAgentsDB, getVirtualMachineDB
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.Resources.Cloud.EndpointFactory import EndpointFactory
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import (
@@ -18,7 +18,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import (
     getVMTypes,
     getPilotBootstrapParameters,
 )
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils import virtualMachineDB
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import getProxyFileForCloud
 
 
@@ -54,6 +53,8 @@ class CloudDirector(AgentModule):
 
     def initialize(self):
         self.siteClient = SiteStatus()
+        self.pilotAgentsDB = getPilotAgentsDB()
+        self.virtualMachineDB = getVirtualMachineDB()
         return S_OK()
 
     def beginExecution(self):
@@ -324,7 +325,7 @@ class CloudDirector(AgentModule):
 
         tqIDList = list(result["Value"].keys())
 
-        result = virtualMachineDB.getInstanceCounters("Status", {})
+        result = self.virtualMachineDB.getInstanceCounters("Status", {})
         totalVMs = 0
         if result["OK"]:
             for status in result["Value"]:
@@ -410,7 +411,7 @@ class CloudDirector(AgentModule):
 
             # Get the number of already instantiated VMs for these task queues
             totalWaitingVMs = 0
-            result = virtualMachineDB.getInstanceCounters("Status", {"Endpoint": endpoint})
+            result = self.virtualMachineDB.getInstanceCounters("Status", {"Endpoint": endpoint})
             if result["OK"]:
                 for status in result["Value"]:
                     if status in ["New", "Submitted"]:
@@ -465,7 +466,7 @@ class CloudDirector(AgentModule):
             for uuID in vmDict:
                 diracUUID = vmDict[uuID]["InstanceID"]
                 endpoint = f"{self.vmTypeDict[vmType]['Site']}::{ceName}"
-                result = virtualMachineDB.insertInstance(uuID, vmTypeName, diracUUID, endpoint, self.vo)
+                result = self.virtualMachineDB.insertInstance(uuID, vmTypeName, diracUUID, endpoint, self.vo)
                 if not result["OK"]:
                     continue
                 pRef = "vm://" + ceName + "/" + diracUUID + ":00"
@@ -489,7 +490,9 @@ class CloudDirector(AgentModule):
                 tqDict[tqID].append(pilotID)
 
             for tqID, pilotList in tqDict.items():
-                result = pilotAgentsDB.addPilotTQReference(pilotList, tqID, "", "", self.localhost, "Cloud", stampDict)
+                result = self.pilotAgentsDB.addPilotTQReference(
+                    pilotList, tqID, "", "", self.localhost, "Cloud", stampDict
+                )
                 if not result["OK"]:
                     self.log.error(f"Failed to insert pilots into the PilotAgentsDB: {result['Message']}")
 
@@ -499,7 +502,7 @@ class CloudDirector(AgentModule):
         return S_OK()
 
     def getVMInstances(self, endpoint, maxInstances):
-        result = virtualMachineDB.getInstanceCounters("Status", {"Endpoint": endpoint})
+        result = self.virtualMachineDB.getInstanceCounters("Status", {"Endpoint": endpoint})
         if not result["OK"]:
             return result
 

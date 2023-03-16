@@ -1272,3 +1272,9 @@ class PivotedPilotSummaryTable:
 
     def getColumnList(self):
         return self._columns
+
+
+try:
+    gPilotAgentsDB = PilotAgentsDB()
+except:
+    gPilotAgentsDB = None
