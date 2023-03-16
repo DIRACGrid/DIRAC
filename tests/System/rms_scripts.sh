@@ -21,7 +21,8 @@ lfn="$userdir"/Dirac_Scripts_Test_Directory/resolv.conf"$( date +%s )"
 
 echo "dirac-dms-put-and-register-request"
 if ! resPut=$(dirac-dms-put-and-register-request "$dirac_user""$( date +%s )" "$lfn" /etc/resolv.conf RAL-SE); then
-   echo "ERROR: could not dirac-dms-put-and-register-request"
+   echo "ERROR: failure running dirac-dms-put-and-register-request"
+   echo "$resPut"
    exit 1
 fi
 echo "$resPut"
@@ -40,7 +41,8 @@ done
 
 echo "## verify that the file is uploaded with dirac-dms-lfn-replicas"
 if ! resRepl=$(dirac-dms-lfn-replicas "$lfn"); then
-   echo "ERROR: could not dirac-dms-lfn-replicas"
+   echo "ERROR: failure running dirac-dms-lfn-replicas"
+   echo "$resRepl"
    exit 1
 fi
 
@@ -52,7 +54,8 @@ fi
 
 echo "## All good, so now we remove it"
 if resRemove=$(! dirac-dms-create-removal-request All "$lfn"); then
-   echo "ERROR: could not dirac-dms-create-removal-request"
+   echo "ERROR: failure running dirac-dms-create-removal-request"
+   echo "$resRemove"
    exit 1
 fi
 reqID=$(echo "$resRemove" | awk '/^Request /{print $2}' |  sed -r "s/'//g")
@@ -67,10 +70,11 @@ do
    echo "$resReq"
 done
 
-echo "## verify that the file is removed with dirac-dms-lfn-replicas"
+echo "## verifying that the file is removed with dirac-dms-lfn-replicas"
 
 if ! resRepl=$(dirac-dms-lfn-replicas "$lfn"); then
-   echo "ERROR: could not dirac-dms-lfn-replicas"
+   echo "ERROR: failure running dirac-dms-lfn-replicas"
+   echo "$resRepl"
    exit 1
 fi
 
@@ -79,3 +83,5 @@ if [ "$resSite" == RAL-SE ]; then
    echo "ERROR: lfn still at RAL-SE"
    exit 1
 fi
+
+echo "## ==> All good, exiting"
