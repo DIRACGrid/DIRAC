@@ -272,6 +272,7 @@ Queue stamp in %(pilotStampList)s
             htcEnv = {
                 "_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "SCITOKENS",
                 "_CONDOR_SCITOKENS_FILE": self.tokenFile.name,
+                "_CONDOR_AUTH_SSL_CLIENT_CADIR": os.environ.get("X509_CERT_DIR", "/etc/grid-security/certificates"),
             }
         else:
             htcEnv = {"_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "GSI"}
