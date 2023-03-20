@@ -52,7 +52,7 @@ The releases are created using the *dirac-distribution* docker image, which can 
 
 Pull it and run inside the dirac-distribution command::
 
-  docker pull diracgrid/dirac-distribution
+  docker pull ghcr.io/diracgrid/management/dirac-distribution
   python3 dirac-distribution.py -r v7r0p8
 
 The above works also for DIRAC extensions, in this case just remember to specify the project name, e.g.::

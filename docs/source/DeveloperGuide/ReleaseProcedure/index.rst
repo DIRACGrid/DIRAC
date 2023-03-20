@@ -239,7 +239,7 @@ The image is rebuilt once per week based on this `Dockerfile in <https://github.
 
 Pull it and run inside the dirac-distribution command::
 
-  $ docker pull diracgrid/dirac-distribution
+  $ docker pull ghcr.io/diracgrid/management/dirac-distribution
   $ python3 dirac-distribution.py -r v7r2p8
 
 The above works also for DIRAC extensions, in this case just remember to specify the project name, e.g.::
@@ -269,6 +269,6 @@ The image is rebuilt once per week based on this `Dockerfile <https://github.com
 
 Pull it and ... ::
 
-  $ docker pull diracgrid/dirac-cvmfs
+  $ docker pull ghcr.io/diracgrid/management/dirac-cvmfs
 
 --> to be expanded

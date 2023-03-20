@@ -606,7 +606,7 @@ def _make_env(flags):
     env["DIRAC_UID"] = str(os.getuid())
     env["DIRAC_GID"] = str(os.getgid())
     env["HOST_OS"] = flags.pop("HOST_OS", DEFAULT_HOST_OS)
-    env["CI_REGISTRY_IMAGE"] = flags.pop("CI_REGISTRY_IMAGE", "diracgrid")
+    env["CI_REGISTRY_IMAGE"] = flags.pop("CI_REGISTRY_IMAGE", "ghcr.io/diracgrid/management")
     env["MYSQL_VER"] = flags.pop("MYSQL_VER", DEFAULT_MYSQL_VER)
     env["ES_VER"] = flags.pop("ES_VER", DEFAULT_ES_VER)
     return env
