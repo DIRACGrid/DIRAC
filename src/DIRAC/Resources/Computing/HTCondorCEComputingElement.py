@@ -61,6 +61,7 @@ from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import writeToTokenFile
+from DIRAC.Core.Security.Locations import getCAsLocation
 from DIRAC.Resources.Computing.BatchSystems.Condor import parseCondorStatus
 
 MANDATORY_PARAMETERS = ["Queue"]
@@ -271,6 +272,8 @@ Queue stamp in %(pilotStampList)s
                 "_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "SCITOKENS",
                 "_CONDOR_SCITOKENS_FILE": self.tokenFile.name,
             }
+            if cas := getCAsLocation():
+                htcEnv["_CONDOR_AUTH_SSL_CLIENT_CADIR"] = cas
         else:
             htcEnv = {"_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "GSI"}
 
