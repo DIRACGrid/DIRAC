@@ -703,7 +703,7 @@ class BaseRequestHandler(RequestHandler):
                 "Location": self.request.uri,
                 "ResponseTime": elapsedTime,
                 # Take the method name from the POST call
-                "MethodName": self.request.arguments.get("method", ["Unknown"])[0],
+                "MethodName": self.request.arguments.get("method", ["Unknown"])[0].decode(),
                 "Protocol": "https",
                 "Status": monitoringRetStatus,
             }
