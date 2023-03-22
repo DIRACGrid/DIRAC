@@ -198,7 +198,7 @@ class SystemAdministratorClientCLI(CLI):
                         for component in components:
                             record = []
                             if rDict[compType][system][component]["Installed"]:
-                                module = str(rDict[compType][system][component]["Module"])
+                                module = str(rDict[compType][system][component]["DIRACModule"])
                                 record += [system, component, module, compType.lower()[:-1]]
                                 if rDict[compType][system][component]["Setup"]:
                                     record += ["Setup"]
@@ -213,7 +213,7 @@ class SystemAdministratorClientCLI(CLI):
                                 record += [str(rDict[compType][system][component]["PID"])]
                                 records.append(record)
                 printTable(fields, records)
-        elif option == "database" or option == "databases":
+        elif option in ("database", "databases"):
             client = SystemAdministratorClient(self.host, self.port)
             if not gComponentInstaller.mysqlPassword:
                 gComponentInstaller.mysqlPassword = "LocalConfig"
@@ -457,9 +457,9 @@ class SystemAdministratorClientCLI(CLI):
                 elif arg == "-t":
                     key = "Component.Type"
                 elif arg == "-m":
-                    key = "Component.Module"
+                    key = "Component.DIRACModule"
                 elif arg == "-s":
-                    key = "Component.System"
+                    key = "Component.DIRACSystem"
                 elif arg == "-h":
                     key = "Host.HostName"
                 elif arg == "-n":
