@@ -1,3 +1,26 @@
+[v8.0.18]
+
+*Core
+
+FIX: (#6923) cast method names to string before sending monitoring
+FIX: (#6905) TornadoREST - fix errors in the exposed methods resolution
+
+*Resources
+
+FIX: (#6920) HTCondorCEComputingElement - set _CONDOR_AUTH_SSL_CLIENT_CADIR before executing condor commands
+FIX: (#6909) better handle exceptions in AREXCE
+
+*FrameworkSystem
+
+FIX: (#6919) stdoutJson logger prints all the necessary fields
+FIX: (#6919) MicrosecondJsonFormatter does not dump DIRAC specific fields (`timeStampIsShown`, `colorIsShown`, etc)
+
+*WorkloadManagementSystem
+
+FIX: (#6918) make singletons of VirtualMachineDB and PilotAgentsDB
+FIX: (#6909) config helper error message
+FIX: (#6906) SiteDirector: failure in submitting Accounting or Monitoring report only prints an error
+
 [v8.0.17]
 
 *Interfaces
