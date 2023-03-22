@@ -55,6 +55,7 @@ def sd(mocker):
     sd.log.setLevel("DEBUG")
     sd.rpcMatcher = MagicMock()
     sd.rssClient = MagicMock()
+    sd.pilotAgentsDB = MagicMock()
     sd.workingDirectory = ""
     sd.queueDict = {
         "aQueue": {

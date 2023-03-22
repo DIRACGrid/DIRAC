@@ -3,30 +3,24 @@ This module is used to create an appropriate object which can be used to insert 
 It always try to insert the records directly. In case of failure a WMS client is used...
 """
 
-from DIRAC.Core.Utilities.ServerUtils import getDBOrClient
+from DIRAC.Core.Base.Client import Client
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import gPilotAgentsDB
+from DIRAC.WorkloadManagementSystem.DB.VirtualMachineDB import gVirtualMachineDB
 
 
 def getPilotAgentsDB():
-    serverName = "WorkloadManagement/PilotManager"
-    PilotAgentsDB = None
     try:
-        from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+        if gPilotAgentsDB and gPilotAgentsDB._connected:
+            return gPilotAgentsDB
     except Exception:
         pass
-    return getDBOrClient(PilotAgentsDB, serverName)
-
-
-pilotAgentsDB = getPilotAgentsDB()
+    return Client(url="WorkloadManagement/PilotManager")
 
 
 def getVirtualMachineDB():
-    serverName = "WorkloadManagement/VirtualMachineManager"
-    VirtualMachineDB = None
     try:
-        from DIRAC.WorkloadManagementSystem.DB.VirtualMachineDB import VirtualMachineDB
+        if gVirtualMachineDB and gVirtualMachineDB._connected:
+            return gVirtualMachineDB
     except Exception:
         pass
-    return getDBOrClient(VirtualMachineDB, serverName)
-
-
-virtualMachineDB = getVirtualMachineDB()
+    return Client(url="WorkloadManagement/VirtualMachineManager")
