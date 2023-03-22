@@ -33,7 +33,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils import getPilotAgentsDB
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
 from DIRAC.WorkloadManagementSystem.Utilities.PilotWrapper import (
@@ -93,6 +93,7 @@ class SiteDirector(AgentModule):
         self.sendSubmissionMonitoring = False
         self.siteClient = None
         self.rssClient = None
+        self.pilotAgentsDB = None
         self.rssFlag = None
 
         self.globalParameters = {"NumberOfProcessors": 1, "MaxRAM": 2048}
@@ -148,6 +149,7 @@ class SiteDirector(AgentModule):
         self.siteClient = SiteStatus()
         self.rssClient = ResourceStatus()
         self.matcherClient = MatcherClient()
+        self.pilotAgentsDB = getPilotAgentsDB()
 
         return S_OK()
 
@@ -390,7 +392,7 @@ class SiteDirector(AgentModule):
             manyWaitingPilotsFlag = False
             if self.pilotWaitingFlag:
                 tqIDList = list(additionalInfo)
-                result = pilotAgentsDB.countPilots(
+                result = self.pilotAgentsDB.countPilots(
                     {"TaskQueueID": tqIDList, "Status": PilotStatus.PILOT_WAITING_STATES}, None
                 )
                 if not result["OK"]:
@@ -533,7 +535,9 @@ class SiteDirector(AgentModule):
     def monitorJobsQueuesPilots(self, matchingTQs):
         """Just printout of jobs queues and pilots status in TQ"""
         tqIDList = list(matchingTQs)
-        result = pilotAgentsDB.countPilots({"TaskQueueID": tqIDList, "Status": PilotStatus.PILOT_WAITING_STATES}, None)
+        result = self.pilotAgentsDB.countPilots(
+            {"TaskQueueID": tqIDList, "Status": PilotStatus.PILOT_WAITING_STATES}, None
+        )
 
         totalWaitingJobs = 0
         for tqDescription in matchingTQs.values():
@@ -834,7 +838,7 @@ class SiteDirector(AgentModule):
             tqDict[tqID].append(pilotID)
 
         for tqID, pilotsList in tqDict.items():
-            result = pilotAgentsDB.addPilotTQReference(
+            result = self.pilotAgentsDB.addPilotTQReference(
                 pilotsList,
                 tqID,
                 self.pilotDN,
@@ -847,7 +851,7 @@ class SiteDirector(AgentModule):
                 self.log.error("Failed add pilots to the PilotAgentsDB", result["Message"])
                 continue
             for pilot in pilotsList:
-                result = pilotAgentsDB.setPilotStatus(
+                result = self.pilotAgentsDB.setPilotStatus(
                     pilot,
                     PilotStatus.SUBMITTED,
                     self.queueDict[queue]["CEName"],
@@ -871,7 +875,7 @@ class SiteDirector(AgentModule):
 
         # See if there are waiting pilots for this queue. If not, allow submission
         if totalSlots and manyWaitingPilotsFlag:
-            result = pilotAgentsDB.selectPilots(
+            result = self.pilotAgentsDB.selectPilots(
                 {"DestinationSite": ceName, "Queue": queueName, "Status": PilotStatus.PILOT_WAITING_STATES}
             )
             if result["OK"]:
@@ -886,7 +890,7 @@ class SiteDirector(AgentModule):
             if availableSlotsCount % self.availableSlotsUpdateCycleFactor == 0:
                 # Get the list of already existing pilots for this queue
                 jobIDList = None
-                result = pilotAgentsDB.selectPilots(
+                result = self.pilotAgentsDB.selectPilots(
                     {"DestinationSite": ceName, "Queue": queueName, "Status": PilotStatus.PILOT_TRANSIENT_STATES}
                 )
 
@@ -916,7 +920,7 @@ class SiteDirector(AgentModule):
                     waitingJobs = 0
                     totalJobs = 0
                     if jobIDList:
-                        result = pilotAgentsDB.getPilotInfo(jobIDList)
+                        result = self.pilotAgentsDB.getPilotInfo(jobIDList)
                         if not result["OK"]:
                             self.log.warn("Failed to check PilotAgentsDB", f"for queue {queue}: \n{result['Message']}")
                             self.failedQueues[queue] += 1
@@ -1122,7 +1126,7 @@ class SiteDirector(AgentModule):
             queueName = self.queueDict[queue]["QueueName"]
             ceType = self.queueDict[queue]["CEType"]
             siteName = self.queueDict[queue]["Site"]
-            result = pilotAgentsDB.selectPilots(
+            result = self.pilotAgentsDB.selectPilots(
                 {
                     "DestinationSite": ceName,
                     "Queue": queueName,
@@ -1139,7 +1143,7 @@ class SiteDirector(AgentModule):
             pilotRefs = result["Value"]
             if not pilotRefs:
                 continue
-            result = pilotAgentsDB.getPilotInfo(pilotRefs)
+            result = self.pilotAgentsDB.getPilotInfo(pilotRefs)
             if not result["OK"]:
                 self.log.error("Failed to get pilots info from DB", result["Message"])
                 continue
@@ -1150,7 +1154,7 @@ class SiteDirector(AgentModule):
 
             # Check if the accounting is to be sent
             if self.sendAccounting:
-                result = pilotAgentsDB.selectPilots(
+                result = self.pilotAgentsDB.selectPilots(
                     {
                         "DestinationSite": ceName,
                         "Queue": queueName,
@@ -1167,7 +1171,7 @@ class SiteDirector(AgentModule):
                 pilotRefs = result["Value"]
                 if not pilotRefs:
                     continue
-                result = pilotAgentsDB.getPilotInfo(pilotRefs)
+                result = self.pilotAgentsDB.getPilotInfo(pilotRefs)
                 if not result["OK"]:
                     self.log.error("Failed to get pilots info from DB", result["Message"])
                     continue
@@ -1190,7 +1194,7 @@ class SiteDirector(AgentModule):
         ceType = self.queueDict[queue]["CEType"]
         siteName = self.queueDict[queue]["Site"]
 
-        result = pilotAgentsDB.selectPilots(
+        result = self.pilotAgentsDB.selectPilots(
             {
                 "DestinationSite": ceName,
                 "Queue": queueName,
@@ -1208,7 +1212,7 @@ class SiteDirector(AgentModule):
         if not pilotRefs:
             return
 
-        result = pilotAgentsDB.getPilotInfo(pilotRefs)
+        result = self.pilotAgentsDB.getPilotInfo(pilotRefs)
         if not result["OK"]:
             self.log.error("Failed to get pilots info from DB", result["Message"])
             return
@@ -1284,7 +1288,7 @@ class SiteDirector(AgentModule):
 
             if newStatus:
                 self.log.info("Updating status", f"to {newStatus} for pilot {pRef}")
-                result = pilotAgentsDB.setPilotStatus(pRef, newStatus, "", "Updated by SiteDirector")
+                result = self.pilotAgentsDB.setPilotStatus(pRef, newStatus, "", "Updated by SiteDirector")
                 if not result["OK"]:
                     self.log.error(result["Message"])
                 if newStatus == "Aborted":
@@ -1323,7 +1327,7 @@ class SiteDirector(AgentModule):
             output, error = result["Value"]
 
         if output:
-            result = pilotAgentsDB.storePilotOutput(pRef, output, error)
+            result = self.pilotAgentsDB.storePilotOutput(pRef, output, error)
             if not result["OK"]:
                 self.log.error("Failed to store pilot output", result["Message"])
         else:
@@ -1363,7 +1367,7 @@ class SiteDirector(AgentModule):
                 self.log.error("Failed to send accounting info for pilot ", pRef)
             else:
                 # Set up AccountingSent flag
-                result = pilotAgentsDB.setAccountingFlag(pRef)
+                result = self.pilotAgentsDB.setAccountingFlag(pRef)
                 if not result["OK"]:
                     self.log.error("Failed to set accounting flag for pilot ", pRef)
 
@@ -1372,7 +1376,7 @@ class SiteDirector(AgentModule):
         if result["OK"]:
             for pRef in pilotDict:
                 self.log.verbose("Setting AccountingSent flag", f"for pilot {pRef}")
-                result = pilotAgentsDB.setAccountingFlag(pRef)
+                result = self.pilotAgentsDB.setAccountingFlag(pRef)
                 if not result["OK"]:
                     self.log.error("Failed to set accounting flag for pilot ", pRef)
         else:
