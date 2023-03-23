@@ -170,7 +170,7 @@ class LocalComputingElement(ComputingElement):
 
         jobStamps = []
         for _i in range(numberOfJobs):
-            jobStamps.append(makeGuid()[:8])
+            jobStamps.append(makeGuid()[:32])
 
         batchDict = {
             "Executable": submitFile,

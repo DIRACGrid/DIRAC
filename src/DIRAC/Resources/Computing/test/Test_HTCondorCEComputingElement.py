@@ -129,7 +129,7 @@ def test__writeSub(mocker, localSchedd, optionsNotExpected, optionsExpected):
     jobStamps = []
     commonJobStampPart = makeGuid()[:3]
     for _i in range(42):
-        jobStamp = commonJobStampPart + makeGuid()[:5]
+        jobStamp = commonJobStampPart + makeGuid()[:29]
         jobStamps.append(jobStamp)
 
     htce._HTCondorCEComputingElement__writeSub("dirac-install", 42, "", 1, jobStamps)  # pylint: disable=E1101
