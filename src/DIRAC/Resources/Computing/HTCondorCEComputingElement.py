@@ -301,7 +301,7 @@ Queue stamp in %(pilotStampList)s
         jobStamps = []
         commonJobStampPart = makeGuid()[:3]
         for _i in range(numberOfJobs):
-            jobStamp = commonJobStampPart + makeGuid()[:5]
+            jobStamp = commonJobStampPart + makeGuid()[:29]
             jobStamps.append(jobStamp)
 
         # We randomize the location of the pilot output and log, because there are just too many of them

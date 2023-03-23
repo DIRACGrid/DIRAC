@@ -188,7 +188,7 @@ class ARCComputingElement(ComputingElement):
         :param list inputs: path of the dependencies to include along with the executable
         :param list outputs: path of the outputs that we want to get at the end of the execution
         """
-        diracStamp = makeGuid()[:8]
+        diracStamp = makeGuid()[:32]
         # Evaluate the number of processors to allocate
         nProcessors = self.ceParameters.get("NumberOfProcessors", 1)
 

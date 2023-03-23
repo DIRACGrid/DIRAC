@@ -563,7 +563,7 @@ class SSHComputingElement(ComputingElement):
 
         jobStamps = []
         for _i in range(numberOfJobs):
-            jobStamps.append(makeGuid()[:8])
+            jobStamps.append(makeGuid()[:32])
 
         numberOfProcessors = self.ceParameters.get("NumberOfProcessors", 1)
         wholeNode = self.ceParameters.get("WholeNode", False)
