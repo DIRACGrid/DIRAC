@@ -125,8 +125,8 @@ pytest --no-check-dirac-environment "${THIS_DIR}/DataManagementSystem/Test_DataM
 
 # normal user proxy
 dirac-login jenkins_user -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
-# echo -e "*** $(date -u) **** MultiVO User Metadata TESTS ****\n"
-# python -m pytest --no-check-dirac-environment "${THIS_DIR}/DataManagementSystem/Test_UserMetadata.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+echo -e "*** $(date -u) **** MultiVO User Metadata TESTS ****\n"
+python -m pytest --no-check-dirac-environment "${THIS_DIR}/DataManagementSystem/Test_UserMetadata.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 echo -e "*** $(date -u) **** S3 TESTS ****\n"
 pytest --no-check-dirac-environment "${THIS_DIR}/Resources/Storage/Test_Resources_S3.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))

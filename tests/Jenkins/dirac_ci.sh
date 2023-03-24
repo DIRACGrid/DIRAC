@@ -280,7 +280,7 @@ fullInstallDIRAC() {
 
   #fix the DBs (for the FileCatalog and MultiVOFileCatalog)
   diracDFCDB
-  # diracMVDFCDB
+  diracMVDFCDB
   python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-dbs.py" "${DEBUG}"
 
   # services (not looking for FrameworkSystem already installed)
@@ -302,12 +302,22 @@ fullInstallDIRAC() {
     exit 1
   fi
 
-  # # install an additional FileCatalog service for multi VO metadata tests
-  # echo "==> calling dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB ${DEBUG}"
-  # if ! dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB "${DEBUG}"; then
-  #     echo 'ERROR: dirac-install-component failed' >&2
-  #     exit 1
-  # fi
+  # install an additional FileCatalog service for multi VO metadata tests
+  if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
+    echo "==> calling dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB ${DEBUG}"
+    if ! dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB "${DEBUG}"; then
+        echo 'ERROR: dirac-install-component failed' >&2
+        exit 1
+    fi
+  else
+    echo "==> calling dirac-install-component DataManagement TornadoMultiVOFileCatalog -m TornadoFileCatalog -p Port=9198 -p Protocol=https -p Database=MultiVOFileCatalogDB ${DEBUG}"
+    if ! dirac-install-component DataManagement TornadoMultiVOFileCatalog -m TornadoFileCatalog -p Port=9198 -p Protocol=https -p Database=MultiVOFileCatalogDB "${DEBUG}"; then
+        echo 'ERROR: dirac-install-component failed' >&2
+        exit 1
+    fi
+    echo "==> Restarting Tornado Tornado"
+    dirac-restart-component Tornado Tornado ${DEBUG}
+  fi
   #fix the DFC services options
   python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-services.py" "${DEBUG}"
 
@@ -326,10 +336,12 @@ fullInstallDIRAC() {
   if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
     echo "==> Restarting DataManagement FileCatalog"
     dirac-restart-component DataManagement FileCatalog ${DEBUG}
+    echo "==> Restarting DataManagement MultiVOFileCatalog"
+    dirac-restart-component DataManagement MultiVOFileCatalog ${DEBUG}
+  else
+    echo "==> Restarting Tornado Tornado"
+    dirac-restart-component Tornado Tornado ${DEBUG}
   fi
-
-  # echo "==> Restarting DataManagement MultiVOFileCatalog"
-  # dirac-restart-component DataManagement MultiVOFileCatalog ${DEBUG}
 
   echo "==> Restarting Configuration Server"
   dirac-restart-component Configuration Server ${DEBUG}
@@ -339,7 +351,10 @@ fullInstallDIRAC() {
     dirac-restart-component ResourceStatus ResourceStatus ${DEBUG}
     dirac-restart-component ResourceStatus ResourceManagement ${DEBUG}
     dirac-restart-component ResourceStatus Publisher ${DEBUG}
-  fi
+  else
+    echo "==> Restarting Tornado Tornado"
+    dirac-restart-component Tornado Tornado ${DEBUG}
+    fi
 
   echo "==> Restarting DataManagement StorageElement(s)"
   dirac-restart-component DataManagement SE-1 ${DEBUG}
@@ -377,7 +392,10 @@ fullInstallDIRAC() {
   if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
     echo "==> Restarting WorkloadManagement JobManager"
     dirac-restart-component WorkloadManagement JobManager ${DEBUG}
-  fi
+  else
+    echo "==> Restarting Tornado Tornado"
+    dirac-restart-component Tornado Tornado ${DEBUG}
+    fi
 
   echo 'Content of etc/Production.cfg:'
   cat "${SERVERINSTALLDIR}/etc/Production.cfg"

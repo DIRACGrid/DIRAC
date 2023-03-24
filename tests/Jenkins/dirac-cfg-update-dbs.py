@@ -45,7 +45,7 @@ for sct in [
     "Systems/DataManagement/Production",
     "Systems/DataManagement/Production/Databases",
     "Systems/DataManagement/Production/Databases/FileCatalogDB",
-    # "Systems/DataManagement/Production/Databases/MultiVOFileCatalogDB",
+    "Systems/DataManagement/Production/Databases/MultiVOFileCatalogDB",
 ]:
     res = csAPI.createSection(sct)
     if not res["OK"]:
@@ -59,9 +59,9 @@ csAPI.setOption("Systems/DataManagement/Production/Databases/FileCatalogDB/DBNam
 csAPI.setOption("Systems/DataManagement/Production/Databases/FileCatalogDB/Host", dbHost)
 csAPI.setOption("Systems/DataManagement/Production/Databases/FileCatalogDB/Port", dbPort)
 
-# csAPI.setOption("Systems/DataManagement/Production/Databases/MultiVOFileCatalogDB/DBName", "MultiVOFileCatalogDB")
-# csAPI.setOption("Systems/DataManagement/Production/Databases/MultiVOFileCatalogDB/Host", dbHost)
-# csAPI.setOption("Systems/DataManagement/Production/Databases/MultiVOFileCatalogDB/Port", dbPort)
+csAPI.setOption("Systems/DataManagement/Production/Databases/MultiVOFileCatalogDB/DBName", "MultiVOFileCatalogDB")
+csAPI.setOption("Systems/DataManagement/Production/Databases/MultiVOFileCatalogDB/Host", dbHost)
+csAPI.setOption("Systems/DataManagement/Production/Databases/MultiVOFileCatalogDB/Port", dbPort)
 
 # Setup other DBs (this is for LHCb - innocuous!)
 #

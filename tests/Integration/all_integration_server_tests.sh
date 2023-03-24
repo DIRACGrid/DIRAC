@@ -64,7 +64,9 @@ echo -e "*** $(date -u)  Reinitialize the DFC DB\n" |& tee -a "${SERVER_TEST_OUT
 diracDFCDB |& tee -a "${SERVER_TEST_OUTPUT}"
 
 echo -e "*** $(date -u)  Restart the DFC service (required for Test_Client_DFC)\n" |& tee -a "${SERVER_TEST_OUTPUT}"
-dirac-restart-component DataManagement FileCatalog "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
+if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
+  dirac-restart-component DataManagement FileCatalog "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
+fi
 dirac-restart-component Tornado Tornado "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
 
 echo -e "*** $(date -u)  Run the DFC client tests as user without admin privileges" |& tee -a "${SERVER_TEST_OUTPUT}"
@@ -78,7 +80,9 @@ echo 'Reinitialize the DFC DB' |& tee -a "${SERVER_TEST_OUTPUT}"
 diracDFCDB |& tee -a "${SERVER_TEST_OUTPUT}"
 
 echo -e "*** $(date -u)  Restart the DFC service (required for Test_Client_DFC)\n" |& tee -a "${SERVER_TEST_OUTPUT}"
-dirac-restart-component DataManagement FileCatalog "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
+if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
+  dirac-restart-component DataManagement FileCatalog "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
+fi
 dirac-restart-component Tornado Tornado "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
 
 echo -e "*** $(date -u)  Run it with the admin privileges" |& tee -a "${SERVER_TEST_OUTPUT}"
