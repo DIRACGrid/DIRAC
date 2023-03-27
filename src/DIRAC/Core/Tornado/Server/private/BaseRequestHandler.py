@@ -317,6 +317,11 @@ class BaseRequestHandler(RequestHandler):
     encode = staticmethod(encode)
     decode = staticmethod(decode)
 
+    # Class instance of monitoringReporter to use
+    # It is initialized in __initialize
+    # If it is set to False, do not instanciate it
+    activityMonitoringReporter = None
+
     @classmethod
     def __pre_initialize(cls) -> list:
         """This method is run by the Tornado server to prepare the handler for launch,
@@ -477,8 +482,9 @@ class BaseRequestHandler(RequestHandler):
 
             cls.initializeHandler(cls._componentInfoDict)
 
-            cls.activityMonitoringReporter = None
-            if "Monitoring" in Operations().getMonitoringBackends(monitoringType="ServiceMonitoring"):
+            if cls.activityMonitoringReporter is not False and "Monitoring" in Operations().getMonitoringBackends(
+                monitoringType="ServiceMonitoring"
+            ):
                 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
                 cls.activityMonitoringReporter = MonitoringReporter(monitoringType="ServiceMonitoring")
@@ -703,7 +709,7 @@ class BaseRequestHandler(RequestHandler):
                 "Location": self.request.uri,
                 "ResponseTime": elapsedTime,
                 # Take the method name from the POST call
-                "MethodName": self.request.arguments.get("method", ["Unknown"])[0].decode(),
+                "MethodName": self.request.arguments.get("method", [b"Unknown"])[0].decode(),
                 "Protocol": "https",
                 "Status": monitoringRetStatus,
             }
