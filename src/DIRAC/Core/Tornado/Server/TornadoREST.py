@@ -152,6 +152,9 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
     METHOD_PREFIX = None
     DEFAULT_LOCATION = "/"
 
+    # Never use the activity monitoring here
+    activityMonitoringReporter = False
+
     @classmethod
     def _pre_initialize(cls) -> list:
         """This method is run by the Tornado server to prepare the handler for launch
