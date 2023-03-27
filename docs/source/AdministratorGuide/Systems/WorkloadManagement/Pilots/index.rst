@@ -168,7 +168,7 @@ If this is the case, then you need to:
 - provide a certificate, or a proxy, to start the pilot;
 - such certificate/proxy should have the `GenericPilot` property;
 - in case of multi-VO environment, the Pilot should set the `/Resources/Computing/CEDefaults/VirtualOrganization` (as done e.g. by `vm-pilot <https://github.com/DIRACGrid/DIRAC/blob/integration/src/DIRAC/WorkloadManagementSystem/Utilities/CloudBootstrap/vm-pilot#L122>`_);
-- find a way to start the pilots: VMDIRAC extension will make sure to create VirtualMachine contextualized to start Pilot3.
+- find a way to start the pilots: DIRAC will make sure to create VirtualMachine contextualized to start DIRAC Pilots.
 
 We have introduced a special command named "GetPilotVersion" that you should use,
 and possibly extend, in case you want to send/start pilots that don't know beforehand the (VO)DIRAC version they are going to install.
@@ -181,10 +181,8 @@ The main file in which you should look is dirac-pilot.py
 that also contains a good explanation on how the system works.
 
 You have to provide in this case a pilot wrapper script (which can be written in bash, for example) that will start your pilot script
-with the proper environment. If you are on a cloud site, often contextualization of your virtual machine is done by supplying
-a script like the following: https://github.com/DIRACGrid/Pilot/blob/master/Pilot/user_data_vm
-
-A simpler example using the LHCbPilot extension follows::
+with the proper environment.
+A simple example using the LHCbPilot extension follows::
 
   #!/bin/sh
   #
