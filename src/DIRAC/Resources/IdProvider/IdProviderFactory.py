@@ -1,39 +1,21 @@
-########################################################################
-# File :   IdProviderFactory.py
-# Author : A.T.
-########################################################################
-
 """  The Identity Provider Factory instantiates IdProvider objects
      according to their configuration
 """
 import jwt
 
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities import ObjectLoader, ThreadSafe
-from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Resources.IdProvider.Utilities import getProviderInfo, getSettingsNamesForIdPIssuer
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.Core.Utilities import ObjectLoader
 from DIRAC.FrameworkSystem.private.authorization.utils.Clients import getDIRACClients
 from DIRAC.FrameworkSystem.private.authorization.utils.Utilities import collectMetadata
-
-gCacheMetadata = ThreadSafe.Synchronizer()
+from DIRAC.Resources.IdProvider.Utilities import getIdProviderIdentifierFromIssuerAndClientID
 
 
 class IdProviderFactory:
     def __init__(self):
         """Standard constructor"""
         self.log = gLogger.getSubLogger(self.__class__.__name__)
-        self.cacheMetadata = DictCache()
 
-    @gCacheMetadata
-    def getMetadata(self, idProvider):
-        return self.cacheMetadata.get(idProvider) or {}
-
-    @gCacheMetadata
-    def addMetadata(self, idProvider, data, time=24 * 3600):
-        if data:
-            self.cacheMetadata.add(idProvider, time, data)
-
-    def getIdProviderForToken(self, token):
+    def getIdProviderFromToken(self, accessToken):
         """This method returns a IdProvider instance corresponding to the supplied
         issuer in a token.
 
@@ -41,15 +23,19 @@ class IdProviderFactory:
 
         :return: S_OK(IdProvider)/S_ERROR()
         """
-        if isinstance(token, dict):
-            token = token["access_token"]
+        # Read token without verification to get issuer & client_id
+        try:
+            payload = jwt.decode(accessToken, leeway=300, options=dict(verify_signature=False, verify_aud=False))
+        except jwt.exceptions.DecodeError as e:
+            return S_ERROR(f"The provided token cannot be decoded: {e}")
 
-        data = {}
+        issuer = payload.get("iss", "").strip("/")
+        clientID = payload.get("client_id", "")
+        if not issuer or not clientID:
+            return S_ERROR(f"Cannot retrieve the IdProvider that emitted {accessToken}")
 
-        # Read token without verification to get issuer
-        issuer = jwt.decode(token, leeway=300, options=dict(verify_signature=False, verify_aud=False))["iss"].strip("/")
-
-        result = getSettingsNamesForIdPIssuer(issuer)
+        # Find a corresponding IdProvider identifier
+        result = getIdProviderIdentifierFromIssuerAndClientID(issuer, clientID)
         if not result["OK"]:
             return result
         return self.getIdProvider(result["Value"])
@@ -77,7 +63,7 @@ class IdProviderFactory:
             pDict.update(clients[name])
         else:
             # if it is external identity provider client
-            result = getProviderInfo(name)
+            result = gConfig.getOptionsDict(f"/Resources/IdProviders/{name}")
             if not result["OK"]:
                 self.log.error("Failed to read configuration", f"{name}: {result['Message']}")
                 return result
@@ -97,9 +83,9 @@ class IdProviderFactory:
             self.log.error("Failed to load object", f"{subClassName}: {result['Message']}")
             return result
 
-        pClass = result["Value"]
+        idProviderClass = result["Value"]
         try:
-            provider = pClass(**pDict)
+            provider = idProviderClass(**pDict)
         except Exception as x:
             msg = f"IdProviderFactory could not instantiate {subClassName} object: {str(x)}"
             self.log.exception()

@@ -222,16 +222,15 @@ class OAuth2Token(_OAuth2Token):
 
         :return: str
         """
-        result = IdProviderFactory().getIdProviderForToken(self.get("access_token"))
+        result = IdProviderFactory().getIdProviderFromToken(self.get("access_token"))
         if not result["OK"]:
             return f"Cannot load provider: {result['Message']}"
         cli = result["Value"]
-        cli.token = self.copy()
-        result = cli.verifyToken()
+        result = cli.verifyToken(self.get("access_token"))
         if not result["OK"]:
             return result["Message"]
         payload = result["Value"]
-        result = cli.researchGroup(payload)
+        result = cli.getUserGroups(self.get("access_token"))
         if not result["OK"]:
             return result["Message"]
         credDict = result["Value"]
