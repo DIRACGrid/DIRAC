@@ -173,7 +173,7 @@ However, every type can directly be monitored in Kibana dashboards that can be i
 Grafana dashboards are also provided for some of the types.
 
 *Kibana dashboard for WMSHistory*
-  A dashboard for WMSHistory monitoring ``WMSDashboard`` is available `here <https://github.com/DIRACGrid/DIRAC/tree/integration/dashboards/WMSDashboard>`__ for import as a NDJSON (as support for JSON is being removed in the latest versions of Kibana).
+  A dashboard for WMSHistory monitoring ``WMSDashboard`` is available `here <https://github.com/DIRACGrid/DIRAC/tree/integration/dashboards/WMS>`__ for import as a NDJSON (as support for JSON is being removed in the latest versions of Kibana).
   The dashboard may not be compatible with older versions of ElasticSearch.
   To import it in the Kibana UI, go to Management -> Saved Objects -> Import and import the JSON file.
 
