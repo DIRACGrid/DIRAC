@@ -110,13 +110,14 @@ class HandlerManager:
         result = loader.loadModules(instances)
         if result["OK"]:
             for module in loader.getModules().values():
-                handler = module["classObj"]
+                # Make a separate class per component that can be individually configured
+                tornadoHandlerClassName = f"{module['modName'].replace('/', '')}Handler"
                 fullComponentName = module["modName"]
+                handler = type(
+                    tornadoHandlerClassName, (module["classObj"],), {"_fullComponentName": fullComponentName}
+                )
 
-                # Define the system and component name as the attributes of the handler that belongs to them
-                handler.SYSTEM_NAME, handler.COMPONENT_NAME = fullComponentName.split("/")
-
-                gLogger.info("Found new handler", f"{fullComponentName}: {handler}")
+                gLogger.info("Found new handler", f"{fullComponentName}: {module['classObj']}")
 
                 # at this stage we run the basic handler initialization
                 # see DIRAC.Core.Tornado.Server.private.BaseRequestHandler for more details
