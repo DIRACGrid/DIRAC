@@ -272,13 +272,10 @@ class BaseRequestHandler(RequestHandler):
     # The variable that will contain the result of the request, see __execute method
     __result = None
 
-    # Below are variables that the developer can OVERWRITE as needed
+    # Full component name in the form <System>/<Component>
+    _fullComponentName = None
 
-    # System name with which this component is associated.
-    # Developer can overwrite this
-    # if your handler is outside the DIRAC system package (src/DIRAC/XXXSystem/<path to your handler>)
-    SYSTEM_NAME = None
-    COMPONENT_NAME = None
+    # Below are variables that the developer can OVERWRITE as needed
 
     # Base system URL. If defined, it is added as a prefix to the handler generated.
     BASE_URL = None
