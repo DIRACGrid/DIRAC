@@ -28,6 +28,21 @@ services:
       retries: 15
       start_period: 60s
 
+  iam-login-service:
+    image: ${IAM_VER}
+    container_name: iam-login-service
+    hostname: iam-login-service
+    ports:
+      - 8080:8080
+    env_file: "${IAM_VER}.env"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/.well-known/openid-configuration"]
+      interval: 5s
+      timeout: 2s
+      retries: 15
+      start_period: 60s
+
+
   # Mock of an S3 storage
   s3-direct:
     image: adobe/s3mock

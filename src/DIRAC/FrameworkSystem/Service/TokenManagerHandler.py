@@ -239,11 +239,11 @@ class TokenManagerHandler(TornadoService):
                 # To do this, first find the refresh token stored in the database with the maximum scope
                 result = self.__tokenDB.getTokenForUserProvider(uid, identityProvider)
                 if result["OK"] and result["Value"]:
-                    idpObj.token = result["Value"]
+                    tokens = result["Value"]
                     result = self.__checkProperties(dn, userGroup)
                     if result["OK"]:
                         # refresh token with requested scope
-                        result = idpObj.refreshToken()
+                        result = idpObj.refreshToken(tokens.get("refresh_token"))
                         if result["OK"]:
                             # caching new tokens
                             self.__tokensCache.add(

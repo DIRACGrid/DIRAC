@@ -27,7 +27,7 @@ from DIRAC.Core.Utilities.JEncode import decode, encode
 from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance
+from DIRAC.Resources.IdProvider.Utilities import getIdProviderIdentifiers
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
 
@@ -405,7 +405,7 @@ class BaseRequestHandler(RequestHandler):
         """Load identity providers that will be used to verify tokens"""
         cls.log.debug("Load identity providers..")
         # Research Identity Providers
-        result = getProvidersForInstance("Id")
+        result = getIdProviderIdentifiers()
         if result["OK"]:
             for providerName in result["Value"]:
                 result = cls._idps.getIdProvider(providerName)
@@ -841,7 +841,7 @@ class BaseRequestHandler(RequestHandler):
         self.log.debug("Verify access token")
         result = self._idp[issuer].verifyToken(accessToken)
         self.log.debug("Search user group")
-        return self._idp[issuer].researchGroup(result["Value"], accessToken) if result["OK"] else result
+        return self._idp[issuer].getUserGroups(accessToken) if result["OK"] else result
 
     def _authzVISITOR(self):
         """Visitor access
