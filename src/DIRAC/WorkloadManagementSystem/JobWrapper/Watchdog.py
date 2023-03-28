@@ -16,26 +16,29 @@
      - Still to implement:
           - CPU normalization for correct comparison with job limit
 """
+import datetime
+import errno
+import getpass
+import math
 import os
 import re
-import time, datetime
 import resource
-import errno
 import socket
-import getpass
-import psutil
+import time
 from pathlib import Path
 
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities import MJF
-from DIRAC.Core.Utilities.Profiler import Profiler
-from DIRAC.Core.Utilities.Os import getDiskSpace
-from DIRAC.Core.Utilities.Subprocess import getChildrenPIDs
+import psutil
+
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
+from DIRAC.Core.Utilities import MJF
+from DIRAC.Core.Utilities.Os import getDiskSpace
+from DIRAC.Core.Utilities.Profiler import Profiler
+from DIRAC.Core.Utilities.Subprocess import getChildrenPIDs
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
-from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
 
 class Watchdog:
@@ -230,7 +233,7 @@ class Watchdog:
 
         try:
             wallClockSecondsLeft = mjf.getWallClockSecondsLeft()
-        except Exception as e:
+        except Exception:
             # Just stop if we can't get the wall clock seconds left
             return S_OK()
 
@@ -590,7 +593,7 @@ class Watchdog:
                 self.log.info("Job is stalled!")
                 return S_ERROR(JobMinorStatus.WATCHDOG_STALLED)
         except Exception as e:
-            self.log.error("Cannot convert CPU consumed from string to int", str(e))
+            self.log.error("Cannot convert CPU consumed from string to int", e)
 
         return S_OK()
 
@@ -611,17 +614,15 @@ class Watchdog:
             mins = float(cpuHMS[1]) * 60
             secs = float(cpuHMS[2])
             cpuValue = float(hours + mins + secs)
-        except Exception as x:
-            self.log.warn(str(x))
+        except Exception:
+            self.log.exception()
             return S_ERROR("Could not calculate CPU time")
 
         # Normalization to be implemented
         normalizedCPUValue = cpuValue
-
-        result = S_OK()
-        result["Value"] = normalizedCPUValue
         self.log.debug(f"CPU value {cputime} converted to {normalizedCPUValue}")
-        return result
+
+        return S_OK(normalizedCPUValue)
 
     #############################################################################
 
@@ -834,31 +835,28 @@ class Watchdog:
                 if rawCPU["OK"]:
                     summary["LastUpdateCPU(s)"] = rawCPU["Value"]
             else:
-                summary["LastUpdateCPU(s)"] = "Could not be estimated"
+                summary["LastUpdateCPU(s)"] = math.nan
         # DiskSpace
         if "DiskSpace" in self.parameters:
             space = self.parameters["DiskSpace"]
             if space:
-                value = abs(float(space[-1]) - float(self.initialValues["DiskSpace"]))
-                if value < 0:
-                    value = 0
-                summary["DiskSpace(MB)"] = value
+                summary["DiskSpace(MB)"] = max(abs(float(space[-1]) - float(self.initialValues["DiskSpace"])), 0.0)
             else:
-                summary["DiskSpace(MB)"] = "Could not be estimated"
+                summary["DiskSpace(MB)"] = math.nan
         # MemoryUsed
         if "MemoryUsed" in self.parameters:
             memory = self.parameters["MemoryUsed"]
             if memory:
                 summary["MemoryUsed(kb)"] = abs(float(memory[-1]) - float(self.initialValues["MemoryUsed"]))
             else:
-                summary["MemoryUsed(kb)"] = "Could not be estimated"
+                summary["MemoryUsed(kb)"] = math.nan
         # LoadAverage
         if "LoadAverage" in self.parameters:
             laList = self.parameters["LoadAverage"]
             if laList:
                 summary["LoadAverage"] = sum(laList) / len(laList)
             else:
-                summary["LoadAverage"] = "Could not be estimated"
+                summary["LoadAverage"] = math.nan
 
         result = self.__getWallClockTime()
         if not result["OK"]:
