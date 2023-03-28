@@ -10,9 +10,9 @@ from authlib.oauth2.base import OAuth2Error
 from authlib.oauth2.rfc7636 import CodeChallenge
 from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.DB.AuthDB import AuthDB
-from DIRAC.Resources.IdProvider.Utilities import getProvidersForInstance, getProviderInfo
+from DIRAC.Resources.IdProvider.Utilities import getIdProviderIdentifiers
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.ConfigurationSystem.Client.Utilities import isDownloadProxyAllowed
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
@@ -299,7 +299,7 @@ class AuthServer(_AuthorizationServer):
         result = getUsernameForDN(credDict["DN"])
         if not result["OK"]:
             comment = f"ID {credDict['ID']} is not registered in DIRAC. "
-            payload.update(idpObj.getUserProfile().get("Value", {}))
+            payload.update(idpObj.getUserProfile(idpObj.token.get("access_token")).get("Value", {}))
             result = self.__registerNewUser(providerName, payload)
 
             if result["OK"]:
@@ -446,7 +446,7 @@ class AuthServer(_AuthorizationServer):
 
         sLog.debug(f"Check if {request.provider} identity provider registered in DIRAC...")
         # Research supported IdPs
-        result = getProvidersForInstance("Id")
+        result = getIdProviderIdentifiers()
         if not result["OK"]:
             raise Exception(result["Message"])
 
@@ -477,7 +477,7 @@ class AuthServer(_AuthorizationServer):
         # Choose IdP HTML interface
         with dom.div(cls="row m-5 justify-content-md-center") as tag:
             for idP in idPs:
-                result = getProviderInfo(idP)
+                result = gConfig.getOptionsDict(f"/Resources/IdProviders/{idP}")
                 if result["OK"]:
                     logo = result["Value"].get("logoURL")
                     with dom.div(cls="col-md-6 p-2").add(dom.div(cls="card shadow-lg h-100 border-0")):

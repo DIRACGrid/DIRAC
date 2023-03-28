@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import fnmatch
+import json
 import os
 import re
+import requests
 import shlex
 import shutil
 import subprocess
@@ -23,6 +25,7 @@ from typer import colors as c
 DEFAULT_HOST_OS = "cc7"
 DEFAULT_MYSQL_VER = "mysql:8.0"
 DEFAULT_ES_VER = "elasticsearch:7.9.1"
+DEFAULT_IAM_VER = "indigoiam/iam-login-service:v1.8.0"
 FEATURE_VARIABLES = {
     "DIRACOSVER": "master",
     "DIRACOS_TARBALL_PATH": None,
@@ -42,6 +45,17 @@ DB_ROOTUSER = "root"
 DB_ROOTPWD = "password"
 DB_HOST = "mysql"
 DB_PORT = "3306"
+
+IAM_INIT_CLIENT_ID = "password-grant"
+IAM_INIT_CLIENT_SECRET = "secret"
+IAM_SIMPLE_CLIENT_NAME = "simple-client"
+IAM_SIMPLE_USER = "jane_doe"
+IAM_SIMPLE_PASSWORD = "password"
+IAM_ADMIN_CLIENT_NAME = "admin-client"
+IAM_ADMIN_USER = "admin"
+IAM_ADMIN_PASSWORD = "password"
+IAM_HOST = "iam-login-service"
+IAM_PORT = "8080"
 
 # Implementation details
 LOG_LEVEL_MAP = {
@@ -97,6 +111,7 @@ The currently known features and their default values are:
   HOST_OS: {DEFAULT_HOST_OS!r}
   MYSQL_VER: {DEFAULT_MYSQL_VER!r}
   ES_VER: {DEFAULT_ES_VER!r}
+  IAM_VER: {DEFAULT_IAM_VER!r}
   {(os.linesep + '  ').join(['%s: %r' % x for x in FEATURE_VARIABLES.items()])}
 
 All features can be prefixed with "SERVER_" or "CLIENT_" to limit their scope.
@@ -265,6 +280,8 @@ def prepare_environment(
         cmd + [f"CREATE USER '{DB_USER}'@'mysql' IDENTIFIED BY '{DB_PASSWORD}';"],
         check=True,
     )
+
+    _prepare_iam_instance()
 
     typer.secho("Copying files to containers", fg=c.GREEN)
     for name, config in [("server", server_config), ("client", client_config)]:
@@ -595,6 +612,7 @@ def _make_env(flags):
     env["CI_REGISTRY_IMAGE"] = flags.pop("CI_REGISTRY_IMAGE", "diracgrid")
     env["MYSQL_VER"] = flags.pop("MYSQL_VER", DEFAULT_MYSQL_VER)
     env["ES_VER"] = flags.pop("ES_VER", DEFAULT_ES_VER)
+    env["IAM_VER"] = flags.pop("IAM_VER", DEFAULT_IAM_VER)
     return env
 
 
@@ -615,6 +633,323 @@ def _dict_to_shell(variables):
     return "\n".join(lines)
 
 
+def _prepare_iam_instance():
+    """Prepare the IAM instance such as we have:
+
+    * 2 clients:
+      * exchange-token-test: able to exchange token
+      * simple-token-test: for users
+    * 2 users:
+      * admin and jane doe (a user)
+    * 3 groups:
+      * dirac/admin
+      * dirac/prod
+      * dirac/user
+    """
+    issuer = f"http://localhost:{IAM_PORT}"
+
+    typer.secho("Getting an IAM admin token", fg=c.GREEN)
+
+    # It sometimes takes a while for IAM to be ready so wait for a while if needed
+    for _ in range(10):
+        try:
+            tokens = _get_iam_token(
+                issuer, IAM_ADMIN_USER, IAM_ADMIN_PASSWORD, IAM_INIT_CLIENT_ID, IAM_INIT_CLIENT_SECRET
+            )
+            break
+        except requests.ConnectionError:
+            time.sleep(10)
+
+    admin_access_token = tokens.get("access_token")
+
+    typer.secho("Creating IAM clients", fg=c.GREEN)
+    user_client_config = _create_iam_client(
+        issuer,
+        admin_access_token,
+        IAM_SIMPLE_CLIENT_NAME,
+    )
+    admin_client_config = _create_iam_client(
+        issuer,
+        admin_access_token,
+        IAM_ADMIN_CLIENT_NAME,
+        grant_types=["urn:ietf:params:oauth:grant-type:token-exchange"],
+    )
+
+    typer.secho("Creating IAM users", fg=c.GREEN)
+    simple_user_config = _create_iam_user(issuer, admin_access_token, IAM_SIMPLE_USER, IAM_SIMPLE_PASSWORD)
+
+    typer.secho("Creating IAM groups", fg=c.GREEN)
+    dirac_group_config = _create_iam_group(issuer, admin_access_token, "dirac")
+    dirac_group_id = dirac_group_config["id"]
+    dirac_admin_group_config = _create_iam_subgroup(issuer, admin_access_token, "dirac", dirac_group_id, "admin")
+    dirac_prod_group_config = _create_iam_subgroup(issuer, admin_access_token, "dirac", dirac_group_id, "prod")
+    dirac_user_group_config = _create_iam_subgroup(issuer, admin_access_token, "dirac", dirac_group_id, "user")
+
+    typer.secho("Adding IAM users to groups", fg=c.GREEN)
+    _create_iam_group_membership(
+        issuer,
+        admin_access_token,
+        simple_user_config["userName"],
+        simple_user_config["id"],
+        [dirac_group_id, dirac_prod_group_config["id"], dirac_user_group_config["id"]],
+    )
+
+
+def _get_iam_token(issuer, user, password, client_id, client_secret):
+    """Get a token using the password flow
+
+    :param str issuer: url of the issuer
+    :param str user: username
+    :param str password: password
+    :param str client_id: client id
+    :param str client_secret: client secret
+    """
+    query = os.path.join(issuer, "token")
+    params = {"username": user, "password": password, "grant_type": "password"}
+    response = requests.post(
+        query,
+        auth=(client_id, client_secret),
+        params=params,
+        timeout=5,
+    )
+    if not response.ok:
+        typer.secho(f"Failed to get an admin token: {response.status_code} {response.reason}", err=True, fg=c.RED)
+        raise typer.Exit(code=1)
+    return response.json()
+
+
+def _create_iam_client(issuer, admin_access_token, client_name, scope="", grant_types=None):
+    """Generate an IAM client
+
+    :param str issuer: url of the issuer
+    :param str admin_access_token: access token to register a client
+    :param str client_name: name of the client
+    :param str scope: scope of the client
+    :param list grant_types: list of grant types
+    """
+    query = os.path.join(issuer, "iam/api/client-registration")
+    headers = {
+        "Authorization": f"Bearer {admin_access_token}",
+        "Content-Type": "application/json",
+    }
+
+    scope = "openid profile offline_access " + scope
+
+    default_grant_types = ["refresh_token", "password"]
+    if not grant_types:
+        grant_types = []
+    grant_types = list(set(default_grant_types + grant_types))
+
+    client_config = {
+        "client_name": client_name,
+        "token_endpoint_auth_method": "client_secret_basic",
+        "scope": scope,
+        "grant_types": grant_types,
+        "response_types": ["code"],
+    }
+
+    response = requests.post(
+        query,
+        headers=headers,
+        data=json.dumps(client_config),
+        timeout=5,
+    )
+    if not response.ok:
+        typer.secho(
+            f"Failed to create client {client_name}: {response.status_code} {response.reason}", err=True, fg=c.RED
+        )
+        raise typer.Exit(code=1)
+
+    # FIX TO REMOVE WITH IAM:v1.8.2
+    # -----------------------------
+    # Because of an issue in IAM, a client dynamically registered using the password flow
+    # will provide invalid refresh token: https://github.com/indigo-iam/iam/issues/575
+    # To cope with this problem, we have to update the client with the following params
+    client_config = response.json()
+    client_config["grant_types"].append("client_credentials")
+    client_config["refresh_token_validity_seconds"] = 3600
+    client_config["access_token_validity_seconds"] = 3600
+
+    query = os.path.join(issuer, "iam/api/clients", client_config["client_id"])
+    response = requests.put(
+        query,
+        headers=headers,
+        data=json.dumps(client_config),
+        timeout=5,
+    )
+    if not response.ok:
+        typer.secho(
+            f"Failed to update client {client_name}: {response.status_code} {response.reason}", err=True, fg=c.RED
+        )
+        raise typer.Exit(code=1)
+    # -----------------------------
+
+    return response.json()
+
+
+def _create_iam_user(issuer, admin_access_token, username, password):
+    """Generate an IAM user
+
+    :param str issuer: url of the issuer
+    :param str admin_access_token: access token to register a client
+    :param str given_name: name of user
+    :param str family_name: family name of the user
+    """
+    query = os.path.join(issuer, "scim/Users")
+    headers = {
+        "Authorization": f"Bearer {admin_access_token}",
+        "Content-Type": "application/scim+json",
+    }
+    given_name, family_name = username.split("_")
+    given_name = given_name.capitalize()
+    family_name = family_name.capitalize()
+    user_config = {
+        "active": True,
+        "userName": username,
+        "password": password,
+        "name": {
+            "givenName": given_name,
+            "familyName": family_name,
+            "formatted": f"{given_name} {family_name}",
+        },
+        "emails": [
+            {
+                "type": "work",
+                "value": f"{given_name}.{family_name}@donotexist.email",
+                "primary": True,
+            }
+        ],
+    }
+
+    response = requests.post(
+        query,
+        headers=headers,
+        data=json.dumps(user_config),
+        timeout=5,
+    )
+    if not response.ok:
+        typer.secho(
+            f"Failed to create user {given_name} {family_name}: {response.status_code} {response.reason}",
+            err=True,
+            fg=c.RED,
+        )
+        raise typer.Exit(code=1)
+    return response.json()
+
+
+def _create_iam_group(issuer, admin_access_token, group_name):
+    """Generate an IAM group
+
+    :param str issuer: url of the issuer
+    :param str admin_access_token: access token to register a client
+    :param str group_name: name of the group
+    """
+    query = os.path.join(issuer, "scim/Groups")
+    headers = {
+        "Authorization": f"Bearer {admin_access_token}",
+        "Content-Type": "application/scim+json",
+    }
+    group_config = {"schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"], "displayName": group_name}
+
+    response = requests.post(
+        query,
+        headers=headers,
+        data=json.dumps(group_config),
+        timeout=5,
+    )
+    if not response.ok:
+        typer.secho(
+            f"Failed to create group {group_name}: {response.status_code} {response.reason}", err=True, fg=c.RED
+        )
+        raise typer.Exit(code=1)
+    return response.json()
+
+
+def _create_iam_subgroup(issuer, admin_access_token, group_name, group_id, subgroup_name):
+    """Generate an IAM subgroup
+
+    :param str issuer: url of the issuer
+    :param str admin_access_token: access token to register a client
+    :param str group_name: name of the group
+    :param str group_id: id of the group
+    :param str subgroup_name: name of the subgroup
+    """
+    subgroup_config = {
+        "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group", "urn:indigo-dc:scim:schemas:IndigoGroup"],
+        "urn:indigo-dc:scim:schemas:IndigoGroup": {
+            "parentGroup": {
+                "display": group_name,
+                "value": group_id,
+                r"\$ref": os.path.join(issuer, "scim/Groups", group_id),
+            },
+        },
+        "displayName": subgroup_name,
+    }
+
+    query = os.path.join(issuer, "scim/Groups")
+    headers = {
+        "Authorization": f"Bearer {admin_access_token}",
+        "Content-Type": "application/scim+json",
+    }
+
+    response = requests.post(
+        query,
+        headers=headers,
+        data=json.dumps(subgroup_config),
+        timeout=5,
+    )
+    if not response.ok:
+        typer.secho(
+            f"Failed to create subgroup {group_name}/{subgroup_name}: {response.status_code} {response.reason}",
+            err=True,
+            fg=c.RED,
+        )
+        raise typer.Exit(code=1)
+    return response.json()
+
+
+def _create_iam_group_membership(issuer, admin_access_token, username, user_id, group_ids):
+    """Bind a given user to some groups/subgroups
+
+    :param str issuer: url of the issuer
+    :param str admin_access_token: access token to register a client
+    :param str username: username
+    :param str user_id:: id of the user
+    :param list group_ids: list of group/subgroup ids
+    """
+    membership_config = {
+        "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+        "operations": [
+            {
+                "op": "add",
+                "path": "members",
+                "value": [
+                    {"display": username, "value": user_id, r"\$ref": os.path.join(issuer, "scim/Users", user_id)}
+                ],
+            }
+        ],
+    }
+
+    headers = {
+        "Authorization": f"Bearer {admin_access_token}",
+        "Content-Type": "application/scim+json",
+    }
+    for group_id in group_ids:
+        query = os.path.join(issuer, "scim/Groups", group_id)
+
+        response = requests.patch(
+            query,
+            headers=headers,
+            data=json.dumps(membership_config),
+            timeout=5,
+        )
+        if not response.ok:
+            typer.secho(
+                f"Failed to add {username} to {group_id}: {response.status_code} {response.reason}", err=True, fg=c.RED
+            )
+            raise typer.Exit(code=1)
+
+
 def _make_config(modules, flags, release_var, editable):
     config = {
         "DEBUG": "True",
@@ -630,6 +965,17 @@ def _make_config(modules, flags, release_var, editable):
         "NoSQLDB_PASSWORD": "changeme",
         "NoSQLDB_HOST": "elasticsearch",
         "NoSQLDB_PORT": "9200",
+        # IAM initial settings
+        "IAM_INIT_CLIENT_ID": IAM_INIT_CLIENT_ID,
+        "IAM_INIT_CLIENT_SECRET": IAM_INIT_CLIENT_SECRET,
+        "IAM_SIMPLE_CLIENT_NAME": IAM_SIMPLE_CLIENT_NAME,
+        "IAM_SIMPLE_USER": IAM_SIMPLE_USER,
+        "IAM_SIMPLE_PASSWORD": IAM_SIMPLE_PASSWORD,
+        "IAM_ADMIN_CLIENT_NAME": IAM_ADMIN_CLIENT_NAME,
+        "IAM_ADMIN_USER": IAM_ADMIN_USER,
+        "IAM_ADMIN_PASSWORD": IAM_ADMIN_PASSWORD,
+        "IAM_HOST": IAM_HOST,
+        "IAM_PORT": IAM_PORT,
         # Hostnames
         "SERVER_HOST": "server",
         "CLIENT_HOST": "client",

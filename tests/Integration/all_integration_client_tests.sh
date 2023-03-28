@@ -84,6 +84,7 @@ pytest --no-check-dirac-environment "${THIS_DIR}/ProductionSystem/Test_Client_TS
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** Resources TESTS ****\n"
 pytest --no-check-dirac-environment "${THIS_DIR}/Resources/Computing/Test_SingularityCE.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/Resources/IdProvider/Test_IdProvider.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** DataManager TESTS ****\n"
