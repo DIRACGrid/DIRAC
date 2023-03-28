@@ -152,7 +152,7 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
         return cls._serviceInfoDict
 
     @classmethod
-    def _getCSAuthorizarionSection(cls, serviceName):
+    def _getCSAuthorizationSection(cls, serviceName):
         """Search service auth section.
 
         :param str serviceName: service name, see :py:meth:`_getFullComponentName`
