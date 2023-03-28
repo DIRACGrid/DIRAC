@@ -660,6 +660,8 @@ def _prepare_iam_instance():
             break
         except requests.ConnectionError:
             time.sleep(10)
+    else:
+        raise RuntimeError("All attempts to _get_iam_token failed ")
 
     admin_access_token = tokens.get("access_token")
 
