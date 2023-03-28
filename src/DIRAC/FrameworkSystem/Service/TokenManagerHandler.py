@@ -266,7 +266,7 @@ class TokenManagerHandler(TornadoService):
         """
 
         # temporary ugly stuff to make it compliant with proxy management
-        userDN = f'/O=DIRAC/CN={userDN}'
+        userDN = f"/O=DIRAC/CN={userDN}"
 
         # Delete it from cache
         credDict = self.getRemoteCredentials()
