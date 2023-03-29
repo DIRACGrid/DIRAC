@@ -13,13 +13,16 @@ from urllib import parse as urlparse
 import certifi
 
 try:
-    from opensearch_dsl import A, Q, Search
     from opensearchpy import OpenSearch as Elasticsearch
-    from opensearchpy.exceptions import ConnectionError as ElasticConnectionError
-    from opensearchpy.exceptions import NotFoundError, RequestError, TransportError, ConflictError
+    from opensearchpy.exceptions import (
+        ConnectionError as ElasticConnectionError,
+        TransportError,
+        NotFoundError,
+        RequestError,
+        ConflictError,
+    )
     from opensearchpy.helpers import BulkIndexError, bulk
 except ImportError:
-    from elasticsearch_dsl import Search, Q, A
     from elasticsearch import Elasticsearch
     from elasticsearch.exceptions import (
         ConnectionError as ElasticConnectionError,
@@ -29,6 +32,15 @@ except ImportError:
         ConflictError,
     )
     from elasticsearch.helpers import BulkIndexError, bulk
+
+try:
+    try:
+        from opensearchpy import A, Q, Search
+    except ImportError:
+        from opensearch_dsl import A, Q, Search
+except ImportError:
+    from elasticsearch_dsl import Search, Q, A
+
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities import DErrno, TimeUtilities
