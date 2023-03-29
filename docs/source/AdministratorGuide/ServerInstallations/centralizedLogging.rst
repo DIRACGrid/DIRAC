@@ -159,4 +159,4 @@ The ElasticSearch template ``lhcb-dirac-logs_default`` looks like::
 Kibana dashboard
 ================
 
-A dashboard for the logs can be found `here <https://github.com/DIRACGrid/DIRAC/tree/integration/dashboards/diracLogsDashboard>`_ in both json and ndjson format, as ES services are dropping support for .json imports in newer versions.
+A dashboard for the logs can be found `here <https://github.com/DIRACGrid/DIRAC/tree/integration/dashboards/diracLogs>`_ in both json and ndjson format, as ES services are dropping support for .json imports in newer versions.
