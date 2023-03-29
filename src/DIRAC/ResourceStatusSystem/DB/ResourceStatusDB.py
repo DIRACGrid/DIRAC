@@ -50,7 +50,7 @@ class ResourceStatusCache(rssBase):
     """
 
     __tablename__ = "ResourceStatusCache"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
     id = Column("ID", BigInteger, nullable=False, autoincrement=True, primary_key=True)
     sitename = Column("SiteName", String(64), nullable=False)
@@ -89,7 +89,7 @@ class ElementStatusBase:
     Prototype for tables.
     """
 
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
     name = Column("Name", String(64), nullable=False, primary_key=True)
     statustype = Column("StatusType", String(128), nullable=False, server_default="all", primary_key=True)

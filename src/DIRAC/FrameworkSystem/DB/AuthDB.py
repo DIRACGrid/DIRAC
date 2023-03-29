@@ -22,7 +22,7 @@ Model = declarative_base()
 
 class RefreshToken(Model):
     __tablename__ = "RefreshToken"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
     jti = Column(String(255), nullable=False, primary_key=True)
     issued_at = Column(Integer, nullable=False, default=0)
     access_token = Column(Text, nullable=False)
@@ -31,7 +31,7 @@ class RefreshToken(Model):
 
 class JWK(Model):
     __tablename__ = "JWK"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
     kid = Column(String(255), unique=True, primary_key=True, nullable=False)
     key = Column(Text, nullable=False)
     expires_at = Column(Integer, nullable=False, default=0)
@@ -39,7 +39,7 @@ class JWK(Model):
 
 class AuthSession(Model):
     __tablename__ = "AuthSession"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
     id = Column(String(255), unique=True, primary_key=True, nullable=False)
     uri = Column(String(255))
     state = Column(String(255))
