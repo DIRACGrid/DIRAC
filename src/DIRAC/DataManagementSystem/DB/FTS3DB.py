@@ -369,7 +369,7 @@ class FTS3DB:
         # This here is inneficient as we update every files, even if it did not change, and we commit every time.
         # It would probably be best to update only the files that changed.
         # However, commiting every time is the recommendation of MySQL
-        # (https://dev.mysql.com/doc/refman/5.7/en/innodb-deadlocks-handling.html)
+        # (https://dev.mysql.com/doc/refman/8.0/en/innodb-deadlocks-handling.html)
 
         for fileID, valueDict in fileStatusDict.items():
             session = self.dbSession()

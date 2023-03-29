@@ -70,11 +70,11 @@ systemctl start runsvdir-start
 yum remove -y $(rpm -qa | grep -i -e mysql -e mariadb | paste -sd ' ') || echo  "MySQL is not yet installed"
 rm -rf /var/lib/mysql/*
 yum install -y \
-    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-devel-5.7.25-1.el7.x86_64.rpm \
-    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-server-5.7.25-1.el7.x86_64.rpm \
-    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-client-5.7.25-1.el7.x86_64.rpm \
-    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-libs-5.7.25-1.el7.x86_64.rpm \
-    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-common-5.7.25-1.el7.x86_64.rpm
+    https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-community-devel-8.0.32-1.el7.x86_64.rpm \
+    https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-community-server-8.0.32-1.el7.x86_64.rpm \
+    https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-community-client-8.0.32-1.el7.x86_64.rpm \
+    https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-community-libs-8.0.32-1.el7.x86_64.rpm \
+    https://dev.mysql.com/get/Downloads/MySQL-8.0/mysql-community-common-8.0.32-1.el7.x86_64.rpm
 # END mysqlInstall
 
 # START mysqlStart
