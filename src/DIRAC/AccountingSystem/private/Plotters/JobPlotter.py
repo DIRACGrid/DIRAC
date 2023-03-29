@@ -13,10 +13,9 @@ class JobPlotter(BaseReporter):
         if grouping == "Country":
             sqlRepr = 'upper( substring( %s, locate( ".", %s, length( %s ) - 4 ) + 1 ) )'
             return (sqlRepr, ["Site", "Site", "Site"], sqlRepr)
-        elif grouping == "Grid":
+        if grouping == "Grid":
             return ('substring_index( %s, ".", 1 )', ["Site"])
-        else:
-            return ("%s", [grouping])
+        return ("%s", [grouping])
 
     _reportCPUEfficiencyName = "CPU efficiency"
 

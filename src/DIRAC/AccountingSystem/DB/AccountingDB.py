@@ -1066,7 +1066,6 @@ class AccountingDB(DB):
                 cmd += f" GROUP BY {groupFields[0] % tuple(groupFields[1])}"
         if orderFields:
             cmd += f" ORDER BY {orderFields[0] % tuple(orderFields[1])}"
-        self.log.verbose(cmd)
         return self._query(cmd, conn=connObj)
 
     def compactBuckets(self, typeFilter=False):
