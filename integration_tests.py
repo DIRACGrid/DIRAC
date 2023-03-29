@@ -4,7 +4,6 @@ import json
 import os
 from pathlib import Path
 import re
-import requests
 import shlex
 import shutil
 import subprocess
@@ -15,7 +14,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from typing import Optional
 
-import click
 import git
 import typer
 import yaml
@@ -647,7 +645,7 @@ def _prepare_iam_instance():
       * dirac/prod
       * dirac/user
     """
-    issuer = f"http://localhost:{IAM_PORT}"
+    issuer = f"http://iam-login-service:{IAM_PORT}"
 
     typer.secho("Getting an IAM admin token", fg=c.GREEN)
 
@@ -658,8 +656,11 @@ def _prepare_iam_instance():
                 issuer, IAM_ADMIN_USER, IAM_ADMIN_PASSWORD, IAM_INIT_CLIENT_ID, IAM_INIT_CLIENT_SECRET
             )
             break
-        except requests.ConnectionError:
+        except typer.Exit:
+            typer.secho("Failed to connect to IAM, will retry in 10 seconds", fg=c.YELLOW)
             time.sleep(10)
+    else:
+        raise RuntimeError("All attempts to _get_iam_token failed")
 
     admin_access_token = tokens.get("access_token")
 
@@ -696,7 +697,24 @@ def _prepare_iam_instance():
     )
 
 
-def _get_iam_token(issuer, user, password, client_id, client_secret):
+def _iam_curl(
+    url: str, *, data: list[str] = [], verb: Optional[str] = None, user: Optional[str] = None, headers: list[str] = []
+) -> subprocess.CompletedProcess:
+    cmd = ["docker", "exec", "server", "curl", "-L", "-s"]
+    if verb:
+        cmd += ["-X", verb]
+    if user:
+        cmd += ["-u", user]
+    for arg in data:
+        cmd += ["-d", arg]
+    for header in headers:
+        cmd += ["-H", header]
+    cmd += [url]
+
+    return subprocess.run(cmd, capture_output=True, check=False)
+
+
+def _get_iam_token(issuer: str, user: str, password: str, client_id: str, client_secret: str) -> dict:
     """Get a token using the password flow
 
     :param str issuer: url of the issuer
@@ -705,21 +723,25 @@ def _get_iam_token(issuer, user, password, client_id, client_secret):
     :param str client_id: client id
     :param str client_secret: client secret
     """
-    query = os.path.join(issuer, "token")
-    params = {"username": user, "password": password, "grant_type": "password"}
-    response = requests.post(
-        query,
-        auth=(client_id, client_secret),
-        params=params,
-        timeout=5,
+    # We use subprocess instead of requests to interact with IAM
+    # Otherwise, if executed from a docker container in a different network namespace, it would not work
+    url = os.path.join(issuer, "token")
+    ret = _iam_curl(
+        url,
+        user=f"{client_id}:{client_secret}",
+        data=[f"grant_type=password", f"username={user}", f"password={password}"],
     )
-    if not response.ok:
-        typer.secho(f"Failed to get an admin token: {response.status_code} {response.reason}", err=True, fg=c.RED)
+
+    if not ret.returncode == 0:
+        typer.secho(f"Failed to get an admin token: {ret.returncode} {ret.stderr}", err=True, fg=c.RED)
         raise typer.Exit(code=1)
-    return response.json()
+
+    return json.loads(ret.stdout)
 
 
-def _create_iam_client(issuer, admin_access_token, client_name, scope="", grant_types=None):
+def _create_iam_client(
+    issuer: str, admin_access_token: str, client_name: str, scope: str = "", grant_types: list[str] = []
+) -> dict:
     """Generate an IAM client
 
     :param str issuer: url of the issuer
@@ -728,17 +750,9 @@ def _create_iam_client(issuer, admin_access_token, client_name, scope="", grant_
     :param str scope: scope of the client
     :param list grant_types: list of grant types
     """
-    query = os.path.join(issuer, "iam/api/client-registration")
-    headers = {
-        "Authorization": f"Bearer {admin_access_token}",
-        "Content-Type": "application/json",
-    }
-
     scope = "openid profile offline_access " + scope
 
     default_grant_types = ["refresh_token", "password"]
-    if not grant_types:
-        grant_types = []
     grant_types = list(set(default_grant_types + grant_types))
 
     client_config = {
@@ -749,16 +763,16 @@ def _create_iam_client(issuer, admin_access_token, client_name, scope="", grant_
         "response_types": ["code"],
     }
 
-    response = requests.post(
-        query,
-        headers=headers,
-        data=json.dumps(client_config),
-        timeout=5,
+    url = os.path.join(issuer, "iam/api/client-registration")
+    ret = _iam_curl(
+        url,
+        verb="POST",
+        headers=[f"Authorization: Bearer {admin_access_token}", f"Content-Type: application/json"],
+        data=[json.dumps(client_config)],
     )
-    if not response.ok:
-        typer.secho(
-            f"Failed to create client {client_name}: {response.status_code} {response.reason}", err=True, fg=c.RED
-        )
+
+    if not ret.returncode == 0:
+        typer.secho(f"Failed to create client {client_name}: {ret.returncode} {ret.stderr}", err=True, fg=c.RED)
         raise typer.Exit(code=1)
 
     # FIX TO REMOVE WITH IAM:v1.8.2
@@ -766,29 +780,28 @@ def _create_iam_client(issuer, admin_access_token, client_name, scope="", grant_
     # Because of an issue in IAM, a client dynamically registered using the password flow
     # will provide invalid refresh token: https://github.com/indigo-iam/iam/issues/575
     # To cope with this problem, we have to update the client with the following params
-    client_config = response.json()
+    client_config = json.loads(ret.stdout)
     client_config["grant_types"].append("client_credentials")
     client_config["refresh_token_validity_seconds"] = 3600
     client_config["access_token_validity_seconds"] = 3600
 
-    query = os.path.join(issuer, "iam/api/clients", client_config["client_id"])
-    response = requests.put(
-        query,
-        headers=headers,
-        data=json.dumps(client_config),
-        timeout=5,
+    url = os.path.join(issuer, "iam/api/clients", client_config["client_id"])
+    ret = _iam_curl(
+        url,
+        verb="PUT",
+        headers=[f"Authorization: Bearer {admin_access_token}", f"Content-Type: application/json"],
+        data=[json.dumps(client_config)],
     )
-    if not response.ok:
-        typer.secho(
-            f"Failed to update client {client_name}: {response.status_code} {response.reason}", err=True, fg=c.RED
-        )
+
+    if not ret.returncode == 0:
+        typer.secho(f"Failed to update client {client_name}: {ret.returncode} {ret.stderr}", err=True, fg=c.RED)
         raise typer.Exit(code=1)
     # -----------------------------
 
-    return response.json()
+    return json.loads(ret.stdout)
 
 
-def _create_iam_user(issuer, admin_access_token, username, password):
+def _create_iam_user(issuer: str, admin_access_token: str, username: str, password: str) -> dict:
     """Generate an IAM user
 
     :param str issuer: url of the issuer
@@ -796,11 +809,6 @@ def _create_iam_user(issuer, admin_access_token, username, password):
     :param str given_name: name of user
     :param str family_name: family name of the user
     """
-    query = os.path.join(issuer, "scim/Users")
-    headers = {
-        "Authorization": f"Bearer {admin_access_token}",
-        "Content-Type": "application/scim+json",
-    }
     given_name, family_name = username.split("_")
     given_name = given_name.capitalize()
     family_name = family_name.capitalize()
@@ -822,51 +830,50 @@ def _create_iam_user(issuer, admin_access_token, username, password):
         ],
     }
 
-    response = requests.post(
-        query,
-        headers=headers,
-        data=json.dumps(user_config),
-        timeout=5,
+    url = os.path.join(issuer, "scim/Users")
+    ret = _iam_curl(
+        url,
+        verb="POST",
+        headers=[f"Authorization: Bearer {admin_access_token}", f"Content-Type: application/scim+json"],
+        data=[json.dumps(user_config)],
     )
-    if not response.ok:
+
+    if not ret.returncode == 0:
         typer.secho(
-            f"Failed to create user {given_name} {family_name}: {response.status_code} {response.reason}",
+            f"Failed to create user {given_name} {family_name}: {ret.returncode} {ret.stderr}",
             err=True,
             fg=c.RED,
         )
         raise typer.Exit(code=1)
-    return response.json()
+    return json.loads(ret.stdout)
 
 
-def _create_iam_group(issuer, admin_access_token, group_name):
+def _create_iam_group(issuer: str, admin_access_token: str, group_name: str) -> dict:
     """Generate an IAM group
 
     :param str issuer: url of the issuer
     :param str admin_access_token: access token to register a client
     :param str group_name: name of the group
     """
-    query = os.path.join(issuer, "scim/Groups")
-    headers = {
-        "Authorization": f"Bearer {admin_access_token}",
-        "Content-Type": "application/scim+json",
-    }
     group_config = {"schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"], "displayName": group_name}
 
-    response = requests.post(
-        query,
-        headers=headers,
-        data=json.dumps(group_config),
-        timeout=5,
+    url = os.path.join(issuer, "scim/Groups")
+    ret = _iam_curl(
+        url,
+        verb="POST",
+        headers=[f"Authorization: Bearer {admin_access_token}", f"Content-Type: application/scim+json"],
+        data=[json.dumps(group_config)],
     )
-    if not response.ok:
-        typer.secho(
-            f"Failed to create group {group_name}: {response.status_code} {response.reason}", err=True, fg=c.RED
-        )
+
+    if not ret.returncode == 0:
+        typer.secho(f"Failed to create group {group_name}: {ret.returncode} {ret.stderr}", err=True, fg=c.RED)
         raise typer.Exit(code=1)
-    return response.json()
+    return json.loads(ret.stdout)
 
 
-def _create_iam_subgroup(issuer, admin_access_token, group_name, group_id, subgroup_name):
+def _create_iam_subgroup(
+    issuer: str, admin_access_token: str, group_name: str, group_id: str, subgroup_name: str
+) -> dict:
     """Generate an IAM subgroup
 
     :param str issuer: url of the issuer
@@ -887,29 +894,27 @@ def _create_iam_subgroup(issuer, admin_access_token, group_name, group_id, subgr
         "displayName": subgroup_name,
     }
 
-    query = os.path.join(issuer, "scim/Groups")
-    headers = {
-        "Authorization": f"Bearer {admin_access_token}",
-        "Content-Type": "application/scim+json",
-    }
-
-    response = requests.post(
-        query,
-        headers=headers,
-        data=json.dumps(subgroup_config),
-        timeout=5,
+    url = os.path.join(issuer, "scim/Groups")
+    ret = _iam_curl(
+        url,
+        verb="POST",
+        headers=[f"Authorization: Bearer {admin_access_token}", f"Content-Type: application/scim+json"],
+        data=[json.dumps(subgroup_config)],
     )
-    if not response.ok:
+
+    if not ret.returncode == 0:
         typer.secho(
-            f"Failed to create subgroup {group_name}/{subgroup_name}: {response.status_code} {response.reason}",
+            f"Failed to create subgroup {group_name}/{subgroup_name}: {ret.returncode} {ret.stderr}",
             err=True,
             fg=c.RED,
         )
         raise typer.Exit(code=1)
-    return response.json()
+    return json.loads(ret.stdout)
 
 
-def _create_iam_group_membership(issuer, admin_access_token, username, user_id, group_ids):
+def _create_iam_group_membership(
+    issuer: str, admin_access_token: str, username: str, user_id: str, group_ids: list[str]
+):
     """Bind a given user to some groups/subgroups
 
     :param str issuer: url of the issuer
@@ -931,23 +936,17 @@ def _create_iam_group_membership(issuer, admin_access_token, username, user_id, 
         ],
     }
 
-    headers = {
-        "Authorization": f"Bearer {admin_access_token}",
-        "Content-Type": "application/scim+json",
-    }
     for group_id in group_ids:
-        query = os.path.join(issuer, "scim/Groups", group_id)
-
-        response = requests.patch(
-            query,
-            headers=headers,
-            data=json.dumps(membership_config),
-            timeout=5,
+        url = os.path.join(issuer, "scim/Groups", group_id)
+        ret = _iam_curl(
+            url,
+            verb="PATCH",
+            headers=[f"Authorization: Bearer {admin_access_token}", f"Content-Type: application/scim+json"],
+            data=[json.dumps(membership_config)],
         )
-        if not response.ok:
-            typer.secho(
-                f"Failed to add {username} to {group_id}: {response.status_code} {response.reason}", err=True, fg=c.RED
-            )
+
+        if not ret.returncode == 0:
+            typer.secho(f"Failed to add {username} to {group_id}: {ret.returncode} {ret.stderr}", err=True, fg=c.RED)
             raise typer.Exit(code=1)
 
 
