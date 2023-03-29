@@ -30,7 +30,7 @@ CREATE TABLE Productions(
     Status  CHAR(32) DEFAULT 'New',
     PRIMARY KEY(ProductionID),
     INDEX(ProductionName)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS ProductionSteps;
@@ -50,7 +50,7 @@ CREATE TABLE ProductionSteps(
     InsertedTime DATETIME,
     PRIMARY KEY(StepID),
     UNIQUE INDEX(StepID)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS ProductionTransformations;
@@ -62,7 +62,7 @@ CREATE TABLE ProductionTransformations(
     PRIMARY KEY(ProductionID, TransformationID),
     UNIQUE INDEX(TransformationID),
     FOREIGN KEY(ProductionID) REFERENCES Productions(ProductionID)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS ProductionTransformationLinks;
@@ -74,6 +74,6 @@ CREATE TABLE ProductionTransformationLinks(
     INDEX(TransformationID),
     FOREIGN KEY(ProductionID) REFERENCES Productions(ProductionID),
     FOREIGN KEY(TransformationID) REFERENCES ProductionTransformations(TransformationID)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 SET FOREIGN_KEY_CHECKS = 1;

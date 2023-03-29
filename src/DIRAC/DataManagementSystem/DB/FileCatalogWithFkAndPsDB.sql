@@ -36,7 +36,7 @@ INSERT INTO FC_Statuses (StatusID, Status) values (1, 'FakeStatus');
 
 CREATE TABLE FC_StorageElements (
     SEID INTEGER AUTO_INCREMENT,
-    SEName VARCHAR(127) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+    SEName VARCHAR(127) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
     AliasName VARCHAR(127) DEFAULT '',
 
     PRIMARY KEY (SEID),
@@ -79,7 +79,7 @@ INSERT INTO FC_Users (UID, UserName) values (1, 'root');
 --
 -- create table FC_DirectoryList (
 --   DirID INT NOT NULL AUTO_INCREMENT,
---   Name varchar(255)CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+--   Name varchar(255)CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
 --
 --   PRIMARY KEY (DirID),
 --
@@ -116,7 +116,7 @@ create table FC_DirectoryList (
   ModificationDate DATETIME,
   Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
   Status INTEGER NOT NULL DEFAULT 0,
-  Name varchar(255)CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+  Name varchar(255)CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
 
   PRIMARY KEY (DirID),
   FOREIGN KEY (UID) REFERENCES FC_Users(UID),
@@ -158,7 +158,7 @@ CREATE TABLE FC_Files(
     Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
     ChecksumType ENUM('Adler32','MD5'),
     Checksum VARCHAR(32),
-    FileName VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+    FileName VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
 
     PRIMARY KEY (FileID),
     FOREIGN KEY (DirID) REFERENCES FC_DirectoryList(DirID) ON DELETE CASCADE,
@@ -223,7 +223,7 @@ CREATE TABLE FC_DirectoryUsage(
 
 CREATE TABLE FC_DirMeta (
     DirID INTEGER NOT NULL,
-    MetaKey VARCHAR(31) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'Noname',
+    MetaKey VARCHAR(31) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT 'Noname',
     MetaValue VARCHAR(31) NOT NULL DEFAULT 'Noname',
     PRIMARY KEY (DirID,MetaKey)
 ) ENGINE = INNODB;
@@ -232,7 +232,7 @@ CREATE TABLE FC_DirMeta (
 
 CREATE TABLE FC_FileMeta (
     FileID INTEGER NOT NULL,
-    MetaKey VARCHAR(31) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL DEFAULT 'Noname',
+    MetaKey VARCHAR(31) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT 'Noname',
     MetaValue VARCHAR(31) NOT NULL DEFAULT 'Noname',
     PRIMARY KEY (FileID,MetaKey)
 ) ENGINE = INNODB;
@@ -242,7 +242,7 @@ CREATE TABLE FC_FileMeta (
 
 CREATE TABLE FC_MetaFields (
   MetaID INT AUTO_INCREMENT PRIMARY KEY,
-  MetaName VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+  MetaName VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   MetaType VARCHAR(128) NOT NULL
 ) ENGINE = INNODB;
 
@@ -250,7 +250,7 @@ CREATE TABLE FC_MetaFields (
 
 CREATE TABLE FC_FileMetaFields (
   MetaID INT AUTO_INCREMENT PRIMARY KEY,
-  MetaName VARCHAR(64) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+  MetaName VARCHAR(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   MetaType VARCHAR(128) NOT NULL
 ) ENGINE = INNODB;
 
@@ -280,7 +280,7 @@ CREATE TABLE FC_FileAncestors (
 
 CREATE TABLE FC_MetaDatasets (
   DatasetID INT AUTO_INCREMENT,
-  DatasetName VARCHAR(128) CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
+  DatasetName VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   MetaQuery VARCHAR(512),
   DirID INT NOT NULL DEFAULT 0,
   TotalSize BIGINT UNSIGNED NOT NULL,

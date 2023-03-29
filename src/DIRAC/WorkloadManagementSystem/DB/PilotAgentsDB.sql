@@ -52,7 +52,7 @@ CREATE TABLE `PilotAgents` (
   KEY `PilotJobReference` (`PilotJobReference`),
   KEY `Status` (`Status`),
   KEY `Statuskey` (`GridSite`,`DestinationSite`,`Status`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
 DROP TABLE IF EXISTS `JobToPilotMapping`;
@@ -62,7 +62,7 @@ CREATE TABLE `JobToPilotMapping` (
   `StartTime` DATETIME NOT NULL,
   KEY `JobID` (`JobID`),
   KEY `PilotID` (`PilotID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `PilotOutput`;
 CREATE TABLE `PilotOutput` (
@@ -70,4 +70,4 @@ CREATE TABLE `PilotOutput` (
   `StdOutput` MEDIUMTEXT,
   `StdError` MEDIUMTEXT,
   PRIMARY KEY (`PilotID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

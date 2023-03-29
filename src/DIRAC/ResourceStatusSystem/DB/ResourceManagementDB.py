@@ -45,7 +45,7 @@ class AccountingCache(rmsBase):
     """AccountingCache table"""
 
     __tablename__ = "AccountingCache"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
     name = Column("Name", String(64), nullable=False, primary_key=True)
     plotname = Column("PlotName", String(64), nullable=False, primary_key=True)
@@ -88,7 +88,7 @@ class DowntimeCache(rmsBase):
     """DowntimeCache table"""
 
     __tablename__ = "DowntimeCache"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
     downtimeid = Column("DowntimeID", String(127), nullable=False, primary_key=True)
     name = Column("Name", String(64), nullable=False)
@@ -150,7 +150,7 @@ class GGUSTicketsCache(rmsBase):
     """GGUSTicketsCache table"""
 
     __tablename__ = "GGUSTicketsCache"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
     gocsite = Column("GocSite", String(64), nullable=False, primary_key=True)
     tickets = Column("Tickets", String(1024), nullable=False)
@@ -186,7 +186,7 @@ class JobCache(rmsBase):
     """JobCache table"""
 
     __tablename__ = "JobCache"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
     site = Column("Site", String(64), nullable=False, primary_key=True)
     status = Column("Status", String(16), nullable=False)
@@ -219,7 +219,7 @@ class PilotCache(rmsBase):
     """PilotCache table"""
 
     __tablename__ = "PilotCache"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
     site = Column("Site", String(64), nullable=False, primary_key=True)
     ce = Column("CE", String(64), nullable=False, primary_key=True)
@@ -261,7 +261,7 @@ class PolicyResult(rmsBase):
     """PolicyResult table"""
 
     __tablename__ = "PolicyResult"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
     policyname = Column("PolicyName", String(64), nullable=False, primary_key=True)
     statustype = Column("StatusType", String(16), nullable=False, server_default="", primary_key=True)
@@ -320,7 +320,7 @@ class SpaceTokenOccupancyCache(rmsBase):
     """SpaceTokenOccupancyCache table"""
 
     __tablename__ = "SpaceTokenOccupancyCache"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
     endpoint = Column("Endpoint", String(128), nullable=False, primary_key=True)
     token = Column("Token", String(64), nullable=False, primary_key=True)
@@ -358,7 +358,7 @@ class TransferCache(rmsBase):
     """TransferCache table"""
 
     __tablename__ = "TransferCache"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
     sourcename = Column("SourceName", String(64), nullable=False, primary_key=True)
     destinationname = Column("DestinationName", String(64), nullable=False, primary_key=True)
