@@ -7,9 +7,10 @@ import zipfile
 import _thread
 import time
 import datetime
-import DIRAC
 
 from diraccfg import CFG
+
+import DIRAC
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -251,15 +252,13 @@ class ConfigurationData:
         value = self.extractOptionFromCFG(f"{self.configurationPath}/AutoPublish", self.localCFG)
         if value and value.lower() in ("no", "false", "n"):
             return False
-        else:
-            return True
+        return True
 
     def getAutoSlaveSync(self):
         value = self.extractOptionFromCFG(f"{self.configurationPath}/AutoSlaveSync", self.localCFG)
         if value and value.lower() in ("no", "false", "n"):
             return False
-        else:
-            return True
+        return True
 
     def getServers(self):
         return list(self.remoteServerList)
@@ -290,8 +289,7 @@ class ConfigurationData:
         value = self.extractOptionFromCFG(f"{self.configurationPath}/Master", self.localCFG)
         if value and value.lower() in ("yes", "true", "y"):
             return True
-        else:
-            return False
+        return False
 
     def getServicesPath(self):
         return "/Services"
