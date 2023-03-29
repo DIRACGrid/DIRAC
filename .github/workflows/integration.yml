@@ -31,8 +31,6 @@ jobs:
       matrix:
         # TEST_NAME is a dummy variable used to make it easier to read the web interface
         include:
-          - TEST_NAME: "MySQL 5.7"
-            ARGS: MYSQL_VER=mysql:5.7
           - TEST_NAME: "MariaDB 10.6, opensearch:2.1.0"
             ARGS: MYSQL_VER=mariadb:10.6.3 ES_VER=opensearchproject/opensearch:2.1.0
           - TEST_NAME: "HTTPS"

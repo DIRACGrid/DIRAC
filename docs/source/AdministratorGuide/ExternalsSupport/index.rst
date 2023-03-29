@@ -18,7 +18,6 @@ MySQL versions
 
 MySQL is a hard dependency for all DIRAC servers installations. Supported versions:
 
-- MySQL 5.7
 - MySQL 8.0
 - MariaDB versions "compatible" with the above MySQL versions.
 

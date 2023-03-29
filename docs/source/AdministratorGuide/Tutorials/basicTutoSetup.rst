@@ -106,7 +106,7 @@ make ``runsvdir-start`` executable and (re)start ``runsvdir``:
 Install MySQL
 -------------
 
-First of all, remove the existing (outdated) installation, and install all the necessary RPMs for MySQL 5.7:
+First of all, remove the existing (outdated) installation, and install all the necessary RPMs for MySQL 8.0:
 
 .. literalinclude:: basicTutoSetup.sh
    :language: bash
