@@ -1,3 +1,38 @@
+[v8.1.0a12]
+
+*WorkloadManagementSystem
+
+FIX: (#6953) Watchdog fix: always report correct types
+FIX: (#6931) make singletons of VirtualMachineDB and PilotAgentsDB
+
+PR for fixing dead link in doc (monitoring part)
+FIX: (#6949) change urls for WMS and Logs dashboards
+
+*tests
+
+CHANGE: (#6948) Integration tests: upped Opensearch version to 2.1.0
+NEW: (#6937) integration tests for IdProviders
+
+*Core
+
+CHANGE: (#6947) remove support for MySQL 5.7
+FIX: (#6944) protection for opensearch_dsl being merged in opensearchpy
+FIX: (#6924) cast method names to string before sending monitoring
+
+*Resources
+
+NEW: (#6937) unit tests for IdProviders
+FIX: (#6927) HTCondorCEComputingElement - set _CONDOR_AUTH_SSL_CLIENT_CADIR before executing condor commands
+
+*Tornado
+
+FIX: (#6933) do not use activityMonitor in TornadoREST
+
+*FrameworkSystem
+
+FIX: (#6922) stdoutJson logger prints all the necessary fields
+FIX: (#6922) MicrosecondJsonFormatter does not dump DIRAC specific fields (`timeStampIsShown`, `colorIsShown`, etc)
+
 [v8.1.0a11]
 
 *Resources
