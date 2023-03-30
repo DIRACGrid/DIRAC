@@ -450,20 +450,27 @@ class LocalConfiguration:
         4. cfg files that come from the command line
         """
         errorsList = []
+        foundCFGFile = False
 
         # 1. $DIRACSYSCONFIG
         if "DIRACSYSCONFIG" in os.environ:
             diracSysConfigFiles = os.environ["DIRACSYSCONFIG"].replace(" ", "").split(",")
             for diracSysConfigFile in reversed(diracSysConfigFiles):
                 gLogger.debug(f"Loading file from DIRACSYSCONFIG {diracSysConfigFile}")
+                if os.path.isfile(diracSysConfigFile):
+                    foundCFGFile = True
                 gConfigurationData.loadFile(diracSysConfigFile)
 
         # 2. ~/.dirac.cfg
+        if os.path.isfile(os.path.expanduser("~/.dirac.cfg")):
+            foundCFGFile = True
         gConfigurationData.loadFile(os.path.expanduser("~/.dirac.cfg"))
 
         # 3. cfg files specified in addCFGFile calls
         for fileName in self.additionalCFGFiles:
-            gLogger.debug(f"Loading file {fileName}")
+            if os.path.isfile(fileName):
+                foundCFGFile = True
+                gLogger.debug(f"Loading file {fileName}")
             retVal = gConfigurationData.loadFile(fileName)
             if not retVal["OK"]:
                 gLogger.debug(f"Could not load file {fileName}: {retVal['Message']}")
@@ -471,11 +478,16 @@ class LocalConfiguration:
 
         # 4. cfg files that come from the command line
         for fileName in self.cliAdditionalCFGFiles:
-            gLogger.debug(f"Loading file {fileName}")
+            if os.path.isfile(fileName):
+                foundCFGFile = True
+                gLogger.debug(f"Loading file {fileName}")
             retVal = gConfigurationData.loadFile(fileName)
             if not retVal["OK"]:
                 gLogger.debug(f"Could not load file {fileName}: {retVal['Message']}")
                 errorsList.append(retVal["Message"])
+
+        if not foundCFGFile:
+            gLogger.warn("No CFG file loaded, was that intentional?")
 
         return errorsList
 
