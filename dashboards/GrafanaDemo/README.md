@@ -1,16 +1,14 @@
 # Grafana Demo
 
-## Data sources used
-- MySQL Accounting database for DIRAC certification
-- ElasticSearch cluster for DIRAC certification
+A running example of this dashboard can be found on the LHCb grafana organisation in the Dev Area with the name `Demo Dashboard`.
 
 ## What plots does the dashboard contain?
-- Production Jobs By Final Minor Status
-- User Jobs By Final Minor Status
-- Job CPU Efficiency By Job Type
-- User Jobs By Job Type
-- User Jobs By Final Minor Stattus
-- Pilots By Status
+- Production Jobs By Final Minor Status (MySQL)
+- User Jobs By Final Minor Status (MySQL)
+- Job CPU Efficiency By Job Type (MySQL)
+- User Jobs By Job Type (ElasticSearch)
+- User Jobs By Final Minor Status (MySQL)
+- Pilots By Status (MySQL)
 
 ## How to import this dashboard into another Grafana installation?
 - Create Grafana data sources for the MySQL database and ElasticSearch cluster (both the DIRAC certification versions).
