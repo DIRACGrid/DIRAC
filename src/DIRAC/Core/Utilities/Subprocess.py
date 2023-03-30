@@ -30,15 +30,11 @@ from multiprocessing import Process, Manager
 import threading
 import time
 import os
+import selectors
 import sys
 import subprocess
 import signal
 import psutil
-
-try:
-    import selectors
-except ImportError:
-    import selectors2 as selectors
 
 # Very Important:
 #  Here we can not import directly from DIRAC, since this file it is imported

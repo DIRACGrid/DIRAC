@@ -1,12 +1,7 @@
 """ Test the SSLTransport mechanism """
 import os
-import socket
+import selectors
 import threading
-
-try:
-    import selectors
-except ImportError:
-    import selectors2 as selectors
 
 from pytest import fixture
 

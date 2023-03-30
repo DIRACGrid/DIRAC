@@ -16,16 +16,11 @@
 """
 import time
 import datetime
-import socket
+import selectors
 import signal
 import os
 import sys
 import multiprocessing
-
-try:
-    import selectors
-except ImportError:
-    import selectors2 as selectors
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.private.Service import Service
