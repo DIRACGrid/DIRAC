@@ -1,11 +1,7 @@
+import selectors
 import socket
 import time
 import os
-
-try:
-    import selectors
-except ImportError:
-    import selectors2 as selectors
 
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
