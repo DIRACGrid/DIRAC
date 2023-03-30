@@ -264,6 +264,10 @@ class TokenManagerHandler(TornadoService):
 
         :return: S_OK()/S_ERROR()
         """
+
+        # temporary ugly stuff to make it compliant with proxy management
+        userDN = f"/O=DIRAC/CN={userDN}"
+
         # Delete it from cache
         credDict = self.getRemoteCredentials()
         if Properties.PROXY_MANAGEMENT not in credDict["properties"]:
@@ -271,3 +275,12 @@ class TokenManagerHandler(TornadoService):
                 return S_ERROR("You aren't allowed!")
         result = Registry.getIDFromDN(userDN)
         return self.__tokenDB.removeToken(user_id=result["Value"]) if result["OK"] else result
+
+    def export_getTokensByUserID(self, userID: str):
+        """Retrieve a token from the DB
+
+        :param userID: user's token id
+
+        :return: S_OK(list)/S_ERROR() token row in dict format
+        """
+        return self.__tokenDB.getTokensByUserID(userID)
