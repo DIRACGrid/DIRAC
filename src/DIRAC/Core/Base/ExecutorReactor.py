@@ -26,7 +26,6 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
-from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 
 
 class ExecutorReactor:
@@ -201,9 +200,8 @@ class ExecutorReactor:
     def __init__(self):
         self.__aliveLock = self.AliveLock()
         self.__executorModules = {}
-        self.__codeModules = {}
         self.__minds = {}
-        self.__loader = ModuleLoader("Executor", PathFinder.getExecutorSection, ExecutorModule)
+        self.__loader = ModuleLoader("Executor", PathFinder.getExecutorSection)
 
     def loadModules(self, modulesList, hideExceptions=False):
         """

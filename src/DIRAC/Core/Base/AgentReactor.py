@@ -30,7 +30,6 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Utilities import ThreadScheduler
-from DIRAC.Core.Base.AgentModule import AgentModule
 
 
 class AgentReactor:
@@ -58,7 +57,7 @@ class AgentReactor:
 
     def __init__(self, baseAgentName):
         self.__agentModules = {}
-        self.__loader = ModuleLoader("Agent", PathFinder.getAgentSection, AgentModule)
+        self.__loader = ModuleLoader("Agent", PathFinder.getAgentSection)
         self.__tasks = {}
         self.__baseAgentName = baseAgentName
         self.__scheduler = ThreadScheduler.ThreadScheduler(enableReactorThread=False, minPeriod=10)

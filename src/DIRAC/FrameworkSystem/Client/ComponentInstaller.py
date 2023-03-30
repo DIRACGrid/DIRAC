@@ -76,10 +76,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import (
     cfgPath,
     cfgPathToList,
 )
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security.Properties import (
     ALARMS_MANAGEMENT,
     CS_ADMINISTRATOR,
@@ -91,7 +88,6 @@ from DIRAC.Core.Security.Properties import (
     SERVICE_ADMINISTRATOR,
     TRUSTED_HOST,
 )
-from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.Core.Utilities.Extensions import (
     extensionsByPriority,
     findAgents,
@@ -1256,11 +1252,11 @@ class ComponentInstaller:
         and if it inherits from the proper class
         """
         if componentType == "agent":
-            loader = ModuleLoader("Agent", PathFinder.getAgentSection, AgentModule)
+            loader = ModuleLoader("Agent", PathFinder.getAgentSection)
         elif componentType == "service":
-            loader = ModuleLoader("Service", PathFinder.getServiceSection, False, moduleSuffix="Handler")
+            loader = ModuleLoader("Service", PathFinder.getServiceSection, moduleSuffix="Handler")
         elif componentType == "executor":
-            loader = ModuleLoader("Executor", PathFinder.getExecutorSection, ExecutorModule)
+            loader = ModuleLoader("Executor", PathFinder.getExecutorSection)
         else:
             return S_ERROR(f"Unknown component type {componentType}")
 
