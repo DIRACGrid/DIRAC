@@ -2,15 +2,9 @@
 """
 import threading
 import time
-import select
-import socket
+import selectors
 
 from concurrent.futures import ThreadPoolExecutor
-
-try:
-    import selectors
-except ImportError:
-    import selectors2 as selectors
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
