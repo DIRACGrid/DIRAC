@@ -292,24 +292,44 @@ class DSession(DConfig):
         return cls.sessionFilePrefix() + ".%d" % (pid,)
 
     def __init__(self, profileName=None, config=None, sessionDir=None, pid=None):
-        self.origin = config or DConfig()
+        if not config:
+            config = DConfig()
+
+        if not profileName:
+            proxyPath = _getProxyLocation()
+            if not proxyPath:
+                gLogger.error("No proxy found")
+                return None
+
+            retVal = _getProxyInfo(proxyPath)
+            if not retVal["OK"]:
+                raise Exception(retVal["Message"])
+            proxyInfo = retVal["Value"]
+            groupName = proxyInfo.get("group")
+            sections = config.sections()
+            for s in sections:
+                if config.has(s, "group_name") and config.get(s, "group_name")["Value"] == groupName:
+                    profileName = s
+                    break
+            if not profileName:
+                if not groupName:
+                    raise Exception("cannot guess profile defaults without a DIRAC group in Proxy")
+                profileName = "__guessed_profile__"
+                userName = proxyInfo.get("username")
+                gLogger.warn(f"No config section found for {groupName}, using default profile.")
+                guessConfigFromCS(config, profileName, userName, groupName)
+
+        self.origin = config
         modified = self.origin.fillMinimal()
         if modified:
             self.origin.write()
 
         self.pid = pid
         if not self.pid:
-            if "DCOMMANDS_PPID" in os.environ:
-                self.pid = int(os.environ["DCOMMANDS_PPID"])
-            else:
-                self.pid = os.getppid()
+            self.pid = os.getppid()
 
         if not sessionDir:
-            var = "DCOMMANDS_SESSION_DIR"
-            if var in os.environ:
-                sessionDir = os.environ[var]
-            else:
-                sessionDir = self.origin.configDir
+            sessionDir = self.origin.configDir
 
         super().__init__(sessionDir, self.sessionFilename(self.pid))
 
@@ -575,43 +595,10 @@ def guessConfigFromCS(config, section, userName, groupName):
                 config.set(section, "default_se", defaultSESite)
 
 
-def sessionFromProxy(config=DConfig(), sessionDir=None):
-    proxyPath = _getProxyLocation()
-    if not proxyPath:
-        gLogger.error("No proxy found")
-        return None
-
-    retVal = _getProxyInfo(proxyPath)
-    if not retVal["OK"]:
-        raise Exception(retVal["Message"])
-
-    pi = retVal["Value"]
-    try:
-        groupName = pi["group"]
-    except KeyError:
-        groupName = None
-
-    sections = config.sections()
-    match = None
-
-    for s in sections:
-        if config.has(s, "group_name") and config.get(s, "group_name")["Value"] == groupName:
-            match = s
-            break
-
-    if not match:
-        if not groupName:
-            raise Exception("cannot guess profile defaults without a DIRAC group in Proxy")
-
-        match = "__guessed_profile__"
-        userName = pi["username"]
-        guessConfigFromCS(config, match, userName, groupName)
-
-    session = DSession(match, config, sessionDir=sessionDir)
-
+def sessionFromProxy(config=None, sessionDir=None):
+    session = DSession(None, config, sessionDir=sessionDir)
     # force copy of config profile options to environment
     session.copyProfile()
-
     return session
 
 
