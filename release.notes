@@ -1,3 +1,38 @@
+[v7r3p36]
+
+*Core
+FIX: (#6807) don't use matplotlib deprecated methods
+FIX: (#6762) Fix exception in FileHelper.networkToString on Python3
+
+*ConfigurationSystem
+FIX: (#6866) VOMS2CSAgent: strip whitespaces from DN entried and nickname
+
+*Interfaces
+NEW: (#6850) Add setPriority to Job API
+
+*RequestManagementSystem
+CHANGE: (#6844) ReqProxy does not attempt a direct forward to central ReqManager
+CHANGE: (#6741) adapt ReqDB to sqlalchemy 2.0
+
+*Resources
+FIX: (#6840) Typo in AREX error meesage
+FIX: (#6837) Complete AREX renewal
+FIX: (#6828) Update AREX delegation renewal
+FIX: (#6826) Fix AREX ARCRESTTimeout
+FIX: (#6813) fix account parameter in SSHBatchCE
+FIX: (#6766) better handle exceptions in AREXCE
+
+*WorkloadManagement
+FIX: (#6766) config helper error message
+FIX: (#6747) Reorder pilot downloads to minimise race condition
+
+*DataManagementSystem
+FIX: (#6816) specify the same column in order_by and distinct in FTS3DB.getNonFinishedOperations
+CHANGE: (#6741) adapt FTS3DB to sqlalchemy 2.0
+
+*Tests
+NEW: (#6745) Integration test for StorageElementHandler and FileHelper
+
 [v7r3p35]
 
 *Resources
