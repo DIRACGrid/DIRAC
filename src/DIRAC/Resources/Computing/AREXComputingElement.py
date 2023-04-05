@@ -304,13 +304,12 @@ class AREXComputingElement(ARCComputingElement):
 
     #############################################################################
 
-    def _getArcJobID(self, executableFile, inputs, outputs, executables, delegation):
+    def _getArcJobID(self, executableFile, inputs, outputs, delegation):
         """Get an ARC JobID endpoint to upload executables and inputs.
 
         :param str executableFile: executable to submit
         :param list inputs: list of input files
         :param list outputs: list of expected output files
-        :param list executables: list of secondary executables (will be uploaded with the executable mode)
         :param str delegation: delegation ID
 
         :return: tuple containing a job ID and a stamp
@@ -320,7 +319,7 @@ class AREXComputingElement(ARCComputingElement):
         query = self._urlJoin("jobs")
 
         # Get the job into the ARC way
-        xrslString, diracStamp = self._writeXRSL(executableFile, inputs, outputs, executables)
+        xrslString, diracStamp = self._writeXRSL(executableFile, inputs, outputs)
         xrslString += delegation
         self.log.debug("XRSL string submitted", "is %s" % xrslString)
         self.log.debug("DIRAC stamp for job", "is %s" % diracStamp)
@@ -344,21 +343,16 @@ class AREXComputingElement(ARCComputingElement):
         arcJobID = responseJob["id"]
         return S_OK((arcJobID, diracStamp))
 
-    def _uploadJobDependencies(self, arcJobID, executableFile, inputs, executables):
+    def _uploadJobDependencies(self, arcJobID, executableFile, inputs):
         """Upload job dependencies so that the job can start.
         This includes the executables and the inputs.
 
         :param str arcJobID: ARC job ID
         :param str executableFile: executable file
         :param list inputs: inputs required by the executable file
-        :param list executables: executables require by the executable file
         """
         filesToSubmit = [executableFile]
-        filesToSubmit += executables
-        if inputs:
-            if not isinstance(inputs, list):
-                inputs = [inputs]
-            filesToSubmit += inputs
+        filesToSubmit += inputs
 
         for fileToSubmit in filesToSubmit:
             queryExecutable = self._urlJoin(os.path.join("jobs", arcJobID, "session", os.path.basename(fileToSubmit)))
@@ -397,10 +391,14 @@ class AREXComputingElement(ARCComputingElement):
         else:
             delegation = "\n(delegationid=%s)" % result["Value"]
 
+        if not inputs:
+            inputs = []
+        if not outputs:
+            outputs = []
+
         # If there is a preamble, then we bundle it in an executable file
-        executables = []
         if self.preamble:
-            executables = [executableFile]
+            inputs.append(executableFile)
             executableFile = self._bundlePreamble(executableFile)
 
         # Submit multiple jobs sequentially.
@@ -410,14 +408,14 @@ class AREXComputingElement(ARCComputingElement):
         batchIDList = []
         stampDict = {}
         for _ in range(numberOfJobs):
-            result = self._getArcJobID(executableFile, inputs, outputs, executables, delegation)
+            result = self._getArcJobID(executableFile, inputs, outputs, delegation)
             if not result["OK"]:
                 break
             arcJobID, diracStamp = result["Value"]
 
             # At this point, only the XRSL job has been submitted to AREX services
             # Here we also upload the executable, other executable files and inputs.
-            result = self._uploadJobDependencies(arcJobID, executableFile, inputs, executables)
+            result = self._uploadJobDependencies(arcJobID, executableFile, inputs)
             if not result["OK"]:
                 break
 
