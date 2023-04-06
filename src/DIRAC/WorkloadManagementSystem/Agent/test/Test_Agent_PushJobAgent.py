@@ -53,10 +53,15 @@ def test__allowedToSubmit(mocker, queue, failedQueues, failedQueueCycleFactor, e
     "ceDict, pilotVersion, pilotProject, expected",
     [
         ({}, None, None, {"RemoteExecution": True}),
-        ({}, "8.0.0", None, {"ReleaseVersion": "8.0.0", "RemoteExecution": True}),
-        ({}, ["8.0.0", "7.3.7"], None, {"ReleaseVersion": "8.0.0", "RemoteExecution": True}),
+        ({}, "8.0.0", None, {"DIRACVersion": "8.0.0", "ReleaseVersion": "8.0.0", "RemoteExecution": True}),
+        ({}, ["8.0.0", "7.3.7"], None, {"DIRACVersion": "8.0.0", "ReleaseVersion": "8.0.0", "RemoteExecution": True}),
         ({}, None, "Project", {"ReleaseProject": "Project", "RemoteExecution": True}),
-        ({}, "8.0.0", "Project", {"ReleaseVersion": "8.0.0", "ReleaseProject": "Project", "RemoteExecution": True}),
+        (
+            {},
+            "8.0.0",
+            "Project",
+            {"DIRACVersion": "8.0.0", "ReleaseVersion": "8.0.0", "ReleaseProject": "Project", "RemoteExecution": True},
+        ),
     ],
 )
 def test__setCEDict(mocker, ceDict, pilotVersion, pilotProject, expected):
