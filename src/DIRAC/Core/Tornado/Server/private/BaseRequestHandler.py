@@ -17,8 +17,6 @@ import jwt
 from tornado.web import RequestHandler, HTTPError
 from tornado.ioloop import IOLoop
 
-import DIRAC
-
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import DErrno
@@ -176,10 +174,6 @@ class BaseRequestHandler(RequestHandler):
     Override the class variable ``SUPPORTED_METHODS`` by writing down the necessary methods there.
     Note that by default all HTTP methods are supported.
 
-    It is important to understand that the handler belongs to the system.
-    The class variable ``SYSTEM_NAME`` displays the system name. By default it is taken from the module name.
-    This value is used to generate the full component name, see :py:meth:`_getFullComponentName` method
-
     This class also defines some variables for writing your handler's methods:
 
         - ``DEFAULT_AUTHORIZATION`` describes the general authorization rules for the entire handler
@@ -200,7 +194,7 @@ class BaseRequestHandler(RequestHandler):
     Also, if necessary, you can create a new type of authorization by simply creating the appropriate method::
 
         def _authzMYAUTH(self):
-            '''Another authorization algoritm.'''
+            '''Another authorization algorithm.'''
             # Do somthing
             return S_OK(credentials)  # return user credentials as a dictionary
 
@@ -212,13 +206,12 @@ class BaseRequestHandler(RequestHandler):
     The class contains methods that require implementation:
 
         - :py:meth:`_pre_initialize`
-        - :py:meth:`_getCSAuthorizarionSection`
+        - :py:meth:`_getCSAuthorizationSection`
         - :py:meth:`_getMethod`
         - :py:meth:`_getMethodArgs`
 
     Some methods have basic behavior, but developers can rewrite them:
 
-        - :py:meth:`_getFullComponentName`
         - :py:meth:`_getComponentInfoDict`
         - :py:meth:`_monitorRequest`
 
@@ -239,7 +232,7 @@ class BaseRequestHandler(RequestHandler):
     At startup, :py:class:`HandlerManager <DIRAC.Core.Tornado.Server.HandlerManager.HandlerManager>` call :py:meth:`__pre_initialize`
     handler method that inspects the handler and its methods to generate tornados URLs of access to it:
 
-        - specifies the full name of the component, including the name of the system to which it belongs, see :py:meth:`_getFullComponentName`.
+        - specifies the full name of the component, including the name of the system to which it belongs as <System>/<Component>.
         - initialization of the main authorization class, see :py:class:`AuthManager <DIRAC.Core.DISET.AuthManager.AuthManager>` for more details.
         - call :py:meth:`__pre_initialize` that should explore the handler, prepare all the necessary attributes and most importantly - return the list of URL tornadoes
 
@@ -247,12 +240,12 @@ class BaseRequestHandler(RequestHandler):
 
         - load all registered identity providers for authentication with access token, see :py:meth:`__loadIdPs`.
         - create a ``cls.log`` logger that should be used in the children classes instead of directly ``gLogger`` (this allows to carry the ``tornadoComponent`` information, crutial for centralized logging)
-        - initialization of the monitoring specific to this handler, see :py:meth:`__initMonitoring`.
+        - initialization of the monitoring specific to this handler, see :py:meth:`_initMonitoring`.
         - initialization of the target handler that inherit this one, see :py:meth:`initializeHandler`.
 
     Next, first of all the tornados prepare method is called which does the following:
 
-        - determines determines the name of the target method and checks its presence, see :py:meth:`_getMethod`.
+        - determines the name of the target method and checks its presence, see :py:meth:`_getMethod`.
         - request monitoring, see :py:meth:`_monitorRequest`.
         - authentication request using one of the available algorithms called ``DEFAULT_AUTHENTICATION``, see :py:meth:`_gatherPeerCredentials` for more details.
         - and finally authorizing the request to access the component, see :py:meth:`authQuery <DIRAC.Core.DISET.AuthManager.AuthManager.authQuery>` for more details.
@@ -262,7 +255,7 @@ class BaseRequestHandler(RequestHandler):
 
         - execute the target method in an executor a separate thread.
         - defines the arguments of the target method, see :py:meth:`_getMethodArgs`.
-        - initialization of the each request, see :py:meth:`initializeRequest`.
+        - initialization of each request, see :py:meth:`initializeRequest`.
         - the result of the target method is processed in the main thread and returned to the client, see :py:meth:`__execute`.
 
     """
@@ -279,13 +272,10 @@ class BaseRequestHandler(RequestHandler):
     # The variable that will contain the result of the request, see __execute method
     __result = None
 
-    # Below are variables that the developer can OVERWRITE as needed
+    # Full component name in the form <System>/<Component>
+    _fullComponentName = None
 
-    # System name with which this component is associated.
-    # Developer can overwrite this
-    # if your handler is outside the DIRAC system package (src/DIRAC/XXXSystem/<path to your handler>)
-    SYSTEM_NAME = None
-    COMPONENT_NAME = None
+    # Below are variables that the developer can OVERWRITE as needed
 
     # Base system URL. If defined, it is added as a prefix to the handler generated.
     BASE_URL = None
@@ -330,12 +320,10 @@ class BaseRequestHandler(RequestHandler):
         :returns: a list of URL (not the string with "https://..." but the tornado object)
                   see http://www.tornadoweb.org/en/stable/web.html#tornado.web.URLSpec
         """
-        # Set full component name, e.g.: <System>/<Component>
-        cls._fullComponentName = cls._getFullComponentName()
 
         # Define base request path
         if not cls.DEFAULT_LOCATION:
-            # By default use full component name as location
+            # By default, use the full component name as location
             cls.DEFAULT_LOCATION = cls._fullComponentName
 
         # SUPPORTED_METHODS should be a tuple
@@ -343,7 +331,7 @@ class BaseRequestHandler(RequestHandler):
             raise TypeError("SUPPORTED_METHODS should be a tuple")
 
         # authorization manager initialization
-        cls._authManager = AuthManager(cls._getCSAuthorizarionSection(cls._fullComponentName))
+        cls._authManager = AuthManager(cls._getCSAuthorizationSection(cls._fullComponentName))
 
         if not (urls := cls._pre_initialize()):
             cls.log.warn("no target method found", f"{cls.__name__}")
@@ -374,31 +362,18 @@ class BaseRequestHandler(RequestHandler):
         raise NotImplementedError("Please, create the _pre_initialize class method")
 
     @classmethod
-    def __initMonitoring(cls, fullComponentName: str, fullUrl: str) -> dict:
+    def _initMonitoring(cls, fullComponentName: str, fullUrl: str) -> dict:
         """
         Initialize the monitoring specific to this handler
         This has to be called only by :py:meth:`.__initialize`
         to ensure thread safety and unicity of the call.
 
-        :param componentName: relative URL ``/<System>/<Component>``
+        :param fullComponentName: relative URL ``<System>/<Component>``
         :param fullUrl: full URl like ``https://<host>:<port>/<System>/<Component>``
         """
         cls._stats = {"requests": 0, "monitorLastStatsUpdate": time.time()}
 
         return S_OK()
-
-    @classmethod
-    def _getFullComponentName(cls) -> str:
-        """Search the full name of the component, including the name of the system to which it belongs.
-        CAN be implemented by developer.
-        """
-        if cls.SYSTEM_NAME is None:
-            # If the system name is not specified, it is taken from the module.
-            cls.SYSTEM_NAME = ([m[:-6] for m in cls.__module__.split(".") if m.endswith("System")] or [None]).pop()
-        if cls.COMPONENT_NAME is None:
-            # If the service name is not specified, it is taken from the handler.
-            cls.COMPONENT_NAME = cls.__name__[: -len("Handler")]
-        return f"{cls.SYSTEM_NAME}/{cls.COMPONENT_NAME}" if cls.SYSTEM_NAME else cls.COMPONENT_NAME
 
     @classmethod
     def __loadIdPs(cls) -> None:
@@ -412,16 +387,16 @@ class BaseRequestHandler(RequestHandler):
                 if result["OK"]:
                     cls._idp[result["Value"].issuer.strip("/")] = result["Value"]
                 else:
-                    cls.log.error("Error getting IDP", f"{providerName}: {result['Message']}")
+                    cls.log.error("Error getting Identity Provider", f"{providerName}: {result['Message']}")
 
     @classmethod
-    def _getCSAuthorizarionSection(cls, fullComponentName: str) -> str:
+    def _getCSAuthorizationSection(cls, fullComponentName: str) -> str:
         """Search component authorization section in CS.
         SHOULD be implemented by developer.
 
-        :param fullComponentName: full component name, see :py:meth:`_getFullComponentName`
+        :param fullComponentName: full component name <System>/<Component>
         """
-        raise NotImplementedError("Please, create the _getCSAuthorizarionSection class method")
+        raise NotImplementedError("Please, create the _getCSAuthorizationSection class method")
 
     @classmethod
     def _getComponentInfoDict(cls, fullComponentName: str, fullURL: str) -> dict:
@@ -429,7 +404,7 @@ class BaseRequestHandler(RequestHandler):
         e.g.: 'serviceName', 'serviceSectionPath', 'csPaths'.
         SHOULD be implemented by developer.
 
-        :param fullComponentName: full component name, see :py:meth:`_getFullComponentName`
+        :param fullComponentName: full component name <System>/<Component>
         :param fullURL: incoming request path
         """
         raise NotImplementedError("Please, create the _getComponentInfoDict class method")
@@ -470,7 +445,7 @@ class BaseRequestHandler(RequestHandler):
             cls.log.info("Initializing method for first use", f"{cls._fullComponentName}, initializing..")
 
             # component monitoring initialization
-            cls.__initMonitoring(cls._fullComponentName, absoluteUrl)
+            cls._initMonitoring(cls._fullComponentName, absoluteUrl)
 
             cls._componentInfoDict = cls._getComponentInfoDict(cls._fullComponentName, absoluteUrl)
 
