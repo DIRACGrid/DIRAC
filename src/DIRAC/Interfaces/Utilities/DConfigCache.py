@@ -21,12 +21,7 @@ class ConfigCache:
     def __init__(self, forceRefresh=False):
         self.newConfig = True
         self.configCacheLifetime = 600.0  # ten minutes
-
-        if "DCOMMANDS_PPID" in os.environ:
-            self.pid = int(os.environ["DCOMMANDS_PPID"])
-        else:
-            self.pid = os.getppid()
-
+        self.pid = os.getppid()
         self.configCacheName = os.path.join(self.cacheDir, self.cacheFilePrefix() + ".%d.%d" % (os.getuid(), self.pid))
 
         if not forceRefresh:

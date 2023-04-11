@@ -7,8 +7,7 @@ Commands Reference
 This page is the work in progress.
 
 The shorthand section contains short commands specifically developed for the interactive use of a DIRAC UI.
-To be able to use these commands, please check the :ref:`shorthand_cmd` section for an
-introduction and initial setup.
+For a complete list of these commands, please check the :ref:`shorthand_cmd` section. Please note that you will need to get a proxy using your usual dirac-proxy-init command before you are able to use the shorthand commands.
 
 .. toctree::
    :maxdepth: 1
