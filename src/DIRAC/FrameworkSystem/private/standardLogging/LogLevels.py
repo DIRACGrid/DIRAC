@@ -1,6 +1,7 @@
 """
 LogLevels wrapper
 """
+from __future__ import annotations
 from enum import IntEnum
 import logging
 
@@ -53,7 +54,7 @@ class LogLevels:
     }
 
     @classmethod
-    def getLevelValue(cls, sName):
+    def getLevelValue(cls, sName: str) -> int | None:
         """
         Get a level value from a level name.
         We could use logging.getLevelName() to get the level value but it is less simple.
@@ -64,7 +65,7 @@ class LogLevels:
         return cls.__levelDict.get(sName.upper())
 
     @classmethod
-    def getLevel(cls, level):
+    def getLevel(cls, level: int) -> str | None:
         """
         Get a level name from a level value.
         We could use logging.getLevelName() to get the level value but it is less simple.
@@ -78,14 +79,14 @@ class LogLevels:
         return None
 
     @classmethod
-    def getLevelNames(cls):
+    def getLevelNames(cls) -> list[str]:
         """
         :return: all level names available in the wrapper
         """
         return list(cls.__levelDict)
 
     @classmethod
-    def getLevels(cls):
+    def getLevels(cls) -> dict[str, int]:
         """
         :return: the level dictionary. Must no be redefined
         """

@@ -62,7 +62,7 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         # configuration of the level and update the format
         self.__configureLevel()
 
-    def initialize(self, systemName, cfgPath, forceInit=False):
+    def initialize(self, systemName: str, cfgPath: str, forceInit: bool = False):
         """
         Configure the root Logging.
         It can be possible to:
@@ -122,7 +122,7 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         finally:
             self._lockConfig.release()
 
-    def __getLogLevelFromCFG(self, cfgPath):
+    def __getLogLevelFromCFG(self, cfgPath: str) -> str:
         """
         Get the logging level from the cfg, following this order:
 
@@ -153,7 +153,7 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
 
         return logLevel
 
-    def __getBackendsFromCFG(self, cfgPath):
+    def __getBackendsFromCFG(self, cfgPath: str) -> list[str]:
         """
         Get backends from the configuration and register them in LoggingRoot.
         This is the new way to get the backends providing a general configuration.
@@ -184,7 +184,7 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
 
         return backends
 
-    def __getBackendOptionsFromCFG(self, cfgPath, backend):
+    def __getBackendOptionsFromCFG(self, cfgPath: str, backend: str) -> dict:
         """
         Get backend options from the configuration.
 
@@ -208,7 +208,7 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
 
         return backendOptions
 
-    def __getFilterList(self, backendOptions):
+    def __getFilterList(self, backendOptions: dict) -> list[str]:
         """
         Return list of defined filters.
 
@@ -218,10 +218,10 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
             return []
         return [fil.strip() for fil in backendOptions["Filter"].split(",") if fil.strip()]
 
-    def __getFilterOptionsFromCFG(self, logFilter):
+    def __getFilterOptionsFromCFG(self, logFilter: str) -> dict:
         """Get filter options from the configuration..
 
-        :param logFilter: filter identifier: stdout, file, f04
+        :param logFilter: filter identifier
         """
         # We have to put the import lines here to avoid a dependancy loop
         from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFilterConfig
@@ -275,7 +275,7 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         self.__enableLogsFromExternalLibs(False)
 
     @staticmethod
-    def __enableLogsFromExternalLibs(isEnabled=True):
+    def __enableLogsFromExternalLibs(isEnabled: bool = True):
         """
         Configure the root logger from 'logging' for an external library use.
         By default the root logger is configured with:
