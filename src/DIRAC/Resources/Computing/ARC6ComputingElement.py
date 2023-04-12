@@ -136,7 +136,7 @@ class ARC6ComputingElement(ARCComputingElement):
                 jobdescs = arc.JobDescriptionList()
 
                 # Get the job into the ARC way
-                xrslString, diracStamp = self._writeXRSL(executableFile)
+                xrslString, diracStamp = self._writeXRSL(executableFile, [], [])
                 self.log.debug(f"XRSL string submitted : {xrslString}")
                 self.log.debug(f"DIRAC stamp for job : {diracStamp}")
 

@@ -133,7 +133,7 @@ One has also to authorize the machine hosting the :mod:`~DIRAC.WorkloadManagemen
    Properties += GenericPilot
    Properties += FileCatalogManagement
 
-One has to specify the concerned VO in the targeted CEs, such as::
+One has to specify the concerned VO, the platform and the CPU Power in the targeted CEs, such as::
 
    <CE>
    {
@@ -141,6 +141,16 @@ One has to specify the concerned VO in the targeted CEs, such as::
          VO = <VO>
          # Required because we are on a host (not on a worker node)
          VirtualOrganization = <VO>
+         # To match compatible jobs
+         Platform = <platform>
+         Queues
+         {
+            <Queue>
+            {
+               CPUNormalizationFactor = <CPU Power value>
+            }
+         }
+
    }
 
 Finally, one has to make sure that job scheduling parameters are correctly fine-tuned. Further details in the :ref:`JobScheduling section <jobscheduling>`.

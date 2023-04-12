@@ -307,13 +307,12 @@ class AREXComputingElement(ARCComputingElement):
 
     #############################################################################
 
-    def _getArcJobID(self, executableFile, inputs, outputs, executables, delegation):
+    def _getArcJobID(self, executableFile, inputs, outputs, delegation):
         """Get an ARC JobID endpoint to upload executables and inputs.
 
         :param str executableFile: executable to submit
         :param list inputs: list of input files
         :param list outputs: list of expected output files
-        :param list executables: list of secondary executables (will be uploaded with the executable mode)
         :param str delegation: delegation ID
 
         :return: tuple containing a job ID and a stamp
@@ -323,7 +322,7 @@ class AREXComputingElement(ARCComputingElement):
         query = self._urlJoin("jobs")
 
         # Get the job into the ARC way
-        xrslString, diracStamp = self._writeXRSL(executableFile, inputs, outputs, executables)
+        xrslString, diracStamp = self._writeXRSL(executableFile, inputs, outputs)
         xrslString += delegation
         self.log.debug("XRSL string submitted", f"is {xrslString}")
         self.log.debug("DIRAC stamp for job", f"is {diracStamp}")
@@ -346,21 +345,16 @@ class AREXComputingElement(ARCComputingElement):
         arcJobID = responseJob["id"]
         return S_OK((arcJobID, diracStamp))
 
-    def _uploadJobDependencies(self, arcJobID, executableFile, inputs, executables):
+    def _uploadJobDependencies(self, arcJobID, executableFile, inputs):
         """Upload job dependencies so that the job can start.
         This includes the executables and the inputs.
 
         :param str arcJobID: ARC job ID
         :param str executableFile: executable file
         :param list inputs: inputs required by the executable file
-        :param list executables: executables require by the executable file
         """
         filesToSubmit = [executableFile]
-        filesToSubmit += executables
-        if inputs:
-            if not isinstance(inputs, list):
-                inputs = [inputs]
-            filesToSubmit += inputs
+        filesToSubmit += inputs
 
         for fileToSubmit in filesToSubmit:
             queryExecutable = self._urlJoin(os.path.join("jobs", arcJobID, "session", os.path.basename(fileToSubmit)))
@@ -377,6 +371,87 @@ class AREXComputingElement(ARCComputingElement):
 
             self.log.verbose("Input correctly uploaded", fileToSubmit)
         return S_OK()
+
+    def submitJob(self, executableFile, proxy, numberOfJobs=1, inputs=None, outputs=None):
+        """Method to submit job
+        Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
+        And none of our supported batch systems have a "-" in their name
+        """
+        result = self._checkSession()
+        if not result["OK"]:
+            self.log.error("Cannot submit jobs", result["Message"])
+            return result
+
+        self.log.verbose(f"Executable file path: {executableFile}")
+
+        # Get a "delegation" and use the same delegation for all the jobs
+        delegation = ""
+        result = self._prepareDelegation()
+        if not result["OK"]:
+            self.log.warn("Could not get a delegation", f"For CE {self.ceHost}")
+            self.log.warn("Continue without a delegation")
+        else:
+            delegation = f"\n(delegationid={result['Value']})"
+
+        if not inputs:
+            inputs = []
+        if not outputs:
+            outputs = []
+
+        # If there is a preamble, then we bundle it in an executable file
+        executables = []
+        if self.preamble:
+            executables = [executableFile]
+            executableFile = self._bundlePreamble(executableFile)
+
+        # Submit multiple jobs sequentially.
+        # Bulk submission would not be significantly faster than multiple single submission.
+        # https://www.nordugrid.org/arc/arc6/tech/rest/rest.html#job-submission-create-a-new-job
+        # Also : https://bugzilla.nordugrid.org/show_bug.cgi?id=4069
+        batchIDList = []
+        stampDict = {}
+        for _ in range(numberOfJobs):
+            result = self._getArcJobID(executableFile, inputs, outputs, delegation)
+            if not result["OK"]:
+                break
+            arcJobID, diracStamp = result["Value"]
+
+            # At this point, only the XRSL job has been submitted to AREX services
+            # Here we also upload the executable, other executable files and inputs.
+            result = self._uploadJobDependencies(arcJobID, executableFile, inputs)
+            if not result["OK"]:
+                break
+
+            jobID = self._arcToDiracID(arcJobID)
+            batchIDList.append(jobID)
+            stampDict[jobID] = diracStamp
+            self.log.debug(
+                "Successfully submitted job",
+                f"{jobID} to CE {self.ceHost}",
+            )
+
+        if batchIDList:
+            result = S_OK(batchIDList)
+            result["PilotStampDict"] = stampDict
+        else:
+            result = S_ERROR("No ID obtained from the ARC job submission")
+        return result
+
+    #############################################################################
+
+    def killJob(self, jobIDList):
+        """Kill the specified jobs
+
+        :param list jobIDList: list of DIRAC Job IDs
+        """
+        if not isinstance(jobIDList, list):
+            jobIDList = [jobIDList]
+        self.log.debug("Killing jobs", ",".join(jobIDList))
+
+        # Convert DIRAC jobs to ARC jobs
+        # DIRAC Jobs might be stored with a DIRAC stamp (":::XXXXX") that should be removed
+        jList = [self._DiracToArcID(job.split(":::")[0]) for job in jobIDList]
+        return self._killJob(jList)
 
     def _killJob(self, arcJobList):
         """Kill the specified jobs
@@ -404,78 +479,47 @@ class AREXComputingElement(ARCComputingElement):
         self.log.debug("Successfully deleted jobs")
         return S_OK()
 
-    def submitJob(self, executableFile, proxy, numberOfJobs=1, inputs=None, outputs=None):
-        """Method to submit job
-        Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
-        And none of our supported batch systems have a "-" in their name
-        """
-        result = self._checkSession()
-        if not result["OK"]:
-            self.log.error("Cannot submit jobs", result["Message"])
-            return result
-
-        self.log.verbose(f"Executable file path: {executableFile}")
-
-        # Get a "delegation" and use the same delegation for all the jobs
-        delegation = ""
-        result = self._prepareDelegation()
-        if not result["OK"]:
-            self.log.warn("Could not get a delegation", f"For CE {self.ceHost}")
-            self.log.warn("Continue without a delegation")
-        else:
-            delegation = f"\n(delegationid={result['Value']})"
-
-        # If there is a preamble, then we bundle it in an executable file
-        executables = []
-        if self.preamble:
-            executables = [executableFile]
-            executableFile = self._bundlePreamble(executableFile)
-
-        # Submit multiple jobs sequentially.
-        # Bulk submission would not be significantly faster than multiple single submission.
-        # https://www.nordugrid.org/arc/arc6/tech/rest/rest.html#job-submission-create-a-new-job
-        # Also : https://bugzilla.nordugrid.org/show_bug.cgi?id=4069
-        batchIDList = []
-        stampDict = {}
-        for _ in range(numberOfJobs):
-            result = self._getArcJobID(executableFile, inputs, outputs, executables, delegation)
-            if not result["OK"]:
-                break
-            arcJobID, diracStamp = result["Value"]
-
-            # At this point, only the XRSL job has been submitted to AREX services
-            # Here we also upload the executable, other executable files and inputs.
-            result = self._uploadJobDependencies(arcJobID, executableFile, inputs, executables)
-            if not result["OK"]:
-                break
-
-            jobID = self._arcToDiracID(arcJobID)
-            batchIDList.append(jobID)
-            stampDict[jobID] = diracStamp
-            self.log.debug(
-                "Successfully submitted job",
-                f"{jobID} to CE {self.ceHost}",
-            )
-
-        if batchIDList:
-            result = S_OK(batchIDList)
-            result["PilotStampDict"] = stampDict
-        else:
-            result = S_ERROR("No ID obtained from the ARC job submission")
-        return result
-
     #############################################################################
 
-    def killJob(self, jobIDList):
-        """Kill the specified jobs
+    def cleanJob(self, jobIDList):
+        """Clean files related to the specified jobs
 
         :param list jobIDList: list of DIRAC Job IDs
         """
-        self.log.debug("Killing jobs", ",".join(jobIDList))
+        if not isinstance(jobIDList, list):
+            jobIDList = [jobIDList]
+        self.log.debug("Cleaning jobs", ",".join(jobIDList))
+
+        # Convert DIRAC jobs to ARC jobs
+        # DIRAC Jobs might be stored with a DIRAC stamp (":::XXXXX") that should be removed
+        jList = [self._DiracToArcID(job.split(":::")[0]) for job in jobIDList]
+        return self._cleanJob(jList)
+
+    def _cleanJob(self, arcJobList):
+        """Clean files related to the specified jobs
+
+        :param list jobIDList: list of ARC Job IDs
+        """
+        result = self._checkSession()
+        if not result["OK"]:
+            self.log.error("Cannot clean jobs", result["Message"])
+            return result
 
         # List of jobs in json format for the REST query
-        jList = [self._DiracToArcID(job) for job in jobIDList]
-        return self._killJob(jList)
+        jobsJson = {"job": [{"id": job} for job in arcJobList]}
+
+        # Prepare the command
+        params = {"action": "clean"}
+        query = self._urlJoin("jobs")
+
+        # Cleaning jobs
+        result = self._request("post", query, params=params, data=json.dumps(jobsJson))
+        if not result["OK"]:
+            self.log.error("Failed to clean all these jobs.", result["Message"])
+            return S_ERROR("Failed to clean all these jobs")
+
+        self.log.debug("Successfully cleaned jobs")
+        return S_OK()
 
     #############################################################################
 
@@ -615,14 +659,10 @@ class AREXComputingElement(ARCComputingElement):
         if not isinstance(jobIDList, list):
             jobIDList = [jobIDList]
 
-        # Jobs are stored with a DIRAC stamp (":::XXXXX") appended
-        jobList = []
-        for j in jobIDList:
-            job = j.split(":::")[0]
-            jobList.append(job)
-
-        self.log.debug("Getting status of jobs:", jobList)
-        arcJobsJson = {"job": [{"id": self._DiracToArcID(job)} for job in jobList]}
+        self.log.debug("Getting status of jobs:", jobIDList)
+        # Convert DIRAC jobs to ARC jobs and encapsulate them in a dictionary for the REST query
+        # DIRAC Jobs might be stored with a DIRAC stamp (":::XXXXX") that should be removed
+        arcJobsJson = {"job": [{"id": self._DiracToArcID(job.split(":::")[0])} for job in jobIDList]}
 
         # Prepare the command
         params = {"action": "status"}
@@ -690,12 +730,8 @@ class AREXComputingElement(ARCComputingElement):
             self.log.error("Cannot get job logging info", result["Message"])
             return result
 
-        # Extract stamp from the Job ID
-        if ":::" in jobID:
-            jobID = jobID.split(":::")[0]
-
         # Prepare the command: Get output files
-        arcJob = self._DiracToArcID(jobID)
+        arcJob = self._DiracToArcID(jobID.split(":::")[0])
         query = self._urlJoin(os.path.join("jobs", arcJob, "diagnose", "errors"))
 
         # Submit the GET request to retrieve outputs
@@ -761,9 +797,9 @@ class AREXComputingElement(ARCComputingElement):
         remoteOutputs = result["Value"]
         self.log.debug("Outputs to get are", remoteOutputs)
 
-        # We assume that workingDirectory exists
         if not workingDirectory:
             if "WorkingDirectory" in self.ceParameters:
+                # We assume that workingDirectory exists
                 workingDirectory = os.path.join(self.ceParameters["WorkingDirectory"], job)
             else:
                 workingDirectory = job
