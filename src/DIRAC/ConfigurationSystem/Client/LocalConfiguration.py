@@ -311,6 +311,7 @@ class LocalConfiguration:
 
     def __initLogger(self, componentName, logSection, forceInit=False):
         gLogger.initialize(componentName, logSection, forceInit=forceInit)
+        gLogger.disableLogsFromExternalLibs()
 
         if self.__debugMode == 1:
             gLogger.setLevel("VERBOSE")
@@ -320,6 +321,7 @@ class LocalConfiguration:
         elif self.__debugMode >= 3:
             gLogger.setLevel("DEBUG")
             gLogger.showHeaders(True)
+            gLogger.enableLogsFromExternalLibs()
 
     def loadUserData(self):
         """

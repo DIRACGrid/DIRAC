@@ -36,7 +36,9 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         - update the format according to the command line argument
 
         """
-        # initialize the root logger, which turns out to be a child of root
+        # initialize the DIRAC root logger, which turns out to be a child of root
+        # it is strongly advised to use a logger with a unique and identifiable name:
+        # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
         super().__init__(name="dirac")
 
         # this line removes some useless information from log records and improves the performances
@@ -259,12 +261,20 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
     def enableLogsFromExternalLibs(self):
         """
         Enable the display of the logs coming from external libraries
+
+        .. warning::
+
+          This method should only be used for debugging purposes.
         """
         self.__enableLogsFromExternalLibs()
 
     def disableLogsFromExternalLibs(self):
         """
         Disable the display of the logs coming from external libraries
+
+        .. warning::
+
+          This method should only be used for debugging purposes.
         """
         self.__enableLogsFromExternalLibs(False)
 

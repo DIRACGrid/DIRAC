@@ -95,9 +95,6 @@ like described in :ref:`development_use_mq`, for example::
      message = result['Value']
 
 
-In order not to spam the logs, the log output of Stomp is always silence, unless the environment variable `DIRAC_DEBUG_STOMP` is set to any value.
-
-
 Message Queue nomenclature in DIRAC
 -----------------------------------
 

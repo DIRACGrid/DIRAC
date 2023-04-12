@@ -14,9 +14,6 @@ DIRAC_DEBUG_DENCODE_CALLSTACK
 DIRAC_DEBUG_M2CRYPTO
   If ``true`` or ``yes``, print a lot of SSL debug output
 
-DIRAC_DEBUG_STOMP
-  If set, the stomp library will print out debug information
-
 DIRAC_DEPRECATED_FAIL
   If set, the use of functions or objects that are marked ``@deprecated`` will fail. Useful for example in continuous
   integration tests against future versions of DIRAC

@@ -135,7 +135,6 @@ class GFAL2_StorageBase(StorageBase):
 
         dlevel = self.log.getLevel()
         if dlevel == "DEBUG":
-            gLogger.enableLogsFromExternalLibs()
             gfal2.set_verbose(gfal2.verbose_level.trace)
 
         # # gfal2 API

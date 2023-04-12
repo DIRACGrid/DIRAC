@@ -43,9 +43,6 @@ class StompMQConnector(MQConnector):
         super().__init__(parameters=parameters)
         self.connection = None
 
-        if "DIRAC_DEBUG_STOMP" in os.environ:
-            gLogger.enableLogsFromExternalLibs()
-
     def setupConnection(self, parameters=None):
         """
          Establishes a new connection to a Stomp server, e.g. RabbitMQ
