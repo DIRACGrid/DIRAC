@@ -6,7 +6,6 @@ import os
 
 from DIRAC import S_ERROR
 from DIRAC.Core.Utilities.LockRing import LockRing
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels, LogLevel
 from DIRAC.Resources.LogFilters.SensitiveDataFilter import SensitiveDataFilter
 
@@ -156,19 +155,6 @@ class Logging:
         finally:
             self._lockOptions.release()
 
-    @deprecated("Use registerBackend() instead")
-    def registerBackends(self, desiredBackends, backendOptions=None):
-        """
-        Attach a list of backends to the Logging object.
-        Convert backend names to backend class names to Backend objects and add them to the Logging object
-
-        :param desiredBackends: list of different names attaching to differents backends.
-                                 list of the possible values: ['stdout', 'stderr', 'file']
-        :param backendOptions: dictionary of different backend options. Example: FileName='/tmp/log.txt'
-        """
-        for backendName in desiredBackends:
-            self.registerBackend(backendName, backendOptions)
-
     def registerBackend(self, desiredBackend, backendOptions=None, backendFilters=None):
         """
         Attach a backend to the Logging object.
@@ -312,7 +298,6 @@ class Logging:
             return objLoader.loadObject(modulePath)
         finally:
             self._lockObjectLoader.release()
-        return S_ERROR()
 
     @staticmethod
     def getAllPossibleLevels():
