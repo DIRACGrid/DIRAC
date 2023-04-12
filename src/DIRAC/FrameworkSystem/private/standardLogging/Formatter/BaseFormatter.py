@@ -2,7 +2,7 @@
 BaseFormatter
 """
 import logging
-import sys
+import time
 
 
 class BaseFormatter(logging.Formatter):
@@ -23,6 +23,9 @@ class BaseFormatter(logging.Formatter):
         :param str fmt: log format: "%(asctime)s UTC %(name)s %(levelname)s: %(message)"
         :param str datefmt: date format: "%Y-%m-%d %H:%M:%S"
         """
+        # Initialization of the UTC time
+        # Actually, time.gmtime is equal to UTC time: it has its DST flag to 0 which means there is no clock advance
+        self.converter = time.gmtime
         super().__init__()
 
     def format(self, record):
@@ -43,7 +46,7 @@ class BaseFormatter(logging.Formatter):
 
         if record.headerIsShown:
             if record.timeStampIsShown:
-                timeStamp = "%(asctime)s UTC "
+                timeStamp = "%(asctime)s "
             if record.contextIsShown:
                 contextComponentList = ["%(componentname)s%(customname)s"]
 
@@ -63,5 +66,14 @@ class BaseFormatter(logging.Formatter):
         fmt += "%(message)s%(spacer)s%(varmessage)s"
 
         self._style._fmt = fmt  # pylint: disable=no-member
-        self.datefmt = "%Y-%m-%d %H:%M:%S"
         return super().format(record)
+
+    def formatTime(self, record, datefmt=None):
+        """:py:meth:`logging.Formatter.formatTime` with microsecond precision by default"""
+        ct = self.converter(record.created)
+        if datefmt:
+            s = time.strftime(datefmt, ct)
+        else:
+            t = time.strftime("%Y-%m-%dT%H:%M:%S", ct)
+            s = "%s,%06dZ" % (t, (record.created - int(record.created)) * 1e6)
+        return s

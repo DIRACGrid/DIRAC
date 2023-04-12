@@ -15,7 +15,7 @@ def cleaningLog(log):
     """
     Remove date and space from the log string
     """
-    log = log.split("UTC ")[-1]
+    log = log.split("Z ", 1)[-1]
     return log
 
 

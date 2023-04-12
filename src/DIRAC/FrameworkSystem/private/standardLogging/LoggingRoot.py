@@ -55,10 +55,6 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         # root Logger level is set to INFO by default
         self._logger.setLevel(LogLevels.INFO)
 
-        # initialization of the UTC time
-        # Actually, time.gmtime is equal to UTC time: it has its DST flag to 0 which means there is no clock advance
-        logging.Formatter.converter = time.gmtime
-
         # initialization of the default backend
         # use the StdoutBackend directly to avoid dependancy loop with ObjectLoader
         self._addBackend(StdoutBackend)
@@ -295,8 +291,9 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         if isEnabled:
             logging.basicConfig(
                 level=logging.DEBUG,
-                format="%(asctime)s UTC ExternalLibrary/%(name)s %(levelname)s: %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
+                format="%(asctime)s,%(msecs)03dZ ExternalLibrary/%(name)s %(levelname)s: %(message)s",
+                datefmt="%Y-%m-%dT%H:%M:%S",
             )
+            rootLogger.handlers[0].formatter.converter = time.gmtime
         else:
             rootLogger.addHandler(logging.NullHandler())

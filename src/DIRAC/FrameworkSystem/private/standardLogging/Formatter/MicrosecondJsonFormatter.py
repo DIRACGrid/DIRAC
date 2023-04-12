@@ -10,6 +10,10 @@ class MicrosecondJsonFormatter(JsonFormatter):
         Add to the list of attributes we don't want to see
         all the DIRAC spefic log formating instructions
         """
+        # Initialization of the UTC time
+        # Actually, time.gmtime is equal to UTC time: it has its DST flag to 0 which means there is no clock advance
+        self.converter = time.gmtime
+
         if "reserved_attrs" not in kwargs:
             kwargs["reserved_attrs"] = RESERVED_ATTRS + (
                 "spacer",
@@ -27,6 +31,6 @@ class MicrosecondJsonFormatter(JsonFormatter):
         if datefmt:
             s = time.strftime(datefmt, ct)
         else:
-            t = time.strftime("%Y-%m-%d %H:%M:%S", ct)
-            s = "%s,%06d" % (t, (record.created - int(record.created)) * 1e6)
+            t = time.strftime("%Y-%m-%dT%H:%M:%S", ct)
+            s = "%s,%06dZ" % (t, (record.created - int(record.created)) * 1e6)
         return s
