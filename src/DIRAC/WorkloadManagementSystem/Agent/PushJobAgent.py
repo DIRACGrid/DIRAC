@@ -373,18 +373,20 @@ class PushJobAgent(JobAgent):
 
     def _setCEDict(self, ceDict):
         """Set CEDict"""
-        # Matcher will check that ReleaseVersion match the pilot version
+        # Matcher will check that ReleaseVersion matches the pilot version
         # It is not needed in this configuration so we set ReleaseVersion as the pilot version
+        # Also, DIRACVersion should be equals to ReleaseVersion, so we modify it
         versions = self.opsHelper.getValue("Pilot/Version", [])
         if versions:
             if not isinstance(versions, list):
                 versions = [versions]
             ceDict["ReleaseVersion"] = versions[0]
+            ceDict["DIRACVersion"] = versions[0]
         project = self.opsHelper.getValue("Pilot/Project", "")
         if project:
             ceDict["ReleaseProject"] = project
 
-        # Add a remoteExecution tag, which can be used in the next stages
+        # Add a RemoteExecution entry, which can be used in the next stages
         ceDict["RemoteExecution"] = True
 
     def _checkMatchingIssues(self, jobRequest):
