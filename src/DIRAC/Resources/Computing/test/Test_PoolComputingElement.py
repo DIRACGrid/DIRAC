@@ -8,6 +8,7 @@ import time
 import pytest
 
 # sut
+from DIRAC import S_ERROR
 from DIRAC.Resources.Computing.PoolComputingElement import PoolComputingElement
 
 jobScript = """#!/usr/bin/env python
@@ -29,6 +30,15 @@ while True:
 print("End job", jobNumber, time.time())
 """
 
+badJobScript = """#!/usr/bin/env python
+
+import sys
+import time
+
+time.sleep(2)
+sys.exit(-5)
+"""
+
 
 def _stopJob(nJob):
     with open(f"stop_job_{nJob}", "w") as stopFile:
@@ -45,6 +55,10 @@ def createAndDelete():
             execFile.write(jobScript % i)
         os.chmod(f"testPoolCEJob_{i}.py", 0o755)
 
+    with open("testBadPoolCEJob.py", "w") as execFile:
+        execFile.write(badJobScript)
+    os.chmod("testBadPoolCEJob.py", 0o755)
+
     yield createAndDelete
 
     # from here on is teardown
@@ -60,6 +74,7 @@ def createAndDelete():
     for i in range(6):
         try:
             os.remove(f"testPoolCEJob_{i}.py")
+            os.remove("testBadPoolCEJob.py")
         except OSError:
             pass
 
@@ -79,6 +94,49 @@ def test_submit_and_shutdown(createAndDelete):
     assert result["OK"] is True
     assert isinstance(result["Value"], dict)
     assert list(result["Value"].values())[0]["OK"] is True
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    "script, ceSubmissionFailure, expected",
+    [
+        # The script is fine, but the InProcess submission is going to fail
+        ("testPoolCEJob_0.py", True, False),
+        # The script is wrong, but the InProcess submission will be fine
+        ("testBadPoolCEJob.py", False, False),
+    ],
+)
+def test_submitBadJobs_and_getResult(mocker, createAndDelete, script, ceSubmissionFailure, expected):
+    """Consists in testing failures during the submission process or the job execution"""
+    # Mocker configuration
+    # Only enabled if ceSubmissionFailure is True
+    proxy = None
+    if ceSubmissionFailure:
+        mocker.patch(
+            "DIRAC.Resources.Computing.ComputingElement.ComputingElement.writeProxyToFile",
+            return_value=S_ERROR("Unexpected failure"),
+        )
+        proxy = "any value to go in the branch that will fail the submission"
+
+    time.sleep(0.5)
+
+    ceParameters = {"WholeNode": True, "NumberOfProcessors": 4}
+    ce = PoolComputingElement("TestPoolCE")
+    ce.setParameters(ceParameters)
+    result = ce.submitJob(script, proxy=proxy)
+
+    # The PoolCE always return S_OK
+    # It cannot capture failures occurring during the submission or after
+    # because it is asynchronous
+    assert result["OK"] is True
+
+    # Waiting for the results of the submission/execution of the script
+    while not ce.taskResults:
+        time.sleep(0.1)
+
+    # Test the results
+    for _, result in ce.taskResults.items():
+        assert result["OK"] == expected
 
 
 def test_executeJob_wholeNode4(createAndDelete):
