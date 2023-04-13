@@ -10,43 +10,19 @@ import os
 import shlex
 import time
 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 
 class RemoteRunner:
-    def __init__(self, siteName=None, ceName=None, queueName=None):
+    def __init__(self, siteName, ceName, queueName):
         self.log = gLogger.getSubLogger("RemoteRunner")
         self._workloadSite = siteName
-        if not self._workloadSite:
-            self.log.warn("You are expected to provide a siteName in parameters from v8.0")
-            self.log.warn("Trying to get workloadSite from /LocalSite/Site...")
-            self._workloadSite = gConfig.getValue("/LocalSite/Site")
         self._workloadCE = ceName
-        if not self._workloadCE:
-            self.log.warn("You are expected to provide a ceName in parameters from v8.0")
-            self.log.warn("Trying to get workloadSite from /LocalSite/GridCE...")
-            self._workloadCE = gConfig.getValue("/LocalSite/GridCE")
         self._workloadQueue = queueName
-        if not self._workloadQueue:
-            self.log.warn("You are expected to provide a queueName in parameters from v8.0")
-            self.log.warn("Trying to get workloadSite from /LocalSite/CEQueue...")
-            self._workloadQueue = gConfig.getValue("/LocalSite/CEQueue")
-
-    @deprecated('Use gConfig.getValue("/LocalSite/RemoteExecution") instead.')
-    def is_remote_execution(self):
-        """Main method: decides whether the execution will be done locally or remotely via a CE.
-
-        This method does not really make sense: if we use RemoteRunner, it means we want to perform a remote execution.
-        Therefore, this should be checked before calling RemoteRunner by checking /LocalSite/RemoteExecution for instance.
-
-        :return: bool
-        """
-        return gConfig.getValue("/LocalSite/RemoteExecution")
 
     def execute(self, command, workingDirectory=".", numberOfProcessors=1, cleanRemoteJob=True):
         """Execute the command remotely via a CE
