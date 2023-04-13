@@ -8,7 +8,7 @@ import shutil
 import stat
 import sys
 
-from DIRAC import gLogger
+from DIRAC import gLogger, gConfig
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.WorkloadManagementSystem.Utilities.RemoteRunner import RemoteRunner
 from DIRAC.Workflow.Modules.ModuleBase import ModuleBase
@@ -83,8 +83,14 @@ class Script(ModuleBase):
         """execute the self.command (uses systemCall)"""
         failed = False
 
-        remoteRunner = RemoteRunner()
-        if remoteRunner.is_remote_execution():
+        # Check whether the execution should be done remotely
+        is_remote_execution = gConfig.getValue("/LocalSite/RemoteExecution", "false")
+        if is_remote_execution.lower() in ["true", "yes"]:
+            remoteRunner = RemoteRunner(
+                gConfig.getValue("/LocalSite/Site"),
+                gConfig.getValue("/LocalSite/GridCE"),
+                gConfig.getValue("/LocalSite/CEQueue"),
+            )
             retVal = remoteRunner.execute(self.command)
         else:
             retVal = systemCall(
