@@ -181,13 +181,12 @@ class ARCComputingElement(ComputingElement):
         ComputingElement._addCEConfigDefaults(self)
 
     #############################################################################
-    def _writeXRSL(self, executableFile, inputs=None, outputs=None, executables=None):
+    def _writeXRSL(self, executableFile, inputs, outputs):
         """Create the JDL for submission
 
         :param str executableFile: executable to wrap in a XRSL file
-        :param str/list inputs: path of the dependencies to include along with the executable
-        :param str/list outputs: path of the outputs that we want to get at the end of the execution
-        :param str/list executables: path to inputs that should have execution mode on the remote worker node
+        :param list inputs: path of the dependencies to include along with the executable
+        :param list outputs: path of the outputs that we want to get at the end of the execution
         """
         diracStamp = makeGuid()[:8]
         # Evaluate the number of processors to allocate
@@ -205,34 +204,25 @@ class ARCComputingElement(ComputingElement):
                 "xrslMPExtraString": self.xrslMPExtraString,
             }
 
-        # Files that would need execution rights on the remote worker node
-        xrslExecutables = ""
-        if executables:
-            if not isinstance(executables, list):
-                executables = [executables]
-            xrslExecutables = f"(executables={' '.join(map(os.path.basename, executables))})"
-            # Add them to the inputFiles
-            if not inputs:
-                inputs = []
-            if not isinstance(inputs, list):
-                inputs = [inputs]
-            inputs += executables
-
         # Dependencies that have to be embedded along with the executable
         xrslInputs = ""
-        if inputs:
-            if not isinstance(inputs, list):
-                inputs = [inputs]
-            for inputFile in inputs:
-                xrslInputs += f'({os.path.basename(inputFile)} "{inputFile}")'
+        executables = []
+        for inputFile in inputs:
+            inputFileBaseName = os.path.basename(inputFile)
+            if os.access(inputFile, os.X_OK):
+                # Files that would need execution rights on the remote worker node
+                executables.append(inputFileBaseName)
+            xrslInputs += f'({inputFileBaseName} "{inputFile}")'
+
+        # Executables are added to the XRSL
+        xrslExecutables = ""
+        if executables:
+            xrslExecutables = f"(executables={' '.join(executables)})"
 
         # Output files to retrieve once the execution is complete
         xrslOutputs = f'("{diracStamp}.out" "") ("{diracStamp}.err" "")'
-        if outputs:
-            if not isinstance(outputs, list):
-                outputs = [outputs]
-            for outputFile in outputs:
-                xrslOutputs += f'({outputFile} "")'
+        for outputFile in outputs:
+            xrslOutputs += f'({outputFile} "")'
 
         xrsl = """
 &(executable="{executable}")
@@ -262,6 +252,13 @@ class ARCComputingElement(ComputingElement):
     def _bundlePreamble(self, executableFile):
         """Bundle the preamble with the executable file"""
         wrapperContent = f"{self.preamble}\n./{executableFile}"
+
+        # We need to make sure the executable file can be executed by the wrapper
+        # By adding the execution mode to the file, the file will be processed as an "executable" in the XRSL
+        # This is done in _writeXRSL()
+        if not os.access(executableFile, os.X_OK):
+            os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH)
+
         return writeScript(wrapperContent, os.getcwd())
 
     #############################################################################
@@ -309,14 +306,14 @@ class ARCComputingElement(ComputingElement):
     @prepareProxyToken
     def submitJob(self, executableFile, proxy, numberOfJobs=1, inputs=None, outputs=None):
         """Method to submit job"""
+        if not inputs:
+            inputs = []
+        if not outputs:
+            outputs = []
 
         self.log.verbose(f"Executable file path: {executableFile}")
-        if not os.access(executableFile, 5):
-            os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH)
-
-        executables = None
         if self.preamble:
-            executables = [executableFile]
+            inputs.append(executableFile)
             executableFile = self._bundlePreamble(executableFile)
 
         batchIDList = []
@@ -336,9 +333,10 @@ class ARCComputingElement(ComputingElement):
             # The basic job description
             jobdescs = arc.JobDescriptionList()
             # Get the job into the ARC way
-            xrslString, diracStamp = self._writeXRSL(executableFile, inputs, outputs, executables)
+            xrslString, diracStamp = self._writeXRSL(executableFile, inputs, outputs)
             self.log.debug(f"XRSL string submitted : {xrslString}")
             self.log.debug(f"DIRAC stamp for job : {diracStamp}")
+
             # The arc bindings don't accept unicode objects in Python 2 so xrslString must be explicitly cast
             result = arc.JobDescription.Parse(str(xrslString), jobdescs)
             if not result:
