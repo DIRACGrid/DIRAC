@@ -14,7 +14,6 @@ from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
 
 class InProcessComputingElement(ComputingElement):
-    #############################################################################
     def __init__(self, ceUniqueID):
         """Standard constructor."""
         super().__init__(ceUniqueID)
@@ -25,7 +24,6 @@ class InProcessComputingElement(ComputingElement):
         self.processors = int(self.ceParameters.get("NumberOfProcessors", 1))
         self.ceParameters["MaxTotalJobs"] = 1
 
-    #############################################################################
     def submitJob(self, executableFile, proxy=None, inputs=None, **kwargs):
         """Method to submit job (overriding base method).
 
@@ -33,6 +31,7 @@ class InProcessComputingElement(ComputingElement):
                                    Normally the JobWrapperTemplate when invoked by the JobAgent.
         :param str proxy: the proxy used for running the job (the payload). It will be dumped to a file.
         :param list inputs: dependencies of executableFile
+        :return: S_OK(payload exit code) / S_ERROR() if submission issue
         """
         payloadEnv = dict(os.environ)
         payloadProxy = ""
@@ -79,34 +78,33 @@ class InProcessComputingElement(ComputingElement):
             for inputFile in inputs:
                 os.unlink(inputFile)
 
-        ret = S_OK()
-
+        # Submission issue
         if not result["OK"]:
             self.log.error("Fail to run InProcess", result["Message"])
-        elif result["Value"][0] > 128:
-            res = S_ERROR()
-            # negative exit values are returned as 256 - exit
-            res["Value"] = result["Value"][0] - 256  # yes, it's "correct"
-            self.log.warn("InProcess Job Execution Failed")
-            self.log.info("Exit status:", result["Value"])
-            if res["Value"] == -2:
-                error = "JobWrapper initialization error"
-            elif res["Value"] == -1:
-                error = "JobWrapper execution error"
+            return S_ERROR(f"Failed to run InProcess: {result['Message']}")
+
+        retCode = result["Value"][0]
+        # Submission issue
+        if retCode > 128:
+            # Negative exit values are returned as 256 - exit
+            retCodeSubmission = retCode - 256  # yes, it's "correct"
+            self.log.warn("Job Execution Failed")
+            self.log.info("Exit status:", retCode)
+            if retCodeSubmission == -2:
+                errorMessage = "JobWrapper initialization error"
+            elif retCodeSubmission == -1:
+                errorMessage = "JobWrapper execution error"
             else:
-                error = "InProcess Job Execution Failed"
-            res["Message"] = error
-            return res
-        elif result["Value"][0] > 0:
+                errorMessage = "Job Execution Failed"
+            return S_ERROR(errorMessage)
+
+        # Submission ok but payload failed
+        if retCode:
             self.log.warn("Fail in payload execution")
-            self.log.info("Exit status:", result["Value"][0])
-            ret["PayloadFailed"] = result["Value"][0]
-        else:
-            self.log.debug("InProcess CE result OK")
 
-        return ret
+        self.log.info("Exit status:", retCode)
+        return S_OK(retCode)
 
-    #############################################################################
     def getCEStatus(self):
         """Method to return information on running and waiting jobs,
         as well as number of available processors

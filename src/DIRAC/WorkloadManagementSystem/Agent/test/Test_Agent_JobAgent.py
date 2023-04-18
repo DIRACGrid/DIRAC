@@ -236,8 +236,9 @@ def test__checkMatcherInfo(mocker, matcherInfo, matcherParams, expectedResult):
     jobAgent = JobAgent("Test", "Test1")
     jobAgent.log = gLogger
     jobAgent.log.setLevel("DEBUG")
+    jobAgent.jobReport = JobReport(123)
 
-    result = jobAgent._checkMatcherInfo(matcherInfo, matcherParams, JobReport(123))
+    result = jobAgent._checkMatcherInfo(matcherInfo, matcherParams)
     assert result["OK"] == expectedResult["OK"]
     if "Value" in result:
         assert result["Value"] == expectedResult["Value"]
@@ -350,8 +351,9 @@ def test__checkInstallSoftware(mocker):
     jobAgent = JobAgent("Test", "Test1")
     jobAgent.log = gLogger
     jobAgent.log.setLevel("DEBUG")
+    jobAgent.jobReport = JobReport(123)
 
-    result = jobAgent._checkInstallSoftware(101, {}, {}, JobReport(123))
+    result = jobAgent._checkInstallSoftware(101, {}, {})
 
     assert result["OK"], result["Message"]
     assert result["Value"] == "Job has no software installation requirement"
@@ -431,6 +433,7 @@ def test__rescheduleFailedJob(mocker, mockJMInput, expected):
 
     jobAgent.log = gLogger
     jobAgent.log.setLevel("DEBUG")
+    jobAgent.jobReport = JobReport(jobID)
 
     result = jobAgent._rescheduleFailedJob(jobID, message)
     result = jobAgent._finish(result["Message"], False)

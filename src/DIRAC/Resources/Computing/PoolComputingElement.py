@@ -19,6 +19,7 @@ NumberOfProcessors:
 
 **Code Documentation**
 """
+import functools
 import os
 import concurrent.futures
 
@@ -85,6 +86,9 @@ class PoolComputingElement(ComputingElement):
 
         self.processors = int(self.ceParameters.get("NumberOfProcessors", self.processors))
         self.ceParameters["MaxTotalJobs"] = self.processors
+        # Indicates that the submission is done asynchronously
+        # The result is not immediately available
+        self.ceParameters["AsyncSubmission"] = True
         self.innerCESubmissionType = self.ceParameters.get("InnerCESubmissionType", self.innerCESubmissionType)
         return S_OK()
 
@@ -107,7 +111,7 @@ class PoolComputingElement(ComputingElement):
         :param str proxy: payload proxy
         :param list inputs: dependencies of executableFile
 
-        :return: S_OK/S_ERROR of the result of the job submission
+        :return: S_OK always. The result of the submission should be included in taskResults
         """
 
         if self.pPool is None:
@@ -115,7 +119,10 @@ class PoolComputingElement(ComputingElement):
 
         processorsForJob = self._getProcessorsForJobs(kwargs)
         if not processorsForJob:
-            return S_ERROR("Not enough processors for the job")
+            self.taskResults[self.taskID] = S_ERROR("Not enough processors for the job")
+            taskID = self.taskID
+            self.taskID += 1
+            return S_OK(taskID)
 
         # Now persisting the job limits for later use in pilot.cfg file (pilot 3 default)
         cd = ConfigurationData(loadDefaultCFG=False)
@@ -141,12 +148,15 @@ class PoolComputingElement(ComputingElement):
             if "USER" in os.environ:
                 taskKwargs["PayloadUser"] = os.environ["USER"] + f"p{str(nUser).zfill(2)}"
 
+        # Submission
         future = self.pPool.submit(executeJob, executableFile, proxy, self.taskID, inputs, **taskKwargs)
         self.processorsPerTask[future] = processorsForJob
-        self.taskID += 1
-        future.add_done_callback(self.finalizeJob)
+        future.add_done_callback(functools.partial(self.finalizeJob, self.taskID))
 
-        return S_OK()  # returning S_OK as callback will do the rest
+        taskID = self.taskID
+        self.taskID += 1
+
+        return S_OK(taskID)  # returning S_OK as callback will do the rest
 
     def _getProcessorsForJobs(self, kwargs):
         """helper function"""
@@ -187,7 +197,7 @@ class PoolComputingElement(ComputingElement):
 
         return requestedProcessors
 
-    def finalizeJob(self, future):
+    def finalizeJob(self, taskID, future):
         """Finalize the job by updating the process utilisation counters
 
         :param future: evaluating the future result
@@ -196,10 +206,10 @@ class PoolComputingElement(ComputingElement):
 
         result = future.result()  # This would be the result of the e.g. InProcess.submitJob()
         if result["OK"]:
-            self.log.info("Task %s finished successfully, %d processor(s) freed" % (future, nProc))
+            self.log.info("Task finished successfully:", f"{taskID}; {nProc} processor(s) freed")
         else:
-            self.log.error("Task failed submission", f"{future}, message: {result['Message']}")
-        self.taskResults[future] = result
+            self.log.error("Task failed submission:", f"{taskID}; message: {result['Message']}")
+        self.taskResults[taskID] = result
 
     def getCEStatus(self):
         """Method to return information on running and waiting jobs,

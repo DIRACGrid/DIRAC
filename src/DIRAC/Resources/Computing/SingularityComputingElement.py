@@ -218,17 +218,13 @@ class SingularityComputingElement(ComputingElement):
             os.mkdir(self.__workdir)
         except OSError:
             if not os.path.isdir(self.__workdir):
-                result = S_ERROR(f"Failed to create container base directory '{self.__workdir}'")
-                result["ReschedulePayload"] = True
-                return result
+                return S_ERROR(f"Failed to create container base directory '{self.__workdir}'")
             # Otherwise, directory probably just already exists...
         baseDir = None
         try:
             baseDir = tempfile.mkdtemp(prefix=f"job{jobDesc.get('jobID', 0)}_", dir=self.__workdir)
         except OSError:
-            result = S_ERROR(f"Failed to create container work directory in '{self.__workdir}'")
-            result["ReschedulePayload"] = True
-            return result
+            return S_ERROR(f"Failed to create container work directory in '{self.__workdir}'")
 
         self.log.debug(f"Use singularity workarea: {baseDir}")
         for subdir in ["home", "tmp", "var_tmp"]:
@@ -259,7 +255,6 @@ class SingularityComputingElement(ComputingElement):
             extraOptions="" if self.__installDIRACInContainer else "/tmp/pilot.cfg",
         )
         if not result["OK"]:
-            result["ReschedulePayload"] = True
             return result
         wrapperPath = result["Value"]
 
@@ -334,30 +329,23 @@ class SingularityComputingElement(ComputingElement):
                 retCode = int(fp.read())
         except (OSError, ValueError):
             # Something failed while trying to get the return code
-            result = S_ERROR("Failed to get return code from inner wrapper")
-            result["ReschedulePayload"] = True
-            return result
+            return S_ERROR("Failed to get return code from inner wrapper")
 
-        result = S_OK()
-        if retCode:
-            # This is the one case where we don't reschedule:
-            # An actual failure of the inner payload for some reason
-            result = S_ERROR("Command failed with exit code %d" % retCode)
-        return result
+        return S_OK(retCode)
 
     def submitJob(self, executableFile, proxy=None, **kwargs):
         """Start a container for a job.
         executableFile is ignored. A new wrapper suitable for running in a
         container is created from jobDesc.
+
+        :return: S_OK(payload exit code) / S_ERROR() if submission issue
         """
         rootImage = self.__root
 
         # Check that singularity is available
         if not self.__hasSingularity():
             self.log.error("Singularity is not installed on PATH.")
-            result = S_ERROR("Failed to find singularity ")
-            result["ReschedulePayload"] = True
-            return result
+            return S_ERROR("Failed to find singularity")
 
         self.log.info("Creating singularity container")
 
@@ -448,9 +436,7 @@ class SingularityComputingElement(ComputingElement):
         else:
             # if we are here is because there's no image, or it is not accessible (e.g. not on CVMFS)
             self.log.error("Singularity image to exec not found: ", rootImage)
-            result = S_ERROR("Failed to find singularity image to exec")
-            result["ReschedulePayload"] = True
-            return result
+            return S_ERROR("Failed to find singularity image to exec")
 
         self.log.debug(f"Execute singularity command: {cmd}")
         self.log.debug(f"Execute singularity env: {self.__getEnv()}")
@@ -463,9 +449,7 @@ class SingularityComputingElement(ComputingElement):
             if proxy and renewTask:
                 gThreadScheduler.removeTask(renewTask)
             self.__deleteWorkArea(baseDir)
-            result = S_ERROR("Error running singularity command")
-            result["ReschedulePayload"] = True
-            return result
+            return S_ERROR("Error running singularity command")
 
         result = self.__checkResult(tmpDir)
         if proxy and renewTask:

@@ -32,6 +32,7 @@ class SudoComputingElement(ComputingElement):
         :param str executableFile: file to execute via systemCall.
                                    Normally the JobWrapperTemplate when invoked by the JobAgent.
         :param str proxy: the proxy used for running the job (the payload). It will be dumped to a file.
+        :return: S_OK(payload exit code) / S_ERROR() if submission issue
         """
         payloadProxy = ""
         if proxy:
@@ -152,20 +153,30 @@ class SudoComputingElement(ComputingElement):
         result = shellCall(0, cmd, callbackFunction=self.sendOutput)
         self.runningJobs -= 1
         if not result["OK"]:
-            result["Value"] = (0, "", "")
-            return result
+            self.log.error("Fail to run Sudo", result["Message"])
+            return S_ERROR(f"Failed to run Sudo: {result['Message']}")
 
-        resultTuple = result["Value"]
-        status = resultTuple[0]
-        stdOutput = resultTuple[1]
-        stdError = resultTuple[2]
-        self.log.info(f"Status after the sudo execution is {str(status)}")
-        if status > 128:
-            error = S_ERROR(status)
-            error["Value"] = (status, stdOutput, stdError)
-            return error
+        retCode = result["Value"][0]
+        # Submission issue
+        if retCode > 128:
+            # Negative exit values are returned as 256 - exit
+            retCodeSubmission = retCode - 256  # yes, it's "correct"
+            self.log.warn("Job Execution Failed")
+            self.log.info("Exit status:", retCode)
+            if retCodeSubmission == -2:
+                errorMessage = "JobWrapper initialization error"
+            elif retCodeSubmission == -1:
+                errorMessage = "JobWrapper execution error"
+            else:
+                errorMessage = "Job Execution Failed"
+            return S_ERROR(errorMessage)
 
-        return result
+        # Submission ok but payload failed
+        if retCode:
+            self.log.warn("Fail in payload execution")
+
+        self.log.info("Exit status:", retCode)
+        return S_OK(retCode)
 
     #############################################################################
     def getCEStatus(self):
