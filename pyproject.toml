@@ -69,6 +69,11 @@ ignored-modules = ["MySQLdb", "numpy"]
 # avoid hangs.
 jobs = 0
 
+# This allows pylint to not display the following false error :
+# No name 'BaseModel' in module 'pydantic' (no-name-in-module)
+# Related issue: https://github.com/pydantic/pydantic/issues/1961
+extension-pkg-whitelist = ["pydantic"]
+
 [tool.pylint.typecheck]
 # List of decorators that change the signature of a decorated function.
 signature-mutators = []

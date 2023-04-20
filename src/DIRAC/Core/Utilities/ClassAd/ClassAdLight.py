@@ -287,7 +287,7 @@ class ClassAd:
                 value = None
         return value
 
-    def getAttributes(self):
+    def getAttributes(self) -> list[str]:
         """Get the list of all the attribute names
 
         :return: list of names as strings

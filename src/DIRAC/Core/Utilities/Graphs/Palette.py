@@ -31,8 +31,6 @@ job_minor_status_palette = {
     JobMinorStatus.INPUT_NOT_AVAILABLE: "#2822A6",
     JobMinorStatus.INPUT_DATA_RESOLUTION: "#FFBE94",
     JobMinorStatus.DOWNLOADING_INPUT_SANDBOX: "#586CFF",
-    JobMinorStatus.INPUT_CONTAINS_SLASHES: "#AB7800",
-    JobMinorStatus.INPUT_INCORRECT: "#6812D6",
     JobMinorStatus.JOB_WRAPPER_INITIALIZATION: "#FFFFCC",
     JobMinorStatus.JOB_EXCEEDED_WALL_CLOCK: "#FF33CC",
     JobMinorStatus.JOB_INSUFFICIENT_DISK: "#33FFCC",

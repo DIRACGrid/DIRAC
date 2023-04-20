@@ -40,7 +40,7 @@ from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping, getDIRACPlatforms
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Workflow.Utilities.Utils import getStepDefinition, addStepToWorkflow
 
@@ -81,12 +81,6 @@ class Job(API):
         self.parameterSeqs = {}
         self.wfArguments = {}
         self.parametricWFArguments = {}
-
-        # loading the function that will be used to determine the platform (it can be VO specific)
-        res = ObjectLoader().loadObject("ConfigurationSystem.Client.Helpers.Resources", "getDIRACPlatforms")
-        if not res["OK"]:
-            self.log.fatal(res["Message"])
-        self.getDIRACPlatforms = res["Value"]
 
         self.script = script
         if not script:
@@ -451,7 +445,7 @@ class Job(API):
             return self._reportError("Expected string for platform", **kwargs)
 
         if not platform.lower() == "any":
-            availablePlatforms = self.getDIRACPlatforms()
+            availablePlatforms = getDIRACPlatforms()
             if not availablePlatforms["OK"]:
                 return self._reportError("Can't check for platform", **kwargs)
             if platform in availablePlatforms["Value"]:
