@@ -118,7 +118,10 @@ class SSLTransport(BaseTransport):
 
         # We ignore the returned sockaddr because SSL.Connection.connect needs
         # a host name.
-        addrInfoList = socket.getaddrinfo(host, port, socket.AF_UNSPEC, socket.SOCK_STREAM)
+        try:
+            addrInfoList = socket.getaddrinfo(host, port, socket.AF_UNSPEC, socket.SOCK_STREAM)
+        except OSError as e:
+            return S_ERROR(f"DNS lookup failed {e!r}")
         for family, _socketType, _proto, _canonname, _socketAddress in addrInfoList:
             try:
                 self.oSocket = SSL.Connection(self.__ctx, family=family)
