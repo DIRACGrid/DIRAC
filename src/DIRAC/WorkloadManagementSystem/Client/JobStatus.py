@@ -86,7 +86,7 @@ class JobsStateMachine(StateMachine):
             RESCHEDULED: State(6, [WAITING, RECEIVED, DELETED, FAILED], defState=RESCHEDULED),
             MATCHED: State(5, [RUNNING, FAILED, RESCHEDULED, KILLED], defState=MATCHED),
             WAITING: State(4, [MATCHED, RESCHEDULED, DELETED], defState=WAITING),
-            STAGING: State(3, [WAITING, FAILED, KILLED], defState=STAGING),
+            STAGING: State(3, [CHECKING, WAITING, FAILED, KILLED], defState=STAGING),
             CHECKING: State(2, [STAGING, WAITING, RESCHEDULED, FAILED, DELETED], defState=CHECKING),
             RECEIVED: State(1, [CHECKING, WAITING, FAILED, DELETED], defState=RECEIVED),
             SUBMITTING: State(0, [RECEIVED, CHECKING, DELETED], defState=SUBMITTING),  # initial state
