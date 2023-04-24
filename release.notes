@@ -1,3 +1,46 @@
+[v8.0.19]
+
+*WorkloadManagementSystem
+
+FIX: (#6979) JobStatus: add staging to checking transition, needed by StorageManagementSystem (Stager)
+NEW: (#6968) tests for RemoteRunner
+CHANGE: (#6968) RemoteRunner can deal with MP applications, clean job outputs and process more applications
+FIX: (#6968) Modify the DIRACVersion in the PushJobAgent
+FIX: (#6938) Watchdog fix: always report correct types
+
+*Core
+
+FIX: (#6975) retry upon DNS lookup error
+FIX: (#6934) protection for opensearch_dsl being merged in opensearchpy
+
+*Resources
+
+NEW: (#6968) cleanJob() in AREX
+CHANGE: (#6968) executables from inputs are passed as executables in the XRSL in ARC and AREX
+NEW: (#6882) unit tests for IdProviders
+
+*docs
+
+CHANGE: (#6968) more details in the "supercomputers" section
+
+*tests
+
+CHANGE: (#6946) Integration tests: upped Opensearch version to 2.1.0
+NEW: (#6882) integration tests for IdProviders
+
+PR for fixing dead link in doc (monitoring part)
+FIX: (#6942) change urls for WMS and Logs dashboards
+PR for adding Dirac side code related to https://github.com/DIRACGrid/WebAppDIRAC/pull/729/commits
+CHANGE: (#6941) Add getTokensByUserID method and make it compliant with ProxyManager code
+
+*Integration tests
+
+FIX: (#6940) Make error nicer when the IAM docker instance is not working properly
+
+*Tornado
+
+FIX: (#6932) do not use activityMonitor in TornadoREST
+
 [v8.0.18]
 
 *Core
