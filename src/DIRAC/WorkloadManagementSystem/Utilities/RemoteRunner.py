@@ -37,7 +37,7 @@ class RemoteRunner:
             self.log.warn("Trying to get workloadSite from /LocalSite/CEQueue...")
             self._workloadQueue = gConfig.getValue("/LocalSite/CEQueue")
 
-    @deprecated('Use gConfig.getValue("/LocalSite/RemoteExecution") instead.')
+    @deprecated('Use gConfig.getValue("/LocalSite/RemoteExecution", False) instead.')
     def is_remote_execution(self):
         """Main method: decides whether the execution will be done locally or remotely via a CE.
 
@@ -46,7 +46,7 @@ class RemoteRunner:
 
         :return: bool
         """
-        return gConfig.getValue("/LocalSite/RemoteExecution")
+        return gConfig.getValue("/LocalSite/RemoteExecution", False)
 
     def execute(self, command, workingDirectory=".", numberOfProcessors=1, cleanRemoteJob=True):
         """Execute the command remotely via a CE
