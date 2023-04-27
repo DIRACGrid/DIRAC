@@ -276,14 +276,14 @@ class ARCComputingElement(ComputingElement):
         # Modifying the ARCLogLevel of an ARCCE instance would impact all existing instances within a same process.
         logLevel = self.ceParameters.get("ARCLogLevel", "")
         if logLevel:
-            arc.Logger_getRootLogger().removeDestinations()
+            arc.Logger.getRootLogger().removeDestinations()
             if logLevel not in self._arcLevels:
                 self.log.warn("ARCLogLevel input is not known:", "%s not in %s" % (logLevel, self._arcLevels))
             else:
                 logstdout = arc.LogStream(sys.stdout)
                 logstdout.setFormat(arc.ShortFormat)
-                arc.Logger_getRootLogger().addDestination(logstdout)
-                arc.Logger_getRootLogger().setThreshold(getattr(arc, logLevel))
+                arc.Logger.getRootLogger().addDestination(logstdout)
+                arc.Logger.getRootLogger().setThreshold(getattr(arc, logLevel))
 
         return S_OK()
 
