@@ -200,7 +200,7 @@ class SErrorException(Exception):
         self.result = cast(DErrorReturnType, result)
 
 
-def returnValueOrRaise(result: DReturnType[T]) -> T:
+def returnValueOrRaise(result: DReturnType[T], *, errorCode: int = 0) -> T:
     """Unwrap an S_OK/S_ERROR response into a value or Exception
 
     This method assists with using exceptions in DIRAC code by raising
@@ -217,7 +217,7 @@ def returnValueOrRaise(result: DReturnType[T]) -> T:
         if "ExecInfo" in result:
             raise result["ExecInfo"][0]
         else:
-            raise SErrorException(result)
+            raise SErrorException(result, errorCode)
     return result["Value"]
 
 
