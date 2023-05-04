@@ -255,9 +255,10 @@ CERT_ATTRS = {
     },
 }
 
+# see src/DIRAC/Core/Security/test/certs/voms/README
 VOMS_PROXY_ATTR = {
-    "notBefore": datetime(2018, 10, 23, 9, 11, 44),
-    "notAfter": datetime(2024, 7, 6, 17, 11, 44),
+    "notBefore": datetime(2023, 4, 28, 13, 54, 37),
+    "notAfter": datetime(2029, 1, 9, 21, 54, 37),
     "fqan": ["/fakevo/Role=user/Capability=NULL"],
     "vo": "fakevo",
     "subject": "/O=Dirac Computing/O=CERN/CN=MrUser",
