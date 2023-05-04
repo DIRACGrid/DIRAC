@@ -391,9 +391,8 @@ class AREXComputingElement(ARCComputingElement):
             outputs = []
 
         # If there is a preamble, then we bundle it in an executable file
-        executables = []
         if self.preamble:
-            executables = [executableFile]
+            inputs.append(executableFile)
             executableFile = self._bundlePreamble(executableFile)
 
         # Submit multiple jobs sequentially.
