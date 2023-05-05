@@ -12,6 +12,7 @@ import time
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
@@ -62,7 +63,7 @@ class RemoteRunner:
         # Check whether CE parameters are set
         result = self._checkParameters()
         if not result["OK"]:
-            result["Value"] = (-1, "", result["Message"])
+            result["Errno"] = DErrno.ESECTION
             return result
         self.log.verbose(
             "The command will be sent to",
@@ -72,7 +73,7 @@ class RemoteRunner:
         # Set up Application Queue
         result = self._setUpWorkloadCE(numberOfProcessors)
         if not result["OK"]:
-            result["Value"] = (-1, "", result["Message"])
+            result["Errno"] = DErrno.ERESUNA
             return result
         workloadCE = result["Value"]
         self.log.debug("The CE interface has been set up")
@@ -92,7 +93,7 @@ class RemoteRunner:
         # Submit the command as a job
         result = workloadCE.submitJob(executable, workloadCE.proxy, inputs=inputs, outputs=outputs)
         if not result["OK"]:
-            result["Value"] = (-1, "", result["Message"])
+            result["Errno"] = DErrno.EWMSSUBM
             return result
         jobID = result["Value"][0]
         stamp = result["PilotStampDict"][jobID]
@@ -103,7 +104,7 @@ class RemoteRunner:
             time.sleep(120)
             result = workloadCE.getJobStatus([jobID])
             if not result["OK"]:
-                result["Value"] = (-1, "", result["Message"])
+                result["Errno"] = DErrno.EWMSSTATUS
                 return result
             jobStatus = result["Value"][jobID]
         self.log.verbose("The final status of the application/script is: ", jobStatus)
@@ -111,16 +112,15 @@ class RemoteRunner:
         # Get job outputs
         result = workloadCE.getJobOutput(f"{jobID}:::{stamp}", os.path.abspath("."))
         if not result["OK"]:
-            result["Value"] = (-1, "", result["Message"])
+            result["Errno"] = DErrno.EWMSJMAN
             return result
         output, error = result["Value"]
 
-        # Clean job on the remote resource
+        # Clean job in the remote resource
         if cleanRemoteJob:
             result = workloadCE.cleanJob(jobID)
             if not result["OK"]:
-                result["Value"] = (-1, "", result["Message"])
-                return result
+                self.log.warn("Failed to clean the output remotely", result["Message"])
 
         commandStatus = {"Done": 0, "Failed": -1, "Killed": -2}
         return S_OK((commandStatus[jobStatus], output, error))
