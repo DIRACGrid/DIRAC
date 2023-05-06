@@ -139,7 +139,7 @@ def checkAndPrepareJob(jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup
     return S_OK()
 
 
-def createJDLWithInitialStatus(classAdJob, classAdReq, jdl2DBParameters, jobAttrs, initialStatus, initialMinorStatus):
+def createJDLWithInitialStatus(classAdJob, classAdReq, jdl2DBParameters, jobAttrs, initialStatus, initialMinorStatus, *, modern=False):
     priority = classAdJob.getAttributeInt("Priority")
     if priority is None:
         priority = 0
@@ -158,7 +158,7 @@ def createJDLWithInitialStatus(classAdJob, classAdReq, jdl2DBParameters, jobAttr
         else:
             jobAttrs["Site"] = jdlValue
 
-    jobAttrs["VerifiedFlag"] = "True"
+    jobAttrs["VerifiedFlag"] = True if modern else "True"
 
     jobAttrs["Status"] = initialStatus
 
