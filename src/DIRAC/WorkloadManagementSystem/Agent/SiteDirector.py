@@ -1044,6 +1044,10 @@ class SiteDirector(AgentModule):
         # SiteName
         pilotOptions.append(f"-n {queueDict['Site']}")
 
+        # Generic Options
+        for genericOption in queueDict.get("GenericOptions", "").split(","):
+            pilotOptions.append(f"-o {genericOption.strip()}")
+
         if "SharedArea" in queueDict:
             pilotOptions.append(f"-o '/LocalSite/SharedArea={queueDict['SharedArea']}'")
 
