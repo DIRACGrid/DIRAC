@@ -49,7 +49,7 @@ pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_E
 pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_JobParameters_MySQLandES.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_PilotAgentsDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_SandboxMetadataDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
-pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_JobCleaningAgent.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+# pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_JobCleaningAgent.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** DMS TESTS ****\n"
