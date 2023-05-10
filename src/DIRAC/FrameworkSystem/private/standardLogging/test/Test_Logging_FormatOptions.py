@@ -135,21 +135,21 @@ def test_showFormatOptionsgLogger(
     gLogger.notice(msg)
     logValue = capturedBackend.getvalue()
     # check that timestamp is available if it has to be available
-    assert ("UTC" in logValue) == isTimeStampAvailable
+    assert ("Z " in logValue) == isTimeStampAvailable
     logstring = cleaningLog(logValue)
     capturedBackend.truncate(0)
     capturedBackend.seek(0)
 
     log.notice(msg)
     logValue = capturedBackend.getvalue()
-    assert ("UTC" in logValue) == isTimeStampAvailable
+    assert ("Z " in logValue) == isTimeStampAvailable
     logstring += cleaningLog(logValue)
     capturedBackend.truncate(0)
     capturedBackend.seek(0)
 
     sublog.notice(msg)
     logValue = capturedBackend.getvalue()
-    assert ("UTC" in logValue) == isTimeStampAvailable
+    assert ("Z " in logValue) == isTimeStampAvailable
     logstring += cleaningLog(logValue)
     capturedBackend.truncate(0)
     capturedBackend.seek(0)

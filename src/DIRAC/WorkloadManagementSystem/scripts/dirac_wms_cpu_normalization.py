@@ -49,9 +49,6 @@ def main():
 
     gLogger.info("Computing benchmark measurements on", "%d processor(s)..." % numberOfProcessors)
 
-    # we want to get the logs coming from db12
-    gLogger.enableLogsFromExternalLibs()
-
     # multiprocessor allocations generally have a CPU Power lower than single core one.
     # in order to avoid having wrong estimations, we run multiple copies of the benchmark simultaneously
     result = multiple_dirac_benchmark(numberOfProcessors)

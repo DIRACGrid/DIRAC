@@ -1,12 +1,12 @@
 """
 Logging
 """
+from __future__ import annotations
 import logging
 import os
 
 from DIRAC import S_ERROR
 from DIRAC.Core.Utilities.LockRing import LockRing
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels, LogLevel
 from DIRAC.Resources.LogFilters.SensitiveDataFilter import SensitiveDataFilter
 
@@ -30,7 +30,7 @@ class Logging:
     # lock the configuration of the Logging
     _lockConfig = _lockRing.getLock("config")
 
-    def __init__(self, father=None, name=""):
+    def __init__(self, father: Logging | None = None, name: str = ""):
         """
         Initialization of the Logging object. By default, 'name' is empty,
         because getChild only accepts string and the first empty string corresponds to the root logger.
@@ -94,7 +94,7 @@ class Logging:
         # lockObjectLoader to protect the ObjectLoader singleton
         self._lockObjectLoader = self._lockRing.getLock("objectLoader")
 
-    def showHeaders(self, yesno=True):
+    def showHeaders(self, yesno: bool = True):
         """
         Depending on the value, display or not the prefix of the message.
 
@@ -102,7 +102,7 @@ class Logging:
         """
         self._setOption("headerIsShown", yesno)
 
-    def showThreadIDs(self, yesno=True):
+    def showThreadIDs(self, yesno: bool = True):
         """
         Depending on the value, display or not the thread ID.
         Make sure to enable the headers: showHeaders(True) before
@@ -111,7 +111,7 @@ class Logging:
         """
         self._setOption("threadIDIsShown", yesno)
 
-    def showTimeStamps(self, yesno=True):
+    def showTimeStamps(self, yesno: bool = True):
         """
         Depending on the value, display or not the timestamp of the message.
         Make sure to enable the headers: showHeaders(True) before
@@ -120,7 +120,7 @@ class Logging:
         """
         self._setOption("timeStampIsShown", yesno)
 
-    def showContexts(self, yesno=True):
+    def showContexts(self, yesno: bool = True):
         """
         Depending on the value, display or not the context of the message.
         Make sure to enable the headers: showHeaders(True) before
@@ -129,7 +129,7 @@ class Logging:
         """
         self._setOption("contextIsShown", yesno)
 
-    def _setOption(self, optionName, value, directCall=True):
+    def _setOption(self, optionName: str, value: bool, directCall: bool = True):
         """
         Depending on the value, modify the value of the option and propagate the option to the children.
         The options of the children will be updated if they were not modified before by a developer.
@@ -156,20 +156,9 @@ class Logging:
         finally:
             self._lockOptions.release()
 
-    @deprecated("Use registerBackend() instead")
-    def registerBackends(self, desiredBackends, backendOptions=None):
-        """
-        Attach a list of backends to the Logging object.
-        Convert backend names to backend class names to Backend objects and add them to the Logging object
-
-        :param desiredBackends: list of different names attaching to differents backends.
-                                 list of the possible values: ['stdout', 'stderr', 'file']
-        :param backendOptions: dictionary of different backend options. Example: FileName='/tmp/log.txt'
-        """
-        for backendName in desiredBackends:
-            self.registerBackend(backendName, backendOptions)
-
-    def registerBackend(self, desiredBackend, backendOptions=None, backendFilters=None):
+    def registerBackend(
+        self, desiredBackend: str, backendOptions: dict | None = None, backendFilters: dict | None = None
+    ) -> bool:
         """
         Attach a backend to the Logging object.
         Convert backend name to backend class name to a Backend object and add it to the Logging object
@@ -198,7 +187,7 @@ class Logging:
         self._addBackend(_class["Value"], backendOptions, filterInstances)
         return True
 
-    def _addBackend(self, backendType, backendOptions=None, backendFilters=None):
+    def _addBackend(self, backendType, backendOptions: dict | None = None, backendFilters: list | None = None):
         """
         Attach a Backend object to the Logging object.
 
@@ -219,7 +208,7 @@ class Logging:
             self._lockLevel.release()
             self._lockOptions.release()
 
-    def _generateFilter(self, filterType, filterOptions=None):
+    def _generateFilter(self, filterType: str, filterOptions: dict | None = None):
         """
         Create a filter and add it to the handler of the backend.
 
@@ -232,7 +221,7 @@ class Logging:
             return None
         return _class["Value"](filterOptions)
 
-    def setLevel(self, levelName):
+    def setLevel(self, levelName: str) -> bool:
         """
         Check if the level name exists and set it.
 
@@ -248,13 +237,13 @@ class Logging:
             return True
         return False
 
-    def getLevel(self):
+    def getLevel(self) -> str:
         """
         :return: the name of the level
         """
         return LogLevels.getLevel(self._logger.getEffectiveLevel())
 
-    def shown(self, levelName):
+    def shown(self, levelName: str) -> bool:
         """
         Determine whether messages with a certain level will be displayed.
 
@@ -273,19 +262,19 @@ class Logging:
             self._lockLevel.release()
 
     @classmethod
-    def getName(cls):
+    def getName(cls) -> str:
         """
         :return: "system name/component name"
         """
         return cls._componentName
 
-    def getSubName(self):
+    def getSubName(self) -> str:
         """
         :return: the name of the logger
         """
         return self.name
 
-    def getDisplayOptions(self):
+    def getDisplayOptions(self) -> dict[str, bool]:
         """
         :return: the dictionary of the display options and their values. Must not be redefined
         """
@@ -298,7 +287,7 @@ class Logging:
         finally:
             self._lockOptions.release()
 
-    def __loadLogClass(self, modulePath):
+    def __loadLogClass(self, modulePath: str):
         """Load class thread-safe."""
         # import ObjectLoader here to avoid a dependancy loop
         from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -312,58 +301,57 @@ class Logging:
             return objLoader.loadObject(modulePath)
         finally:
             self._lockObjectLoader.release()
-        return S_ERROR()
 
     @staticmethod
-    def getAllPossibleLevels():
+    def getAllPossibleLevels() -> list[str]:
         """
         :return: a list of all levels available
         """
         return LogLevels.getLevelNames()
 
-    def always(self, sMsg, sVarMsg=""):
+    def always(self, sMsg: str, sVarMsg: str = "") -> bool:
         """
         Always level
         """
         return self._createLogRecord(LogLevels.ALWAYS, sMsg, sVarMsg)
 
-    def notice(self, sMsg, sVarMsg=""):
+    def notice(self, sMsg: str, sVarMsg: str = "") -> bool:
         """
         Notice level
         """
         return self._createLogRecord(LogLevels.NOTICE, sMsg, sVarMsg)
 
-    def info(self, sMsg, sVarMsg=""):
+    def info(self, sMsg: str, sVarMsg: str = "") -> bool:
         """
         Info level
         """
         return self._createLogRecord(LogLevels.INFO, sMsg, sVarMsg)
 
-    def verbose(self, sMsg, sVarMsg=""):
+    def verbose(self, sMsg: str, sVarMsg: str = "") -> bool:
         """
         Verbose level
         """
         return self._createLogRecord(LogLevels.VERBOSE, sMsg, sVarMsg)
 
-    def debug(self, sMsg, sVarMsg=""):
+    def debug(self, sMsg: str, sVarMsg: str = "") -> bool:
         """
         Debug level
         """
         return self._createLogRecord(LogLevels.DEBUG, sMsg, sVarMsg)
 
-    def warn(self, sMsg, sVarMsg=""):
+    def warn(self, sMsg: str, sVarMsg: str = "") -> bool:
         """
         Warn
         """
         return self._createLogRecord(LogLevels.WARN, sMsg, sVarMsg)
 
-    def error(self, sMsg, sVarMsg=""):
+    def error(self, sMsg: str, sVarMsg: str = "") -> bool:
         """
         Error level
         """
         return self._createLogRecord(LogLevels.ERROR, sMsg, sVarMsg)
 
-    def exception(self, sMsg="", sVarMsg="", lException=False, lExcInfo=False):
+    def exception(self, sMsg: str = "", sVarMsg: str = "", lException: bool = False, lExcInfo: bool = False) -> bool:
         """
         Exception level
         """
@@ -371,13 +359,15 @@ class Logging:
         _ = lExcInfo
         return self._createLogRecord(LogLevels.ERROR, sMsg, sVarMsg, exc_info=True)
 
-    def fatal(self, sMsg, sVarMsg=""):
+    def fatal(self, sMsg: str, sVarMsg: str = "") -> bool:
         """
         Fatal level
         """
         return self._createLogRecord(LogLevels.FATAL, sMsg, sVarMsg)
 
-    def _createLogRecord(self, level, sMsg, sVarMsg, exc_info=False, local_context=None):
+    def _createLogRecord(
+        self, level: int, sMsg: str, sVarMsg: str, exc_info: bool = False, local_context: dict | None = None
+    ) -> bool:
         """
         Create a log record according to the level of the message.
 
@@ -425,7 +415,7 @@ class Logging:
         finally:
             self._lockLevel.release()
 
-    def showStack(self):
+    def showStack(self) -> bool:
         """
         Display a debug message without any content.
 
@@ -433,7 +423,7 @@ class Logging:
         """
         return self.debug("")
 
-    def getSubLogger(self, subName):
+    def getSubLogger(self, subName: str) -> Logging:
         """
         Create a new Logging object, child of this Logging, if it does not exists.
 
@@ -474,7 +464,7 @@ class Logging:
         (see https://github.com/DIRACGrid/DIRAC/issues/5280)
         """
 
-        def __init__(self, logger, extra):
+        def __init__(self, logger: Logging, extra: dict):
             """
             :param logger: :py:class:`Logging` object on which to be based
             :param extra: dictionary of extra information to be passed
@@ -483,7 +473,7 @@ class Logging:
             self.logger = logger
             self.extra = extra
 
-        def always(self, sMsg, sVarMsg=""):
+        def always(self, sMsg: str, sVarMsg: str = "") -> bool:
             """
             Always level
             """
@@ -491,7 +481,7 @@ class Logging:
                 LogLevels.ALWAYS, sMsg, sVarMsg, local_context=self.extra
             )
 
-        def notice(self, sMsg, sVarMsg=""):
+        def notice(self, sMsg: str, sVarMsg: str = "") -> bool:
             """
             Notice level
             """
@@ -499,7 +489,7 @@ class Logging:
                 LogLevels.NOTICE, sMsg, sVarMsg, local_context=self.extra
             )
 
-        def info(self, sMsg, sVarMsg=""):
+        def info(self, sMsg: str, sVarMsg: str = "") -> bool:
             """
             Info level
             """
@@ -507,7 +497,7 @@ class Logging:
                 LogLevels.INFO, sMsg, sVarMsg, local_context=self.extra
             )
 
-        def verbose(self, sMsg, sVarMsg=""):
+        def verbose(self, sMsg: str, sVarMsg: str = "") -> bool:
             """
             Verbose level
             """
@@ -515,7 +505,7 @@ class Logging:
                 LogLevels.VERBOSE, sMsg, sVarMsg, local_context=self.extra
             )
 
-        def debug(self, sMsg, sVarMsg=""):
+        def debug(self, sMsg: str, sVarMsg: str = "") -> bool:
             """
             Debug level
             """
@@ -523,7 +513,7 @@ class Logging:
                 LogLevels.DEBUG, sMsg, sVarMsg, local_context=self.extra
             )
 
-        def warn(self, sMsg, sVarMsg=""):
+        def warn(self, sMsg: str, sVarMsg: str = "") -> bool:
             """
             Warn
             """
@@ -531,7 +521,7 @@ class Logging:
                 LogLevels.WARN, sMsg, sVarMsg, local_context=self.extra
             )
 
-        def error(self, sMsg, sVarMsg=""):
+        def error(self, sMsg: str, sVarMsg: str = "") -> bool:
             """
             Error level
             """
@@ -539,7 +529,9 @@ class Logging:
                 LogLevels.ERROR, sMsg, sVarMsg, local_context=self.extra
             )
 
-        def exception(self, sMsg="", sVarMsg="", lException=False, lExcInfo=False):
+        def exception(
+            self, sMsg: str = "", sVarMsg: str = "", lException: bool = False, lExcInfo: bool = False
+        ) -> bool:
             """
             Exception level
             """
@@ -549,7 +541,7 @@ class Logging:
                 LogLevels.ERROR, sMsg, sVarMsg, exc_info=True, local_context=self.extra
             )
 
-        def fatal(self, sMsg, sVarMsg=""):
+        def fatal(self, sMsg: str, sVarMsg: str = "") -> bool:
             """
             Fatal level
             """
@@ -557,7 +549,7 @@ class Logging:
                 LogLevels.FATAL, sMsg, sVarMsg, local_context=self.extra
             )
 
-    def getLocalSubLogger(self, subName):
+    def getLocalSubLogger(self, subName: str) -> Logging.LocalSubLogger:
         """
         Create a subLogger which is meant to have very short lifetime,
         (e.g. when you want to add the jobID in the name)

@@ -36,7 +36,9 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         - update the format according to the command line argument
 
         """
-        # initialize the root logger, which turns out to be a child of root
+        # initialize the DIRAC root logger, which turns out to be a child of root
+        # it is strongly advised to use a logger with a unique and identifiable name:
+        # https://docs.python.org/3/howto/logging.html#configuring-logging-for-a-library
         super().__init__(name="dirac")
 
         # this line removes some useless information from log records and improves the performances
@@ -53,10 +55,6 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         # root Logger level is set to INFO by default
         self._logger.setLevel(LogLevels.INFO)
 
-        # initialization of the UTC time
-        # Actually, time.gmtime is equal to UTC time: it has its DST flag to 0 which means there is no clock advance
-        logging.Formatter.converter = time.gmtime
-
         # initialization of the default backend
         # use the StdoutBackend directly to avoid dependancy loop with ObjectLoader
         self._addBackend(StdoutBackend)
@@ -64,7 +62,7 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         # configuration of the level and update the format
         self.__configureLevel()
 
-    def initialize(self, systemName, cfgPath, forceInit=False):
+    def initialize(self, systemName: str, cfgPath: str, forceInit: bool = False):
         """
         Configure the root Logging.
         It can be possible to:
@@ -124,7 +122,7 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         finally:
             self._lockConfig.release()
 
-    def __getLogLevelFromCFG(self, cfgPath):
+    def __getLogLevelFromCFG(self, cfgPath: str) -> str:
         """
         Get the logging level from the cfg, following this order:
 
@@ -155,7 +153,7 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
 
         return logLevel
 
-    def __getBackendsFromCFG(self, cfgPath):
+    def __getBackendsFromCFG(self, cfgPath: str) -> list[str]:
         """
         Get backends from the configuration and register them in LoggingRoot.
         This is the new way to get the backends providing a general configuration.
@@ -186,7 +184,7 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
 
         return backends
 
-    def __getBackendOptionsFromCFG(self, cfgPath, backend):
+    def __getBackendOptionsFromCFG(self, cfgPath: str, backend: str) -> dict:
         """
         Get backend options from the configuration.
 
@@ -210,7 +208,7 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
 
         return backendOptions
 
-    def __getFilterList(self, backendOptions):
+    def __getFilterList(self, backendOptions: dict) -> list[str]:
         """
         Return list of defined filters.
 
@@ -220,10 +218,10 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
             return []
         return [fil.strip() for fil in backendOptions["Filter"].split(",") if fil.strip()]
 
-    def __getFilterOptionsFromCFG(self, logFilter):
+    def __getFilterOptionsFromCFG(self, logFilter: str) -> dict:
         """Get filter options from the configuration..
 
-        :param logFilter: filter identifier: stdout, file, f04
+        :param logFilter: filter identifier
         """
         # We have to put the import lines here to avoid a dependancy loop
         from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFilterConfig
@@ -259,17 +257,25 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
     def enableLogsFromExternalLibs(self):
         """
         Enable the display of the logs coming from external libraries
+
+        .. warning::
+
+          This method should only be used for debugging purposes.
         """
         self.__enableLogsFromExternalLibs()
 
     def disableLogsFromExternalLibs(self):
         """
         Disable the display of the logs coming from external libraries
+
+        .. warning::
+
+          This method should only be used for debugging purposes.
         """
         self.__enableLogsFromExternalLibs(False)
 
     @staticmethod
-    def __enableLogsFromExternalLibs(isEnabled=True):
+    def __enableLogsFromExternalLibs(isEnabled: bool = True):
         """
         Configure the root logger from 'logging' for an external library use.
         By default the root logger is configured with:
@@ -285,8 +291,9 @@ class LoggingRoot(Logging, metaclass=DIRACSingleton):
         if isEnabled:
             logging.basicConfig(
                 level=logging.DEBUG,
-                format="%(asctime)s UTC ExternalLibrary/%(name)s %(levelname)s: %(message)s",
-                datefmt="%Y-%m-%d %H:%M:%S",
+                format="%(asctime)s,%(msecs)03dZ ExternalLibrary/%(name)s %(levelname)s: %(message)s",
+                datefmt="%Y-%m-%dT%H:%M:%S",
             )
+            rootLogger.handlers[0].formatter.converter = time.gmtime
         else:
             rootLogger.addHandler(logging.NullHandler())
