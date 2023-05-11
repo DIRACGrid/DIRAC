@@ -165,8 +165,8 @@ def destroy():
     typer.secho("Shutting down and removing containers", err=True, fg=c.GREEN)
     with _gen_docker_compose(DEFAULT_MODULES) as docker_compose_fn:
         os.execvpe(
-            "docker-compose",
-            ["docker-compose", "-f", docker_compose_fn, "down", "--remove-orphans", "-t", "0"],
+            "docker",
+            ["docker", "compose", "-f", docker_compose_fn, "down", "--remove-orphans", "-t", "0"],
             _make_env({}),
         )
 
@@ -207,10 +207,10 @@ def prepare_environment(
     server_config = _make_config(modules, server_flags, release_var, editable)
     client_config = _make_config(modules, client_flags, release_var, editable)
 
-    typer.secho("Running docker-compose to create containers", fg=c.GREEN)
+    typer.secho("Running docker compose to create containers", fg=c.GREEN)
     with _gen_docker_compose(modules) as docker_compose_fn:
         subprocess.run(
-            ["docker-compose", "-f", docker_compose_fn, "up", "-d"],
+            ["docker", "compose", "-f", docker_compose_fn, "up", "-d"],
             check=True,
             env=docker_compose_env,
         )
@@ -503,7 +503,7 @@ class TestExit(typer.Exit):
 
 @contextmanager
 def _gen_docker_compose(modules):
-    # Load the docker-compose configuration and mount the necessary volumes
+    # Load the docker compose configuration and mount the necessary volumes
     input_fn = Path(__file__).parent / "tests/CI/docker-compose.yml"
     docker_compose = yaml.safe_load(input_fn.read_text())
     volumes = [f"{path}:/home/dirac/LocalRepo/ALTERNATIVE_MODULES/{name}" for name, path in modules.items()]
@@ -532,7 +532,7 @@ def _gen_docker_compose(modules):
 def _check_containers_running(*, is_up=True):
     with _gen_docker_compose(DEFAULT_MODULES) as docker_compose_fn:
         running_containers = subprocess.run(
-            ["docker-compose", "-f", docker_compose_fn, "ps", "-q", "-a"],
+            ["docker", "compose", "-f", docker_compose_fn, "ps", "-q", "-a"],
             stdout=subprocess.PIPE,
             env=_make_env({}),
             check=True,
