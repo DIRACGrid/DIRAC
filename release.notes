@@ -1,3 +1,23 @@
+[v8.0.20]
+
+*RequestManagementSystem
+
+FIX: (#7011) fix the monitoring of Operations not yet entered into the DB
+
+*WorkloadManagementSystem
+
+NEW: (#7005) add the possibility of adding generic options for running the pilots
+
+*WorkloadManagement
+
+FIX: (#6998) return specific exit code in RemoteRunner in case of failure
+FIX: (#6985) Getting the value of /LocalSite/RemoteExecution
+
+*Resources
+
+FIX: (#6997) ARCLogLevel
+FIX: (#6989) remove executables definition from AREXCE.submitJob()
+
 [v8.0.19]
 
 *WorkloadManagementSystem
