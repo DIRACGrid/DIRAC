@@ -291,8 +291,8 @@ class RequestTask:
                                 "host": Network.getFQDN(),
                                 "objectType": "Operation",
                                 "operationType": pluginName,
-                                "objectID": operation.OperationID,
-                                "parentID": operation.RequestID,
+                                "objectID": getattr(operation, "OperationID", 0),
+                                "parentID": getattr(operation, "RequestID", 0),
                                 "status": "Attempted",
                                 "nbObject": 1,
                             }
@@ -313,8 +313,8 @@ class RequestTask:
                                     "host": Network.getFQDN(),
                                     "objectType": "Operation",
                                     "operationType": pluginName,
-                                    "objectID": operation.OperationID,
-                                    "parentID": operation.RequestID,
+                                    "objectID": getattr(operation, "OperationID", 0),
+                                    "parentID": getattr(operation, "RequestID", 0),
                                     "status": "Failed",
                                     "nbObject": 1,
                                 }
@@ -325,7 +325,7 @@ class RequestTask:
                                 "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
                                 "host": Network.getFQDN(),
                                 "objectType": "Request",
-                                "objectID": operation.RequestID,
+                                "objectID": getattr(operation, "RequestID", 0),
                                 "status": "Failed",
                                 "nbObject": 1,
                             }
@@ -347,7 +347,10 @@ class RequestTask:
                             if operation.Status != "Failed":
                                 operation.Status = "Failed"
                             self.request.Error = "Job no longer exists"
-            except Exception as error:
+            except Exception as e:
+                # We can't do except Exception as error
+                # because it masks the local variable
+                error = repr(e)
                 self.log.exception("hit by exception:", error)
                 if pluginName:
                     if self.rmsMonitoring:
@@ -357,8 +360,8 @@ class RequestTask:
                                 "host": Network.getFQDN(),
                                 "objectType": "Operation",
                                 "operationType": pluginName,
-                                "objectID": operation.OperationID,
-                                "parentID": operation.RequestID,
+                                "objectID": getattr(operation, "OperationID", 0),
+                                "parentID": getattr(operation, "RequestID", 0),
                                 "status": "Failed",
                                 "nbObject": 1,
                             }
@@ -369,7 +372,7 @@ class RequestTask:
                             "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
                             "host": Network.getFQDN(),
                             "objectType": "Request",
-                            "objectID": operation.RequestID,
+                            "objectID": getattr(operation, "RequestID", 0),
                             "status": "Failed",
                             "nbObject": 1,
                         }
@@ -388,8 +391,8 @@ class RequestTask:
                             "host": Network.getFQDN(),
                             "objectType": "Operation",
                             "operationType": pluginName,
-                            "objectID": operation.OperationID,
-                            "parentID": operation.RequestID,
+                            "objectID": getattr(operation, "OperationID", 0),
+                            "parentID": getattr(operation, "RequestID", 0),
                             "status": "Successful",
                             "nbObject": 1,
                         }
@@ -402,8 +405,8 @@ class RequestTask:
                             "host": Network.getFQDN(),
                             "objectType": "Operation",
                             "operationType": pluginName,
-                            "objectID": operation.OperationID,
-                            "parentID": operation.RequestID,
+                            "objectID": getattr(operation, "OperationID", 0),
+                            "parentID": getattr(operation, "RequestID", 0),
                             "status": "Failed",
                             "nbObject": 1,
                         }
