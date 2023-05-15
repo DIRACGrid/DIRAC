@@ -282,7 +282,7 @@ class OperationHandlerBase(metaclass=DynamicProps):
             "operationType": self.operation.Type,
             "status": status,
             "nbObject": nbObject,
-            "parentID": self.operation.OperationID,
+            "parentID": getattr(self.operation, "OperationID", 0),
         }
 
         return record
