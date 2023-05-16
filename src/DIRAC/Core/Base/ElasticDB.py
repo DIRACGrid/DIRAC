@@ -9,7 +9,7 @@ class ElasticDB(DIRACDB, ElasticSearchDB):
     """Class for interfacing DIRAC ES DB definitions to ES clusters"""
 
     ########################################################################
-    def __init__(self, dbname, fullName, indexPrefix="", parentLogger=None):
+    def __init__(self, fullName, indexPrefix="", parentLogger=None):
         """c'tor
 
         :param self: self reference
