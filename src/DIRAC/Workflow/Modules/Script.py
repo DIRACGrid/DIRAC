@@ -84,8 +84,7 @@ class Script(ModuleBase):
         failed = False
 
         # Check whether the execution should be done remotely
-        is_remote_execution = gConfig.getValue("/LocalSite/RemoteExecution", "false")
-        if is_remote_execution.lower() in ["true", "yes"]:
+        if gConfig.getValue("/LocalSite/RemoteExecution", False):
             remoteRunner = RemoteRunner(
                 gConfig.getValue("/LocalSite/Site"),
                 gConfig.getValue("/LocalSite/GridCE"),
