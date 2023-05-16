@@ -74,6 +74,19 @@ class JobManagerHandlerMixin:
             except RuntimeError as excp:
                 return S_ERROR(f"Can't connect to DB: {excp}")
 
+        cls.elasticJobParametersDB = None
+        useESForJobParametersFlag = Operations().getValue("/Services/JobMonitoring/useESForJobParametersFlag", False)
+        if useESForJobParametersFlag:
+            try:
+                result = ObjectLoader().loadObject(
+                    "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
+                )
+                if not result["OK"]:
+                    return result
+                cls.elasticJobParametersDB = result["Value"](parentLogger=cls.log)
+            except RuntimeError as excp:
+                return S_ERROR(f"Can't connect to DB: {excp!r}")
+
         cls.msgClient = MessageClient("WorkloadManagement/OptimizationMind")
         result = cls.msgClient.connect(JobManager=True)
         if not result["OK"]:
@@ -393,6 +406,12 @@ class JobManagerHandlerMixin:
                 self.log.error("Failed to remove jobs from JobDB", f"(n={len(validJobList)})")
             else:
                 self.log.info("Removed jobs from JobDB", f"(n={len(validJobList)})")
+
+            if self.elasticJobParametersDB:
+                for jobID in validJobList:
+                    result = self.elasticJobParametersDB.deleteJobParameters(int(jobID))
+                    if not result["OK"]:
+                        self.log.error("Failed to delete Job Parameters from ElasticJobParametersDB", result["Message"])
 
             for jobID in validJobList:
                 resultTQ = self.taskQueueDB.deleteJob(jobID)

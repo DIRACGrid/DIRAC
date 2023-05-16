@@ -301,6 +301,9 @@ class ElasticSearchDB:
             return S_OK(self.client.delete(index, docID))
         except RequestError as re:
             return S_ERROR(re)
+        except NotFoundError:
+            sLog.warn("Could not find document to be deleted", f"{docID} in index {index}")
+            return S_OK()
 
     @ifConnected
     def existsDoc(self, index: str, docID: str) -> bool:
