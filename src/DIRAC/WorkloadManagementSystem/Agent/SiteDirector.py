@@ -1024,9 +1024,8 @@ class SiteDirector(AgentModule):
         # DIRAC Extensions to be used in pilots
         pilotExtensionsList = opsHelper.getValue("Pilot/Extensions", [])
         extensionsList = []
-        if pilotExtensionsList:
-            if pilotExtensionsList[0] != "None":
-                extensionsList = pilotExtensionsList
+        if pilotExtensionsList and pilotExtensionsList[0] != "None":
+            extensionsList = pilotExtensionsList
         else:
             extensionsList = [ext for ext in CSGlobals.getCSExtensions() if "Web" not in ext]
         if extensionsList:
@@ -1039,12 +1038,15 @@ class SiteDirector(AgentModule):
         # SiteName
         pilotOptions.append(f"-n {queueDict['Site']}")
 
+        # Generic Options
+        for genericOption in queueDict.get("GenericOptions", "").split(","):
+            pilotOptions.append(f"-o {genericOption.strip()}")
+
         if "SharedArea" in queueDict:
             pilotOptions.append(f"-o '/LocalSite/SharedArea={queueDict['SharedArea']}'")
 
-        if "ExtraPilotOptions" in queueDict:
-            for extraPilotOption in queueDict["ExtraPilotOptions"].split(","):
-                pilotOptions.append(extraPilotOption.strip())
+        for extraPilotOption in queueDict.get("ExtraPilotOptions", "").split(","):
+            pilotOptions.append(extraPilotOption.strip())
 
         if "Modules" in queueDict:
             pilotOptions.append(f"--modules={queueDict['Modules']}")
