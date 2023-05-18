@@ -39,4 +39,3 @@ They do require some initial setup.
     default_se = ANOTHER-SE-disk
 
    Now you are set up to use the DIRAC short commands. For a full list of what is available, please see the :ref:`shorthand_cmd` section.
-
