@@ -19,5 +19,6 @@ What starts here is a guide to develop DIRAC components. This guide is done in t
    TestingAgents/index
    DevelopingExecutors/index
    DevelopingCommands/index
+   DevelopingInterfaces/index
    Utilities/index
    Resources/index

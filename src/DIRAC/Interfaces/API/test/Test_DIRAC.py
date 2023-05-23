@@ -2,21 +2,20 @@
 """
 # pylint: disable=no-member, protected-access, missing-docstring
 import logging
-
 from pprint import pformat
 import pytest
 from unittest.mock import MagicMock, call
 
-from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC import S_OK
+from DIRAC.Interfaces.API.Dirac import Dirac
 
 logging.basicConfig()
 LOG = logging.getLogger("TestDirac")
 LOG.setLevel(logging.ERROR)
 
 
-@pytest.fixture
-def dirac():
+@pytest.fixture(name="dirac")
+def fixtureDirac():
     d = Dirac()
     d.log = MagicMock(name="Log")
     d.log.debug = d.log
@@ -28,8 +27,8 @@ def dirac():
     return d
 
 
-@pytest.fixture
-def job():
+@pytest.fixture(name="job")
+def fixtureJob():
     from DIRAC.Interfaces.API.Job import Job
 
     job = Job(stdout="printer", stderr="/dev/null")
@@ -37,8 +36,8 @@ def job():
     return job
 
 
-@pytest.fixture
-def osmock():
+@pytest.fixture(name="osmock")
+def fixtureOs():
     os = MagicMock(return_value=False, name="OS")
     os.environ = dict()
     os.environ["DIRAC"] = "/root/dirac"
@@ -71,8 +70,8 @@ def osmock():
     return os
 
 
-@pytest.fixture
-def confMock():
+@pytest.fixture(name="confMock")
+def fixtureConfMock():
     gConf = MagicMock(name="gConfig")
 
     def getVal(*args, **kwargs):

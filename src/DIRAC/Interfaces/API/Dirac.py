@@ -34,11 +34,15 @@ from DIRAC.Core.Base.API import API
 from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Utilities.JDL import loadJDLasJob
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.PrettyPrint import printDict, printTable
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection, getServiceURL
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Interfaces.API.Job import Job
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -46,6 +50,10 @@ from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
+from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import (
+    checkIfParametricJobIsCorrect,
+    transformParametricJobIntoParsableOne,
+)
 
 COMPONENT_NAME = "DiracAPI"
 
@@ -139,41 +147,67 @@ class Dirac(API):
         """
         self.__printInfo()
 
+        if not isinstance(job, (str, Job)):
+            return S_ERROR("The job must be either a string or a job object")
+
         if isinstance(job, str):
             if os.path.exists(job):
                 self.log.verbose(f"Found job JDL file {job}")
                 with open(job) as fd:
-                    jdlAsString = fd.read()
+                    jdl = fd.read()
             else:
                 self.log.verbose("Job is a JDL string")
-                jdlAsString = job
-            jobDescriptionObject = None
-        else:  # we assume it is of type "DIRAC.Interfaces.API.Job.Job"
-            try:
-                formulationErrors = job.errorDict
-            except AttributeError as x:
-                self.log.verbose(f"Could not obtain job errors:{x}")
-                formulationErrors = {}
+                jdl = job
 
-            if formulationErrors:
-                for method, errorList in formulationErrors.items():
-                    self.log.error(">>>> Error in {}() <<<<\n{}".format(method, "\n".join(errorList)))
-                return S_ERROR(formulationErrors)
+            jdl = jdl.strip()
+            if not jdl.startswith("[") and not jdl.endswith("]"):
+                jdl = f"[{jdl}]"
 
-            # Run any VO specific checks if desired prior to submission, this may or may not be overridden
-            # in a derived class for example
-            try:
-                result = self.preSubmissionChecks(job, mode)
-                if not result["OK"]:
-                    self.log.error(f"Pre-submission checks failed for job with message: \"{result['Message']}\"")
-                    return result
-            except Exception as x:
-                msg = f'Error in VO specific function preSubmissionChecks: "{x}"'
-                self.log.error(msg)
-                return S_ERROR(msg)
+            jobDescription = ClassAd(jdl)
 
-            jobDescriptionObject = io.StringIO(job._toXML())  # pylint: disable=protected-access
-            jdlAsString = job._toJDL(jobDescriptionObject=jobDescriptionObject)  # pylint: disable=protected-access
+            jdl = transformParametricJobIntoParsableOne(jobDescription)
+
+            res = checkIfParametricJobIsCorrect(jobDescription)
+            if not res["OK"]:
+                return res
+
+            stdout = "std.out"
+            if jobDescription.lookupAttribute("StdOutput"):
+                stdout = jobDescription.getAttributeString("StdOutput")
+                jobDescription.deleteAttribute("StdOutput")
+
+            stderr = "std.err"
+            if jobDescription.lookupAttribute("StdError"):
+                stderr = jobDescription.getAttributeString("StdError")
+                jobDescription.deleteAttribute("StdError")
+
+            job = Job(stdout=stdout, stderr=stderr)
+
+            res = loadJDLasJob(job, jobDescription)
+            if not res["OK"]:
+                return res
+            job = res["Value"]
+
+        formulationErrors = job.errorDict
+        if formulationErrors:
+            for method, errorList in formulationErrors.items():
+                self.log.error(">>>> Error in {}() <<<<\n{}".format(method, "\n".join(errorList)))
+            return S_ERROR(formulationErrors)
+
+        # Run any VO specific checks if desired prior to submission, this may or may not be overridden
+        # in a derived class for example
+        try:
+            result = self.preSubmissionChecks(job, mode)
+            if not result["OK"]:
+                self.log.error(f"Pre-submission checks failed for job with message: '{result['Message']}'")
+                return result
+        except Exception as x:
+            msg = f"Error in VO specific function preSubmissionChecks: '{x}'"
+            self.log.error(msg)
+            return S_ERROR(msg)
+
+        jobDescriptionObject = io.StringIO(job._toXML())  # pylint: disable=protected-access
+        jdlAsString = job._toJDL(jobDescriptionObject=jobDescriptionObject)  # pylint: disable=protected-access
 
         if mode.lower() == "local":
             result = self.runLocal(job)

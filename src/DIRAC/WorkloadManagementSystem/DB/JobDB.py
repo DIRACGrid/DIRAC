@@ -19,7 +19,7 @@ import operator
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteTier
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACPlatform, getSiteTier
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
@@ -68,12 +68,6 @@ class JobDB(DB):
         # data member to check if __init__ went through without error
         self.__initialized = False
         self.maxRescheduling = self.getCSOption("MaxRescheduling", 3)
-
-        # loading the function that will be used to determine the platform (it can be VO specific)
-        res = ObjectLoader().loadObject("ConfigurationSystem.Client.Helpers.Resources", "getDIRACPlatform")
-        if not res["OK"]:
-            self.log.fatal(res["Message"])
-        self.getDIRACPlatform = res["Value"]
 
         self.jobAttributeNames = []
 
@@ -1137,7 +1131,7 @@ class JobDB(DB):
         # platform(s)
         platformList = classAdJob.getListFromExpression("Platform")
         if platformList:
-            result = self.getDIRACPlatform(platformList)
+            result = getDIRACPlatform(platformList)
             if not result["OK"]:
                 return result
             if result["Value"]:

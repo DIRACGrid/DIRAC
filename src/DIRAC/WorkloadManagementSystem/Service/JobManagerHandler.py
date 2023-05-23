@@ -10,7 +10,6 @@
 
 """
 from DIRAC import S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
@@ -20,7 +19,11 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
+from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import (
+    checkIfParametricJobIsCorrect,
+    generateParametricJobs,
+    transformParametricJobIntoParsableOne,
+)
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     JobPolicy,
     RIGHT_SUBMIT,
@@ -140,16 +143,17 @@ class JobManagerHandlerMixin:
             jobDesc = f"{jobDesc}]"
 
         # Check if the job is a parametric one
-        jobClassAd = ClassAd(jobDesc)
-        result = getParameterVectorLength(jobClassAd)
+        jobClassAd = transformParametricJobIntoParsableOne(ClassAd(jobDesc))
+
+        result = checkIfParametricJobIsCorrect(jobClassAd)
         if not result["OK"]:
-            self.log.error("Issue with getParameterVectorLength", result["Message"])
             return result
-        nJobs = result["Value"]
+
         parametricJob = False
-        if nJobs is not None and nJobs > 0:
+        if jobClassAd.lookupAttribute("Parameters"):
             # if we are here, then jobDesc was the description of a parametric job. So we start unpacking
             parametricJob = True
+            nJobs = jobClassAd.getAttributeInt("Parameters")
             if nJobs > self.maxParametricJobs:
                 self.log.error(
                     "Maximum of parametric jobs exceeded:",

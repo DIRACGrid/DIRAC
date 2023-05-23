@@ -1,11 +1,16 @@
 """ This is a test of the parametric job generation tools
 """
-# pylint: disable= missing-docstring
+# pylint: disable= missing-docstring, invalid-name
 
 import pytest
 
-from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import (
+    checkIfParametricJobIsCorrect,
+    generateParametricJobs,
+    putDefaultNameOnNamelessParameterSequence,
+    transformParametricJobIntoParsableOne,
+)
 
 TEST_JDL_NO_PARAMETERS = """
 [
@@ -59,56 +64,6 @@ TEST_JDL_MULTI = """
 ]
 """
 
-TEST_JDL_MULTI_BAD = """
-[
-    Executable = "my_executable";
-    Arguments = "%(A)s %(B)s";
-    JobName = "Test_%n";
-    Parameters = 3;
-    ParameterStart.A = 1;
-    ParameterStep.A = 1;
-    ParameterFactor.A = 2;
-    Parameters.B = { "a","b","c","d" };
-]
-"""
-
-
-@pytest.mark.parametrize(
-    "jdl, expectedArguments",
-    [
-        (TEST_JDL_SIMPLE, ["a", "b", "c"]),
-        (TEST_JDL_SIMPLE_BUNCH, ["5", "5", "5"]),
-        (TEST_JDL_SIMPLE_PROGRESSION, ["1", "3", "7"]),
-        (TEST_JDL_MULTI, ["1 a", "3 b", "7 c"]),
-        (TEST_JDL_NO_PARAMETERS, []),
-    ],
-)
-def test_getParameterVectorLength_successful(jdl: str, expectedArguments: list[str]):
-    # Arrange
-    jobDescription = ClassAd(jdl)
-
-    # Act
-    result = getParameterVectorLength(jobDescription)
-
-    # Assert
-    assert result["OK"], result["Message"]
-    if expectedArguments:
-        assert result["Value"] == len(expectedArguments)
-    else:
-        assert result["Value"] == None
-
-
-@pytest.mark.parametrize("jdl", [TEST_JDL_MULTI_BAD])
-def test_getParameterVectorLength_unsuccessful(jdl: str):
-    # Arrange
-    jobDescription = ClassAd(jdl)
-
-    # Act
-    result = getParameterVectorLength(jobDescription)
-
-    # Assert
-    assert not result["OK"], result["Value"]
-
 
 @pytest.mark.parametrize(
     "jdl, expectedArguments",
@@ -132,7 +87,155 @@ def test_generateParametricJobs(jdl: str, expectedArguments: list[str]):
     jobDescList = result["Value"]
     assert len(jobDescList) == len(expectedArguments)
 
-    for i in range(len(jobDescList)):
-        jobDescription = ClassAd(jobDescList[i])
+    for i, jobDescription in enumerate(jobDescList):
+        jobDescription = ClassAd(jobDescription)
+        assert jobDescription.getAttributeInt("ParameterNumber") == i
         assert jobDescription.getAttributeString("JobName") == f"Test_{i}"
         assert jobDescription.getAttributeString("Arguments") == expectedArguments[i]
+
+
+@pytest.mark.parametrize(
+    "jdl, expectedResult",
+    [
+        (TEST_JDL_NO_PARAMETERS, True),
+        (TEST_JDL_SIMPLE, True),
+        (TEST_JDL_SIMPLE_BUNCH, True),
+        (TEST_JDL_SIMPLE_PROGRESSION, True),
+        (TEST_JDL_MULTI, True),
+        (
+            """
+            [
+                Executable = "my_executable";
+                Arguments = "%(A)s %(B)s";
+                JobName = "Test_%n";
+                Parameters = 3;
+                ParameterStart.A = 1;
+                ParameterStep.A = 1;
+                ParameterFactor.A = 2;
+                Parameters.B = { "a","b","c","d" };
+            ]
+            """,
+            False,
+        ),
+    ],
+)
+def test_checkIfParametricJobIsCorrect(jdl: str, expectedResult: bool):
+    # Arrange
+    jobDescription = transformParametricJobIntoParsableOne(ClassAd(jdl))
+
+    # Act
+    res = checkIfParametricJobIsCorrect(jobDescription)
+
+    # Assert
+    if expectedResult:
+        assert res["OK"], res["Message"]
+    else:
+        assert not res["OK"]
+
+
+@pytest.mark.parametrize(
+    "jdl, expected",
+    [
+        (TEST_JDL_NO_PARAMETERS, TEST_JDL_NO_PARAMETERS),
+        (
+            TEST_JDL_SIMPLE,
+            """
+            [
+                Executable = "my_executable";
+                Arguments = "%(A)s";
+                JobName = "Test_%n";
+                Parameters = 3;
+                Parameters.A = { "a","b","c" };
+            ]
+            """,
+        ),
+        (
+            TEST_JDL_SIMPLE_BUNCH,
+            """
+            [
+                Executable = "my_executable";
+                Arguments = "%(A)s";
+                JobName = "Test_%n";
+                Parameters = 3;
+                ParameterStart.A = 5
+            ]
+            """,
+        ),
+        (
+            TEST_JDL_SIMPLE_PROGRESSION,
+            """
+            [
+                Executable = "my_executable";
+                Arguments = "%(A)s";
+                JobName = "Test_%n";
+                Parameters = 3;
+                ParameterStart.A = 1;
+                ParameterStep.A = 1;
+                ParameterFactor.A = 2;
+            ]
+            """,
+        ),
+        (TEST_JDL_MULTI, TEST_JDL_MULTI),
+    ],
+)
+def test_putDefaultNameOnNamelessParameterSequence(jdl, expected):
+    assert putDefaultNameOnNamelessParameterSequence(ClassAd(jdl)).asJDL() == ClassAd(expected).asJDL()
+
+
+@pytest.mark.parametrize(
+    "jdl, expected",
+    [
+        (TEST_JDL_NO_PARAMETERS, TEST_JDL_NO_PARAMETERS),
+        (
+            TEST_JDL_SIMPLE,
+            """
+            [
+                Executable = "my_executable";
+                Arguments = "%(A)s";
+                JobName = "Test_%n";
+                Parameters = 3;
+                Parameters.A = {"a", "b", "c"};
+            ]
+            """,
+        ),
+        (
+            TEST_JDL_SIMPLE_BUNCH,
+            """
+            [
+                Executable = "my_executable";
+                Arguments = "%(A)s";
+                JobName = "Test_%n";
+                Parameters = 3;
+                Parameters.A = {5, 5, 5}
+            ]
+            """,
+        ),
+        (
+            TEST_JDL_SIMPLE_PROGRESSION,
+            """
+            [
+                Executable = "my_executable";
+                Arguments = "%(A)s";
+                JobName = "Test_%n";
+                Parameters = 3;
+                Parameters.A = {1, 3, 7};
+            ]
+            """,
+        ),
+        (
+            TEST_JDL_MULTI,
+            """
+            [
+                Executable = "my_executable";
+                Arguments = "%(A)s %(B)s";
+                JobName = "Test_%n";
+                Parameters = 3;
+                Parameters.A = {1, 3, 7};
+                Parameters.B = {"a", "b", "c"};
+            ]
+            """,
+        ),
+    ],
+)
+def test_transformParametricJobIntoParsableOne(jdl, expected):
+    assert transformParametricJobIntoParsableOne(ClassAd(jdl)).asJDL() == ClassAd(expected).asJDL()

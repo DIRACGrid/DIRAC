@@ -73,6 +73,7 @@ def test_SimpleParametricJob():
 @pytest.mark.parametrize(
     "proc, minProc, maxProc, expectedProc, expectedMinProc, expectedMaxProc",
     [
+        (None, None, None, None, None, None),
         (4, None, None, 4, None, 4),
         (4, 2, None, 4, None, 4),
         (4, 2, 8, 4, None, 4),

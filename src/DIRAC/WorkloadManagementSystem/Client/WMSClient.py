@@ -13,7 +13,6 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
-from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import getParameterVectorLength
 
 
 class WMSClient:
@@ -177,13 +176,12 @@ class WMSClient:
             return result
 
         # Submit the job now and get the new job ID
-        result = getParameterVectorLength(classAdJob)
-        if not result["OK"]:
-            return result
-        nJobs = result["Value"]
         result = self.jobManager.submitJob(classAdJob.asJDL())
 
-        if nJobs:
+        if classAdJob.lookupAttribute("Parameters"):
+            nJobs = classAdJob.getAttributeInt("Parameters")
+            if not nJobs:
+                return S_ERROR(EWMSJDL, "The JDL Parameters field must be an int")
             gLogger.debug("Applying transactional job submission")
             # The server applies transactional bulk submission, we should confirm the jobs
             if result["OK"]:
