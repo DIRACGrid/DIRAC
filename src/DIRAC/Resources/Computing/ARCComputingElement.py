@@ -48,11 +48,11 @@ XRSLMPExtraString:
 import os
 import stat
 import sys
+import uuid
 
 import arc  # Has to work if this module is called #pylint: disable=import-error
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
-from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
@@ -188,7 +188,7 @@ class ARCComputingElement(ComputingElement):
         :param list inputs: path of the dependencies to include along with the executable
         :param list outputs: path of the outputs that we want to get at the end of the execution
         """
-        diracStamp = makeGuid()[:32]
+        diracStamp = uuid.uuid4().hex
         # Evaluate the number of processors to allocate
         nProcessors = self.ceParameters.get("NumberOfProcessors", 1)
 
