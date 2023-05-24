@@ -8,6 +8,13 @@ from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
+from DIRAC.FrameworkSystem.Utilities.TokenManagementUtilities import (
+    getIdProviderClient,
+    getCachedKey,
+    getCachedToken,
+    DEFAULT_AT_EXPIRATION_TIME,
+    DEFAULT_RT_EXPIRATION_TIME,
+)
 
 gTokensSync = ThreadSafe.Synchronizer()
 
@@ -15,8 +22,6 @@ gTokensSync = ThreadSafe.Synchronizer()
 @createClient("Framework/TokenManager")
 class TokenManagerClient(Client):
     """Client exposing the TokenManager Service."""
-
-    DEFAULT_RT_EXPIRATION_TIME = 24 * 3600
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -27,7 +32,7 @@ class TokenManagerClient(Client):
     @gTokensSync
     def getToken(
         self,
-        username: str,
+        username: str = None,
         userGroup: str = None,
         scope: str = None,
         audience: str = None,
@@ -45,42 +50,35 @@ class TokenManagerClient(Client):
 
         :return: S_OK(dict)/S_ERROR()
         """
-        if not identityProvider and userGroup:
-            identityProvider = Registry.getIdPForGroup(userGroup)
-        if not identityProvider:
-            return S_ERROR(f"The {userGroup} group belongs to a VO that is not tied to any Identity Provider.")
-
-        # prepare the client instance of the appropriate IdP
-        result = self.idps.getIdProvider(identityProvider)
+        # Get an IdProvider Client instance
+        result = getIdProviderClient(userGroup, identityProvider)
         if not result["OK"]:
             return result
         idpObj = result["Value"]
 
-        if userGroup and (result := idpObj.getGroupScopes(userGroup)):
-            # What scope correspond to the requested group?
-            scope = list(set((scope or []) + result))
+        # Search for an existing token in tokensCache
+        cachedKey = getCachedKey(idpObj.name, username, userGroup, scope, audience)
+        result = getCachedToken(self.__tokensCache, cachedKey, requiredTimeLeft)
+        if result["OK"]:
+            # A valid token has been found and is returned
+            return result
 
-        # Set the scope
-        idpObj.scope = " ".join(scope)
+        # No token in cache: get a token from the server
+        result = self.executeRPC(username, userGroup, scope, audience, idpObj.name, requiredTimeLeft, call="getToken")
 
-        # Let's check if there are corresponding tokens in the cache
-        cacheKey = (username, idpObj.scope, audience, identityProvider)
-        if self.__tokensCache.exists(cacheKey, requiredTimeLeft):
-            # Well we have a fresh record containing a Token object
-            token = self.__tokensCache.get(cacheKey)
-            # Let's check if the access token is fresh
-            if not token.is_expired(requiredTimeLeft):
-                return S_OK(token)
-
-        result = self.executeRPC(
-            username, userGroup, scope, audience, identityProvider, requiredTimeLeft, call="getToken"
-        )
-
+        # Save token in cache
         if result["OK"]:
             token = OAuth2Token(dict(result["Value"]))
+
+            # Get the date at which the token will expire
+            # If the refresh token is present, we use it as we can easily generate an access token from it
+            duration = token.get_claim("exp", "access_token") or DEFAULT_AT_EXPIRATION_TIME
+            if token.get("refresh_token"):
+                duration = token.get_claim("exp", "refresh_token") or DEFAULT_RT_EXPIRATION_TIME
+
             self.__tokensCache.add(
-                cacheKey,
-                token.get_claim("exp", "refresh_token") or self.DEFAULT_RT_EXPIRATION_TIME,
+                cachedKey,
+                duration,
                 token,
             )
 
