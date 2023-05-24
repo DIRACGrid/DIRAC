@@ -26,6 +26,7 @@ RESTVersion:
 import os
 import json
 import requests
+import shutil
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security import Locations
@@ -144,7 +145,7 @@ class AREXComputingElement(ARCComputingElement):
         """
         return os.path.join(self.base_url, command)
 
-    def _request(self, method, query, params=None, data=None, headers=None, timeout=None):
+    def _request(self, method, query, params=None, data=None, headers=None, timeout=None, stream=False):
         """Perform a request and properly handle the results/exceptions.
 
         :param str method: "post", "get", "put"
@@ -164,12 +165,7 @@ class AREXComputingElement(ARCComputingElement):
 
         try:
             response = self.session.request(
-                method,
-                query,
-                headers=headers,
-                params=params,
-                data=data,
-                timeout=timeout,
+                method, query, headers=headers, params=params, data=data, timeout=timeout, stream=stream
             )
             if not response.ok:
                 return S_ERROR(f"Response: {response.status_code} - {response.reason}")
@@ -811,20 +807,21 @@ class AREXComputingElement(ARCComputingElement):
             query = self._urlJoin(os.path.join("jobs", job, "session", remoteOutput))
 
             # Submit the GET request to retrieve outputs
-            result = self._request("get", query)
+            result = self._request("get", query, stream=True)
             if not result["OK"]:
                 self.log.error("Error downloading", f"{remoteOutput} for {job}: {result['Message']}")
                 return S_ERROR(f"Error downloading {remoteOutput} for {jobID}")
             response = result["Value"]
-            outputContent = response.text
+
+            localOutput = os.path.join(workingDirectory, remoteOutput)
+            with open(localOutput, "wb") as f:
+                shutil.copyfileobj(response.raw, f)
 
             if remoteOutput == f"{stamp}.out":
-                stdout = outputContent
-            elif remoteOutput == f"{stamp}.err":
-                stderr = outputContent
-            else:
-                localOutput = os.path.join(workingDirectory, remoteOutput)
-                with open(localOutput, "w") as f:
-                    f.write(outputContent)
+                with open(localOutput) as f:
+                    stdout = f.read()
+            if remoteOutput == f"{stamp}.err":
+                with open(localOutput) as f:
+                    stderr = f.read()
 
         return S_OK((stdout, stderr))
