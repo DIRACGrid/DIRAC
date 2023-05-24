@@ -52,6 +52,7 @@ import datetime
 import errno
 import threading
 import textwrap
+import uuid
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
@@ -60,7 +61,6 @@ from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
-from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import writeToTokenFile
 from DIRAC.Core.Security.Locations import getCAsLocation
 from DIRAC.Resources.Computing.BatchSystems.Condor import parseCondorStatus
@@ -300,9 +300,9 @@ Queue stamp in %(pilotStampList)s
         # The submitted pilots are going to have a common part of the stamp to construct a path to retrieve results
         # Then they also have an individual part to make them unique
         jobStamps = []
-        commonJobStampPart = makeGuid()[:3]
+        commonJobStampPart = uuid.uuid4().hex[:3]
         for _i in range(numberOfJobs):
-            jobStamp = commonJobStampPart + makeGuid()[:29]
+            jobStamp = commonJobStampPart + uuid.uuid4().hex[:29]
             jobStamps.append(jobStamp)
 
         # We randomize the location of the pilot output and log, because there are just too many of them
