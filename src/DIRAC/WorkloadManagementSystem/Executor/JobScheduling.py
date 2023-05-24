@@ -11,13 +11,12 @@
 
 import random
 
-from DIRAC import S_OK, S_ERROR, gConfig
-
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.JDL import CPU_TIME, GRID_CE, JOB_TYPE, OWNER_GROUP, PLATFORM, TAGS
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Utilities.TimeUtilities import fromString, toEpoch
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -300,89 +299,27 @@ class JobScheduling(OptimizerExecutor):
         """
 
         bannedSites = jobManifest.getOption("BannedSites", [])
-        if not bannedSites:
-            bannedSites = jobManifest.getOption("BannedSite", [])
         if bannedSites:
             self.jobLog.info("Banned sites", ", ".join(bannedSites))
 
         sites = jobManifest.getOption("Site", [])
-        # TODO: Only accept known sites after removing crap like ANY set in the original manifest
-        sites = [site for site in sites if site.strip().lower() not in ("any", "")]
 
         if sites:
             if len(sites) == 1:
                 self.jobLog.info("Single chosen site", f": {sites[0]} specified")
             else:
                 self.jobLog.info("Multiple sites requested", f": {','.join(sites)}")
-            sites = self._applySiteFilter(sites, banned=bannedSites)
-            if not sites:
-                return S_ERROR("Impossible site requirement")
 
         return S_OK((sites, bannedSites))
-
-    def _getTagsFromManifest(self, jobManifest):
-        """helper method to add a list of tags to the TQ from the job manifest content"""
-
-        # Generate Tags from specific requirements
-        tagList = []
-
-        # sorting out the number of processors
-        nProcessors = 1
-        maxProcessors = 1
-
-        if "NumberOfProcessors" in jobManifest:  # this should be the exact number
-            nProcessors = jobManifest.getOption("NumberOfProcessors", 0)
-
-        else:  # is there a min? and in that case, is there a max?
-            if "MinNumberOfProcessors" in jobManifest:
-                nProcessors = jobManifest.getOption("MinNumberOfProcessors", 0)
-
-                if "MaxNumberOfProcessors" in jobManifest:
-                    maxProcessors = jobManifest.getOption("MaxNumberOfProcessors", 0)
-                else:
-                    maxProcessors = -1
-
-        if nProcessors and nProcessors > 1:
-            tagList.append("%dProcessors" % nProcessors)
-            tagList.append("MultiProcessor")
-        if maxProcessors == -1 or maxProcessors > 1:
-            tagList.append("MultiProcessor")
-
-        if "WholeNode" in jobManifest:
-            if jobManifest.getOption("WholeNode", "").lower() in ["1", "yes", "true", "y"]:
-                tagList.append("WholeNode")
-                tagList.append("MultiProcessor")
-
-        # sorting out the RAM (this should be probably coded ~same as number of processors)
-        if "MaxRAM" in jobManifest:
-            maxRAM = jobManifest.getOption("MaxRAM", 0)
-            if maxRAM:
-                tagList.append("%dGB" % maxRAM)
-
-        # other tags? Just add them
-        if "Tags" in jobManifest:
-            tagList.extend(jobManifest.getOption("Tags", []))
-        if "Tag" in jobManifest:
-            tagList.extend(jobManifest.getOption("Tag", []))
-
-        return tagList
 
     def __sendToTQ(self, jobState, jobManifest, sites, bannedSites, onlineSites=None):
         """This method sends jobs to the task queue agent and if candidate sites
         are defined, updates job JDL accordingly.
         """
 
-        tagList = self._getTagsFromManifest(jobManifest)
-        if tagList:
-            jobManifest.setOption("Tags", ", ".join(tagList))
-
-        reqSection = "JobRequirements"
-        if reqSection in jobManifest:
-            result = jobManifest.getSection(reqSection)
-        else:
-            result = jobManifest.createSection(reqSection)
+        result = jobManifest.createSection("JobRequirements")
         if not result["OK"]:
-            self.jobLog.error("Cannot create jobManifest section", f"({reqSection}: {result['Message']})")
+            self.jobLog.error("Cannot create JobRequirements section in the jobManifest", result["Message"])
             return result
         reqCfg = result["Value"]
 
@@ -391,16 +328,21 @@ class JobScheduling(OptimizerExecutor):
         if bannedSites:
             reqCfg.setOption("BannedSites", ", ".join(bannedSites))
 
-        # Job multivalue requirement keys are specified as singles in the job descriptions
-        # but for backward compatibility can be also plurals
-        for key in ("JobType", "GridRequiredCEs", "GridCE", "Tags"):
-            reqKey = key
-            if key == "JobType":
-                reqKey = "JobTypes"
-            elif key == "GridRequiredCEs" or key == "GridCE":  # Remove obsolete GridRequiredCEs
-                reqKey = "GridCEs"
-            if key in jobManifest:
-                reqCfg.setOption(reqKey, ", ".join(jobManifest.getOption(key, [])))
+        reqCfg.setOption("CPUTime", jobManifest.getOption(CPU_TIME))
+        reqCfg.setOption("JobTypes", jobManifest.getOption(JOB_TYPE))
+
+        # FIXME: Change OwnerDN for Owner
+        # reqCfg.setOption("OwnerDN", jobManifest.getOption(OWNER_DN))
+        reqCfg.setOption("OwnerGroup", jobManifest.getOption(OWNER_GROUP))
+
+        if GRID_CE in jobManifest:
+            reqCfg.setOption("GridCEs", jobManifest.getOption(GRID_CE))
+
+        if PLATFORM in jobManifest:
+            reqCfg.setOption("Platforms", jobManifest.getOption(PLATFORM))
+
+        if TAGS in jobManifest:
+            reqCfg.setOption("Tags", ", ".join(jobManifest.getOption(TAGS)))
 
         result = self.__setJobSite(jobState, sites, onlineSites=onlineSites)
         if not result["OK"]:

@@ -17,17 +17,26 @@ import datetime
 
 import operator
 
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteTier
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.JDL import (
+    JOB_GROUP,
+    JOB_NAME,
+    JOB_TYPE,
+    MANDATORY_FIELDS,
+    OWNER,
+    OWNER_GROUP,
+    PRIORITY,
+    SITE,
+    dumpJobDescriptionModelAsJDL,
+    jdlToJobDescriptionModel,
+)
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import EWMSSUBM, EWMSJMAN
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
-from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
@@ -84,8 +93,6 @@ class JobDB(DB):
         if not result["OK"]:
             self.log.fatal("JobDB: Can not retrieve job Attributes")
             return
-
-        self.jdl2DBParameters = ["JobName", "JobType", "JobGroup"]
 
         self.log.info("MaxReschedule", self.maxRescheduling)
         self.log.info("==================================================")
@@ -906,10 +913,7 @@ class JobDB(DB):
     #############################################################################
     def insertNewJobIntoDB(
         self,
-        jdl,
-        owner,
-        ownerDN,
-        ownerGroup,
+        jdl: str,
         initialStatus=JobStatus.RECEIVED,
         initialMinorStatus="Job accepted",
     ):
@@ -925,27 +929,32 @@ class JobDB(DB):
         :param str initialMinorStatus: optional initial minor job status
         :return: new job ID
         """
-        jobManifest = JobManifest()
-        result = jobManifest.load(jdl)
-        if not result["OK"]:
-            return result
-        jobManifest.setOptionsFromDict({"Owner": owner, "OwnerDN": ownerDN, "OwnerGroup": ownerGroup})
-        result = jobManifest.check()
-        if not result["OK"]:
-            return result
-        jobAttrNames = []
-        jobAttrValues = []
 
-        # 1.- insert original JDL on DB and get new JobID
-        # Fix the possible lack of the brackets in the JDL
-        if jdl.strip()[0].find("[") != 0:
-            jdl = "[" + jdl + "]"
+        # 1. Insert original JDL on DB and get new JobID
         result = self.__insertNewJDL(jdl)
         if not result["OK"]:
             return S_ERROR(EWMSSUBM, "Failed to insert JDL in to DB")
         jobID = result["Value"]
 
-        jobManifest.setOption("JobID", jobID)
+        # 2. Replace the JobID placeholder if any in the JDL and update the JDL
+        if jdl.find("%j") != -1:
+            jdl = jdl.replace("%j", jdl)
+
+        classAdJob = ClassAd(jdl)
+        classAdJob.insertAttributeInt("JobID", jobID)
+        res = self.setJobJDL(jobID, classAdJob.asJDL())
+        if not res["OK"]:
+            res = self.removeJobFromDB(jobID)
+            if res["OK"]:
+                return S_ERROR(EWMSSUBM, "Failed to insert JDL into the DB")
+
+            # If we can't remove the job from the DB, we try to put it in Failed status
+            initialStatus = JobStatus.FAILED
+            initialMinorStatus = "Error while updating the JDL in the DB"
+
+        # 3. Adding the job in the Jobs table
+        jobAttrNames = []
+        jobAttrValues = []
 
         jobAttrNames.append("JobID")
         jobAttrValues.append(jobID)
@@ -956,56 +965,10 @@ class JobDB(DB):
         jobAttrNames.append("SubmissionTime")
         jobAttrValues.append(str(datetime.datetime.utcnow()))
 
-        jobAttrNames.append("Owner")
-        jobAttrValues.append(owner)
-
-        jobAttrNames.append("OwnerDN")
-        jobAttrValues.append(ownerDN)
-
-        jobAttrNames.append("OwnerGroup")
-        jobAttrValues.append(ownerGroup)
-
-        # 2.- Check JDL and Prepare DIRAC JDL
-        jobJDL = jobManifest.dumpAsJDL()
-
-        # Replace the JobID placeholder if any
-        if jobJDL.find("%j") != -1:
-            jobJDL = jobJDL.replace("%j", str(jobID))
-
-        classAdJob = ClassAd(jobJDL)
-        classAdReq = ClassAd("[]")
-        retVal = S_OK(jobID)
-        retVal["JobID"] = jobID
-        if not classAdJob.isOK():
-            jobAttrNames.append("Status")
-            jobAttrValues.append(JobStatus.FAILED)
-
-            jobAttrNames.append("MinorStatus")
-            jobAttrValues.append("Error in JDL syntax")
-
-            result = self.insertFields("Jobs", jobAttrNames, jobAttrValues)
-            if not result["OK"]:
-                return result
-
-            retVal["Status"] = JobStatus.FAILED
-            retVal["MinorStatus"] = "Error in JDL syntax"
-            return retVal
-
-        classAdJob.insertAttributeInt("JobID", jobID)
-        result = self.__checkAndPrepareJob(
-            jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup, jobAttrNames, jobAttrValues
-        )
-        if not result["OK"]:
-            return result
-
-        priority = classAdJob.getAttributeInt("Priority")
-        if priority is None:
-            priority = 0
         jobAttrNames.append("UserPriority")
-        jobAttrValues.append(priority)
+        jobAttrValues.append(classAdJob.getAttributeInt(PRIORITY))
 
-        for jdlName in self.jdl2DBParameters:
-            # Defaults are set by the DB.
+        for jdlName in [OWNER, OWNER_GROUP, JOB_NAME, JOB_TYPE, JOB_GROUP]:
             jdlValue = classAdJob.getAttributeString(jdlName)
             if jdlValue:
                 jobAttrNames.append(jdlName)
@@ -1028,16 +991,6 @@ class JobDB(DB):
         jobAttrNames.append("MinorStatus")
         jobAttrValues.append(initialMinorStatus)
 
-        reqJDL = classAdReq.asJDL()
-        classAdJob.insertAttributeInt("JobRequirements", reqJDL)
-
-        jobJDL = classAdJob.asJDL()
-
-        result = self.setJobJDL(jobID, jobJDL)
-        if not result["OK"]:
-            return result
-
-        # Adding the job in the Jobs table
         result = self.insertFields("Jobs", jobAttrNames, jobAttrValues)
         if not result["OK"]:
             return result
@@ -1059,9 +1012,6 @@ class JobDB(DB):
         e_jobID = ret["Value"]
 
         for lfn in inputData:
-            # some jobs are setting empty string as InputData
-            if not lfn:
-                continue
             ret = self._escapeString(lfn.strip())
             if not ret["OK"]:
                 return ret
@@ -1075,94 +1025,13 @@ class JobDB(DB):
             if not result["OK"]:
                 return result
 
+        retVal = S_OK(jobID)
+        retVal["JobID"] = jobID
         retVal["Status"] = initialStatus
         retVal["MinorStatus"] = initialMinorStatus
         retVal["TimeStamp"] = str(datetime.datetime.utcnow())
 
         return retVal
-
-    def __checkAndPrepareJob(
-        self, jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup, jobAttrNames, jobAttrValues
-    ):
-        """
-        Check Consistency of Submitted JDL and set some defaults
-        Prepare subJDL with Job Requirements
-        """
-        error = ""
-        vo = getVOForGroup(ownerGroup)
-
-        jdlOwner = classAdJob.getAttributeString("Owner")
-        jdlOwnerDN = classAdJob.getAttributeString("OwnerDN")
-        jdlOwnerGroup = classAdJob.getAttributeString("OwnerGroup")
-        jdlVO = classAdJob.getAttributeString("VirtualOrganization")
-
-        if jdlOwner and jdlOwner != owner:
-            error = "Wrong Owner in JDL"
-        elif jdlOwnerDN and jdlOwnerDN != ownerDN:
-            error = "Wrong Owner DN in JDL"
-        elif jdlOwnerGroup and jdlOwnerGroup != ownerGroup:
-            error = "Wrong Owner Group in JDL"
-        elif jdlVO and jdlVO != vo:
-            error = "Wrong Virtual Organization in JDL"
-
-        classAdJob.insertAttributeString("Owner", owner)
-        classAdJob.insertAttributeString("OwnerDN", ownerDN)
-        classAdJob.insertAttributeString("OwnerGroup", ownerGroup)
-
-        if vo:
-            classAdJob.insertAttributeString("VirtualOrganization", vo)
-
-        classAdReq.insertAttributeString("OwnerDN", ownerDN)
-        classAdReq.insertAttributeString("OwnerGroup", ownerGroup)
-        if vo:
-            classAdReq.insertAttributeString("VirtualOrganization", vo)
-
-        inputDataPolicy = Operations(vo=vo).getValue("InputDataPolicy/InputDataModule")
-        if inputDataPolicy and not classAdJob.lookupAttribute("InputDataModule"):
-            classAdJob.insertAttributeString("InputDataModule", inputDataPolicy)
-
-        # priority
-        priority = classAdJob.getAttributeInt("Priority")
-        if priority is None:
-            priority = 0
-        classAdReq.insertAttributeInt("UserPriority", priority)
-
-        # CPU time
-        cpuTime = classAdJob.getAttributeInt("CPUTime")
-        if cpuTime is None:
-            opsHelper = Operations(group=ownerGroup)
-            cpuTime = opsHelper.getValue("JobDescription/DefaultCPUTime", 86400)
-        classAdReq.insertAttributeInt("CPUTime", cpuTime)
-
-        # platform(s)
-        platformList = classAdJob.getListFromExpression("Platform")
-        if platformList:
-            result = self.getDIRACPlatform(platformList)
-            if not result["OK"]:
-                return result
-            if result["Value"]:
-                classAdReq.insertAttributeVectorString("Platforms", result["Value"])
-            else:
-                error = "OS compatibility info not found"
-
-        if error:
-            retVal = S_ERROR(EWMSSUBM, error)
-            retVal["JobId"] = jobID
-            retVal["Status"] = JobStatus.FAILED
-            retVal["MinorStatus"] = error
-
-            jobAttrNames.append("Status")
-            jobAttrValues.append(JobStatus.FAILED)
-
-            jobAttrNames.append("MinorStatus")
-            jobAttrValues.append(error)
-            resultInsert = self.setJobAttributes(jobID, jobAttrNames, jobAttrValues)
-            if not resultInsert["OK"]:
-                retVal["MinorStatus"] += f"; {resultInsert['Message']}"
-
-            return retVal
-
-        return S_OK()
 
     #############################################################################
     def removeJobFromDB(self, jobIDs):
@@ -1268,12 +1137,6 @@ class JobDB(DB):
                 return res
             return S_ERROR(f"Maximum number of reschedulings is reached: {self.maxRescheduling}")
 
-        jobAttrNames = []
-        jobAttrValues = []
-
-        jobAttrNames.append("RescheduleCounter")
-        jobAttrValues.append(rescheduleCounter)
-
         # Save the job parameters for later debugging
         result = JobMonitoringClient().getJobParameters(jobID)
         if result["OK"]:
@@ -1302,46 +1165,48 @@ class JobDB(DB):
         if not res["OK"]:
             return res
 
-        jdl = res["Value"]
+        jdl = res["Value"].strip()
         # Fix the possible lack of the brackets in the JDL
-        if jdl.strip()[0].find("[") != 0:
-            jdl = "[" + jdl + "]"
+        if not jdl.startswith("["):
+            jdl = f"[{jdl}]"
+
+        # Replace the JobID placeholder if any
+        if jdl.find("%j") != -1:
+            jdl = jdl.replace("%j", str(jobID))
+
         classAdJob = ClassAd(jdl)
-        classAdReq = ClassAd("[]")
-        retVal = S_OK(jobID)
-        retVal["JobID"] = jobID
 
+        # If the job has not been processed with Pydantic yet, do it now
+        if not MANDATORY_FIELDS.issubset(classAdJob.getAttributes()):
+            res = jdlToJobDescriptionModel(classAdJob)
+            if not res["OK"]:
+                return res
+            job = res["Value"]
+
+            classAdJob = dumpJobDescriptionModelAsJDL(job)
+            result = self.setJobJDL(jobID, originalJDL=classAdJob.asJDL())
         classAdJob.insertAttributeInt("JobID", jobID)
-        result = self.__checkAndPrepareJob(
-            jobID,
-            classAdJob,
-            classAdReq,
-            resultDict["Owner"],
-            resultDict["OwnerDN"],
-            resultDict["OwnerGroup"],
-            jobAttrNames,
-            jobAttrValues,
-        )
 
+        result = self.setJobJDL(jobID, classAdJob.asJDL())
         if not result["OK"]:
             return result
 
-        priority = classAdJob.getAttributeInt("Priority")
-        if priority is None:
-            priority = 0
+        jobAttrNames = []
+        jobAttrValues = []
+
+        jobAttrNames.append("RescheduleCounter")
+        jobAttrValues.append(rescheduleCounter)
+
         jobAttrNames.append("UserPriority")
-        jobAttrValues.append(priority)
+        jobAttrValues.append(classAdJob.getAttributeInt(PRIORITY))
 
-        siteList = classAdJob.getListFromExpression("Site")
-        if not siteList:
-            site = "ANY"
-        elif len(siteList) > 1:
-            site = "Multiple"
-        else:
-            site = siteList[0]
-
-        jobAttrNames.append("Site")
-        jobAttrValues.append(site)
+        jdlValue = classAdJob.getAttributeString(SITE)
+        if jdlValue:
+            jobAttrNames.append("Site")
+            if jdlValue.find(",") != -1:
+                jobAttrValues.append("Multiple")
+            else:
+                jobAttrValues.append(jdlValue)
 
         jobAttrNames.append("Status")
         jobAttrValues.append(JobStatus.RECEIVED)
@@ -1361,19 +1226,6 @@ class JobDB(DB):
         jobAttrNames.append("RescheduleTime")
         jobAttrValues.append(str(datetime.datetime.utcnow()))
 
-        reqJDL = classAdReq.asJDL()
-        classAdJob.insertAttributeInt("JobRequirements", reqJDL)
-
-        jobJDL = classAdJob.asJDL()
-
-        # Replace the JobID placeholder if any
-        if jobJDL.find("%j") != -1:
-            jobJDL = jobJDL.replace("%j", str(jobID))
-
-        result = self.setJobJDL(jobID, jobJDL)
-        if not result["OK"]:
-            return result
-
         result = self.__setInitialJobParameters(classAdJob, jobID)
         if not result["OK"]:
             return result
@@ -1382,6 +1234,8 @@ class JobDB(DB):
         if not result["OK"]:
             return result
 
+        retVal = S_OK(jobID)
+        retVal["JobID"] = jobID
         retVal["InputData"] = classAdJob.lookupAttribute("InputData")
         retVal["RescheduleCounter"] = rescheduleCounter
         retVal["Status"] = JobStatus.RECEIVED

@@ -1,12 +1,13 @@
 """Transformation classes around the JDL format."""
 
+from urllib.parse import quote
 from diraccfg import CFG
 from pydantic import ValidationError
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC.WorkloadManagementSystem.Utilities.JobModel import BaseJobDescriptionModel
+from DIRAC.WorkloadManagementSystem.Utilities.JobModel import BaseJobDescriptionModel, JobDescriptionModel
 
 ARGUMENTS = "Arguments"
 BANNED_SITES = "BannedSites"
@@ -41,6 +42,21 @@ OWNER_GROUP = "OwnerGroup"
 VO = "VirtualOrganization"
 
 CREDENTIALS_FIELDS = {OWNER, OWNER_GROUP, VO}
+
+MANDATORY_FIELDS = {
+    CPU_TIME,
+    EXECUTABLE,
+    JOB_NAME,
+    JOB_TYPE,
+    LOG_LEVEL,
+    MIN_NUMBER_OF_PROCESSORS,
+    PRIORITY,
+    STD_ERROR,
+    STD_OUTPUT,
+    OWNER,
+    OWNER_GROUP,
+    VO,
+}
 
 
 def loadJDLAsCFG(jdl):
@@ -357,3 +373,146 @@ def jdlToBaseJobDescriptionModel(classAd: ClassAd):
         return S_ERROR(f"Invalid JDL: {e}")
 
     return S_OK(jobDescription)
+
+
+def jdlToJobDescriptionModel(classAd: ClassAd):
+    """
+    Converts a JDL with credentials into a JobDescriptionModel.
+    """
+    if not {OWNER, OWNER_GROUP, VO}.issubset(classAd.getAttributes()):
+        return S_ERROR("Missing mandatory credentials attributes")
+
+    owner = classAd.getAttributeString(OWNER)
+    ownerGroup = classAd.getAttributeString(OWNER_GROUP)
+    vo = classAd.getAttributeString(VO)
+
+    res = jdlToBaseJobDescriptionModel(classAd)
+    if not res["OK"]:
+        return res
+    baseJobDescritionModel = res["Value"]
+
+    try:
+        job = JobDescriptionModel(
+            **baseJobDescritionModel.dict(exclude_none=True),
+            owner=owner,
+            ownerGroup=ownerGroup,
+            vo=vo,
+        )
+    except ValidationError as e:
+        return S_ERROR(f"Invalid JDL: {e}")
+
+    return S_OK(job)
+
+
+def dumpJobDescriptionModelAsJDL(jobDescription: JobDescriptionModel):
+    """
+    Converts the checked JSON string by pydantic into a JDL string to store in the database.
+    This method is implemented to give the same output as the _toJDL() method.
+    """
+
+    classAd = ClassAd("[]")
+    classAd.insertAttributeString(OWNER, jobDescription.owner)
+    classAd.insertAttributeString(OWNER_GROUP, jobDescription.ownerGroup)
+    classAd.insertAttributeString(VO, jobDescription.vo)
+
+    classAd.insertAttributeInt(CPU_TIME, jobDescription.cpuTime)
+    classAd.insertAttributeString(EXECUTABLE, jobDescription.executable)
+    classAd.insertAttributeString(JOB_NAME, jobDescription.jobName)
+    classAd.insertAttributeString(JOB_TYPE, jobDescription.jobType)
+    classAd.insertAttributeString(LOG_LEVEL, jobDescription.logLevel)
+    classAd.insertAttributeInt(MIN_NUMBER_OF_PROCESSORS, jobDescription.minNumberOfProcessors)
+    classAd.insertAttributeInt(PRIORITY, jobDescription.priority)
+    classAd.insertAttributeString(STD_ERROR, jobDescription.stderr)
+    classAd.insertAttributeString(STD_OUTPUT, jobDescription.stdout)
+
+    if jobDescription.arguments:
+        classAd.insertAttributeString(ARGUMENTS, jobDescription.arguments)
+
+    if jobDescription.bannedSites:
+        if len(jobDescription.bannedSites) == 1:
+            classAd.insertAttributeString(BANNED_SITES, jobDescription.bannedSites[0])
+        else:
+            classAd.insertAttributeVectorString(BANNED_SITES, sorted(list(jobDescription.bannedSites)))
+
+    if jobDescription.executionEnvironment:
+        environment = []
+        for key, val in jobDescription.executionEnvironment.items():
+            environment.append(f"{key}={quote(str(val))}")
+
+        if len(environment) == 1:
+            classAd.insertAttributeString(EXECUTION_ENVIRONMENT, environment[0])
+        else:
+            classAd.insertAttributeVectorString(EXECUTION_ENVIRONMENT, environment)
+
+    if jobDescription.gridCE:
+        classAd.insertAttributeString(GRID_CE, jobDescription.gridCE)
+
+    if jobDescription.inputData:
+        if len(jobDescription.inputData) == 1:
+            classAd.insertAttributeString(INPUT_DATA, list(jobDescription.inputData)[0])
+        else:
+            classAd.insertAttributeVectorString(INPUT_DATA, sorted(list(jobDescription.inputData)))
+
+    if jobDescription.inputDataPolicy:
+        classAd.insertAttributeString(INPUT_DATA_POLICY, jobDescription.inputDataPolicy)
+
+    if jobDescription.inputSandbox:
+        if len(jobDescription.inputSandbox) == 1:
+            classAd.insertAttributeString(INPUT_SANDBOX, list(jobDescription.inputSandbox)[0])
+        else:
+            classAd.insertAttributeVectorString(INPUT_SANDBOX, sorted(list(jobDescription.inputSandbox)))
+
+    if jobDescription.jobConfigArgs:
+        classAd.insertAttributeString(JOB_CONFIG_ARGS, jobDescription.jobConfigArgs)
+
+    if jobDescription.jobGroup:
+        classAd.insertAttributeString(JOB_GROUP, jobDescription.jobGroup)
+
+    if jobDescription.maxNumberOfProcessors:
+        classAd.insertAttributeInt(MAX_NUMBER_OF_PROCESSORS, jobDescription.maxNumberOfProcessors)
+        if jobDescription.minNumberOfProcessors == jobDescription.maxNumberOfProcessors:
+            classAd.insertAttributeInt(NUMBER_OF_PROCESSORS, jobDescription.minNumberOfProcessors)
+
+    if jobDescription.outputData:
+        if len(jobDescription.outputData) == 1:
+            classAd.insertAttributeString(OUTPUT_DATA, list(jobDescription.outputData)[0])
+        else:
+            classAd.insertAttributeVectorString(OUTPUT_DATA, sorted(list(jobDescription.outputData)))
+
+    if jobDescription.outputPath:
+        classAd.insertAttributeString(OUTPUT_PATH, jobDescription.outputPath)
+
+    if jobDescription.outputSandbox:
+        if len(jobDescription.outputSandbox) == 1:
+            classAd.insertAttributeString(OUTPUT_SANDBOX, list(jobDescription.outputSandbox)[0])
+        else:
+            classAd.insertAttributeVectorString(OUTPUT_SANDBOX, sorted(list(jobDescription.outputSandbox)))
+
+    if jobDescription.outputSE:
+        classAd.insertAttributeString(OUTPUT_SE, jobDescription.outputSE)
+
+    if jobDescription.platform:
+        classAd.insertAttributeString(PLATFORM, jobDescription.platform)
+
+    if jobDescription.sites:
+        if len(jobDescription.sites) == 1:
+            classAd.insertAttributeString(SITE, list(jobDescription.sites)[0])
+        else:
+            classAd.insertAttributeVectorString(SITE, sorted(list(jobDescription.sites)))
+
+    if jobDescription.tags:
+        if len(jobDescription.tags) == 1:
+            classAd.insertAttributeString(TAGS, jobDescription.tags[0])
+        else:
+            classAd.insertAttributeVectorString(TAGS, sorted(list(jobDescription.tags)))
+
+    if jobDescription.extraFields:
+        for key, value in jobDescription.extraFields.items():
+            if isinstance(value, (float, int)):
+                classAd.insertAttributeInt(key, value)
+            elif isinstance(value, str):
+                classAd.insertAttributeString(key, value)
+            else:
+                classAd.insertAttributeString(key, str(value))
+
+    return classAd
