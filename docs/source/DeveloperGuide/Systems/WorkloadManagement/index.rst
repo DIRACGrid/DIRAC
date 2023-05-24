@@ -106,24 +106,5 @@ It is based on layered architecture and is based on DIRAC architecture:
     SandboxMetadataDB class is a front-end to the metadata for sandboxes.
 
   * ElasticJobParametersDB
-    ElasticJobParametersDB class is a front-end to the ES-based index providing Job Parameters.
-    It is used in most of the WMS components and is based on ElasticSearch.
-
-------------------------------------------
-Using ElasticSearch DB for Job Parameters
-------------------------------------------
-
-ElasticJobParametersDB is a DB class which is used to interact with an ElasticSearch backend. It contains methods
-to retreive (get) information about the Job Parameters along with updating and creating those parameters.
-
-The class exposes two methods:
-
-  * getJobParameters(JobID, ParamList (optional)):
-    This method can be used to get information of the Job Parameters based on the JobID. Returns name and value.
-    Optional ParamList can be given to make the search more specific.
-    The method uses the search API provided by ElasticSearch-py.
-
-  * setJobParameter(JobID, Name, Value):
-    This method is used to update the Job Parameters based on the given JobID. Returns result of the operation.
-    If JobID  is not present in the index, it inserts the given values in that day's index.
-    The method uses the update-by-query and create APIs provided by ElasticSearch-py.
+    ElasticJobParametersDB class is a front-end to the Elastic/OpenSearch based index providing Job Parameters.
+    It is used in most of the WMS components and is based on Elastic/OpenSearch.

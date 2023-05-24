@@ -27,12 +27,13 @@ TaskQueueDB
 
 All the DBs above are MySQL DBs, and should be installed using the :ref:`system administrator console <system-admin-console>`.
 
-
-.. versionadded:: v7r0
-   The JobDB MySQL table *JobParameters* can be replaced by an JobParameters backend built in ElasticSearch.
+   The JobDB MySQL table *JobParameters* can be replaced by an JobParameters backend built in Elastic/OpenSearch.
    To enable it, set the following flag::
 
       /Operations/[Defaults | Setup]/Services/JobMonitoring/useESForJobParametersFlag=True
+
+  If you decide to make use of this Elastic/OpenSearch backend for storing job parameters, you would be in charge of setting
+  the index policies, as Job Parameters stored in Elastic/OpenSearch are not deleted together with the jobs.
 
 
 Services
