@@ -9,7 +9,7 @@ requesting new tokens for DIRAC components that have the appropriate permissions
     :dedent: 2
     :caption: TokenManager options
 
-The most common use of this service is to obtain user tokens with certain scope to return to the user for its purposes,
+The most common use of this service is to obtain tokens with certain scope to return to the user for its purposes,
 or to provide to the DIRAC service to perform asynchronous tasks on behalf of the user.
 This is mainly about the :py:meth:`export_getToken` method.
 
@@ -39,6 +39,14 @@ from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.FrameworkSystem.DB.TokenDB import TokenDB
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+from DIRAC.FrameworkSystem.Utilities.TokenManagementUtilities import (
+    getIdProviderClient,
+    getCachedKey,
+    getCachedToken,
+    DEFAULT_RT_EXPIRATION_TIME,
+    DEFAULT_AT_EXPIRATION_TIME,
+)
+
 
 # Used to synchronize the cache with user tokens
 gTokensSync = ThreadSafe.Synchronizer()
@@ -46,7 +54,6 @@ gTokensSync = ThreadSafe.Synchronizer()
 
 class TokenManagerHandler(TornadoService):
     DEFAULT_AUTHORIZATION = ["authenticated"]
-    DEFAULT_RT_EXPIRATION_TIME = 24 * 3600
 
     @classmethod
     def initializeHandler(cls, *args):
@@ -176,7 +183,7 @@ class TokenManagerHandler(TornadoService):
     @gTokensSync
     def export_getToken(
         self,
-        username: str,
+        username: str = None,
         userGroup: str = None,
         scope: str = None,
         audience: str = None,
@@ -199,33 +206,42 @@ class TokenManagerHandler(TornadoService):
 
         :return: S_OK(dict)/S_ERROR()
         """
-        if not identityProvider and userGroup:
-            identityProvider = Registry.getIdPForGroup(userGroup)
-        if not identityProvider:
-            return S_ERROR(f"The {userGroup} group belongs to the VO that is not tied to any Identity Provider.")
-
-        # prepare the client instance of the appropriate IdP
-        result = self.idps.getIdProvider(identityProvider)
+        # Get an IdProvider Client instance
+        result = getIdProviderClient(userGroup, identityProvider)
         if not result["OK"]:
             return result
         idpObj = result["Value"]
 
-        if userGroup and (result := idpObj.getGroupScopes(userGroup)):
-            # What scope correspond to the requested group?
-            scope = list(set((scope or []) + result))
+        # Search for an existing token in tokensCache
+        cachedKey = getCachedKey(idpObj.name, username, userGroup, scope, audience)
+        result = getCachedToken(self.__tokensCache, cachedKey, requiredTimeLeft)
+        if result["OK"]:
+            # A valid token has been found and is returned
+            return result
 
-        # Set the scope
-        idpObj.scope = " ".join(scope)
+        # A client token is requested
+        if not username:
+            result = self.__checkProperties("", "")
+            if not result["OK"]:
+                return result
 
-        # Let's check if there is a corresponding token in the cache
-        cacheKey = (username, idpObj.scope, audience, identityProvider)
-        if self.__tokensCache.exists(cacheKey, requiredTimeLeft):
-            # Well we have a fresh record containing a Token object
-            token = self.__tokensCache.get(cacheKey)
-            # Let's check if the access token is fresh
-            if not token.is_expired(requiredTimeLeft):
-                return S_OK(token)
+            # Get the client token with requested scope and audience
+            scope = cachedKey[1]
+            audience = cachedKey[2]
+            result = idpObj.fetchToken(grant_type="client_credentials", scope=scope, audience=audience)
+            if not result["OK"]:
+                return result
+            token = result["Value"]
 
+            # Caching new token: only get an access token (no refresh token in this context)
+            self.__tokensCache.add(
+                cachedKey,
+                result["Value"].get_claim("exp", "access_token") or DEFAULT_AT_EXPIRATION_TIME,
+                token,
+            )
+            return result
+
+        # A user token is requested
         err = []
         # No luck so far, let's refresh the token stored in the database
         result = Registry.getDNForUsername(username)
@@ -237,7 +253,7 @@ class TokenManagerHandler(TornadoService):
             if result["OK"]:
                 uid = result["Value"]
                 # To do this, first find the refresh token stored in the database with the maximum scope
-                result = self.__tokenDB.getTokenForUserProvider(uid, identityProvider)
+                result = self.__tokenDB.getTokenForUserProvider(uid, idpObj.name)
                 if result["OK"] and result["Value"]:
                     tokens = result["Value"]
                     result = self.__checkProperties(dn, userGroup)
@@ -247,8 +263,8 @@ class TokenManagerHandler(TornadoService):
                         if result["OK"]:
                             # caching new tokens
                             self.__tokensCache.add(
-                                cacheKey,
-                                result["Value"].get_claim("exp", "refresh_token") or self.DEFAULT_RT_EXPIRATION_TIME,
+                                cachedKey,
+                                result["Value"].get_claim("exp", "refresh_token") or DEFAULT_RT_EXPIRATION_TIME,
                                 result["Value"],
                             )
                             return result
