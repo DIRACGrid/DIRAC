@@ -142,9 +142,20 @@ class JobScheduling(OptimizerExecutor):
         if jobType in Operations().getValue("Transformations/DataProcessing", []):
             self.jobLog.info("Production job: sending to TQ, but first checking if staging is requested")
 
+            res = jobState.getAttribute("Owner")
+            if not res["OK"]:
+                return res
+            owner = res["Value"]
+
+            res = jobState.getAttribute("OwnerGroup")
+            if not res["OK"]:
+                return res
+            ownerGroup = res["Value"]
+
             res = getFilesToStage(
                 inputData,
-                jobState=jobState,
+                owner,
+                ownerGroup,
                 checkOnlyTapeSEs=self.ex_getOption("CheckOnlyTapeSEs", True),
                 jobLog=self.jobLog,
             )

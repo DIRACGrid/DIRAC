@@ -337,6 +337,9 @@ fullInstallDIRAC() {
     exit 1
   fi
 
+  #celery
+  celery "--config" "DIRAC.Core.Celery.celeryconfig" "--app" "DIRAC.Core.Celery.CeleryApp.celery" "worker" "--concurrency" "10" "--loglevel" "DEBUG" "--detach"
+
   echo "==> Restarting WorkloadManagement JobManager"
   dirac-restart-component WorkloadManagement JobManager ${DEBUG}
 

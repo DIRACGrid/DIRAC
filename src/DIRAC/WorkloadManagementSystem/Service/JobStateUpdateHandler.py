@@ -6,11 +6,14 @@
     setJobStatus()
 
 """
+from os import getenv
 import time
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Celery.CeleryApp import celery
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
+from DIRAC.Core.Utilities.JDL import jdlToJobDescriptionModel
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -60,8 +63,12 @@ class JobStateUpdateHandlerMixin:
     def export_updateJobFromStager(cls, jobID, status):
         """Simple call back method to be used by the stager."""
         if status == "Done":
-            jobStatus = JobStatus.CHECKING
-            minorStatus = "JobScheduling"
+            if getenv("DIRAC_USE_CELERY"):
+                jobStatus = JobStatus.RECEIVED
+                minorStatus = "Input files staged successfully"
+            else:
+                jobStatus = JobStatus.CHECKING
+                minorStatus = "JobScheduling"
         else:
             jobStatus = None
             minorStatus = "Staging input files failed"
@@ -88,9 +95,25 @@ class JobStateUpdateHandlerMixin:
         if not result["OK"]:
             if result["Message"].find("does not exist") != -1:
                 return S_OK()
+            return result
+
+        if getenv("DIRAC_USE_CELERY"):
+            res = cls.jobDB.getJobJDL(jobID)
+            if not res["OK"]:
+                return res
+
+            jdl = res["Value"]
+
+            res = jdlToJobDescriptionModel(jdl)
+            if not res["OK"]:
+                return res
+            job = res["Value"]
+
+            celery.send_task("resolveInputData", task_id=str(jobID), args=[job.json()])
+
         if infoStr:
             return S_OK(infoStr)
-        return result
+        return S_OK()
 
     ###########################################################################
     types_setJobStatus = [[str, int], str, str, str]

@@ -28,6 +28,21 @@ services:
       retries: 15
       start_period: 60s
 
+  rabbitmq:
+    image: rabbitmq
+    container_name: rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=password
+    ports:
+      - 5672:5672
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 5s
+      timeout: 2s
+      retries: 15
+      start_period: 60s
+
   iam-login-service:
     image: ${IAM_VER}
     container_name: iam-login-service
@@ -65,6 +80,8 @@ services:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     ulimits:
       nofile: 8192
 
@@ -77,3 +94,15 @@ services:
       - dirac-server
     ulimits:
       nofile: 8192
+
+  # Monitoring
+  flower:
+    image: mher/flower
+    container_name: flower
+    environment:
+      - CELERY_BROKER_URL=amqp://admin:password@rabbitmq:5672/
+      - FLOWER_PORT=5555
+    ports:
+      - 5555:5555
+    depends_on:
+      - rabbitmq

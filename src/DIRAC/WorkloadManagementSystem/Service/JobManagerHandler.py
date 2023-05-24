@@ -9,15 +9,21 @@
     killJob()
 
 """
+from os import getenv
 from pydantic import ValidationError
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+from DIRAC.Core.Celery.CeleryApp import celery
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC.Core.Utilities.JDL import dumpJobDescriptionModelAsJDL, jdlToBaseJobDescriptionModel
+from DIRAC.Core.Utilities.JDL import (
+    dumpJobDescriptionModelAsJDL,
+    jdlToBaseJobDescriptionModel,
+    jdlToJobDescriptionModel,
+)
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
@@ -227,9 +233,13 @@ class JobManagerHandlerMixin:
 
         result["JobID"] = result["Value"]
         result["requireProxyUpload"] = self.__checkIfProxyUploadIsRequired()
-        # Ensure non-parametric jobs (i.e. non-bulk) get sent to optimizer immediately
+        # Ensure non-parametric jobs (i.e. non-bulk) get sent to celery immediately
         if not parametricJob:
-            self.__sendJobsToOptimizationMind(jobIDList)
+            if getenv("DIRAC_USE_CELERY"):
+                # celery.send_task("resolveInputSandbox", task_id=str(jobID), args=[jobs[0].json(exclude_none=True)])
+                pass
+            else:
+                self.__sendJobsToOptimizationMind(jobIDList)
         return result
 
     ###########################################################################
@@ -284,7 +294,22 @@ class JobManagerHandlerMixin:
         if not result["OK"]:
             return result
 
-        self.__sendJobsToOptimizationMind(jobUpdateStatusList)
+        if getenv("DIRAC_USE_CELERY"):
+            for jobID in jobIDs:
+                res = self.jobDB.getJobJDL(jobID)
+                if not res["OK"]:
+                    return res
+                jdl = res["Value"]
+
+                res = jdlToJobDescriptionModel(jdl)
+                if not res["OK"]:
+                    return res
+                job = res["Value"]
+
+                celery.send_task("resolveInputSandbox", task_id=str(jobID), args=[job.json(exclude_none=True)])
+        else:
+            self.__sendJobsToOptimizationMind(jobUpdateStatusList)
+
         return S_OK(jobUpdateStatusList)
 
     ###########################################################################
@@ -362,6 +387,22 @@ class JobManagerHandlerMixin:
                 source="JobManager",
             )
 
+        if getenv("DIRAC_USE_CELERY"):
+            for jobID in jobIDs:
+                res = self.jobDB.getJobJDL(jobID)
+                if not res["OK"]:
+                    return res
+                jdl = res["Value"]
+
+                res = jdlToJobDescriptionModel(jdl)
+                if not res["OK"]:
+                    return res
+                job = res["Value"]
+
+                celery.send_task("resolveInputSandbox", task_id=str(jobID), args=[job.json(exclude_none=True)])
+        else:
+            self.__sendJobsToOptimizationMind(validJobList)
+
         if invalidJobList or nonauthJobList:
             result = S_ERROR("Some jobs failed reschedule")
             if invalidJobList:
@@ -372,7 +413,6 @@ class JobManagerHandlerMixin:
 
         result = S_OK(validJobList)
         result["requireProxyUpload"] = len(ownerJobList) > 0 and self.__checkIfProxyUploadIsRequired()
-        self.__sendJobsToOptimizationMind(validJobList)
         return result
 
     types_removeJob = []
@@ -652,7 +692,22 @@ class JobManagerHandlerMixin:
                     source="JobManager",
                 )
 
-        self.__sendJobsToOptimizationMind(good_ids)
+        if getenv("DIRAC_USE_CELERY"):
+            for jobID in jobIDs:
+                res = self.jobDB.getJobJDL(jobID)
+                if not res["OK"]:
+                    return res
+                jdl = res["Value"]
+
+                res = jdlToJobDescriptionModel(jdl)
+                if not res["OK"]:
+                    return res
+                job = res["Value"]
+
+                celery.send_task("resolveInputSandbox", task_id=str(jobID), args=[job.json(exclude_none=True)])
+        else:
+            self.__sendJobsToOptimizationMind(good_ids)
+
         if invalidJobList or nonauthJobList or badIDs:
             result = S_ERROR("Some jobs failed resetting")
             if invalidJobList:

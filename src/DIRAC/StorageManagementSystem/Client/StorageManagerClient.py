@@ -13,7 +13,7 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 
-def getFilesToStage(lfnList, jobState=None, checkOnlyTapeSEs=None, jobLog=None):
+def getFilesToStage(lfnList, userName=None, userGroup=None, checkOnlyTapeSEs=None, jobLog=None):
     """Utility that returns out of a list of LFNs those files that are offline,
     and those for which at least one copy is online
     """
@@ -61,20 +61,6 @@ def getFilesToStage(lfnList, jobState=None, checkOnlyTapeSEs=None, jobLog=None):
             seToLFNs.setdefault(se, list()).append(lfn)
 
     if seToLFNs:
-        if jobState:
-            # Get user name and group from the job state
-            userName = jobState.getAttribute("Owner")
-            if not userName["OK"]:
-                return userName
-            userName = userName["Value"]
-
-            userGroup = jobState.getAttribute("OwnerGroup")
-            if not userGroup["OK"]:
-                return userGroup
-            userGroup = userGroup["Value"]
-        else:
-            userName = None
-            userGroup = None
         # Check whether files are Online or Offline, or missing at SE
         result = _checkFilesToStage(
             seToLFNs,
