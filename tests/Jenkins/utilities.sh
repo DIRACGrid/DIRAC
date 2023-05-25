@@ -667,7 +667,6 @@ diracAddSite() {
 diracServices(){
   echo '==> [diracServices]'
 
-  # Ignore tornado services
   local services=$(cut -d '.' -f 1 < services | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
 
   # group proxy, will be uploaded explicitly

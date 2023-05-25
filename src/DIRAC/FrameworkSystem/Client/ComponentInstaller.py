@@ -1532,8 +1532,6 @@ class ComponentInstaller:
                 self.addSystemInstance(system, self.instance, self.setup, True)
 
             for system, service in setupServices:
-                addTornado = bool(service.startswith("Tornado"))
-
                 if not self.addDefaultOptionsToCS(None, "service", system, service, extensions, overwrite=True)["OK"]:
                     # If we are not allowed to write to the central CS, add the configuration to the local file
                     gLogger.warn(
@@ -1544,7 +1542,7 @@ class ComponentInstaller:
                     if not res["OK"]:
                         gLogger.warn("Can't write to the specific component CFG")
 
-                if addTornado:
+                if service.startswith("Tornado"):
                     gLogger.notice("Installing Tornado")
                     if not (res := self.installTornado())["OK"]:
                         return res
@@ -1624,7 +1622,7 @@ class ComponentInstaller:
 
         # 3.- Then installed requested services
         for system, service in setupServices:
-            if not bool(service.startswith("Tornado")):
+            if not service.startswith("Tornado"):
                 if not (result := self.setupComponent("service", system, service, extensions))["OK"]:
                     gLogger.error(result["Message"])
                     continue

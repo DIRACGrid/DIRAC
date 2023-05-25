@@ -56,7 +56,6 @@ def main():
     Script.parseCommandLine(ignoreErrors=False)
     args = Script.getPositionalArgs()
 
-    # If we specify a service, add its
     if not args or len(args) > 2:
         Script.showHelp(exitCode=1)
 
@@ -116,16 +115,16 @@ def main():
         gLogger.error(result["Message"])
         DIRACexit(1)
 
-    if not component.startswith("Tornado"):
+    if component.startswith("Tornado"):
+        result = gComponentInstaller.installTornado()
+        if not result["OK"]:
+            gLogger.error(result["Message"])
+            DIRACexit(1)
+    else:
         result = gComponentInstaller.installComponent(cType, system, component, extensionsByPriority(), params.module)
         if not result["OK"]:
             gLogger.error(result["Message"])
             DIRACexit(1)
-
-    result = gComponentInstaller.installTornado()
-    if not result["OK"]:
-        gLogger.error(result["Message"])
-        DIRACexit(1)
 
     gLogger.notice(f"Successfully installed component {component} in {system} system, now setting it up")
 
