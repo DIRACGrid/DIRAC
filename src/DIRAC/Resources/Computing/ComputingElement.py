@@ -258,11 +258,7 @@ class ComputingElement:
             result["WaitingJobs"] = 0
             result["SubmittedJobs"] = 0
         else:
-            result = self.ceParameters.get("CEType")
-            if result and result == "CREAM":
-                result = self.getCEStatus(jobIDList)  # pylint: disable=too-many-function-args
-            else:
-                result = self.getCEStatus()
+            result = self.getCEStatus()
             if not result["OK"]:
                 return result
         runningJobs = result["RunningJobs"]

@@ -70,7 +70,7 @@ def test_doNew():
                 "OUTAGE",
                 now,
                 "Resource",
-                "CREAM",
+                "HTCondorCE",
             ),
         ),
         "Columns": [

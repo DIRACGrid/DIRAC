@@ -27,13 +27,13 @@ sge_o_log_name:             lhcb049
 sge_o_path:                 /opt/sge/bin/lx24-amd64:/usr/bin:/bin
 sge_o_shell:                /bin/sh
 sge_o_workdir:              /var/glite/tmp
-sge_o_host:                 cccreamceli05
+sge_o_host:                 celi05
 account:                    GRID=EGI SITE=IN2P3-CC TIER=tier1 VO=lhcb ROLEVOMS=&2Flhcb&2FRole=pilot&2FCapability=NULL
 merge:                      y
 hard resource_list:         os=sl5,s_cpu=1000,s_vmem=5120M,s_fsize=51200M,cvmfs=1,dcache=1
-mail_list:                  lhcb049@cccreamceli05.in2p3.fr
+mail_list:                  lhcb049@celi05.in2p3.fr
 notify:                     FALSE
-job_name:                   cccreamceli05_crm05_749996134
+job_name:                   celi05_crm05_749996134
 stdout_path_list:           NONE:NONE:/dev/null
 jobshare:                   0
 hard_queue_list:            huge

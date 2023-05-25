@@ -18,7 +18,7 @@ in "two" different formats:
 
 The system consists of the following accounting types:
    - Job:  for creating reports of the activity on the computing resources such as Grid, Cloud, etc.
-   - Pilot: for creating reports for pilot jobs running on different computing elements such as ARC CE, CREAM, VAC, etc.
+   - Pilot: for creating reports for pilot jobs running on different computing elements such as ARC, HTCondor, VAC, etc.
    - Data operation: for creating reports about data activities: transfers, replication, removal, etc.
    - WMS History: This it used for monitoring the DIRAC Workload Management system. This type is replaced by the
      WMS monitoring which is part of the Monitoring system. It is replaced, because the WMS History type is for real
