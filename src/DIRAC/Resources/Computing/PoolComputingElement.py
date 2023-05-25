@@ -29,7 +29,6 @@ from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationDat
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
 from DIRAC.Resources.Computing.InProcessComputingElement import InProcessComputingElement
-from DIRAC.Resources.Computing.SudoComputingElement import SudoComputingElement
 from DIRAC.Resources.Computing.SingularityComputingElement import SingularityComputingElement
 
 # Number of unix users to run job payloads with sudo
@@ -48,12 +47,7 @@ def executeJob(executableFile, proxy, taskID, inputs, **kwargs):
 
     innerCESubmissionType = kwargs.pop("InnerCESubmissionType")
 
-    if innerCESubmissionType == "Sudo":
-        ce = SudoComputingElement("Task-" + str(taskID))
-        payloadUser = kwargs.get("PayloadUser")
-        if payloadUser:
-            ce.setParameters({"PayloadUser": payloadUser})
-    elif innerCESubmissionType == "Singularity":
+    if innerCESubmissionType == "Singularity":
         ce = SingularityComputingElement("Task-" + str(taskID))
     else:
         ce = InProcessComputingElement("Task-" + str(taskID))
