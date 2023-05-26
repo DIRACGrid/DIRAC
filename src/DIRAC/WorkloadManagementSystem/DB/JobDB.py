@@ -1205,24 +1205,6 @@ class JobDB(DB):
 
         return result
 
-    #################################################################
-    def rescheduleJobs(self, jobIDs):
-        """Reschedule all the jobs in the given list"""
-
-        result = S_OK()
-
-        failedJobs = []
-        for jobID in jobIDs:
-            result = self.rescheduleJob(jobID)
-            if not result["OK"]:
-                failedJobs.append(jobID)
-
-        if failedJobs:
-            result = S_ERROR("JobDB.rescheduleJobs: Not all the jobs were rescheduled")
-            result["FailedJobs"] = failedJobs
-
-        return result
-
     #############################################################################
     def rescheduleJob(self, jobID):
         """Reschedule the given job to run again from scratch. Retain the already
