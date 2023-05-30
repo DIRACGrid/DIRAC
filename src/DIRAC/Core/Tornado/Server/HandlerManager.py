@@ -2,8 +2,6 @@
   This module contains the necessary tools to discover and load
   the handlers for serving HTTPS
 """
-from tornado.web import RequestHandler
-
 from DIRAC import gConfig, gLogger, S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
@@ -103,7 +101,7 @@ class HandlerManager:
         # Extract ports, e.g.: ['Framework/MyService', 'Framework/MyService2:9443]
         port, instances = self.__extractPorts(instances)
 
-        loader = ModuleLoader(componentType, pathFinder, RequestHandler, moduleSuffix="Handler")
+        loader = ModuleLoader(componentType, pathFinder, False, moduleSuffix="Handler")
 
         # Use DIRAC system to load: search in CS if path is given and if not defined
         # it search in place it should be (e.g. in DIRAC/FrameworkSystem/< component type >)

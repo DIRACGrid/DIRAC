@@ -122,7 +122,7 @@ findServices(){
       ServicestoSearch=' '
     fi
   else
-    ServicestoExclude='notExcluding'
+    ServicestoExclude=' '
   fi
 
   if ! cd "${SERVERINSTALLDIR}" -ne 0; then
@@ -132,7 +132,7 @@ findServices(){
   if [[ -n "${ServicestoExclude}" ]]; then
     python -m DIRAC.Core.Utilities.Extensions findServices | grep -v "${ServicestoExclude}" > services
   else
-    python -m DIRAC.Core.Utilities.Extensions findServices | grep "${ServicestoSearch}"> services
+    python -m DIRAC.Core.Utilities.Extensions findServices | grep "${ServicestoSearch}" > services
   fi
 
   echo "found $(wc -l services)"
@@ -609,12 +609,12 @@ diracUserAndGroup() {
 
 diracProxies() {
   echo '==> [diracProxies]'
-  # User proxy, should be uploaded anyway
+  # User proxy
   if ! dirac-login -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" -T 72 "${DEBUG}"; then
     echo 'ERROR: dirac-login failed' >&2
     exit 1
   fi
-  # group proxy, will be uploaded explicitly
+  # group proxy
   if ! dirac-login prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" -T 72 "${DEBUG}"; then
     echo 'ERROR: dirac-login failed' >&2
     exit 1
@@ -667,8 +667,7 @@ diracAddSite() {
 diracServices(){
   echo '==> [diracServices]'
 
-  # Ignore tornado services
-  local services=$(cut -d '.' -f 1 < services | grep -v Tornado | grep -v TokenManager | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
+  local services=$(cut -d '.' -f 1 < services | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
@@ -678,6 +677,10 @@ diracServices(){
     echo "==> calling dirac-install-component $serv ${DEBUG}"
     if ! dirac-install-component "$serv" "${DEBUG}"; then
       echo 'ERROR: dirac-install-component failed' >&2
+      exit 1
+    fi
+    if ! dirac-restart-component Tornado Tornado "${DEBUG}"; then
+      echo 'ERROR: could not restart Tornado' >&2
       exit 1
     fi
   done
@@ -799,7 +802,7 @@ diracDFCDB(){
   mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" < "${SRC_ROOT}/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql"
 }
 
-# Drop, then manually install the DFC for MultiVOFileCatalog
+# Drop, then manually install the DFC with MultiVOFileCatalogDB
 diracMVDFCDB(){
   echo '==> [diracMVDFCDB]'
 

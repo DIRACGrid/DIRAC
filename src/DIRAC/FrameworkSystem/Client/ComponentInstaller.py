@@ -55,6 +55,7 @@ import re
 import shutil
 import stat
 import subprocess
+import textwrap
 import time
 from collections import defaultdict
 
@@ -75,10 +76,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import (
     cfgPath,
     cfgPathToList,
 )
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security.Properties import (
     ALARMS_MANAGEMENT,
     CS_ADMINISTRATOR,
@@ -345,8 +343,7 @@ class ComponentInstaller:
         result = cfgClient.mergeFromCFG(cfg)
         if not result["OK"]:
             return result
-        result = cfgClient.commit()
-        return result
+        return cfgClient.commit()
 
     def _addCfgToLocalCS(self, cfg):
         """
@@ -716,6 +713,12 @@ class ComponentInstaller:
 
         gLogger.notice("Adding to CS", f"{componentType} {system}/{component}")
         resultAddToCFG = self._addCfgToCS(compCfg)
+        if not resultAddToCFG["OK"]:
+            return resultAddToCFG
+        resultAddToCFG = self.addTornadoOptionsToCS(gConfig_o)
+        if not resultAddToCFG["OK"]:
+            return resultAddToCFG
+
         if componentType == "executor":
             # Is it a container ?
             execList = compCfg.getOption(f"{componentSection}/Load", [])
@@ -727,6 +730,7 @@ class ComponentInstaller:
                     gLogger.warn("Can't add to default CS", result["Message"])
                 resultAddToCFG.setdefault("Modules", {})
                 resultAddToCFG["Modules"][element] = result["OK"]
+
         return resultAddToCFG
 
     def addDefaultOptionsToComponentCfg(self, componentType, systemName, component, extensions):
@@ -818,7 +822,10 @@ class ComponentInstaller:
         cfg.createNewSection(cfgPath(sectionPath, component), "", compCfg)
 
         for option, value in specialOptions.items():
-            cfg.setOption(cfgPath(sectionPath, component, option), value)
+            cfg.setOption(
+                cfgPath(sectionPath, component, option),
+                value,
+            )
 
         # Add the service URL
         if componentType == "service":
@@ -830,14 +837,14 @@ class ComponentInstaller:
                 failoverUrlsPath = cfgPath("Systems", system, compInstance, "FailoverURLs")
                 cfg.createNewSection(failoverUrlsPath)
                 if protocol == "https":
-                    tornadoPort = gConfig.getValue(
-                        f"/Systems/Tornado/{PathFinder.getSystemInstance('Tornado')}/Port",
-                        8443,
-                    )
+                    if not port:
+                        port = gConfig.getValue(
+                            f"/Systems/Tornado/{PathFinder.getSystemInstance('Tornado')}/Port", 8443
+                        )
                     cfg.setOption(
                         # Strip "Tornado" from the beginning of component name if present
                         cfgPath(urlsPath, component[len("Tornado") if component.startswith("Tornado") else 0 :]),
-                        f"https://{self.host}:{tornadoPort}/{system}/{component}",
+                        f"https://{self.host}:{port}/{system}/{component}",
                     )
                 else:
                     cfg.setOption(
@@ -930,8 +937,7 @@ class ComponentInstaller:
 
         system = systemName.replace("System", "")
         gLogger.notice(
-            "Adding %s system as %s self.instance for %s self.setup to dirac.cfg and CS"
-            % (system, compInstance, mySetup)
+            f"Adding {system} system as {compInstance} self.instance for {mySetup} self.setup to dirac.cfg and CS"
         )
 
         cfg = self.__getCfg(cfgPath("DIRAC", "Setups", mySetup), system, compInstance)
@@ -1246,11 +1252,11 @@ class ComponentInstaller:
         and if it inherits from the proper class
         """
         if componentType == "agent":
-            loader = ModuleLoader("Agent", PathFinder.getAgentSection, AgentModule)
+            loader = ModuleLoader("Agent", PathFinder.getAgentSection)
         elif componentType == "service":
-            loader = ModuleLoader("Service", PathFinder.getServiceSection, RequestHandler, moduleSuffix="Handler")
+            loader = ModuleLoader("Service", PathFinder.getServiceSection, moduleSuffix="Handler")
         elif componentType == "executor":
-            loader = ModuleLoader("Executor", PathFinder.getExecutorSection, ExecutorModule)
+            loader = ModuleLoader("Executor", PathFinder.getExecutorSection)
         else:
             return S_ERROR(f"Unknown component type {componentType}")
 
@@ -1445,16 +1451,27 @@ class ComponentInstaller:
             # This server hosts the Master of the CS
             from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
-            gLogger.notice("Installing Master Configuration Server")
+            gLogger.notice("Installing Master Configuration Server (Tornado-based)")
 
-            cfg = self.__getCfg(cfgPath("DIRAC", "Setups", self.setup), "Configuration", self.instance)
+            # Add some needed bootstrapping configuration
+            cfg = self.__getCfg(cfgPath("DIRAC", "Setups", self.setup), "Tornado", self.instance)
+            self._addCfgToDiracCfg(cfg)
+            cfg = self.__getCfg(
+                cfgPath("Systems", "Configuration", self.instance, "Services", "Server"),
+                "HandlerPath",
+                "DIRAC/ConfigurationSystem/Service/TornadoConfigurationHandler.py",
+            )
+            self._addCfgToDiracCfg(cfg)
+            cfg = self.__getCfg(
+                cfgPath("Systems", "Configuration", self.instance, "Services", "Server"), "Port", "9135"
+            )
             self._addCfgToDiracCfg(cfg)
             cfg = self.__getCfg(cfgPath("DIRAC", "Configuration"), "Master", "yes")
             cfg.setOption(cfgPath("DIRAC", "Configuration", "Name"), setupConfigurationName)
 
             serversCfgPath = cfgPath("DIRAC", "Configuration", "Servers")
             if not self.localCfg.getOption(serversCfgPath, []):
-                serverUrl = f"dips://{self.host}:9135/Configuration/Server"
+                serverUrl = f"https://{self.host}:9135/Configuration/Server"
                 cfg.setOption(serversCfgPath, serverUrl)
                 gConfigurationData.setOptionInCFG(serversCfgPath, serverUrl)
             instanceOptionPath = cfgPath("DIRAC", "Setups", self.setup)
@@ -1513,6 +1530,7 @@ class ComponentInstaller:
             gLogger.notice("Registering System instances")
             for system in setupSystems:
                 self.addSystemInstance(system, self.instance, self.setup, True)
+
             for system, service in setupServices:
                 if not self.addDefaultOptionsToCS(None, "service", system, service, extensions, overwrite=True)["OK"]:
                     # If we are not allowed to write to the central CS, add the configuration to the local file
@@ -1523,6 +1541,17 @@ class ComponentInstaller:
                     res = self.addDefaultOptionsToComponentCfg("service", system, service, extensions)
                     if not res["OK"]:
                         gLogger.warn("Can't write to the specific component CFG")
+
+                if service.startswith("Tornado"):
+                    gLogger.notice("Installing Tornado")
+                    if not (res := self.installTornado())["OK"]:
+                        return res
+
+                    if not (res := self.setupTornadoService(system, service))["OK"]:
+                        return res
+
+                    self.runsvctrlComponent("Tornado", "Tornado", "t")
+
             for system, agent in setupAgents:
                 if not self.addDefaultOptionsToCS(None, "agent", system, agent, extensions, overwrite=True)["OK"]:
                     # If we are not allowed to write to the central CS, add the configuration to the local file
@@ -1593,22 +1622,20 @@ class ComponentInstaller:
 
         # 3.- Then installed requested services
         for system, service in setupServices:
-            result = self.setupComponent("service", system, service, extensions)
-            if not result["OK"]:
-                gLogger.error(result["Message"])
-                continue
+            if not service.startswith("Tornado"):
+                if not (result := self.setupComponent("service", system, service, extensions))["OK"]:
+                    gLogger.error(result["Message"])
+                    continue
 
         # 4.- Now the agents
         for system, agent in setupAgents:
-            result = self.setupComponent("agent", system, agent, extensions)
-            if not result["OK"]:
+            if not (result := self.setupComponent("agent", system, agent, extensions))["OK"]:
                 gLogger.error(result["Message"])
                 continue
 
         # 5.- Now the executors
         for system, executor in setupExecutors:
-            result = self.setupComponent("executor", system, executor, extensions)
-            if not result["OK"]:
+            if not (result := self.setupComponent("executor", system, executor, extensions))["OK"]:
                 gLogger.error(result["Message"])
                 continue
 
@@ -1637,29 +1664,33 @@ class ComponentInstaller:
         logConfigFile = os.path.join(logDir, "config")
         with open(logConfigFile, "w") as fd:
             fd.write(
-                """s10000000
-  n20
-  """
+                textwrap.dedent(
+                    """
+                    s10000000
+                    n20
+                    """
+                )
             )
 
         logRunFile = os.path.join(logDir, "run")
         with open(logRunFile, "w") as fd:
             fd.write(
-                """#!/bin/bash
+                textwrap.dedent(
+                    f"""#!/bin/bash
 
-rcfile=%(bashrc)s
-[[ -e $rcfile ]] && source ${rcfile}
-#
-exec svlogd .
-  """
-                % {"bashrc": os.path.join(self.instancePath, "bashrc")}
+                    rcfile={os.path.join(self.instancePath, "bashrc")}
+                    [[ -e ${{rcfile}} ]] && source ${{rcfile}}
+                    #
+                    exec svlogd .
+                    """
+                )
             )
 
         os.chmod(logRunFile, self.gDefaultPerms)
 
     def installComponent(self, componentType, system, component, extensions, componentModule="", checkModule=True):
         """
-        Install runit directory for the specified component
+        DIPS services: install runit directory for the specified component
         """
         # Check if the component is already installed
         runitCompDir = os.path.join(self.runitDir, system, component)
@@ -1712,7 +1743,7 @@ exec svlogd .
             for var in bashSection:
                 bashVars = f"{bashVars}\nexport {var}={bashSection[var]}"
 
-        # Now do the actual installation
+        # Now do the actual installation (for DIPS)
         try:
             componentCfg = os.path.join(self.linkedRootPath, "etc", f"{system}_{component}.cfg")
             if not os.path.exists(componentCfg):
@@ -1722,28 +1753,42 @@ exec svlogd .
 
             runFile = os.path.join(runitCompDir, "run")
             with open(runFile, "w") as fd:
-                fd.write(
-                    """#!/bin/bash
+                # Special case for tornado-based master CS
+                if system == "Configuration" and component == "Server":
+                    fd.write(
+                        textwrap.dedent(
+                            f"""#!/bin/bash
 
-rcfile=%(bashrc)s
-[[ -e $rcfile ]] && source ${rcfile}
-#
-exec 2>&1
-#
-[[ "%(componentType)s" = "agent" ]] && renice 20 -p $$
-#%(bashVariables)s
-#
-exec dirac-%(componentType)s %(system)s/%(component)s --cfg %(componentCfg)s < /dev/null
-    """
-                    % {
-                        "bashrc": os.path.join(self.instancePath, "bashrc"),
-                        "bashVariables": bashVars,
-                        "componentType": componentType.replace("-", "_"),
-                        "system": system,
-                        "component": component,
-                        "componentCfg": componentCfg,
-                    }
-                )
+                            rcfile={os.path.join(self.instancePath, 'bashrc')}
+                            [[ -e ${{rcfile}} ]] && source ${{rcfile}}
+                            #
+                            export DIRAC_USE_TORNADO_IOLOOP=Yes
+                            exec 2>&1
+                            #
+                            [ "service" = "agent" ] && renice 20 -p $$
+                            #
+                            #
+                            exec tornado-start-CS -ddd
+                            """
+                        )
+                    )
+                else:
+                    fd.write(
+                        textwrap.dedent(
+                            f"""#!/bin/bash
+
+                            rcfile={os.path.join(self.instancePath, "bashrc")}
+                            [[ -e ${{rcfile}} ]] && source ${{rcfile}}
+                            #
+                            exec 2>&1
+                            #
+                            [[ "{componentType.replace("-", "_")}" = "agent" ]] && renice 20 -p $$
+                            #{bashVars}
+                            #
+                            exec dirac-{componentType.replace("-", "_")} {system}/{component} --cfg {componentCfg} < /dev/null
+                        """
+                        )
+                    )
 
             os.chmod(runFile, self.gDefaultPerms)
 
@@ -1755,12 +1800,13 @@ exec dirac-%(componentType)s %(system)s/%(component)s --cfg %(componentCfg)s < /
                 controlDir = self.runitDir.replace("runit", "control")
                 with open(stopFile, "w") as fd:
                     fd.write(
-                        """#!/bin/bash
+                        textwrap.dedent(
+                            f"""#!/bin/bash
 
-echo %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
-touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
-"""
-                        % {"controlDir": controlDir, "system": system, "component": component, "type": cTypeLower}
+                            echo {controlDir}/{system}/{component}/stop_{cTypeLower}
+                            touch {controlDir}/{system}/{component}/stop_{cTypeLower}
+                            """
+                        )
                     )
 
                 os.chmod(stopFile, self.gDefaultPerms)
@@ -1920,15 +1966,17 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
                 runFile = os.path.join(runitWebAppDir, "run")
                 with open(runFile, "w") as fd:
                     fd.write(
-                        f"""#!/bin/bash
+                        textwrap.dedent(
+                            f"""#!/bin/bash
 
-rcfile={os.path.join(self.instancePath, 'bashrc')}
-[[ -e $rcfile ]] && source $rcfile
-#
-exec 2>&1
-#
-exec dirac-webapp-run -p < /dev/null
-  """
+                            rcfile={os.path.join(self.instancePath, 'bashrc')}
+                            [[ -e $rcfile ]] && source $rcfile
+                            #
+                            exec 2>&1
+                            #
+                            exec dirac-webapp-run -p < /dev/null
+                            """
+                        )
                     )
 
                 os.chmod(runFile, self.gDefaultPerms)
@@ -2319,8 +2367,7 @@ exec dirac-webapp-run -p < /dev/null
         # Check if the Tornado itself is already installed
         runitCompDir = os.path.join(self.runitDir, "Tornado", "Tornado")
         if os.path.exists(runitCompDir):
-            msg = "Tornado_Tornado already installed"
-            gLogger.notice(msg)
+            gLogger.notice("Tornado_Tornado already installed")
             return S_OK(runitCompDir)
 
         # Check the setup for the given system
@@ -2336,16 +2383,19 @@ exec dirac-webapp-run -p < /dev/null
             runFile = os.path.join(runitCompDir, "run")
             with open(runFile, "w") as fd:
                 fd.write(
-                    f"""#!/bin/bash
-rcfile={os.path.join(self.instancePath, 'bashrc')}
-[ -e $rcfile ] && source $rcfile
-#
-export DIRAC_USE_TORNADO_IOLOOP=Yes
-exec 2>&1
-#
-#
-exec tornado-start-all
-"""
+                    textwrap.dedent(
+                        f"""#!/bin/bash
+
+                        rcfile={os.path.join(self.instancePath, 'bashrc')}
+                        [ -e $rcfile ] && source $rcfile
+                        #
+                        export DIRAC_USE_TORNADO_IOLOOP=Yes
+                        exec 2>&1
+                        #
+                        #
+                        exec tornado-start-all
+                        """
+                    )
                 )
 
             os.chmod(runFile, self.gDefaultPerms)
@@ -2381,10 +2431,9 @@ exec tornado-start-all
         tornadoSection = cfgPath("Systems", "Tornado", compInstance)
 
         cfg = self.__getCfg(tornadoSection, "Port", 8443)
-        # cfg.setOption(cfgPath(tornadoSection, 'Password'), self.mysqlPassword)
         return self._addCfgToCS(cfg)
 
-    def setupTornadoService(self, system, component, extensions, componentModule="", checkModule=True):
+    def setupTornadoService(self, system, component):
         """
         Install and create link in startup
         """
@@ -2427,15 +2476,6 @@ exec tornado-start-all
         resDict["RunitStatus"] = result["Value"][f"{system}_{component}"]["RunitStatus"]
 
         return S_OK(resDict)
-
-        # port = compCfg.getOption('Port', 0)
-        # if port and self.host:
-        #   urlsPath = cfgPath('Systems', system, compInstance, 'URLs')
-        #   cfg.createNewSection(urlsPath)
-        #   failoverUrlsPath = cfgPath('Systems', system, compInstance, 'FailoverURLs')
-        #   cfg.createNewSection(failoverUrlsPath)
-        #   cfg.setOption(cfgPath(urlsPath, component),
-        #                 'dips://%s:%d/%s/%s' % (self.host, port, system, component))
 
 
 gComponentInstaller = ComponentInstaller()

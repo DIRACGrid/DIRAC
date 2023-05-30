@@ -1,8 +1,8 @@
 .. _https_services:
 
-==================================
-Installing HTTPs services in DIRAC
-==================================
+===============================
+Note on HTTPs services in DIRAC
+===============================
 
 .. contents::
 
@@ -36,7 +36,7 @@ First, the following configuration subsections have to be added to CS::
     Setups
     {
       ...
-      Tornado = Production
+      Tornado = Production  # "Production" is common here, for your setup what follow what's already there for the other systems
     }
   }
 
@@ -57,94 +57,15 @@ First, the following configuration subsections have to be added to CS::
 Installation of an HTTPs based service
 ======================================
 
-This procedure is to be used if you are want to serve a new service with HTTPs.
+Just run ``dirac-install-component`` with the service you are interested in, for example
+``dirac-install-component WorkloadManagement/JobMonitoring``. This will install an ``runit`` component running ``tornado-start-all``.
 
+Alternatively, use ``dirac-admin-sysadmi-cli``.
 
-Case 1: you do NOT run the equivalent DISET service
----------------------------------------------------
+Case: you are already running the equivalent DISET service
+-----------------------------------------------------------
 
-This is the most trivial case. Just run ``dirac-install-tornado-service`` with the service you are interested in. This will install an ``runit`` component running ``tornado-start-all``.
-
-Case 2: you run the equivalent DISET service
---------------------------------------------
-
-Because the CS already contains the handler definition for DISET, ``dirac-install-tornado-service`` will not modify it. Thus, you have to update it yourself, before running the command, otherwise ``tornado-start-all`` will not find any service to run, and the installation will be shown as failed.
-
-Procedure:
-
-#. Update by hand the CS of the desired service:
-
-  * Remove the port definition
-  * Modify the handler to point to the Tornado handler
-  * add ``Protocol=https``
-
-The example the follows is for the "DIRAC File Catalog" (DFC) service. This would normally be in CS as::
-
-  Systems
-  {
-    ...
-    DataManagement
-    {
-      Production
-      {
-        URLs
-        {
-          ...
-          FileCatalog = dips://my.server.org:9197/DataManagement/FileCatalog
-        }
-        Services
-        {
-          ...
-          FileCatalog
-          {
-            ...
-            Port = 9197
-            Protocol = dips
-            ...
-          }
-        }
-        ...
-      }
-    }
-  }
-
-
-And you need to change it to::
-
-  Systems
-  {
-    ...
-    DataManagement
-    {
-      Production
-      {
-        URLs
-        {
-          ...
-          FileCatalog = https://my.server.org:8443/DataManagement/FileCatalog
-        }
-        Services
-        {
-          ...
-          FileCatalog
-          {
-            ...
-            Protocol = https
-            HandlerPath = DIRAC/DataManagementSystem/Service/TornadoFileCatalogHandler.py
-            ...
-          }
-        }
-        ...
-      }
-    }
-  }
-
-
-#. Run ``dirac-install-tornado-service`` or restart the tornado component if already running.
-
-.. note::
-  This means that from now on, the DISET service cannot be restarted anymore, as its configuration would be wrong.
-  So, go ahead and remove (by hand, for now) the `runit`-related directories of the DISET service.
+You can (before or after installing the tornado-based service) fully remove the DISET version of the service with ``dirac-uninstall-component DataManagement JobMonitoring``
 
 Example of configuration before/after:
 
@@ -166,7 +87,7 @@ In any case, do not forget to update the URL of the service you just installed, 
 Adding more tornado instances on a different machine
 ====================================================
 
-Simply use ``dirac-install-tornado-service`` with no arguments on the new machine.
+Simply use ``dirac-install-component`` with no arguments on the new machine.
 
 
 MasterCS special case

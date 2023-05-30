@@ -8,10 +8,9 @@ from DIRAC.Core.Utilities.Extensions import extensionsByPriority, recurseImport
 
 
 class ModuleLoader:
-    def __init__(self, importLocation, sectionFinder, superClass, csSuffix=False, moduleSuffix=False):
+    def __init__(self, importLocation, sectionFinder, csSuffix=False, moduleSuffix=False):
         self.__modules = {}
         self.__loadedModules = {}
-        self.__superClass = superClass
         # Function to find the
         self.__sectionFinder = sectionFinder
         # Import from where? <Ext>.<System>System.<importLocation>.<module>
@@ -130,8 +129,7 @@ class ModuleLoader:
             loadCSSection = self.__sectionFinder(loadName)
             handlerPath = gConfig.getValue(f"{loadCSSection}/HandlerPath", "")
             if handlerPath:
-                gLogger.info(f"Trying to {loadName} from CS defined path {handlerPath}")
-                gLogger.verbose(f"Found handler for {loadName}: {handlerPath}")
+                gLogger.info(f"Trying to load handler for {loadName} from CS defined path {handlerPath}")
                 handlerPath = handlerPath.replace("/", ".")
                 if handlerPath.endswith(".py"):
                     handlerPath = handlerPath[:-3]
@@ -177,9 +175,7 @@ class ModuleLoader:
                     location = modObj.__path__
                 gLogger.exception(f"{location} module does not have a {module} class!")
                 return S_ERROR(f"Cannot load {module}")
-            # Check if it's subclass
-            if not issubclass(modClass, self.__superClass):
-                return S_ERROR(f"{loadName} has to inherit from {self.__superClass.__name__}")
+
             self.__loadedModules[loadName] = {"classObj": modClass, "moduleObj": modObj}
             # End of loading of 'loadName' module
 

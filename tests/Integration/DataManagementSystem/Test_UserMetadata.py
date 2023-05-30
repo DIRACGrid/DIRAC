@@ -80,18 +80,6 @@ class TestUserMetadataBasicTestCase(unittest.TestCase):
 
 
 class testMetadata(TestUserMetadataBasicTestCase):
-    def test_verifyCatalogConfiguration(self):
-        fileMetadataOption = gConfig.getOption(
-            "Systems/DataManagement/Production/Services/MultiVOFileCatalog/FileMetadata"
-        )
-        dirMetadataOption = gConfig.getOption(
-            "Systems/DataManagement/Production/Services/MultiVOFileCatalog/DirectoryMetadata"
-        )
-        self.assertTrue(fileMetadataOption["OK"])
-        self.assertEqual(fileMetadataOption["Value"], "MultiVOFileMetadata")
-        self.assertTrue(dirMetadataOption["OK"])
-        self.assertEqual(dirMetadataOption["Value"], "MultiVODirectoryMetadata")
-
     def test_fileCatalogClient(self):
         try:
             #  MultiVOFileCatalog instantiation test only

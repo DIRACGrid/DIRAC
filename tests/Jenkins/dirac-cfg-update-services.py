@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 """ update local cfg
 """
+import os
+import sys
+
 from DIRAC.Core.Base.Script import Script
 
 Script.setUsageMessage(
@@ -48,38 +51,43 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 csAPI = CSAPI()
 
+fc = "FileCatalog"
+multiFC = "MultiVOFileCatalog"
+
+if os.environ.get("TEST_HTTPS", "Yes") == "Yes":
+    fc = f"Tornado{fc}"
+    multiFC = f"Tornado{multiFC}"
+
 for sct in [
     "Systems/DataManagement/Production/Services",
-    "Systems/DataManagement/Production/Services/FileCatalog",
-    "Systems/DataManagement/Production/Services/MultiVOFileCatalog",
+    f"Systems/DataManagement/Production/Services/{fc}",
+    f"Systems/DataManagement/Production/Services/{multiFC}",
 ]:
     res = csAPI.createSection(sct)
     if not res["OK"]:
         print(res["Message"])
-        exit(1)
+        sys.exit(1)
 
-csAPI.setOption("Systems/DataManagement/Production/Services/FileCatalog/DirectoryManager", "DirectoryClosure")
-csAPI.setOption("Systems/DataManagement/Production/Services/FileCatalog/FileManager", "FileManagerPs")
-csAPI.setOption("Systems/DataManagement/Production/Services/FileCatalog/SecurityManager", "VOMSSecurityManager")
-csAPI.setOption("Systems/DataManagement/Production/Services/FileCatalog/UniqueGUID", True)
+csAPI.setOption(f"Systems/DataManagement/Production/Services/{fc}/DirectoryManager", "DirectoryClosure")
+csAPI.setOption(f"Systems/DataManagement/Production/Services/{fc}/FileManager", "FileManagerPs")
+csAPI.setOption(f"Systems/DataManagement/Production/Services/{fc}/SecurityManager", "VOMSSecurityManager")
+csAPI.setOption(f"Systems/DataManagement/Production/Services/{fc}/UniqueGUID", True)
 
-csAPI.setOption("Systems/DataManagement/Production/Services/MultiVOFileCatalog/DirectoryManager", "DirectoryClosure")
-csAPI.setOption("Systems/DataManagement/Production/Services/MultiVOFileCatalog/FileManager", "FileManagerPs")
-csAPI.setOption("Systems/DataManagement/Production/Services/MultiVOFileCatalog/SecurityManager", "NoSecurityManager")
-csAPI.setOption("Systems/DataManagement/Production/Services/MultiVOFileCatalog/UniqueGUID", True)
+csAPI.setOption(f"Systems/DataManagement/Production/Services/{multiFC}/DirectoryManager", "DirectoryClosure")
+csAPI.setOption(f"Systems/DataManagement/Production/Services/{multiFC}/FileManager", "FileManagerPs")
+csAPI.setOption(f"Systems/DataManagement/Production/Services/{multiFC}/SecurityManager", "NoSecurityManager")
+csAPI.setOption(f"Systems/DataManagement/Production/Services/{multiFC}/UniqueGUID", True)
 # configure MultiVO metadata related options:
-res = csAPI.setOption(
-    "Systems/DataManagement/Production/Services/MultiVOFileCatalog/FileMetadata", "MultiVOFileMetadata"
-)
+res = csAPI.setOption(f"Systems/DataManagement/Production/Services/{multiFC}/FileMetadata", "MultiVOFileMetadata")
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 
 res = csAPI.setOption(
-    "Systems/DataManagement/Production/Services/MultiVOFileCatalog/DirectoryMetadata", "MultiVODirectoryMetadata"
+    f"Systems/DataManagement/Production/Services/{multiFC}/DirectoryMetadata", "MultiVODirectoryMetadata"
 )
 if not res["OK"]:
     print(res["Message"])
-    exit(1)
+    sys.exit(1)
 
 csAPI.commit()

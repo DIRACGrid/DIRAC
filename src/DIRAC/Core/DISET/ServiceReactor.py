@@ -25,7 +25,6 @@ import multiprocessing
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.private.Service import Service
 from DIRAC.Core.DISET.private.GatewayService import GatewayService
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -47,7 +46,7 @@ class ServiceReactor:
     def __init__(self):
         self.__services = {}
         self.__alive = True
-        self.__loader = ModuleLoader("Service", PathFinder.getServiceSection, RequestHandler, moduleSuffix="Handler")
+        self.__loader = ModuleLoader("Service", PathFinder.getServiceSection, moduleSuffix="Handler")
         self.__maxFD = 0
         self.__listeningConnections = {}
         self.__stats = ReactorStats()

@@ -8,17 +8,14 @@ these components are organized in *systems*, and these components can be install
 using the :ref:`system-admin-console`.
 
 The components don't need to be all resident on the same host, in fact it's common practice to have several hosts
-for large installations.
+for large installations. Puppet and Kubernetes are pupular choices for deploying DIRAC components.
 
-Normally, services are always exposed on the same port, which is defined in the configuration for each of them.
-
-.. note:: in the near future the services are planned to run on one port, see :ref:`httpsTornado` and some services already run on one port, by default on 8443
+Most of DIRAC services can be exposed using either the DIPs or the HTTPs protocol.
 
 As a general rule, services can be duplicated,
 meaning you can have the same service running on multiple hosts, thus reducing the load.
 There are only 2 cases of DIRAC services that have a "master/slave" concept, and these are the Configuration Service
 and the Accounting/DataStore service.
-The WorkloadManagement/Matcher service should also not be duplicated.
 
 Same can be said for executors: you can have many residing on different hosts.
 

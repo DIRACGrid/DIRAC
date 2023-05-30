@@ -165,7 +165,7 @@ fullInstallDIRAC() {
 
   killRunsv
 
-  # basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
+  # basic install, with only the master CS and few other services running (and their DBs)
   if ! installSite; then
     echo "ERROR: installSite failed" >&2
     exit 1
@@ -216,7 +216,20 @@ fullInstallDIRAC() {
     exit 1
   fi
 
+  dirac-restart-component Tornado Tornado ${DEBUG}
+
   findServices 'FrameworkSystem'
+  grep -v 'Tornado' services > disetServices
+  if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
+    mv disetServices services
+  else
+    # construct the list with a mix of Tornado and DISET services
+    grep 'Tornado' services > tornadoServices
+    more tornadoServices | sed s/Tornado//g > tornadoServicesWithoutTornado
+    comm -1 -3 <(sort tornadoServicesWithoutTornado) <(sort disetServices) >> tornadoServices
+    mv tornadoServices services
+  fi
+  #
   if ! diracServices; then
     echo "ERROR: diracServices failed" >&2
     exit 1
@@ -239,8 +252,17 @@ fullInstallDIRAC() {
 
   echo "==> Restarting Framework services"
   dirac-restart-component Framework '*' ${DEBUG}
+  dirac-restart-component Tornado Tornado ${DEBUG}
 
   #Now all the rest
+
+  # slave CS
+  if [[ "${TEST_HTTPS:-Yes}" = "Yes" ]]; then
+    if ! dirac-install-component Configuration TornadoConfiguration "${DEBUG}"; then
+      echo 'ERROR: dirac-install-component failed' >&2
+      exit 1
+    fi
+  fi
 
   #DBs (not looking for FrameworkSystem ones, already installed)
   findDatabases 'exclude' 'FrameworkSystem'
@@ -261,18 +283,40 @@ fullInstallDIRAC() {
   diracMVDFCDB
   python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-dbs.py" "${DEBUG}"
 
-  #services (not looking for FrameworkSystem already installed)
+  # services (not looking for FrameworkSystem already installed)
   findServices 'exclude' 'FrameworkSystem'
+
+  grep -v 'Tornado' services > disetServices
+  if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
+    mv disetServices services
+  else
+    # construct the list with a mix of Tornado and DISET services
+    grep 'Tornado' services > tornadoServices
+    more tornadoServices | sed s/Tornado//g > tornadoServicesWithoutTornado
+    comm -1 -3 <(sort tornadoServicesWithoutTornado) <(sort disetServices) >> tornadoServices
+    mv tornadoServices services
+  fi
+
   if ! diracServices; then
     echo "ERROR: diracServices failed" >&2
     exit 1
   fi
 
   # install an additional FileCatalog service for multi VO metadata tests
-  echo "==> calling dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB ${DEBUG}"
-  if ! dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB "${DEBUG}"; then
-      echo 'ERROR: dirac-install-component failed' >&2
-      exit 1
+  if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
+    echo "==> calling dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB ${DEBUG}"
+    if ! dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB "${DEBUG}"; then
+        echo 'ERROR: dirac-install-component failed' >&2
+        exit 1
+    fi
+  else
+    echo "==> calling dirac-install-component DataManagement TornadoMultiVOFileCatalog -m TornadoFileCatalog -p Port=9198 -p Protocol=https -p Database=MultiVOFileCatalogDB ${DEBUG}"
+    if ! dirac-install-component DataManagement TornadoMultiVOFileCatalog -m TornadoFileCatalog -p Port=9198 -p Protocol=https -p Database=MultiVOFileCatalogDB "${DEBUG}"; then
+        echo 'ERROR: dirac-install-component failed' >&2
+        exit 1
+    fi
+    echo "==> Restarting Tornado Tornado"
+    dirac-restart-component Tornado Tornado ${DEBUG}
   fi
   #fix the DFC services options
   python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-services.py" "${DEBUG}"
@@ -280,29 +324,37 @@ fullInstallDIRAC() {
   #fix the SandboxStore and other stuff
   python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-server.py" dirac-JenkinsSetup "${DEBUG}"
 
+  echo "==> Restarting Tornado Tornado"
+  dirac-restart-component Tornado Tornado ${DEBUG}
+
   echo "==> Restarting WorkloadManagement SandboxStore"
   dirac-restart-component WorkloadManagement SandboxStore ${DEBUG}
 
   echo "==> Restarting WorkloadManagement Matcher"
   dirac-restart-component WorkloadManagement Matcher ${DEBUG}
 
-  echo "==> Restarting DataManagement FileCatalog"
-  dirac-restart-component DataManagement FileCatalog ${DEBUG}
-
-  echo "==> Restarting DataManagement MultiVOFileCatalog"
-  dirac-restart-component DataManagement MultiVOFileCatalog ${DEBUG}
+  if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
+    echo "==> Restarting DataManagement FileCatalog"
+    dirac-restart-component DataManagement FileCatalog ${DEBUG}
+    echo "==> Restarting DataManagement MultiVOFileCatalog"
+    dirac-restart-component DataManagement MultiVOFileCatalog ${DEBUG}
+  else
+    echo "==> Restarting Tornado Tornado"
+    dirac-restart-component Tornado Tornado ${DEBUG}
+  fi
 
   echo "==> Restarting Configuration Server"
   dirac-restart-component Configuration Server ${DEBUG}
 
-  echo "==> Restarting ResourceStatus ResourceStatus"
-  dirac-restart-component ResourceStatus ResourceStatus ${DEBUG}
-
-  echo "==> Restarting ResourceStatus ResourceManagement"
-  dirac-restart-component ResourceStatus ResourceManagement ${DEBUG}
-
-  echo "==> Restarting ResourceStatus Publisher"
-  dirac-restart-component ResourceStatus Publisher ${DEBUG}
+  if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
+    echo "==> Restarting ResourceStatus *"
+    dirac-restart-component ResourceStatus ResourceStatus ${DEBUG}
+    dirac-restart-component ResourceStatus ResourceManagement ${DEBUG}
+    dirac-restart-component ResourceStatus Publisher ${DEBUG}
+  else
+    echo "==> Restarting Tornado Tornado"
+    dirac-restart-component Tornado Tornado ${DEBUG}
+    fi
 
   echo "==> Restarting DataManagement StorageElement(s)"
   dirac-restart-component DataManagement SE-1 ${DEBUG}
@@ -337,14 +389,22 @@ fullInstallDIRAC() {
     exit 1
   fi
 
-  echo "==> Restarting WorkloadManagement JobManager"
-  dirac-restart-component WorkloadManagement JobManager ${DEBUG}
+  if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
+    echo "==> Restarting WorkloadManagement JobManager"
+    dirac-restart-component WorkloadManagement JobManager ${DEBUG}
+  else
+    echo "==> Restarting Tornado Tornado"
+    dirac-restart-component Tornado Tornado ${DEBUG}
+    fi
 
   echo 'Content of etc/Production.cfg:'
   cat "${SERVERINSTALLDIR}/etc/Production.cfg"
 
   echo "==> Restarting Configuration Server"
   dirac-restart-component Configuration Server ${DEBUG}
+
+  echo "==> Restarting Tornado Tornado"
+  dirac-restart-component Tornado Tornado ${DEBUG}
 
 }
 

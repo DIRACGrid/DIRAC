@@ -4,10 +4,10 @@ requesting new tokens for DIRAC components that have the appropriate permissions
 .. note:: As a newly created service, it will not support the old DIPS protocol, which is living to its age.
 
 .. literalinclude:: ../ConfigTemplate.cfg
-    :start-after: ##BEGIN TokenManager:
+    :start-after: ##BEGIN TornadoTokenManager:
     :end-before: ##END
     :dedent: 2
-    :caption: TokenManager options
+    :caption: TornadoTokenManager options
 
 The most common use of this service is to obtain tokens with certain scope to return to the user for its purposes,
 or to provide to the DIRAC service to perform asynchronous tasks on behalf of the user.
@@ -52,7 +52,7 @@ from DIRAC.FrameworkSystem.Utilities.TokenManagementUtilities import (
 gTokensSync = ThreadSafe.Synchronizer()
 
 
-class TokenManagerHandler(TornadoService):
+class TornadoTokenManagerHandler(TornadoService):
     DEFAULT_AUTHORIZATION = ["authenticated"]
 
     @classmethod

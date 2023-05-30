@@ -1,18 +1,18 @@
 """Service interface is the service which provide config for client and synchronize Master/Slave servers"""
 
 import os
-import time
 import re
+import time
 import zipfile
 import zlib
 
 import DIRAC
 from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData, ConfigurationData
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import ConfigurationData, gConfigurationData
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 
@@ -22,7 +22,6 @@ class ServiceInterfaceBase:
     def __init__(self, sURL):
         self.sURL = sURL
         gLogger.info("Initializing Configuration Service", f"URL is {sURL}")
-        self.__modificationsIgnoreMask = ["/DIRAC/Configuration/Servers", "/DIRAC/Configuration/Version"]
         gConfigurationData.setAsService()
         if not gConfigurationData.isMaster():
             gLogger.info("Starting configuration service as slave")

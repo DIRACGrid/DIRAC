@@ -2,72 +2,75 @@
 """
 Do the initial installation and configuration of a DIRAC component
 """
+from DIRAC import S_OK
 from DIRAC import exit as DIRACexit
-from DIRAC import gConfig, gLogger, S_OK
+from DIRAC import gConfig, gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 
-overwrite = False
-module = ""
-specialOptions = {}
 
+class Params:
+    """Class holding the parameters, and callbacks for their respective switches."""
 
-def setOverwrite(opVal):
-    global overwrite
-    overwrite = True
-    return S_OK()
+    def __init__(self) -> None:
+        """C'or"""
+        self.overwrite = False
+        self.module = ""
+        self.specialOptions = {}
 
+        self.switches = [
+            ("w", "overwrite", "Overwrite the configuration in the global CS", self.setOverwrite),
+            ("m:", "module=", "Python module name for the component code", self.setModule),
+            ("p:", "parameter=", "Special component option ", self.setSpecialOption),
+        ]
 
-def setModule(optVal):
-    global specialOptions, module
-    specialOptions["Module"] = optVal
-    module = optVal
-    return S_OK()
+    def setOverwrite(self):
+        self.overwrite = True
+        return S_OK()
 
+    def setModule(self, value):
+        self.specialOptions["Module"] = value
+        self.module = value
+        return S_OK()
 
-def setSpecialOption(optVal):
-    global specialOptions
-    option, value = optVal.split("=")
-    specialOptions[option] = value
-    return S_OK()
+    def setSpecialOption(self, value):
+        option, val = value.split("=")
+        self.specialOptions[option] = val
+        return S_OK()
 
 
 @Script()
 def main():
-    global overwrite
-    global specialOptions
-    global module
-    global specialOptions
+    params = Params()
 
-    from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
-
-    gComponentInstaller.exitOnError = True
-
-    Script.registerSwitch("w", "overwrite", "Overwrite the configuration in the global CS", setOverwrite)
-    Script.registerSwitch("m:", "module=", "Python module name for the component code", setModule)
-    Script.registerSwitch("p:", "parameter=", "Special component option ", setSpecialOption)
-    # Registering arguments will automatically add their description to the help menu
+    Script.registerSwitches(params.switches)
     Script.registerArgument(
         (
-            "System/Component: Full component name (ie: WorkloadManagement/Matcher)",
+            "System/Component: Full component name (ie: WorkloadManagement/JobMonitoring)",
             "System:           Name of the DIRAC system (ie: WorkloadManagement)",
         )
     )
-    Script.registerArgument(" Component:        Name of the DIRAC service (ie: Matcher)", mandatory=False)
+    Script.registerArgument(" Component:        Name of the DIRAC service (ie: JobMonitoring)", mandatory=False)
 
-    Script.parseCommandLine()
+    Script.parseCommandLine(ignoreErrors=False)
     args = Script.getPositionalArgs()
 
+    if not args or len(args) > 2:
+        Script.showHelp(exitCode=1)
+
+    # System/Component
     if len(args) == 1:
         args = args[0].split("/")
 
-    if len(args) != 2:
-        Script.showHelp(exitCode=1)
-
     system = args[0]
     component = args[1]
-    compOrMod = module or component
+    compOrMod = params.module or component
+
+    # Now actually doing things
+    from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
+
+    gComponentInstaller.exitOnError = True
 
     result = gComponentInstaller.getSoftwareComponents(extensionsByPriority())
     if not result["OK"]:
@@ -83,9 +86,9 @@ def main():
         gLogger.error(f"Component {system}/{component} is not available for installation")
         DIRACexit(1)
 
-    if module:
+    if params.module:
         result = gComponentInstaller.addDefaultOptionsToCS(
-            gConfig, cType, system, module, extensionsByPriority(), overwrite=overwrite
+            gConfig, cType, system, params.module, extensionsByPriority(), overwrite=params.overwrite
         )
         result = gComponentInstaller.addDefaultOptionsToCS(
             gConfig,
@@ -93,8 +96,8 @@ def main():
             system,
             component,
             extensionsByPriority(),
-            specialOptions=specialOptions,
-            overwrite=overwrite,
+            specialOptions=params.specialOptions,
+            overwrite=params.overwrite,
             addDefaultOptions=False,
         )
     else:
@@ -104,31 +107,49 @@ def main():
             system,
             component,
             extensionsByPriority(),
-            specialOptions=specialOptions,
-            overwrite=overwrite,
+            specialOptions=params.specialOptions,
+            overwrite=params.overwrite,
         )
 
     if not result["OK"]:
         gLogger.error(result["Message"])
         DIRACexit(1)
-    result = gComponentInstaller.installComponent(cType, system, component, extensionsByPriority(), module)
-    if not result["OK"]:
-        gLogger.error(result["Message"])
-        DIRACexit(1)
+
+    if component.startswith("Tornado"):
+        result = gComponentInstaller.installTornado()
+        if not result["OK"]:
+            gLogger.error(result["Message"])
+            DIRACexit(1)
+    else:
+        result = gComponentInstaller.installComponent(cType, system, component, extensionsByPriority(), params.module)
+        if not result["OK"]:
+            gLogger.error(result["Message"])
+            DIRACexit(1)
+
     gLogger.notice(f"Successfully installed component {component} in {system} system, now setting it up")
-    result = gComponentInstaller.setupComponent(cType, system, component, extensionsByPriority(), module)
-    if not result["OK"]:
-        gLogger.error(result["Message"])
-        DIRACexit(1)
-    if component == "ComponentMonitoring":
+
+    if component.startswith("Tornado"):
+        result = gComponentInstaller.setupTornadoService(system, component)
+        if not result["OK"]:
+            gLogger.error(result["Message"])
+            DIRACexit(1)
+    else:
+        result = gComponentInstaller.setupComponent(cType, system, component, extensionsByPriority(), params.module)
+        if not result["OK"]:
+            gLogger.error(result["Message"])
+            DIRACexit(1)
+
+    if "ComponentMonitoring" in component:
         result = MonitoringUtilities.monitorInstallation("DB", system, "InstalledComponentsDB")
         if not result["OK"]:
             gLogger.error(result["Message"])
             DIRACexit(1)
-    result = MonitoringUtilities.monitorInstallation(cType, system, component, module)
+
+    result = MonitoringUtilities.monitorInstallation(cType, system, component, params.module)
     if not result["OK"]:
         gLogger.error(result["Message"])
         DIRACexit(1)
+
     gLogger.notice(f"Successfully completed the installation of {system}/{component}")
     DIRACexit()
 
