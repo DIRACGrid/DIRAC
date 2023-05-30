@@ -78,11 +78,10 @@ def test_prepareSingleOperationsBody(transBody, owner, taskDict):
     # keep the number of tasks for later
     originalNbOfTasks = len(taskDict)
 
-    # Make up the DN and the group
-    ownerDN = "DN_" + owner
+    # Make up the group
     ownerGroup = "group_" + owner
 
-    res = reqTasks.prepareTransformationTasks(transBody, taskDict, owner=owner, ownerGroup=ownerGroup, ownerDN=ownerDN)
+    res = reqTasks.prepareTransformationTasks(transBody, taskDict, owner=owner, ownerGroup=ownerGroup)
 
     assert res["OK"], res
 
@@ -98,7 +97,7 @@ def test_prepareSingleOperationsBody(transBody, owner, taskDict):
 
         # Check that the attributes of the request are what
         # we expect them to be
-        assert req.OwnerDN == ownerDN
+        assert req.Owner == owner
         assert req.OwnerGroup == ownerGroup
 
         # Make sure we only have one operation
@@ -162,13 +161,10 @@ def test_prepareMultiOperationsBody(transBody, owner, taskDict):
     # keep the number of tasks for later
     originalNbOfTasks = len(taskDict)
 
-    # Make up the DN and the group
-    ownerDN = "DN_" + owner
+    # Make up the group
     ownerGroup = "group_" + owner
 
-    res = reqTasks.prepareTransformationTasks(
-        json.dumps(transBody), taskDict, owner=owner, ownerGroup=ownerGroup, ownerDN=ownerDN
-    )
+    res = reqTasks.prepareTransformationTasks(json.dumps(transBody), taskDict, owner=owner, ownerGroup=ownerGroup)
 
     assert res["OK"], res
 
@@ -184,7 +180,7 @@ def test_prepareMultiOperationsBody(transBody, owner, taskDict):
 
         # Check that the attributes of the request are what
         # we expect them to be
-        assert req.OwnerDN == ownerDN
+        assert req.Owner == owner
         assert req.OwnerGroup == ownerGroup
 
         # Make sure we have as many operations as tuple in the body
@@ -243,13 +239,10 @@ def test_prepareProblematicMultiOperationsBody(transBody, owner, taskDict):
     # keep the number of tasks for later
     originalNbOfTasks = len(taskDict)
 
-    # Make up the DN and the group
-    ownerDN = "DN_" + owner
+    # Make up the group
     ownerGroup = "group_" + owner
 
-    res = reqTasks.prepareTransformationTasks(
-        json.dumps(transBody), taskDict, owner=owner, ownerGroup=ownerGroup, ownerDN=ownerDN
-    )
+    res = reqTasks.prepareTransformationTasks(json.dumps(transBody), taskDict, owner=owner, ownerGroup=ownerGroup)
 
     assert res["OK"], res
 
@@ -270,7 +263,7 @@ def test_prepareProblematicMultiOperationsBody(transBody, owner, taskDict):
 
         # Check that the attributes of the request are what
         # we expect them to be
-        assert req.OwnerDN == ownerDN
+        assert req.Owner == owner
         assert req.OwnerGroup == ownerGroup
 
         # Make sure we have as many operations as tuple in the body
@@ -318,13 +311,10 @@ def test_complexBodyPlugin(taskDict, pluginFactor):
     # keep the number of tasks for later
     originalNbOfTasks = len(taskDict)
 
-    # Make up the DN and the group
-    ownerDN = "DN_owner"
+    # Make up the group
     ownerGroup = "group_owner"
 
-    res = reqTasks.prepareTransformationTasks(
-        encode(transBody), taskDict, owner="owner", ownerGroup=ownerGroup, ownerDN=ownerDN
-    )
+    res = reqTasks.prepareTransformationTasks(encode(transBody), taskDict, owner="owner", ownerGroup=ownerGroup)
 
     assert res["OK"], res
 
@@ -340,7 +330,7 @@ def test_complexBodyPlugin(taskDict, pluginFactor):
 
         # Check that the attributes of the request are what
         # we expect them to be
-        assert req.OwnerDN == ownerDN
+        assert req.Owner == "owner"
         assert req.OwnerGroup == ownerGroup
 
         # DummyBody only creates a single operation.

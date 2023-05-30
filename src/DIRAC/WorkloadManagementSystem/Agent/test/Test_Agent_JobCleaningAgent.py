@@ -4,8 +4,8 @@ import pytest
 from unittest.mock import MagicMock
 
 # DIRAC Components
+from DIRAC import gLogger, S_OK
 from DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent import JobCleaningAgent
-from DIRAC import gLogger
 
 gLogger.setLevel("DEBUG")
 
@@ -128,6 +128,9 @@ def test_deleteJobOversizedSandbox(mocker, inputs, params, expected):
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB", return_value=mockNone)
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.ReqClient", return_value=mockNone)
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobMonitoringClient", return_value=mockJMC)
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.getDNForUsername", return_value=S_OK(["/bih/boh/DN"])
+    )
 
     jobCleaningAgent = JobCleaningAgent()
     jobCleaningAgent.log = gLogger

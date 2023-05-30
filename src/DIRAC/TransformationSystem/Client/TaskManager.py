@@ -39,11 +39,10 @@ class TaskBase(TransformationAgentsUtilities):
         _taskDict,  # pylint: disable=no-self-use, unused-argument
         owner="",
         ownerGroup="",
-        ownerDN="",
         bulkSubmissionFlag=False,
     ):  # pylint: disable=unused-argument
         """To make sure the method is implemented in the derived class"""
-        if owner or ownerGroup or ownerDN or bulkSubmissionFlag:  # Makes pylint happy
+        if owner or ownerGroup or bulkSubmissionFlag:  # Makes pylint happy
             pass
         return S_ERROR("Not implemented")
 

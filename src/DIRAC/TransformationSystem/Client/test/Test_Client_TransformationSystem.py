@@ -109,13 +109,13 @@ class RequestTasksSuccess(ClientsTestCase):
     def test_prepareTranformationTasks(self):
         # No tasks in input
         taskDict = {}
-        res = self.requestTasks.prepareTransformationTasks("", taskDict, "owner", "ownerGroup", "/bih/boh/DN")
+        res = self.requestTasks.prepareTransformationTasks("", taskDict, "owner", "ownerGroup")
         self.assertTrue(res["OK"])
         self.assertEqual(len(taskDict), 0)
 
         # 3 tasks, 1 task not OK (in second transformation)
         taskDict = {123: {"TransformationID": 2, "TargetSE": "SE3", "b3": "bb3", "InputData": ""}}
-        res = self.requestTasks.prepareTransformationTasks("", taskDict, "owner", "ownerGroup", "/bih/boh/DN")
+        res = self.requestTasks.prepareTransformationTasks("", taskDict, "owner", "ownerGroup")
         self.assertTrue(res["OK"])
         # We should "lose" one of the task in the preparation
         self.assertEqual(len(taskDict), 0)
@@ -132,7 +132,7 @@ class RequestTasksSuccess(ClientsTestCase):
             3: {"TransformationID": 2, "TargetSE": "SE3", "b3": "bb3", "InputData": ""},
         }
 
-        res = self.requestTasks.prepareTransformationTasks("", taskDict, "owner", "ownerGroup", "/bih/boh/DN")
+        res = self.requestTasks.prepareTransformationTasks("", taskDict, "owner", "ownerGroup")
         self.assertTrue(res["OK"])
         # We should "lose" one of the task in the preparation
         self.assertEqual(len(taskDict), 2)
@@ -149,9 +149,7 @@ class RequestTasksSuccess(ClientsTestCase):
                 self.assertEqual(task["TaskObject"][0].Status, "Waiting")
 
         # # test another (single) OperationType
-        res = self.requestTasks.prepareTransformationTasks(
-            "someType;LogUpload", taskDict, "owner", "ownerGroup", "/bih/boh/DN"
-        )
+        res = self.requestTasks.prepareTransformationTasks("someType;LogUpload", taskDict, "owner", "ownerGroup")
         self.assertTrue(res["OK"])
         # We should "lose" one of the task in the preparation
         self.assertEqual(len(taskDict), 2)
@@ -178,7 +176,7 @@ class RequestTasksSuccess(ClientsTestCase):
             3: {"TransformationID": 2, "TargetSE": "SE3", "b3": "bb3", "InputData": ""},
         }
 
-        res = self.requestTasks.prepareTransformationTasks(jsonBody, taskDict, "owner", "ownerGroup", "/bih/boh/DN")
+        res = self.requestTasks.prepareTransformationTasks(jsonBody, taskDict, "owner", "ownerGroup")
         self.assertTrue(res["OK"])
         # We should "lose" one of the task in the preparation
         self.assertEqual(len(taskDict), 2)

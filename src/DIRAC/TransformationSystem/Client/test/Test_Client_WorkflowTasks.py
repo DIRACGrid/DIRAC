@@ -5,7 +5,7 @@
 from unittest.mock import MagicMock
 import pytest
 
-from DIRAC import gLogger
+from DIRAC import gLogger, S_OK
 from DIRAC.Interfaces.API.Job import Job
 
 # sut
@@ -91,9 +91,11 @@ expectedBulk = {
         (taskDictNoInputsNoSite, True, True, expectedBulk),
     ],
 )
-def test_prepareTranformationTasks(taskDictionary, bulkSubmissionFlag, result, expectedRes):
+def test_prepareTranformationTasks(mocker, taskDictionary, bulkSubmissionFlag, result, expectedRes):
+    mocker.patch("DIRAC.TransformationSystem.Client.WorkflowTasks.getDNForUsername", return_value=S_OK(["/bih/boh/DN"]))
+
     res = wfTasks.prepareTransformationTasks(
-        "", taskDictionary, "test_user", "test_group", "test_DN", bulkSubmissionFlag=bulkSubmissionFlag
+        "", taskDictionary, "test_user", "test_group", bulkSubmissionFlag=bulkSubmissionFlag
     )
     assert res["OK"] == result
     if res["OK"]:
@@ -109,11 +111,11 @@ def test_prepareTranformationTasks(taskDictionary, bulkSubmissionFlag, result, e
 
 
 def ourgetSitesForSE(ses):
-    if ses == ["pippo"] or ses == "pippo":
+    if ses in (["pippo"], "pippo"):
         return {"OK": True, "Value": ["Site1"]}
-    elif ses == ["pluto"] or ses == "pluto":
+    if ses in (["pluto"], "pluto"):
         return {"OK": True, "Value": ["Site2"]}
-    elif ses == ["pippo", "pluto"] or ses == "pippo,pluto":
+    if ses in (["pippo", "pluto"], "pippo,pluto"):
         return {"OK": True, "Value": ["Site1", "Site2"]}
 
 

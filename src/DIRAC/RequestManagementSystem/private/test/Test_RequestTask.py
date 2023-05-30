@@ -29,7 +29,7 @@ class RequestTaskTests(unittest.TestCase):
         self.req = Request()
         self.req.RequestName = "foobarbaz"
         self.req.OwnerGroup = "lhcb_user"
-        self.req.OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=705305/CN=Christophe Haen"
+        self.req.Owner = "chaen"
         self.op = Operation({"Type": "ForwardDISET", "Arguments": "tts10:helloWorldee"})
         self.req.addOperation(self.op)
         self.task = None
