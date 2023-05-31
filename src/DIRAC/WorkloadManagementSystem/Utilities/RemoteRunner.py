@@ -65,8 +65,7 @@ class RemoteRunner:
         self.log.verbose("Command to submit:", command)
 
         # Check whether CE parameters are set
-        result = self._checkParameters()
-        if not result["OK"]:
+        if not (result := self._checkParameters())["OK"]:
             result["Errno"] = DErrno.ESECTION
             return result
         self.log.info(
@@ -75,8 +74,7 @@ class RemoteRunner:
         )
 
         # Set up Application Queue
-        result = self._setUpWorkloadCE(numberOfProcessors)
-        if not result["OK"]:
+        if not (result := self._setUpWorkloadCE(numberOfProcessors))["OK"]:
             result["Errno"] = DErrno.ERESUNA
             return result
         workloadCE = result["Value"]
@@ -94,8 +92,9 @@ class RemoteRunner:
         outputs = ["/"]
 
         # Submit the command as a job
-        result = workloadCE.submitJob(self.executable, workloadCE.proxy, inputs=inputs, outputs=outputs)
-        if not result["OK"]:
+        if not (result := workloadCE.submitJob(self.executable, workloadCE.proxy, inputs=inputs, outputs=outputs))[
+            "OK"
+        ]:
             result["Errno"] = DErrno.EWMSSUBM
             return result
         jobID = result["Value"][0]
@@ -116,24 +115,21 @@ class RemoteRunner:
 
         # Get job outputs
         self.log.info("Getting the outputs of the command...")
-        result = workloadCE.getJobOutput(f"{jobID}:::{stamp}", os.path.abspath("."))
-        if not result["OK"]:
+        if not (result := workloadCE.getJobOutput(f"{jobID}:::{stamp}", os.path.abspath(".")))["OK"]:
             result["Errno"] = DErrno.EWMSJMAN
             return result
         output, error = result["Value"]
 
         # Make sure the output is correct
         self.log.info("Checking the integrity of the outputs...")
-        result = self._checkOutputIntegrity(".")
-        if not result["OK"]:
+        if not (result := self._checkOutputIntegrity("."))["OK"]:
             result["Errno"] = DErrno.EWMSJMAN
             return result
         self.log.info("The output has been retrieved and declared complete")
 
         # Clean job in the remote resource
         if cleanRemoteJob:
-            result = workloadCE.cleanJob(jobID)
-            if not result["OK"]:
+            if not (result := workloadCE.cleanJob(jobID))["OK"]:
                 self.log.warn("Failed to clean the output remotely", result["Message"])
             self.log.info("The job has been remotely removed")
 
@@ -261,7 +257,6 @@ class RemoteRunner:
                     while chunk := f.read(128 * hash.block_size):
                         hash.update(chunk)
                 if checkSum != hash.hexdigest():
-                    print(hash.hexdigest())
                     return S_ERROR(f"{localOutput} is corrupted")
 
         return S_OK()
