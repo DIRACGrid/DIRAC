@@ -6,6 +6,7 @@ no outbound connectivity (e.g. supercomputers)
 Mostly called by workflow modules, RemoteRunner is generally the last component to get through before
 the script/application execution on a remote machine.
 """
+import hashlib
 import os
 import shlex
 import time
@@ -21,6 +22,9 @@ from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 class RemoteRunner:
     def __init__(self, siteName, ceName, queueName):
         self.log = gLogger.getSubLogger("RemoteRunner")
+        self.executable = "workloadExec.sh"
+        self.checkSumOutput = "md5Checksum.txt"
+
         self._workloadSite = siteName
         self._workloadCE = ceName
         self._workloadQueue = queueName
@@ -37,44 +41,44 @@ class RemoteRunner:
         self.log.verbose("Command to submit:", command)
 
         # Check whether CE parameters are set
-        result = self._checkParameters()
-        if not result["OK"]:
+        if not (result := self._checkParameters())["OK"]:
             result["Errno"] = DErrno.ESECTION
             return result
-        self.log.verbose(
-            "The command will be sent to",
+        self.log.info(
+            "Preparing and submitting the command to",
             f"site {self._workloadSite}, CE {self._workloadCE}, queue {self._workloadQueue}",
         )
 
         # Set up Application Queue
-        result = self._setUpWorkloadCE(numberOfProcessors)
-        if not result["OK"]:
+        if not (result := self._setUpWorkloadCE(numberOfProcessors))["OK"]:
             result["Errno"] = DErrno.ERESUNA
             return result
         workloadCE = result["Value"]
         self.log.debug("The CE interface has been set up")
 
         # Add the command in an executable file
-        executable = "workloadExec.sh"
-        self._wrapCommand(command, workingDirectory, executable)
+        self._wrapCommand(command, workingDirectory)
         self.log.debug("The command has been wrapped into an executable")
 
         # Get inputs from the current working directory
         inputs = os.listdir(workingDirectory)
-        inputs.remove(os.path.basename(executable))
+        inputs.remove(os.path.basename(self.executable))
         self.log.verbose("The executable will be sent along with the following inputs:", ",".join(inputs))
         # Request the whole directory as output
         outputs = ["/"]
 
         # Submit the command as a job
-        result = workloadCE.submitJob(executable, workloadCE.proxy, inputs=inputs, outputs=outputs)
-        if not result["OK"]:
+        if not (result := workloadCE.submitJob(self.executable, workloadCE.proxy, inputs=inputs, outputs=outputs))[
+            "OK"
+        ]:
             result["Errno"] = DErrno.EWMSSUBM
             return result
         jobID = result["Value"][0]
         stamp = result["PilotStampDict"][jobID]
+        self.log.info("The command has been wrapped in a job and sent. Remote JobID: ", jobID)
 
         # Get status of the job
+        self.log.info("Waiting for the end of the job...")
         jobStatus = PilotStatus.RUNNING
         while jobStatus not in PilotStatus.PILOT_FINAL_STATES:
             time.sleep(120)
@@ -83,20 +87,27 @@ class RemoteRunner:
                 result["Errno"] = DErrno.EWMSSTATUS
                 return result
             jobStatus = result["Value"][jobID]
-        self.log.verbose("The final status of the application/script is: ", jobStatus)
+        self.log.info("The final status of the application/script is: ", jobStatus)
 
         # Get job outputs
-        result = workloadCE.getJobOutput(f"{jobID}:::{stamp}", os.path.abspath("."))
-        if not result["OK"]:
+        self.log.info("Getting the outputs of the command...")
+        if not (result := workloadCE.getJobOutput(f"{jobID}:::{stamp}", os.path.abspath(".")))["OK"]:
             result["Errno"] = DErrno.EWMSJMAN
             return result
         output, error = result["Value"]
 
+        # Make sure the output is correct
+        self.log.info("Checking the integrity of the outputs...")
+        if not (result := self._checkOutputIntegrity("."))["OK"]:
+            result["Errno"] = DErrno.EWMSJMAN
+            return result
+        self.log.info("The output has been retrieved and declared complete")
+
         # Clean job in the remote resource
         if cleanRemoteJob:
-            result = workloadCE.cleanJob(jobID)
-            if not result["OK"]:
+            if not (result := workloadCE.cleanJob(jobID))["OK"]:
                 self.log.warn("Failed to clean the output remotely", result["Message"])
+            self.log.info("The job has been remotely removed")
 
         commandStatus = {"Done": 0, "Failed": -1, "Killed": -2}
         return S_OK((commandStatus[jobStatus], output, error))
@@ -166,12 +177,11 @@ class RemoteRunner:
 
         return S_OK(workloadCE)
 
-    def _wrapCommand(self, command, workingDirectory, executable):
+    def _wrapCommand(self, command, workingDirectory):
         """Wrap the command in a file
 
         :param str command: command line to write in the executable
         :param str workingDirectory: directory containing the inputs required by the command
-        :param str executable: path of the executable that should contain the command to submit
         :return: path of the executable
         """
         # Check whether the command contains any absolute path: there would be no way to access them remotely
@@ -195,5 +205,34 @@ class RemoteRunner:
             argumentsProcessed.append(os.path.join(".", os.path.basename(argument)))
 
         command = shlex.join(argumentsProcessed)
-        with open(executable, "w") as f:
+        with open(self.executable, "w") as f:
             f.write(command)
+            # Post-processing: compute the checksum of the outputs
+            f.write(f"\nmd5sum * > {self.checkSumOutput}")
+
+    def _checkOutputIntegrity(self, workingDirectory):
+        """Make sure that output files are not corrupted.
+
+        :param str workingDirectory: path of the outputs
+        """
+        checkSumOutput = os.path.join(workingDirectory, self.checkSumOutput)
+        if not os.path.exists(checkSumOutput):
+            return S_ERROR(f"Cannot guarantee the integrity of the outputs: {checkSumOutput} unavailable")
+
+        with open(checkSumOutput) as f:
+            # for each output file, compute the md5 checksum
+            for line in f:
+                checkSum, remoteOutput = list(filter(None, line.strip("\n").split(" ")))
+
+                hash = hashlib.md5()
+                localOutput = os.path.join(workingDirectory, remoteOutput)
+                if not os.path.exists(localOutput):
+                    return S_ERROR(f"{localOutput} was expected but not found")
+
+                with open(localOutput, "rb") as f:
+                    while chunk := f.read(128 * hash.block_size):
+                        hash.update(chunk)
+                if checkSum != hash.hexdigest():
+                    return S_ERROR(f"{localOutput} is corrupted")
+
+        return S_OK()
