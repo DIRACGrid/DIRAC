@@ -174,6 +174,8 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
 
                 ceInfo["Queues"].update(newQueues)
 
+    defaultLocalCEType = gConfig.getOption("/Resources/Computing/DefaultLocalCEType", "")
+
     changeSet = set()
     for site in ceBdiiDict:
         result = getDIRACSiteName(site)
@@ -310,7 +312,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
                     reqTag = queueDict.get("RequiredTag", "")
                     # LocalCEType can be empty (equivalent to "InProcess")
                     # or "Pool", "Singularity", but also "Pool/Singularity"
-                    localCEType = queueDict.get("LocalCEType", "")
+                    localCEType = queueDict.get("LocalCEType", defaultLocalCEType)
                     try:
                         localCEType_inner = localCEType.split("/")[1]
                     except IndexError:
