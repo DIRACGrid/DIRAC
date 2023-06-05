@@ -1,3 +1,19 @@
+[v8.0.21]
+
+*WorkloadManagement
+
+NEW: (#7040) Add /Resources/Computing/DefaultLocalCEType option
+NEW: (#7032) md5 checksum comparison in RemoteRunner
+
+*Resources
+
+FIX: (#7032) reduce memory consumption of AREXCE.getJobOutput()
+FIX: (#7025) SSHCE getPilotOutput remove stamp
+
+*WorkloadManagementSystem
+
+CHANGE: (#6950) TokenManagerHandler provides client access token if username is not provided.
+
 [v8.0.20]
 
 *RequestManagementSystem
