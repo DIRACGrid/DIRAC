@@ -7,6 +7,7 @@ from timeit import default_timer
 # from DIRAC
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase, setGfalSetting
 from DIRAC import gLogger, S_ERROR, S_OK
+from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 
 # Duration in sec of a removal from which we start throttling
 # The value is empirical
@@ -92,6 +93,11 @@ class EchoStorage(GFAL2_StorageBase):
         # We don't need extended attributes for metadata
         self._defaultExtendedAttributes = None
 
+        if self.protocolParameters["Protocol"] == "root":
+            self._addDoubleSlashForXroot = self.__addDoubleSlash
+        else:
+            self._addDoubleSlashForXroot = lambda x: x
+
     def putDirectory(self, path):
         """Not available on Echo
 
@@ -170,3 +176,31 @@ class EchoStorage(GFAL2_StorageBase):
                     # If it took too long, we sleep for a bit
                     if duration > REMOVAL_DURATION_THROTTLE_LIMIT:
                         time.sleep(random.uniform(0, 3))
+
+    def __addDoubleSlash(self, res):
+        """Utilities to add the double slash between the host(:port) and the path for xroot only
+
+        :param res: DIRAC return structure which contains an URL if S_OK
+        :return: DIRAC structure with corrected URL
+        """
+        if not res["OK"]:
+            return res
+        url = res["Value"]
+        res = pfnparse(url, srmSpecific=self.srmSpecificParse)
+        if not res["OK"]:
+            return res
+        urlDict = res["Value"]
+        urlDict["Path"] = "/" + urlDict["Path"]
+        return pfnunparse(urlDict, srmSpecific=self.srmSpecificParse)
+
+    def getURLBase(self, withWSUrl=False):
+        """Overwrite to add the double slash"""
+        return self._addDoubleSlashForXroot(super().getURLBase(withWSUrl=withWSUrl))
+
+    def constructURLFromLFN(self, lfn, withWSUrl=False):
+        """Overwrite to add the double slash"""
+        return self._addDoubleSlashForXroot(super().constructURLFromLFN(lfn=lfn, withWSUrl=withWSUrl))
+
+    def getCurrentURL(self, fileName):
+        """Overwrite to add the double slash"""
+        return self._addDoubleSlashForXroot(super().getCurrentURL(fileName))
