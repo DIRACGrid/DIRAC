@@ -242,7 +242,7 @@ class StalledJobAgent(AgentModule):
                 if site in self.stalledJobsToRescheduleSites:
                     return self._updateJobStatus(jobID, JobStatus.RESCHEDULED, minorStatus=setFailed, force=True)
 
-            return self._updateJobStatus(jobID, JobStatus.FAILED, minorStatus=setFailed)
+            return self._updateJobStatus(jobID, JobStatus.FAILED, minorStatus=setFailed, force=True)
 
         return S_OK()
 
