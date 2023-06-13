@@ -24,6 +24,7 @@
 
 from DIRAC.Core.Tornado.Client.private.TornadoBaseClient import TornadoBaseClient
 from DIRAC.Core.Utilities.JEncode import encode
+from DIRAC.Core.Utilities.File import getGlobbedTotalSize
 
 
 class TornadoClient(TornadoBaseClient):
@@ -63,7 +64,7 @@ class TornadoClient(TornadoBaseClient):
         retVal["rpcStub"] = (self._getBaseStub(), method, list(args))
         return retVal
 
-    def receiveFile(self, destFile, *args):
+    def receiveFile(self, destFile, fileId, token=""):
         """
         Equivalent of :py:meth:`~DIRAC.Core.DISET.TransferClient.TransferClient.receiveFile`
 
@@ -77,6 +78,25 @@ class TornadoClient(TornadoBaseClient):
         # Start request
         retVal = self._request(outputFile=destFile, **rpcCall)
         return retVal
+
+    def sendFile(self, filename, fileID):
+        """
+        Equivalent of :py:meth:`~DIRAC.Core.DISET.TransferClient.TransferClient.sendFile`
+
+        In practice, it calls the remote method `streamFromClient` and transfers the file
+        as a string type value
+
+        :param str filename: file (or path) where to store the result
+        :param any fileID: tuple if file identifiers
+        :returns: S_OK/S_ERROR result of the remote RPC call
+        """
+        fileSize = getGlobbedTotalSize(filename)
+        token = ""
+
+        with open(filename, "br") as input:
+            result = self.executeRPC("streamFromClient", *[fileID, token, fileSize, input.read()])
+
+        return result
 
 
 def executeRPCStub(rpcStub):

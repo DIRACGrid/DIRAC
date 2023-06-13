@@ -11,6 +11,7 @@ import os
 import time
 import threading
 import tempfile
+import hashlib
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -24,9 +25,10 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Core.Utilities.File import getGlobbedTotalSize
 
 
-class SandboxStoreHandler(RequestHandler):
+class SandboxStoreHandlerMixin:
     __purgeCount = -1
     __purgeLock = threading.Lock()
     __purgeWorking = False
@@ -44,10 +46,10 @@ class SandboxStoreHandler(RequestHandler):
             return S_ERROR(f"Can't connect to DB: {repr(excp)}")
         return S_OK()
 
-    def initialize(self):
+    def initializeRequest(self):
         self.__backend = self.getCSOption("Backend", "local")
         self.__localSEName = self.getCSOption("LocalSE", "SandboxSE")
-        self.__maxUploadBytes = self.getCSOption("MaxSandboxSizeMiB", 10) * 1048576
+        self._maxUploadBytes = self.getCSOption("MaxSandboxSizeMiB", 10) * 1048576
         if self.__backend.lower() == "local" or self.__backend == self.__localSEName:
             self.__useLocalStorage = True
             self.__seNameToUse = self.__localSEName
@@ -75,13 +77,14 @@ class SandboxStoreHandler(RequestHandler):
         pathItems.extend([md5[0:3], md5[3:6], md5])
         return os.path.join(*pathItems)
 
-    def transfer_fromClient(self, fileId, token, fileSize, fileHelper):
+    def _getFromClient(self, fileId, token, fileSize, fileHelper=None, data=""):
         """
         Receive a file as a sandbox
         """
 
-        if self.__maxUploadBytes and fileSize > self.__maxUploadBytes:
-            fileHelper.markAsTransferred()
+        if self._maxUploadBytes and fileSize > self._maxUploadBytes:
+            if fileHelper:
+                fileHelper.markAsTransferred()
             return S_ERROR("Sandbox is too big. Please upload it to a grid storage element")
 
         if isinstance(fileId, (list, tuple)):
@@ -113,7 +116,8 @@ class SandboxStoreHandler(RequestHandler):
         result = self.sandboxDB.getSandboxId(seName, sePFN, credDict["username"], credDict["group"])
         if result["OK"]:
             gLogger.info("Sandbox already exists. Skipping upload")
-            fileHelper.markAsTransferred()
+            if fileHelper:
+                fileHelper.markAsTransferred()
             sbURL = f"SB:{seName}|{sePFN}"
             assignTo = {key: [(sbURL, assignTo[key])] for key in assignTo}
             result = self.export_assignSandboxesToEntities(assignTo)
@@ -126,14 +130,35 @@ class SandboxStoreHandler(RequestHandler):
         else:
             hdPath = False
         # Write to local file
-        result = self.__networkToFile(fileHelper, hdPath)
+
+        if fileHelper:
+            result = self.__networkToFile(fileHelper, hdPath)
+        elif data:
+            hdPath = os.path.realpath(hdPath)
+            mkDir(os.path.dirname(hdPath))
+            with open(hdPath, "bw") as output:
+                output.write(data)
+            result = S_OK(hdPath)
+        else:
+            result = S_ERROR("No data provided")
+
         if not result["OK"]:
             gLogger.error("Error while receiving sandbox file", result["Message"])
             return result
         hdPath = result["Value"]
         gLogger.info("Wrote sandbox to file", hdPath)
         # Check hash!
-        if fileHelper.getHash() != aHash:
+        if fileHelper:
+            hdHash = fileHelper.getHash()
+        else:
+            oMD5 = hashlib.md5()
+            with open(hdPath, "rb") as fd:
+                bData = fd.read(10240)
+                while bData:
+                    oMD5.update(bData)
+                    bData = fd.read(10240)
+            hdHash = oMD5.hexdigest()
+        if hdHash != aHash:
             self.__secureUnlinkFile(hdPath)
             gLogger.error("Hashes don't match! Client defined hash is different with received data hash!")
             return S_ERROR("Hashes don't match!")
@@ -147,13 +172,14 @@ class SandboxStoreHandler(RequestHandler):
             sbPath = result["Value"][1]
         # Register!
         gLogger.info("Registering sandbox in the DB with", f"SB:{self.__seNameToUse}|{sbPath}")
+        fSize = getGlobbedTotalSize(hdPath)
         result = self.sandboxDB.registerAndGetSandbox(
             credDict["username"],
             credDict["DN"],
             credDict["group"],
             self.__seNameToUse,
             sbPath,
-            fileHelper.getTransferedBytes(),
+            fSize,
         )
         if not result["OK"]:
             self.__secureUnlinkFile(hdPath)
@@ -165,6 +191,13 @@ class SandboxStoreHandler(RequestHandler):
         if not result["OK"]:
             return result
         return S_OK(sbURL)
+
+    def transfer_fromClient(self, fileId, token, fileSize, fileHelper):
+        """
+        Receive a file as a sandbox
+        """
+
+        return self._getFromFile(fileId, token, fileSize, fileHelper=fileHelper)
 
     def transfer_bulkFromClient(self, fileId, token, _fileSize, fileHelper):
         """Receive files packed into a tar archive by the fileHelper logic.
@@ -322,16 +355,14 @@ class SandboxStoreHandler(RequestHandler):
 
     types_assignSandboxesToEntities = [dict]
 
-    def export_assignSandboxesToEntities(self, enDict, ownerName="", ownerGroup="", entitySetup=False):
+    def export_assignSandboxesToEntities(self, enDict, ownerName="", ownerGroup=""):
         """
         Assign sandboxes to jobs.
         Expects a dict of { entityId : [ ( SB, SBType ), ... ] }
         """
-        if not entitySetup:
-            entitySetup = self.serviceInfoDict["clientSetup"]
         credDict = self.getRemoteCredentials()
         return self.sandboxDB.assignSandboxesToEntities(
-            enDict, credDict["username"], credDict["group"], entitySetup, ownerName, ownerGroup
+            enDict, credDict["username"], credDict["group"], ownerName, ownerGroup
         )
 
     ##################
@@ -339,30 +370,24 @@ class SandboxStoreHandler(RequestHandler):
 
     types_unassignEntities = [(list, tuple)]
 
-    def export_unassignEntities(self, entitiesList, entitiesSetup=False):
+    def export_unassignEntities(self, entitiesList):
         """
         Unassign a list of jobs
         """
-        if not entitiesSetup:
-            entitiesSetup = self.serviceInfoDict["clientSetup"]
         credDict = self.getRemoteCredentials()
-        return self.sandboxDB.unassignEntities({entitiesSetup: entitiesList}, credDict["username"], credDict["group"])
+        return self.sandboxDB.unassignEntities(entitiesList, credDict["username"], credDict["group"])
 
     ##################
     # Getting assigned sandboxes
 
     types_getSandboxesAssignedToEntity = [str]
 
-    def export_getSandboxesAssignedToEntity(self, entityId, entitySetup=False):
+    def export_getSandboxesAssignedToEntity(self, entityId):
         """
         Get the sandboxes associated to a job and the association type
         """
-        if not entitySetup:
-            entitySetup = self.serviceInfoDict["clientSetup"]
         credDict = self.getRemoteCredentials()
-        result = self.sandboxDB.getSandboxesAssignedToEntity(
-            entityId, entitySetup, credDict["username"], credDict["group"]
-        )
+        result = self.sandboxDB.getSandboxesAssignedToEntity(entityId, credDict["username"], credDict["group"])
         if not result["OK"]:
             return result
         sbDict = {}
@@ -400,6 +425,10 @@ class SandboxStoreHandler(RequestHandler):
         fileID is the local file name in the SE.
         token is used for access rights confirmation.
         """
+
+        return self._sendToClient(fileID, token, fileHelper=fileHelper)
+
+    def _sendToClient(self, fileID, token, fileHelper=None, raw=False):
         credDict = self.getRemoteCredentials()
         serviceURL = self.serviceInfoDict["URL"]
         filePath = fileID.replace(serviceURL, "")
@@ -412,13 +441,21 @@ class SandboxStoreHandler(RequestHandler):
         hdPath = self.__sbToHDPath(filePath)
         if not os.path.isfile(hdPath):
             return S_ERROR("Sandbox does not exist")
-        result = fileHelper.getFileDescriptor(hdPath, "rb")
-        if not result["OK"]:
-            return S_ERROR(f"Failed to get file descriptor: {result['Message']}")
-        fd = result["Value"]
-        result = fileHelper.FDToNetwork(fd)
-        fileHelper.oFile.close()
-        return result
+
+        if fileHelper:
+            result = fileHelper.getFileDescriptor(hdPath, "rb")
+            if not result["OK"]:
+                return S_ERROR(f"Failed to get file descriptor: {result['Message']}")
+            fd = result["Value"]
+            result = fileHelper.FDToNetwork(fd)
+            fileHelper.oFile.close()
+            return result
+
+        with open(hdPath, "rb") as fd:
+            if raw:
+                return fd.read()
+            else:
+                return S_OK(fd.read())
 
     ##################
     # Purge sandboxes
@@ -531,3 +568,12 @@ class SandboxStoreHandler(RequestHandler):
             except Exception:
                 gLogger.exception("RM raised an exception while trying to delete a remote sandbox")
                 return S_ERROR("RM raised an exception while trying to delete a remote sandbox")
+
+    def export_sendFile(self, filename, fileID, data=""):
+        print(filename, fileID, data)
+
+        return S_OK(filename)
+
+
+class SandboxStoreHandler(SandboxStoreHandlerMixin, RequestHandler):
+    pass
