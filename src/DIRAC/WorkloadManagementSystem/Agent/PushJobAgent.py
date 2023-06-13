@@ -25,7 +25,6 @@ from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesRes
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
 from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 MAX_JOBS_MANAGED = 100
 
