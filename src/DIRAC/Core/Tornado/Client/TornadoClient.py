@@ -74,7 +74,15 @@ class TornadoClient(TornadoBaseClient):
         :param args: list of arguments
         :returns: S_OK/S_ERROR
         """
-        rpcCall = {"method": "streamToClient", "args": encode(args)}
+        rpcCall = {
+            "method": "streamToClient",
+            "args": encode(
+                (
+                    fileId,
+                    token,
+                )
+            ),
+        }
         # Start request
         retVal = self._request(outputFile=destFile, **rpcCall)
         return retVal
