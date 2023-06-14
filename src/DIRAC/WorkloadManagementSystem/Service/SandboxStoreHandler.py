@@ -197,7 +197,7 @@ class SandboxStoreHandlerMixin:
         Receive a file as a sandbox
         """
 
-        return self._getFromFile(fileId, token, fileSize, fileHelper=fileHelper)
+        return self._getFromClient(fileId, token, fileSize, fileHelper=fileHelper)
 
     def transfer_bulkFromClient(self, fileId, token, _fileSize, fileHelper):
         """Receive files packed into a tar archive by the fileHelper logic.
