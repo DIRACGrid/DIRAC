@@ -46,7 +46,7 @@ class SandboxStoreHandlerMixin:
             return S_ERROR(f"Can't connect to DB: {repr(excp)}")
         return S_OK()
 
-    def initializeRequest(self):
+    def initialize(self):
         self.__backend = self.getCSOption("Backend", "local")
         self.__localSEName = self.getCSOption("LocalSE", "SandboxSE")
         self._maxUploadBytes = self.getCSOption("MaxSandboxSizeMiB", 10) * 1048576
@@ -63,6 +63,9 @@ class SandboxStoreHandlerMixin:
             SandboxStoreHandler.__purgeCount = 0
         if SandboxStoreHandler.__purgeCount == 0:
             threading.Thread(target=self.purgeUnusedSandboxes).start()
+
+    def initializeRequest(self):
+        self.initialize()
 
     def __getSandboxPath(self, md5):
         """Generate the sandbox path"""
@@ -292,7 +295,7 @@ class SandboxStoreHandlerMixin:
                 fd = tfd
             else:
                 fd = open(destFileName, "wb")
-            result = fileHelper.networkToDataSink(fd, maxFileSize=self.__maxUploadBytes)
+            result = fileHelper.networkToDataSink(fd, maxFileSize=self._maxUploadBytes)
             fd.close()
         except Exception as e:
             gLogger.error("Cannot open to write destination file", f"{destFileName}: {repr(e).replace(',)', ')')}")
