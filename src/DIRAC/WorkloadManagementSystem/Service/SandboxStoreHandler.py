@@ -569,11 +569,6 @@ class SandboxStoreHandlerMixin:
                 gLogger.exception("RM raised an exception while trying to delete a remote sandbox")
                 return S_ERROR("RM raised an exception while trying to delete a remote sandbox")
 
-    def export_sendFile(self, filename, fileID, data=""):
-        print(filename, fileID, data)
-
-        return S_OK(filename)
-
 
 class SandboxStoreHandler(SandboxStoreHandlerMixin, RequestHandler):
     pass
