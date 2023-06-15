@@ -64,7 +64,7 @@ class TornadoClient(TornadoBaseClient):
         retVal["rpcStub"] = (self._getBaseStub(), method, list(args))
         return retVal
 
-    def receiveFile(self, destFile, fileId, token=""):
+    def receiveFile(self, destFile, *args):
         """
         Equivalent of :py:meth:`~DIRAC.Core.DISET.TransferClient.TransferClient.receiveFile`
 
@@ -74,15 +74,7 @@ class TornadoClient(TornadoBaseClient):
         :param args: list of arguments
         :returns: S_OK/S_ERROR
         """
-        rpcCall = {
-            "method": "streamToClient",
-            "args": encode(
-                (
-                    fileId,
-                    token,
-                )
-            ),
-        }
+        rpcCall = {"method": "streamToClient", "args": encode(args)}
         # Start request
         retVal = self._request(outputFile=destFile, **rpcCall)
         return retVal
