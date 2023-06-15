@@ -134,8 +134,11 @@ class PilotCStoJSONSynchronizer:
                         pilotDict["CEs"][ce] = {"Site": site, "GridCEType": ceType}
 
                     # This LocalCEType is like 'InProcess' or 'Pool' or 'Pool/Singularity' etc.
-                    # It can be in the queue and/or the CE level
-                    localCEType = gConfig.getValue(cfgPath("/Resources", "Sites", grid, site, "CEs", ce, "LocalCEType"))
+                    # It can be at the installation, queue and/or CE level
+                    defaultLocalCEType = gConfig.getValue("/Resources/Computing/DefaultLocalCEType", "")
+                    localCEType = gConfig.getValue(
+                        cfgPath("/Resources", "Sites", grid, site, "CEs", ce, "LocalCEType"), defaultLocalCEType
+                    )
                     if localCEType is not None:
                         pilotDict["CEs"][ce].setdefault("LocalCEType", localCEType)
 

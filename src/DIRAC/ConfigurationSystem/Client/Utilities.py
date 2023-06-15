@@ -174,7 +174,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
 
                 ceInfo["Queues"].update(newQueues)
 
-    defaultLocalCEType = gConfig.getOption("/Resources/Computing/DefaultLocalCEType", "")
+    defaultLocalCEType = gConfig.getValue("/Resources/Computing/DefaultLocalCEType", "")
 
     changeSet = set()
     for site in ceBdiiDict:
