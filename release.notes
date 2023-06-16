@@ -1,3 +1,28 @@
+[v8.0.22]
+
+*WorkloadManagementSystem
+
+FIX: (#7051) Implementation of DefaultLocalCEType option
+FIX: (#7045) fix(StalledJobAgent): after a job was Killed, we have to force the Failed.
+
+*test
+
+FIX: (#7047) Workflow tests need pilot.cfg to work
+
+*Resources
+
+CHANGE: (#7044) use double slash in Echo xroot URLs
+
+*docs
+
+FIX: (#7020) added a note about removal of elastic job parameters
+
+*Core
+
+FIX: (#6945) print a warning message when no CFG file is found
+FIX: (#6943) HandlerManager - create separate class for each service handler
+FIX: (#6943) BaseRequestHandler - fullComponentName can be only defined in the configuration
+
 [v8.0.21]
 
 *WorkloadManagement
