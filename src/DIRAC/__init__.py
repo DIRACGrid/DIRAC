@@ -214,6 +214,8 @@ def initialize(
     localCfg = LocalConfiguration()
 
     for config_file in extra_config_files or []:
+        if not os.path.exists(config_file):
+            continue
         cfg = CFG()
         cfg.loadFromFile(config_file)
         gConfigurationData.mergeWithLocal(cfg)

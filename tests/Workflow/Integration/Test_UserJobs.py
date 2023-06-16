@@ -10,7 +10,7 @@ import multiprocessing
 
 import DIRAC
 
-DIRAC.initialize()  # Initialize configuration
+DIRAC.initialize(extra_config_files=["pilot.cfg"])  # Initialize configuration
 
 from DIRAC import gLogger, rootPath
 from DIRAC.tests.Utilities.IntegrationTest import IntegrationTest
