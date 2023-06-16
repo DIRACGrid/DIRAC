@@ -56,10 +56,11 @@ def updateFlag():
 
     # Now we need to restart the services for the new configuration to be picked up
 
-    time.sleep(2)
+    time.sleep(5)
 
     os.system("dirac-restart-component WorkloadManagement JobMonitoring")
     os.system("dirac-restart-component WorkloadManagement JobStateUpdate")
+    os.system("dirac-restart-component WorkloadManagement JobManager")
     os.system("dirac-restart-component Tornado Tornado")
 
     time.sleep(5)

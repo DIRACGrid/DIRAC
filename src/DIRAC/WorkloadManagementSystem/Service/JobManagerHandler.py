@@ -61,7 +61,7 @@ class JobManagerHandlerMixin:
             cls.pilotAgentsDB = result["Value"](parentLogger=cls.log)
 
         except RuntimeError as excp:
-            return S_ERROR(f"Can't connect to DB: {excp}")
+            return S_ERROR(f"Can't connect to DB: {excp!r}")
 
         cls.msgClient = MessageClient("WorkloadManagement/OptimizationMind")
         result = cls.msgClient.connect(JobManager=True)
@@ -376,8 +376,7 @@ class JobManagerHandlerMixin:
 
         if validJobList:
             self.log.verbose("Removing jobs", f"(n={len(validJobList)})")
-            result = self.jobDB.removeJobFromDB(validJobList)
-            if not result["OK"]:
+            if not (result := self.jobDB.removeJobFromDB(validJobList))["OK"]:
                 self.log.error("Failed to remove jobs from JobDB", f"(n={len(validJobList)})")
             else:
                 self.log.info("Removed jobs from JobDB", f"(n={len(validJobList)})")
@@ -390,8 +389,7 @@ class JobManagerHandlerMixin:
                 else:
                     count += 1
 
-            result = self.jobLoggingDB.deleteJob(validJobList)
-            if not result["OK"]:
+            if not (result := self.jobLoggingDB.deleteJob(validJobList))["OK"]:
                 self.log.error("Failed to remove jobs from JobLoggingDB", f"(n={len(validJobList)})")
             else:
                 self.log.info("Removed jobs from JobLoggingDB", f"(n={len(validJobList)})")
@@ -465,16 +463,13 @@ class JobManagerHandlerMixin:
         :return: S_OK()/S_ERROR()
         """
         if sendKillCommand:
-            result = self.jobDB.setJobCommand(jobID, "Kill")
-            if not result["OK"]:
+            if not (result := self.jobDB.setJobCommand(jobID, "Kill"))["OK"]:
                 return result
 
         self.log.info("Job marked for termination", jobID)
-        result = self.jobDB.setJobStatus(jobID, JobStatus.KILLED, "Marked for termination")
-        if not result["OK"]:
+        if not (result := self.jobDB.setJobStatus(jobID, JobStatus.KILLED, "Marked for termination"))["OK"]:
             self.log.warn("Failed to set job Killed status", result["Message"])
-        result = self.taskQueueDB.deleteJob(jobID)
-        if not result["OK"]:
+        if not (result := self.taskQueueDB.deleteJob(jobID))["OK"]:
             self.log.warn("Failed to delete job from the TaskQueue", result["Message"])
 
         return S_OK()
