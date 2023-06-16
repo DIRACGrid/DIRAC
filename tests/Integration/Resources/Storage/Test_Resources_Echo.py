@@ -46,6 +46,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 gLogger.setLevel("DEBUG")
 
 STORAGE_NAME = "RAL-ECHO"
+STORAGE_SECTIONS = []
 # Size in bytes of the file we want to produce
 FILE_SIZE = 5 * 1024  # 5kB
 # base path on the storage where the test files/folders will be created
@@ -136,7 +137,7 @@ def setuptest(request):
         with open(os.path.join(workPath, fn), "w") as f:
             f.write(_mul(fn))
 
-    se = StorageElement(STORAGE_NAME)
+    se = StorageElement(STORAGE_NAME, protocolSections=STORAGE_SECTIONS)
 
     putDir = {
         os.path.join(DESTINATION_PATH, "Workflow/FolderA"): os.path.join(local_path, "Workflow/FolderA"),
@@ -205,7 +206,7 @@ def setuptest(request):
 #   print 'in test hello2 %s %s'%(setuptest)
 
 
-@pytest.mark.order1
+@pytest.mark.run(order=1)
 def test_uploadDirectory_shouldFail(setuptest):
     """uploading directories is not possible with Echo"""
     res = se.putDirectory(putDir)
@@ -224,7 +225,7 @@ def test_uploadDirectory_shouldFail(setuptest):
         assert res["Value"]["Successful"][fn] is False
 
 
-@pytest.mark.order2
+@pytest.mark.run(order=2)
 def test_listDirectory_shouldFail(setuptest):
     """Listing directory should fail"""
     res = se.listDirectory(listDir)
@@ -232,7 +233,7 @@ def test_listDirectory_shouldFail(setuptest):
         assert dn in res["Value"]["Failed"], res
 
 
-@pytest.mark.order3
+@pytest.mark.run(order=3)
 def test_createDirectory(setuptest):
     """Echo is nice enough to tell us that it is a success..."""
     res = se.createDirectory(createDir)
@@ -240,7 +241,7 @@ def test_createDirectory(setuptest):
         assert dn in res["Value"]["Successful"], res
 
 
-@pytest.mark.order4
+@pytest.mark.run(order=4)
 def test_putFile(setuptest):
     """Copy a file"""
     res = se.putFile(putFile)
@@ -248,7 +249,7 @@ def test_putFile(setuptest):
     # time.sleep(0.2)
 
 
-@pytest.mark.order5
+@pytest.mark.run(order=5)
 def test_isFile(setuptest):
     """Test whether an LFN is a file"""
     res = se.isFile(isFile)
@@ -257,7 +258,7 @@ def test_isFile(setuptest):
         assert res["Value"]["Successful"][lfn], res
 
 
-@pytest.mark.order6
+@pytest.mark.run(order=6)
 def test_getFileMetadata(setuptest):
     """Get the metadata of previously uploaded files"""
     res = se.getFileMetadata(isFile)
@@ -272,7 +273,7 @@ def test_getFileMetadata(setuptest):
         assert res[lfn]["Size"] == fileSizes[lfn]
 
 
-@pytest.mark.order7
+@pytest.mark.run(order=7)
 def test_getDirectory_shouldFail(setuptest):
     """Get directory cannot work on Echo"""
 
@@ -281,7 +282,7 @@ def test_getDirectory_shouldFail(setuptest):
         assert dn in res["Value"]["Failed"], res
 
 
-@pytest.mark.order8
+@pytest.mark.run(order=8)
 def test_removeFile(setuptest):
     """Remove files"""
     res = se.removeFile(removeFile)
@@ -291,7 +292,7 @@ def test_removeFile(setuptest):
     assert res["Value"]["Successful"][removeFile[0]] is False
 
 
-@pytest.mark.order9
+@pytest.mark.run(order=9)
 def test_removeNonExistingFile(setuptest):
     """remove non existing file"""
     res = se.removeFile(removeFile)
