@@ -7,9 +7,10 @@ import zipfile
 import _thread
 import time
 import datetime
-import DIRAC
 
 from diraccfg import CFG
+
+import DIRAC
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
