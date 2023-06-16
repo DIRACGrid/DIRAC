@@ -413,8 +413,8 @@ class LocalConfiguration:
 
         groupArgs = []
         step = 0
-        for i in range(len(self.commandArgumentList)):
-            argMarking, description, mandatory, values, default = self.commandArgumentList[i]
+        for i, commandArgument in enumerate(self.commandArgumentList):
+            argMarking, description, mandatory, values, default = commandArgument
 
             # Check whether the required arguments are given in the command line
             if len(self.commandArgList) <= (i + step):
@@ -434,7 +434,7 @@ class LocalConfiguration:
                 if values and cArg not in values:
                     gLogger.fatal(
                         "Error when parsing command line arguments: "
-                        '"%s" does not match the allowed values for %s' % (cArg, argMarking)
+                        f'"{cArg}" does not match the allowed values for {argMarking}'
                     )
                     self.showHelp(exitCode=1)
 
@@ -445,30 +445,51 @@ class LocalConfiguration:
     def __loadCFGFiles(self):
         """
         Loads possibly several cfg files, in order:
-        1. ~/.dirac.cfg
-        2. cfg files pointed by DIRACSYSCONFIG env variable (comma-separated)
+        1. cfg files pointed by DIRACSYSCONFIG env variable (comma-separated)
+        2. ~/.dirac.cfg
         3. cfg files specified in addCFGFile calls
         4. cfg files that come from the command line
         """
         errorsList = []
+        foundCFGFile = False
+
+        # 1. $DIRACSYSCONFIG
         if "DIRACSYSCONFIG" in os.environ:
             diracSysConfigFiles = os.environ["DIRACSYSCONFIG"].replace(" ", "").split(",")
             for diracSysConfigFile in reversed(diracSysConfigFiles):
                 gLogger.debug(f"Loading file from DIRACSYSCONFIG {diracSysConfigFile}")
+                if os.path.isfile(diracSysConfigFile):
+                    foundCFGFile = True
                 gConfigurationData.loadFile(diracSysConfigFile)
+
+        # 2. ~/.dirac.cfg
+        if os.path.isfile(os.path.expanduser("~/.dirac.cfg")):
+            foundCFGFile = True
         gConfigurationData.loadFile(os.path.expanduser("~/.dirac.cfg"))
+
+        # 3. cfg files specified in addCFGFile calls
         for fileName in self.additionalCFGFiles:
-            gLogger.debug(f"Loading file {fileName}")
+            if os.path.isfile(fileName):
+                foundCFGFile = True
+                gLogger.debug(f"Loading file {fileName}")
             retVal = gConfigurationData.loadFile(fileName)
             if not retVal["OK"]:
                 gLogger.debug(f"Could not load file {fileName}: {retVal['Message']}")
                 errorsList.append(retVal["Message"])
+
+        # 4. cfg files that come from the command line
         for fileName in self.cliAdditionalCFGFiles:
-            gLogger.debug(f"Loading file {fileName}")
+            if os.path.isfile(fileName):
+                foundCFGFile = True
+                gLogger.debug(f"Loading file {fileName}")
             retVal = gConfigurationData.loadFile(fileName)
             if not retVal["OK"]:
                 gLogger.debug(f"Could not load file {fileName}: {retVal['Message']}")
                 errorsList.append(retVal["Message"])
+
+        if not foundCFGFile:
+            gLogger.warn("No CFG file loaded, was that intentional?")
+
         return errorsList
 
     def __addUserDataToConfiguration(self):
