@@ -17,18 +17,18 @@
     getGroupedPilotSummary()
 
 """
-import threading
 import datetime
 import decimal
+import threading
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Base.DB import DB
 import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
-from DIRAC.Core.Utilities import DErrno
+from DIRAC import S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getUsernameForDN, getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername, getVOForGroup
-from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC.Core.Base.DB import DB
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.MySQL import _quotedList
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 
@@ -112,12 +112,8 @@ class PilotAgentsDB(DB):
                     setList.append(f"GridSite='{res['Value'][destination]}'")
 
         set_string = ",".join(setList)
-        req = "UPDATE PilotAgents SET " + set_string + f" WHERE PilotJobReference='{pilotRef}'"
-        result = self._update(req, conn=conn)
-        if not result["OK"]:
-            return result
-
-        return S_OK()
+        req = f"UPDATE PilotAgents SET {set_string} WHERE PilotJobReference='{pilotRef}'"
+        return self._update(req, conn=conn)
 
     # ###########################################################################################
     # FIXME: this can't work ATM because of how the DB table is made. Maybe it would be useful later.
@@ -330,9 +326,9 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         pilotIDs = []
         for row in result["Value"]:
             pilotDict = {}
-            for i in range(len(parameters)):
-                pilotDict[parameters[i]] = row[i]
-                if parameters[i] == "PilotID":
+            for i, par in enumerate(parameters):
+                pilotDict[par] = row[i]
+                if par == "PilotID":
                     pilotIDs.append(row[i])
             resDict[row[0]] = pilotDict
 
@@ -341,8 +337,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             return S_OK(resDict)
 
         jobsDict = result["Value"]
-        for pilotRef in resDict:
-            pilotInfo = resDict[pilotRef]
+        for pilotRef, pilotInfo in resDict.items():
             pilotID = pilotInfo["PilotID"]
             if pilotID in jobsDict:
                 pilotInfo["Jobs"] = jobsDict[pilotID]
@@ -367,16 +362,14 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         """Set the pilot agent benchmark"""
 
         req = f"UPDATE PilotAgents SET BenchMark='{mark:f}' WHERE PilotJobReference='{pilotRef}'"
-        result = self._update(req)
-        return result
+        return self._update(req)
 
     ##########################################################################################
     def setAccountingFlag(self, pilotRef, mark="True"):
         """Set the pilot AccountingSent flag"""
 
         req = f"UPDATE PilotAgents SET AccountingSent='{mark}' WHERE PilotJobReference='{pilotRef}'"
-        result = self._update(req)
-        return result
+        return self._update(req)
 
     ##########################################################################################
     def storePilotOutput(self, pilotRef, output, error):
@@ -409,21 +402,19 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         result = self._query(req)
         if not result["OK"]:
             return result
-        else:
-            if result["Value"]:
-                try:
-                    stdout = result["Value"][0][0].decode()  # account for the use of BLOBs
-                    error = result["Value"][0][1].decode()
-                except AttributeError:
-                    stdout = result["Value"][0][0]
-                    error = result["Value"][0][1]
-                if stdout == '""':
-                    stdout = ""
-                if error == '""':
-                    error = ""
-                return S_OK({"StdOut": stdout, "StdErr": error})
-            else:
-                return S_ERROR("PilotJobReference " + pilotRef + " not found")
+        if not result["Value"]:
+            return S_ERROR(f"PilotJobReference {pilotRef} not found")
+        try:
+            stdout = result["Value"][0][0].decode()  # account for the use of BLOBs
+            error = result["Value"][0][1].decode()
+        except AttributeError:
+            stdout = result["Value"][0][0]
+            error = result["Value"][0][1]
+        if stdout == '""':
+            stdout = ""
+        if error == '""':
+            error = ""
+        return S_OK({"StdOut": stdout, "StdErr": error})
 
     ##########################################################################################
     def __getPilotID(self, pilotRef):
@@ -434,19 +425,17 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             result = self._query(req)
             if not result["OK"]:
                 return 0
-            else:
-                if result["Value"]:
-                    return int(result["Value"][0][0])
-                return 0
-        else:
-            refString = ",".join(["'" + ref + "'" for ref in pilotRef])
-            req = f"SELECT PilotID from PilotAgents WHERE PilotJobReference in ( {refString} )"
-            result = self._query(req)
-            if not result["OK"]:
-                return []
             if result["Value"]:
-                return [x[0] for x in result["Value"]]
+                return int(result["Value"][0][0])
+            return 0
+        refString = ",".join(["'" + ref + "'" for ref in pilotRef])
+        req = f"SELECT PilotID from PilotAgents WHERE PilotJobReference in ( {refString} )"
+        result = self._query(req)
+        if not result["OK"]:
             return []
+        if result["Value"]:
+            return [x[0] for x in result["Value"]]
+        return []
 
     ##########################################################################################
     def setJobForPilot(self, jobID, pilotRef, site=None, updateStatus=True):
@@ -455,17 +444,13 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         pilotID = self.__getPilotID(pilotRef)
         if pilotID:
             if updateStatus:
-                reason = "Report from job %d" % int(jobID)
+                reason = f"Report from job {jobID}"
                 result = self.setPilotStatus(pilotRef, status=PilotStatus.RUNNING, statusReason=reason, gridSite=site)
                 if not result["OK"]:
                     return result
-            req = "INSERT INTO JobToPilotMapping (PilotID,JobID,StartTime) VALUES (%d,%d,UTC_TIMESTAMP())" % (
-                pilotID,
-                jobID,
-            )
+            req = f"INSERT INTO JobToPilotMapping (PilotID,JobID,StartTime) VALUES ({int(pilotID)}, {int(jobID)}, UTC_TIMESTAMP())"
             return self._update(req)
-        else:
-            return S_ERROR("PilotJobReference " + pilotRef + " not found")
+        return S_ERROR(f"PilotJobReference {pilotRef} not found")
 
     ##########################################################################################
     def setCurrentJobID(self, pilotRef, jobID):
@@ -568,16 +553,15 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             result = self._query(req)
             if not result["OK"]:
                 return result
-            else:
-                if result["Value"]:
-                    for res in result["Value"]:
-                        site = res[0]
-                        count = res[1]
-                        if site:
-                            if site not in summary_dict:
-                                summary_dict[site] = {}
-                            summary_dict[site][st] = int(count)
-                            summary_dict["Total"][st] += int(count)
+            if result["Value"]:
+                for res in result["Value"]:
+                    site = res[0]
+                    count = res[1]
+                    if site:
+                        if site not in summary_dict:
+                            summary_dict[site] = {}
+                        summary_dict[site][st] = int(count)
+                        summary_dict["Total"][st] += int(count)
 
         # Get aborted pilots in the last hour, day
         req = "SELECT DestinationSite,count(DestinationSite) FROM PilotAgents WHERE Status='Aborted' AND "
@@ -723,14 +707,12 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         if total > 10:
             if eff < 25.0:
                 return "Bad"
-            elif eff < 60.0:
+            if eff < 60.0:
                 return "Poor"
-            elif eff < 85.0:
+            if eff < 85.0:
                 return "Fair"
-            else:
-                return "Good"
-        else:
-            return "Idle"
+            return "Good"
+        return "Idle"
 
     def getPilotSummaryWeb(self, selectDict, sortList, startItem, maxItems):
         """Get summary of the pilot jobs status by CE/site in a standard structure"""
@@ -861,26 +843,26 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
 
         records = []
         siteSumDict = {}
-        for site in resultDict:
+        for site, ces in resultDict.items():
             sumDict = {}
             for state in allStateNames:
                 if state not in sumDict:
                     sumDict[state] = 0
             sumDict["Total"] = 0
-            for ce in resultDict[site]:
+            for ce, ceDict in ces.items():
                 itemList = [site, ce]
                 total = 0
                 for state in allStateNames:
-                    itemList.append(resultDict[site][ce][state])
-                    sumDict[state] += resultDict[site][ce][state]
+                    itemList.append(ceDict[state])
+                    sumDict[state] += ceDict[state]
                     if state == PilotStatus.DONE:
-                        done = resultDict[site][ce][state]
+                        done = ceDict[state]
                     if state == "Done_Empty":
-                        empty = resultDict[site][ce][state]
+                        empty = ceDict[state]
                     if state == PilotStatus.ABORTED:
-                        aborted = resultDict[site][ce][state]
-                    if state != "Aborted_Hour" and state != "Done_Empty":
-                        total += resultDict[site][ce][state]
+                        aborted = ceDict[state]
+                    if state not in ("Aborted_Hour", "Done_Empty"):
+                        total += ceDict[state]
 
                 sumDict["Total"] += total
                 # Add the total number of pilots seen in the last day
@@ -915,10 +897,10 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
                 else:
                     itemList.append("Idle")
 
-                if len(resultDict[site]) == 1 or expand_site:
+                if len(ces) == 1 or expand_site:
                     records.append(itemList)
 
-            if len(resultDict[site]) > 1 and not expand_site:
+            if len(ces) > 1 and not expand_site:
                 itemList = [site, "Multiple"]
                 for state in allStateNames + ["Total"]:
                     if state in sumDict:
@@ -1210,7 +1192,7 @@ class PivotedPilotSummaryTable:
 
         self._columns += self.pstates  # MySQL._query() does not give us column names, sadly.
 
-    def buildSQL(self, selectDict=None):
+    def buildSQL(self):
         """
         Build an SQL query to create a table with all status counts in one row, ("pivoted")
         grouped by columns in the column list.

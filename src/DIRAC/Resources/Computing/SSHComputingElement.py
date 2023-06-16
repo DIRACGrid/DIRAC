@@ -65,13 +65,15 @@ SSHType:
 import errno
 import json
 import os
-import pexpect
 import shutil
 import stat
+import uuid
 from urllib.parse import urlparse
 from urllib.parse import quote
 from urllib.parse import unquote
 from shlex import quote as shlex_quote
+
+import pexpect
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR
@@ -81,7 +83,6 @@ from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Resources.Computing.PilotBundle import bundleProxy, writeScript
 from DIRAC.Resources.Computing.BatchSystems.executeBatch import executeBatchContent
 from DIRAC.Core.Utilities.List import uniqueElements
-from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 
@@ -563,7 +564,7 @@ class SSHComputingElement(ComputingElement):
 
         jobStamps = []
         for _i in range(numberOfJobs):
-            jobStamps.append(makeGuid()[:8])
+            jobStamps.append(uuid.uuid4().hex)
 
         numberOfProcessors = self.ceParameters.get("NumberOfProcessors", 1)
         wholeNode = self.ceParameters.get("WholeNode", False)

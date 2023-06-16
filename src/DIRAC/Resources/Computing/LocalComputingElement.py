@@ -37,15 +37,14 @@ import shutil
 import tempfile
 import getpass
 import errno
+import uuid
 from urllib.parse import urlparse
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC import gConfig
 
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Resources.Computing.PilotBundle import bundleProxy, writeScript
 from DIRAC.Core.Utilities.List import uniqueElements
-from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.Subprocess import systemCall
 
 
@@ -170,7 +169,7 @@ class LocalComputingElement(ComputingElement):
 
         jobStamps = []
         for _i in range(numberOfJobs):
-            jobStamps.append(makeGuid()[:8])
+            jobStamps.append(uuid.uuid4().hex)
 
         batchDict = {
             "Executable": submitFile,
