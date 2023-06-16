@@ -50,7 +50,7 @@ class MonitoringDB(ElasticDB):
             section = getDatabaseSection("Monitoring/MonitoringDB")
             indexPrefix = gConfig.getValue(f"{section}/IndexPrefix", CSGlobals.getSetup()).lower()
             # Connecting to the ES cluster
-            super().__init__(dbname=name.split("/")[1], fullName=name, indexPrefix=indexPrefix)
+            super().__init__(fullName=name, indexPrefix=indexPrefix)
         except RuntimeError as ex:
             self.log.error("Can't connect to MonitoringDB", repr(ex))
             raise ex
