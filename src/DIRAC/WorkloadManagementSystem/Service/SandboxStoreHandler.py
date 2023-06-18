@@ -456,7 +456,7 @@ class SandboxStoreHandlerMixin:
         if fileHelper:
             result = fileHelper.getFileDescriptor(hdPath, "rb")
             if not result["OK"]:
-                return S_ERROR(f"Failed to get file descriptor: {result['Message']}")
+                return result
             fd = result["Value"]
             result = fileHelper.FDToNetwork(fd)
             fileHelper.oFile.close()
@@ -465,8 +465,7 @@ class SandboxStoreHandlerMixin:
         with open(hdPath, "rb") as fd:
             if raw:
                 return fd.read()
-            else:
-                return S_OK(fd.read())
+            return S_OK(fd.read())
 
     ##################
     # Purge sandboxes
