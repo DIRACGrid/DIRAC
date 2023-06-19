@@ -1,7 +1,7 @@
 """
    Contains the mechanism to evaluate whether to use or not a catalog
 """
-from pyparsing import infixNotation, opAssoc, Word, printables, Literal, Suppress
+from pyparsing import infix_notation, opAssoc, Word, printables, Literal, Suppress
 
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -131,7 +131,7 @@ class FCConditionParser:
 
     # We can combine the pluginOperand with boolean expression,
     # and prioritized by squared bracket
-    __boolExpr = infixNotation(
+    __boolExpr = infix_notation(
         __pluginOperand,
         [
             ("!", 1, opAssoc.RIGHT, _BoolNot),
