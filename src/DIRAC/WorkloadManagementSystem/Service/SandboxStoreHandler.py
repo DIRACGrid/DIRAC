@@ -46,7 +46,7 @@ class SandboxStoreHandlerMixin:
             return S_ERROR(f"Can't connect to DB: {repr(excp)}")
         return S_OK()
 
-    def initialize(self):
+    def initializeRequest(self):
         self.__backend = self.getCSOption("Backend", "local")
         self.__localSEName = self.getCSOption("LocalSE", "SandboxSE")
         self._maxUploadBytes = self.getCSOption("MaxSandboxSizeMiB", 10) * 1048576
@@ -63,9 +63,6 @@ class SandboxStoreHandlerMixin:
             SandboxStoreHandler.__purgeCount = 0
         if SandboxStoreHandler.__purgeCount == 0:
             threading.Thread(target=self.purgeUnusedSandboxes).start()
-
-    def initializeRequest(self):
-        self.initialize()
 
     def __getSandboxPath(self, md5):
         """Generate the sandbox path"""
@@ -364,7 +361,7 @@ class SandboxStoreHandlerMixin:
         Expects a dict of { entityId : [ ( SB, SBType ), ... ] }
         """
         if not entitySetup:
-            entitySetup = self.serviceInfoDict["clientSetup"]
+            entitySetup = self.diracSetup
         credDict = self.getRemoteCredentials()
         return self.sandboxDB.assignSandboxesToEntities(
             enDict, credDict["username"], credDict["group"], entitySetup, ownerName, ownerGroup
@@ -380,7 +377,7 @@ class SandboxStoreHandlerMixin:
         Unassign a list of jobs
         """
         if not entitiesSetup:
-            entitiesSetup = self.serviceInfoDict["clientSetup"]
+            entitiesSetup = self.diracSetup
         credDict = self.getRemoteCredentials()
         return self.sandboxDB.unassignEntities({entitiesSetup: entitiesList}, credDict["username"], credDict["group"])
 
@@ -394,7 +391,7 @@ class SandboxStoreHandlerMixin:
         Get the sandboxes associated to a job and the association type
         """
         if not entitySetup:
-            entitySetup = self.serviceInfoDict["clientSetup"]
+            entitySetup = self.diracSetup
         credDict = self.getRemoteCredentials()
         result = self.sandboxDB.getSandboxesAssignedToEntity(
             entityId, entitySetup, credDict["username"], credDict["group"]
@@ -581,4 +578,7 @@ class SandboxStoreHandlerMixin:
 
 
 class SandboxStoreHandler(SandboxStoreHandlerMixin, RequestHandler):
-    pass
+    def initialize(self):
+        # we need it still in 8.0
+        self.diracSetup = self.serviceInfoDict["clientSetup"]
+        return self.initializeRequest()

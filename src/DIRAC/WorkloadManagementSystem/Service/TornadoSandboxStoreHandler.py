@@ -14,6 +14,9 @@ from DIRAC.WorkloadManagementSystem.Service.SandboxStoreHandler import SandboxSt
 
 class TornadoSandboxStoreHandler(SandboxStoreHandlerMixin, TornadoService):
     def initializeRequest(self):
+        self.diracSetup = self.get_argument("clientSetup")
+        # Ugly, but makes DIPS and HTTPS handlers compatible, TBD properly
+        self.serviceInfoDict = self._serviceInfoDict
         return SandboxStoreHandlerMixin.initializeRequest(self)
 
     def export_streamFromClient(self, fileId, token, fileSize, data):
