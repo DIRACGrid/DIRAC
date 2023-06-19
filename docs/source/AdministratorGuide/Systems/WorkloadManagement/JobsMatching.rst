@@ -24,7 +24,7 @@ The JobAgent running on the Worker Node and started by the pilot presents capabi
      OwnerGroup:            diracAdmin,test,user
      PilotBenchmark:        19.5
      PilotInfoReportedFlag: False
-     PilotReference:        https://ce-01.somewhere.org:8443/CREAM155256908
+     PilotReference:        htcondorce://ce-01.somewhere.org:8443/155256908.0
      Platform:              x86_64_glibc-2.21
      ReleaseProject:        VO
      ReleaseVersion:        7.2.13

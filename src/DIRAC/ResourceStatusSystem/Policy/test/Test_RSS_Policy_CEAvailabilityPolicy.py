@@ -45,8 +45,8 @@ class CEAvailabilityPolicy_Success(CEAvailabilityPolicy_TestCase):
             "Value": {
                 "Reason": "All queues in 'Production'",
                 "Status": "Production",
-                "cccreamceli05.in2p3.fr:8443/cream-sge-long": "Production",
-                "cccreamceli05.in2p3.fr:8443/cream-sge-verylong": "Production",
+                "celi05.in2p3.fr:8443/condor-long": "Production",
+                "celi05.in2p3.fr:8443/condor-verylong": "Production",
             },
         }
         res = policy._evaluate(commandResult)
@@ -59,8 +59,8 @@ class CEAvailabilityPolicy_Success(CEAvailabilityPolicy_TestCase):
             "Value": {
                 "Reason": "All queues in 'Production'",
                 "Status": "Degraded",
-                "cccreamceli05.in2p3.fr:8443/cream-sge-long": "Production",
-                "cccreamceli05.in2p3.fr:8443/cream-sge-verylong": "Production",
+                "celi05.in2p3.fr:8443/condor-long": "Production",
+                "celi05.in2p3.fr:8443/condor-verylong": "Production",
             },
         }
         res = policy._evaluate(commandResult)

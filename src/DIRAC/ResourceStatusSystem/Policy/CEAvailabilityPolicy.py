@@ -20,8 +20,8 @@ class CEAvailabilityPolicy(PolicyBase):
           'Value': {
             'Reason': "All queues in 'Production'",
             'Status': 'Production',
-            'cccreamceli05.in2p3.fr:8443/cream-sge-long': 'Production',
-            'cccreamceli05.in2p3.fr:8443/cream-sge-verylong': 'Production'
+            'celi05.in2p3.fr:8443/condor-long': 'Production',
+            'celi05.in2p3.fr:8443/condor-verylong': 'Production'
             }
           }
 

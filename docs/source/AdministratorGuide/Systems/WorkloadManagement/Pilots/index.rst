@@ -23,7 +23,7 @@ First of all, a definition:
 
 A pilot can be sent, as a script to be run. Or, it can be fetched.
 
-A pilot can run on every computing resource, e.g.: on CREAM Computing elements,
+A pilot can run on every computing resource, e.g.: on HTCondor Computing elements,
 on DIRAC Computing elements, on Virtual Machines in the form of contextualization script,
 or IAAC (Infrastructure as a Client) provided that these machines are properly configured.
 

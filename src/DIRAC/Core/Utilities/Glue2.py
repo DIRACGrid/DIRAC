@@ -198,17 +198,8 @@ def __getGlue2ShareInfo(host, shareInfoLists):
                 shareEndpoints = [shareEndpoints]
             for endpoint in shareEndpoints:
                 ceType = endpoint.rsplit(".", 1)[1]
-                # get queue Name, in CREAM this is behind GLUE2entityOtherInfo...
-                if ceType == "CREAM":
-                    for otherInfo in shareInfoDict["GLUE2EntityOtherInfo"]:
-                        if otherInfo.startswith("CREAMCEId"):
-                            queueName = otherInfo.split("/", 1)[1]
-                            # creamCEs are EOL soon, ignore any info they have
-                            if queueInfo.pop("NumberOfProcessors", 1) != 1:
-                                sLog.verbose("Ignoring MaxSlotsPerJob option for CreamCE", endpoint)
-
                 # HTCondorCE, htcondorce
-                elif ceType.lower().endswith("htcondorce"):
+                if ceType.lower().endswith("htcondorce"):
                     ceType = "HTCondorCE"
                     queueName = "condor"
 

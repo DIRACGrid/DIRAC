@@ -21,7 +21,7 @@ from DIRAC.WorkloadManagementSystem.Client.CPUNormalization import queueNormaliz
 @Script()
 def main():
     # Registering arguments will automatically add their description to the help menu
-    Script.registerArgument(["Queue: GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/cream-pbs-lhcb)"])
+    Script.registerArgument(["Queue: GlueCEUniqueID of the Queue (ie, juk.nikhef.nl:8443/condor-lhcb)"])
     _, args = Script.parseCommandLine(ignoreErrors=True)
 
     exitCode = 0

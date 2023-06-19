@@ -30,7 +30,7 @@ is a unique job identifier within the DIRAC Workload Management System. You can 
 the status of the job by giving::
 
   $ dirac-wms-job-status 11758
-  JobID=11758 Status=Waiting; MinorStatus=Pilot Agent Submission; Site=CREAM.CNAF.it;
+  JobID=11758 Status=Waiting; MinorStatus=Pilot Agent Submission; Site=DIRAC.CNAF.it;
 
 In the output of the command you get the job Status, Minor Status with more details, and the site
 to which the job is destinated.

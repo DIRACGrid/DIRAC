@@ -87,11 +87,11 @@ And if we take a look to the ComputingElement Resources, we can see the pattern 
 
 ::
 
-    .../Computing/some.cream.ce
-                         /CEType = CREAM
-                         /Host = some.cream.ce
+    .../Computing/some.htcondor.ce
+                         /CEType = HTCondorCE
+                         /Host = some.htcondor.ce
                          /Queues
-                                 /cream-sge-long
+                                 /condor-long
                                            /Communities = VO1, VO2
                                            /Domains = Grid1, Grid2
                                            /MaxCPUTime =
