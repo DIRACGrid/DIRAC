@@ -1,3 +1,78 @@
+[v8.1.0a13]
+
+*Core
+
+FIX: (#7058) print a warning message when no CFG file is found
+FIX: (#6976) retry upon DNS lookup error
+FIX: (#6955) HandlerManager - create separate class for each service handler
+FIX: (#6955) BaseRequestHandler - fullComponentName can be only defined in the configuration
+
+*docs
+
+FIX: (#7057) added a note about removal of elastic job parameters
+CHANGE: (#6969) more details in the "supercomputers" section
+
+*Resources
+
+CHANGE: (#7055) use double slash in Echo xroot URLs
+FIX: (#7042) reduce memory consumption of AREXCE.getJobOutput()
+CHANGE: (#7036) remove CREAM CE
+FIX: (#7028) SSHCE getPilotOutput remove stamp
+FIX: (#7000) ARCLogLevel
+FIX: (#6999) remove executables definition from AREXCE.submitJob()
+NEW: (#6969) cleanJob() in AREX
+CHANGE: (#6969) executables from inputs are passed as executables in the XRSL in ARC and AREX
+
+*test
+
+FIX: (#7053) Workflow tests need pilot.cfg to work
+
+*WorkloadManagementSystem
+
+FIX: (#7052) Implementation of DefaultLocalCEType option
+FIX: (#7046) fix(StalledJobAgent): after a job was Killed, we have to force the Failed.
+CHANGE: (#7033) TokenManagerHandler provides client access token if username is not provided.
+CHANGE: (#7031) Using JobManager instead of JobDB for rescheduling stalled jobs
+CHANGE: (#7019) removed old format of ElasticJobParametersDB
+NEW: (#7017) add the possibility of adding generic options for running the pilots
+FIX: (#6980) JobStatus: add staging to checking transition, needed by StorageManagementSystem (Stager)
+NEW: (#6969) tests for RemoteRunner
+CHANGE: (#6969) RemoteRunner can deal with MP applications, clean job outputs and process more applications
+FIX: (#6969) Modify the DIRACVersion in the PushJobAgent
+
+*WorkloadManagement
+
+NEW: (#7042) md5 checksum comparison in RemoteRunner
+NEW: (#7041) Add /Resources/Computing/DefaultLocalCEType option
+FIX: (#7007) return specific exit code in RemoteRunner in case of failure
+FIX: (#7006) Getting the value of /LocalSite/RemoteExecution
+
+*RequestManagementSystem
+
+FIX: (#7013) fix the monitoring of Operations not yet entered into the DB
+
+*FrameworkSystem
+
+CHANGE: (#6967) enable/disableLogsFromExternalLibs only used from LocalConfiguration
+FIX: (#6967) remove a deprecated method
+CHANGE: (#6967) gLogger date format
+NEW: (#6967) type hinting in gLogger
+
+*Interfaces
+
+FIX: (#6961) Removed dinit, sessions are now instantiated automatically. Also removed DCOMMANDS_PPID.
+
+PR for adding Dirac side code related to https://github.com/DIRACGrid/WebAppDIRAC/pull/729/commits
+CHANGE: (#6956) Add getTokensByUserID method and make it compliant with ProxyManager code
+
+*Integration tests
+
+FIX: (#6954) Make error nicer when the IAM docker instance is not working properly
+
+*dashboards
+
+NEW: (#6911) added json export of Grafana demo dashboard
+
 [v8.1.0a12]
 
 *WorkloadManagementSystem
