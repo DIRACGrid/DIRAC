@@ -1,36 +1,41 @@
+.. _shorthand_commands_tutorial:
+
 ==================
 Shorthand Commands
 ==================
 
-These commands are aimed at frequest users of a DIRAC UI, especially if you experience latency issues, as this setup offers a caching mechanism.
+These commands are aimed at frequent users of a DIRAC UI, especially if you experience latency issues, as this setup offers a caching mechanism.
 They do require some initial setup.
 
-#. Setting up your default
 
-You only need to do this once.
+#. Before using any DIRAC UI commands you need to set up your DIRAC UI environment and get a proxy::
 
-    $ source diracos/diracosrc
-    $ dirac-proxy-init -g [your DIRAC group]
-    $ dconfig --minimal
+        $ source diracos/diracosrc
+        $ dirac-proxy-init -g [your DIRAC group]
 
-This will create a skeleton config file in ``~/.dirac/dcommands.conf``
-Now edit the configuration file using your details. If you are a member of more than one VO, you might want to setup different profiles for each.
+#. Setting up your defaults.
+
+   You only need to do this once::
+
+        $ dconfig --minimal
+
+   This will create a skeleton config file in ``~/.dirac/dcommands.conf``
+
+   Now edit the configuration file using your details. If you are a member of more than one VO, you might want to set up different profiles for each. Your current group will be automatically picked up from your proxy.
+
+   .. code-block:: cfg
 
     [global]
-    default_profile = my_dirac_group
+    default_profile = myvo_user
 
-    [my_dirac_group]
-    group_name = my_dirac_group
-    home_dir = /my_dirac_group/user/m/mydir
+    [myvo_user]
+    group_name = myvo_user
+    home_dir = /myvo/user/m/mydir
     default_se = MYHOME-SE-disk
 
+    [my2vo_prod]
+    group_name = my2vo_prod
+    home_dir = /my2vo/prod/mc
+    default_se = ANOTHER-SE-disk
 
-#. Session Initialization
-
-You need to do this for every session.
-
-    $ source diracos/diracosrc
-    $ dinit
-
-Now you are set up to use the DIRAC short commands. For a full list of what is available,
-please see the :ref:`commands_reference` section.
+   Now you are set up to use the DIRAC short commands. For a full list of what is available, please see the :ref:`shorthand_cmd` section.
