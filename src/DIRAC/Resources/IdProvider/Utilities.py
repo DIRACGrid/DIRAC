@@ -39,7 +39,8 @@ def getIdProviderIdentifierFromIssuerAndClientID(issuer, clientID):
 
     for identifier in result["Value"]:
         testedClientID = gConfig.getValue(f"/Resources/IdProviders/{identifier}/client_id")
-        if testedClientID and testedClientID == clientID:
+        # clientID is not always available, e.g. in case of a token of particular user
+        if not clientID or (testedClientID and testedClientID == clientID):
             # Found the client ID but need to check the issuer
             # 2 different issuers could theoretically have a same client ID
             testedIssuer = gConfig.getValue(f"/Resources/IdProviders/{identifier}/issuer")

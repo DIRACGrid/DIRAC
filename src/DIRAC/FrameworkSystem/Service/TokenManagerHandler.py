@@ -259,7 +259,7 @@ class TokenManagerHandler(TornadoService):
                     result = self.__checkProperties(dn, userGroup)
                     if result["OK"]:
                         # refresh token with requested scope
-                        result = idpObj.refreshToken(tokens.get("refresh_token"))
+                        result = idpObj.refreshToken(tokens.get("refresh_token"), group=userGroup, scope=scope)
                         if result["OK"]:
                             # caching new tokens
                             self.__tokensCache.add(
