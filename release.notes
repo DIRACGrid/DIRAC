@@ -1,3 +1,19 @@
+[v8.1.0a14]
+
+*WorkloadManagementSystem
+
+NEW: (#7059) new script dirac-admin-add-pilot
+
+*dashboard
+
+NEW: (#7039) add missing dashboards of issue #6742 also to the LHCb grafana organisation. The dashboards can be checked/reviewed at https://monit-grafana.cern.ch/dashboards/f/qwdBd3KVk/dev-dirac-certification
+
+Please follow the template:
+
+*docs
+
+FIX: (#7023) added remaining info from COMDIRAC Wiki. Addresses part of #6746
+
 [v8.1.0a13]
 
 *Core
