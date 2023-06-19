@@ -2,11 +2,11 @@
 """
 tests for HTCondorCEComputingElement module
 """
+import uuid
 import pytest
 
 from DIRAC.Resources.Computing import HTCondorCEComputingElement as HTCE
 from DIRAC.Resources.Computing.BatchSystems import Condor
-from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC import S_OK
 
 MODNAME = "DIRAC.Resources.Computing.HTCondorCEComputingElement"
@@ -127,9 +127,9 @@ def test__writeSub(mocker, localSchedd, optionsNotExpected, optionsExpected):
     mocker.patch(MODNAME + ".mkDir")
 
     jobStamps = []
-    commonJobStampPart = makeGuid()[:3]
+    commonJobStampPart = uuid.uuid4().hex[:3]
     for _i in range(42):
-        jobStamp = commonJobStampPart + makeGuid()[:5]
+        jobStamp = commonJobStampPart + uuid.uuid4().hex[:29]
         jobStamps.append(jobStamp)
 
     htce._HTCondorCEComputingElement__writeSub("dirac-install", 42, "", 1, jobStamps)  # pylint: disable=E1101
