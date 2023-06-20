@@ -213,7 +213,7 @@ class TornadoTokenManagerHandler(TornadoService):
         idpObj = result["Value"]
 
         # Search for an existing token in tokensCache
-        cachedKey = getCachedKey(idpObj.name, username, userGroup, scope, audience)
+        cachedKey = getCachedKey(idpObj, username, userGroup, scope, audience)
         result = getCachedToken(self.__tokensCache, cachedKey, requiredTimeLeft)
         if result["OK"]:
             # A valid token has been found and is returned
@@ -259,7 +259,7 @@ class TornadoTokenManagerHandler(TornadoService):
                     result = self.__checkProperties(dn, userGroup)
                     if result["OK"]:
                         # refresh token with requested scope
-                        result = idpObj.refreshToken(tokens.get("refresh_token"))
+                        result = idpObj.refreshToken(tokens.get("refresh_token"), group=userGroup, scope=scope)
                         if result["OK"]:
                             # caching new tokens
                             self.__tokensCache.add(
