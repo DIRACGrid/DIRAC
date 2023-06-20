@@ -25,6 +25,8 @@ csAPI = CSAPI()
 
 csAPI.setOption("Systems/WorkloadManagement/Production/Services/SandboxStore/BasePath", f"{setupName}/sandboxes")
 csAPI.setOption("Systems/WorkloadManagement/Production/Services/SandboxStore/LogLevel", "DEBUG")
+csAPI.setOption("Systems/WorkloadManagement/Production/Services/TornadoSandboxStore/BasePath", f"{setupName}/sandboxes")
+csAPI.setOption("Systems/WorkloadManagement/Production/Services/TornadoSandboxStore/LogLevel", "DEBUG")
 
 # Now setting a SandboxSE as the following:
 #     ProductionSandboxSE

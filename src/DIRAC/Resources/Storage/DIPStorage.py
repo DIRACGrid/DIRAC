@@ -160,7 +160,7 @@ class DIPStorage(StorageBase):
 
     def __getFile(self, src_url, dest_file):
         transferClient = TransferClient(self.url)
-        res = transferClient.receiveFile(dest_file, src_url, token=self.checkSum)
+        res = transferClient.receiveFile(dest_file, src_url, self.checkSum)
         if not res["OK"]:
             return res
         if not os.path.exists(dest_file):
