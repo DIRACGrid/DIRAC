@@ -30,7 +30,7 @@ def getCachedKey(
     idProviderClient,
     username: str = None,
     userGroup: str = None,
-    scope: str = None,
+    scope: list[str] = None,
     audience: str = None,
 ):
     """Build the key to potentially retrieve a cached token given the provided parameters.
@@ -53,7 +53,9 @@ def getCachedKey(
     if userGroup and (result := idProviderClient.getGroupScopes(userGroup)):
         # What scope correspond to the requested group?
         scope = list(set((scope or []) + result))
-    scope = " ".join(scope)
+
+    if scope:
+        scope = " ".join(sorted(scope))
 
     return (subject, scope, audience, idProviderClient.name, idProviderClient.issuer)
 

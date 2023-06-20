@@ -445,7 +445,7 @@ class SiteDirector(AgentModule):
 
             # Get valid token if needed
             if "Token" in ce.ceParameters.get("Tag", []):
-                result = self.__getPilotToken()
+                result = self.__getPilotToken(audience=ce.audienceName)
                 if not result["OK"]:
                     return result
                 ce.setToken(result["Value"], 3500)
@@ -465,13 +465,20 @@ class SiteDirector(AgentModule):
 
         return S_OK()
 
-    def __getPilotToken(self):
+    def __getPilotToken(self, audience: str, scope: list[str] = None):
         """Get the token corresponding to the pilot user identity
 
+        :param audience: Token audience, targeting a single CE
+        :param scope: list of permissions needed to interact with a CE
         :return: S_OK/S_ERROR, Token object as Value
         """
-        result = gTokenManager.getToken(userGroup=self.pilotGroup, requiredTimeLeft=600)
-        return result
+        if not audience:
+            return S_ERROR("Audience is not defined")
+
+        if not scope:
+            scope = ["compute.cancel", "compute.create", "compute.read", "compute.cancel"]
+
+        return gTokenManager.getToken(userGroup=self.pilotGroup, requiredTimeLeft=600, scope=scope, audience=audience)
 
     def _ifAndWhereToSubmit(self):
         """Return a tuple that says if and where to submit pilots:
@@ -1234,9 +1241,10 @@ class SiteDirector(AgentModule):
 
         # Get valid token if needed
         if "Token" in ce.ceParameters.get("Tag", []):
-            result = self.__getPilotToken()
+            result = self.__getPilotToken(audience=ce.audienceName)
             if not result["OK"]:
-                return result
+                self.log.error("Failed to get token", f"{ceName}: {result['Message']}")
+                return
             ce.setToken(result["Value"], 3500)
 
         result = ce.getJobStatus(stampedPilotRefs)
