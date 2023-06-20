@@ -1,3 +1,32 @@
+[v8.0.23]
+
+FIX: (#7061) Close DISET selector when we no longer need it
+
+*WorkloadManagent
+
+NEW: (#7049) New TornadoSandboxStoreHandler implementation
+
+*Core
+
+NEW: (#7049) TornadoClient - added sendFile() method
+
+*Resources
+
+NEW: (#6970) add a test for the PoolCE to highlight the fact that submission failures cannot be handled by the caller with the return value
+
+*WorkloadManagement
+
+FIX: (#6970) management of the job status in JobAgent
+NEW: (#6970) add a test for the JobAgent to make sure the status of the submissions are correctly handled
+
+*docs
+
+NEW: (#6970) documentation about ComputingElement
+
+*WorkloadManagementSystem
+
+NEW: (#6914) new script dirac-admin-add-pilot
+
 [v8.0.22]
 
 *WorkloadManagementSystem
