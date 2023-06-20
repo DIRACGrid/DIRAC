@@ -14,13 +14,11 @@ import re
 import random
 from collections import defaultdict
 
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_OK, gConfig
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
@@ -139,6 +137,12 @@ class PushJobAgent(JobAgent):
         if not result["OK"] or result["Value"]:
             return result
 
+        # Check errors that could have occurred during job submission and/or execution
+        # Status are handled internally, and therefore, not checked outside of the method
+        result = self._checkSubmittedJobs()
+        if not result["OK"]:
+            return result
+
         for queueName, queueDictionary in queueDictItems:
             # Make sure there is no problem with the queue before trying to submit
             if not self._allowedToSubmit(queueName):
@@ -183,8 +187,8 @@ class PushJobAgent(JobAgent):
                 matcherParams = ["JDL", "DN", "Group"]
                 matcherInfo = jobRequest["Value"]
                 jobID = matcherInfo["JobID"]
-                jobReport = JobReport(jobID, f"PushJobAgent@{self.siteName}")
-                result = self._checkMatcherInfo(matcherInfo, matcherParams, jobReport)
+                self.jobReport.setJob(jobID)
+                result = self._checkMatcherInfo(matcherInfo, matcherParams)
                 if not result["OK"]:
                     self.failedQueues[queueName] += 1
                     break
@@ -203,13 +207,13 @@ class PushJobAgent(JobAgent):
                 # Get JDL paramters
                 parameters = self._getJDLParameters(jobJDL)
                 if not parameters["OK"]:
-                    jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Could Not Extract JDL Parameters")
+                    self.jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Could Not Extract JDL Parameters")
                     self.log.warn("Could Not Extract JDL Parameters", parameters["Message"])
                     self.failedQueues[queueName] += 1
                     break
 
                 params = parameters["Value"]
-                result = self._extractValuesFromJobParams(params, jobReport)
+                result = self._extractValuesFromJobParams(params)
                 if not result["OK"]:
                     self.failedQueues[queueName] += 1
                     break
@@ -219,93 +223,81 @@ class PushJobAgent(JobAgent):
 
                 self.log.verbose("Job request successful: \n", jobRequest["Value"])
                 self.log.info("Received", f"JobID={jobID}, JobType={jobType}, OwnerDN={ownerDN}, JobGroup={jobGroup}")
-                try:
-                    jobReport.setJobParameter(par_name="MatcherServiceTime", par_value=str(matchTime), sendFlag=False)
-                    jobReport.setJobStatus(
-                        status=JobStatus.MATCHED, minorStatus="Job Received by Agent", sendFlag=False
-                    )
 
-                    # Setup proxy
-                    result_setupProxy = self._setupProxy(ownerDN, jobGroup)
-                    if not result_setupProxy["OK"]:
-                        result = self._rescheduleFailedJob(jobID, result_setupProxy["Message"])
-                        self.failedQueues[queueName] += 1
-                        break
-                    proxyChain = result_setupProxy.get("Value")
+                self.jobReport.setJobParameter(par_name="MatcherServiceTime", par_value=str(matchTime), sendFlag=False)
+                self.jobReport.setJobStatus(
+                    status=JobStatus.MATCHED, minorStatus="Job Received by Agent", sendFlag=False
+                )
 
-                    # Check software and install them if required
-                    software = self._checkInstallSoftware(jobID, params, ceDict, jobReport)
-                    if not software["OK"]:
-                        self.log.error("Failed to install software for job", f"{jobID}")
-                        errorMsg = software["Message"]
-                        if not errorMsg:
-                            errorMsg = "Failed software installation"
-                        result = self._rescheduleFailedJob(jobID, errorMsg)
-                        self.failedQueues[queueName] += 1
-                        break
-
-                    # Submit the job to the CE
-                    self.log.debug(f"Before self._submitJob() ({self.ceName}CE)")
-                    result_submitJob = self._submitJob(
-                        jobID=jobID,
-                        jobParams=params,
-                        resourceParams=ceDict,
-                        optimizerParams=optimizerParams,
-                        proxyChain=proxyChain,
-                        jobReport=jobReport,
-                        processors=submissionParams["processors"],
-                        wholeNode=submissionParams["wholeNode"],
-                        maxNumberOfProcessors=submissionParams["maxNumberOfProcessors"],
-                        mpTag=submissionParams["mpTag"],
-                    )
-
-                    # Committing the JobReport before evaluating the result of job submission
-                    res = jobReport.commit()
-                    if not res["OK"]:
-                        resFD = jobReport.generateForwardDISET()
-                        if not resFD["OK"]:
-                            self.log.error("Error generating ForwardDISET operation", resFD["Message"])
-                        elif resFD["Value"]:
-                            # Here we create the Request.
-                            op = resFD["Value"]
-                            request = Request()
-                            requestName = f"jobAgent_{jobID}"
-                            request.RequestName = requestName.replace('"', "")
-                            request.JobID = jobID
-                            request.SourceComponent = f"JobAgent_{jobID}"
-                            request.addOperation(op)
-                            # This might fail, but only a message would be printed.
-                            self._sendFailoverRequest(request)
-
-                    if not result_submitJob["OK"]:
-                        self.log.error("Error during submission", result_submitJob["Message"])
-                        self.failedQueues[queueName] += 1
-                        break
-                    elif "PayloadFailed" in result_submitJob:
-                        # Do not keep running and do not overwrite the Payload error
-                        message = f"Payload execution failed with error code {result_submitJob['PayloadFailed']}"
-                        self.log.info(message)
-
-                    self.log.debug(f"After {self.ceName}CE submitJob()")
-
-                    # Check that there is enough slots locally
-                    result = self._checkCEAvailability(self.computingElement)
-                    if not result["OK"] or result["Value"]:
-                        return result
-
-                    # Check that there is enough slots in the remote CE to match a new job
-                    result = self._checkCEAvailability(ce)
-                    if not result["OK"] or result["Value"]:
-                        self.failedQueues[queueName] += 1
-                        break
-
-                    # Try to match a new job
-                    jobRequest = self._matchAJob(ceDictList)
-                except Exception as subExcept:  # pylint: disable=broad-except
-                    self.log.exception("Exception in submission", "", lException=subExcept, lExcInfo=True)
-                    result = self._rescheduleFailedJob(jobID, "Job processing failed with exception")
+                # Setup proxy
+                result_setupProxy = self._setupProxy(ownerDN, jobGroup)
+                if not result_setupProxy["OK"]:
+                    result = self._rescheduleFailedJob(jobID, result_setupProxy["Message"])
                     self.failedQueues[queueName] += 1
                     break
+                proxyChain = result_setupProxy.get("Value")
+
+                # Check software and install them if required
+                software = self._checkInstallSoftware(jobID, params, ceDict)
+                if not software["OK"]:
+                    self.log.error("Failed to install software for job", f"{jobID}")
+                    errorMsg = software["Message"]
+                    if not errorMsg:
+                        errorMsg = "Failed software installation"
+                    result = self._rescheduleFailedJob(jobID, errorMsg)
+                    self.failedQueues[queueName] += 1
+                    break
+
+                # Submit the job to the CE
+                self.log.debug(f"Before self._submitJob() ({self.ceName}CE)")
+                resultSubmission = self._submitJob(
+                    jobID=jobID,
+                    jobParams=params,
+                    resourceParams=ceDict,
+                    optimizerParams=optimizerParams,
+                    proxyChain=proxyChain,
+                    processors=submissionParams["processors"],
+                    wholeNode=submissionParams["wholeNode"],
+                    maxNumberOfProcessors=submissionParams["maxNumberOfProcessors"],
+                    mpTag=submissionParams["mpTag"],
+                )
+                if not result["OK"]:
+                    result = self._rescheduleFailedJob(jobID, resultSubmission["Message"])
+                    self.failedQueues[queueName] += 1
+                    break
+                self.log.debug(f"After {self.ceName}CE submitJob()")
+
+                # Committing the JobReport before evaluating the result of job submission
+                res = self.jobReport.commit()
+                if not res["OK"]:
+                    resFD = self.jobReport.generateForwardDISET()
+                    if not resFD["OK"]:
+                        self.log.error("Error generating ForwardDISET operation", resFD["Message"])
+                    elif resFD["Value"]:
+                        # Here we create the Request.
+                        op = resFD["Value"]
+                        request = Request()
+                        requestName = f"jobAgent_{jobID}"
+                        request.RequestName = requestName.replace('"', "")
+                        request.JobID = jobID
+                        request.SourceComponent = f"JobAgent_{jobID}"
+                        request.addOperation(op)
+                        # This might fail, but only a message would be printed.
+                        self._sendFailoverRequest(request)
+
+                # Check that there is enough slots locally
+                result = self._checkCEAvailability(self.computingElement)
+                if not result["OK"] or result["Value"]:
+                    return result
+
+                # Check that there is enough slots in the remote CE to match a new job
+                result = self._checkCEAvailability(ce)
+                if not result["OK"] or result["Value"]:
+                    self.failedQueues[queueName] += 1
+                    break
+
+                # Try to match a new job
+                jobRequest = self._matchAJob(ceDictList)
 
             if not jobRequest["OK"]:
                 self._checkMatchingIssues(jobRequest)

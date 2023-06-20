@@ -67,10 +67,14 @@ class JobAgent(AgentModule):
         self.fillingMode = True
         self.minimumTimeLeft = 5000
         self.stopOnApplicationFailure = True
+        self.hostFailureCount = 0
+        self.stopAfterHostFailures = 3
+        self.matchFailedCount = 0
         self.stopAfterFailedMatches = 10
         self.jobCount = 0
-        self.matchFailedCount = 0
         self.extraOptions = ""
+        self.logLevel = "INFO"
+        self.defaultWrapperLocation = "DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py"
 
         # Timeleft
         self.initTimes = os.times()
@@ -78,6 +82,9 @@ class JobAgent(AgentModule):
         self.timeLeft = self.initTimeLeft
         self.timeLeftUtil = None
         self.pilotInfoReportedFlag = False
+
+        # Submission results
+        self.submissionDict = {}
 
     #############################################################################
     def initialize(self):
@@ -115,10 +122,15 @@ class JobAgent(AgentModule):
         self.fillingMode = self.am_getOption("FillingModeFlag", self.fillingMode)
         self.minimumTimeLeft = self.am_getOption("MinimumTimeLeft", self.minimumTimeLeft)
         self.stopOnApplicationFailure = self.am_getOption("StopOnApplicationFailure", self.stopOnApplicationFailure)
+        self.stopAfterHostFailures = self.am_getOption("StopAfterHostFailures", self.stopAfterHostFailures)
         self.stopAfterFailedMatches = self.am_getOption("StopAfterFailedMatches", self.stopAfterFailedMatches)
         self.extraOptions = gConfig.getValue("/AgentJobRequirements/ExtraOptions", self.extraOptions)
+        self.logLevel = self.am_getOption("DefaultLogLevel", self.logLevel)
+        self.defaultWrapperLocation = self.am_getOption("JobWrapperTemplate", self.defaultWrapperLocation)
+
         # Utilities
         self.timeLeftUtil = TimeLeft()
+        self.jobReport = JobReport(0, f"{self.__class__.__name__}@{self.siteName}")
         return S_OK()
 
     def _initializeComputingElement(self, localCE):
@@ -146,7 +158,6 @@ class JobAgent(AgentModule):
             return self._finish("Node is being drained by an operator")
 
         self.log.verbose("Job Agent execution loop")
-
         # Check that there is enough slots to match a job
         result = self._checkCEAvailability(self.computingElement)
         if not result["OK"]:
@@ -176,7 +187,6 @@ class JobAgent(AgentModule):
         # Try to match a job
         jobRequest = self._matchAJob(ceDictList)
 
-        self.stopAfterFailedMatches = self.am_getOption("StopAfterFailedMatches", self.stopAfterFailedMatches)
         if not jobRequest["OK"]:
             res = self._checkMatchingIssues(jobRequest)
             if not res["OK"]:
@@ -196,8 +206,8 @@ class JobAgent(AgentModule):
         matcherParams = ["JDL", "DN", "Group"]
         matcherInfo = jobRequest["Value"]
         jobID = matcherInfo["JobID"]
-        jobReport = JobReport(jobID, f"JobAgent@{self.siteName}")
-        result = self._checkMatcherInfo(matcherInfo, matcherParams, jobReport)
+        self.jobReport.setJob(jobID)
+        result = self._checkMatcherInfo(matcherInfo, matcherParams)
         if not result["OK"]:
             return self._finish(result["Message"])
 
@@ -220,12 +230,12 @@ class JobAgent(AgentModule):
         # Get JDL paramters
         parameters = self._getJDLParameters(jobJDL)
         if not parameters["OK"]:
-            jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Could Not Extract JDL Parameters")
+            self.jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Could Not Extract JDL Parameters")
             self.log.warn("Could Not Extract JDL Parameters", parameters["Message"])
             return self._finish("JDL Problem")
 
         params = parameters["Value"]
-        result = self._extractValuesFromJobParams(params, jobReport)
+        result = self._extractValuesFromJobParams(params)
         if not result["OK"]:
             return self._finish(result["Value"])
         submissionParams = result["Value"]
@@ -235,90 +245,88 @@ class JobAgent(AgentModule):
         self.log.verbose("Job request successful: \n", jobRequest["Value"])
         self.log.info("Received", f"JobID={jobID}, JobType={jobType}, OwnerDN={ownerDN}, JobGroup={jobGroup}")
         self.jobCount += 1
-        try:
-            jobReport.setJobParameter(par_name="MatcherServiceTime", par_value=str(matchTime), sendFlag=False)
-            if "BOINC_JOB_ID" in os.environ:
-                # Report BOINC environment
-                for thisp in ("BoincUserID", "BoincHostID", "BoincHostPlatform", "BoincHostName"):
-                    jobReport.setJobParameter(
-                        par_name=thisp, par_value=gConfig.getValue(f"/LocalSite/{thisp}", "Unknown"), sendFlag=False
-                    )
+        self.jobReport.setJobParameter(par_name="MatcherServiceTime", par_value=str(matchTime), sendFlag=False)
+        if "BOINC_JOB_ID" in os.environ:
+            # Report BOINC environment
+            for thisp in ("BoincUserID", "BoincHostID", "BoincHostPlatform", "BoincHostName"):
+                self.jobReport.setJobParameter(
+                    par_name=thisp, par_value=gConfig.getValue(f"/LocalSite/{thisp}", "Unknown"), sendFlag=False
+                )
 
-            jobReport.setJobStatus(minorStatus="Job Received by Agent", sendFlag=False)
-            result_setupProxy = self._setupProxy(ownerDN, jobGroup)
-            if not result_setupProxy["OK"]:
-                result = self._rescheduleFailedJob(jobID, result_setupProxy["Message"])
-                return self._finish(result["Message"], self.stopOnApplicationFailure)
-            proxyChain = result_setupProxy.get("Value")
-
-            # Save the job jdl for external monitoring
-            self._saveJobJDLRequest(jobID, jobJDL)
-
-            # Check software and install them if required
-            software = self._checkInstallSoftware(jobID, params, ceDict, jobReport)
-            if not software["OK"]:
-                self.log.error("Failed to install software for job", f"{jobID}")
-                errorMsg = software["Message"]
-                if not errorMsg:
-                    errorMsg = "Failed software installation"
-                result = self._rescheduleFailedJob(jobID, errorMsg)
-                return self._finish(result["Message"], self.stopOnApplicationFailure)
-
-            gridCE = gConfig.getValue("/LocalSite/GridCE", "")
-            if gridCE:
-                jobReport.setJobParameter(par_name="GridCE", par_value=gridCE, sendFlag=False)
-
-            queue = gConfig.getValue("/LocalSite/CEQueue", "")
-            if queue:
-                jobReport.setJobParameter(par_name="CEQueue", par_value=queue, sendFlag=False)
-
-            self.log.debug(f"Before self._submitJob() ({self.ceName}CE)")
-            result_submitJob = self._submitJob(
-                jobID=jobID,
-                jobParams=params,
-                resourceParams=ceDict,
-                optimizerParams=optimizerParams,
-                proxyChain=proxyChain,
-                jobReport=jobReport,
-                processors=submissionParams["processors"],
-                wholeNode=submissionParams["wholeNode"],
-                maxNumberOfProcessors=submissionParams["maxNumberOfProcessors"],
-                mpTag=submissionParams["mpTag"],
-            )
-
-            # Committing the JobReport before evaluating the result of job submission
-            res = jobReport.commit()
-            if not res["OK"]:
-                resFD = jobReport.generateForwardDISET()
-                if not resFD["OK"]:
-                    self.log.error("Error generating ForwardDISET operation", resFD["Message"])
-                elif resFD["Value"]:
-                    # Here we create the Request.
-                    op = resFD["Value"]
-                    request = Request()
-                    requestName = f"jobAgent_{jobID}"
-                    request.RequestName = requestName.replace('"', "")
-                    request.JobID = jobID
-                    request.SourceComponent = f"JobAgent_{jobID}"
-                    request.addOperation(op)
-                    # This might fail, but only a message would be printed.
-                    self._sendFailoverRequest(request)
-
-            if not result_submitJob["OK"]:
-                return self._finish(result_submitJob["Message"])
-            elif "PayloadFailed" in result_submitJob:
-                # Do not keep running and do not overwrite the Payload error
-                message = f"Payload execution failed with error code {result_submitJob['PayloadFailed']}"
-                if self.stopOnApplicationFailure:
-                    return self._finish(message, self.stopOnApplicationFailure)
-                else:
-                    self.log.info(message)
-
-            self.log.debug(f"After {self.ceName}CE submitJob()")
-        except Exception as subExcept:  # pylint: disable=broad-except
-            self.log.exception("Exception in submission", "", lException=subExcept, lExcInfo=True)
-            result = self._rescheduleFailedJob(jobID, "Job processing failed with exception", direct=True)
+        self.jobReport.setJobStatus(minorStatus="Job Received by Agent", sendFlag=False)
+        result_setupProxy = self._setupProxy(ownerDN, jobGroup)
+        if not result_setupProxy["OK"]:
+            result = self._rescheduleFailedJob(jobID, result_setupProxy["Message"])
             return self._finish(result["Message"], self.stopOnApplicationFailure)
+        proxyChain = result_setupProxy.get("Value")
+
+        # Save the job jdl for external monitoring
+        self._saveJobJDLRequest(jobID, jobJDL)
+
+        # Check software and install them if required
+        software = self._checkInstallSoftware(jobID, params, ceDict)
+        if not software["OK"]:
+            self.log.error("Failed to install software for job", f"{jobID}")
+            errorMsg = software["Message"]
+            if not errorMsg:
+                errorMsg = "Failed software installation"
+            result = self._rescheduleFailedJob(jobID, errorMsg)
+            return self._finish(result["Message"], self.stopOnApplicationFailure)
+
+        gridCE = gConfig.getValue("/LocalSite/GridCE", "")
+        if gridCE:
+            self.jobReport.setJobParameter(par_name="GridCE", par_value=gridCE, sendFlag=False)
+
+        queue = gConfig.getValue("/LocalSite/CEQueue", "")
+        if queue:
+            self.jobReport.setJobParameter(par_name="CEQueue", par_value=queue, sendFlag=False)
+
+        self.log.debug(f"Before self._submitJob() ({self.ceName}CE)")
+        result = self._submitJob(
+            jobID=jobID,
+            jobParams=params,
+            resourceParams=ceDict,
+            optimizerParams=optimizerParams,
+            proxyChain=proxyChain,
+            processors=submissionParams["processors"],
+            wholeNode=submissionParams["wholeNode"],
+            maxNumberOfProcessors=submissionParams["maxNumberOfProcessors"],
+            mpTag=submissionParams["mpTag"],
+        )
+        if not result["OK"]:
+            # This should only happen if an error occurred before the actual submission to the CE
+            result = self._rescheduleFailedJob(jobID, f"Job submission failed: {result['Message']}")
+            return self._finish(result["Message"])
+        self.log.debug(f"After {self.ceName}CE submitJob()")
+
+        # Committing the JobReport before evaluating the result of job submission
+        res = self.jobReport.commit()
+        if not res["OK"]:
+            resFD = self.jobReport.generateForwardDISET()
+            if not resFD["OK"]:
+                self.log.error("Error generating ForwardDISET operation", resFD["Message"])
+            elif resFD["Value"]:
+                # Here we create the Request.
+                op = resFD["Value"]
+                request = Request()
+                requestName = f"jobAgent_{jobID}"
+                request.RequestName = requestName.replace('"', "")
+                request.JobID = jobID
+                request.SourceComponent = f"JobAgent_{jobID}"
+                request.addOperation(op)
+                # This might fail, but only a message would be printed.
+                self._sendFailoverRequest(request)
+
+        # Checking errors that could have occurred during the job submission and/or execution
+        result = self._checkSubmittedJobs()
+        if not result["OK"]:
+            return result
+        submissionErrors = result["Value"][0]
+        payloadErrors = result["Value"][1]
+        if submissionErrors:
+            return self._finish("Error during the submission process")
+        if payloadErrors:
+            return self._finish("Error during a payload execution", self.stopOnApplicationFailure)
 
         return S_OK("Job Agent cycle complete")
 
@@ -509,7 +517,7 @@ class JobAgent(AgentModule):
         return S_OK(chain)
 
     #############################################################################
-    def _checkInstallSoftware(self, jobID, jobParams, resourceParams, jobReport):
+    def _checkInstallSoftware(self, jobID, jobParams, resourceParams):
         """Checks software requirement of job and whether this is already present
         before installing software locally.
         """
@@ -518,7 +526,7 @@ class JobAgent(AgentModule):
             self.log.verbose(msg)
             return S_OK(msg)
 
-        jobReport.setJobStatus(minorStatus="Installing Software", sendFlag=False)
+        self.jobReport.setJobStatus(minorStatus="Installing Software", sendFlag=False)
         softwareDist = jobParams["SoftwareDistModule"]
         self.log.verbose("Found VO Software Distribution module", f": {softwareDist}")
         argumentsDict = {"Job": jobParams, "CE": resourceParams}
@@ -570,15 +578,15 @@ class JobAgent(AgentModule):
             return self._finish("Nothing to do for more than %d cycles" % self.stopAfterFailedMatches)
         return S_OK()
 
-    def _checkMatcherInfo(self, matcherInfo, matcherParams, jobReport):
+    def _checkMatcherInfo(self, matcherInfo, matcherParams):
         """Check that all relevant information about the job are available"""
         for param in matcherParams:
             if param not in matcherInfo:
-                jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus=f"Matcher did not return {param}")
+                self.jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus=f"Matcher did not return {param}")
                 return S_ERROR("Matcher Failed")
 
             if not matcherInfo[param]:
-                jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus=f"Matcher returned null {param}")
+                self.jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus=f"Matcher returned null {param}")
                 return S_ERROR("Matcher Failed")
 
             self.log.verbose("Matcher returned", f"{param} = {matcherInfo[param]} ")
@@ -592,7 +600,6 @@ class JobAgent(AgentModule):
         resourceParams,
         optimizerParams,
         proxyChain,
-        jobReport,
         processors=1,
         wholeNode=False,
         maxNumberOfProcessors=0,
@@ -601,11 +608,6 @@ class JobAgent(AgentModule):
         """Submit job to the Computing Element instance after creating a custom
         Job Wrapper with the available job parameters.
         """
-        logLevel = self.am_getOption("DefaultLogLevel", "INFO")
-        defaultWrapperLocation = self.am_getOption(
-            "JobWrapperTemplate", "DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py"
-        )
-
         # Add the number of requested processors to the job environment
         if "ExecutionEnvironment" in jobParams:
             if isinstance(jobParams["ExecutionEnvironment"], str):
@@ -618,15 +620,15 @@ class JobAgent(AgentModule):
             "resourceParams": resourceParams,
             "optimizerParams": optimizerParams,
             "extraOptions": self.extraOptions,
-            "defaultWrapperLocation": defaultWrapperLocation,
+            "defaultWrapperLocation": self.defaultWrapperLocation,
         }
-        result = createJobWrapper(log=self.log, logLevel=logLevel, **jobDesc)
+        result = createJobWrapper(log=self.log, logLevel=self.logLevel, **jobDesc)
         if not result["OK"]:
             return result
 
         wrapperFile = result["Value"][0]
         inputs = list(result["Value"][1:])
-        jobReport.setJobStatus(minorStatus="Submitting To CE")
+        self.jobReport.setJobStatus(minorStatus="Submitting To CE")
 
         self.log.info("Submitting JobWrapper", f"{os.path.basename(wrapperFile)} to {self.ceName}CE")
 
@@ -637,45 +639,89 @@ class JobAgent(AgentModule):
             return S_ERROR("Payload Proxy Not Found")
 
         payloadProxy = proxy["Value"]
-        submission = self.computingElement.submitJob(
-            wrapperFile,
-            payloadProxy,
-            numberOfProcessors=processors,
-            maxNumberOfProcessors=maxNumberOfProcessors,
-            wholeNode=wholeNode,
-            mpTag=mpTag,
-            jobDesc=jobDesc,
-            log=self.log,
-            logLevel=logLevel,
-            inputs=inputs,
-        )
-        submissionResult = S_OK("Job submitted")
-
-        if submission["OK"]:
-            batchID = submission["Value"]
-            self.log.info("Job submitted", f"(DIRAC JobID: {jobID}; Batch ID: {batchID}")
-            if "PayloadFailed" in submission:
-                submissionResult["PayloadFailed"] = submission["PayloadFailed"]
-            time.sleep(self.jobSubmissionDelay)
-        else:
-            self.log.error("Job submission failed", jobID)
-            jobReport.setJobParameter(
-                par_name="ErrorMessage", par_value=f"{self.ceName} CE Submission Error", sendFlag=False
+        try:
+            result = self.computingElement.submitJob(
+                wrapperFile,
+                payloadProxy,
+                numberOfProcessors=processors,
+                maxNumberOfProcessors=maxNumberOfProcessors,
+                wholeNode=wholeNode,
+                mpTag=mpTag,
+                jobDesc=jobDesc,
+                log=self.log,
+                logLevel=self.logLevel,
+                inputs=inputs,
             )
-            if "ReschedulePayload" in submission:
-                result = self._rescheduleFailedJob(jobID, submission["Message"])
-                self._finish(result["Message"], self.stopOnApplicationFailure)
-                return S_OK()  # Without this, the job is marked as failed
-            else:
-                if "Value" in submission:  # yes, it's "correct", S_ERROR with 'Value' key
-                    self.log.error(
-                        "Error in DIRAC JobWrapper or inner CE execution:",
-                        f"exit code = {str(submission['Value'])}",
-                    )
-            self.log.error("CE Error", f"{self.ceName} : {submission['Message']}")
-            submissionResult = submission
+        except Exception as unexpectedSubmitException:
+            # This should almost never happen in theory
+            self.log.exception("Exception occurred when submitting", f"JobID: {jobID}")
+            taskID = 0
+            # We create a S_ERROR from the exception to compute it as a normal error
+            self.computingElement.taskResults[taskID] = S_ERROR(unexpectedSubmitException)
+            self.submissionDict[jobID] = taskID
+            return S_OK()
 
-        return submissionResult
+        # Submission results are processed in _checkSubmittedJobs
+        # If the submission is done synchronously, the result should be provided in result
+        # We add it to the taskResults dictionary
+        # taskID is always 0 because it means the JobAgent manages a single job per cycle
+        if not self.computingElement.ceParameters.get("AsyncSubmission", False):
+            taskID = 0
+            self.computingElement.taskResults[taskID] = result
+        # If the submission is done asynchronously,
+        # the result of the submission is already in the computingElement.taskResults dict
+        # In this case, result contains the CE-specific jobID (described as taskID here)
+        else:
+            taskID = result.get("Value")
+
+        self.log.info("Job being submitted", f"(DIRAC JobID: {jobID}; Task ID: {taskID})")
+
+        self.submissionDict[jobID] = taskID
+        time.sleep(self.jobSubmissionDelay)
+        return S_OK()
+
+    def _checkSubmittedJobs(self):
+        """Get the status of the submitted jobs and/or the submission process itself."""
+        # We expect the computingElement to have a taskResult dictionary.
+        submissionErrors = []
+        payloadErrors = []
+        originalJobID = self.jobReport.jobID
+        for jobID, taskID in self.submissionDict.items():
+            if not taskID in self.computingElement.taskResults:
+                continue
+
+            result = self.computingElement.taskResults[taskID]
+            # jobReport will handle different jobIDs
+            # setJobParameter() and setJobStatus() should send status immediately (sendFlag=True by default)
+            self.jobReport.setJob(jobID)
+
+            # The submission process failed
+            if not result["OK"]:
+                self.log.error("Job submission failed", jobID)
+                self.jobReport.setJobParameter(par_name="ErrorMessage", par_value=f"{self.ceName} CE Submission Error")
+
+                self.log.error("Error in DIRAC JobWrapper or inner CE execution:", result["Message"])
+                submissionErrors.append(result["Message"])
+                self._rescheduleFailedJob(jobID, result["Message"])
+                # Stop the JobAgent if too many CE errors
+                self.hostFailureCount += 1
+                if self.hostFailureCount > self.stopAfterHostFailures:
+                    return self._finish(result["Message"], self.stopAfterHostFailures)
+
+            # The payload failed (if result["Value"] is not 0)
+            elif result["Value"]:
+                self.jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Payload failed")
+
+                # Do not keep running and do not overwrite the Payload error
+                message = f"Payload execution failed with error code {result['Value']}"
+                payloadErrors.append(message)
+                self.log.info(message)
+
+            # Remove taskID from computingElement.taskResults as it has been treated
+            del self.computingElement.taskResults[taskID]
+
+        self.jobReport.setJob(originalJobID)
+        return S_OK((submissionErrors, payloadErrors))
 
     #############################################################################
     def _getJDLParameters(self, jdl):
@@ -706,14 +752,14 @@ class JobAgent(AgentModule):
             self.log.exception(lException=x)
             return S_ERROR("Exception while extracting JDL parameters for job")
 
-    def _extractValuesFromJobParams(self, params, jobReport):
+    def _extractValuesFromJobParams(self, params):
         """Extract values related to the job from the job parameter dictionary"""
         submissionDict = {}
 
         submissionDict["jobID"] = params.get("JobID")
         if not submissionDict["jobID"]:
             msg = "Job has not JobID defined in JDL parameters"
-            jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus=msg)
+            self.jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus=msg)
             self.log.warn(msg)
             return S_ERROR("JDL Problem")
 
@@ -764,11 +810,13 @@ class JobAgent(AgentModule):
                 int(jobID), status=JobStatus.RESCHEDULED, applicationStatus=message, source="JobAgent@%s", force=True
             )
         else:
-            jobReport = JobReport(int(jobID), f"JobAgent@{self.siteName}")
+            originalJobID = self.jobReport.jobID
+            self.jobReport.setJob(jobID)
             # Setting a job parameter does not help since the job will be rescheduled,
             # instead set the status with the cause and then another status showing the
             # reschedule operation.
-            jobReport.setJobStatus(status=JobStatus.RESCHEDULED, applicationStatus=message, sendFlag=True)
+            self.jobReport.setJobStatus(status=JobStatus.RESCHEDULED, applicationStatus=message, sendFlag=True)
+            self.jobReport.setJob(originalJobID)
 
         self.log.info("Job will be rescheduled")
         result = JobManagerClient().rescheduleJob(jobID)
@@ -815,8 +863,11 @@ class JobAgent(AgentModule):
         res = self.computingElement.shutdown()
         if not res["OK"]:
             self.log.error("CE could not be properly shut down", res["Message"])
-        elif res["Value"]:
-            self.log.info("Job submission(s) result", res["Value"])
+
+        # Check the submitted jobs a last time
+        result = self._checkSubmittedJobs()
+        if not result["OK"]:
+            self.log.error("Problem while trying to get status of the last submitted jobs")
 
         gridCE = gConfig.getValue("/LocalSite/GridCE", "")
         queue = gConfig.getValue("/LocalSite/CEQueue", "")

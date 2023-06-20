@@ -1,13 +1,16 @@
 """ Test class for Job Agent
 """
-
+import os
 import pytest
+import time
 
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
+from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
+from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
+from DIRAC.Resources.Computing.test.Test_PoolComputingElement import badJobScript, jobScript
 from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
-from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
-from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
-from DIRAC import gLogger, S_ERROR
 
 gLogger.setLevel("DEBUG")
 
@@ -236,8 +239,9 @@ def test__checkMatcherInfo(mocker, matcherInfo, matcherParams, expectedResult):
     jobAgent = JobAgent("Test", "Test1")
     jobAgent.log = gLogger
     jobAgent.log.setLevel("DEBUG")
+    jobAgent.jobReport = JobReport(123)
 
-    result = jobAgent._checkMatcherInfo(matcherInfo, matcherParams, JobReport(123))
+    result = jobAgent._checkMatcherInfo(matcherInfo, matcherParams)
     assert result["OK"] == expectedResult["OK"]
     if "Value" in result:
         assert result["Value"] == expectedResult["Value"]
@@ -350,8 +354,9 @@ def test__checkInstallSoftware(mocker):
     jobAgent = JobAgent("Test", "Test1")
     jobAgent.log = gLogger
     jobAgent.log.setLevel("DEBUG")
+    jobAgent.jobReport = JobReport(123)
 
-    result = jobAgent._checkInstallSoftware(101, {}, {}, JobReport(123))
+    result = jobAgent._checkInstallSoftware(101, {}, {})
 
     assert result["OK"], result["Message"]
     assert result["Value"] == "Job has no software installation requirement"
@@ -431,6 +436,7 @@ def test__rescheduleFailedJob(mocker, mockJMInput, expected):
 
     jobAgent.log = gLogger
     jobAgent.log.setLevel("DEBUG")
+    jobAgent.jobReport = JobReport(jobID)
 
     result = jobAgent._rescheduleFailedJob(jobID, message)
     result = jobAgent._finish(result["Message"], False)
@@ -462,3 +468,103 @@ def test_submitJob(mocker, mockJWInput, expected):
 
     if not result["OK"]:
         assert result["Message"] == expected["Message"]
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize(
+    "localCE, job, expectedResult1, expectedResult2",
+    [
+        # Sync submission, should not encounter any issue
+        ("InProcess", jobScript % "1", ([], []), ([], [])),
+        # Async submission, should not encounter any issue
+        ("Pool/InProcess", jobScript % "1", ([], []), ([], [])),
+        # Sync submission of a failed job, first time the job is failed, second time is ok since the job
+        # as already been processed
+        ("InProcess", badJobScript, ([], ["Payload execution failed with error code 5"]), ([], [])),
+        # Async submission of a failed job, first time the job has not failed yet, second time it is failed
+        ("Pool/InProcess", badJobScript, ([], []), ([], ["Payload execution failed with error code 5"])),
+        # Sync submission, should fail because of a problem in the Singularity CE
+        ("Singularity", jobScript % "1", (["Failed to find singularity"], []), ([], [])),
+        # Async submission, should fail because of a problem in the Singularity CE
+        ("Pool/Singularity", jobScript % "1", (["Failed to find singularity"], []), ([], [])),
+    ],
+)
+def test_submitAndCheckJob(mocker, localCE, job, expectedResult1, expectedResult2):
+    """Test the submission and the management of the job status."""
+    jobName = "testJob.py"
+    with open(jobName, "w") as execFile:
+        execFile.write(job)
+    os.chmod(jobName, 0o755)
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobAgent.am_stopExecution")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.createJobWrapper", return_value=S_OK([jobName]))
+    mocker.patch("DIRAC.Core.Security.X509Chain.X509Chain.dumpAllToString", return_value=S_OK())
+
+    jobID = 123
+
+    jobAgent = JobAgent("JobAgent", "Test")
+    jobAgent.log = gLogger.getSubLogger("JobAgent")
+    jobAgent._initializeComputingElement(localCE)
+    jobAgent.jobReport = JobReport(jobID)
+
+    # Submit a job
+    result = jobAgent._submitJob(
+        jobID=jobID, jobParams={}, resourceParams={}, optimizerParams={}, proxyChain=X509Chain()
+    )
+    # Check that no error occurred during the submission process
+    # at the level of the JobAgent
+    assert result["OK"]
+
+    # Check that the job was added to jobAgent.submissionDict
+    assert len(jobAgent.submissionDict) == 1
+    assert jobID in jobAgent.submissionDict
+
+    # If the submission is synchronous jobAgent.computingElement.taskResults
+    # should already contain the result
+    if not jobAgent.computingElement.ceParameters.get("AsyncSubmission", False):
+        assert len(jobAgent.computingElement.taskResults) == 1
+    # Else, the job is still running, the result should not already be present
+    # Unless, an error occurred during the submission
+    else:
+        if expectedResult1[0]:
+            assert len(jobAgent.computingElement.taskResults) == 1
+        else:
+            assert len(jobAgent.computingElement.taskResults) == 0
+
+    # Check errors that could have occurred in the innerCE
+    result = jobAgent._checkSubmittedJobs()
+    assert result["OK"]
+    assert result["Value"] == expectedResult1
+
+    # Check that the job is still present in jobAgent.submissionDict
+    assert len(jobAgent.submissionDict) == 1
+    assert jobID in jobAgent.submissionDict
+
+    # If the submission is synchronous jobAgent.computingElement.taskResults
+    # should not contain the result anymore: already processed by checkSubmittedJobs
+    if not jobAgent.computingElement.ceParameters.get("AsyncSubmission", False):
+        assert len(jobAgent.computingElement.taskResults) == 0
+    # Else, the job is still running, the result should not already be present
+    # Unless, an error occurred during the submission
+    else:
+        if expectedResult1[0]:
+            assert len(jobAgent.computingElement.taskResults) == 0
+        else:
+            # Wait for the end of the job
+            attempts = 0
+            while len(jobAgent.computingElement.taskResults) < 1:
+                time.sleep(0.1)
+                attempts += 1
+                if attempts == 1200:
+                    break
+            assert len(jobAgent.computingElement.taskResults) == 1
+
+    # Check errors that could have occurred in the innerCE
+    result = jobAgent._checkSubmittedJobs()
+    assert result["OK"]
+    assert result["Value"] == expectedResult2
+
+    # From here, taskResults should be empty
+    assert jobID in jobAgent.submissionDict
+    assert len(jobAgent.computingElement.taskResults) == 0

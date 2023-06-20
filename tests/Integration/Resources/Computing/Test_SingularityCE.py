@@ -32,7 +32,6 @@ def test_submitJob():
     ce = SingularityComputingElement("SingularityComputingElement")
     res = ce.submitJob("testJob.py", None)
     assert res["OK"] is False
-    assert res["ReschedulePayload"] is True
     res = ce.getCEStatus()
     assert res["OK"] is True
     assert res["SubmittedJobs"] == 1
@@ -69,7 +68,6 @@ def test_submitJobWrapper():
     )
 
     assert res["OK"] is False  # This is False because the image can't be found
-    assert res["ReschedulePayload"] is True
 
     res = ce.getCEStatus()
     assert res["OK"] is True
