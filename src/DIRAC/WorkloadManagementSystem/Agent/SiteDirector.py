@@ -32,6 +32,8 @@ from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
+from DIRAC.WorkloadManagementSystem.Client.PilotScopes import PILOT_SCOPES
+
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import getPilotAgentsDB
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
@@ -476,7 +478,7 @@ class SiteDirector(AgentModule):
             return S_ERROR("Audience is not defined")
 
         if not scope:
-            scope = ["compute.cancel", "compute.create", "compute.read", "compute.cancel"]
+            scope = PILOT_SCOPES
 
         return gTokenManager.getToken(userGroup=self.pilotGroup, requiredTimeLeft=600, scope=scope, audience=audience)
 

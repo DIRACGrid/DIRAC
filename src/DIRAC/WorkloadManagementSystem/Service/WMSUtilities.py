@@ -10,6 +10,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, ge
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
+from DIRAC.WorkloadManagementSystem.Client.PilotScopes import PILOT_SCOPES
 
 
 # List of files to be inserted/retrieved into/from pilot Output Sandbox
@@ -77,7 +78,7 @@ def setPilotCredentials(ce, pilotDict):
     if "Token" in ce.ceParameters.get("Tag", []):
         result = gTokenManager.getToken(
             userGroup=pilotDict["OwnerGroup"],
-            scope=["compute.cancel", "compute.create", "compute.modify", "compute.read"],
+            scope=PILOT_SCOPES,
             audience=ce.audienceName,
             requiredTimeLeft=150,
         )
