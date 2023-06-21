@@ -19,6 +19,17 @@
 
      The ComputingElement objects are usually instantiated with the help of
      ComputingElementFactory.
+
+     The ComputingElement class can be considered abstract. 3 kinds of abstract ComputingElements
+     can be distinguished from it:
+
+      - Remote ComputingElement: includes methods to interact with a remote ComputingElement
+        (e.g. HtCondorCEComputingElement, ARCComputingElement).
+      - Inner ComputingElement: includes methods to locally interact with an underlying worker node.
+        It is worth noting that an Inner ComputingElement provides synchronous submission
+        (the submission of a job is blocking the execution until its completion). It deals with one job at a time.
+      - Inner Pool ComputingElement: includes methods to locally interact with Inner ComputingElements asynchronously.
+        It can manage a pool of jobs running simultaneously.
 """
 
 import os

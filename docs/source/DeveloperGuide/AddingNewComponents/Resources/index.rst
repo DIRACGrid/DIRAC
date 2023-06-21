@@ -16,5 +16,6 @@ DIRAC applications
    :maxdepth: 2
 
    Catalog
+   Computing
    MessageQueues/index
    Storage
