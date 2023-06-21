@@ -327,34 +327,24 @@ fullInstallDIRAC() {
   echo "==> Restarting Tornado Tornado"
   dirac-restart-component Tornado Tornado ${DEBUG}
 
-  echo "==> Restarting WorkloadManagement SandboxStore"
-  dirac-restart-component WorkloadManagement SandboxStore ${DEBUG}
-
-  echo "==> Restarting WorkloadManagement Matcher"
-  dirac-restart-component WorkloadManagement Matcher ${DEBUG}
-
   if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
+    echo "==> Restarting WorkloadManagement SandboxStore"
+    dirac-restart-component WorkloadManagement SandboxStore ${DEBUG}
     echo "==> Restarting DataManagement FileCatalog"
     dirac-restart-component DataManagement FileCatalog ${DEBUG}
     echo "==> Restarting DataManagement MultiVOFileCatalog"
     dirac-restart-component DataManagement MultiVOFileCatalog ${DEBUG}
-  else
-    echo "==> Restarting Tornado Tornado"
-    dirac-restart-component Tornado Tornado ${DEBUG}
-  fi
-
-  echo "==> Restarting Configuration Server"
-  dirac-restart-component Configuration Server ${DEBUG}
-
-  if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
     echo "==> Restarting ResourceStatus *"
     dirac-restart-component ResourceStatus ResourceStatus ${DEBUG}
     dirac-restart-component ResourceStatus ResourceManagement ${DEBUG}
     dirac-restart-component ResourceStatus Publisher ${DEBUG}
-  else
-    echo "==> Restarting Tornado Tornado"
-    dirac-restart-component Tornado Tornado ${DEBUG}
-    fi
+  fi
+
+  echo "==> Restarting WorkloadManagement Matcher"
+  dirac-restart-component WorkloadManagement Matcher ${DEBUG}
+
+  echo "==> Restarting Configuration Server"
+  dirac-restart-component Configuration Server ${DEBUG}
 
   echo "==> Restarting DataManagement StorageElement(s)"
   dirac-restart-component DataManagement SE-1 ${DEBUG}

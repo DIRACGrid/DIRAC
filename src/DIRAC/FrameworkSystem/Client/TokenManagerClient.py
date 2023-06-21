@@ -57,7 +57,7 @@ class TokenManagerClient(Client):
         idpObj = result["Value"]
 
         # Search for an existing token in tokensCache
-        cachedKey = getCachedKey(idpObj.name, username, userGroup, scope, audience)
+        cachedKey = getCachedKey(idpObj, username, userGroup, scope, audience)
         result = getCachedToken(self.__tokensCache, cachedKey, requiredTimeLeft)
         if result["OK"]:
             # A valid token has been found and is returned
