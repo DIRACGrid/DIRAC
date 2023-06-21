@@ -134,6 +134,7 @@ class MessageBroker:
                         continue
                     sel.register(mt["transport"].getSocket(), selectors.EVENT_READ, trid)
                 if not sel.get_map():
+                    sel.close()
                     self.__listeningForMessages = False
                     return
             finally:
@@ -148,6 +149,8 @@ class MessageBroker:
             except Exception as e:
                 gLogger.exception("Exception while selecting persistent connections", lException=e)
                 continue
+            finally:
+                sel.close()
 
             for key, event in events:
                 if event & selectors.EVENT_READ:
