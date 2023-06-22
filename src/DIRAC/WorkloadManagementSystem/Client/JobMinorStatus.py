@@ -76,8 +76,4 @@ ILLEGAL_JOB_JDL = "Illegal Job JDL"
 #
 INPUT_NOT_AVAILABLE = "Input Data Not Available"
 #
-INPUT_CONTAINS_SLASHES = "Input data contains //"
-#
-INPUT_INCORRECT = "Input data not correctly specified"
-#
 NO_CANDIDATE_SITE_FOUND = "No candidate sites available"

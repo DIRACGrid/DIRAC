@@ -124,20 +124,6 @@ class JobScheduling(OptimizerExecutor):
                     return self.__holdJob(jobState, "No requested site(s) are active/valid")
                 userSites = list(usableSites)
 
-        checkPlatform = self.ex_getOption("CheckPlatform", False)
-        jobPlatform = jobManifest.getOption("Platform", None)
-
-        # Check that the platform is valid (in OSCompatibility list)
-        if checkPlatform and jobPlatform:
-            result = gConfig.getOptionsDict("/Resources/Computing/OSCompatibility")
-            if not result["OK"]:
-                self.jobLog.error("Unable to get OSCompatibility list", result["Message"])
-                return result
-            allPlatforms = result["Value"]
-            if jobPlatform not in allPlatforms:
-                self.jobLog.error("Platform not supported", jobPlatform)
-                return S_ERROR("Platform is not supported")
-
         # Check if there is input data
         result = jobState.getInputData()
         if not result["OK"]:
