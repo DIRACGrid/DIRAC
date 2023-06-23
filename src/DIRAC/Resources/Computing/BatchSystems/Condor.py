@@ -70,8 +70,8 @@ kill_sig=SIGTERM
 on_exit_hold = ExitCode != 0
 # A random subcode to identify who put the job on hold
 on_exit_hold_subcode = %(holdReasonSubcode)s
-# Jobs are then deleted from the system after N days
-period_remove = (time() - EnteredCurrentStatus) > (%(daysToKeepRemoteLogs)s * 24 * 3600)
+# Jobs are then deleted from the system after N days if they are not running
+period_remove = (JobStatus != 2) && (time() - EnteredCurrentStatus) > (%(daysToKeepRemoteLogs)s * 24 * 3600)
 
 # Specific options
 # ----------------
@@ -105,9 +105,10 @@ def parseCondorStatus(lines, jobID):
             # A job can be held for many various reasons, we need to further investigate with the holdReasonCode & holdReasonSubCode
             # Details in:
             # https://htcondor.readthedocs.io/en/latest/classad-attributes/job-classad-attributes.html#HoldReasonCode
-
-            # By default, a held (5) job is defined as Aborted, but there might be some exceptions
             if status == 5:
+
+                # By default, a held (5) job is defined as Aborted, but there might be some exceptions
+                status = 3
                 try:
                     holdReasonCode = int(l[2])
                     holdReasonSubcode = int(l[3])
@@ -124,7 +125,7 @@ def parseCondorStatus(lines, jobID):
                 if holdReasonCode == 3 and holdReasonSubcode == HOLD_REASON_SUBCODE:
                     status = 5
                 # If holdReasonCode is 16 (Input files are being spooled), the job should be marked as Waiting
-                if holdReasonCode == 16:
+                elif holdReasonCode == 16:
                     status = 1
 
             return (STATES_MAP.get(status, "Unknown"), holdReason)

@@ -12,14 +12,14 @@ from DIRAC import S_OK
 MODNAME = "DIRAC.Resources.Computing.HTCondorCEComputingElement"
 
 STATUS_LINES = """
-123.2 5
-123.1 3
+123.2 5 4 0 undefined
+123.1 3 undefined undefined undefined
 """.strip().split(
     "\n"
 )
 
 HISTORY_LINES = """
-123 0 4
+123.0 4 undefined undefined undefined
 """.strip().split(
     "\n"
 )
@@ -31,31 +31,43 @@ def setUp():
 
 
 def test_parseCondorStatus():
-    statusLines = """
-  104097.9 2
-  104098.0 1
-  104098.1 4
+    statusLines = f"""
+  104098.1 1 undefined undefined undefined
+  104098.2 2 undefined undefined undefined
+  104098.3 3 undefined undefined undefined
+  104098.4 4 undefined undefined undefined
+  104098.5 5 16 57 Input data are being spooled
+  104098.6 5 3 {Condor.HOLD_REASON_SUBCODE} Policy
+  104098.7 5 1 0 undefined
 
   foo bar
-  104098.2 3
-  104098.3 5
-  104098.4 7
+  104096.1 3 16 test test
+  104096.2 3 test
+  104096.3 5 undefined undefined undefined
+  104096.4 7
   """.strip().split(
         "\n"
     )
     # force there to be an empty line
 
     expectedResults = {
-        "104097.9": "Running",
-        "104098.0": "Waiting",
-        "104098.1": "Done",
-        "104098.2": "Aborted",
-        "104098.3": "HELD",
-        "104098.4": "Unknown",
+        "104098.1": "Waiting",
+        "104098.2": "Running",
+        "104098.3": "Aborted",
+        "104098.4": "Done",
+        "104098.5": "Waiting",
+        "104098.6": "Failed",
+        "104098.7": "Aborted",
+        "foo": "Unknown",
+        "104096.1": "Aborted",
+        "104096.2": "Aborted",
+        "104096.3": "Unknown",
+        "104096.4": "Unknown",
     }
 
     for jobID, expected in expectedResults.items():
-        assert HTCE.parseCondorStatus(statusLines, jobID) == expected
+        print(jobID, expected)
+        assert HTCE.parseCondorStatus(statusLines, jobID)[0] == expected
 
 
 def test_getJobStatus(mocker):
@@ -65,6 +77,7 @@ def test_getJobStatus(mocker):
         side_effect=[
             S_OK((0, "\n".join(STATUS_LINES), "")),
             S_OK((0, "\n".join(HISTORY_LINES), "")),
+            S_OK((0, "", "")),
             S_OK((0, "", "")),
         ],
     )
@@ -86,7 +99,6 @@ def test_getJobStatus(mocker):
         "htcondorce://condorce.foo.arg/123.2": "Aborted",
         "htcondorce://condorce.foo.arg/333.3": "Unknown",
     }
-
     assert ret["OK"] is True
     assert expectedResults == ret["Value"]
 
@@ -102,7 +114,7 @@ def test_getJobStatusBatchSystem(mocker):
     expectedResults = {
         "123.0": "Done",
         "123.1": "Aborted",
-        "123.2": "Unknown",  # HELD is treated as Unknown
+        "123.2": "Aborted",
         "333.3": "Unknown",
     }
 
@@ -113,8 +125,8 @@ def test_getJobStatusBatchSystem(mocker):
 @pytest.mark.parametrize(
     "localSchedd, optionsNotExpected, optionsExpected",
     [
-        (False, ["ShouldTransferFiles = YES", "WhenToTransferOutput = ON_EXIT_OR_EVICT"], ["universe = vanilla"]),
-        (True, [], ["ShouldTransferFiles = YES", "WhenToTransferOutput = ON_EXIT_OR_EVICT", "universe = grid"]),
+        (False, ["grid_resources = "], ["universe = vanilla"]),
+        (True, [], ["universe = grid"]),
     ],
 )
 def test__writeSub(mocker, localSchedd, optionsNotExpected, optionsExpected):
@@ -132,7 +144,7 @@ def test__writeSub(mocker, localSchedd, optionsNotExpected, optionsExpected):
         jobStamp = commonJobStampPart + uuid.uuid4().hex[:29]
         jobStamps.append(jobStamp)
 
-    htce._HTCondorCEComputingElement__writeSub("dirac-install", 42, "", 1, jobStamps)  # pylint: disable=E1101
+    htce._HTCondorCEComputingElement__writeSub("dirac-install", "", 1, jobStamps)  # pylint: disable=E1101
     for option in optionsNotExpected:
         # the three [0] are: call_args_list[firstCall][ArgsArgumentsTuple][FirstArgsArgument]
         assert option not in subFileMock.write.call_args_list[0][0][0]
