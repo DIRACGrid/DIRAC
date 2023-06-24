@@ -917,7 +917,10 @@ class Dirac(API):
             for lfn in repsResult["Value"]["Failed"]:
                 records.append((lfn, "Unknown", str(repsResult["Value"]["Failed"][lfn])))
 
-            printTable(fields, records, numbering=False)
+            if records:
+                printTable(fields, records, numbering=False)
+            else:
+                self.log.info("No replicas found")
 
         return repsResult
 
