@@ -32,11 +32,6 @@ class JobMonitoringHandlerMixin:
                 return result
             cls.jobLoggingDB = result["Value"](parentLogger=cls.log)
 
-            result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.TaskQueueDB", "TaskQueueDB")
-            if not result["OK"]:
-                return result
-            cls.taskQueueDB = result["Value"](parentLogger=cls.log)
-
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp}")
 
