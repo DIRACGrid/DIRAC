@@ -65,6 +65,8 @@ class AREXComputingElement(ARCComputingElement):
 
         # Get options from the ceParameters dictionary
         self.port = self.ceParameters.get("Port", self.port)
+        self.audienceName = f"https://{self.ceName}:{self.port}"
+
         self.restVersion = self.ceParameters.get("RESTVersion", self.restVersion)
         self.proxyTimeLeftBeforeRenewal = self.ceParameters.get(
             "ProxyTimeLeftBeforeRenewal", self.proxyTimeLeftBeforeRenewal

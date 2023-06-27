@@ -34,7 +34,7 @@ class TokenManagerClient(Client):
         self,
         username: str = None,
         userGroup: str = None,
-        scope: str = None,
+        scope: list[str] = None,
         audience: str = None,
         identityProvider: str = None,
         requiredTimeLeft: int = 0,

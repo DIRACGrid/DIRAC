@@ -448,10 +448,42 @@ def test_refreshToken(iam_connection, token, update, expectedValue):
     assert result["OK"] == expectedValue["OK"]
     if result["OK"]:
         resultToken = result["Value"]
-        assert resultToken["scope"].split(" ").sort() == baseParams["scope"].split("+").sort()
+        assert sorted(resultToken["scope"].split(" ")) == sorted(baseParams["scope"].split("+"))
         # Update the valid access token for next tests
         if update:
             token["access_token"] = resultToken["access_token"]
+    else:
+        assert expectedValue["Message"] in result["Message"]
+
+
+@pytest.mark.parametrize(
+    "grantType, scope, audience, expectedValue",
+    [
+        # Client credentials
+        # No scope, no audience
+        ("client_credentials", None, None, {"OK": True}),
+        # Scope, no audience
+        ("client_credentials", ["openid"], None, {"OK": True}),
+        ("client_credentials", ["openid", "profile"], None, {"OK": True}),
+        # Scope, audience
+        ("client_credentials", ["openid"], "ce1.test.ch", {"OK": True}),
+        # Invalid scope
+        ("client_credentials", ["compute.read"], None, {"OK": False, "Message": "Cannot fetch access token"}),
+    ],
+)
+def test_fetchToken(iam_connection, grantType, scope, audience, expectedValue):
+    """Test fetchToken"""
+    idProvider = IAMIdProvider(**baseParams)
+
+    result = idProvider.fetchToken(grant_type=grantType, scope=scope, audience=audience)
+    assert result["OK"] == expectedValue["OK"]
+    if result["OK"]:
+        resultToken = result["Value"]
+
+        # Default scope
+        if not scope:
+            scope = baseParams["scope"].split("+")
+        assert sorted(resultToken["scope"].split(" ")) == sorted(scope)
     else:
         assert expectedValue["Message"] in result["Message"]
 

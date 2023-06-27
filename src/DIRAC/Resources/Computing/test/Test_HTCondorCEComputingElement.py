@@ -61,7 +61,7 @@ def test_parseCondorStatus():
 def test_getJobStatus(mocker):
     """Test HTCondorCE getJobStatus"""
     mocker.patch(
-        MODNAME + ".executeGridCommand",
+        MODNAME + ".HTCondorCEComputingElement._executeCondorCommand",
         side_effect=[
             S_OK((0, "\n".join(STATUS_LINES), "")),
             S_OK((0, "\n".join(HISTORY_LINES), "")),
@@ -170,7 +170,9 @@ def test_submitJob(setUp, mocker, localSchedd, expected):
     ceName = "condorce.cern.ch"
     htce.ceName = ceName
 
-    execMock = mocker.patch(MODNAME + ".executeGridCommand", return_value=S_OK((0, "123.0 - 123.0", "")))
+    execMock = mocker.patch(
+        MODNAME + ".HTCondorCEComputingElement._executeCondorCommand", return_value=S_OK((0, "123.0 - 123.0", ""))
+    )
     mocker.patch(
         MODNAME + ".HTCondorCEComputingElement._HTCondorCEComputingElement__writeSub", return_value="dirac_pilot"
     )
@@ -179,7 +181,7 @@ def test_submitJob(setUp, mocker, localSchedd, expected):
     result = htce.submitJob("pilot", "proxy", 1)
 
     assert result["OK"] is True
-    assert " ".join(execMock.call_args_list[0][0][1]) == expected
+    assert " ".join(execMock.call_args_list[0][0][0]) == expected
 
 
 @pytest.mark.parametrize(
@@ -202,10 +204,12 @@ def test_killJob(setUp, mocker, jobIDList, jobID, ret, success, local):
     htce.ceParameters = ceParameters
     htce._reset()
 
-    execMock = mocker.patch(MODNAME + ".executeGridCommand", return_value=S_OK((ret, "", "")))
+    execMock = mocker.patch(
+        MODNAME + ".HTCondorCEComputingElement._executeCondorCommand", return_value=S_OK((ret, "", ""))
+    )
 
     ret = htce.killJob(jobIDList=jobIDList)
     assert ret["OK"] == success
     if jobID:
         expected = f"condor_rm {htce.remoteScheddOptions.strip()} {jobID}"
-        assert " ".join(execMock.call_args_list[0][0][1]) == expected
+        assert " ".join(execMock.call_args_list[0][0][0]) == expected

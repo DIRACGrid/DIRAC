@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import systemCall, shellCall
 
 
-def executeGridCommand(proxy, cmd, gridEnvScript=None, gridEnvDict=None):
+def executeGridCommand(cmd, gridEnvScript=None, gridEnvDict=None):
     """
     Execute cmd tuple after sourcing GridEnv
     """
@@ -36,22 +36,6 @@ def executeGridCommand(proxy, cmd, gridEnvScript=None, gridEnvDict=None):
             gridEnv["X509_CERT_DIR"] = currentEnv["X509_CERT_DIR"]
     else:
         gridEnv = currentEnv
-
-    if not proxy:
-        res = getProxyInfo()
-        if not res["OK"]:
-            return res
-        gridEnv["X509_USER_PROXY"] = res["Value"]["path"]
-    elif isinstance(proxy, str):
-        if os.path.exists(proxy):
-            gridEnv["X509_USER_PROXY"] = proxy
-        else:
-            return S_ERROR("Can not treat proxy passed as a string")
-    else:
-        ret = gProxyManager.dumpProxyToFile(proxy)
-        if not ret["OK"]:
-            return ret
-        gridEnv["X509_USER_PROXY"] = ret["Value"]
 
     if gridEnvDict:
         gridEnv.update(gridEnvDict)

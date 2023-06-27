@@ -127,9 +127,11 @@ class HTCondorCEComputingElement(ComputingElement):
     def __init__(self, ceUniqueID):
         """Standard constructor."""
         super().__init__(ceUniqueID)
-
-        self.submittedJobs = 0
         self.mandatoryParameters = MANDATORY_PARAMETERS
+
+        self.port = "9619"
+        self.audienceName = f"{self.ceName}:{self.port}"
+        self.submittedJobs = 0
         self.pilotProxy = ""
         self.queue = ""
         self.outputURL = "gsiftp://localhost"
@@ -171,12 +173,12 @@ class HTCondorCEComputingElement(ComputingElement):
 
         executable = os.path.join(self.workingDirectory, executable)
 
-        useCredentials = ""
+        useCredentials = "use_x509userproxy = true"
         if tokenFile:
-            useCredentials = textwrap.dedent(
+            useCredentials += textwrap.dedent(
                 f"""
                 use_scitokens = true
-                scitokens_file = {tokenFile}
+                scitokens_file = {tokenFile.name}
                 """
             )
 
@@ -200,14 +202,13 @@ WhenToTransferOutput = ON_EXIT_OR_EVICT
         sub = """
 executable = %(executable)s
 universe = %(targetUniverse)s
-use_x509userproxy = true
 %(useCredentials)s
 output = $(Cluster).$(Process).out
 error = $(Cluster).$(Process).err
 log = $(Cluster).$(Process).log
 environment = "HTCONDOR_JOBID=$(Cluster).$(Process) DIRAC_PILOT_STAMP=$(stamp)"
 initialdir = %(initialDir)s
-grid_resource = condor %(ceName)s %(ceName)s:9619
+grid_resource = condor %(ceName)s %(ceName)s:%(port)s
 transfer_output_files = ""
 request_cpus = %(processors)s
 %(localScheddOptions)s
@@ -223,6 +224,7 @@ Queue stamp in %(pilotStampList)s
             nJobs=nJobs,
             processors=processors,
             ceName=self.ceName,
+            port=self.port,
             extraString=self.extraSubmitString,
             initialDir=os.path.join(self.workingDirectory, location),
             localScheddOptions=localScheddOptions,
@@ -246,7 +248,9 @@ Queue stamp in %(pilotStampList)s
             if self.useLocalSchedd == "False":
                 self.useLocalSchedd = False
 
-        self.remoteScheddOptions = "" if self.useLocalSchedd else f"-pool {self.ceName}:9619 -name {self.ceName} "
+        self.remoteScheddOptions = (
+            "" if self.useLocalSchedd else f"-pool {self.ceName}:{self.port} -name {self.ceName} "
+        )
 
         self.log.debug("Using local schedd:", self.useLocalSchedd)
         self.log.debug("Remote scheduler option:", self.remoteScheddOptions)
@@ -259,7 +263,18 @@ Queue stamp in %(pilotStampList)s
         :param bool keepTokenFile: flag to reuse or not the previously created token file
         :return: S_OK/S_ERROR - the result of the executeGridCommand() call
         """
+        if not self.token and not self.proxy:
+            return S_ERROR(f"Cannot execute the command, token and proxy not found: {cmd}")
 
+        # Prepare proxy
+        result = self._prepareProxy()
+        if not result["OK"]:
+            return result
+
+        htcEnv = {
+            "_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "GSI",
+        }
+        # If a token is present, then we use it (overriding htcEnv)
         if self.token:
             # Create a new token file if we do not keep it across several calls
             if not self.tokenFile or not keepTokenFile:
@@ -274,11 +289,8 @@ Queue stamp in %(pilotStampList)s
             }
             if cas := getCAsLocation():
                 htcEnv["_CONDOR_AUTH_SSL_CLIENT_CADIR"] = cas
-        else:
-            htcEnv = {"_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "GSI"}
 
         result = executeGridCommand(
-            self.proxy,
             cmd,
             gridEnvScript=self.gridEnv,
             gridEnvDict=htcEnv,
@@ -319,7 +331,7 @@ Queue stamp in %(pilotStampList)s
         cmd = ["condor_submit", "-terse", subName]
         # the options for submit to remote are different than the other remoteScheddOptions
         # -remote: submit to a remote condor_schedd and spool all the required inputs
-        scheddOptions = [] if self.useLocalSchedd else ["-pool", f"{self.ceName}:9619", "-remote", self.ceName]
+        scheddOptions = [] if self.useLocalSchedd else ["-pool", f"{self.ceName}:{self.port}", "-remote", self.ceName]
         for op in scheddOptions:
             cmd.insert(-1, op)
 
@@ -544,7 +556,7 @@ Queue stamp in %(pilotStampList)s
             return S_ERROR(e.errno, f"{errorMessage} ({iwd})")
 
         if not self.useLocalSchedd:
-            cmd = ["condor_transfer_data", "-pool", f"{self.ceName}:9619", "-name", self.ceName, condorID]
+            cmd = ["condor_transfer_data", "-pool", f"{self.ceName}:{self.port}", "-name", self.ceName, condorID]
             result = self._executeCondorCommand(cmd)
             self.log.verbose(result)
 
