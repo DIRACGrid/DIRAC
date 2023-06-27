@@ -50,26 +50,25 @@ class IdProviderFactory:
         """
         if not name:
             return S_ERROR("Identity Provider client name must be not None.")
-        # Get Authorization Server metadata
-        try:
-            asMetaDict = collectMetadata(kwargs.get("issuer"), ignoreErrors=True)
-        except Exception as e:
-            return S_ERROR(str(e))
         self.log.debug("Search configuration for", name)
+
         clients = getDIRACClients()
         if name in clients:
             # If it is a DIRAC default pre-registered client
+            # Get Authorization Server metadata
+            try:
+                asMetaDict = collectMetadata(kwargs.get("issuer"), ignoreErrors=True)
+            except Exception as e:
+                return S_ERROR(str(e))
             pDict = asMetaDict
             pDict.update(clients[name])
         else:
-            # if it is external identity provider client
+            # If it is external identity provider client
             result = gConfig.getOptionsDict(f"/Resources/IdProviders/{name}")
             if not result["OK"]:
                 self.log.error("Failed to read configuration", f"{name}: {result['Message']}")
                 return result
             pDict = result["Value"]
-            # Set default redirect_uri
-            pDict["redirect_uri"] = pDict.get("redirect_uri", asMetaDict["redirect_uri"])
 
         pDict.update(kwargs)
         pDict["ProviderName"] = name

@@ -71,15 +71,21 @@ class ComputingElement:
         self.log = gLogger.getSubLogger(ceName)
         self.ceName = ceName
         self.ceParameters = {}
-        self.proxy = ""
-        self.token = None
-        self.valid = None
         self.mandatoryParameters = []
-        self.batchSystem = None
-        self.taskResults = {}
+
+        # Token audience
+        # None by default, it needs to be redefined in subclasses
+        self.audienceName = None
+        self.token = None
+
+        self.proxy = ""
         self.minProxyTime = gConfig.getValue("/Registry/MinProxyLifeTime", 10800)  # secs
         self.defaultProxyTime = gConfig.getValue("/Registry/DefaultProxyLifeTime", 43200)  # secs
         self.proxyCheckPeriod = gConfig.getValue("/Registry/ProxyCheckingPeriod", 3600)  # secs
+        self.valid = None
+
+        self.batchSystem = None
+        self.taskResults = {}
 
         clsName = self.__class__.__name__
         if clsName.endswith("ComputingElement"):

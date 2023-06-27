@@ -429,6 +429,8 @@ class OAuth2IdProvider(OAuth2Session):
         """
         try:
             self.fetch_access_token(self.get_metadata("token_endpoint"), **kwargs)
+        except OAuthError as e:
+            return S_ERROR(f"Cannot fetch access token: {e}")
         except Exception as e:
             self.log.exception(e)
             return S_ERROR(repr(e))

@@ -10,6 +10,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, ge
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
+from DIRAC.WorkloadManagementSystem.Client.PilotScopes import PILOT_SCOPES
 
 
 # List of files to be inserted/retrieved into/from pilot Output Sandbox
@@ -67,27 +68,6 @@ def getPilotProxy(pilotDict):
     return S_OK(proxy)
 
 
-def getPilotToken(pilotDict):
-    """Get a token corresponding to the pilot
-
-    :param dict pilotDict: pilot parameters
-    :return: S_OK/S_ERROR with token as Value
-    """
-    ownerDN = pilotDict["OwnerDN"]
-    group = pilotDict["OwnerGroup"]
-
-    result = getUsernameForDN(ownerDN)
-    if not result["OK"]:
-        return result
-    username = result["Value"]
-    result = gTokenManager.getToken(
-        username=username,
-        userGroup=group,
-        requiredTimeLeft=3600,
-    )
-    return result
-
-
 def setPilotCredentials(ce, pilotDict):
     """Instrument the given CE with proxy or token
 
@@ -96,10 +76,15 @@ def setPilotCredentials(ce, pilotDict):
     :return: S_OK/S_ERROR
     """
     if "Token" in ce.ceParameters.get("Tag", []):
-        result = getPilotToken(pilotDict)
+        result = gTokenManager.getToken(
+            userGroup=pilotDict["OwnerGroup"],
+            scope=PILOT_SCOPES,
+            audience=ce.audienceName,
+            requiredTimeLeft=150,
+        )
         if not result["OK"]:
             return result
-        ce.setToken(result["Value"], 3500)
+        ce.setToken(result["Value"])
     else:
         result = getPilotProxy(pilotDict)
         if not result["OK"]:

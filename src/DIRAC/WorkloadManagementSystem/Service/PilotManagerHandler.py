@@ -135,6 +135,7 @@ class PilotManagerHandler(RequestHandler):
         if not hasattr(ce, "getJobOutput"):
             return S_ERROR(f"Pilot output not available for {pilotDict['GridType']} CEs")
 
+        # Set proxy or token for the CE
         result = setPilotCredentials(ce, pilotDict)
         if not result["OK"]:
             return result

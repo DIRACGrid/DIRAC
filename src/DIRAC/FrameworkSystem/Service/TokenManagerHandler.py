@@ -61,6 +61,13 @@ class TokenManagerHandler(TornadoService):
 
         :return: S_OK()/S_ERROR()
         """
+        # Cache containing tokens from scope requested by the client
+        cls.__tokensCache = DictCache()
+
+        # The service plays an important OAuth 2.0 role, namely it is an Identity Provider client.
+        # This allows you to manage tokens without the involvement of their owners.
+        cls.idps = IdProviderFactory()
+
         # Let's try to connect to the database
         try:
             cls.__tokenDB = TokenDB(parentLogger=cls.log)
@@ -68,12 +75,6 @@ class TokenManagerHandler(TornadoService):
             cls.log.exception(e)
             return S_ERROR(f"Could not connect to the database {repr(e)}")
 
-        # Cache containing tokens from scope requested by the client
-        cls.__tokensCache = DictCache()
-
-        # The service plays an important OAuth 2.0 role, namely it is an Identity Provider client.
-        # This allows you to manage tokens without the involvement of their owners.
-        cls.idps = IdProviderFactory()
         return S_OK()
 
     def export_getUserTokensInfo(self):
@@ -185,7 +186,7 @@ class TokenManagerHandler(TornadoService):
         self,
         username: str = None,
         userGroup: str = None,
-        scope: str = None,
+        scope: list[str] = None,
         audience: str = None,
         identityProvider: str = None,
         requiredTimeLeft: int = 0,
