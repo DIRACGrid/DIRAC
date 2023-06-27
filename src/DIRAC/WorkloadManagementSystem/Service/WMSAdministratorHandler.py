@@ -178,7 +178,6 @@ class WMSAdministratorHandlerMixin:
         job reference
 
         :param str jobID: job ID
-
         :return: S_OK(dict)/S_ERROR()
         """
         pilotReference = ""
