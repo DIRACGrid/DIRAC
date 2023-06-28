@@ -1,3 +1,26 @@
+[v7r3p37]
+
+*WorkloadManagement
+
+FIX: (#7043) fix(StalledJobAgent): after a job was Killed, we have to force the Failed.
+FIX: (#6972) JobStatus: add staging to checking transition, needed by StorageManagementSystem (Stager)
+NEW: (#6963) tests for RemoteRunner
+CHANGE: (#6963) RemoteRunner can deal with MP applications, clean job outputs and process more applications
+FIX: (#6963) Modify the DIRACVersion in the PushJobAgent
+FIX: (#6987) return specific exit code in RemoteRunner in case of failure
+FIX: (#6984) Getting the value of /LocalSite/RemoteExecution
+
+*Resources
+
+FIX: (#7037) add workaround for https timeout when dowloading file
+FIX: (#6990) ARCLogLevel
+NEW: (#6963) cleanJob() in AREX
+CHANGE: (#6963) executables from inputs are passed as executables in the XRSL in ARC and AREX
+
+*docs
+
+CHANGE: (#6963) more details in the "supercomputers" section
+
 [v7r3p36]
 
 *Core
