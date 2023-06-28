@@ -63,6 +63,7 @@ from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 MANDATORY_PARAMETERS = ["Queue"]  # Mandatory for ARC CEs in GLUE2?
 # See https://www.nordugrid.org/arc/arc6/tech/rest/rest.html#rest-interface-job-states
 # We let "Deleted, Hold, Undefined" for the moment as we are not sure whether they are still used
+# "None" is a special case: it is returned when the job ID is not found in the system
 STATES_MAP = {
     "Accepting": PilotStatus.WAITING,
     "Accepted": PilotStatus.WAITING,
@@ -83,6 +84,7 @@ STATES_MAP = {
     "Wiped": PilotStatus.ABORTED,
     "Deleted": PilotStatus.ABORTED,
     "Hold": PilotStatus.FAILED,
+    "None": PilotStatus.ABORTED,
     "Undefined": PilotStatus.UNKNOWN,
 }
 
