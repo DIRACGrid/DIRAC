@@ -52,7 +52,10 @@ class AREXComputingElement(ARCComputingElement):
         self.timeout = 5.0
         # Request session
         self.session = None
-        self.headers = {}
+        self.headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        }
         # URL used to communicate with the REST interface
         self.base_url = ""
 
@@ -90,13 +93,6 @@ class AREXComputingElement(ARCComputingElement):
         # Set up the request framework
         self.session = requests.Session()
         self.session.verify = Locations.getCAsLocation()
-        self.headers = {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-        }
-        # Attach the token to the headers if present
-        if os.environ.get("BEARER_TOKEN"):
-            self.headers["Authorization"] = "Bearer " + os.environ["BEARER_TOKEN"]
 
         return S_OK()
 
@@ -186,11 +182,22 @@ class AREXComputingElement(ARCComputingElement):
         if not self.session:
             return S_ERROR("REST interface not initialised.")
 
-        # Get a proxy
+        # Reinitialize the authentication parameters
+        self.session.cert = None
+        self.headers.pop("Authorization", None)
+
+        # Get a proxy: still mandatory, even if tokens are used to authenticate
         result = self._prepareProxy()
         if not result["OK"]:
             self.log.error("Failed to set up proxy", result["Message"])
             return result
+
+        if self.token:
+            # Attach the token to the headers if present
+            self.headers["Authorization"] = "Bearer " + self.token["access_token"]
+            return S_OK()
+
+        # Attach the proxy to the session, only if the token is unavailable
         self.session.cert = Locations.getProxyLocation()
         return S_OK()
 
@@ -236,9 +243,12 @@ class AREXComputingElement(ARCComputingElement):
 
         # Get a proxy and sign the CSR
         proxy = X509Chain()
-        result = proxy.loadProxyFromFile(self.session.cert)
+        proxyFile = Locations.getProxyLocation()
+        if not proxyFile:
+            return S_ERROR(f"No proxy available")
+        result = proxy.loadProxyFromFile(proxyFile)
         if not result["OK"]:
-            return S_ERROR(f"Can't load {self.session.cert}: {result['Message']}")
+            return S_ERROR(f"Can't load {proxyFile}: {result['Message']}")
         result = proxy.generateChainFromRequestString(csrContent)
         if not result["OK"]:
             self.log.error("Problem with the Certificate Signing Request:", result["Message"])
