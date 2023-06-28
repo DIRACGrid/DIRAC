@@ -1,3 +1,21 @@
+[v8.0.24]
+
+*WorkloadManagementSystem
+
+FIX: (#7080) disable activityMonitoring for JobAgent
+NEW: (#7062) audience support in SiteDirector
+
+*Resources
+
+NEW: (#7062) audienceName attribute in CEs
+CHANGE/FIX: (#7048) proxy renewal logic in AREX
+FIX: (#7048) submitting tokens with AREX
+FIX: (#7048) correctly report aborted pilots with AREX
+
+*FrameworkSyste
+
+FIX: (#7062) fix TokenManager(Client/Handler/Utilities)
+
 [v8.0.23]
 
 FIX: (#7061) Close DISET selector when we no longer need it
