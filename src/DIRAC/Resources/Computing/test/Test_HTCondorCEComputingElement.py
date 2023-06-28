@@ -61,7 +61,7 @@ def test_parseCondorStatus():
         "foo": "Unknown",
         "104096.1": "Aborted",
         "104096.2": "Aborted",
-        "104096.3": "Unknown",
+        "104096.3": "Aborted",
         "104096.4": "Unknown",
     }
 
@@ -73,7 +73,7 @@ def test_parseCondorStatus():
 def test_getJobStatus(mocker):
     """Test HTCondorCE getJobStatus"""
     mocker.patch(
-        MODNAME + ".HTCondorCEComputingElement._executeCondorCommand",
+        MODNAME + ".executeGridCommand",
         side_effect=[
             S_OK((0, "\n".join(STATUS_LINES), "")),
             S_OK((0, "\n".join(HISTORY_LINES), "")),
@@ -82,8 +82,12 @@ def test_getJobStatus(mocker):
         ],
     )
     mocker.patch(MODNAME + ".HTCondorCEComputingElement._HTCondorCEComputingElement__cleanup")
+    mocker.patch(MODNAME + ".HTCondorCEComputingElement._prepareProxy", return_value=S_OK())
 
     htce = HTCE.HTCondorCEComputingElement(12345)
+    # Need to initialize proxy because it is required by executeCondorCommand()
+    htce.proxy = "dumb_proxy"
+
     ret = htce.getJobStatus(
         [
             "htcondorce://condorce.foo.arg/123.0:::abc321",
@@ -99,6 +103,7 @@ def test_getJobStatus(mocker):
         "htcondorce://condorce.foo.arg/123.2": "Aborted",
         "htcondorce://condorce.foo.arg/333.3": "Unknown",
     }
+    print(ret)
     assert ret["OK"] is True
     assert expectedResults == ret["Value"]
 
@@ -153,18 +158,18 @@ def test__writeSub(mocker, localSchedd, optionsNotExpected, optionsExpected):
 
 
 @pytest.mark.parametrize(
-    "localSchedd, expected", [(False, "-pool condorce.cern.ch:9619 -name condorce.cern.ch"), (True, "")]
+    "localSchedd, expected", [(False, "-pool condorce.cern.ch:9619 -name condorce.cern.ch "), (True, "")]
 )
 def test_reset(setUp, localSchedd, expected):
     ceParameters = setUp
 
     htce = HTCE.HTCondorCEComputingElement(12345)
     htce.ceParameters = ceParameters
-    htce.useLocalSchedd = True
+    htce.useLocalSchedd = localSchedd
     ceName = "condorce.cern.ch"
     htce.ceName = ceName
     htce._reset()
-    assert htce.remoteScheddOptions == ""
+    assert htce.remoteScheddOptions == expected
 
 
 @pytest.mark.parametrize(
@@ -179,12 +184,12 @@ def test_submitJob(setUp, mocker, localSchedd, expected):
     htce = HTCE.HTCondorCEComputingElement(12345)
     htce.ceParameters = ceParameters
     htce.useLocalSchedd = localSchedd
+    htce.proxy = "dumb_proxy"
     ceName = "condorce.cern.ch"
     htce.ceName = ceName
 
-    execMock = mocker.patch(
-        MODNAME + ".HTCondorCEComputingElement._executeCondorCommand", return_value=S_OK((0, "123.0 - 123.0", ""))
-    )
+    execMock = mocker.patch(MODNAME + ".executeGridCommand", return_value=S_OK((0, "123.0 - 123.0", "")))
+    mocker.patch(MODNAME + ".HTCondorCEComputingElement._prepareProxy", return_value=S_OK())
     mocker.patch(
         MODNAME + ".HTCondorCEComputingElement._HTCondorCEComputingElement__writeSub", return_value="dirac_pilot"
     )
@@ -212,13 +217,13 @@ def test_killJob(setUp, mocker, jobIDList, jobID, ret, success, local):
     ceParameters = setUp
     htce = HTCE.HTCondorCEComputingElement(12345)
     htce.ceName = "condorce.foo.arg"
+    htce.proxy = "dumb_proxy"
     htce.useLocalSchedd = local
     htce.ceParameters = ceParameters
     htce._reset()
 
-    execMock = mocker.patch(
-        MODNAME + ".HTCondorCEComputingElement._executeCondorCommand", return_value=S_OK((ret, "", ""))
-    )
+    execMock = mocker.patch(MODNAME + ".executeGridCommand", return_value=S_OK((ret, "", "")))
+    mocker.patch(MODNAME + ".HTCondorCEComputingElement._prepareProxy", return_value=S_OK())
 
     ret = htce.killJob(jobIDList=jobIDList)
     assert ret["OK"] == success

@@ -272,7 +272,7 @@ class HTCondorCEComputingElement(ComputingElement):
             self.tokenFile = None
             # We have got a non-zero status code
             errorString = stderr if stderr else stdout
-            return S_ERROR(f"Command", f"{cmd} failed with: {status} - {errorString.strip()}")
+            return S_ERROR(f"Command {cmd} failed with: {status} - {errorString.strip()}")
 
         # Remove token file if we do not want to keep it
         self.tokenFile = self.tokenFile if keepTokenFile else None
@@ -413,7 +413,7 @@ class HTCondorCEComputingElement(ComputingElement):
 
         qList = []
         for _condorIDs in breakListIntoChunks(condorIDs.values(), 100):
-            # This will return a list of 1245.75 3
+            # This will return a list of 1245.75 3 undefined undefined undefined
             cmd = ["condor_q"]
             cmd.extend(self.remoteScheddOptions.strip().split(" "))
             cmd.extend(_condorIDs)

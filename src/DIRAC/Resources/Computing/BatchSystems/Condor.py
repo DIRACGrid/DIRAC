@@ -23,7 +23,7 @@ STATES_MAP = {
     5: "Failed",
 }
 
-HOLD_REASON_SUBCODE = 55
+HOLD_REASON_SUBCODE = "55"
 
 subTemplate = """
 # Environment
@@ -71,7 +71,7 @@ on_exit_hold = ExitCode != 0
 # A random subcode to identify who put the job on hold
 on_exit_hold_subcode = %(holdReasonSubcode)s
 # Jobs are then deleted from the system after N days if they are not running
-period_remove = (JobStatus != 2) && (time() - EnteredCurrentStatus) > (%(daysToKeepRemoteLogs)s * 24 * 3600)
+period_remove = (JobStatus != 1) && (JobStatus != 2) && ((time() - EnteredCurrentStatus) > (%(daysToKeepRemoteLogs)s * 24 * 3600))
 
 # Specific options
 # ----------------
@@ -94,13 +94,17 @@ def parseCondorStatus(lines, jobID):
     :returns: Status as known by DIRAC, and a reason if the job is being held
     """
     jobID = str(jobID)
+
+    holdReason = ""
     for line in lines:
         l = line.strip().split()
+
+        # Make sure the status is present and is an integer
         try:
             status = int(l[1])
         except (ValueError, IndexError):
             continue
-        holdReason = ""
+
         if l[0] == jobID:
             # A job can be held for many various reasons, we need to further investigate with the holdReasonCode & holdReasonSubCode
             # Details in:
@@ -110,22 +114,22 @@ def parseCondorStatus(lines, jobID):
                 # By default, a held (5) job is defined as Aborted, but there might be some exceptions
                 status = 3
                 try:
-                    holdReasonCode = int(l[2])
-                    holdReasonSubcode = int(l[3])
-                    holdReason = l[4:]
-                except (ValueError, IndexError):
+                    holdReasonCode = l[2]
+                    holdReasonSubcode = l[3]
+                    holdReason = " ".join(l[4:])
+                except IndexError:
                     # This should not happen in theory
                     # Just set the status to unknown such as
                     status = -1
-                    holdReasonCode = -1
-                    holdReasonSubcode = -1
+                    holdReasonCode = "undefined"
+                    holdReasonSubcode = "undefined"
 
                 # If holdReasonCode is 3 (The PERIODIC_HOLD expression evaluated to True. Or, ON_EXIT_HOLD was true)
                 # And subcode is HOLD_REASON_SUBCODE, then it means the job failed by itself, it needs to be marked as Failed
-                if holdReasonCode == 3 and holdReasonSubcode == HOLD_REASON_SUBCODE:
+                if holdReasonCode == "3" and holdReasonSubcode == HOLD_REASON_SUBCODE:
                     status = 5
                 # If holdReasonCode is 16 (Input files are being spooled), the job should be marked as Waiting
-                elif holdReasonCode == 16:
+                elif holdReasonCode == "16":
                     status = 1
 
             return (STATES_MAP.get(status, "Unknown"), holdReason)
