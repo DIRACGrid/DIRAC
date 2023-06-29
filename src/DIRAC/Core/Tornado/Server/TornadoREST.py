@@ -267,7 +267,7 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
         return {}
 
     @classmethod
-    def _getCSAuthorizationSection(cls, apiName):
+    def _getCSAuthorizarionSection(cls, apiName):
         """Search endpoint auth section.
 
         :param str apiName: API name, see :py:meth:`_getFullComponentName`
