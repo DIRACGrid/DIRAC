@@ -137,42 +137,41 @@ class ComputingElement:
 
         self.log.debug("Initializing the CE parameters")
 
-        # Collect global defaults first
-        for section in ["/Resources/Computing/CEDefaults", f"/Resources/Computing/{self.ceType}"]:
-            result = gConfig.getOptionsDict(section)
+        # Collect global defaults first:
+        # - /Resources/Computing/CEDefaults and /Resources/Computing/<CEType>
+        # Then the local CE configuration:
+        # - /LocalSite/<CEName>
+        # Finally the site level parameters
+        # - /LocalSite
+        for section in [
+            "/Resources/Computing/CEDefaults",
+            f"/Resources/Computing/{self.ceType}",
+            f"/LocalSite/{self.ceName}",
+            "/LocalSite",
+        ]:
+            ceParameters = getCEConfigDict(section)
 
-            self.log.debug(result)
+            # List parameters cannot be updated as any other fields, they should be concatenated in a set(), not overriden
+            for listParam in LIST_PARAMETERS:
+                # If listParam is not present or null, we remove it from ceParameters and continue
+                if not listParam in ceParameters or not ceParameters[listParam]:
+                    ceParameters.pop(listParam, [])
+                    continue
+                # Initialize self.ceParameters[listParam] is not done and update the set
+                if not listParam in self.ceParameters:
+                    self.ceParameters[listParam] = set()
+                self.ceParameters[listParam].update(set(ceParameters.pop(listParam)))
 
-            if result["OK"]:
-                ceOptions = result["Value"]
-                for key in ceOptions:
-                    if key in INTEGER_PARAMETERS:
-                        ceOptions[key] = int(ceOptions[key])
-                    if key in FLOAT_PARAMETERS:
-                        ceOptions[key] = float(ceOptions[key])
-                    if key in LIST_PARAMETERS:
-                        ceOptions[key] = gConfig.getValue(os.path.join(section, key), [])
-                self.ceParameters.update(ceOptions)
+            self.log.debug(f"CE Parameters from {section}:", ceParameters)
+            self.ceParameters.update(ceParameters)
 
-        # Get local CE configuration
-        localConfigDict = getCEConfigDict(self.ceName)
-        self.ceParameters.update(localConfigDict)
+        # Site level adjustments
+        if "Architecture" in self.ceParameters:
+            self.ceParameters["Platform"] = self.ceParameters["Architecture"]
+        if "LocalSE" in self.ceParameters:
+            self.ceParameters["LocalSE"] = self.ceParameters["LocalSE"].split(", ")
 
-        # Adds site level parameters
-        section = "/LocalSite"
-        result = gConfig.getOptionsDict(section)
-        if result["OK"] and result["Value"]:
-            localSiteParameters = result["Value"]
-            self.log.debug(f"Local site parameters are: {localSiteParameters}")
-            for option, value in localSiteParameters.items():
-                if option == "Architecture":
-                    self.ceParameters["Platform"] = value
-                    self.ceParameters["Architecture"] = value
-                elif option == "LocalSE":
-                    self.ceParameters["LocalSE"] = value.split(", ")
-                else:
-                    self.ceParameters[option] = value
-
+        # Add default values if required
         self._addCEConfigDefaults()
 
     def isValid(self):
@@ -462,12 +461,14 @@ class ComputingElement:
         for option, value in self.ceParameters.items():
             if isinstance(value, list):
                 ceDict[option] = value
+            elif isinstance(value, set):
+                ceDict[option] = list(value)
             elif isinstance(value, str):
                 try:
                     ceDict[option] = int(value)
                 except ValueError:
                     ceDict[option] = value
-            elif isinstance(value, (int,) + (float,)):
+            elif isinstance(value, (int, float)):
                 ceDict[option] = value
             else:
                 self.log.warn(f"Type of option {option} = {value} not determined")
@@ -515,11 +516,24 @@ class ComputingElement:
         return S_OK(self.taskResults)
 
 
-def getCEConfigDict(ceName):
-    """Look into LocalSite for configuration Parameters for this CE"""
-    ceConfigDict = {}
-    if ceName:
-        result = gConfig.getOptionsDict(f"/LocalSite/{ceName}")
-        if result["OK"]:
-            ceConfigDict = result["Value"]
-    return ceConfigDict
+def getCEConfigDict(section: str) -> dict:
+    """Look into section for configuration Parameters for this CE
+
+    :param section: name of the CFG section to exploit
+    """
+
+    result = gConfig.getOptionsDict(section)
+
+    if not result["OK"]:
+        return {}
+
+    ceOptions = result["Value"]
+    for key in ceOptions:
+        if key in INTEGER_PARAMETERS:
+            ceOptions[key] = int(ceOptions[key])
+        if key in FLOAT_PARAMETERS:
+            ceOptions[key] = float(ceOptions[key])
+        if key in LIST_PARAMETERS:
+            ceOptions[key] = gConfig.getValue(os.path.join(section, key), [])
+
+    return ceOptions
