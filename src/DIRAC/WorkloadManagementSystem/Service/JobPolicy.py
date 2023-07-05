@@ -83,8 +83,8 @@ class JobPolicy:
         self.userProperties = getPropertiesForGroup(userGroup, [])
         self.jobDB = None
         self.allInfo = allInfo
-        self.__permissions = {}
-        self.__getUserJobPolicy()
+        self._permissions = {}
+        self._getUserJobPolicy()
 
     def getUserRightsForJob(self, jobID, owner=None, group=None):
         """Get access rights to job with jobID for the user specified by
@@ -102,44 +102,44 @@ class JobPolicy:
 
         return self.getJobPolicy(owner, group)
 
-    def __getUserJobPolicy(self):
+    def _getUserJobPolicy(self):
         """Get the job rights for the primary user for which the JobPolicy object
         is created
         """
         # Can not do anything by default
         for right in ALL_RIGHTS:
-            self.__permissions[right] = False
+            self._permissions[right] = False
 
         # Anybody can get info about the jobs
         if self.allInfo:
-            self.__permissions[RIGHT_GET_INFO] = True
+            self._permissions[RIGHT_GET_INFO] = True
 
         # Give JobAdmin permission if needed
         if Properties.JOB_ADMINISTRATOR in self.userProperties:
             for right in PROPERTY_RIGHTS[Properties.JOB_ADMINISTRATOR]:
-                self.__permissions[right] = True
+                self._permissions[right] = True
 
         # Give JobMonitor permission if needed
         if Properties.JOB_MONITOR in self.userProperties:
             for right in PROPERTY_RIGHTS[Properties.JOB_MONITOR]:
-                self.__permissions[right] = True
+                self._permissions[right] = True
 
         # Give normal user permission if needed
         if Properties.NORMAL_USER in self.userProperties:
             for right in PROPERTY_RIGHTS[Properties.NORMAL_USER]:
-                self.__permissions[right] = True
+                self._permissions[right] = True
 
         # Give permissions of the generic pilot
         if Properties.GENERIC_PILOT in self.userProperties:
             for right in PROPERTY_RIGHTS[Properties.GENERIC_PILOT]:
-                self.__permissions[right] = True
+                self._permissions[right] = True
 
     def getJobPolicy(self, jobOwner="", jobOwnerGroup=""):
         """Get the job operations rights for a job owned by jobOwnerDN/jobOwnerGroup
         for a user with userDN/userGroup.
         Returns a dictionary of various operations rights
         """
-        permDict = dict(self.__permissions)
+        permDict = dict(self._permissions)
         # Job Owner can do everything with his jobs
         if jobOwner and self.userName and jobOwner == self.userName:
             for right in OWNER_RIGHTS:
