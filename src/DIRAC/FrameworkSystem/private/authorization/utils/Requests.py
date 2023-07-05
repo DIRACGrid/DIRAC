@@ -4,7 +4,7 @@ from tornado.escape import json_decode
 from authlib.common.encoding import to_unicode
 from authlib.oauth2 import OAuth2Request as _OAuth2Request
 from authlib.oauth2.rfc6749.util import scope_to_list
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 
 class OAuth2Request(_OAuth2Request):
@@ -19,6 +19,7 @@ class OAuth2Request(_OAuth2Request):
 
     def setQueryArguments(self, **kwargs):
         """Set query arguments"""
+        query = self.query = urlparse(self.uri).query
         for k in kwargs:
             # Quote value before add it to request query
             value = (
@@ -39,7 +40,8 @@ class OAuth2Request(_OAuth2Request):
 
         :return: str
         """
-        return self.uri.replace("?%s" % (self.query or ""), "")
+        query = urlparse(self.uri).query
+        return self.uri.replace("?%s" % (query or ""), "")
 
     @property
     def groups(self):
