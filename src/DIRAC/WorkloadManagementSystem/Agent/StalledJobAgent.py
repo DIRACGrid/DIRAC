@@ -340,7 +340,7 @@ class StalledJobAgent(AgentModule):
 
         if not minorStatus:  # Retain last minor status for stalled jobs
             result = self.jobDB.getJobAttributes(job, ["MinorStatus"])
-            if result["OK"]:
+            if result["OK"] and "MinorStatus" in result["Value"]:
                 minorStatus = result["Value"]["MinorStatus"]
             else:
                 self.log.error("Failed getting MinorStatus", "for job %d: %s" % (job, result["Message"]))
@@ -475,6 +475,8 @@ class StalledJobAgent(AgentModule):
                             lastWallTime = value
                     except ValueError:
                         pass
+                if isinstance(heartBeatTime, str):
+                    heartBeatTime = datetime.datetime.strptime(heartBeatTime, "%Y-%m-%d %H:%M:%S")
                 if heartBeatTime > lastHeartBeatTime:
                     lastHeartBeatTime = heartBeatTime
 
