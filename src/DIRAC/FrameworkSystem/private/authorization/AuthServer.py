@@ -5,7 +5,7 @@ import pprint
 from dominate import tags as dom
 
 from authlib.jose import JsonWebKey, jwt
-from authlib.oauth2 import HttpRequest, AuthorizationServer as _AuthorizationServer
+from authlib.oauth2 import AuthorizationServer as _AuthorizationServer
 from authlib.oauth2.base import OAuth2Error
 from authlib.oauth2.rfc7636 import CodeChallenge
 from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
@@ -33,6 +33,11 @@ from DIRAC.FrameworkSystem.private.authorization.grants.RevokeToken import Revoc
 from DIRAC.FrameworkSystem.private.authorization.grants.RefreshToken import RefreshTokenGrant
 from DIRAC.FrameworkSystem.private.authorization.grants.DeviceFlow import DeviceAuthorizationEndpoint, DeviceCodeGrant
 from DIRAC.FrameworkSystem.private.authorization.grants.AuthorizationCode import AuthorizationCodeGrant
+
+try:
+    from authlib.oauth2 import JsonRequest
+except ImportError:
+    from authlib.oauth2 import HttpRequest as JsonRequest
 
 sLog = gLogger.getSubLogger(__name__)
 
@@ -326,7 +331,7 @@ class AuthServer(_AuthorizationServer):
 
     def create_json_request(self, request):
         """Parse request. Rewrite authlib method."""
-        return self.create_oauth2_request(request, HttpRequest, True)
+        return self.create_oauth2_request(request, JsonRequest, True)
 
     def validate_requested_scope(self, scope, state=None):
         """See :func:`authlib.oauth2.rfc6749.authorization_server.validate_requested_scope`"""
