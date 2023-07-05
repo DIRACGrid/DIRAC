@@ -39,9 +39,13 @@ class JobAgent(AgentModule):
 
     def __init__(self, agentName, loadName, baseAgentName=False, properties=None):
         """Just defines some default parameters"""
+
         if not properties:
             properties = {}
         super().__init__(agentName, loadName, baseAgentName, properties)
+
+        # disable activity monitoring for this agent
+        self.activityMonitoring = False
 
         # Inner CE
         # CE type the JobAgent submits to. It can be "InProcess" or "Pool" or "Singularity".
