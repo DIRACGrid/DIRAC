@@ -30,7 +30,7 @@ dependencies:
   - psutil >=4.2.0
   - pyasn1 >0.4.1
   - pyasn1-modules
-  - pydantic
+  - pydantic <2
   - python-json-logger >=0.1.8
   - pytz >=2015.7
   - pyyaml
