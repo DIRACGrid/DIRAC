@@ -24,7 +24,7 @@ class ComputingElementFactory:
             self.log.verbose(f"Creating CE for name {ceName}")
         ceTypeLocal = ceType if ceType else self.ceType
         ceNameLocal = ceName if ceName else ceType
-        ceConfigDict = getCEConfigDict(ceNameLocal)
+        ceConfigDict = getCEConfigDict(f"/LocalSite/{ceNameLocal}")
         self.log.verbose("CEConfigDict", ceConfigDict)
         if "CEType" in ceConfigDict:
             ceTypeLocal = ceConfigDict["CEType"]
