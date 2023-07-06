@@ -46,8 +46,7 @@ def getPilotCE(pilotDict):
     if not result["OK"]:
         shutil.rmtree(queueDict["WorkingDirectory"])
         return result
-    ce = result["Value"]
-    return S_OK(ce)
+    return result
 
 
 def getPilotProxy(pilotDict):
@@ -56,16 +55,15 @@ def getPilotProxy(pilotDict):
     :param dict pilotDict: pilot parameters
     :return: S_OK/S_ERROR with proxy as Value
     """
-    owner = pilotDict["OwnerDN"]
+    ownerDN = pilotDict["OwnerDN"]
     group = pilotDict["OwnerGroup"]
 
     groupVOMS = getGroupOption(group, "VOMSRole", group)
-    result = gProxyManager.getPilotProxyFromVOMSGroup(owner, groupVOMS)
+    result = gProxyManager.getPilotProxyFromVOMSGroup(ownerDN, groupVOMS)
     if not result["OK"]:
-        gLogger.error("Could not get proxy:", f"User \"{owner}\" Group \"{groupVOMS}\" : {result['Message']}")
+        gLogger.error("Could not get proxy:", f"User \"{ownerDN}\" Group \"{groupVOMS}\" : {result['Message']}")
         return S_ERROR("Failed to get the pilot's owner proxy")
-    proxy = result["Value"]
-    return S_OK(proxy)
+    return result
 
 
 def setPilotCredentials(ce, pilotDict):

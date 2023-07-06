@@ -1,14 +1,12 @@
-""" The StalledJobAgent hunts for stalled jobs in the Job database. Jobs in "running"
-    state not receiving a heart beat signal for more than stalledTime
-    seconds will be assigned the "Stalled" state.
-
+"""The StalledJobAgent hunts for stalled jobs in the Job database. Jobs in
+"running" state not receiving a heart beat signal for more than stalledTime
+seconds will be assigned the "Stalled" state.
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN StalledJobAgent
   :end-before: ##END
   :dedent: 2
   :caption: StalledJobAgent options
-
 """
 import concurrent.futures
 import datetime
@@ -20,6 +18,7 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.TimeUtilities import fromString, toEpoch, second
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
@@ -31,10 +30,13 @@ from DIRAC.WorkloadManagementSystem.Client import JobStatus, JobMinorStatus
 
 
 class StalledJobAgent(AgentModule):
-    """Agent for setting Running jobs Stalled, and Stalled jobs Failed. And a few more."""
+    """Agent for setting Running jobs Stalled, and Stalled jobs Failed.
+
+    And a few more.
+    """
 
     def __init__(self, *args, **kwargs):
-        """c'tor"""
+        """c'tor."""
         super().__init__(*args, **kwargs)
 
         self.jobDB = None
@@ -42,12 +44,14 @@ class StalledJobAgent(AgentModule):
         self.matchedTime = 7200
         self.rescheduledTime = 600
         self.submittingTime = 300
+        self.stalledJobsToleranceTime = 0
         self.stalledJobsTolerantSites = []
         self.stalledJobsToRescheduleSites = []
+        self.threadPoolExecutor = None
 
     #############################################################################
     def initialize(self):
-        """Sets default parameters"""
+        """Sets default parameters."""
         self.jobDB = JobDB()
         self.logDB = JobLoggingDB()
 
@@ -56,19 +60,21 @@ class StalledJobAgent(AgentModule):
         if not self.am_getOption("Enable", True):
             self.log.info("Stalled Job Agent running in disabled mode")
 
-        wms_instance = getSystemInstance("WorkloadManagement")
-        if not wms_instance:
+        wmsInstance = getSystemInstance("WorkloadManagement")
+        if not wmsInstance:
             return S_ERROR("Can not get the WorkloadManagement system instance")
-        self.stalledJobsTolerantSites = self.am_getOption("StalledJobsTolerantSites", [])
-        self.stalledJobsToleranceTime = self.am_getOption("StalledJobsToleranceTime", 0)
+        self.stalledJobsTolerantSites = self.am_getOption("StalledJobsTolerantSites", self.stalledJobsTolerantSites)
+        self.stalledJobsToleranceTime = self.am_getOption("StalledJobsToleranceTime", self.stalledJobsToleranceTime)
 
-        self.stalledJobsToRescheduleSites = self.am_getOption("StalledJobsToRescheduleSites", [])
+        self.stalledJobsToRescheduleSites = self.am_getOption(
+            "StalledJobsToRescheduleSites", self.stalledJobsToRescheduleSites
+        )
 
         self.submittingTime = self.am_getOption("SubmittingTime", self.submittingTime)
         self.matchedTime = self.am_getOption("MatchedTime", self.matchedTime)
         self.rescheduledTime = self.am_getOption("RescheduledTime", self.rescheduledTime)
 
-        wrapperSection = cfgPath("Systems", "WorkloadManagement", wms_instance, "JobWrapper")
+        wrapperSection = cfgPath("Systems", "WorkloadManagement", wmsInstance, "JobWrapper")
 
         failedTime = self.am_getOption("FailedTimeHours", 6)
         watchdogCycle = gConfig.getValue(cfgPath(wrapperSection, "CheckingTime"), 30 * 60)
@@ -88,14 +94,14 @@ class StalledJobAgent(AgentModule):
 
         # setting up the threading
         maxNumberOfThreads = self.am_getOption("MaxNumberOfThreads", 15)
-        self.log.verbose("Multithreaded with %d threads" % maxNumberOfThreads)
+        self.log.verbose(f"Multithreaded with {maxNumberOfThreads} threads")
         self.threadPoolExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=maxNumberOfThreads)
 
         return S_OK()
 
     #############################################################################
     def execute(self):
-        """The main agent execution method"""
+        """The main agent execution method."""
         # Now we are getting what's going to be checked
         futures = []
 
@@ -161,7 +167,7 @@ class StalledJobAgent(AgentModule):
         return S_OK()
 
     def finalize(self):
-        """graceful finalization"""
+        """Graceful finalization."""
 
         self.log.info("Wait for threads to get empty before terminating the agent")
         self.threadPoolExecutor.shutdown()
@@ -169,14 +175,15 @@ class StalledJobAgent(AgentModule):
         return S_OK()
 
     def _execute(self, job_Op):
-        """
-        Doing the actual job. This is run inside the threads
+        """Doing the actual job.
+
+        This is run inside the threads
         """
         jobID, jobOp = job_Op.split(":")
         jobID = int(jobID)
         res = getattr(self, f"{jobOp}")(jobID)
         if not res["OK"]:
-            self.log.error(f"Failure executing {jobOp}", "on %d: %s" % (jobID, res["Message"]))
+            self.log.error(f"Failure executing {jobOp}", f"on {jobID}: {res['Message']}")
 
     #############################################################################
     def _markStalledJobs(self, jobID):
@@ -204,8 +211,8 @@ class StalledJobAgent(AgentModule):
 
     #############################################################################
     def _failStalledJobs(self, jobID):
-        """
-        Changes the Stalled status to Failed for jobs long in the Stalled status.
+        """Changes the Stalled status to Failed for jobs long in the Stalled
+        status.
 
         Run inside thread.
         """
@@ -214,7 +221,7 @@ class StalledJobAgent(AgentModule):
         # Check if the job pilot is lost
         result = self._getJobPilotStatus(jobID)
         if not result["OK"]:
-            self.log.error("Failed to get pilot status", "for job %d: %s" % (jobID, result["Message"]))
+            self.log.error("Failed to get pilot status", f"for job {jobID}: {result['Message']}")
             return result
         pilotStatus = result["Value"]
         if pilotStatus != "Running":
@@ -223,7 +230,7 @@ class StalledJobAgent(AgentModule):
             # Verify that there was no sign of life for long enough
             result = self._getLatestUpdateTime(jobID)
             if not result["OK"]:
-                self.log.error("Failed to get job update time", "for job %d: %s" % (jobID, result["Message"]))
+                self.log.error("Failed to get job update time", f"for job {jobID}: {result['Message']}")
                 return result
             elapsedTime = toEpoch() - result["Value"]
             if elapsedTime > self.failedTime:
@@ -232,7 +239,9 @@ class StalledJobAgent(AgentModule):
         # Set the jobs Failed, send them a kill signal in case they are not really dead
         # and send accounting info
         if setFailed:
-            self._sendKillCommand(jobID)  # always returns None
+            res = self._sendKillCommand(jobID)
+            if not res["OK"]:
+                self.log.error("Failed to kill job", jobID)
 
             # For some sites we might want to reschedule rather than fail the jobs
             if self.stalledJobsToRescheduleSites:
@@ -248,7 +257,7 @@ class StalledJobAgent(AgentModule):
         return S_OK()
 
     def _getJobPilotStatus(self, jobID):
-        """Get the job pilot status"""
+        """Get the job pilot status."""
         result = JobMonitoringClient().getJobParameter(jobID, "Pilot_Reference")
         if not result["OK"]:
             return result
@@ -260,9 +269,9 @@ class StalledJobAgent(AgentModule):
         result = PilotManagerClient().getPilotInfo(pilotReference)
         if not result["OK"]:
             if DErrno.cmpError(result, DErrno.EWMSNOPILOT):
-                self.log.warn("No pilot found", "for job %d: %s" % (jobID, result["Message"]))
+                self.log.warn("No pilot found", f"for job {jobID}: {result['Message']}")
                 return S_OK("NoPilot")
-            self.log.error("Failed to get pilot information", "for job %d: %s" % (jobID, result["Message"]))
+            self.log.error("Failed to get pilot information", f"for job {jobID}: {result['Message']}")
             return result
         pilotStatus = result["Value"][pilotReference]["Status"]
 
@@ -271,8 +280,7 @@ class StalledJobAgent(AgentModule):
     #############################################################################
     def _checkJobStalled(self, job, stalledTime):
         """Compares the most recent of LastUpdateTime and HeartBeatTime against
-        the stalledTime limit.
-        """
+        the stalledTime limit."""
         result = self._getLatestUpdateTime(job)
         if not result["OK"]:
             return result
@@ -289,7 +297,7 @@ class StalledJobAgent(AgentModule):
 
     #############################################################################
     def _getLatestUpdateTime(self, job):
-        """Returns the most recent of HeartBeatTime and LastUpdateTime"""
+        """Returns the most recent of HeartBeatTime and LastUpdateTime."""
         result = self.jobDB.getJobAttributes(job, ["HeartBeatTime", "LastUpdateTime"])
         if not result["OK"] or not result["Value"]:
             self.log.error(
@@ -317,7 +325,7 @@ class StalledJobAgent(AgentModule):
 
     #############################################################################
     def _updateJobStatus(self, job, status, minorStatus=None, force=False):
-        """This method updates the job status in the JobDB"""
+        """This method updates the job status in the JobDB."""
 
         if not self.am_getOption("Enable", True):
             return S_OK("Disabled")
@@ -327,15 +335,13 @@ class StalledJobAgent(AgentModule):
         self.log.debug(f"self.jobDB.setJobAttribute({job},'Status','{status}',update=True)")
         result = self.jobDB.setJobAttribute(job, "Status", status, update=True, force=force)
         if not result["OK"]:
-            self.log.error("Failed setting Status", "%s for job %d: %s" % (status, job, result["Message"]))
+            self.log.error("Failed setting Status", f"{status} for job {job}: {result['Message']}")
             toRet = result
         if minorStatus:
             self.log.debug(f"self.jobDB.setJobAttribute({job},'MinorStatus','{minorStatus}',update=True)")
             result = self.jobDB.setJobAttribute(job, "MinorStatus", minorStatus, update=True)
             if not result["OK"]:
-                self.log.error(
-                    "Failed setting MinorStatus", "%s for job %d: %s" % (minorStatus, job, result["Message"])
-                )
+                self.log.error("Failed setting MinorStatus", f"{minorStatus} for job {job}: {result['Message']}")
                 toRet = result
 
         if not minorStatus:  # Retain last minor status for stalled jobs
@@ -343,7 +349,7 @@ class StalledJobAgent(AgentModule):
             if result["OK"] and "MinorStatus" in result["Value"]:
                 minorStatus = result["Value"]["MinorStatus"]
             else:
-                self.log.error("Failed getting MinorStatus", "for job %d: %s" % (job, result["Message"]))
+                self.log.error("Failed getting MinorStatus", f"for job {job}: {result['Message']}")
                 minorStatus = "idem"
                 toRet = result
 
@@ -355,7 +361,8 @@ class StalledJobAgent(AgentModule):
         return toRet
 
     def _getProcessingType(self, jobID):
-        """Get the Processing Type from the JDL, until it is promoted to a real Attribute"""
+        """Get the Processing Type from the JDL, until it is promoted to a real
+        Attribute."""
         processingType = "unknown"
         result = self.jobDB.getJobJDL(jobID, original=True)
         if not result["OK"]:
@@ -366,8 +373,7 @@ class StalledJobAgent(AgentModule):
         return processingType
 
     def _sendAccounting(self, jobID):
-        """
-        Send WMS accounting data for the given job.
+        """Send WMS accounting data for the given job.
 
         Run inside thread.
         """
@@ -447,11 +453,11 @@ class StalledJobAgent(AgentModule):
         if result["OK"]:
             self.jobDB.setJobAttribute(jobID, "AccountedFlag", "True")
         else:
-            self.log.error("Failed to send accounting report", "Job: %d, Error: %s" % (int(jobID), result["Message"]))
+            self.log.error("Failed to send accounting report", f"for job {jobID}: {result['Message']}")
         return result
 
     def _checkHeartBeat(self, jobID, jobDict):
-        """Get info from HeartBeat"""
+        """Get info from HeartBeat."""
         result = self.jobDB.getHeartBeatData(jobID)
         lastCPUTime = 0
         lastWallTime = 0
@@ -483,7 +489,7 @@ class StalledJobAgent(AgentModule):
         return lastCPUTime, lastWallTime, lastHeartBeatTime
 
     def _checkLoggingInfo(self, jobID, jobDict):
-        """Get info from JobLogging"""
+        """Get info from JobLogging."""
         logList = []
         result = self.logDB.getJobLoggingInfo(jobID)
         if result["OK"]:
@@ -517,7 +523,8 @@ class StalledJobAgent(AgentModule):
         return startTime, endTime
 
     def _kickStuckJobs(self):
-        """Reschedule jobs stuck in initialization status Rescheduled, Matched"""
+        """Reschedule jobs stuck in initialization status Rescheduled,
+        Matched."""
 
         message = ""
 
@@ -564,6 +571,7 @@ class StalledJobAgent(AgentModule):
 
     def _failSubmittingJobs(self):
         """Failed Jobs stuck in Submitting Status for a long time.
+
         They are due to a failed bulk submission transaction.
         """
 
@@ -587,17 +595,18 @@ class StalledJobAgent(AgentModule):
 
         :param int job: ID of job to send kill command
         """
-        ownerDN = self.jobDB.getJobAttribute(job, "OwnerDN")
-        ownerGroup = self.jobDB.getJobAttribute(job, "OwnerGroup")
-        if ownerDN["OK"] and ownerGroup["OK"]:
-            wmsClient = WMSClient(
-                useCertificates=True, delegatedDN=ownerDN["Value"], delegatedGroup=ownerGroup["Value"]
-            )
-            resKill = wmsClient.killJob(job)
-            if not resKill["OK"]:
-                self.log.error("Failed to send kill command to job", f"{job}: {resKill['Message']}")
-        else:
-            self.log.error(
-                "Failed to get ownerDN or Group for job:",
-                f"{job}: {ownerDN.get('Message', '')}, {ownerGroup.get('Message', '')}",
-            )
+
+        res = self.jobDB.getJobAttribute(job, "Owner")
+        if not res["OK"]:
+            return res
+        owner = res["Value"]
+
+        res = self.jobDB.getJobAttribute(job, "OwnerGroup")
+        if not res["OK"]:
+            return res
+        ownerGroup = res["Value"]
+
+        wmsClient = WMSClient(
+            useCertificates=True, delegatedDN=getDNForUsername(owner)["Value"][0], delegatedGroup=ownerGroup
+        )
+        return wmsClient.killJob(job)

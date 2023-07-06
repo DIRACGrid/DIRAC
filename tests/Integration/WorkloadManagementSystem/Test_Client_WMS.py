@@ -182,7 +182,6 @@ def test_submitJob(jobType, inputData, expectedSite):
     #     # Check that the JDL contains some fields
     #     assert jobDescription.lookupAttribute("Owner") is True
     #     assert jobDescription.lookupAttribute("OwnerGroup") is True
-    #     assert jobDescription.lookupAttribute("OwnerDN") is True
     #     assert jobDescription.lookupAttribute("CPUTime") is True
     #     assert jobDescription.lookupAttribute("Priority") is True
     #     assert jobDescription.lookupAttribute("JobID") is True
@@ -193,7 +192,6 @@ def test_submitJob(jobType, inputData, expectedSite):
 
     #     resourceDescription = {
     #         "OwnerGroup": jobDescription.getAttributeString("OwnerGroup"),
-    #         "OwnerDN": jobDescription.getAttributeString("OwnerDN"),
     #         "VirtualOrganization": jobDescription.getAttributeString("VirtualOrganization"),
     #         "CPUTime": jobDescription.getAttributeInt("CPUTime"),
     #         "DIRACVersion": "pippo",
@@ -313,7 +311,6 @@ def test_WMSClient_rescheduleJob():
         # Check that the JDL contains some fields
         assert jobDescription.lookupAttribute("Owner") is True
         assert jobDescription.lookupAttribute("OwnerGroup") is True
-        assert jobDescription.lookupAttribute("OwnerDN") is True
         assert jobDescription.lookupAttribute("CPUTime") is True
         assert jobDescription.lookupAttribute("Priority") is True
         assert jobDescription.lookupAttribute("JobID") is True
@@ -325,7 +322,6 @@ def test_WMSClient_rescheduleJob():
 
         # resourceDescription = {
         #     "OwnerGroup": jobDescription.getAttributeString("OwnerGroup"),
-        #     "OwnerDN": jobDescription.getAttributeString("OwnerDN"),
         #     "VirtualOrganization": jobDescription.getAttributeString("VirtualOrganization"),
         #     "CPUTime": jobDescription.getAttributeInt("CPUTime"),
         #     "DIRACVersion": "pippo",
@@ -376,7 +372,6 @@ def test_WMSClient_rescheduleJob():
 
         assert jobDescription.lookupAttribute("Owner") is True
         assert jobDescription.lookupAttribute("OwnerGroup") is True
-        assert jobDescription.lookupAttribute("OwnerDN") is True
         assert jobDescription.lookupAttribute("JobID") is True
 
     finally:

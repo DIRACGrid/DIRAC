@@ -154,7 +154,7 @@ class JobManifest:
         """
         Check that the manifest is OK
         """
-        for k in ["Owner", "OwnerDN", "OwnerGroup"]:
+        for k in ["Owner", "OwnerGroup"]:
             if k not in self.__manifest:
                 return S_ERROR(f"Missing var {k} in manifest")
 

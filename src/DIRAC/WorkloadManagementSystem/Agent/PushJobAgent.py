@@ -9,22 +9,22 @@
 
 """
 
-import sys
-import re
 import random
+import sys
 from collections import defaultdict
 
 from DIRAC import S_OK, gConfig
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
 from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
-from DIRAC.RequestManagementSystem.Client.Request import Request
 
 MAX_JOBS_MANAGED = 100
 
@@ -184,7 +184,7 @@ class PushJobAgent(JobAgent):
             jobRequest = self._matchAJob(ceDictList)
             while jobRequest["OK"]:
                 # Check matcher information returned
-                matcherParams = ["JDL", "DN", "Group"]
+                matcherParams = ["JDL", "Owner", "Group"]
                 matcherInfo = jobRequest["Value"]
                 jobID = matcherInfo["JobID"]
                 self.jobReport.setJob(jobID)
@@ -195,7 +195,7 @@ class PushJobAgent(JobAgent):
 
                 jobJDL = matcherInfo["JDL"]
                 jobGroup = matcherInfo["Group"]
-                ownerDN = matcherInfo["DN"]
+                owner = matcherInfo["Owner"]
                 ceDict = matcherInfo["CEDict"]
                 matchTime = matcherInfo["matchTime"]
 
@@ -222,7 +222,7 @@ class PushJobAgent(JobAgent):
                 jobType = submissionParams["jobType"]
 
                 self.log.verbose("Job request successful: \n", jobRequest["Value"])
-                self.log.info("Received", f"JobID={jobID}, JobType={jobType}, OwnerDN={ownerDN}, JobGroup={jobGroup}")
+                self.log.info("Received", f"JobID={jobID}, JobType={jobType}, Owner={owner}, JobGroup={jobGroup}")
 
                 self.jobReport.setJobParameter(par_name="MatcherServiceTime", par_value=str(matchTime), sendFlag=False)
                 self.jobReport.setJobStatus(
@@ -230,6 +230,7 @@ class PushJobAgent(JobAgent):
                 )
 
                 # Setup proxy
+                ownerDN = getDNForUsername(owner)["Value"]
                 result_setupProxy = self._setupProxy(ownerDN, jobGroup)
                 if not result_setupProxy["OK"]:
                     result = self._rescheduleFailedJob(jobID, result_setupProxy["Message"])

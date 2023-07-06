@@ -109,18 +109,17 @@ class WorkflowTasks(TaskBase):
         ownerDN = res["Value"][0]
 
         if bulkSubmissionFlag:
-            return self.__prepareTasksBulk(transBody, taskDict, owner, ownerGroup, ownerDN)
+            return self.__prepareTasksBulk(transBody, taskDict, owner, ownerGroup)
         # not a bulk submission
-        return self.__prepareTasks(transBody, taskDict, owner, ownerGroup, ownerDN)
+        return self.__prepareTasks(transBody, taskDict, owner, ownerGroup)
 
-    def __prepareTasksBulk(self, transBody, taskDict, owner, ownerGroup, ownerDN):
+    def __prepareTasksBulk(self, transBody, taskDict, owner, ownerGroup):
         """Prepare transformation tasks with a single job object for bulk submission
 
         :param str transBody: transformation job template
         :param dict taskDict: dictionary of per task parameters
         :param str owner: owner of the transformation
         :param str ownerGroup: group of the owner of the transformation
-        :param str ownerDN: DN of the owner of the transformation
 
         :return: S_OK/S_ERROR with updated taskDict
         """
@@ -137,7 +136,6 @@ class WorkflowTasks(TaskBase):
         self._logVerbose(f"Setting job owner:group to {owner}:{ownerGroup}", transID=transID, method=method)
         oJob.setOwner(owner)
         oJob.setOwnerGroup(ownerGroup)
-        oJob.setOwnerDN(ownerDN)
 
         try:
             site = oJob.workflow.findParameter("Site").getValue()
@@ -253,14 +251,13 @@ class WorkflowTasks(TaskBase):
         taskDict["BulkJobObject"] = oJob
         return S_OK(taskDict)
 
-    def __prepareTasks(self, transBody, taskDict, owner, ownerGroup, ownerDN):
+    def __prepareTasks(self, transBody, taskDict, owner, ownerGroup):
         """Prepare transformation tasks with a job object per task
 
         :param str transBody: transformation job template
         :param dict taskDict: dictionary of per task parameters
         :param owner: owner of the transformation
         :param str ownerGroup: group of the owner of the transformation
-        :param str ownerDN: DN of the owner of the transformation
 
         :return:  S_OK/S_ERROR with updated taskDict
         """
@@ -275,7 +272,6 @@ class WorkflowTasks(TaskBase):
         oJobTemplate = self.jobClass(transBody)
         oJobTemplate.setOwner(owner)
         oJobTemplate.setOwnerGroup(ownerGroup)
-        oJobTemplate.setOwnerDN(ownerDN)
 
         try:
             site = oJobTemplate.workflow.findParameter("Site").getValue()

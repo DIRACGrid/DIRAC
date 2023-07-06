@@ -309,22 +309,32 @@ Running the above might take a while. Supposing you are interested in running on
     ./integration_tests.py prepare-environment [FLAGS]
     ./integration_tests.py install-server
 
-which (in some minutes) will give you a fully dockerized server setup (`docker container ls` will list the created container, and you can see what's going on inside with the standard `docker exec -it server /bin/bash`). Now, suppose that you want to run `WorkloadManagementSystem/Test_JobDB.py`.
-The first thing to do is that you should first login in the docker container, by doing:
+which (in some minutes) will give you a fully dockerized server setup
+(`docker container ls` will list the created container, and you can see what's going on inside with the standard `docker exec -it server /bin/bash`.
+Now, suppose that you want to run `WorkloadManagementSystem/Test_JobDB.py`,
+the first thing to do is that you should first login in the docker container, by doing:
 
 .. code-block:: bash
 
     ./integration_tests.py exec-server
 
-The installations automatically pick up external changes to the DIRAC code and tests)
+(The docker installation automatically picks up external changes to the DIRAC code and tests)
 
 Now you can run the test with:
 
 .. code-block:: bash
 
-    pytest LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py
+    pytest --no-check-dirac-environment LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py
 
 You can find the logs of the services in `/home/dirac/ServerInstallDIR/diracos/runit/`
+
+You can also login in client and mysql with:
+
+.. code-block:: bash
+
+    ./integration_tests.py exec-client
+    ./integration_tests.py exec-mysql
+
 
 
 Validation and System tests

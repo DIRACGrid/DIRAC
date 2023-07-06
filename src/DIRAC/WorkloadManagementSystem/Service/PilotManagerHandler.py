@@ -96,7 +96,7 @@ class PilotManagerHandler(RequestHandler):
 
         pilotDict = result["Value"][pilotReference]
 
-        owner = pilotDict["OwnerDN"]
+        ownerDN = pilotDict["OwnerDN"]
         group = pilotDict["OwnerGroup"]
 
         # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
@@ -108,7 +108,7 @@ class PilotManagerHandler(RequestHandler):
                 resultDict = {}
                 resultDict["StdOut"] = stdout
                 resultDict["StdErr"] = error
-                resultDict["OwnerDN"] = owner
+                resultDict["OwnerDN"] = ownerDN
                 resultDict["OwnerGroup"] = group
                 resultDict["FileList"] = []
                 return S_OK(resultDict)
@@ -146,7 +146,7 @@ class PilotManagerHandler(RequestHandler):
         resultDict = {}
         resultDict["StdOut"] = stdout
         resultDict["StdErr"] = error
-        resultDict["OwnerDN"] = owner
+        resultDict["OwnerDN"] = ownerDN
         resultDict["OwnerGroup"] = group
         resultDict["FileList"] = []
         shutil.rmtree(ce.ceParameters["WorkingDirectory"])
@@ -325,7 +325,7 @@ class PilotManagerHandler(RequestHandler):
         if isinstance(pilotRefList, str):
             pilotRefs = [pilotRefList]
 
-        # Regroup pilots per site and per owner
+        # Regroup pilots per site and per ownerDN
         pilotRefDict = {}
         for pilotReference in pilotRefs:
             result = cls.pilotAgentsDB.getPilotInfo(pilotReference)
@@ -333,9 +333,11 @@ class PilotManagerHandler(RequestHandler):
                 return S_ERROR("Failed to get info for pilot " + pilotReference)
 
             pilotDict = result["Value"][pilotReference]
-            owner = pilotDict["OwnerDN"]
+            ownerDN = pilotDict["OwnerDN"]
             group = pilotDict["OwnerGroup"]
-            queue = "@@@".join([owner, group, pilotDict["GridSite"], pilotDict["DestinationSite"], pilotDict["Queue"]])
+            queue = "@@@".join(
+                [ownerDN, group, pilotDict["GridSite"], pilotDict["DestinationSite"], pilotDict["Queue"]]
+            )
             gridType = pilotDict["GridType"]
             pilotRefDict.setdefault(queue, {})
             pilotRefDict[queue].setdefault("PilotList", [])

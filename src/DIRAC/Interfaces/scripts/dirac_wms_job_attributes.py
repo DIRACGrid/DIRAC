@@ -28,7 +28,6 @@ Example:
    'MinorStatus': 'Execution Complete',
    'OSandboxReadyFlag': 'False',
    'Owner': 'vhamar',
-   'OwnerDN': '/O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar',
    'OwnerGroup': 'eela_user',
    'RescheduleCounter': '0',
    'RescheduleTime': 'None',
@@ -42,7 +41,8 @@ Example:
    'UserPriority': '1',
    'VerifiedFlag': 'True'}
 """
-import DIRAC
+from DIRAC import exit as dExit
+from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 
 
@@ -65,9 +65,9 @@ def main():
             exitCode = 2
 
     for error in errorList:
-        print("ERROR %s: %s" % error)
+        gLogger.error(f"{error}")
 
-    DIRAC.exit(exitCode)
+    dExit(exitCode)
 
 
 if __name__ == "__main__":

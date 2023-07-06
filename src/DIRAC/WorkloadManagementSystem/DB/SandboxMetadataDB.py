@@ -1,10 +1,10 @@
 """ SandboxMetadataDB class is a front-end to the metadata for sandboxes
 """
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities import List
-from DIRAC.Core.Security import Properties
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.Core.Base.DB import DB
+from DIRAC.Core.Security import Properties
+from DIRAC.Core.Utilities import List
 
 
 class SandboxMetadataDB(DB):
@@ -32,7 +32,6 @@ class SandboxMetadataDB(DB):
             "Fields": {
                 "OwnerId": "INTEGER(10) UNSIGNED AUTO_INCREMENT NOT NULL",
                 "Owner": "VARCHAR(32) NOT NULL",
-                "OwnerDN": "VARCHAR(255) NOT NULL",
                 "OwnerGroup": "VARCHAR(32) NOT NULL",
             },
             "PrimaryKey": "OwnerId",
@@ -72,18 +71,13 @@ class SandboxMetadataDB(DB):
 
         return self._createTables(tablesToCreate)
 
-    def __registerAndGetOwnerId(self, owner, ownerDN, ownerGroup):
+    def __registerAndGetOwnerId(self, owner, ownerGroup):
         """
         Get the owner ID and register it if it's not there
         """
         ownerEscaped = self._escapeString(owner)["Value"]
-        ownerDNEscaped = self._escapeString(ownerDN)["Value"]
         ownerGroupEscaped = self._escapeString(ownerGroup)["Value"]
-        sqlCmd = "SELECT OwnerId FROM `sb_Owners` WHERE Owner = {} AND OwnerDN = {} AND OwnerGroup = {}".format(
-            ownerEscaped,
-            ownerDNEscaped,
-            ownerGroupEscaped,
-        )
+        sqlCmd = f"SELECT OwnerId FROM `sb_Owners` WHERE Owner = {ownerEscaped} AND OwnerGroup = {ownerGroupEscaped}"
         result = self._query(sqlCmd)
         if not result["OK"]:
             return result
@@ -91,10 +85,8 @@ class SandboxMetadataDB(DB):
         if data:
             return S_OK(data[0][0])
         # Its not there, insert it
-        sqlCmd = "INSERT INTO `sb_Owners` ( OwnerId, Owner, OwnerDN, OwnerGroup ) VALUES ( 0, {}, {}, {} )".format(
-            ownerEscaped,
-            ownerDNEscaped,
-            ownerGroupEscaped,
+        sqlCmd = (
+            f"INSERT INTO `sb_Owners` ( OwnerId, Owner, OwnerGroup ) VALUES ( 0, {ownerEscaped}, {ownerGroupEscaped} )"
         )
         result = self._update(sqlCmd)
         if not result["OK"]:
@@ -106,12 +98,12 @@ class SandboxMetadataDB(DB):
             return S_ERROR("Can't determine owner id after insertion")
         return S_OK(result["Value"][0][0])
 
-    def registerAndGetSandbox(self, owner, ownerDN, ownerGroup, sbSE, sbPFN, size=0):
+    def registerAndGetSandbox(self, owner, ownerGroup, sbSE, sbPFN, size=0):
         """
         Register a new sandbox in the metadata catalog
         Returns ( sbid, newSandbox )
         """
-        result = self.__registerAndGetOwnerId(owner, ownerDN, ownerGroup)
+        result = self.__registerAndGetOwnerId(owner, ownerGroup)
         if not result["OK"]:
             return result
         ownerId = result["Value"]
@@ -386,13 +378,13 @@ class SandboxMetadataDB(DB):
         :param requestDN: host DN used as credentials
         :param requesterGroup: group used to use as credentials (should be 'hosts')
 
-        :returns: S_OK with tuple (owner, ownerDN, ownerGroup)
+        :returns: S_OK with tuple (owner, ownerGroup)
         """
         res = self.getSandboxId(SEName, SEPFN, None, requesterGroup, "OwnerId", requesterDN=requesterDN)
         if not res["OK"]:
             return res
 
-        sqlCmd = "SELECT `Owner`, `OwnerDN`, `OwnerGroup` FROM `sb_Owners` WHERE `OwnerId` = %d" % res["Value"]
+        sqlCmd = "SELECT `Owner`, `OwnerGroup` FROM `sb_Owners` WHERE `OwnerId` = %d" % res["Value"]
         res = self._query(sqlCmd)
         if not res["OK"]:
             return res

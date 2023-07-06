@@ -17,25 +17,24 @@ def test_SandboxMetadataDB():
     owner = "adminusername"
     ownerDN = "/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser"
     ownerGroup = "dirac_admin"
-    enSetup = "enSetup"
 
     sbSE = "ProductionSandboxSE"
     sbPFN = "/sb/pfn/1.tar.bz2"
 
-    res = smDB.registerAndGetSandbox(owner, ownerDN, ownerGroup, sbSE, sbPFN, 123)
+    res = smDB.registerAndGetSandbox(owner, ownerGroup, sbSE, sbPFN, 123)
     assert res["OK"], res["Message"]
     sbId, newSandbox = res["Value"]
     print(f"sbId:{sbId}")
     print(f"newSandbox:{newSandbox}")
 
     assignTo = {owner: [(f"SB:{sbSE}|{sbPFN}", ownerGroup)]}
-    res = smDB.assignSandboxesToEntities(assignTo, owner, ownerGroup, enSetup)
+    res = smDB.assignSandboxesToEntities(assignTo, owner, ownerGroup)
     assert res["OK"], res["Message"]
     assert res["Value"] == 1
 
     res = smDB.getSandboxOwner(sbSE, sbPFN, ownerDN, ownerGroup)
     assert res["OK"], res["Message"]
-    assert res["Value"] == (owner, ownerDN, ownerGroup)
+    assert res["Value"] == (owner, ownerGroup)
 
     res = smDB.getSandboxId(sbSE, sbPFN, owner, ownerGroup)
     assert res["OK"], res["Message"]
@@ -48,5 +47,4 @@ def test_SandboxMetadataDB():
     assert res["OK"], res["Message"]
 
     res = smDB.getUnusedSandboxes()
-    print(res)
     assert res["OK"], res["Message"]

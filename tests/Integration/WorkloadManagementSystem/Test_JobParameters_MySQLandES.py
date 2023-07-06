@@ -117,9 +117,9 @@ def test_MySQLandES_jobParameters():
     # So now we are using the ES backend
 
     # This will still be in MySQL, but first it will look if it's in ES
-    res = jobMonitoringClient.getJobParameter(jobID, "ParName-fromMySQL")
-    assert res["OK"], res["Message"]
-    assert res["Value"] == {"ParName-fromMySQL": "ParValue-fromMySQL"}, res["Value"]
+    _checkWithRetries(
+        jobMonitoringClient.getJobParameter, (jobID, "ParName-fromMySQL"), {"ParName-fromMySQL": "ParValue-fromMySQL"}
+    )
 
     # Now we insert (in ES)
     res = jobStateUpdateClient.setJobParameter(jobID, "ParName-fromES", "ParValue-fromES")

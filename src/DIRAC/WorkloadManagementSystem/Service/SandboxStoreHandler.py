@@ -7,23 +7,23 @@
   :dedent: 2
   :caption: SandboxStore options
 """
-import os
-import time
-import threading
-import tempfile
 import hashlib
+import os
+import tempfile
+import threading
+import time
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security import Locations, Properties, X509Certificate
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.Service.StorageElementHandler import getDiskSpace
+from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.Client.Operation import Operation
-from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize
 
@@ -175,7 +175,6 @@ class SandboxStoreHandlerMixin:
         fSize = getGlobbedTotalSize(hdPath)
         result = self.sandboxDB.registerAndGetSandbox(
             credDict["username"],
-            credDict["DN"],
             credDict["group"],
             self.__seNameToUse,
             sbPath,
@@ -224,7 +223,7 @@ class SandboxStoreHandlerMixin:
             return S_OK(f"SB:{seName}|{sePFN}")
 
         result = self.sandboxDB.registerAndGetSandbox(
-            credDict["username"], credDict["DN"], credDict["group"], seName, sePFN, fileHelper.getTransferedBytes()
+            credDict["username"], credDict["group"], seName, sePFN, fileHelper.getTransferedBytes()
         )
         if not result["OK"]:
             self.__secureUnlinkFile(tmpFilePath)

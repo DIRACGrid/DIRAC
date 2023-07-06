@@ -908,7 +908,6 @@ class JobDB(DB):
         self,
         jdl,
         owner,
-        ownerDN,
         ownerGroup,
         initialStatus=JobStatus.RECEIVED,
         initialMinorStatus="Job accepted",
@@ -919,7 +918,6 @@ class JobDB(DB):
 
         :param str jdl: job description JDL
         :param str owner: job owner user name
-        :param str ownerDN: job owner DN
         :param str ownerGroup: job owner group
         :param str initialStatus: optional initial job status (Received by default)
         :param str initialMinorStatus: optional initial minor job status
@@ -929,7 +927,7 @@ class JobDB(DB):
         result = jobManifest.load(jdl)
         if not result["OK"]:
             return result
-        jobManifest.setOptionsFromDict({"Owner": owner, "OwnerDN": ownerDN, "OwnerGroup": ownerGroup})
+        jobManifest.setOptionsFromDict({"Owner": owner, "OwnerGroup": ownerGroup})
         result = jobManifest.check()
         if not result["OK"]:
             return result
@@ -958,9 +956,6 @@ class JobDB(DB):
 
         jobAttrNames.append("Owner")
         jobAttrValues.append(owner)
-
-        jobAttrNames.append("OwnerDN")
-        jobAttrValues.append(ownerDN)
 
         jobAttrNames.append("OwnerGroup")
         jobAttrValues.append(ownerGroup)
@@ -993,7 +988,7 @@ class JobDB(DB):
 
         classAdJob.insertAttributeInt("JobID", jobID)
         result = self.__checkAndPrepareJob(
-            jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup, jobAttrNames, jobAttrValues
+            jobID, classAdJob, classAdReq, owner, ownerGroup, jobAttrNames, jobAttrValues
         )
         if not result["OK"]:
             return result
@@ -1081,9 +1076,7 @@ class JobDB(DB):
 
         return retVal
 
-    def __checkAndPrepareJob(
-        self, jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup, jobAttrNames, jobAttrValues
-    ):
+    def __checkAndPrepareJob(self, jobID, classAdJob, classAdReq, owner, ownerGroup, jobAttrNames, jobAttrValues):
         """
         Check Consistency of Submitted JDL and set some defaults
         Prepare subJDL with Job Requirements
@@ -1092,27 +1085,22 @@ class JobDB(DB):
         vo = getVOForGroup(ownerGroup)
 
         jdlOwner = classAdJob.getAttributeString("Owner")
-        jdlOwnerDN = classAdJob.getAttributeString("OwnerDN")
         jdlOwnerGroup = classAdJob.getAttributeString("OwnerGroup")
         jdlVO = classAdJob.getAttributeString("VirtualOrganization")
 
         if jdlOwner and jdlOwner != owner:
             error = "Wrong Owner in JDL"
-        elif jdlOwnerDN and jdlOwnerDN != ownerDN:
-            error = "Wrong Owner DN in JDL"
         elif jdlOwnerGroup and jdlOwnerGroup != ownerGroup:
             error = "Wrong Owner Group in JDL"
         elif jdlVO and jdlVO != vo:
             error = "Wrong Virtual Organization in JDL"
 
         classAdJob.insertAttributeString("Owner", owner)
-        classAdJob.insertAttributeString("OwnerDN", ownerDN)
         classAdJob.insertAttributeString("OwnerGroup", ownerGroup)
 
         if vo:
             classAdJob.insertAttributeString("VirtualOrganization", vo)
 
-        classAdReq.insertAttributeString("OwnerDN", ownerDN)
         classAdReq.insertAttributeString("OwnerGroup", ownerGroup)
         if vo:
             classAdReq.insertAttributeString("VirtualOrganization", vo)
@@ -1219,7 +1207,6 @@ class JobDB(DB):
                 "VerifiedFlag",
                 "RescheduleCounter",
                 "Owner",
-                "OwnerDN",
                 "OwnerGroup",
             ],
         )
@@ -1299,7 +1286,6 @@ class JobDB(DB):
             classAdJob,
             classAdReq,
             resultDict["Owner"],
-            resultDict["OwnerDN"],
             resultDict["OwnerGroup"],
             jobAttrNames,
             jobAttrValues,

@@ -12,6 +12,7 @@ import time
 from diraccfg import CFG
 
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, siteName
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -202,7 +203,7 @@ class JobAgent(AgentModule):
         self.matchFailedCount = 0
 
         # Check matcher information returned
-        matcherParams = ["JDL", "DN", "Group"]
+        matcherParams = ["JDL", "Owner", "Group"]
         matcherInfo = jobRequest["Value"]
         jobID = matcherInfo["JobID"]
         self.jobReport.setJob(jobID)
@@ -217,7 +218,7 @@ class JobAgent(AgentModule):
 
         jobJDL = matcherInfo["JDL"]
         jobGroup = matcherInfo["Group"]
-        ownerDN = matcherInfo["DN"]
+        owner = matcherInfo["Owner"]
         ceDict = matcherInfo["CEDict"]
         matchTime = matcherInfo["matchTime"]
 
@@ -242,7 +243,7 @@ class JobAgent(AgentModule):
         jobType = submissionParams["jobType"]
 
         self.log.verbose("Job request successful: \n", jobRequest["Value"])
-        self.log.info("Received", f"JobID={jobID}, JobType={jobType}, OwnerDN={ownerDN}, JobGroup={jobGroup}")
+        self.log.info("Received", f"JobID={jobID}, JobType={jobType}, Owner={owner}, JobGroup={jobGroup}")
         self.jobCount += 1
         self.jobReport.setJobParameter(par_name="MatcherServiceTime", par_value=str(matchTime), sendFlag=False)
         if "BOINC_JOB_ID" in os.environ:
@@ -253,6 +254,7 @@ class JobAgent(AgentModule):
                 )
 
         self.jobReport.setJobStatus(minorStatus="Job Received by Agent", sendFlag=False)
+        ownerDN = getDNForUsername(owner)["Value"]
         result_setupProxy = self._setupProxy(ownerDN, jobGroup)
         if not result_setupProxy["OK"]:
             result = self._rescheduleFailedJob(jobID, result_setupProxy["Message"])
@@ -472,26 +474,26 @@ class JobAgent(AgentModule):
                 self.log.error("Failed to setup proxy", proxyResult["Message"])
                 return S_ERROR(f"Failed to setup proxy: {proxyResult['Message']}")
             return S_OK(proxyResult["Value"])
-        else:
-            ret = getProxyInfo(disableVOMS=True)
-            if not ret["OK"]:
-                self.log.error("Invalid Proxy", ret["Message"])
-                return S_ERROR("Invalid Proxy")
 
-            proxyChain = ret["Value"]["chain"]
-            if "groupProperties" not in ret["Value"]:
-                print(ret["Value"])
-                print(proxyChain.dumpAllToString())
-                self.log.error("Invalid Proxy", "Group has no properties defined")
-                return S_ERROR("Proxy has no group properties defined")
+        ret = getProxyInfo(disableVOMS=True)
+        if not ret["OK"]:
+            self.log.error("Invalid Proxy", ret["Message"])
+            return S_ERROR("Invalid Proxy")
 
-            groupProps = ret["Value"]["groupProperties"]
-            if Properties.GENERIC_PILOT in groupProps or Properties.PILOT in groupProps:
-                proxyResult = self._requestProxyFromProxyManager(ownerDN, ownerGroup)
-                if not proxyResult["OK"]:
-                    self.log.error("Invalid Proxy", proxyResult["Message"])
-                    return S_ERROR(f"Failed to setup proxy: {proxyResult['Message']}")
-                proxyChain = proxyResult["Value"]
+        proxyChain = ret["Value"]["chain"]
+        if "groupProperties" not in ret["Value"]:
+            print(ret["Value"])
+            print(proxyChain.dumpAllToString())
+            self.log.error("Invalid Proxy", "Group has no properties defined")
+            return S_ERROR("Proxy has no group properties defined")
+
+        groupProps = ret["Value"]["groupProperties"]
+        if Properties.GENERIC_PILOT in groupProps or Properties.PILOT in groupProps:
+            proxyResult = self._requestProxyFromProxyManager(ownerDN, ownerGroup)
+            if not proxyResult["OK"]:
+                self.log.error("Invalid Proxy", proxyResult["Message"])
+                return S_ERROR(f"Failed to setup proxy: {proxyResult['Message']}")
+            proxyChain = proxyResult["Value"]
 
         return S_OK(proxyChain)
 
