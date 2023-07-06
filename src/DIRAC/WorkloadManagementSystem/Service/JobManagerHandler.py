@@ -83,7 +83,6 @@ class JobManagerHandlerMixin:
         self.maxParametricJobs = self.srv_getCSOption("MaxParametricJobs", MAX_PARAMETRIC_JOBS)
         self.jobPolicy = JobPolicy(self.owner, self.ownerGroup, self.userProperties)
         self.jobPolicy.jobDB = self.jobDB
-        self.ownerDN = getDNForUsername(self.owner)["Value"][0]
         return S_OK()
 
     def __sendJobsToOptimizationMind(self, jids):
@@ -125,6 +124,8 @@ class JobManagerHandlerMixin:
         :param str jobDesc: job description JDL (of a single or parametric job)
         :return: S_OK/S_ERROR, a list of newly created job IDs in case of S_OK.
         """
+
+        ownerDN = getDNForUsername(self.owner)["Value"][0]
 
         if self.peerUsesLimitedProxy:
             return S_ERROR(EWMSSUBM, "Can't submit using a limited proxy")
@@ -188,7 +189,7 @@ class JobManagerHandlerMixin:
                 JobDescriptionModel(
                     **baseJobDescritionModel.dict(exclude_none=True),
                     owner=self.owner,
-                    ownerDN=self.ownerDN,
+                    ownerDN=ownerDN,
                     ownerGroup=self.ownerGroup,
                     vo=getVOForGroup(self.ownerGroup),
                 )
@@ -216,9 +217,9 @@ class JobManagerHandlerMixin:
             jobIDList.append(jobID)
 
         # Set persistency flag
-        retVal = gProxyManager.getUserPersistence(self.ownerDN, self.ownerGroup)
+        retVal = gProxyManager.getUserPersistence(ownerDN, self.ownerGroup)
         if "Value" not in retVal or not retVal["Value"]:
-            gProxyManager.setPersistency(self.ownerDN, self.ownerGroup, True)
+            gProxyManager.setPersistency(ownerDN, self.ownerGroup, True)
 
         if parametricJob:
             result = S_OK(jobIDList)
@@ -293,7 +294,8 @@ class JobManagerHandlerMixin:
 
         :return: bool
         """
-        result = gProxyManager.userHasProxy(self.ownerDN, self.ownerGroup, validSeconds=18000)
+        ownerDN = getDNForUsername(self.owner)["Value"][0]
+        result = gProxyManager.userHasProxy(ownerDN, self.ownerGroup, validSeconds=18000)
         if not result["OK"]:
             self.log.error("Can't check if the user has proxy uploaded", result["Message"])
             return True
