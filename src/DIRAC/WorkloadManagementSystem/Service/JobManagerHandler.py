@@ -444,12 +444,10 @@ class JobManagerHandlerMixin:
         :param int jobID: job ID
         :return: S_OK()/S_ERROR()
         """
-        result = self.jobDB.setJobStatus(jobID, JobStatus.DELETED, "Checking accounting")
-        if not result["OK"]:
+        if not (result := self.jobDB.setJobStatus(jobID, JobStatus.DELETED, "Checking accounting"))["OK"]:
             return result
 
-        result = self.taskQueueDB.deleteJob(jobID)
-        if not result["OK"]:
+        if not (result := self.taskQueueDB.deleteJob(jobID))["OK"]:
             self.log.warn("Failed to delete job from the TaskQueue")
 
         # if it was the last job for the pilot
@@ -467,8 +465,7 @@ class JobManagerHandlerMixin:
                 if not result["OK"]:
                     self.log.error("Failed to get pilot info", result["Message"])
                     return result
-                pilotRef = result[0]["PilotJobReference"]
-                ret = self.pilotAgentsDB.deletePilot(pilot)
+                ret = self.pilotAgentsDB.deletePilot(result["Value"]["PilotJobReference"])
                 if not ret["OK"]:
                     self.log.error("Failed to delete pilot from PilotAgentsDB", ret["Message"])
                     return ret
