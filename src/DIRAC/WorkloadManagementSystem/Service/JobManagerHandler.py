@@ -24,9 +24,6 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Utilities.JobModel import JobDescriptionModel
-from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
-
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     RIGHT_DELETE,
     RIGHT_KILL,
@@ -35,6 +32,7 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     RIGHT_SUBMIT,
     JobPolicy,
 )
+from DIRAC.WorkloadManagementSystem.Utilities.JobModel import JobDescriptionModel
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
 
 MAX_PARAMETRIC_JOBS = 20
@@ -160,9 +158,9 @@ class JobManagerHandlerMixin:
             if nJobs > self.maxParametricJobs:
                 self.log.error(
                     "Maximum of parametric jobs exceeded:",
-                    "limit %d smaller than number of jobs %d" % (self.maxParametricJobs, nJobs),
+                    f"limit {self.maxParametricJobs} smaller than number of jobs {nJobs}",
                 )
-                return S_ERROR(EWMSJDL, "Number of parametric jobs exceeds the limit of %d" % self.maxParametricJobs)
+                return S_ERROR(EWMSJDL, f"Number of parametric jobs exceeds the limit of {self.maxParametricJobs}")
             result = generateParametricJobs(jobClassAd)
             if not result["OK"]:
                 return result
@@ -407,18 +405,18 @@ class JobManagerHandlerMixin:
             for jobID in validJobList:
                 resultTQ = self.taskQueueDB.deleteJob(jobID)
                 if not resultTQ["OK"]:
-                    self.log.warn("Failed to remove job from TaskQueueDB", "(%d): %s" % (jobID, resultTQ["Message"]))
+                    self.log.warn("Failed to remove job from TaskQueueDB", f"({jobID}): {resultTQ['Message']}")
                     error_count += 1
                 else:
                     count += 1
 
-            if not (result := self.jobLoggingDB.deleteJob(validJobList))["OK"]:
+            if not self.jobLoggingDB.deleteJob(validJobList)["OK"]:
                 self.log.error("Failed to remove jobs from JobLoggingDB", f"(n={len(validJobList)})")
             else:
                 self.log.info("Removed jobs from JobLoggingDB", f"(n={len(validJobList)})")
 
             if count > 0 or error_count > 0:
-                self.log.info("Removed jobs from DB", "(%d jobs with %d errors)" % (count, error_count))
+                self.log.info("Removed jobs from DB", f"({count} jobs with {error_count} errors)")
 
         if invalidJobList or nonauthJobList:
             self.log.error(
@@ -522,7 +520,7 @@ class JobManagerHandlerMixin:
             deleteJobList = []
             markKilledJobList = []
             stagingJobList = []
-            for jobID, sDict in result["Value"].items():  # can be an iterator
+            for jobID, sDict in result["Value"].items():
                 if sDict["Status"] in (JobStatus.RUNNING, JobStatus.MATCHED, JobStatus.STALLED):
                     killJobList.append(jobID)
                 elif sDict["Status"] in (
