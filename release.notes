@@ -1,3 +1,50 @@
+[v8.1.0a15]
+
+*Resources
+
+FIX: (#7100) concatenate tags instead of overriding them in ComputingElement.initializeParameters()
+NEW: (#7079) audienceName attribute in CEs
+NEW: (#7065) add a test for the PoolCE to highlight the fact that submission failures cannot be handled by the caller with the return value
+
+*WorkloadManagementSystem
+
+FIX: (#7098) Exceptions in StalledJobAgent
+CHANGE: (#7097) modifying access specifiers of JobPolicy from private to protected
+FIX: (#7081) disable activityMonitoring for JobAgent
+NEW: (#7079) audience support in SiteDirector
+CHANGE: (#6973) validating the JDL job format using a pydantic model
+
+*FrameworkSystem
+
+FIX: (#7094) Support Authlib v1.2.1
+
+*FrameworkSyste
+
+FIX: (#7079) fix TokenManager(Client/Handler/Utilities)
+
+*WorkloadManagent
+
+NEW: (#7068) New TornadoSandboxStoreHandler implementation
+
+*Core
+
+NEW: (#7068) TornadoClient - added sendFile() method
+
+FIX: (#7067) Close DISET selector when we no longer need it
+
+*WorkloadManagement
+
+FIX: (#7065) management of the job status in JobAgent
+NEW: (#7065) add a test for the JobAgent to make sure the status of the submissions are correctly handled
+
+*docs
+
+NEW: (#7065) documentation about ComputingElement
+
+*tests
+
+NEW: (#7024) added script for comdirac hackathon certification tests
+
 [v8.1.0a14]
 
 *WorkloadManagementSystem
