@@ -74,23 +74,14 @@ class PilotManagerHandler(RequestHandler):
         return S_OK(resultDict)
 
     ##########################################################################################
-    types_addPilotTQReference = [list, int, str, str]
+    types_addPilotReference = [list, str]
 
-    @deprecated("Use addPilotTQRef")
     @classmethod
-    def export_addPilotTQReference(
-        cls, pilotRef, taskQueueID, ownerDN, ownerGroup, broker="Unknown", gridType="DIRAC", pilotStampDict={}
+    def export_addPilotReference(
+        cls, pilotRef, ownerGroup, gridType="DIRAC", pilotStampDict={}
     ):
         """Add a new pilot job reference"""
-
-        return cls.pilotAgentsDB.addPilotTQReference(pilotRef, taskQueueID, ownerGroup, gridType, pilotStampDict)
-
-    types_addPilotTQRef = [list, int, str]
-
-    @classmethod
-    def export_addPilotTQRef(cls, pilotRef, taskQueueID, ownerGroup, gridType="DIRAC", pilotStampDict={}):
-        """Add a new pilot job reference"""
-        return cls.pilotAgentsDB.addPilotTQReference(pilotRef, taskQueueID, ownerGroup, gridType, pilotStampDict)
+        return cls.pilotAgentsDB.addPilotReference(pilotRef, ownerGroup, gridType, pilotStampDict)
 
     ##############################################################################
     types_getPilotOutput = [str]

@@ -5,7 +5,7 @@
 
     Available methods are:
 
-    addPilotTQReference()
+    addPilotReference()
     setPilotStatus()
     deletePilot()
     clearPilots()
@@ -38,11 +38,9 @@ class PilotAgentsDB(DB):
         self.lock = threading.Lock()
 
     ##########################################################################################
-    def addPilotTQReference(self, pilotRef, taskQueueID, ownerGroup, gridType="DIRAC", pilotStampDict={}):
+
+    def addPilotReference(self, pilotRef, ownerGroup, gridType="DIRAC", pilotStampDict={}):
         """Add a new pilot job reference"""
-
-        err = "PilotAgentsDB.addPilotTQReference: Failed to retrieve a new Id."
-
         for ref in pilotRef:
             stamp = ""
             if ref in pilotStampDict:
@@ -50,9 +48,9 @@ class PilotAgentsDB(DB):
 
             req = (
                 "INSERT INTO PilotAgents "
-                + "(PilotJobReference, TaskQueueID, OwnerGroup, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp) "
+                + "(PilotJobReference, OwnerGroup, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp) "
                 + "VALUES ('%s',%d,'%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')"
-                % (ref, int(taskQueueID), ownerGroup, gridType, stamp)
+                % (ref, ownerGroup, gridType, stamp)
             )
 
             result = self._update(req)
@@ -60,7 +58,7 @@ class PilotAgentsDB(DB):
                 return result
 
             if "lastRowId" not in result:
-                return S_ERROR(f"{err}")
+                return S_ERROR("PilotAgentsDB.addPilotReference: Failed to retrieve a new Id.")
 
         return S_OK()
 
