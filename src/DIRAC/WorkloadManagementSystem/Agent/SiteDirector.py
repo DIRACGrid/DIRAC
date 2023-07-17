@@ -10,6 +10,7 @@
 import datetime
 import os
 import socket
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -45,6 +46,11 @@ from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesRes
 
 MAX_PILOTS_TO_SUBMIT = 100
 
+# Submission policies
+AGGRESSIVE_FILLING = "AgressingFilling"
+WAITING_SUPPORTED_JOBS = "WaitingSupportedJobs"
+SUBMISSION_POLICIES = [AGGRESSIVE_FILLING, WAITING_SUPPORTED_JOBS]
+
 
 class SiteDirector(AgentModule):
     """SiteDirector class provides an implementation of a DIRAC agent.
@@ -78,7 +84,10 @@ class SiteDirector(AgentModule):
 
         # self.failedQueueCycleFactor is the number of cycles a queue has to wait before getting pilots again
         self.failedQueueCycleFactor = 10
+        self.submissionPolicyName = AGGRESSIVE_FILLING
+        self.submissionPolicy = None
 
+        self.workingDirectory = None
         self.maxQueueLength = 86400 * 3
         self.pilotLogLevel = "INFO"
 
@@ -124,6 +133,13 @@ class SiteDirector(AgentModule):
         self.pilotLogLevel = self.am_getOption("PilotLogLevel", self.pilotLogLevel)
         self.maxPilotsToSubmit = self.am_getOption("MaxPilotsToSubmit", self.maxPilotsToSubmit)
         self.failedQueueCycleFactor = self.am_getOption("FailedQueueCycleFactor", self.failedQueueCycleFactor)
+
+        # Load submission policy
+        self.submissionPolicyName = self.am_getOption("SubmissionPolicy", self.submissionPolicyName)
+        result = self._loadSubmissionPolicy()
+        if not result:
+            return result
+        self.submissionPolicy = result["Value"]()
 
         # Flags
         self.sendAccounting = self.am_getOption("SendPilotAccounting", self.sendAccounting)
@@ -176,6 +192,17 @@ class SiteDirector(AgentModule):
 
         return S_OK()
 
+    def _loadSubmissionPolicy(self):
+        """Load a submission policy"""
+        objectLoader = ObjectLoader()
+        result = objectLoader.loadObject(
+            f"WorkloadManagementSystem.Agent.SiteDirector.{self.submissionPolicyName}", self.submissionPolicyName
+        )
+        if not result["OK"]:
+            self.log.error(f"Failed to load submission policy: {result['Message']}")
+            return result
+        return S_OK(result["Value"])
+
     def _buildQueueDict(self, siteNames, ces, ceTypes, tags):
         """Build the queueDict dictionary containing information about the queues that will be provisioned"""
         # Get details about the resources
@@ -186,8 +213,8 @@ class SiteDirector(AgentModule):
         # Set up the queue dictionary
         result = getQueuesResolved(
             siteDict=result["Value"],
+            vo=self.vo,
             queueCECache=self.queueCECache,
-            workingDir=self.workingDirectory,
             instantiateCEs=True,
         )
         if not result["OK"]:
@@ -310,6 +337,9 @@ class SiteDirector(AgentModule):
             self.log.verbose(f"{queueName}: No slot available")
             return S_ERROR(f"{queueName}: No slot available")
         self.log.info(f"{queueName}: to submit={totalSlots}")
+
+        # Apply the submission policy
+        totalSlots = self.submissionPolicy.apply(totalSlots)
 
         # Limit the number of pilots to submit to self.maxPilotsToSubmit
         pilotsToSubmit = min(self.maxPilotsToSubmit, totalSlots)
@@ -1021,3 +1051,64 @@ class SiteDirector(AgentModule):
             return S_ERROR()
         self.log.verbose("Done committing to monitoring")
         return S_OK()
+
+
+class SubmissionPolicy(ABC):
+    """Abstract class to define a submission strategy."""
+
+    @abstractmethod
+    def apply(self, availableSlots: int, queueName: str, queueInfo: dict[str, str], vo: str) -> int:
+        """Method to redefine in the concrete subclasses
+
+        :param availableSlots: slots available for new pilots
+        :param queueName: the name of the targeted queue
+        :param queueInfo: a dictionary of attributes related to the queue
+        :param vo: VO
+        """
+        pass
+
+
+class AgressiveFillingPolicy(SubmissionPolicy):
+    def apply(self, availableSlots: int, queueName: str, queueInfo: dict[str, str], vo: str) -> int:
+        """All the available slots should be filled up.
+        Should be employed for sites that are always processing jobs.
+
+        * Pros: would quickly fill up a queue
+        * Cons: would consume a lot of CPU hours for nothing if pilots do not match jobs
+        """
+        return availableSlots
+
+
+class WaitingSupportedJobsPolicy(SubmissionPolicy):
+    def __init__(self) -> None:
+        super().__init__()
+        self.matcherClient = MatcherClient()
+
+    def apply(self, availableSlots: int, queueName: str, queueInfo: dict[str, str], vo: str) -> int:
+        """Fill up available slots only if waiting supported jobs exist.
+        Should be employed for sites that are rarely used (targetting specific Task Queues).
+
+        * Pros: submit pilots only if necessary, and quickly fill up the queue if needed
+        * Cons: would create some unused pilots in all the sites supervised by this policy and targeting a same task queue
+        """
+        # Prepare CE dictionary from the queue info
+        ce = queueInfo["CE"]
+        ceDict = ce.ceParameters
+        ceDict["GridCE"] = queueInfo["CEName"]
+        if vo:
+            ceDict["Community"] = vo
+
+        # Get Task Queues related to the CE
+        result = self.matcherClient.getMatchingTaskQueues(ceDict)
+        if not result["OK"]:
+            self.log.error("Could not retrieve TaskQueues from TaskQueueDB", result["Message"])
+            return 0
+        taskQueueDict = result["Value"]
+
+        # Get the number of jobs that would match the capability of the CE
+        waitingSupportedJobs = 0
+        for tq in taskQueueDict.values():
+            waitingSupportedJobs += tq["Jobs"]
+
+        # Return the minimum value between the number of slots available and supported jobs
+        return min(availableSlots, waitingSupportedJobs)
