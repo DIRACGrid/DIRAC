@@ -318,7 +318,10 @@ class AREXComputingElement(ARCComputingElement):
         return S_OK(delegationIDs)
 
     def _getProxyFromDelegationID(self, delegationID):
-        """Get proxy stored within the"""
+        """Get proxy stored within the delegation
+
+        :param str delegationID: delegation ID
+        """
         query = self._urlJoin(os.path.join("delegations", delegationID))
         params = {"action": "get"}
 
@@ -595,10 +598,14 @@ class AREXComputingElement(ARCComputingElement):
             self.log.error("Cannot get CE Status", result["Message"])
             return result
 
-        # Try to find out which VO we are running for.
+        # Find out which VO we are running for.
         # Essential now for REST interface.
-        res = getVOfromProxyGroup()
-        vo = res["Value"] if res["OK"] else ""
+        result = getVOfromProxyGroup()
+        if not result["OK"]:
+            return result
+        if not result["Value"]:
+            return S_ERROR("Could not get VO value from the proxy group")
+        vo = result["Value"]
 
         # Prepare the command
         params = {"schema": "glue2"}
