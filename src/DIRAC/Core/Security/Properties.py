@@ -44,8 +44,12 @@ class SecurityProperty(str, Enum):
     PRIVATE_LIMITED_DELEGATION = "PrivateLimitedDelegation"
     #: Allow managing proxies
     PROXY_MANAGEMENT = "ProxyManagement"
-    #: Allow managing production
+    #: Allow managing all productions
     PRODUCTION_MANAGEMENT = "ProductionManagement"
+    #: Allow managing all productions in the same group
+    PRODUCTION_SHARING = "ProductionSharing"
+    #: Allows user to manage productions they own only
+    PRODUCTION_USER = "ProductionUser"
     #: Allow production request approval on behalf of PPG
     PPG_AUTHORITY = "PPGAuthority"
     #: Allow Bookkeeping Management

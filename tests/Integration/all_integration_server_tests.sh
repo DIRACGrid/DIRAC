@@ -38,6 +38,10 @@ pytest --no-check-dirac-environment "${THIS_DIR}/Monitoring/Test_MonitoringRepor
 pytest --no-check-dirac-environment "${THIS_DIR}/Monitoring/Test_MonitoringDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
+echo -e "*** $(date -u)  **** TS TESTS ****\n"
+pytest --no-check-dirac-environment "${THIS_DIR}/TransformationSystem/Test_TS_CheckPerms.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+
+#-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** RSS TESTS ****\n"
 pytest --no-check-dirac-environment "${THIS_DIR}/ResourceStatusSystem/Test_FullChain.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
