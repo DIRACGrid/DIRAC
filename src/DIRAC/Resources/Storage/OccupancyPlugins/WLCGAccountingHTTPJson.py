@@ -10,7 +10,7 @@ When this is used, the OccupancyLFN has to be the full HTTP(s) URL
 import os
 import requests
 
-from DIRAC.Core.Security.Locations import getCAsLocation
+from DIRAC.Core.Security.Locations import getCAsLocation, getProxyLocation
 from DIRAC.Resources.Storage.OccupancyPlugins.WLCGAccountingJson import WLCGAccountingJson
 
 
@@ -39,11 +39,11 @@ class WLCGAccountingHTTPJson(WLCGAccountingJson):
         :param filePath: destination path for the file
 
         """
-
         try:
             with open(filePath, "w") as fd:
                 caPath = getCAsLocation()
-                res = requests.get(occupancyLFN, verify=caPath)
+                userProxy = getProxyLocation()
+                res = requests.get(occupancyLFN, cert=userProxy, verify=caPath)
                 res.raise_for_status()
                 fd.write(res.text)
         except Exception as e:
