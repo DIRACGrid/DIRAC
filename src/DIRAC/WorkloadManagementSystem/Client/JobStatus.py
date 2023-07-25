@@ -15,6 +15,8 @@ CHECKING = "Checking"
 #:
 STAGING = "Staging"
 #:
+SCOUTING = "Scouting"
+#:
 WAITING = "Waiting"
 #:
 MATCHED = "Matched"
@@ -43,6 +45,7 @@ JOB_STATES = [
     SUBMITTING,
     RECEIVED,
     CHECKING,
+    SCOUTING,
     STAGING,
     WAITING,
     MATCHED,
@@ -86,9 +89,10 @@ class JobsStateMachine(StateMachine):
             RESCHEDULED: State(6, [WAITING, RECEIVED, DELETED, FAILED], defState=RESCHEDULED),
             MATCHED: State(5, [RUNNING, FAILED, RESCHEDULED, KILLED], defState=MATCHED),
             WAITING: State(4, [MATCHED, RESCHEDULED, DELETED], defState=WAITING),
-            STAGING: State(3, [CHECKING, WAITING, FAILED, KILLED], defState=STAGING),
-            CHECKING: State(2, [STAGING, WAITING, RESCHEDULED, FAILED, DELETED], defState=CHECKING),
-            RECEIVED: State(1, [CHECKING, WAITING, FAILED, DELETED], defState=RECEIVED),
+            STAGING: State(3, [WAITING, FAILED, KILLED], defState=STAGING),
+            SCOUTING: State(2, [CHECKING, FAILED, STALLED, KILLED], defState=SCOUTING),
+            CHECKING: State(2, [SCOUTING, STAGING, WAITING, RESCHEDULED, FAILED, DELETED], defState=CHECKING),
+            RECEIVED: State(1, [SCOUTING, CHECKING, WAITING, FAILED, DELETED], defState=RECEIVED),
             SUBMITTING: State(0, [RECEIVED, CHECKING, DELETED], defState=SUBMITTING),  # initial state
         }
 
