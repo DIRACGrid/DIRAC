@@ -84,18 +84,18 @@ class JobsStateMachine(StateMachine):
 
         # States transitions
         self.states = {
-            DELETED: State(14),  # final state
-            KILLED: State(13, [DELETED], defState=KILLED),
-            FAILED: State(12, [RESCHEDULED, DELETED], defState=FAILED),
-            DONE: State(11, [DELETED], defState=DONE),
-            COMPLETED: State(10, [DONE, FAILED], defState=COMPLETED),
-            COMPLETING: State(9, [DONE, FAILED, COMPLETED, STALLED, KILLED], defState=COMPLETING),
-            STALLED: State(8, [RUNNING, FAILED, KILLED], defState=STALLED),
-            RUNNING: State(7, [STALLED, DONE, FAILED, RESCHEDULED, COMPLETING, KILLED, RECEIVED], defState=RUNNING),
-            RESCHEDULED: State(6, [WAITING, RECEIVED, DELETED, FAILED], defState=RESCHEDULED),
-            MATCHED: State(5, [RUNNING, FAILED, RESCHEDULED, KILLED], defState=MATCHED),
-            WAITING: State(4, [MATCHED, RESCHEDULED, DELETED], defState=WAITING),
-            STAGING: State(3, [CHECKING, WAITING, FAILED, KILLED], defState=STAGING),
+            DELETED: State(15),  # final state
+            KILLED: State(14, [DELETED], defState=KILLED),
+            FAILED: State(13, [RESCHEDULED, DELETED], defState=FAILED),
+            DONE: State(12, [DELETED], defState=DONE),
+            COMPLETED: State(11, [DONE, FAILED], defState=COMPLETED),
+            COMPLETING: State(10, [DONE, FAILED, COMPLETED, STALLED, KILLED], defState=COMPLETING),
+            STALLED: State(9, [RUNNING, FAILED, KILLED], defState=STALLED),
+            RUNNING: State(8, [STALLED, DONE, FAILED, RESCHEDULED, COMPLETING, KILLED, RECEIVED], defState=RUNNING),
+            RESCHEDULED: State(7, [WAITING, RECEIVED, DELETED, FAILED], defState=RESCHEDULED),
+            MATCHED: State(6, [RUNNING, FAILED, RESCHEDULED, KILLED], defState=MATCHED),
+            WAITING: State(5, [MATCHED, RESCHEDULED, DELETED], defState=WAITING),
+            STAGING: State(4, [CHECKING, WAITING, FAILED, KILLED], defState=STAGING),
             SCOUTING: State(3, [CHECKING, FAILED, STALLED, KILLED], defState=SCOUTING),
             CHECKING: State(2, [SCOUTING, STAGING, WAITING, RESCHEDULED, FAILED, DELETED], defState=CHECKING),
             RECEIVED: State(1, [SCOUTING, CHECKING, WAITING, FAILED, DELETED], defState=RECEIVED),
