@@ -796,7 +796,9 @@ class ComponentInstaller:
             for ext in extensions:
                 cfgTemplateModule = f"{ext}.{system}System"
                 try:
-                    cfgTemplate = importlib_resources.read_text(cfgTemplateModule, "ConfigTemplate.cfg")
+                    cfgTemplate = (
+                        importlib_resources.files(cfgTemplateModule).joinpath("ConfigTemplate.cfg").read_text()
+                    )
                 except (ImportError, OSError):
                     continue
                 gLogger.notice("Loading configuration template from", cfgTemplateModule)
@@ -2170,7 +2172,7 @@ class ComponentInstaller:
         systemName = databases[filename]
         moduleName = ".".join([extension, systemName, "DB"])
         gLogger.debug(f"Installing {filename} from {moduleName}")
-        dbSql = importlib_resources.read_text(moduleName, filename)
+        dbSql = importlib_resources.files(moduleName).joinpath(filename).read_text()
 
         # just check
         result = self.execMySQL("SHOW STATUS")
@@ -2270,7 +2272,7 @@ class ComponentInstaller:
                 sourcedDBbFileName = line.split(" ")[1].replace("\n", "")
                 gLogger.info(f"Found file to source: {sourcedDBbFileName}")
                 module, filename = sourcedDBbFileName.rsplit("/", 1)
-                dbSourced = importlib_resources.read_text(module.replace("/", "."), filename)
+                dbSourced = importlib_resources.files(module.replace("/", ".")).joinpath(filename).read_text()
                 for lineSourced in dbSourced.split("\n"):
                     if lineSourced.strip():
                         cmdLines.append(lineSourced.strip())
