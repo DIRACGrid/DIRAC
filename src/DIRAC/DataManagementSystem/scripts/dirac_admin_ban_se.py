@@ -115,10 +115,10 @@ def main():
             if seOptions["ReadAccess"] == "Banned":
                 gLogger.notice("Read access already banned", se)
                 resR["OK"] = True
-            elif not seOptions["ReadAccess"] in ["Active", "Degraded", "Probing"]:
+            elif not seOptions["ReadAccess"] in ["Active", "Degraded", "Probing", "Error"]:
                 gLogger.notice(
                     "Read option for %s is %s, instead of %s"
-                    % (se, seOptions["ReadAccess"], ["Active", "Degraded", "Probing"])
+                    % (se, seOptions["ReadAccess"], ["Active", "Degraded", "Probing", "Error"])
                 )
                 gLogger.notice("Try specifying the command switches")
             else:
