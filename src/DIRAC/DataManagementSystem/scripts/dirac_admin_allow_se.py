@@ -98,7 +98,7 @@ def main():
         DIRAC.exit()
 
     STATUS_TYPES = ["ReadAccess", "WriteAccess", "CheckAccess", "RemoveAccess"]
-    ALLOWED_STATUSES = ["Unknown", "InActive", "Banned", "Probing", "Degraded"]
+    ALLOWED_STATUSES = ["Unknown", "InActive", "Banned", "Probing", "Degraded", "Error"]
 
     statusAllowedDict = {}
     for statusType in STATUS_TYPES:
