@@ -52,8 +52,6 @@ class PilotLoggingAgent(AgentModule):
         if isinstance(self.voList, str):
             self.voList = [self.voList]
 
-        self.setup = gConfig.getValue("/DIRAC/Setup", None)
-
         return S_OK()
 
     def execute(self):
@@ -65,7 +63,7 @@ class PilotLoggingAgent(AgentModule):
         """
         voRes = {}
         for vo in self.voList:
-            self.opsHelper = Operations(vo=vo, setup=self.setup)
+            self.opsHelper = Operations(vo=vo)
             # is remote pilot logging enabled for the VO ?
             pilotLogging = self.opsHelper.getValue("/Pilot/RemoteLogging", False)
             if pilotLogging:
