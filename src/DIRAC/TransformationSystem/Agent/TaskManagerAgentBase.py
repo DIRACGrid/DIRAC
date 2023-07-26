@@ -18,7 +18,6 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Dictionaries import breakDictionaryIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getUsernameForDN
 from DIRAC.TransformationSystem.Client.FileReport import FileReport
 from DIRAC.TransformationSystem.Client.WorkflowTasks import WorkflowTasks
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -249,21 +248,21 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
 
     #############################################################################
 
-    def _getClients(self, ownerDN=None, ownerGroup=None):
+    def _getClients(self, owner=None, ownerGroup=None):
         """Returns the clients used in the threads
 
         This is another function that should be extended.
 
         The clients provided here are defaults, and should be adapted
 
-        If ownerDN and ownerGroup are not None the clients will delegate to these credentials
+        If owner and ownerGroup are not None the clients will delegate to these credentials
 
-        :param str ownerDN: DN of the owner of the submitted jobs
+        :param str owner: owner of the submitted jobs
         :param str ownerGroup: group of the owner of the submitted jobs
         :returns: dict of Clients
         """
         threadTransformationClient = TransformationClient()
-        threadTaskManager = WorkflowTasks(ownerDN=ownerDN, ownerGroup=ownerGroup)
+        threadTaskManager = WorkflowTasks(owner=owner, ownerGroup=ownerGroup)
         threadTaskManager.pluginLocation = self.pluginLocation
 
         return {"TransformationClient": threadTransformationClient, "TaskManager": threadTaskManager}
@@ -274,7 +273,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         clients = (
             self._getClients()
             if self.shifterProxy
-            else self._getClients(ownerGroup=self.credTuple[1], ownerDN=self.credTuple[2])
+            else self._getClients(owner=self.credTuple[0], ownerGroup=self.credTuple[1])
             if self.credentials
             else None
         )
@@ -288,8 +287,8 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
             transID = transDict["TransformationID"]
             operations = transDict["Operations"]
             if not (self.credentials or self.shifterProxy):
-                ownerDN, group = transDict["OwnerDN"], transDict["OwnerGroup"]
-                clients = self._getClients(ownerDN=ownerDN, ownerGroup=group)
+                owner, group = transDict["Owner"], transDict["OwnerGroup"]
+                clients = self._getClients(owner=owner, ownerGroup=group)
             self._logInfo("Start processing transformation", method=method, transID=transID)
             for operation in operations:
                 self._logInfo(f"Executing {operation}", method=method, transID=transID)
@@ -651,7 +650,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         transformations,
         owner=None,
         ownerGroup=None,
-        ownerDN=None,
     ):
         """Fill the operationsOnTransformationDict"""
 
@@ -659,12 +657,12 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
             (
                 transformation["TransformationID"],
                 transformation["Body"],
-                transformation["AuthorDN"],
+                transformation["Author"],
                 transformation["AuthorGroup"],
             )
             for transformation in transformations["Value"]
         )
-        for transID, body, t_ownerDN, t_ownerGroup in transformationIDsAndBodies:
+        for transID, body, t_owner, t_ownerGroup in transformationIDsAndBodies:
             if transID in operationsOnTransformationDict:
                 operationsOnTransformationDict[transID]["Operations"].append(operation)
             else:
@@ -672,9 +670,8 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                     "TransformationID": transID,
                     "Body": body,
                     "Operations": [operation],
-                    "Owner": owner if owner else getUsernameForDN(t_ownerDN)["Value"],
+                    "Owner": owner if owner else t_owner,
                     "OwnerGroup": ownerGroup if owner else t_ownerGroup,
-                    "OwnerDN": ownerDN if owner else t_ownerDN,
                 }
 
     def __getCredentials(self):
@@ -691,7 +688,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         owner = resCred["Value"]["User"]
         ownerGroup = resCred["Value"]["Group"]
         # returns  a list
-        ownerDN = getDNForUsername(owner)["Value"][0]
-        self.credTuple = (owner, ownerGroup, ownerDN)
+        self.credTuple = (owner, ownerGroup)
         self.log.info(f"Cred: Tasks will be submitted with the credentials {owner}:{ownerGroup}")
         return S_OK()

@@ -5,6 +5,7 @@ from io import StringIO
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.DErrno import ETSDATA, ETSUKN
@@ -29,7 +30,7 @@ class WorkflowTasks(TaskBase):
         jobClass=None,
         opsH=None,
         destinationPlugin=None,
-        ownerDN=None,
+        owner=None,
         ownerGroup=None,
     ):
         """Generates some default objects.
@@ -42,10 +43,12 @@ class WorkflowTasks(TaskBase):
 
         super().__init__(transClient, logger)
 
-        useCertificates = bool(bool(ownerDN) and bool(ownerGroup))
+        useCertificates = bool(bool(owner) and bool(ownerGroup))
         if not submissionClient:
             self.submissionClient = WMSClient(
-                useCertificates=useCertificates, delegatedDN=ownerDN, delegatedGroup=ownerGroup
+                useCertificates=useCertificates,
+                delegatedDN=getDNForUsername(owner)["Value"][0] if owner else None,
+                delegatedGroup=ownerGroup,
             )
         else:
             self.submissionClient = submissionClient
