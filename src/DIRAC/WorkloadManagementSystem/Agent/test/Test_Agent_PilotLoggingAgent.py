@@ -79,7 +79,6 @@ def pla(mocker, plaBase):
 def test_initialize(plaBase):
     res = plaBase.initialize()
     assert plaBase.voList == plaModule.getVOs()["Value"]
-    assert plaBase.setup is not None
     assert res == S_OK()
 
 
