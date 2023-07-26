@@ -50,7 +50,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         # credentials
         self.shifterProxy = None
         self.credentials = None
-        self.credTuple = (None, None, None)
+        self.credTuple = (None, None)
 
         self.pluginLocation = ""
         self.bulkSubmissionFlag = False
@@ -101,17 +101,16 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         """The execution method is transformations that need to be processed"""
 
         # 1. determining which credentials will be used for the submission
-        owner, ownerGroup, ownerDN = None, None, None
+        owner, ownerGroup = None, None
         # getting the credentials for submission
         resProxy = getProxyInfo(proxy=False, disableVOMS=False)
         if resProxy["OK"]:  # there is a shifterProxy
             proxyInfo = resProxy["Value"]
             owner = proxyInfo["username"]
             ownerGroup = proxyInfo["group"]
-            ownerDN = proxyInfo["identity"]
             self.log.info(f"ShifterProxy: Tasks will be submitted with the credentials {owner}:{ownerGroup}")
         elif self.credentials:
-            owner, ownerGroup, ownerDN = self.credTuple
+            owner, ownerGroup = self.credTuple
         else:
             self.log.info("Using per Transformation Credentials!")
 
@@ -137,7 +136,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                     transformations,
                     owner=owner,
                     ownerGroup=ownerGroup,
-                    ownerDN=ownerDN,
                 )
 
         # 2.2. Determine whether the task files status is to be monitored and updated
@@ -159,7 +157,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                     transformations,
                     owner=owner,
                     ownerGroup=ownerGroup,
-                    ownerDN=ownerDN,
                 )
 
         # Determine whether the checking of reserved tasks is to be performed
@@ -181,7 +178,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                     transformations,
                     owner=owner,
                     ownerGroup=ownerGroup,
-                    ownerDN=ownerDN,
                 )
 
         # Determine whether the submission of tasks is to be performed
@@ -210,7 +206,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                     transformations,
                     owner=owner,
                     ownerGroup=ownerGroup,
-                    ownerDN=ownerDN,
                 )
 
         # now call _execute...

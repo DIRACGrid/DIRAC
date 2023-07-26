@@ -24,7 +24,7 @@ class TransformationInfo:
         self.jobMon = jobMon
         self.fcClient = fcClient
         self.transType = transInfoDict["Type"]
-        self.authorDN = transInfoDict["AuthorDN"]
+        self.author = transInfoDict["Author"]
         self.authorGroup = transInfoDict["AuthorGroup"]
         self.jobStateClient = JobStateUpdateClient()
 
@@ -140,7 +140,7 @@ class TransformationInfo:
         successfullyRemoved = 0
 
         for lfnList in breakListIntoChunks(filesToDelete, 200):
-            with UserProxy(proxyUserDN=self.authorDN, proxyUserGroup=self.authorGroup) as proxyResult:
+            with UserProxy(proxyUserName=self.author, proxyUserGroup=self.authorGroup) as proxyResult:
                 if not proxyResult["OK"]:
                     raise RuntimeError(f"Failed to get a proxy: {proxyResult['Message']}")
                 result = DataManager().removeFile(lfnList)

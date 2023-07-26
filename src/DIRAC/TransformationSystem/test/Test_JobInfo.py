@@ -40,7 +40,7 @@ class TestJI(unittest.TestCase):
             "Priority": 1,
             "Platform": "x86_64-slc5-gcc43-opt",
             "JobRequirements": {
-                "OwnerDN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
+                "Owner": "asailer",
                 "VirtualOrganization": "ilc",
                 "Setup": "ILC-Production",
                 "CPUTime": 300000,
@@ -80,7 +80,7 @@ class TestJI(unittest.TestCase):
             "TransformationID": 6326,
             "StdError": "std.err",
             "IS_PROD": "True",
-            "OwnerDN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
+            "Owner": "asailer",
             "JobGroup": 0o0006326,
             "OutputSandbox": [
                 "std.err",
@@ -107,7 +107,7 @@ class TestJI(unittest.TestCase):
             "Priority": 1,
             "Platform": "x86_64-slc5-gcc43-opt",
             "JobRequirements": {
-                "OwnerDN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
+                "Owner": "asailer",
                 "VirtualOrganization": "ilc",
                 "Setup": "ILC-Production",
                 "CPUTime": 300000,
@@ -147,7 +147,7 @@ class TestJI(unittest.TestCase):
             "TransformationID": 6326,
             "StdError": "std.err",
             "IS_PROD": "True",
-            "OwnerDN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
+            "Owner": "asailer",
             "JobGroup": 0o0006326,
             "OutputSandbox": [
                 "std.err",
@@ -175,7 +175,7 @@ class TestJI(unittest.TestCase):
             "Priority": 1,
             "Platform": "x86_64-slc5-gcc43-opt",
             "JobRequirements": {
-                "OwnerDN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
+                "Owner": "asailer",
                 "VirtualOrganization": "ilc",
                 "Setup": "ILC-Production",
                 "CPUTime": 300000,
@@ -218,7 +218,7 @@ class TestJI(unittest.TestCase):
             "TransformationID": 6301,
             "StdError": "std.err",
             "IS_PROD": "True",
-            "OwnerDN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
+            "Owner": "asailer",
             "JobGroup": "00006301",
             "OutputSandbox": [
                 "std.err",
@@ -242,7 +242,7 @@ class TestJI(unittest.TestCase):
             "Priority": 1,
             "Platform": "x86_64-slc5-gcc43-opt",
             "JobRequirements": {
-                "OwnerDN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
+                "Owner": "asailer",
                 "VirtualOrganization": "ilc",
                 "Setup": "ILC-Production",
                 "CPUTime": 300000,
@@ -275,7 +275,7 @@ class TestJI(unittest.TestCase):
             "TransformationID": 6498,
             "StdError": "std.err",
             "IS_PROD": "True",
-            "OwnerDN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
+            "Owner": "asailer",
             "JobGroup": "00006498",
             "OutputSandbox": [
                 "std.err",

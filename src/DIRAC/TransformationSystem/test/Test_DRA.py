@@ -92,7 +92,7 @@ class TestDRA(unittest.TestCase):
             TransformationID=1234,
             TransformationName="TestProd12",
             Type="TestProd",
-            AuthorDN="/some/cert/owner",
+            Author="owner",
             AuthorGroup="Test_Prod",
         )
         self.dra.tClient.getTransformations = Mock(return_value=S_OK([transInfoDict]))
@@ -122,7 +122,7 @@ class TestDRA(unittest.TestCase):
             TransformationID=1234,
             TransformationName="TestProd12",
             Type="TestProd",
-            AuthorDN="/some/cert/owner",
+            Author="owner",
             AuthorGroup="Test_Prod",
         )
         with patch(f"{MODULE_NAME}.TransformationInfo", new=tinfoMock):
@@ -142,7 +142,7 @@ class TestDRA(unittest.TestCase):
             TransformationID=1234,
             TransformationName="TestProd12",
             Type="MCSimulation",
-            AuthorDN="/some/cert/owner",
+            Author="owner",
             AuthorGroup="Test_Prod",
         )
         with patch(f"{MODULE_NAME}.TransformationInfo", new=tinfoMock):
@@ -160,7 +160,7 @@ class TestDRA(unittest.TestCase):
             TransformationID=1234,
             TransformationName="TestProd12",
             Type="TestProd",
-            AuthorDN="/some/cert/owner",
+            Author="owner",
             AuthorGroup="Test_Prod",
         )
 
@@ -449,21 +449,21 @@ class TestDRA(unittest.TestCase):
             TransformationID=123,
             TransformationName="TestProd123",
             Type="MCGeneration",
-            AuthorDN="/some/cert/owner",
+            Author="owner",
             AuthorGroup="Test_Prod",
         )
         d124 = dict(
             TransformationID=124,
             TransformationName="TestProd124",
             Type="MCGeneration",
-            AuthorDN="/some/cert/owner",
+            Author="owner",
             AuthorGroup="Test_Prod",
         )
         d125 = dict(
             TransformationID=125,
             TransformationName="TestProd125",
             Type="MCGeneration",
-            AuthorDN="/some/cert/owner",
+            Author="owner",
             AuthorGroup="Test_Prod",
         )
 

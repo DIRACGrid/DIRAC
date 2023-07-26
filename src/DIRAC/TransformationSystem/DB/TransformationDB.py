@@ -55,7 +55,7 @@ class TransformationDB(DB):
             "LongDescription",
             "CreationDate",
             "LastUpdate",
-            "AuthorDN",
+            "Author",
             "AuthorGroup",
             "Type",
             "Plugin",
@@ -129,7 +129,7 @@ class TransformationDB(DB):
         transName,
         description,
         longDescription,
-        authorDN,
+        author,
         authorGroup,
         transType,
         plugin,
@@ -162,7 +162,7 @@ class TransformationDB(DB):
         body = res["Value"]
         req = (
             "INSERT INTO Transformations (TransformationName,Description,LongDescription, \
-                                        CreationDate,LastUpdate,AuthorDN,AuthorGroup,Type,Plugin,AgentType,\
+                                        CreationDate,LastUpdate,Author,AuthorGroup,Type,Plugin,AgentType,\
                                         FileMask,Status,TransformationGroup,GroupSize,\
                                         InheritedFrom,Body,MaxNumberOfTasks,EventsPerTask)\
                                 VALUES ('%s','%s','%s',\
@@ -173,7 +173,7 @@ class TransformationDB(DB):
                 transName,
                 description,
                 longDescription,
-                authorDN,
+                author,
                 authorGroup,
                 transType,
                 plugin,
@@ -218,19 +218,19 @@ class TransformationDB(DB):
             originalID = res["Value"]
             # FIXME: this is not the right place to change status information, and in general the whole should not be here
             res = self.setTransformationParameter(
-                originalID, "Status", "Completing", author=authorDN, connection=connection
+                originalID, "Status", "Completing", author=author, connection=connection
             )
             if not res["OK"]:
                 gLogger.error("Failed to update parent transformation status: now deleting", res["Message"])
                 return self.deleteTransformation(transID, connection=connection)
             res = self.setTransformationParameter(
-                originalID, "AgentType", "Automatic", author=authorDN, connection=connection
+                originalID, "AgentType", "Automatic", author=author, connection=connection
             )
             if not res["OK"]:
                 gLogger.error("Failed to update parent transformation agent type, now deleting", res["Message"])
                 return self.deleteTransformation(transID, connection=connection)
             message = "Creation of the derived transformation (%d)" % transID
-            self.__updateTransformationLogging(originalID, message, authorDN, connection=connection)
+            self.__updateTransformationLogging(originalID, message, author, connection=connection)
             res = self.getTransformationFiles(condDict={"TransformationID": originalID}, connection=connection)
             if not res["OK"]:
                 gLogger.error("Could not get transformation files, now deleting", res["Message"])
@@ -266,7 +266,7 @@ class TransformationDB(DB):
                     gLogger.error("Failed to add files to transformation", f"{transID} {res['Message']}")
         message = "Created transformation %d" % transID
 
-        self.__updateTransformationLogging(transID, message, authorDN, connection=connection)
+        self.__updateTransformationLogging(transID, message, author, connection=connection)
         return S_OK(transID)
 
     def getTransformations(
@@ -1268,19 +1268,19 @@ class TransformationDB(DB):
     # These methods manipulate the TransformationLog table
     #
 
-    def __updateTransformationLogging(self, transName, message, authorDN, connection=False):
+    def __updateTransformationLogging(self, transName, message, author, connection=False):
         """Update the Transformation log table with any modifications"""
-        if not authorDN:
+        if not author:
             res = getProxyInfo(False, False)
             if res["OK"]:
-                authorDN = res["Value"]["subject"]
+                author = res["Value"]["username"]
         res = self._getConnectionTransID(connection, transName)
         if not res["OK"]:
             return res
         connection = res["Value"]["Connection"]
         transID = res["Value"]["TransformationID"]
         req = "INSERT INTO TransformationLog (TransformationID,Message,Author,MessageDate)"
-        req = req + f" VALUES ({transID},'{message}','{authorDN}',UTC_TIMESTAMP());"
+        req = req + f" VALUES ({transID},'{message}','{author}',UTC_TIMESTAMP());"
         return self._update(req, conn=connection)
 
     def getTransformationLogging(self, transName, connection=False):
@@ -1296,11 +1296,11 @@ class TransformationDB(DB):
         if not res["OK"]:
             return res
         transList = []
-        for transID, message, authorDN, messageDate in res["Value"]:
+        for transID, message, author, messageDate in res["Value"]:
             transDict = {}
             transDict["TransformationID"] = transID
             transDict["Message"] = message
-            transDict["AuthorDN"] = authorDN
+            transDict["Author"] = author
             transDict["MessageDate"] = messageDate
             transList.append(transDict)
         return S_OK(transList)

@@ -67,16 +67,14 @@ class TransformationManagerHandlerMixin:
         inputMetaQuery=None,
         outputMetaQuery=None,
     ):
-        #    authorDN = self._clientTransport.peerCredentials['DN']
-        #    authorGroup = self._clientTransport.peerCredentials['group']
         credDict = self.getRemoteCredentials()
-        authorDN = credDict.get("DN", credDict.get("CN"))
+        author = credDict.get("username")
         authorGroup = credDict.get("group")
         res = self.transformationDB.addTransformation(
             transName,
             description,
             longDescription,
-            authorDN,
+            author,
             authorGroup,
             transType,
             plugin,
@@ -100,41 +98,34 @@ class TransformationManagerHandlerMixin:
 
     def export_deleteTransformation(self, transName):
         credDict = self.getRemoteCredentials()
-        authorDN = credDict.get("DN", credDict.get("CN"))
-        # authorDN = self._clientTransport.peerCredentials['DN']
-        return self.transformationDB.deleteTransformation(transName, author=authorDN)
+        author = credDict.get("username")
+        return self.transformationDB.deleteTransformation(transName, author=author)
 
     types_completeTransformation = [[int, str]]
 
     def export_completeTransformation(self, transName):
         credDict = self.getRemoteCredentials()
-        authorDN = credDict.get("DN", credDict.get("CN"))
-        # authorDN = self._clientTransport.peerCredentials['DN']
-        return self.transformationDB.setTransformationParameter(transName, "Status", "Completed", author=authorDN)
+        author = credDict.get("username")
+        return self.transformationDB.setTransformationParameter(transName, "Status", "Completed", author=author)
 
     types_cleanTransformation = [[int, str]]
 
     def export_cleanTransformation(self, transName):
         credDict = self.getRemoteCredentials()
-        authorDN = credDict.get("DN", credDict.get("CN"))
-        # authorDN = self._clientTransport.peerCredentials['DN']
-        return self.transformationDB.cleanTransformation(transName, author=authorDN)
+        author = credDict.get("username")
+        return self.transformationDB.cleanTransformation(transName, author=author)
 
     types_setTransformationParameter = [[int, str], str]
 
     def export_setTransformationParameter(self, transName, paramName, paramValue):
         credDict = self.getRemoteCredentials()
-        authorDN = credDict.get("DN", credDict.get("CN"))
-        # authorDN = self._clientTransport.peerCredentials['DN']
-        return self.transformationDB.setTransformationParameter(transName, paramName, paramValue, author=authorDN)
+        author = credDict.get("username")
+        return self.transformationDB.setTransformationParameter(transName, paramName, paramValue, author=author)
 
     types_deleteTransformationParameter = [[int, str], str]
 
     @classmethod
     def export_deleteTransformationParameter(cls, transName, paramName):
-        # credDict = self.getRemoteCredentials()
-        # authorDN = credDict[ 'DN' ]
-        # authorDN = self._clientTransport.peerCredentials['DN']
         return cls.transformationDB.deleteTransformationParameter(transName, paramName)
 
     types_getTransformations = []
@@ -315,17 +306,15 @@ class TransformationManagerHandlerMixin:
 
     def export_deleteTasks(self, transName, taskMin, taskMax):
         credDict = self.getRemoteCredentials()
-        authorDN = credDict.get("DN", credDict.get("CN"))
-        # authorDN = self._clientTransport.peerCredentials['DN']
-        return self.transformationDB.deleteTasks(transName, taskMin, taskMax, author=authorDN)
+        author = credDict.get("username")
+        return self.transformationDB.deleteTasks(transName, taskMin, taskMax, author=author)
 
     types_extendTransformation = [[int, str], int]
 
     def export_extendTransformation(self, transName, nTasks):
         credDict = self.getRemoteCredentials()
-        authorDN = credDict.get("DN", credDict.get("CN"))
-        # authorDN = self._clientTransport.peerCredentials['DN']
-        return self.transformationDB.extendTransformation(transName, nTasks, author=authorDN)
+        author = credDict.get("username")
+        return self.transformationDB.extendTransformation(transName, nTasks, author=author)
 
     types_getTasksToSubmit = [[int, str], int]
 
@@ -361,15 +350,15 @@ class TransformationManagerHandlerMixin:
 
     def export_createTransformationMetaQuery(self, transName, queryDict, queryType):
         credDict = self.getRemoteCredentials()
-        authorDN = credDict.get("DN", credDict.get("CN"))
-        return self.transformationDB.createTransformationMetaQuery(transName, queryDict, queryType, author=authorDN)
+        author = credDict.get("username")
+        return self.transformationDB.createTransformationMetaQuery(transName, queryDict, queryType, author=author)
 
     types_deleteTransformationMetaQuery = [[int, str], str]
 
     def export_deleteTransformationMetaQuery(self, transName, queryType):
         credDict = self.getRemoteCredentials()
-        authorDN = credDict.get("DN", credDict.get("CN"))
-        return self.transformationDB.deleteTransformationMetaQuery(transName, queryType, author=authorDN)
+        author = credDict.get("username")
+        return self.transformationDB.deleteTransformationMetaQuery(transName, queryType, author=author)
 
     types_getTransformationMetaQuery = [[int, str], str]
 

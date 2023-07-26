@@ -2,7 +2,6 @@ import time
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.JEncode import decode
 
