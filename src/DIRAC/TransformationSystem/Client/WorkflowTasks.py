@@ -5,7 +5,6 @@ from io import StringIO
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.DErrno import ETSDATA, ETSUKN
@@ -102,11 +101,6 @@ class WorkflowTasks(TaskBase):
             proxyInfo = res["Value"]
             owner = proxyInfo["username"]
             ownerGroup = proxyInfo["group"]
-
-        res = getDNForUsername(owner)
-        if not res["OK"]:
-            return res
-        ownerDN = res["Value"][0]
 
         if bulkSubmissionFlag:
             return self.__prepareTasksBulk(transBody, taskDict, owner, ownerGroup)

@@ -92,8 +92,6 @@ expectedBulk = {
     ],
 )
 def test_prepareTranformationTasks(mocker, taskDictionary, bulkSubmissionFlag, result, expectedRes):
-    mocker.patch("DIRAC.TransformationSystem.Client.WorkflowTasks.getDNForUsername", return_value=S_OK(["/bih/boh/DN"]))
-
     res = wfTasks.prepareTransformationTasks(
         "", taskDictionary, "test_user", "test_group", bulkSubmissionFlag=bulkSubmissionFlag
     )
