@@ -9,6 +9,7 @@ import glob
 import shutil
 import tarfile
 import datetime
+from typing import Any
 
 from git import Repo
 
@@ -16,6 +17,7 @@ from DIRAC import gLogger, gConfig, S_OK
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
+from DIRAC.Core.Utilities.ReturnValues import DReturnType, DOKReturnType
 
 
 class PilotCStoJSONSynchronizer:
@@ -59,8 +61,10 @@ class PilotCStoJSONSynchronizer:
         self.pilotRepoBranch = ops.getValue("Pilot/pilotRepoBranch", self.pilotRepoBranch)
         self.pilotVORepoBranch = ops.getValue("Pilot/pilotVORepoBranch", self.pilotVORepoBranch)
 
-    def getCSDict(self, includeMasterCS=True):
-        """Gets minimal info for running a pilot, from the CS
+    def getCSDict(self, includeMasterCS: bool = True) -> DReturnType[Any]:
+        """
+        Gets minimal info for running a pilot, from the CS. The complete Operations section is
+        dumped to a dictionary. A decision which VO to use will be delegated to a pilot.
 
         :returns: pilotDict (containing pilots run info)
         :rtype: S_OK, S_ERROR, value is pilotDict
@@ -68,41 +72,26 @@ class PilotCStoJSONSynchronizer:
 
         pilotDict = {
             "timestamp": datetime.datetime.utcnow().isoformat(),
-            "Setups": {},
             "CEs": {},
             "GenericPilotDNs": [],
         }
 
         self.log.info("-- Getting the content of the CS --")
 
-        # These are in fact not only setups: they may be "Defaults" sections, or VOs, in multi-VOs installations
-        setupsRes = gConfig.getSections("/Operations/")
-        if not setupsRes["OK"]:
-            self.log.error("Can't get sections from Operations", setupsRes["Message"])
-            return setupsRes
-        setupsInOperations = setupsRes["Value"]
+        # Get the whole Operations section as a dict.
+        self.log.verbose("From Operations (whole section)")
+        opRes = gConfig.getOptionsDictRecursively("/Operations")
+        if not opRes["OK"]:
+            self.log.error("Can't get sections from Operations", opRes["Message"])
+            return opRes
+        pilotDict.update(opRes["Value"])
 
-        # getting the setup(s) in this CS, and comparing with what we found in Operations
-        setupsInDIRACRes = gConfig.getSections("DIRAC/Setups")
-        if not setupsInDIRACRes["OK"]:
-            self.log.error("Can't get sections from DIRAC/Setups", setupsInDIRACRes["Message"])
-            return setupsInDIRACRes
-        setupsInDIRAC = setupsInDIRACRes["Value"]
-
-        # Handling the case of multi-VO CS
-        if not set(setupsInDIRAC).intersection(set(setupsInOperations)):
-            vos = list(setupsInOperations)
-            for vo in vos:
-                setupsFromVOs = gConfig.getSections(f"/Operations/{vo}")
-                if not setupsFromVOs["OK"]:
-                    continue
-                else:
-                    setupsInOperations = setupsFromVOs["Value"]
-
-        self.log.verbose("From Operations/[Setup]/Pilot")
-
-        for setup in setupsInOperations:
-            self._getPilotOptionsPerSetup(setup, pilotDict)
+        # we still need a pilotVOVersion
+        self.opsHelper = Operations(setup=self.pilotSetup)
+        self.pilotVOVersion = self.opsHelper.getValue("/Pilot/Version")
+        # if self.pilotVORepo is defined and self.pilotVOVersion is not, syncScripts is likely to fail.
+        if self.pilotVOVersion is None and self.pilotVORepo:
+            self.log.error("Pilot VO repo is set in the CS but the pilot VO version is not. Expect problems ahead")
 
         self.log.verbose("From Resources/Sites")
         sitesSection = gConfig.getSections("/Resources/Sites/")
@@ -170,85 +159,7 @@ class PilotCStoJSONSynchronizer:
 
         return S_OK(pilotDict)
 
-    def _getPilotOptionsPerSetup(self, setup, pilotDict):
-        """Given a setup, returns its pilot options in a dictionary"""
-
-        options = gConfig.getOptionsDict(f"/Operations/{setup}/Pilot")
-        if not options["OK"]:
-            self.log.warn("Section does not exist: skipping", f"/Operations/{setup}/Pilot ")
-            return
-
-        # We include everything that's in the Pilot section for this setup
-        if setup == self.pilotSetup:
-            self.pilotVOVersion = options["Value"]["Version"]
-        pilotDict["Setups"][setup] = options["Value"]
-        # We update separately 'GenericPilotDNs'
-        try:
-            pilotDict["GenericPilotDNs"].append(pilotDict["Setups"][setup]["GenericPilotDN"])
-        except KeyError:
-            pass
-        ceTypesCommands = gConfig.getOptionsDict(f"/Operations/{setup}/Pilot/Commands")
-        if ceTypesCommands["OK"]:
-            # It's ok if the Pilot section doesn't list any Commands too
-            pilotDict["Setups"][setup]["Commands"] = {}
-            for ceType in ceTypesCommands["Value"]:
-                # FIXME: inconsistent that we break Commands down into a proper list but other things are comma-list strings
-                pilotDict["Setups"][setup]["Commands"][ceType] = ceTypesCommands["Value"][ceType].split(", ")
-                # pilotDict['Setups'][setup]['Commands'][ceType] = ceTypesCommands['Value'][ceType]
-        if "CommandExtensions" in pilotDict["Setups"][setup]:
-            # FIXME: inconsistent that we break CommandExtensionss down into a proper
-            # list but other things are comma-list strings
-            pilotDict["Setups"][setup]["CommandExtensions"] = pilotDict["Setups"][setup]["CommandExtensions"].split(
-                ", "
-            )
-            # pilotDict['Setups'][setup]['CommandExtensions'] = pilotDict['Setups'][setup]['CommandExtensions']
-
-        # Getting the details aboout the MQ Services to be used for logging, if any
-        if "LoggingMQService" in pilotDict["Setups"][setup]:
-            loggingMQService = gConfig.getOptionsDict(
-                f"/Resources/MQServices/{pilotDict['Setups'][setup]['LoggingMQService']}"
-            )
-            if not loggingMQService["OK"]:
-                self.log.error(loggingMQService["Message"])
-                return loggingMQService
-            pilotDict["Setups"][setup]["Logging"] = {}
-            pilotDict["Setups"][setup]["Logging"]["Host"] = loggingMQService["Value"]["Host"]
-            pilotDict["Setups"][setup]["Logging"]["Port"] = loggingMQService["Value"]["Port"]
-
-            loggingMQServiceQueuesSections = gConfig.getSections(
-                f"/Resources/MQServices/{pilotDict['Setups'][setup]['LoggingMQService']}/Queues"
-            )
-            if not loggingMQServiceQueuesSections["OK"]:
-                self.log.error(loggingMQServiceQueuesSections["Message"])
-                return loggingMQServiceQueuesSections
-            pilotDict["Setups"][setup]["Logging"]["Queue"] = {}
-
-            for queue in loggingMQServiceQueuesSections["Value"]:
-                loggingMQServiceQueue = gConfig.getOptionsDict(
-                    f"/Resources/MQServices/{pilotDict['Setups'][setup]['LoggingMQService']}/Queues/{queue}"
-                )
-                if not loggingMQServiceQueue["OK"]:
-                    self.log.error(loggingMQServiceQueue["Message"])
-                    return loggingMQServiceQueue
-                pilotDict["Setups"][setup]["Logging"]["Queue"][queue] = loggingMQServiceQueue["Value"]
-
-            queuesRes = gConfig.getSections(
-                f"/Resources/MQServices/{pilotDict['Setups'][setup]['LoggingMQService']}/Queues"
-            )
-            if not queuesRes["OK"]:
-                return queuesRes
-            queues = queuesRes["Value"]
-            queuesDict = {}
-            for queue in queues:
-                queueOptionRes = gConfig.getOptionsDict(
-                    f"/Resources/MQServices/{pilotDict['Setups'][setup]['LoggingMQService']}/Queues/{queue}"
-                )
-                if not queueOptionRes["OK"]:
-                    return queueOptionRes
-                queuesDict[queue] = queueOptionRes["Value"]
-            pilotDict["Setups"][setup]["Logging"]["Queues"] = queuesDict
-
-    def syncScripts(self):
+    def syncScripts(self) -> DOKReturnType[Any]:
         """Clone the pilot scripts from the Pilot repositories (handle also extensions)"""
         tarFiles = []
 
