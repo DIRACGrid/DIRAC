@@ -1,3 +1,25 @@
+[v8.0.25]
+
+*ResourceStatusSystem
+
+FIX: (#7119) Add the Error status in the scripts
+
+*Resources
+
+FEAT: (#7119) allow to pass credentials when downloading the SRR file
+FIX: (#7087) concatenate tags instead of overriding them in ComputingElement.initializeParameters()
+
+*FrameworkSystem
+
+FIX: (#7112) replaced deprecated importlib read_text function to fix failure in CI tests
+FIX: (#7078) Support Authlib v1.2.1
+
+*WorkloadManagementSystem
+
+CHANGE: (#7093) factorize some utilities of JobSubmit into functions
+CHANGE: (#7092) modifying access specifiers of JobPolicy from private to protected
+FIX: (#7089) Exceptions in StalledJobAgent
+
 [v8.0.24]
 
 *WorkloadManagementSystem
