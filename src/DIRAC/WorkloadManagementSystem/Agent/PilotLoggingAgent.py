@@ -31,6 +31,7 @@ class PilotLoggingAgent(AgentModule):
     def __init__(self, *args, **kwargs):
         """c'tor"""
         super().__init__(*args, **kwargs)
+        self.clearPilotsDelay = 30
 
     def initialize(self):
         """
@@ -42,7 +43,7 @@ class PilotLoggingAgent(AgentModule):
         :param self: self reference
         """
         # pilot logs lifetime in days
-        self.clearPilotsDelay = self.am_getOption("ClearPilotsDelay", 30)
+        self.clearPilotsDelay = self.am_getOption("ClearPilotsDelay", self.clearPilotsDelay)
         # configured VOs and setup
         res = getVOs()
         if not res["OK"]:
