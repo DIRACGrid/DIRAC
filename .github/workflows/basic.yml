@@ -10,7 +10,7 @@ jobs:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
+        python-version: '3.11'
     - name: Install pre-commit
       run: pip install pre-commit
     - name: Run pre-commit
@@ -40,7 +40,7 @@ jobs:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
+        python-version: '3.11'
     - name: Installing dependencies
       run: |
         python -m pip install pycodestyle
