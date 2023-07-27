@@ -30,6 +30,7 @@ Commit messages
 
 Commit messages must be between 20 and 150 chars, and follow the format
 ``<type>(<scope>): <subject>``:
+
 * ``type``: docs, feat, fix, refactor, style or test
 * ``scope`` (optional): any extra info, (like DMS or whatever)
 
