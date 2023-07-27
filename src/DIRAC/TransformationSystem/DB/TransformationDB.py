@@ -401,9 +401,9 @@ class TransformationDB(DB):
             if not res["OK"]:
                 return S_ERROR("Failed to parse parameter value")
             paramValue = res["Value"]
-            req = f"UPDATE Transformations SET {paramName}={paramValue}, LastUpdate=UTC_TIMESTAMP() WHERE TransformationID={transID}"
+            req = f"UPDATE Transformations SET {paramName}='{paramValue}', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID={transID}"
             return self._update(req, conn=connection)
-        req = f"UPDATE Transformations SET {paramName}={paramValue}, LastUpdate=UTC_TIMESTAMP() WHERE TransformationID={transID}"
+        req = f"UPDATE Transformations SET {paramName}='{paramValue}', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID={transID}"
         return self._update(req, conn=connection)
 
     def _getTransformationID(self, transName, connection=False):
