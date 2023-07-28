@@ -75,7 +75,7 @@ dependencies:
   # RTD Sphinx theme
   - sphinx_rtd_theme
   # Bootstrap and new elements fo Sphinx
-  - sphinx-panels
+  - sphinx-design
   # unused
   - funcsigs
   - jinja2

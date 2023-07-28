@@ -104,7 +104,7 @@ extensions = [
     "sphinx.ext.graphviz",
     "recommonmark",
     "sphinx_rtd_theme",
-    "sphinx_panels",
+    "sphinx_design",
 ]
 
 
