@@ -83,7 +83,7 @@ class BaseJobDescriptionModel(BaseModel):
                     raise ValueError("Input data files must start with LFN:/")
         return v
 
-    @root_validator
+    @root_validator(allow_reuse=True)
     def checkNumberOfInputDataFiles(cls, values):
         if "inputData" in values and values["inputData"]:
             maxInputDataFiles = Operations().getValue("JobDescription/MaxInputData", 500)
@@ -126,14 +126,14 @@ class BaseJobDescriptionModel(BaseModel):
             )
         return v
 
-    @root_validator
+    @root_validator(allow_reuse=True)
     def checkThatMaxNumberOfProcessorsIsGreaterThanMinNumberOfProcessors(cls, values):
         if "maxNumberOfProcessors" in values and values["maxNumberOfProcessors"]:
             if values["maxNumberOfProcessors"] < values["minNumberOfProcessors"]:
                 raise ValueError("maxNumberOfProcessors must be greater than minNumberOfProcessors")
         return values
 
-    @root_validator
+    @root_validator(allow_reuse=True)
     def addTagsDependingOnNumberOfProcessors(cls, values):
         if "maxNumberOfProcessors" in values and values["minNumberOfProcessors"] == values["maxNumberOfProcessors"]:
             if values["tags"] is None:
@@ -157,7 +157,7 @@ class BaseJobDescriptionModel(BaseModel):
                 raise ValueError(f"Invalid sites: {' '.join(invalidSites)}")
         return v
 
-    @root_validator
+    @root_validator(allow_reuse=True)
     def checkThatSitesAndBannedSitesAreNotMutuallyExclusive(cls, values):
         if "sites" in values and values["sites"] and "bannedSites" in values and values["bannedSites"]:
             values["sites"] -= values["bannedSites"]
@@ -192,7 +192,7 @@ class JobDescriptionModel(BaseJobDescriptionModel):
     ownerGroup: str
     vo: str
 
-    @root_validator
+    @root_validator(allow_reuse=True)
     def checkLFNMatchesREGEX(cls, values):
         if "inputData" in values and values["inputData"]:
             for lfn in values["inputData"]:
