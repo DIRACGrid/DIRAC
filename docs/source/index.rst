@@ -34,43 +34,64 @@ An alternative description of the DIRAC system can be found in this `presentatio
 Documentation
 =============
 
-.. panels::
-  :card: shadow + text-center
-  :img-top-cls: p-5
+.. grid:: 2
+   :padding: 3
+   :gutter: 3
 
-  :img-top: _static/dirac_user.png
-  .. link-button:: UserGuide/index
-      :type: ref
-      :text: User Guide
-      :classes: btn-link stretched-link font-weight-bold
+   .. grid-item-card::
+      :shadow: lg
+      :text-align: center
+      :link-type: ref
+      :class-body: btn-link stretched-link font-weight-bold
+      :class-img-top: p-5
+      :img-top: _static/dirac_user.png
+      :link: user-guide
+      :link-alt: User Guide
 
-  including client installation
+      User Guide
 
-  ---
-  :img-top: _static/dirac_dev.png
-  .. link-button:: DeveloperGuide/index
-      :type: ref
-      :text: Developer Guide
-      :classes: btn-link stretched-link font-weight-bold
+      including client installation
 
-  adding new functionality to DIRAC
+   .. grid-item-card::
+      :shadow: lg
+      :text-align: center
+      :link-type: ref
+      :class-body: btn-link stretched-link font-weight-bold
+      :class-img-top: p-5
+      :img-top: _static/dirac_dev.png
+      :link: developer_guide
+      :link-alt: Developer Guide
 
-  ---
-  :img-top: _static/dirac_admin.png
-  .. link-button:: AdministratorGuide/index
-      :type: ref
-      :text: Administrator Guide
-      :classes: btn-link stretched-link font-weight-bold
+      Developer Guide
 
-  services administration, server installation
+      adding new functionality to DIRAC
 
-  ---
-  :img-top: _static/dirac_code.png
-  .. link-button:: CodeDocumentation/index
-      :type: ref
-      :text: Code Documentation
-      :classes: btn-link stretched-link font-weight-bold
 
-  code reference
+   .. grid-item-card::
+      :shadow: lg
+      :text-align: center
+      :link-type: ref
+      :class-body: btn-link stretched-link font-weight-bold
+      :class-img-top: p-5
+      :img-top: _static/dirac_admin.png
+      :link: administrator_guide
+      :link-alt: Administrator Guide
+
+      Administrator Guide
+
+      services administration, server installation
+
+
+   .. grid-item-card::
+      :shadow: lg
+      :text-align: center
+      :link-type: ref
+      :class-body: btn-link stretched-link font-weight-bold
+      :class-img-top: p-5
+      :img-top: _static/dirac_code.png
+      :link: code_documentation
+      :link-alt: Code Reference
+
+      code reference
 
 :ref:`genindex`
