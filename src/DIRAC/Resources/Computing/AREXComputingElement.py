@@ -92,7 +92,6 @@ class AREXComputingElement(ARCComputingElement):
         """Set the token and update the headers
 
         :param token: OAuth2Token object or dictionary containing token structure
-        :param int valid: validity period in seconds
         """
         super().setToken(token)
         self.headers["Authorization"] = "Bearer " + self.token["access_token"]

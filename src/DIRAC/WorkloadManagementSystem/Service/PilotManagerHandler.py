@@ -77,9 +77,7 @@ class PilotManagerHandler(RequestHandler):
     types_addPilotReference = [list, str]
 
     @classmethod
-    def export_addPilotReference(
-        cls, pilotRef, ownerGroup, gridType="DIRAC", pilotStampDict={}
-    ):
+    def export_addPilotReference(cls, pilotRef, ownerGroup, gridType="DIRAC", pilotStampDict={}):
         """Add a new pilot job reference"""
         return cls.pilotAgentsDB.addPilotReference(pilotRef, ownerGroup, gridType, pilotStampDict)
 

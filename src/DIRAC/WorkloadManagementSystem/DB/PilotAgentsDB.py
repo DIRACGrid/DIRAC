@@ -49,7 +49,7 @@ class PilotAgentsDB(DB):
             req = (
                 "INSERT INTO PilotAgents "
                 + "(PilotJobReference, OwnerGroup, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp) "
-                + "VALUES ('%s',%d,'%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')"
+                + "VALUES ('%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')"
                 % (ref, ownerGroup, gridType, stamp)
             )
 

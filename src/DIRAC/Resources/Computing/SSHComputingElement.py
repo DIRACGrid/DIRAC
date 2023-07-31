@@ -307,15 +307,14 @@ class SSHComputingElement(ComputingElement):
         self.errorTemplate = ""
 
     ############################################################################
-    def setProxy(self, proxy, valid=0):
+    def setProxy(self, proxy):
         """
         Set and prepare proxy to use
 
         :param str proxy: proxy to use
-        :param int valid: proxy validity period
         :return:  S_OK/S_ERROR
         """
-        ComputingElement.setProxy(self, proxy, valid)
+        ComputingElement.setProxy(self, proxy)
         if self.ceParameters.get("SSHType", "ssh") == "gsissh":
             result = self._prepareProxy()
             if not result["OK"]:

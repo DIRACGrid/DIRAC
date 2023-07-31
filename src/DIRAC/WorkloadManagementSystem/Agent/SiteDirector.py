@@ -10,7 +10,6 @@
 import datetime
 import os
 import socket
-from abc import ABC, abstractmethod
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -47,7 +46,7 @@ from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesRes
 MAX_PILOTS_TO_SUBMIT = 100
 
 # Submission policies
-AGGRESSIVE_FILLING = "AgressingFilling"
+AGGRESSIVE_FILLING = "AggressiveFilling"
 WAITING_SUPPORTED_JOBS = "WaitingSupportedJobs"
 SUBMISSION_POLICIES = [AGGRESSIVE_FILLING, WAITING_SUPPORTED_JOBS]
 
@@ -75,7 +74,6 @@ class SiteDirector(AgentModule):
         self.sendAccounting = True
         self.sendSubmissionAccounting = True
         self.sendSubmissionMonitoring = False
-        self.localhost = socket.getfqdn()
 
         self.siteClient = None
         self.rssClient = None
@@ -84,12 +82,11 @@ class SiteDirector(AgentModule):
 
         # self.failedQueueCycleFactor is the number of cycles a queue has to wait before getting pilots again
         self.failedQueueCycleFactor = 10
-        self.submissionPolicyName = AGGRESSIVE_FILLING
+        self.submissionPolicyName = WAITING_SUPPORTED_JOBS
         self.submissionPolicy = None
 
         self.workingDirectory = None
         self.maxQueueLength = 86400 * 3
-        self.pilotLogLevel = "INFO"
 
     def initialize(self):
         """Initial settings"""
@@ -128,9 +125,8 @@ class SiteDirector(AgentModule):
         self.pilotDN, self.pilotGroup = result["Value"]
 
         # Parameters
-        self.workingDirectory = self.am_getOption("WorkDirectory")
+        self.workingDirectory = self.am_getOption("WorkDirectory", self.workingDirectory)
         self.maxQueueLength = self.am_getOption("MaxQueueLength", self.maxQueueLength)
-        self.pilotLogLevel = self.am_getOption("PilotLogLevel", self.pilotLogLevel)
         self.maxPilotsToSubmit = self.am_getOption("MaxPilotsToSubmit", self.maxPilotsToSubmit)
         self.failedQueueCycleFactor = self.am_getOption("FailedQueueCycleFactor", self.failedQueueCycleFactor)
 
@@ -213,7 +209,6 @@ class SiteDirector(AgentModule):
         # Set up the queue dictionary
         result = getQueuesResolved(
             siteDict=result["Value"],
-            vo=self.vo,
             queueCECache=self.queueCECache,
             instantiateCEs=True,
         )
@@ -698,7 +693,7 @@ class SiteDirector(AgentModule):
 
     #####################################################################################
 
-    def monitorPilotStatus(self):
+    def monitorPilots(self):
         """Update status of pilots in transient and final states"""
         self.log.verbose("Monitoring: Queues treated are", ",".join(self.queueDict))
 
@@ -1051,64 +1046,3 @@ class SiteDirector(AgentModule):
             return S_ERROR()
         self.log.verbose("Done committing to monitoring")
         return S_OK()
-
-
-class SubmissionPolicy(ABC):
-    """Abstract class to define a submission strategy."""
-
-    @abstractmethod
-    def apply(self, availableSlots: int, queueName: str, queueInfo: dict[str, str], vo: str) -> int:
-        """Method to redefine in the concrete subclasses
-
-        :param availableSlots: slots available for new pilots
-        :param queueName: the name of the targeted queue
-        :param queueInfo: a dictionary of attributes related to the queue
-        :param vo: VO
-        """
-        pass
-
-
-class AgressiveFillingPolicy(SubmissionPolicy):
-    def apply(self, availableSlots: int, queueName: str, queueInfo: dict[str, str], vo: str) -> int:
-        """All the available slots should be filled up.
-        Should be employed for sites that are always processing jobs.
-
-        * Pros: would quickly fill up a queue
-        * Cons: would consume a lot of CPU hours for nothing if pilots do not match jobs
-        """
-        return availableSlots
-
-
-class WaitingSupportedJobsPolicy(SubmissionPolicy):
-    def __init__(self) -> None:
-        super().__init__()
-        self.matcherClient = MatcherClient()
-
-    def apply(self, availableSlots: int, queueName: str, queueInfo: dict[str, str], vo: str) -> int:
-        """Fill up available slots only if waiting supported jobs exist.
-        Should be employed for sites that are rarely used (targetting specific Task Queues).
-
-        * Pros: submit pilots only if necessary, and quickly fill up the queue if needed
-        * Cons: would create some unused pilots in all the sites supervised by this policy and targeting a same task queue
-        """
-        # Prepare CE dictionary from the queue info
-        ce = queueInfo["CE"]
-        ceDict = ce.ceParameters
-        ceDict["GridCE"] = queueInfo["CEName"]
-        if vo:
-            ceDict["Community"] = vo
-
-        # Get Task Queues related to the CE
-        result = self.matcherClient.getMatchingTaskQueues(ceDict)
-        if not result["OK"]:
-            self.log.error("Could not retrieve TaskQueues from TaskQueueDB", result["Message"])
-            return 0
-        taskQueueDict = result["Value"]
-
-        # Get the number of jobs that would match the capability of the CE
-        waitingSupportedJobs = 0
-        for tq in taskQueueDict.values():
-            waitingSupportedJobs += tq["Jobs"]
-
-        # Return the minimum value between the number of slots available and supported jobs
-        return min(availableSlots, waitingSupportedJobs)

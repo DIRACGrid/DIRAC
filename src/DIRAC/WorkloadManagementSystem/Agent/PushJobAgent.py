@@ -324,8 +324,6 @@ class PushJobAgent(JobAgent):
         result = getQueuesResolved(
             siteDict=result["Value"],
             queueCECache=self.queueCECache,
-            gridEnv=getGridEnv(),
-            setup=gConfig.getValue("/DIRAC/Setup", "unknown"),
             instantiateCEs=True,
         )
         if not result["OK"]:
