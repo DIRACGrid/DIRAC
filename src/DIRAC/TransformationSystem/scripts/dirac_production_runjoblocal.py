@@ -63,9 +63,6 @@ def __downloadPilotScripts():
         "dirac-pilot.py",
         "pilotCommands.py",
         "pilotTools",
-        "MessageSender",
-        "PilotLogger.py",
-        "PilotLoggerTools.py",
     ]:
         remoteFile = urlopen(
             os.path.join("https://raw.githubusercontent.com/DIRACGrid/Pilot/master/Pilot/", fileName),
@@ -95,7 +92,7 @@ def __configurePilot(basepath, vo):
     diracdir = os.path.expanduser("~") + os.path.sep
     try:
         os.rename(diracdir + ".dirac.cfg", diracdir + ".dirac.cfg.old")
-    except OSError:
+    except (OSError, FileNotFoundError):
         pass
     shutil.copyfile(diracdir + "pilot.cfg", diracdir + ".dirac.cfg")
 
@@ -146,7 +143,10 @@ def main():
         __runJobLocally(_jobID, _path, _vo)
     finally:
         os.chdir(_dir)
-        os.rename(_dir + ".dirac.cfg.old", _dir + ".dirac.cfg")
+        try:
+            os.rename(_dir + ".dirac.cfg.old", _dir + ".dirac.cfg")
+        except FileNotFoundError:
+            pass
 
 
 if __name__ == "__main__":
