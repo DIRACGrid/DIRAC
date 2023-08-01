@@ -110,8 +110,8 @@ class HTCondorCEComputingElement(ComputingElement):
     #############################################################################
 
     def _DiracToCondorID(self, diracJobID):
-        """Convert a DIRAC jobID into an Condor jobID.
-        Example: https://<ce>/1234/0 becomes 1234.0
+        """Convert a DIRAC jobID into a Condor jobID.
+        Example: htcondorce://<ce>/1234.0 becomes 1234.0
 
         :param str: DIRAC jobID
         :return: Condor jobID
@@ -128,7 +128,7 @@ class HTCondorCEComputingElement(ComputingElement):
 
         :param str condorJobIDs: the output of condor_submit
 
-        :return: job references such as htcondorce://<CE name>/<clusterID>.<i>
+        :return: job references such as htcondorce://<ce>/<clusterID>.<i>
         """
         clusterIDs = condorJobIDs.split("-")
         if len(clusterIDs) != 2:
@@ -179,7 +179,6 @@ class HTCondorCEComputingElement(ComputingElement):
 
         # Remote schedd options by default
         targetUniverse = "vanilla"
-        # This is used to remove outputs from the remote schedd
         scheddOptions = ""
         if self.useLocalSchedd:
             targetUniverse = "grid"
@@ -227,7 +226,7 @@ class HTCondorCEComputingElement(ComputingElement):
 
         :param list cmd: list of the condor command elements
         :param bool keepTokenFile: flag to reuse or not the previously created token file
-        :return: S_OK/S_ERROR - the result of the executeGridCommand() call
+        :return: S_OK/S_ERROR - the stdout parameter of the executeGridCommand() call
         """
         if not self.token and not self.proxy:
             return S_ERROR(f"Cannot execute the command, token and proxy not found: {cmd}")
@@ -406,8 +405,7 @@ class HTCondorCEComputingElement(ComputingElement):
         # Get all condorIDs so we can just call condor_q and condor_history once
         for diracJobID in jobIDList:
             diracJobID = diracJobID.split(":::")[0]
-            condorJobID = self._DiracToCondorID(diracJobID)
-            condorIDs[diracJobID] = condorJobID
+            condorIDs[diracJobID] = self._DiracToCondorID(diracJobID)
 
         self.tokenFile = None
 
@@ -422,8 +420,7 @@ class HTCondorCEComputingElement(ComputingElement):
             if not result["OK"]:
                 return result
 
-            _qList = result["Value"].split("\n")
-            qList.extend(_qList)
+            qList.extend(result["Value"].split("\n"))
 
             condorHistCall = ["condor_history"]
             condorHistCall.extend(self.remoteScheddOptions.strip().split(" "))
@@ -433,21 +430,15 @@ class HTCondorCEComputingElement(ComputingElement):
             if not result["OK"]:
                 return result
 
-            _qList = result["Value"].split("\n")
-            qList.extend(_qList)
+            qList.extend(result["Value"].split("\n"))
 
-        jobsToCancel = []
         for job, jobID in condorIDs.items():
-            pilotStatus, reason = parseCondorStatus(qList, jobID)
+            jobStatus, reason = parseCondorStatus(qList, jobID)
 
-            if pilotStatus == PilotStatus.ABORTED:
-                self.log.verbose("Held job", f"{jobID} because: {reason}")
-                jobsToCancel.append(jobID)
+            if jobStatus == PilotStatus.ABORTED:
+                self.log.verbose("Job", f"{jobID} held: {reason}")
 
-            resultDict[job] = pilotStatus
-
-        # Make sure the pilot stays dead and gets taken out of the condor_q
-        self.killJob(jobsToCancel)
+            resultDict[job] = jobStatus
 
         self.tokenFile = None
 
@@ -480,7 +471,7 @@ class HTCondorCEComputingElement(ComputingElement):
 
         return S_OK((result["Value"]["output"], result["Value"]["error"]))
 
-    def _findFile(self, workingDir, fileName, pathToResult):
+    def _findFile(self, fileName, pathToResult):
         """Find a file in a file system.
 
         :param str workingDir: the name of the directory containing the given file to search for
@@ -489,7 +480,7 @@ class HTCondorCEComputingElement(ComputingElement):
 
         :return: path leading to the file
         """
-        path = os.path.join(workingDir, pathToResult, fileName)
+        path = os.path.join(self.workingDirectory, pathToResult, fileName)
         if os.path.exists(path):
             return S_OK(path)
         return S_ERROR(errno.ENOENT, f"Could not find {path}")
@@ -535,7 +526,7 @@ class HTCondorCEComputingElement(ComputingElement):
         outputsSuffix = {"output": "out", "error": "err", "logging": "log"}
         outputs = {}
         for output, suffix in outputsSuffix.items():
-            resOut = self._findFile(self.workingDirectory, f"{condorJobID}.{suffix}", pathToResult)
+            resOut = self._findFile(f"{condorJobID}.{suffix}", pathToResult)
             if not resOut["OK"]:
                 # Return an error if the output type was targeted, else we continue
                 if output in outTypes:

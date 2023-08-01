@@ -66,7 +66,6 @@ def test_parseCondorStatus():
     }
 
     for jobID, expected in expectedResults.items():
-        print(jobID, expected)
         assert HTCE.parseCondorStatus(statusLines, jobID)[0] == expected
 
 
@@ -103,7 +102,6 @@ def test_getJobStatus(mocker):
         "htcondorce://condorce.foo.arg/123.2": "Aborted",
         "htcondorce://condorce.foo.arg/333.3": "Unknown",
     }
-    print(ret)
     assert ret["OK"] is True
     assert expectedResults == ret["Value"]
 

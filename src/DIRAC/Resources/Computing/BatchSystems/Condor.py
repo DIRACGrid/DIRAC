@@ -45,8 +45,10 @@ output = $(Cluster).$(Process).out
 error = $(Cluster).$(Process).err
 log = $(Cluster).$(Process).log
 
-# Transfer all output files, even if the job is failed
+# No other files are to be transferred
 transfer_output_files = ""
+
+# Transfer outputs, even if the job is failed
 should_transfer_files = YES
 when_to_transfer_output = ON_EXIT_OR_EVICT
 
@@ -68,10 +70,10 @@ kill_sig=SIGTERM
 # By default, HTCondor marked jobs as completed regardless of its status
 # This option allows to mark jobs as Held if they don't finish successfully
 on_exit_hold = ExitCode != 0
-# A random subcode to identify who put the job on hold
+# A subcode of our choice to identify who put the job on hold
 on_exit_hold_subcode = %(holdReasonSubcode)s
-# Jobs are then deleted from the system after N days if they are not running
-period_remove = (JobStatus != 1) && (JobStatus != 2) && ((time() - EnteredCurrentStatus) > (%(daysToKeepRemoteLogs)s * 24 * 3600))
+# Jobs are then deleted from the system after N days if they are not idle or running
+periodic_remove = (JobStatus != 1) && (JobStatus != 2) && ((time() - EnteredCurrentStatus) > (%(daysToKeepRemoteLogs)s * 24 * 3600))
 
 # Specific options
 # ----------------
@@ -88,7 +90,7 @@ Queue stamp in %(pilotStampList)s
 def parseCondorStatus(lines, jobID):
     """parse the condor_q or condor_history output for the job status
 
-    :param lines: list of lines from the output of the condor commands, each line is a pair of jobID, statusID, and holdReasonCode
+    :param lines: list of lines from the output of the condor commands, each line is a tuple of jobID, statusID, and holdReasonCode
     :type lines: python:list
     :param str jobID: jobID of condor job, e.g.: 123.53
     :returns: Status as known by DIRAC, and a reason if the job is being held
@@ -96,44 +98,52 @@ def parseCondorStatus(lines, jobID):
     jobID = str(jobID)
 
     holdReason = ""
+    status = None
     for line in lines:
         l = line.strip().split()
+
+        # Make sure the job ID exists
+        if len(l) < 1 or l[0] != jobID:
+            continue
 
         # Make sure the status is present and is an integer
         try:
             status = int(l[1])
         except (ValueError, IndexError):
-            continue
+            break
 
-        if l[0] == jobID:
-            # A job can be held for many various reasons, we need to further investigate with the holdReasonCode & holdReasonSubCode
-            # Details in:
-            # https://htcondor.readthedocs.io/en/latest/classad-attributes/job-classad-attributes.html#HoldReasonCode
-            if status == 5:
+        # Stop here if the status is not held (5): result should be found in STATES_MAP
+        if status != 5:
+            break
 
-                # By default, a held (5) job is defined as Aborted, but there might be some exceptions
-                status = 3
-                try:
-                    holdReasonCode = l[2]
-                    holdReasonSubcode = l[3]
-                    holdReason = " ".join(l[4:])
-                except IndexError:
-                    # This should not happen in theory
-                    # Just set the status to unknown such as
-                    status = -1
-                    holdReasonCode = "undefined"
-                    holdReasonSubcode = "undefined"
+        # A job can be held for various reasons,
+        # we need to further investigate with the holdReasonCode & holdReasonSubCode
+        # Details in:
+        # https://htcondor.readthedocs.io/en/latest/classad-attributes/job-classad-attributes.html#HoldReasonCode
 
-                # If holdReasonCode is 3 (The PERIODIC_HOLD expression evaluated to True. Or, ON_EXIT_HOLD was true)
-                # And subcode is HOLD_REASON_SUBCODE, then it means the job failed by itself, it needs to be marked as Failed
-                if holdReasonCode == "3" and holdReasonSubcode == HOLD_REASON_SUBCODE:
-                    status = 5
-                # If holdReasonCode is 16 (Input files are being spooled), the job should be marked as Waiting
-                elif holdReasonCode == "16":
-                    status = 1
+        # By default, a held (5) job is defined as Aborted in STATES_MAP, but there might be some exceptions
+        status = 3
+        try:
+            holdReasonCode = l[2]
+            holdReasonSubcode = l[3]
+            holdReason = " ".join(l[4:])
+        except IndexError:
+            # This should not happen in theory
+            # Just set the status to unknown such as
+            status = None
+            holdReasonCode = "undefined"
+            holdReasonSubcode = "undefined"
+            break
 
-            return (STATES_MAP.get(status, "Unknown"), holdReason)
-    return ("Unknown", holdReason)
+        # If holdReasonCode is 3 (The PERIODIC_HOLD expression evaluated to True. Or, ON_EXIT_HOLD was true)
+        # And subcode is HOLD_REASON_SUBCODE, then it means the job failed by itself, it needs to be marked as Failed
+        if holdReasonCode == "3" and holdReasonSubcode == HOLD_REASON_SUBCODE:
+            status = 5
+        # If holdReasonCode is 16 (Input files are being spooled), the job should be marked as Waiting
+        elif holdReasonCode == "16":
+            status = 1
+
+    return (STATES_MAP.get(status, "Unknown"), holdReason)
 
 
 class Condor(object):
