@@ -1,3 +1,9 @@
+[v7r3p38]
+
+*WorkloadManagement
+FIX: (#7122) reintroduce 'Staging' to 'Checking' transition in JobsStateMachine
+NEW: (#7118) Introducing 'Scouting' status in job state transitions
+
 [v7r3p37]
 
 *WorkloadManagement
