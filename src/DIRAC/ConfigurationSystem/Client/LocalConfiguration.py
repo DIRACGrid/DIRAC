@@ -447,8 +447,9 @@ class LocalConfiguration:
         Loads possibly several cfg files, in order:
         1. cfg files pointed by DIRACSYSCONFIG env variable (comma-separated)
         2. ~/.dirac.cfg
-        3. cfg files specified in addCFGFile calls
-        4. cfg files that come from the command line
+        3. DIRAC.rootPath/etc/dirac.cfg
+        4. cfg files specified in addCFGFile calls
+        5. cfg files that come from the command line
         """
         errorsList = []
         foundCFGFile = False
@@ -467,7 +468,11 @@ class LocalConfiguration:
             foundCFGFile = True
         gConfigurationData.loadFile(os.path.expanduser("~/.dirac.cfg"))
 
-        # 3. cfg files specified in addCFGFile calls
+        # 3. defaultCFGFile = os.path.join(DIRAC.rootPath, "etc", "dirac.cfg")
+        if os.path.isfile(os.path.join(DIRAC.rootPath, "etc", "dirac.cfg")):
+            foundCFGFile = True
+
+        # 4. cfg files specified in addCFGFile calls
         for fileName in self.additionalCFGFiles:
             if os.path.isfile(fileName):
                 foundCFGFile = True
@@ -477,7 +482,7 @@ class LocalConfiguration:
                 gLogger.debug(f"Could not load file {fileName}: {retVal['Message']}")
                 errorsList.append(retVal["Message"])
 
-        # 4. cfg files that come from the command line
+        # 5. cfg files that come from the command line
         for fileName in self.cliAdditionalCFGFiles:
             if os.path.isfile(fileName):
                 foundCFGFile = True
