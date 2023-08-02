@@ -7,6 +7,7 @@ jobs:
   pr-sweep:
     runs-on: ubuntu-latest
     concurrency: pr-sweep
+    timeout-minutes: 30
     if: github.repository == 'DIRACGrid/DIRAC'
     steps:
     - uses: actions/checkout@v3
