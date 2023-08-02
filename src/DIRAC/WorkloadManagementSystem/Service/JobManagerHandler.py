@@ -24,9 +24,6 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Utilities.JobModel import JobDescriptionModel
-from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
-
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     RIGHT_DELETE,
     RIGHT_KILL,
@@ -35,6 +32,7 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     RIGHT_SUBMIT,
     JobPolicy,
 )
+from DIRAC.WorkloadManagementSystem.Utilities.JobModel import JobDescriptionModel
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
 
 MAX_PARAMETRIC_JOBS = 20
@@ -85,7 +83,6 @@ class JobManagerHandlerMixin:
         self.maxParametricJobs = self.srv_getCSOption("MaxParametricJobs", MAX_PARAMETRIC_JOBS)
         self.jobPolicy = JobPolicy(self.owner, self.ownerGroup, self.userProperties)
         self.jobPolicy.jobDB = self.jobDB
-        self.ownerDN = getDNForUsername(self.owner)["Value"][0]
         return S_OK()
 
     def __sendJobsToOptimizationMind(self, jids):
@@ -128,6 +125,8 @@ class JobManagerHandlerMixin:
         :return: S_OK/S_ERROR, a list of newly created job IDs in case of S_OK.
         """
 
+        ownerDN = getDNForUsername(self.owner)["Value"][0]
+
         if self.peerUsesLimitedProxy:
             return S_ERROR(EWMSSUBM, "Can't submit using a limited proxy")
 
@@ -160,9 +159,9 @@ class JobManagerHandlerMixin:
             if nJobs > self.maxParametricJobs:
                 self.log.error(
                     "Maximum of parametric jobs exceeded:",
-                    "limit %d smaller than number of jobs %d" % (self.maxParametricJobs, nJobs),
+                    f"limit {self.maxParametricJobs} smaller than number of jobs {nJobs}",
                 )
-                return S_ERROR(EWMSJDL, "Number of parametric jobs exceeds the limit of %d" % self.maxParametricJobs)
+                return S_ERROR(EWMSJDL, f"Number of parametric jobs exceeds the limit of {self.maxParametricJobs}")
             result = generateParametricJobs(jobClassAd)
             if not result["OK"]:
                 return result
@@ -190,7 +189,7 @@ class JobManagerHandlerMixin:
                 JobDescriptionModel(
                     **baseJobDescritionModel.dict(exclude_none=True),
                     owner=self.owner,
-                    ownerDN=self.ownerDN,
+                    ownerDN=ownerDN,
                     ownerGroup=self.ownerGroup,
                     vo=getVOForGroup(self.ownerGroup),
                 )
@@ -218,9 +217,9 @@ class JobManagerHandlerMixin:
             jobIDList.append(jobID)
 
         # Set persistency flag
-        retVal = gProxyManager.getUserPersistence(self.ownerDN, self.ownerGroup)
+        retVal = gProxyManager.getUserPersistence(ownerDN, self.ownerGroup)
         if "Value" not in retVal or not retVal["Value"]:
-            gProxyManager.setPersistency(self.ownerDN, self.ownerGroup, True)
+            gProxyManager.setPersistency(ownerDN, self.ownerGroup, True)
 
         if parametricJob:
             result = S_OK(jobIDList)
@@ -295,7 +294,8 @@ class JobManagerHandlerMixin:
 
         :return: bool
         """
-        result = gProxyManager.userHasProxy(self.ownerDN, self.ownerGroup, validSeconds=18000)
+        ownerDN = getDNForUsername(self.owner)["Value"][0]
+        result = gProxyManager.userHasProxy(ownerDN, self.ownerGroup, validSeconds=18000)
         if not result["OK"]:
             self.log.error("Can't check if the user has proxy uploaded", result["Message"])
             return True
@@ -407,18 +407,18 @@ class JobManagerHandlerMixin:
             for jobID in validJobList:
                 resultTQ = self.taskQueueDB.deleteJob(jobID)
                 if not resultTQ["OK"]:
-                    self.log.warn("Failed to remove job from TaskQueueDB", "(%d): %s" % (jobID, resultTQ["Message"]))
+                    self.log.warn("Failed to remove job from TaskQueueDB", f"({jobID}): {resultTQ['Message']}")
                     error_count += 1
                 else:
                     count += 1
 
-            if not (result := self.jobLoggingDB.deleteJob(validJobList))["OK"]:
+            if not self.jobLoggingDB.deleteJob(validJobList)["OK"]:
                 self.log.error("Failed to remove jobs from JobLoggingDB", f"(n={len(validJobList)})")
             else:
                 self.log.info("Removed jobs from JobLoggingDB", f"(n={len(validJobList)})")
 
             if count > 0 or error_count > 0:
-                self.log.info("Removed jobs from DB", "(%d jobs with %d errors)" % (count, error_count))
+                self.log.info("Removed jobs from DB", f"({count} jobs with {error_count} errors)")
 
         if invalidJobList or nonauthJobList:
             self.log.error(
@@ -446,12 +446,10 @@ class JobManagerHandlerMixin:
         :param int jobID: job ID
         :return: S_OK()/S_ERROR()
         """
-        result = self.jobDB.setJobStatus(jobID, JobStatus.DELETED, "Checking accounting")
-        if not result["OK"]:
+        if not (result := self.jobDB.setJobStatus(jobID, JobStatus.DELETED, "Checking accounting"))["OK"]:
             return result
 
-        result = self.taskQueueDB.deleteJob(jobID)
-        if not result["OK"]:
+        if not (result := self.taskQueueDB.deleteJob(jobID))["OK"]:
             self.log.warn("Failed to delete job from the TaskQueue")
 
         # if it was the last job for the pilot
@@ -469,8 +467,7 @@ class JobManagerHandlerMixin:
                 if not result["OK"]:
                     self.log.error("Failed to get pilot info", result["Message"])
                     return result
-                pilotRef = result[0]["PilotJobReference"]
-                ret = self.pilotAgentsDB.deletePilot(pilot)
+                ret = self.pilotAgentsDB.deletePilot(result["Value"]["PilotJobReference"])
                 if not ret["OK"]:
                     self.log.error("Failed to delete pilot from PilotAgentsDB", ret["Message"])
                     return ret
@@ -522,7 +519,7 @@ class JobManagerHandlerMixin:
             deleteJobList = []
             markKilledJobList = []
             stagingJobList = []
-            for jobID, sDict in result["Value"].items():  # can be an iterator
+            for jobID, sDict in result["Value"].items():
                 if sDict["Status"] in (JobStatus.RUNNING, JobStatus.MATCHED, JobStatus.STALLED):
                     killJobList.append(jobID)
                 elif sDict["Status"] in (
