@@ -1,3 +1,31 @@
+[v8.0.26]
+
+*docs
+
+change: Replace the use of sphinx-panels with sphinx-design, this unblocks the use of latest sphinx versions (panels was requiring sphinx < 5)
+
+*TransformationSystem
+
+FIX: (#7138) dirac_production_runjoblocal: updated list of Pilot modules
+
+*Core
+
+FIX: (#7137) look also for DIRAC.rootPath/etc/dirac.cfg before printing a warning of not found cfg
+
+*Resources
+
+FIX: (#7135) Propagate environment variables from host to container.
+FIX: (#7131) Don't print client_secret in oauth2 debug
+FIX: (#7104) MultiVO proxy renewal in AREX
+
+*FrameworkSystem
+
+FIX: (#7130) Do not overwrite the tornado port if already set
+
+*WorkloadManagement
+
+NEW: (#7129) Introducing 'Scouting' status in job state transitions
+
 [v8.0.25]
 
 *ResourceStatusSystem
