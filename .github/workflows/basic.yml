@@ -115,7 +115,7 @@ jobs:
       run: .github/workflows/fail-fast.sh
     - name: fix python3.9
       run: |
-        sed "s/python =3.11/python =3.9/g" environment.yml
+        sed -i "s/python =3.11/python =3.9/g" environment.yml
     - uses: conda-incubator/setup-miniconda@master
       with:
         environment-file: environment.yml
