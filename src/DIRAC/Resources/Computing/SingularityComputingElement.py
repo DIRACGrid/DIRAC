@@ -14,6 +14,7 @@
 import io
 import json
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -83,6 +84,18 @@ chmod 644 retcode
 echo "Finishing inner container wrapper scripts at `date`."
 
 """
+
+
+ENV_VAR_WHITELIST = [
+    r"TERM",
+    r"VOMS_.*",
+    r"X509_.*",
+    r"XRD_.*",
+    r"Xrd.*",
+    r"DIRAC_.*",
+    r"BEARER_TOKEN.*",
+]
+ENV_VAR_WHITELIST = re.compile(r"^(" + r"|".join(ENV_VAR_WHITELIST) + r")$")
 
 
 class SingularityComputingElement(ComputingElement):
@@ -311,12 +324,17 @@ class SingularityComputingElement(ComputingElement):
         """Gets the environment for use within the container.
         We blank almost everything to prevent contamination from the host system.
         """
-        payloadEnv = {}
-        if "TERM" in os.environ:
-            payloadEnv["TERM"] = os.environ["TERM"]
+
+        if not self.__installDIRACInContainer:
+            payloadEnv = {k: v for k, v in os.environ.items() if ENV_VAR_WHITELIST.match(k)}
+        else:
+            payloadEnv = {}
+
         payloadEnv["TMP"] = "/tmp"
         payloadEnv["TMPDIR"] = "/tmp"
         payloadEnv["X509_USER_PROXY"] = os.path.join(self.__innerdir, "proxy")
+        payloadEnv["DIRACSYSCONFIG"] = os.path.join(self.__innerdir, "pilot.cfg")
+
         return payloadEnv
 
     @staticmethod
