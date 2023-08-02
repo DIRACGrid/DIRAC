@@ -2388,7 +2388,12 @@ exec tornado-start-all
             return S_ERROR(f"{instanceOption} not defined in {self.cfgFile}")
         tornadoSection = cfgPath("Systems", "Tornado", compInstance)
 
-        cfg = self.__getCfg(tornadoSection, "Port", 8443)
+        if gConfig_o:
+            tornadoPort = gConfig_o.getValue(cfgPath(tornadoSection, "Port"), "8443")
+        else:
+            tornadoPort = self.localCfg.getOption(cfgPath(tornadoSection, "Port"), "8443")
+
+        cfg = self.__getCfg(tornadoSection, "Port", tornadoPort)
         # cfg.setOption(cfgPath(tornadoSection, 'Password'), self.mysqlPassword)
         return self._addCfgToCS(cfg)
 
