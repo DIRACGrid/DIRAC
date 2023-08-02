@@ -148,9 +148,8 @@ transDict = {
     "TransformationID": 1,
     "Operations": ["op1", "op2"],
     "Body": "veryBigBody",
-    "Owner": "prodMan",
-    "OwnerDN": "/ca=man/user=prodMan",
-    "OwnerGroup": "prodMans",
+    "Owner": "prod",
+    "OwnerGroup": "prods",
 }
 sOkJobDict = {"OK": True, "Value": {"JobDictionary": {123: "foo", 456: "bar"}}}
 sOkJobs = {"OK": True, "Value": {123: "foo", 456: "bar"}}

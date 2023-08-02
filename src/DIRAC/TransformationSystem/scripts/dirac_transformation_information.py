@@ -12,8 +12,8 @@ from DIRAC.TransformationSystem.Utilities.ScriptUtilities import getTransformati
 
 @Script()
 def main():
-    informations = [
-        "AuthorDN",
+    information = [
+        "Author",
         "AuthorGroup",
         "Body",
         "CreationDate",
@@ -37,13 +37,13 @@ def main():
 
     tr = TransformationClient()
 
-    requestedInfo = informations
+    requestedInfo = information
     switches = Script.getUnprocessedSwitches()
     infoList = []
     for switch, val in switches:
         if switch == "Information":
             infoList = [info.lower() for info in val.split(",")]
-            requestedInfo = [info for info in informations if info.lower() in infoList]
+            requestedInfo = [info for info in information if info.lower() in infoList]
     if "body" not in infoList and "Body" in requestedInfo:
         requestedInfo.remove("Body")
 

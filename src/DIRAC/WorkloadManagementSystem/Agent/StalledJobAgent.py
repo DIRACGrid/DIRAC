@@ -607,6 +607,8 @@ class StalledJobAgent(AgentModule):
         ownerGroup = res["Value"]
 
         wmsClient = WMSClient(
-            useCertificates=True, delegatedDN=getDNForUsername(owner)["Value"][0], delegatedGroup=ownerGroup
+            useCertificates=True,
+            delegatedDN=getDNForUsername(owner)["Value"][0] if owner else None,
+            delegatedGroup=ownerGroup,
         )
         return wmsClient.killJob(job)

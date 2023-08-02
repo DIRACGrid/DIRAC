@@ -5,7 +5,6 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.JEncode import decode
-
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -36,7 +35,7 @@ class RequestTasks(TaskBase):
         requestClient=None,
         requestClass=None,
         requestValidator=None,
-        ownerDN=None,
+        owner=None,
         ownerGroup=None,
     ):
         """c'tor
@@ -50,11 +49,13 @@ class RequestTasks(TaskBase):
             logger = gLogger.getSubLogger(self.__class__.__name__)
 
         super().__init__(transClient, logger)
-        useCertificates = True if (bool(ownerDN) and bool(ownerGroup)) else False
+        useCertificates = True if (bool(owner) and bool(ownerGroup)) else False
 
         if not requestClient:
             self.requestClient = ReqClient(
-                useCertificates=useCertificates, delegatedDN=ownerDN, delegatedGroup=ownerGroup
+                useCertificates=useCertificates,
+                delegatedDN=getDNForUsername(owner)["Value"][0] if owner else None,
+                delegatedGroup=ownerGroup,
             )
         else:
             self.requestClient = requestClient

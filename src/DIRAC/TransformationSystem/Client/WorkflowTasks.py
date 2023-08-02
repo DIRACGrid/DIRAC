@@ -30,7 +30,7 @@ class WorkflowTasks(TaskBase):
         jobClass=None,
         opsH=None,
         destinationPlugin=None,
-        ownerDN=None,
+        owner=None,
         ownerGroup=None,
     ):
         """Generates some default objects.
@@ -43,10 +43,12 @@ class WorkflowTasks(TaskBase):
 
         super().__init__(transClient, logger)
 
-        useCertificates = bool(bool(ownerDN) and bool(ownerGroup))
+        useCertificates = bool(bool(owner) and bool(ownerGroup))
         if not submissionClient:
             self.submissionClient = WMSClient(
-                useCertificates=useCertificates, delegatedDN=ownerDN, delegatedGroup=ownerGroup
+                useCertificates=useCertificates,
+                delegatedDN=getDNForUsername(owner)["Value"][0] if owner else None,
+                delegatedGroup=ownerGroup,
             )
         else:
             self.submissionClient = submissionClient
@@ -102,11 +104,6 @@ class WorkflowTasks(TaskBase):
             proxyInfo = res["Value"]
             owner = proxyInfo["username"]
             ownerGroup = proxyInfo["group"]
-
-        res = getDNForUsername(owner)
-        if not res["OK"]:
-            return res
-        ownerDN = res["Value"][0]
 
         if bulkSubmissionFlag:
             return self.__prepareTasksBulk(transBody, taskDict, owner, ownerGroup)

@@ -58,7 +58,7 @@ def tiFixture():
         TransformationID=1234,
         TransformationName="TestProd12",
         Type="TestProd",
-        AuthorDN="/some/cert/owner",
+        Author="owner",
         AuthorGroup="Test_Prod",
     )
 
