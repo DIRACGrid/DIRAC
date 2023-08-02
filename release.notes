@@ -1,3 +1,47 @@
+[v8.1.0a16]
+
+*FrameworkSystem
+
+FIX: (#7149) Do not overwrite the tornado port if already set
+FIX: (#7117) replaced deprecated importlib read_text function to fix failure in CI tests
+
+*Resources
+
+FIX: (#7147) MultiVO proxy renewal in AREX
+FIX: (#7146) Propagate environment variables from host to container.
+FIX: (#7134) Don't print client_secret in oauth2 debug
+FEAT: (#7120) allow to pass credentials when downloading the SRR file
+CHANGE: (#7103) ARC and ARC6 are now deprecated
+CHANGE/FIX: (#7102) proxy renewal logic in AREX
+FIX: (#7102) submitting tokens with AREX
+FIX: (#7102) correctly report aborted pilots with AREX
+
+*TransformationSystem
+
+FIX: (#7144) dirac_production_runjoblocal: updated list of Pilot modules
+CHANGE: (#7124) use userName instead of DN
+
+*Core
+
+FIX: (#7142) look also for DIRAC.rootPath/etc/dirac.cfg before printing a warning of not found cfg
+
+*docs
+
+change: Replace the use of sphinx-panels with sphinx-design, this unblocks the use of latest sphinx versions (panels was requiring sphinx < 5)
+FIX: (#7133) formatting item list
+
+*WorkloadManagement
+
+NEW: (#7132) Introducing 'Scouting' status in job state transitions
+
+*ResourceStatusSystem
+
+FIX: (#7120) Add the Error status in the scripts
+
+*WorkloadManagementSystem
+
+FIX: (#7101) JobManagerHandler: get the OwnerDN only when needed.
+
 [v8.1.0a15]
 
 *Resources
