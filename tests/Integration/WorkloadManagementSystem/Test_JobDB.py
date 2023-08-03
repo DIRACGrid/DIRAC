@@ -168,6 +168,7 @@ def test_getJobJDL_nonOriginal(jobDB: JobDB):
         JobRequirements =
             [
                 CPUTime = 86400;
+                Owner = "owner";
                 OwnerGroup = "ownerGroup";
                 UserPriority = 1;
                 VirtualOrganization = "vo";
