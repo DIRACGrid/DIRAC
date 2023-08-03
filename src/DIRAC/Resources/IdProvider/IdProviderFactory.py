@@ -73,8 +73,11 @@ class IdProviderFactory:
         pDict.update(kwargs)
         pDict["ProviderName"] = name
 
-        self.log.verbose(f"Creating IdProvider of {pDict['ProviderType']} type with the name {name}")
-        subClassName = f"{pDict['ProviderType']}IdProvider"
+        # Instantiating the IdProvider
+        # By default, OAuth2IdProvider is used
+        providerType = pDict.get("ProviderType", "OAuth2")
+        self.log.verbose(f"Creating IdProvider of {providerType} type with the name {name}")
+        subClassName = f"{providerType}IdProvider"
 
         objectLoader = ObjectLoader.ObjectLoader()
         result = objectLoader.loadObject(f"Resources.IdProvider.{subClassName}", subClassName)
