@@ -139,7 +139,7 @@ class RequestValidator(metaclass=DIRACSingleton):
         """add `fcnObj` validator"""
         if not callable(fcnObj):
             return S_ERROR("supplied argument is not callable")
-        args = inspect.getargspec(fcnObj).args
+        args = inspect.getfullargspec(fcnObj).args
         if len(args) not in (1, 2):
             return S_ERROR("wrong number of arguments for supplied function object")
         cls.validator = cls.validator + tuple(
