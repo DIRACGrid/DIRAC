@@ -10,7 +10,7 @@ jobs:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
+        python-version: '3.11'
     - name: Install pre-commit
       run: pip install pre-commit
     - name: Run pre-commit
@@ -40,7 +40,7 @@ jobs:
     - uses: actions/checkout@v3
     - uses: actions/setup-python@v2
       with:
-        python-version: '3.9'
+        python-version: '3.11'
     - name: Installing dependencies
       run: |
         python -m pip install pycodestyle
@@ -77,6 +77,45 @@ jobs:
     - uses: actions/checkout@v3
     - name: Fail-fast for outdated pipelines
       run: .github/workflows/fail-fast.sh
+    - uses: conda-incubator/setup-miniconda@master
+      with:
+        environment-file: environment.yml
+        miniforge-variant: Mambaforge
+        use-mamba: true
+    - name: Run tests
+      run: |
+        # FIXME: The unit tests currently only work with editable installs
+        pip install -e .[server,testing]
+        ${{ matrix.command }}
+      env:
+        REFERENCE_BRANCH: ${{ github['base_ref'] || github['head_ref'] }}
+
+  check-py39:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
+    timeout-minutes: 30
+    defaults:
+      # Activate the conda environment automatically in each step
+      run:
+        shell: bash -l {0}
+
+    strategy:
+      fail-fast: False
+      matrix:
+        command:
+          # TODO These three tests fail on Python 3:
+          #   * `test_BaseType_Unicode` and `test_nestedStructure` fail due to
+          #     DISET's string and unicode types being poorly defined
+          - pytest --runslow -k 'not test_BaseType_Unicode and not test_nestedStructure'
+          - pylint -j 0 -E src/
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Fail-fast for outdated pipelines
+      run: .github/workflows/fail-fast.sh
+    - name: fix python3.9
+      run: |
+        sed -i "s/python =3.11/python =3.9/g" environment.yml
     - uses: conda-incubator/setup-miniconda@master
       with:
         environment-file: environment.yml
