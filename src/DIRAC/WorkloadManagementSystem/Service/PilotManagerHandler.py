@@ -7,6 +7,8 @@ import datetime
 from DIRAC import S_OK, S_ERROR
 import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
 
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
@@ -70,13 +72,24 @@ class PilotManagerHandler(RequestHandler):
     ##########################################################################################
     types_addPilotTQReference = [list, int, str, str]
 
+    @deprecated("Use addPilotTQRef")
     @classmethod
     def export_addPilotTQReference(
         cls, pilotRef, taskQueueID, ownerDN, ownerGroup, broker="Unknown", gridType="DIRAC", pilotStampDict={}
     ):
         """Add a new pilot job reference"""
+
+        return cls.pilotAgentsDB.addPilotTQReference(pilotRef, taskQueueID, ownerGroup, gridType, pilotStampDict)
+
+    types_addPilotTQRef = [list, int, str, str]
+
+    @classmethod
+    def export_addPilotTQRef(
+        cls, pilotRef, taskQueueID, ownerGroup, broker="Unknown", gridType="DIRAC", pilotStampDict={}
+    ):
+        """Add a new pilot job reference"""
         return cls.pilotAgentsDB.addPilotTQReference(
-            pilotRef, taskQueueID, ownerDN, ownerGroup, broker, gridType, pilotStampDict
+            pilotRef, taskQueueID, ownerGroup, broker, gridType, pilotStampDict
         )
 
     ##############################################################################
@@ -96,7 +109,6 @@ class PilotManagerHandler(RequestHandler):
 
         pilotDict = result["Value"][pilotReference]
 
-        ownerDN = pilotDict["OwnerDN"]
         group = pilotDict["OwnerGroup"]
 
         # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
@@ -108,7 +120,6 @@ class PilotManagerHandler(RequestHandler):
                 resultDict = {}
                 resultDict["StdOut"] = stdout
                 resultDict["StdErr"] = error
-                resultDict["OwnerDN"] = ownerDN
                 resultDict["OwnerGroup"] = group
                 resultDict["FileList"] = []
                 return S_OK(resultDict)
@@ -146,7 +157,6 @@ class PilotManagerHandler(RequestHandler):
         resultDict = {}
         resultDict["StdOut"] = stdout
         resultDict["StdErr"] = error
-        resultDict["OwnerDN"] = ownerDN
         resultDict["OwnerGroup"] = group
         resultDict["FileList"] = []
         shutil.rmtree(ce.ceParameters["WorkingDirectory"])
@@ -325,7 +335,7 @@ class PilotManagerHandler(RequestHandler):
         if isinstance(pilotRefList, str):
             pilotRefs = [pilotRefList]
 
-        # Regroup pilots per site and per ownerDN
+        # Regroup pilots per site
         pilotRefDict = {}
         for pilotReference in pilotRefs:
             result = cls.pilotAgentsDB.getPilotInfo(pilotReference)
@@ -333,11 +343,8 @@ class PilotManagerHandler(RequestHandler):
                 return S_ERROR("Failed to get info for pilot " + pilotReference)
 
             pilotDict = result["Value"][pilotReference]
-            ownerDN = pilotDict["OwnerDN"]
             group = pilotDict["OwnerGroup"]
-            queue = "@@@".join(
-                [ownerDN, group, pilotDict["GridSite"], pilotDict["DestinationSite"], pilotDict["Queue"]]
-            )
+            queue = "@@@".join([group, pilotDict["GridSite"], pilotDict["DestinationSite"], pilotDict["Queue"]])
             gridType = pilotDict["GridType"]
             pilotRefDict.setdefault(queue, {})
             pilotRefDict[queue].setdefault("PilotList", [])
@@ -428,33 +435,13 @@ class PilotManagerHandler(RequestHandler):
         if endDate:
             del selectDict["ToDate"]
 
-        # Owner attribute is not part of PilotAgentsDB
-        # It has to be converted into a OwnerDN
-        owners = selectDict.get("Owner")
-        if owners:
-            ownerDNs = []
-            for owner in owners:
-                result = getDNForUsername(owner)
-                if not result["OK"]:
-                    return result
-                ownerDNs.append(result["Value"])
-
-            selectDict["OwnerDN"] = ownerDNs
-            del selectDict["Owner"]
-
         result = cls.pilotAgentsDB.getCounters(
             "PilotAgents", [attribute], selectDict, newer=startDate, older=endDate, timeStamp="LastUpdateTime"
         )
         statistics = {}
         if result["OK"]:
             for status, count in result["Value"]:
-                if "OwnerDN" in status:
-                    userName = getUsernameForDN(status["OwnerDN"])
-                    if userName["OK"]:
-                        status["OwnerDN"] = userName["Value"]
-                    statistics[status["OwnerDN"]] = count
-                else:
-                    statistics[status[attribute]] = count
+                statistics[status[attribute]] = count
 
         return S_OK(statistics)
 

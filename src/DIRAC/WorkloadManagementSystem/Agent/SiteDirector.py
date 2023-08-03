@@ -841,7 +841,6 @@ class SiteDirector(AgentModule):
             result = self.pilotAgentsDB.addPilotTQReference(
                 pilotsList,
                 tqID,
-                self.pilotDN,
                 self.pilotGroup,
                 self.localhost,
                 self.queueDict[queue]["CEType"],
@@ -1201,7 +1200,6 @@ class SiteDirector(AgentModule):
                 "GridType": ceType,
                 "GridSite": siteName,
                 "Status": PilotStatus.PILOT_TRANSIENT_STATES,
-                "OwnerDN": self.pilotDN,
                 "OwnerGroup": self.pilotGroup,
             }
         )

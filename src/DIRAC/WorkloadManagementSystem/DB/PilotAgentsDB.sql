@@ -36,7 +36,6 @@ CREATE TABLE `PilotAgents` (
   `Queue` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `GridSite` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `Broker` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
-  `OwnerDN` VARCHAR(255) NOT NULL,
   `OwnerGroup` VARCHAR(128) NOT NULL,
   `GridType` VARCHAR(32) NOT NULL DEFAULT 'LCG',
   `GridRequirements` TEXT,

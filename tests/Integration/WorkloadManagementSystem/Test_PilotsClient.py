@@ -27,7 +27,7 @@ def test_PilotsDB():
     for jobID in ["aPilot", "anotherPilot"]:
         pilots.deletePilots(jobID)
 
-    res = pilots.addPilotTQReference(["aPilot"], 1, "/a/ownerDN", "a/owner/Group")
+    res = pilots.addPilotTQRef(["aPilot"], 1, "ownerGroup")
     assert res["OK"], res["Message"]
     res = pilots.getCurrentPilotCounters({})
     assert res["OK"], res["Message"]
@@ -38,15 +38,14 @@ def test_PilotsDB():
     assert res["OK"], res["Message"]
     assert res["Value"] == {}
 
-    res = pilots.addPilotTQReference(["anotherPilot"], 1, "/a/ownerDN", "a/owner/Group")
+    res = pilots.addPilotTQRef(["anotherPilot"], 1, "ownerGroup")
     assert res["OK"], res["Message"]
     res = pilots.storePilotOutput("anotherPilot", "This is an output", "this is an error")
     assert res["OK"], res["Message"]
     res = pilots.getPilotOutput("anotherPilot")
     assert res["OK"], res["Message"]
     assert res["Value"] == {
-        "OwnerDN": "/a/ownerDN",
-        "OwnerGroup": "a/owner/Group",
+        "OwnerGroup": "ownerGroup",
         "StdErr": "this is an error",
         "FileList": [],
         "StdOut": "This is an output",
@@ -68,13 +67,11 @@ def test_PilotsDB():
     assert res["OK"], res["Message"]
     assert res["Value"] == {
         "GridType": ["DIRAC"],
-        "OwnerGroup": ["a/owner/Group"],
+        "OwnerGroup": ["ownerGroup"],
         "DestinationSite": ["NotAssigned"],
         "Broker": ["Unknown"],
         "Status": ["Submitted"],
-        "OwnerDN": ["/a/ownerDN"],
         "GridSite": ["Unknown"],
-        "Owner": [],
     }
     res = pilots.getPilotSummaryWeb({}, [], 0, 100)
     assert res["OK"], res["Message"]

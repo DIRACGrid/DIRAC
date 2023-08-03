@@ -39,7 +39,6 @@ def preparePilots(stateCount, testSite, testCE, testGroup):
     res = paDB.addPilotTQReference(
         pilotRef,
         123,
-        "ownerDN",
         testGroup,
     )
     assert res["OK"] is True, res["Message"]
@@ -84,7 +83,6 @@ def test_basic():
     res = paDB.addPilotTQReference(
         ["pilotRef"],
         123,
-        "ownerDN",
         "ownerGroup",
     )
     assert res["OK"] is True

@@ -23,7 +23,7 @@ import threading
 
 import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
 from DIRAC import S_ERROR, S_OK
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getUsernameForDN, getVOForGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DErrno
@@ -39,7 +39,7 @@ class PilotAgentsDB(DB):
 
     ##########################################################################################
     def addPilotTQReference(
-        self, pilotRef, taskQueueID, ownerDN, ownerGroup, broker="Unknown", gridType="DIRAC", pilotStampDict={}
+        self, pilotRef, taskQueueID, ownerGroup, broker="Unknown", gridType="DIRAC", pilotStampDict={}
     ):
         """Add a new pilot job reference"""
 
@@ -50,16 +50,11 @@ class PilotAgentsDB(DB):
             if ref in pilotStampDict:
                 stamp = pilotStampDict[ref]
 
-            res = self._escapeString(ownerDN)
-            if not res["OK"]:
-                return res
-            escapedOwnerDN = res["Value"]
-
             req = (
-                "INSERT INTO PilotAgents( PilotJobReference, TaskQueueID, OwnerDN, "
+                "INSERT INTO PilotAgents( PilotJobReference, TaskQueueID, "
                 + "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp ) "
-                + "VALUES ('%s',%d,%s,'%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')"
-                % (ref, int(taskQueueID), escapedOwnerDN, ownerGroup, broker, gridType, stamp)
+                + "VALUES ('%s',%d,'%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')"
+                % (ref, int(taskQueueID), ownerGroup, broker, gridType, stamp)
             )
 
             result = self._update(req)
@@ -186,7 +181,7 @@ class PilotAgentsDB(DB):
         return S_OK(result["Value"][0][0])
 
     #########################################################################################
-    def getPilotGroups(self, groupList=["Status", "OwnerDN", "OwnerGroup", "GridType"], condDict={}):
+    def getPilotGroups(self, groupList=["Status", "OwnerGroup", "GridType"], condDict={}):
         """
         Get all exisiting combinations of groupList Values
         """
@@ -275,7 +270,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         parameters = (
             [
                 "PilotJobReference",
-                "OwnerDN",
                 "OwnerGroup",
                 "GridType",
                 "Broker",
@@ -1030,7 +1024,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
     def getPilotMonitorSelectors(self):
         """Get distinct values for the Pilot Monitor page selectors"""
 
-        paramNames = ["OwnerDN", "OwnerGroup", "GridType", "Broker", "Status", "DestinationSite", "GridSite"]
+        paramNames = ["OwnerGroup", "GridType", "Broker", "Status", "DestinationSite", "GridSite"]
 
         resultDict = {}
         for param in paramNames:
@@ -1039,14 +1033,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
                 resultDict[param] = result["Value"]
             else:
                 resultDict = []
-
-            if param == "OwnerDN":
-                userList = []
-                for dn in result["Value"]:
-                    resultUser = getUsernameForDN(dn)
-                    if resultUser["OK"]:
-                        userList.append(resultUser["Value"])
-                resultDict["Owner"] = userList
 
         return S_OK(resultDict)
 
@@ -1057,16 +1043,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         resultDict = {}
         if "LastUpdateTime" in selectDict:
             del selectDict["LastUpdateTime"]
-        if "Owner" in selectDict:
-            userList = selectDict["Owner"]
-            if not isinstance(userList, list):
-                userList = [userList]
-            dnList = []
-            for uName in userList:
-                uList = getDNForUsername(uName)["Value"]
-                dnList += uList
-            selectDict["OwnerDN"] = dnList
-            del selectDict["Owner"]
+
         startDate = selectDict.get("FromDate", None)
         if startDate:
             del selectDict["FromDate"]
@@ -1108,7 +1085,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
 
         paramNames = [
             "PilotJobReference",
-            "OwnerDN",
             "OwnerGroup",
             "GridType",
             "Broker",
