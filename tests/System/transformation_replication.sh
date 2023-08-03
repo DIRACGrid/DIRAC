@@ -101,9 +101,9 @@ fi
 echo ""
 echo "Checking if the files have been added to the transformation"
 dirac-transformation-get-files "${transID}" | sort > ./transLFNs.txt
-if diff --ignore-space-change LFNstoTS.txt transLFNs.txt!
+if ! diff --ignore-space-change LFNstoTS.txt transLFNs.txt
 then
-  echo 'Error: files have not been  added to the transformation'
+  echo 'Error: files have not been added to the transformation'
   exit 1
 else
   echo 'Successful check'
