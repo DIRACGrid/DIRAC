@@ -16,7 +16,6 @@ Example:
                                                           'LastUpdateTime': datetime.datetime(2011, 2, 21, 12, 49, 14),
                                                           'OutputReady': 'False',
                                                           'OwnerGroup': '/biomed',
-                                                          'ParentID': 0L,
                                                           'PilotID': 2241L,
                                                           'PilotJobReference': 'https://marlb.in2p3.fr:9000/2KHFrQjkw',
                                                           'PilotStamp': '',

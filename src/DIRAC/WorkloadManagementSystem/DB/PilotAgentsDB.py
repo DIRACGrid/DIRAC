@@ -262,7 +262,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         return S_OK(idList)
 
     ##########################################################################################
-    def getPilotInfo(self, pilotRef=False, parentId=False, conn=False, paramNames=[], pilotID=False):
+    def getPilotInfo(self, pilotRef=False, conn=False, paramNames=[], pilotID=False):
         """Get all the information for the pilot job reference or reference list"""
 
         parameters = (
@@ -273,7 +273,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
                 "Status",
                 "DestinationSite",
                 "BenchMark",
-                "ParentID",
                 "OutputReady",
                 "AccountingSent",
                 "SubmissionTime",
@@ -290,7 +289,10 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
 
         cmd = f"SELECT {', '.join(parameters)} FROM PilotAgents"
         condSQL = []
-        for key, value in [("PilotJobReference", pilotRef), ("PilotID", pilotID), ("ParentID", parentId)]:
+        for key, value in [
+            ("PilotJobReference", pilotRef),
+            ("PilotID", pilotID),
+        ]:
             resList = []
             for v in value if isinstance(value, list) else [value] if value else []:
                 result = self._escapeString(v)
@@ -309,8 +311,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             msg = "No pilots found"
             if pilotRef:
                 msg += f" for PilotJobReference(s): {pilotRef}"
-            if parentId:
-                msg += f" with parent id: {parentId}"
             return S_ERROR(DErrno.EWMSNOPILOT, msg)
 
         resDict = {}
@@ -1087,7 +1087,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             "Status",
             "DestinationSite",
             "BenchMark",
-            "ParentID",
             "SubmissionTime",
             "PilotID",
             "LastUpdateTime",
