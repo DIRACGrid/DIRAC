@@ -49,8 +49,8 @@ class PilotAgentsDB(DB):
                 stamp = pilotStampDict[ref]
 
             req = (
-                "INSERT INTO PilotAgents( PilotJobReference, TaskQueueID, "
-                + "OwnerGroup, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp ) "
+                "INSERT INTO PilotAgents "
+                + "(PilotJobReference, TaskQueueID, OwnerGroup, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp) "
                 + "VALUES ('%s',%d,'%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')"
                 % (ref, int(taskQueueID), ownerGroup, gridType, stamp)
             )
@@ -574,61 +574,16 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
 
         return S_OK(summary_dict)
 
-    #   def getPilotSummaryShort( self, startTimeWindow = None, endTimeWindow = None, ce = '' ):
-    #     """
-    #     Spin off the method getPilotSummary. It is doing things in such a way that
-    #     do not make much sense. This method returns the pilots that were updated in the
-    #     time window [ startTimeWindow, endTimeWindow ), if they are present.
-    #     """
-    #
-    #     sqlSelect = 'SELECT DestinationSite,Status,count(Status) FROM PilotAgents'
-    #
-    #     whereSelect = []
-    #
-    #     if startTimeWindow is not None:
-    #       whereSelect.append( ' LastUpdateTime >= "%s"' % startTimeWindow )
-    #     if endTimeWindow is not None:
-    #       whereSelect.append( ' LastUpdateTime < "%s"' % endTimeWindow )
-    #     if ce:
-    #       whereSelect.append( ' DestinationSite = "%s"' % ce )
-    #
-    #     if whereSelect:
-    #       sqlSelect += ' WHERE'
-    #       sqlSelect += ' AND'.join( whereSelect )
-    #
-    #     sqlSelect += ' GROUP BY DestinationSite,Status'
-    #
-    #     resSelect = self._query( sqlSelect )
-    #     if not resSelect[ 'OK' ]:
-    #       return resSelect
-    #
-    #     result = { 'Total' : collections.defaultdict( int ) }
-    #
-    #     for row in resSelect[ 'Value' ]:
-    #
-    #       ceName, statusName, statusCount = row
-    #
-    #       if not ceName in result:
-    #         result[ ceName ] = {}
-    #       result[ ceName ][ statusName ] = int( statusCount )
-    #
-    #       result[ 'Total' ][ statusName ] += int( statusCount )
-    #
-    #     return S_OK( result )
-
     ##########################################################################################
-    def getGroupedPilotSummary(self, selectDict, columnList):
+    def getGroupedPilotSummary(self, columnList):
         """
         The simplified pilot summary based on getPilotSummaryWeb method. It calculates pilot efficiency
         based on the same algorithm as in the Web version, basically takes into account Done and
         Aborted pilots only from the last day. The selection is done entirely in SQL.
 
-        :param dict selectDict: A dictionary to pass additional conditions to select statements, i.e.
-                                it allows to define start time for Done and Aborted Pilots. Unused.
         :param list columnList: A list of column to consider when grouping to calculate efficiencies.
                            e.g. ['GridSite', 'DestinationSite'] is used to calculate efficiencies
-                           for sites and  CEs. If we want to add an OwnerGroup it would be:
-                           ['GridSite', 'DestinationSite', 'OwnerGroup'].
+                           for sites and  CEs.
         :return: S_OK/S_ERROR with a dict containing the ParameterNames and Records lists.
         """
 

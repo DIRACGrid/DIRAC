@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-########################################################################
-# File :    dirac-admin-get-job-pilots
-# Author :  Stuart Paterson
-########################################################################
 """
 Retrieve info about pilots that have matched a given Job
 
@@ -17,22 +13,18 @@ Example:
                                                           'LastUpdateTime': datetime.datetime(2011, 2, 21, 12, 39, 10),
                                                           'OutputReady': 'True',
                                                           'OwnerGroup': '/biomed',
-                                                          'PilotID': 2247L,
                                                           'PilotJobReference': 'https://marlb.in2p3.fr:9000/biq6KT45Q',
                                                           'PilotStamp': '',
                                                           'Status': 'Done',
                                                           'SubmissionTime': datetime.datetime(2011, 2, 21, 12, 27, 52),
                                                           'TaskQueueID': 399L}}
 """
-# pylint: disable=wrong-import-position
 from DIRAC.Core.Base.Script import Script
 
 
 @Script()
 def main():
-    # Registering arguments will automatically add their description to the help menu
     Script.registerArgument(["JobID:    DIRAC ID of the Job"])
-    # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
     _, args = Script.parseCommandLine(ignoreErrors=True)
 
     from DIRAC import exit as DIRACExit
@@ -55,8 +47,8 @@ def main():
             errorList.append((job, result["Message"]))
             exitCode = 2
 
-    for error in errorList:
-        print("ERROR %s: %s" % error)
+    for job, error in errorList:
+        print(f"ERROR for {job}: {error}")
 
     DIRACExit(exitCode)
 

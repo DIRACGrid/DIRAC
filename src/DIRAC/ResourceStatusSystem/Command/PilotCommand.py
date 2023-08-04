@@ -93,9 +93,9 @@ class PilotCommand(Command):
             return S_ERROR(f'"{element}" is not  Site nor Resource')
 
         if element == "Resource":
-            pilotsResultPivot = self.pilots.getGroupedPilotSummary({}, ["GridSite", "DestinationSite", "OwnerGroup"])
+            pilotsResultPivot = self.pilots.getGroupedPilotSummary(["GridSite", "DestinationSite", "OwnerGroup"])
         elif element == "Site":
-            pilotsResultPivot = self.pilots.getGroupedPilotSummary({}, ["GridSite", "OwnerGroup"])
+            pilotsResultPivot = self.pilots.getGroupedPilotSummary(["GridSite", "OwnerGroup"])
         else:
             # You should never see this error
             return S_ERROR(f'"{element}" is not  Site nor Resource')

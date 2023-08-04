@@ -75,13 +75,13 @@ class PilotManagerHandler(RequestHandler):
     @deprecated("Use addPilotTQRef")
     @classmethod
     def export_addPilotTQReference(
-        cls, pilotRef, taskQueueID, ownerDN, ownerGroup, gridType="DIRAC", pilotStampDict={}
+        cls, pilotRef, taskQueueID, ownerDN, ownerGroup, broker="Unknown", gridType="DIRAC", pilotStampDict={}
     ):
         """Add a new pilot job reference"""
 
-        return cls.pilotAgentsDB.addPilotTQReference(pilotRef, taskQueueID, ownerGroup, gridType, pilotStampDict)
+        return cls.pilotAgentsDB.addPilotTQReference(pilotRef, taskQueueID, gridType, pilotStampDict)
 
-    types_addPilotTQRef = [list, int, str, str]
+    types_addPilotTQRef = [list, int, str]
 
     @classmethod
     def export_addPilotTQRef(cls, pilotRef, taskQueueID, ownerGroup, gridType="DIRAC", pilotStampDict={}):
@@ -265,19 +265,18 @@ class PilotManagerHandler(RequestHandler):
         return cls.pilotAgentsDB.getPilotSummaryWeb(selectDict, sortList, startItem, maxItems)
 
     ##############################################################################
-    types_getGroupedPilotSummary = [dict, list]
+    types_getGroupedPilotSummary = [list]
 
     @classmethod
-    def export_getGroupedPilotSummary(cls, selectDict, columnList):
+    def export_getGroupedPilotSummary(cls, columnList):
         """
         Get pilot summary showing grouped by columns in columnList, all pilot states
         and pilot efficiencies in a single row.
 
-        :param selectDict: additional arguments to SELECT clause
         :param columnList: a list of columns to GROUP BY (less status column)
         :return: a dictionary containing column names and data records
         """
-        return cls.pilotAgentsDB.getGroupedPilotSummary(selectDict, columnList)
+        return cls.pilotAgentsDB.getGroupedPilotSummary(columnList)
 
     ##############################################################################
     types_getPilots = [[str, int]]
@@ -339,8 +338,9 @@ class PilotManagerHandler(RequestHandler):
                 return S_ERROR("Failed to get info for pilot " + pilotReference)
 
             pilotDict = result["Value"][pilotReference]
-            group = pilotDict["OwnerGroup"]
-            queue = "@@@".join([group, pilotDict["GridSite"], pilotDict["DestinationSite"], pilotDict["Queue"]])
+            queue = "@@@".join(
+                [pilotDict["OwnerGroup"], pilotDict["GridSite"], pilotDict["DestinationSite"], pilotDict["Queue"]]
+            )
             gridType = pilotDict["GridType"]
             pilotRefDict.setdefault(queue, {})
             pilotRefDict[queue].setdefault("PilotList", [])

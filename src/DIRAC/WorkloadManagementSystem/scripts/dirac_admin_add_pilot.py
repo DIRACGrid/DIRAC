@@ -8,7 +8,7 @@ the same can't be true for pilots started in the vacuum (i.e. without SiteDirect
 This script is here to solve specifically this issue, even though it can be used for other things too.
 
 Example:
-  $ dirac-admin-add-pilot htcondor:123456 user user_group DIRAC A11D8D2E-60F8-17A6-5520-E2276F41 --Status=Running
+  $ dirac-admin-add-pilot htcondor:123456 group DIRAC A11D8D2E-60F8-17A6-5520-E2276F41 --Status=Running
 
 """
 
@@ -88,7 +88,7 @@ def main():
         if not DErrno.cmpError(res, DErrno.EWMSNOPILOT):
             gLogger.error(res["Message"])
             DIRACExit(1)
-        res = pmc.addPilotTQRef([pilotRef], params.taskQueueID, ownerGroup, "Unknown", gridType, {pilotRef: pilotStamp})
+        res = pmc.addPilotTQRef([pilotRef], params.taskQueueID, ownerGroup, gridType, {pilotRef: pilotStamp})
         if not res["OK"]:
             gLogger.error(res["Message"])
             DIRACExit(1)

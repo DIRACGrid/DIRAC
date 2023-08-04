@@ -2,8 +2,7 @@
 
 *TransformationSystem
 
-NEW: (#7170) 
-Implement a finer grained permissions model for Transformations.
+NEW: (#7170) Implement a finer grained permissions model for Transformations.
 
 *DataManagementSystem
 

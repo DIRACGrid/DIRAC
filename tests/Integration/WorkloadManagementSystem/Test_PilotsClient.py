@@ -27,7 +27,7 @@ def test_PilotsDB():
     for jobID in ["aPilot", "anotherPilot"]:
         pilots.deletePilots(jobID)
 
-    res = pilots.addPilotTQRef(["aPilot"], 1, "ownerGroup")
+    res = pilots.addPilotTQRef(["aPilot"], 1, "a/owner/Group")
     assert res["OK"], res["Message"]
     res = pilots.getCurrentPilotCounters({})
     assert res["OK"], res["Message"]
@@ -38,14 +38,14 @@ def test_PilotsDB():
     assert res["OK"], res["Message"]
     assert res["Value"] == {}
 
-    res = pilots.addPilotTQRef(["anotherPilot"], 1, "ownerGroup")
+    res = pilots.addPilotTQRef(["anotherPilot"], 1, "a/owner/Group")
     assert res["OK"], res["Message"]
     res = pilots.storePilotOutput("anotherPilot", "This is an output", "this is an error")
     assert res["OK"], res["Message"]
     res = pilots.getPilotOutput("anotherPilot")
     assert res["OK"], res["Message"]
     assert res["Value"] == {
-        "OwnerGroup": "ownerGroup",
+        "OwnerGroup": "a/owner/Group",
         "StdErr": "this is an error",
         "FileList": [],
         "StdOut": "This is an output",
@@ -67,7 +67,7 @@ def test_PilotsDB():
     assert res["OK"], res["Message"]
     assert res["Value"] == {
         "GridType": ["DIRAC"],
-        "OwnerGroup": ["ownerGroup"],
+        "OwnerGroup": ["a/owner/Group"],
         "DestinationSite": ["NotAssigned"],
         "Status": ["Submitted"],
         "GridSite": ["Unknown"],
