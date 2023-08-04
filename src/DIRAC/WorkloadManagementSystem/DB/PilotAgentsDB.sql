@@ -38,7 +38,6 @@ CREATE TABLE `PilotAgents` (
   `Broker` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `OwnerGroup` VARCHAR(128) NOT NULL,
   `GridType` VARCHAR(32) NOT NULL DEFAULT 'LCG',
-  `GridRequirements` TEXT,
   `BenchMark` DOUBLE NOT NULL DEFAULT 0.0,
   `SubmissionTime` DATETIME DEFAULT NULL,
   `LastUpdateTime` DATETIME DEFAULT NULL,
