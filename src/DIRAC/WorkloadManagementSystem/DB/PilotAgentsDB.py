@@ -38,9 +38,7 @@ class PilotAgentsDB(DB):
         self.lock = threading.Lock()
 
     ##########################################################################################
-    def addPilotTQReference(
-        self, pilotRef, taskQueueID, ownerGroup, broker="Unknown", gridType="DIRAC", pilotStampDict={}
-    ):
+    def addPilotTQReference(self, pilotRef, taskQueueID, ownerGroup, gridType="DIRAC", pilotStampDict={}):
         """Add a new pilot job reference"""
 
         err = "PilotAgentsDB.addPilotTQReference: Failed to retrieve a new Id."
@@ -52,9 +50,9 @@ class PilotAgentsDB(DB):
 
             req = (
                 "INSERT INTO PilotAgents( PilotJobReference, TaskQueueID, "
-                + "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp ) "
-                + "VALUES ('%s',%d,'%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')"
-                % (ref, int(taskQueueID), ownerGroup, broker, gridType, stamp)
+                + "OwnerGroup, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp ) "
+                + "VALUES ('%s',%d,'%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')"
+                % (ref, int(taskQueueID), ownerGroup, gridType, stamp)
             )
 
             result = self._update(req)
@@ -272,7 +270,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
                 "PilotJobReference",
                 "OwnerGroup",
                 "GridType",
-                "Broker",
                 "Status",
                 "DestinationSite",
                 "BenchMark",
@@ -1024,7 +1021,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
     def getPilotMonitorSelectors(self):
         """Get distinct values for the Pilot Monitor page selectors"""
 
-        paramNames = ["OwnerGroup", "GridType", "Broker", "Status", "DestinationSite", "GridSite"]
+        paramNames = ["OwnerGroup", "GridType", "Status", "DestinationSite", "GridSite"]
 
         resultDict = {}
         for param in paramNames:
@@ -1087,7 +1084,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             "PilotJobReference",
             "OwnerGroup",
             "GridType",
-            "Broker",
             "Status",
             "DestinationSite",
             "BenchMark",

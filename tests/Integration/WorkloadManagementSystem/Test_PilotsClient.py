@@ -69,7 +69,6 @@ def test_PilotsDB():
         "GridType": ["DIRAC"],
         "OwnerGroup": ["ownerGroup"],
         "DestinationSite": ["NotAssigned"],
-        "Broker": ["Unknown"],
         "Status": ["Submitted"],
         "GridSite": ["Unknown"],
     }

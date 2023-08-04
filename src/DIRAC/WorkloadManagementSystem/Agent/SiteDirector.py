@@ -1354,7 +1354,7 @@ class SiteDirector(AgentModule):
                 pA.setValueByKey("Site", "Unknown")
             pA.setValueByKey("GridCE", pilotDict[pRef]["DestinationSite"])
             pA.setValueByKey("GridMiddleware", pilotDict[pRef]["GridType"])
-            pA.setValueByKey("GridResourceBroker", pilotDict[pRef]["Broker"])
+            pA.setValueByKey("GridResourceBroker", "DIRAC")
             pA.setValueByKey("GridStatus", pilotDict[pRef]["Status"])
             if "Jobs" not in pilotDict[pRef]:
                 pA.setValueByKey("Jobs", 0)
