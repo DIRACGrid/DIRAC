@@ -34,9 +34,9 @@ class ProductionManagerHandlerMixin:
 
     def export_addProduction(self, prodName, prodDescription):
         credDict = self.getRemoteCredentials()
-        authorDN = credDict.get("DN", credDict.get("CN"))
+        author = credDict.get("username")
         authorGroup = credDict.get("group")
-        res = self.productionDB.addProduction(prodName, prodDescription, authorDN, authorGroup)
+        res = self.productionDB.addProduction(prodName, prodDescription, author, authorGroup)
         if res["OK"]:
             gLogger.info("Added production %d" % res["Value"])
         return res
@@ -45,8 +45,8 @@ class ProductionManagerHandlerMixin:
 
     def export_deleteProduction(self, prodName):
         credDict = self.getRemoteCredentials()
-        authorDN = credDict.get("DN", credDict.get("CN"))
-        return self.productionDB.deleteProduction(prodName, author=authorDN)
+        author = credDict.get("username")
+        return self.productionDB.deleteProduction(prodName, author=author)
 
     types_getProductions = []
 
