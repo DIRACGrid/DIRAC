@@ -9,7 +9,9 @@ import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
+from DIRAC.WorkloadManagementSystem.DB.ElasticPilotParametersDB import ElasticPilotParametersDB
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import (
     getPilotCE,
@@ -32,6 +34,18 @@ class PilotManagerHandler(RequestHandler):
 
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp}")
+
+        cls.elasticPilotParametersDB = None
+        if Operations().getValue("/Services/JobMonitoring/useESForPilotParametersFlag", False):
+            try:
+                result = ObjectLoader().loadObject(
+                    "WorkloadManagementSystem.DB.ElasticPilotParametersDB", "ElasticPilotParametersDB"
+                )
+                if not result["OK"]:
+                    return result
+                cls.elasticPilotParametersDB = result["Value"]()
+            except RuntimeError as excp:
+                return S_ERROR(f"Can't connect to DB: {excp}")
 
         return S_OK()
 
@@ -483,3 +497,15 @@ class PilotManagerHandler(RequestHandler):
     @classmethod
     def export_clearPilots(cls, interval=30, aborted_interval=7):
         return cls.pilotAgentsDB.clearPilots(interval, aborted_interval)
+
+    #### ElasticPilotParameters
+
+    types_setPilotParameters = [int, str, str]
+
+    @classmethod
+    def export_setPilotParameter(cls, pilotID, key, value):
+        """Set Pilot parameters"""
+        if cls.elasticPilotParametersDB:
+            return cls.elasticPilotParametersDB.setPilotParameter(pilotID, key, value)
+
+        return S_OK()
