@@ -398,7 +398,7 @@ class SingularityComputingElement(ComputingElement):
         innerCmd = os.path.join(self.__innerdir, "dirac_container.sh")
         cmd = [self.__singularityBin, "exec"]
         cmd.extend(["--contain"])  # use minimal /dev and empty other directories (e.g. /tmp and $HOME)
-        cmd.extend(["--ipc", "--pid"])  # run container in new IPC and PID namespaces
+        cmd.extend(["--ipc"])  # run container in a new IPC namespace
         cmd.extend(["--workdir", baseDir])  # working directory to be used for /tmp, /var/tmp and $HOME
         cmd.extend(["--home", "/tmp"])  # Avoid using small tmpfs for default $HOME and use scratch /tmp instead
         if self.__hasUserNS():
