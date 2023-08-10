@@ -430,10 +430,16 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                     )
                     opFile.Error = "Couldn't get metadata"
                 elif noReplicas:
-                    self.log.error(
-                        "Unable to schedule transfer",
-                        f"File {opFile.LFN} doesn't exist at {','.join(noReplicas)}",
-                    )
+                    if None in noReplicas:
+                        self.log.error(
+                            "Unable to schedule transfer",
+                            f"File {opFile.LFN} doesn't have any replicas, which should never happen",
+                        )
+                    else:
+                        self.log.error(
+                            "Unable to schedule transfer",
+                            f"File {opFile.LFN} doesn't exist at {','.join(noReplicas)}",
+                        )
                     opFile.Error = "No replicas found"
                     opFile.Status = "Failed"
                 elif badReplicas:
