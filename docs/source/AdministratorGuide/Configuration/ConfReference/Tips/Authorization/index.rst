@@ -35,7 +35,11 @@ are showed in the next table:
 +----------------------------+------------------------------------------------------------------+-------------+
 | *PrivateLimitedDelegation* | Allow getting only limited proxies for one self                  |             |
 +----------------------------+------------------------------------------------------------------+-------------+
-| *ProductionManagement*     | Allow managing production                                        |             |
+| *ProductionManagement*     | Allow managing all productions                                   |             |
++----------------------------+------------------------------------------------------------------+-------------+
+| *ProductionSharing*        | Allow managing productions owned by the same group               |             |
++----------------------------+------------------------------------------------------------------+-------------+
+| *ProductionUser*           | Allow managing productions owned by the same user                |             |
 +----------------------------+------------------------------------------------------------------+-------------+
 | *ProxyManagement*          | Allow managing proxies                                           |             |
 +----------------------------+------------------------------------------------------------------+-------------+

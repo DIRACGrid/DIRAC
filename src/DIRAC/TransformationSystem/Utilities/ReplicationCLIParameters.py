@@ -2,6 +2,7 @@
 Command Line Parameters for creating the Replication transformations Script
 """
 from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Security.Properties import SecurityProperty
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSVOForGroup
 
@@ -151,9 +152,13 @@ class Params:
         groupProperties = proxyValues.get("groupProperties", [])
 
         if groupProperties:
-            if "ProductionManagement" not in groupProperties:
+            if (
+                SecurityProperty.PRODUCTION_MANAGEMENT not in groupProperties
+                and SecurityProperty.PRODUCTION_SHARING not in groupProperties
+                and SecurityProperty.PRODUCTION_USER not in groupProperties
+            ):
                 self.errorMessages.append(
-                    "ERROR: Not allowed to create production, you need a ProductionManagement proxy."
+                    "ERROR: Not allowed to create production, you need one of the Production properties."
                 )
                 return False
         else:
