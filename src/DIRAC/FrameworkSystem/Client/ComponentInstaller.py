@@ -87,6 +87,7 @@ from DIRAC.Core.Security.Properties import (
     PROXY_MANAGEMENT,
     SERVICE_ADMINISTRATOR,
     TRUSTED_HOST,
+    PRODUCTION_MANAGEMENT,
 )
 from DIRAC.Core.Utilities.Extensions import (
     extensionsByPriority,
@@ -438,6 +439,7 @@ class ComponentInstaller:
             FULL_DELEGATION,
             PROXY_MANAGEMENT,
             OPERATOR,
+            PRODUCTION_MANAGEMENT,
         ]
 
         for section in (
