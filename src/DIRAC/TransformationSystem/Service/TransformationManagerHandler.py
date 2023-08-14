@@ -2,6 +2,7 @@
 """
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Security.Properties import SecurityProperty
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -32,6 +33,32 @@ class TransformationManagerHandlerMixin:
             return S_ERROR(f"Can't connect to TransformationDB: {excp}")
 
         return S_OK()
+
+    def checkPermissions(self, transName: str):
+        """
+        checks if remote user has permission to access to a given transformation
+
+        :param str transName: Name of the transformation to check
+
+        :return: S_ERROR if user does not have permission or if transformation does not exist
+                 S_OK otherwise
+        """
+        credDict = self.getRemoteCredentials()
+        groupProperties = credDict.get("properties", [])
+        if SecurityProperty.PRODUCTION_MANAGEMENT in groupProperties:
+            return S_OK()
+        tfDetails = self.transformationDB.getTransformation(transName)
+        if not tfDetails["OK"]:
+            return S_ERROR(f"Could not retrieve transformation {transName} details for permissions check.")
+        authorGroup = tfDetails["Value"]["AuthorGroup"]
+        authorDN = tfDetails["Value"]["AuthorDN"]
+        if SecurityProperty.PRODUCTION_SHARING in groupProperties:
+            if authorGroup == credDict["group"]:
+                return S_OK()
+        if SecurityProperty.PRODUCTION_USER in groupProperties:
+            if authorDN == credDict["DN"]:
+                return S_OK()
+        return S_ERROR(f"You do not have permissions for transformation {transName}")
 
     types_getCounters = [str, list, dict]
 
@@ -67,11 +94,16 @@ class TransformationManagerHandlerMixin:
         inputMetaQuery=None,
         outputMetaQuery=None,
     ):
-        #    authorDN = self._clientTransport.peerCredentials['DN']
-        #    authorGroup = self._clientTransport.peerCredentials['group']
         credDict = self.getRemoteCredentials()
         authorDN = credDict.get("DN", credDict.get("CN"))
         authorGroup = credDict.get("group")
+        groupProperties = credDict.get("properties", [])
+        if (
+            SecurityProperty.PRODUCTION_MANAGEMENT not in groupProperties
+            and SecurityProperty.PRODUCTION_SHARING not in groupProperties
+            and SecurityProperty.PRODUCTION_USER not in groupProperties
+        ):
+            return S_ERROR("You do not have permission to add a Transformation")
         res = self.transformationDB.addTransformation(
             transName,
             description,
@@ -99,43 +131,45 @@ class TransformationManagerHandlerMixin:
     types_deleteTransformation = [[int, str]]
 
     def export_deleteTransformation(self, transName):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
         credDict = self.getRemoteCredentials()
         authorDN = credDict.get("DN", credDict.get("CN"))
-        # authorDN = self._clientTransport.peerCredentials['DN']
         return self.transformationDB.deleteTransformation(transName, author=authorDN)
 
     types_completeTransformation = [[int, str]]
 
     def export_completeTransformation(self, transName):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
         credDict = self.getRemoteCredentials()
         authorDN = credDict.get("DN", credDict.get("CN"))
-        # authorDN = self._clientTransport.peerCredentials['DN']
         return self.transformationDB.setTransformationParameter(transName, "Status", "Completed", author=authorDN)
 
     types_cleanTransformation = [[int, str]]
 
     def export_cleanTransformation(self, transName):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
         credDict = self.getRemoteCredentials()
         authorDN = credDict.get("DN", credDict.get("CN"))
-        # authorDN = self._clientTransport.peerCredentials['DN']
         return self.transformationDB.cleanTransformation(transName, author=authorDN)
 
     types_setTransformationParameter = [[int, str], str]
 
     def export_setTransformationParameter(self, transName, paramName, paramValue):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
         credDict = self.getRemoteCredentials()
         authorDN = credDict.get("DN", credDict.get("CN"))
-        # authorDN = self._clientTransport.peerCredentials['DN']
         return self.transformationDB.setTransformationParameter(transName, paramName, paramValue, author=authorDN)
 
     types_deleteTransformationParameter = [[int, str], str]
 
-    @classmethod
-    def export_deleteTransformationParameter(cls, transName, paramName):
-        # credDict = self.getRemoteCredentials()
-        # authorDN = credDict[ 'DN' ]
-        # authorDN = self._clientTransport.peerCredentials['DN']
-        return cls.transformationDB.deleteTransformationParameter(transName, paramName)
+    def export_deleteTransformationParameter(self, transName, paramName):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
+        return self.transformationDB.deleteTransformationParameter(transName, paramName)
 
     types_getTransformations = []
 
@@ -168,21 +202,26 @@ class TransformationManagerHandlerMixin:
 
     types_getTransformation = [[int, str]]
 
-    @classmethod
-    def export_getTransformation(cls, transName, extraParams=False):
-        return cls.transformationDB.getTransformation(transName, extraParams=extraParams)
+    def export_getTransformation(self, transName, extraParams=False):
+        # check first if transformation exists to avoid returning permissions error for non-existing transformation
+        tfDetails = self.transformationDB.getTransformation(transName, extraParams=extraParams)
+        if not tfDetails["OK"]:
+            return tfDetails
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
+        return tfDetails
 
     types_getTransformationParameters = [[int, str], [str, list]]
 
-    @classmethod
-    def export_getTransformationParameters(cls, transName, parameters):
-        return cls.transformationDB.getTransformationParameters(transName, parameters)
+    def export_getTransformationParameters(self, transName, parameters):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
+        return self.transformationDB.getTransformationParameters(transName, parameters)
 
     types_getTransformationWithStatus = [[str, list, tuple]]
 
-    @classmethod
-    def export_getTransformationWithStatus(cls, status):
-        return cls.transformationDB.getTransformationWithStatus(status)
+    def export_getTransformationWithStatus(self, status):
+        return self.transformationDB.getTransformationWithStatus(status)
 
     ####################################################################
     #
@@ -191,28 +230,30 @@ class TransformationManagerHandlerMixin:
 
     types_addFilesToTransformation = [[int, str], [list, tuple]]
 
-    @classmethod
-    def export_addFilesToTransformation(cls, transName, lfns):
-        return cls.transformationDB.addFilesToTransformation(transName, lfns)
+    def export_addFilesToTransformation(self, transName, lfns):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
+        return self.transformationDB.addFilesToTransformation(transName, lfns)
 
     types_addTaskForTransformation = [[int, str]]
 
-    @classmethod
-    def export_addTaskForTransformation(cls, transName, lfns=[], se="Unknown"):
-        return cls.transformationDB.addTaskForTransformation(transName, lfns=lfns, se=se)
+    def export_addTaskForTransformation(self, transName, lfns=[], se="Unknown"):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
+        return self.transformationDB.addTaskForTransformation(transName, lfns=lfns, se=se)
 
     types_setFileStatusForTransformation = [[int, str], dict]
 
-    @classmethod
     @ignoreEncodeWarning
-    def export_setFileStatusForTransformation(cls, transName, dictOfNewFilesStatus):
+    def export_setFileStatusForTransformation(self, transName, dictOfNewFilesStatus):
         """Sets the file status for the transformation.
 
         The dictOfNewFilesStatus is a dictionary with the form:
         {12345: ('StatusA', errorA), 6789: ('StatusB',errorB),  ... } where the keys are fileIDs
         The tuple may be a string with only the status if the client was from an older version
         """
-
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
         if not dictOfNewFilesStatus:
             return S_OK({})
 
@@ -222,35 +263,43 @@ class TransformationManagerHandlerMixin:
         else:
             return S_ERROR("Status field should be two values")
 
-        res = cls.transformationDB._getConnectionTransID(False, transName)
+        res = self.transformationDB._getConnectionTransID(False, transName)
         if not res["OK"]:
             return res
         connection = res["Value"]["Connection"]
         transID = res["Value"]["TransformationID"]
 
-        return cls.transformationDB.setFileStatusForTransformation(transID, newStatusForFileIDs, connection=connection)
+        return self.transformationDB.setFileStatusForTransformation(transID, newStatusForFileIDs, connection=connection)
 
     types_getTransformationStats = [[int, str]]
 
-    @classmethod
-    def export_getTransformationStats(cls, transName):
-        return cls.transformationDB.getTransformationStats(transName)
+    def export_getTransformationStats(self, transName):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
+        return self.transformationDB.getTransformationStats(transName)
 
     types_getTransformationFilesCount = [[int, str], str]
 
-    @classmethod
-    def export_getTransformationFilesCount(cls, transName, field, selection={}):
-        return cls.transformationDB.getTransformationFilesCount(transName, field, selection=selection)
+    def export_getTransformationFilesCount(self, transName, field, selection={}):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
+        return self.transformationDB.getTransformationFilesCount(transName, field, selection=selection)
 
     types_getTransformationFiles = []
 
-    @classmethod
     def export_getTransformationFiles(
-        cls, condDict=None, older=None, newer=None, timeStamp="LastUpdate", orderAttribute=None, limit=None, offset=None
+        self,
+        condDict=None,
+        older=None,
+        newer=None,
+        timeStamp="LastUpdate",
+        orderAttribute=None,
+        limit=None,
+        offset=None,
     ):
         if not condDict:
             condDict = {}
-        return cls.transformationDB.getTransformationFiles(
+        return self.transformationDB.getTransformationFiles(
             condDict=condDict,
             older=older,
             newer=newer,
@@ -295,33 +344,39 @@ class TransformationManagerHandlerMixin:
 
     types_setTaskStatus = [[int, str], [list, int], str]
 
-    @classmethod
-    def export_setTaskStatus(cls, transName, taskID, status):
-        return cls.transformationDB.setTaskStatus(transName, taskID, status)
+    def export_setTaskStatus(self, transName, taskID, status):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
+        return self.transformationDB.setTaskStatus(transName, taskID, status)
 
     types_setTaskStatusAndWmsID = [[int, str], int, str, str]
 
-    @classmethod
-    def export_setTaskStatusAndWmsID(cls, transName, taskID, status, taskWmsID):
-        return cls.transformationDB.setTaskStatusAndWmsID(transName, taskID, status, taskWmsID)
+    def export_setTaskStatusAndWmsID(self, transName, taskID, status, taskWmsID):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
+        return self.transformationDB.setTaskStatusAndWmsID(transName, taskID, status, taskWmsID)
 
     types_getTransformationTaskStats = [[int, str]]
 
-    @classmethod
-    def export_getTransformationTaskStats(cls, transName):
-        return cls.transformationDB.getTransformationTaskStats(transName)
+    def export_getTransformationTaskStats(self, transName):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
+        return self.transformationDB.getTransformationTaskStats(transName)
 
     types_deleteTasks = [[int, str], int, int]
 
     def export_deleteTasks(self, transName, taskMin, taskMax):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
         credDict = self.getRemoteCredentials()
         authorDN = credDict.get("DN", credDict.get("CN"))
-        # authorDN = self._clientTransport.peerCredentials['DN']
         return self.transformationDB.deleteTasks(transName, taskMin, taskMax, author=authorDN)
 
     types_extendTransformation = [[int, str], int]
 
     def export_extendTransformation(self, transName, nTasks):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
         credDict = self.getRemoteCredentials()
         authorDN = credDict.get("DN", credDict.get("CN"))
         # authorDN = self._clientTransport.peerCredentials['DN']
@@ -331,6 +386,8 @@ class TransformationManagerHandlerMixin:
 
     def export_getTasksToSubmit(self, transName, numTasks, site=""):
         """Get information necessary for submission for a given number of tasks for a given transformation"""
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
         res = self.transformationDB.getTransformation(transName)
         if not res["OK"]:
             return res
@@ -360,6 +417,8 @@ class TransformationManagerHandlerMixin:
     types_createTransformationMetaQuery = [[int, str], dict, str]
 
     def export_createTransformationMetaQuery(self, transName, queryDict, queryType):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
         credDict = self.getRemoteCredentials()
         authorDN = credDict.get("DN", credDict.get("CN"))
         return self.transformationDB.createTransformationMetaQuery(transName, queryDict, queryType, author=authorDN)
@@ -367,6 +426,8 @@ class TransformationManagerHandlerMixin:
     types_deleteTransformationMetaQuery = [[int, str], str]
 
     def export_deleteTransformationMetaQuery(self, transName, queryType):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
         credDict = self.getRemoteCredentials()
         authorDN = credDict.get("DN", credDict.get("CN"))
         return self.transformationDB.deleteTransformationMetaQuery(transName, queryType, author=authorDN)
@@ -374,6 +435,8 @@ class TransformationManagerHandlerMixin:
     types_getTransformationMetaQuery = [[int, str], str]
 
     def export_getTransformationMetaQuery(self, transName, queryType):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
         return self.transformationDB.getTransformationMetaQuery(transName, queryType)
 
     ####################################################################
@@ -384,6 +447,8 @@ class TransformationManagerHandlerMixin:
     types_getTransformationLogging = [[int, str]]
 
     def export_getTransformationLogging(self, transName):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
         return self.transformationDB.getTransformationLogging(transName)
 
     ####################################################################
@@ -394,6 +459,8 @@ class TransformationManagerHandlerMixin:
     types_getAdditionalParameters = [[int, str]]
 
     def export_getAdditionalParameters(self, transName):
+        if not (result := self.checkPermissions(transName))["OK"]:
+            return result
         return self.transformationDB.getAdditionalParameters(transName)
 
     ####################################################################

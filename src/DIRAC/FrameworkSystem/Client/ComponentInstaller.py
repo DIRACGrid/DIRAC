@@ -93,6 +93,7 @@ from DIRAC.Core.Security.Properties import (
     OPERATOR,
     NORMAL_USER,
     TRUSTED_HOST,
+    PRODUCTION_MANAGEMENT,
 )
 
 from DIRAC.ConfigurationSystem.Client import PathFinder
@@ -447,6 +448,7 @@ class ComponentInstaller:
             FULL_DELEGATION,
             PROXY_MANAGEMENT,
             OPERATOR,
+            PRODUCTION_MANAGEMENT,
         ]
 
         for section in (
