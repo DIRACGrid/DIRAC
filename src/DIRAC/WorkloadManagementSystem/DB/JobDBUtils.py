@@ -84,6 +84,7 @@ def checkAndPrepareJob(jobID, classAdJob, classAdReq, owner, ownerGroup, jobAttr
     if vo:
         classAdJob.insertAttributeString("VirtualOrganization", vo)
 
+    classAdReq.insertAttributeString("Owner", owner)
     classAdReq.insertAttributeString("OwnerGroup", ownerGroup)
     if vo:
         classAdReq.insertAttributeString("VirtualOrganization", vo)
