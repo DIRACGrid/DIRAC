@@ -738,7 +738,7 @@ class SystemAdministratorClientCLI(CLI):
                     system,
                     component,
                     extensionsByPriority(),
-                    specialOptions,
+                    specialOptions=specialOptions,
                     addDefaultOptions=True,
                 )
             else:
