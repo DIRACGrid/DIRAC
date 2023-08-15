@@ -10,7 +10,7 @@ FIX: (#7158) default providerType if not found in IdProviderFactory
 
 *TransformationSystem
 
-NEW: (#7113) 
+NEW: (#7113)
 Implement a finer grained permissions model for Transformations.
 
 *DataManagementSystem

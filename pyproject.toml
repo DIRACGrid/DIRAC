@@ -10,8 +10,10 @@ git_describe_command = "git describe --dirty --tags --long --match *[0-9].[0-9]*
 
 [tool.black]
 line-length = 120
-target-version = ['py39']
+target-version = ['py311']
 
+[tool.isort]
+profile = "black"
 
 [tool.mypy]
 allow_redefinition = true
@@ -27,6 +29,12 @@ files = [
 exclude = [
     '/tests/'
 ]
+
+
+[tool.ruff]
+select = ["E", "F", "B", "I", "PLE"]
+ignore = ["B905", "B008", "B006"]
+line-length = 120
 
 [tool.pylint.basic]
 
@@ -76,7 +84,7 @@ signature-mutators = []
 [tool.pylint.format]
 
 # Maximum number of characters on a single line.
-max-line-length = 130
+max-line-length = 120
 
 [tool.pylint."messages control"]
 disable = ["R0903","I0011","c-extension-no-member"]
