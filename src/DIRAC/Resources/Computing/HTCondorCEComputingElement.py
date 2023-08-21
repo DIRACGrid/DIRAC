@@ -109,21 +109,21 @@ class HTCondorCEComputingElement(ComputingElement):
 
     #############################################################################
 
-    def _DiracToCondorID(self, diracJobID):
-        """Convert a DIRAC jobID into a Condor jobID.
+    def _jobReferenceToCondorID(self, jobReference):
+        """Convert a job reference into a Condor jobID.
         Example: htcondorce://<ce>/1234.0 becomes 1234.0
 
-        :param str: DIRAC jobID
+        :param str: job reference, a condor jobID with additional details
         :return: Condor jobID
         """
         # Remove CE and protocol information from arc Job ID
-        if "://" in diracJobID:
-            condorJobID = diracJobID.split("/")[-1]
+        if "://" in jobReference:
+            condorJobID = jobReference.split("/")[-1]
             return condorJobID
-        return diracJobID
+        return jobReference
 
-    def _condorToDiracID(self, condorJobIDs):
-        """Get the references from the condor_submit output.
+    def _condorIDToJobReference(self, condorJobIDs):
+        """Get the job references from the condor job IDs.
         Cluster ids look like " 107.0 - 107.0 " or " 107.0 - 107.4 "
 
         :param str condorJobIDs: the output of condor_submit
@@ -318,16 +318,16 @@ class HTCondorCEComputingElement(ComputingElement):
             return result
 
         stdout = result["Value"]
-        pilotJobReferences = self._condorToDiracID(stdout)
-        if not pilotJobReferences["OK"]:
-            return pilotJobReferences
-        pilotJobReferences = pilotJobReferences["Value"]
+        jobReferences = self._condorIDToJobReference(stdout)
+        if not jobReferences["OK"]:
+            return jobReferences
+        jobReferences = jobReferences["Value"]
 
         self.log.verbose("JobStamps:", jobStamps)
-        self.log.verbose("pilotRefs:", pilotJobReferences)
+        self.log.verbose("pilotRefs:", jobReferences)
 
-        result = S_OK(pilotJobReferences)
-        result["PilotStampDict"] = dict(zip(pilotJobReferences, jobStamps))
+        result = S_OK(jobReferences)
+        result["PilotStampDict"] = dict(zip(jobReferences, jobStamps))
         if self.useLocalSchedd:
             # Executable is transferred afterward
             # Inform the caller that Condor cannot delete it before the end of the execution
@@ -346,15 +346,15 @@ class HTCondorCEComputingElement(ComputingElement):
         self.log.verbose("KillJob jobIDList", jobIDList)
         self.tokenFile = None
 
-        for diracJobID in jobIDList:
-            condorJobID = self._DiracToCondorID(diracJobID.split(":::")[0])
-            self.log.verbose("Killing pilot", diracJobID)
+        for jobReference in jobIDList:
+            condorJobID = self._jobReferenceToCondorID(jobReference.split(":::")[0])
+            self.log.verbose("Killing pilot", jobReference)
             cmd = ["condor_rm"]
             cmd.extend(self.remoteScheddOptions.strip().split(" "))
             cmd.append(condorJobID)
             result = self._executeCondorCommand(cmd, keepTokenFile=True)
             if not result["OK"]:
-                self.log.error("Failed to kill pilot", f"{diracJobID}: {result['Message']}")
+                self.log.error("Failed to kill pilot", f"{jobReference}: {result['Message']}")
                 return result
 
         self.tokenFile = None
@@ -403,9 +403,9 @@ class HTCondorCEComputingElement(ComputingElement):
         resultDict = {}
         condorIDs = {}
         # Get all condorIDs so we can just call condor_q and condor_history once
-        for diracJobID in jobIDList:
-            diracJobID = diracJobID.split(":::")[0]
-            condorIDs[diracJobID] = self._DiracToCondorID(diracJobID)
+        for jobReference in jobIDList:
+            jobReference = jobReference.split(":::")[0]
+            condorIDs[jobReference] = self._jobReferenceToCondorID(jobReference)
 
         self.tokenFile = None
 
@@ -493,7 +493,7 @@ class HTCondorCEComputingElement(ComputingElement):
         """
         # Extract stamp from the Job ID
         if ":::" in jobID:
-            diracJobID, stamp = jobID.split(":::")
+            jobReference, stamp = jobID.split(":::")
         else:
             return S_ERROR(f"DIRAC stamp not defined for {jobID}")
 
@@ -503,7 +503,7 @@ class HTCondorCEComputingElement(ComputingElement):
             return S_ERROR(f"Stamp is not long enough: {stamp}")
         pathToResult = os.path.join(self.ceName, stamp[0], stamp[1:3])
 
-        condorJobID = self._DiracToCondorID(diracJobID)
+        condorJobID = self._jobReferenceToCondorID(jobReference)
         iwd = os.path.join(self.workingDirectory, pathToResult)
 
         try:
