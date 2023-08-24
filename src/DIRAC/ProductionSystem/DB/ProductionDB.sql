@@ -26,7 +26,7 @@ CREATE TABLE Productions(
     CreationDate DATETIME,
     LastUpdate DATETIME,
     Author VARCHAR(255) NOT NULL,
-    AuthorDN VARCHAR(255),
+    AuthorDN VARCHAR(255) DEFAULT NULL,
     AuthorGroup VARCHAR(255) NOT NULL,
     Status  CHAR(32) DEFAULT 'New',
     PRIMARY KEY(ProductionID),

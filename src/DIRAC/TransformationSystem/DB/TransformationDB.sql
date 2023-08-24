@@ -29,7 +29,7 @@ CREATE TABLE Transformations(
     CreationDate DATETIME,
     LastUpdate DATETIME,
     Author VARCHAR(255) NOT NULL,
-    AuthorDN VARCHAR(255),
+    AuthorDN VARCHAR(255) DEFAULT NULL,
     AuthorGroup VARCHAR(255) NOT NULL,
     Type CHAR(32) DEFAULT 'Simulation',
     Plugin CHAR(32) DEFAULT 'None',
