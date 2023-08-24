@@ -386,22 +386,6 @@ class DiracAdmin(API):
         )
 
     #############################################################################
-    def getPilotProxy(self, userDN, userGroup, validity=43200):
-        """Retrieves a pilot proxy with default 12hr validity and stores
-        this in a file in the local directory by default.
-
-        Example usage:
-
-          >>> gLogger.notice(diracAdmin.getVOMSProxy())
-          {'OK': True, 'Value': }
-
-        :return: S_OK,S_ERROR
-
-        """
-
-        return gProxyManager.getPilotProxyFromDIRACGroup(userDN, userGroup, requiredTimeLeft=validity)
-
-    #############################################################################
     def resetJob(self, jobID):
         """Reset a job or list of jobs in the WMS.  This operation resets the reschedule
         counter for a job or list of jobs and allows them to run as new.

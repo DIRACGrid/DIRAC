@@ -841,7 +841,6 @@ class SiteDirector(AgentModule):
             result = self.pilotAgentsDB.addPilotTQReference(
                 pilotsList,
                 tqID,
-                self.pilotDN,
                 self.pilotGroup,
                 self.localhost,
                 self.queueDict[queue]["CEType"],
@@ -1201,7 +1200,6 @@ class SiteDirector(AgentModule):
                 "GridType": ceType,
                 "GridSite": siteName,
                 "Status": PilotStatus.PILOT_TRANSIENT_STATES,
-                "OwnerDN": self.pilotDN,
                 "OwnerGroup": self.pilotGroup,
             }
         )
@@ -1356,7 +1354,7 @@ class SiteDirector(AgentModule):
                 pA.setValueByKey("Site", "Unknown")
             pA.setValueByKey("GridCE", pilotDict[pRef]["DestinationSite"])
             pA.setValueByKey("GridMiddleware", pilotDict[pRef]["GridType"])
-            pA.setValueByKey("GridResourceBroker", pilotDict[pRef]["Broker"])
+            pA.setValueByKey("GridResourceBroker", "DIRAC")
             pA.setValueByKey("GridStatus", pilotDict[pRef]["Status"])
             if "Jobs" not in pilotDict[pRef]:
                 pA.setValueByKey("Jobs", 0)
