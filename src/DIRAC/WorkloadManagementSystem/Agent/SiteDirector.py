@@ -842,7 +842,6 @@ class SiteDirector(AgentModule):
                 pilotsList,
                 tqID,
                 self.pilotGroup,
-                self.localhost,
                 self.queueDict[queue]["CEType"],
                 stampDict,
             )
