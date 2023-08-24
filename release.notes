@@ -1,3 +1,13 @@
+[v8.1.0a18]
+
+*Production
+
+CHANGE: (#7162) Move from DN to Username
+
+*WorkloadManagementSystem
+
+CHANGE: (#7157) PilotAgentsDB: move DN in favor of username
+
 [v8.1.0a17]
 
 *TransformationSystem
