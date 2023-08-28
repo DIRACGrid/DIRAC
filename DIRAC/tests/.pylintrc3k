@@ -1,4 +1,0 @@
-[MASTER]
-load-plugins=caniusepython3.pylint_checker
-[MESSAGES CONTROL]
-disable=native-string

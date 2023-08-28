@@ -1,3 +1,0 @@
-"""
-   DIRAC.Core.ClassAd package
-"""

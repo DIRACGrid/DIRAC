@@ -1,4 +1,0 @@
-"""
-DIRAC.Interfaces package
-
-"""
