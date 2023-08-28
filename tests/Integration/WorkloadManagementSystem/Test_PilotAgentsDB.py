@@ -39,7 +39,6 @@ def preparePilots(stateCount, testSite, testCE, testGroup):
     res = paDB.addPilotTQReference(
         pilotRef,
         123,
-        "ownerDN",
         testGroup,
     )
     assert res["OK"] is True, res["Message"]
@@ -81,12 +80,7 @@ def cleanUpPilots(pilotRef):
 
 def test_basic():
     """usual insert/verify"""
-    res = paDB.addPilotTQReference(
-        ["pilotRef"],
-        123,
-        "ownerDN",
-        "ownerGroup",
-    )
+    res = paDB.addPilotTQReference(["pilotRef"], 123, "ownerGroup")
     assert res["OK"] is True
 
     res = paDB.deletePilot("pilotRef")
@@ -103,16 +97,14 @@ def test_getGroupedPilotSummary(mocked_fcn):
     """
     stateCount = [10, 50, 7, 3, 12, 8, 6, 4]
     testGroup = "ownerGroup"
-    testGroupVO = "ownerGroupVO"
     testCE = "TestCE"
     testSite = "TestSite"
 
     mocked_fcn.return_value = "ownerGroupVO"
 
     pilotRef = preparePilots(stateCount, testSite, testCE, testGroup)
-    selectDict = {}
     columnList = ["GridSite", "DestinationSite", "OwnerGroup"]
-    res = paDB.getGroupedPilotSummary(selectDict, columnList)
+    res = paDB.getGroupedPilotSummary(columnList)
 
     cleanUpPilots(pilotRef)
     expectedParameterList = [
@@ -146,7 +138,6 @@ def test_getGroupedPilotSummary(mocked_fcn):
     assert len(record) == len(expectedParameterList)
     assert record[0] == testSite
     assert record[1] == testCE
-    assert record[2] == testGroupVO
 
     # pilot state counts:
     for i, entry in enumerate(record[3:11]):

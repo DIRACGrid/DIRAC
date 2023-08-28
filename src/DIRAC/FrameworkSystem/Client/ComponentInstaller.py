@@ -87,6 +87,7 @@ from DIRAC.Core.Security.Properties import (
     PROXY_MANAGEMENT,
     SERVICE_ADMINISTRATOR,
     TRUSTED_HOST,
+    PRODUCTION_MANAGEMENT,
 )
 from DIRAC.Core.Utilities.Extensions import (
     extensionsByPriority,
@@ -438,6 +439,7 @@ class ComponentInstaller:
             FULL_DELEGATION,
             PROXY_MANAGEMENT,
             OPERATOR,
+            PRODUCTION_MANAGEMENT,
         ]
 
         for section in (
@@ -674,7 +676,7 @@ class ComponentInstaller:
         """
         Add the section with the component options to the CS
         """
-        if mySetup is None:
+        if not mySetup:
             mySetup = self.setup
 
         if gConfig_o:
@@ -2403,7 +2405,7 @@ class ComponentInstaller:
             os.chmod(runFile, self.gDefaultPerms)
 
         except Exception:
-            error = "Failed to prepare self.setup forTornado"
+            error = "Failed to prepare self.setup for Tornado"
             gLogger.exception(error)
             if self.exitOnError:
                 DIRAC.exit(-1)

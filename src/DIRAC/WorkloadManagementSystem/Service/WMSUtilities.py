@@ -6,7 +6,8 @@ import shutil
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN, getVOForGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
@@ -111,7 +112,7 @@ def killPilotsInQueues(pilotRefDict):
     ceFactory = ComputingElementFactory()
 
     for key, pilotDict in pilotRefDict.items():
-        owner, group, site, ce, queue = key.split("@@@")
+        pilotGroup, site, ce, queue = key.split("@@@")
         result = getQueue(site, ce, queue)
         if not result["OK"]:
             return result
@@ -122,13 +123,20 @@ def killPilotsInQueues(pilotRefDict):
             return result
         ce = result["Value"]
 
-        group = getGroupOption(group, "VOMSRole", group)
-        ret = gProxyManager.getPilotProxyFromVOMSGroup(owner, group)
-        if not ret["OK"]:
-            gLogger.error("Could not get proxy:", f"User '{owner}' Group '{group}' : {ret['Message']}")
-            return S_ERROR("Failed to get the pilot's owner proxy")
-        proxy = ret["Value"]
-        ce.setProxy(proxy)
+        pilotDN = Operations(vo=getVOForGroup(pilotGroup)).getValue("Pilot/GenericPilotDN")
+
+        if pilotGroup and pilotDN:
+            res = getUsernameForDN(pilotDN)
+            if not res["OK"]:
+                return res
+            owner = res["Value"]
+            group = getGroupOption(pilotGroup, "VOMSRole", pilotGroup)
+            ret = gProxyManager.getPilotProxyFromVOMSGroup(owner, group)
+            if not ret["OK"]:
+                gLogger.error("Could not get proxy:", f"User '{owner}' Group '{group}' : {ret['Message']}")
+                return S_ERROR("Failed to get the pilot's owner proxy")
+            proxy = ret["Value"]
+            ce.setProxy(proxy)
 
         pilotList = pilotDict["PilotList"]
         result = ce.killJob(pilotList)

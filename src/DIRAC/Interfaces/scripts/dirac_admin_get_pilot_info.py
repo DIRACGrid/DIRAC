@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-########################################################################
-# File :    dirac-admin-get-pilot-info
-# Author :  Ricardo Graciani
-########################################################################
 """
 Retrieve available info about the given pilot
 
@@ -10,23 +6,18 @@ Example:
   $ dirac-admin-get-pilot-info https://marlb.in2p3.fr:9000/26KCLKBFtxXKHF4_ZrQjkw
   {'https://marlb.in2p3.fr:9000/26KCLKBFtxXKHF4_ZrQjkw': {'AccountingSent': 'False',
                                                           'BenchMark': 0.0,
-                                                          'Broker': 'marwms.in2p3.fr',
                                                           'DestinationSite': 'cclcgceli01.in2p3.fr',
                                                           'GridSite': 'LCG.IN2P3.fr',
                                                           'GridType': 'gLite',
                                                           'LastUpdateTime': datetime.datetime(2011, 2, 21, 12, 49, 14),
                                                           'OutputReady': 'False',
-                                                          'OwnerDN': '/O=GRID/C=FR/O=CNRS/OU=LPC/CN=Sebastien Guizard',
                                                           'OwnerGroup': '/biomed',
-                                                          'ParentID': 0L,
-                                                          'PilotID': 2241L,
                                                           'PilotJobReference': 'https://marlb.in2p3.fr:9000/2KHFrQjkw',
                                                           'PilotStamp': '',
                                                           'Status': 'Done',
                                                           'SubmissionTime': datetime.datetime(2011, 2, 21, 12, 27, 52),
                                                           'TaskQueueID': 399L}}
 """
-# pylint: disable=wrong-import-position
 from DIRAC.Core.Base.Script import Script
 
 extendedPrint = False
@@ -63,7 +54,6 @@ def main():
                 for key in [
                     "PilotJobReference",
                     "Status",
-                    "OwnerDN",
                     "OwnerGroup",
                     "SubmissionTime",
                     "DestinationSite",
@@ -85,10 +75,9 @@ def main():
                         diracAdmin.log.notice(f"{tab}Job ID: {jobID}")
                         tab += "  "
                         for key in [
-                            "OwnerDN",
-                            "OwnerGroup",
                             "JobName",
                             "Status",
+                            "OwnerGroup",
                             "StartExecTime",
                             "LastUpdateTime",
                             "EndExecTime",
@@ -99,8 +88,8 @@ def main():
             else:
                 print(diracAdmin.pPrint.pformat({gridID: res}))
 
-    for error in errorList:
-        print("ERROR %s: %s" % error)
+    for job, error in errorList:
+        print(f"ERROR for {job}: {error}")
 
     DIRACExit(exitCode)
 

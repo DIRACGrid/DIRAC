@@ -30,23 +30,23 @@ class ProductionManagerHandlerMixin:
     # These are the methods to manipulate the Productions table
     #
 
-    types_addProduction = [str, str]
+    types_addProduction = [prodTypes, str]
 
     def export_addProduction(self, prodName, prodDescription):
         credDict = self.getRemoteCredentials()
-        authorDN = credDict.get("DN", credDict.get("CN"))
+        author = credDict.get("username", credDict.get("DN", credDict.get("CN")))
         authorGroup = credDict.get("group")
-        res = self.productionDB.addProduction(prodName, prodDescription, authorDN, authorGroup)
+        res = self.productionDB.addProduction(prodName, prodDescription, author, authorGroup)
         if res["OK"]:
-            gLogger.info("Added production %d" % res["Value"])
+            gLogger.info("Added production", res["Value"])
         return res
 
     types_deleteProduction = [prodTypes]
 
     def export_deleteProduction(self, prodName):
         credDict = self.getRemoteCredentials()
-        authorDN = credDict.get("DN", credDict.get("CN"))
-        return self.productionDB.deleteProduction(prodName, author=authorDN)
+        author = credDict.get("username")
+        return self.productionDB.deleteProduction(prodName, author=author)
 
     types_getProductions = []
 

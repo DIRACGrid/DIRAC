@@ -1,3 +1,36 @@
+[v8.1.0a18]
+
+*Production
+
+CHANGE: (#7162) Move from DN to Username
+
+*WorkloadManagementSystem
+
+CHANGE: (#7157) PilotAgentsDB: move DN in favor of username
+
+[v8.1.0a17]
+
+*TransformationSystem
+
+NEW: (#7170) Implement a finer grained permissions model for Transformations.
+
+*DataManagementSystem
+
+FIX: (#7168) better error reporting when an existing LFN has no replicas (at least it doesn't crash)
+
+*WorkloadManagement
+
+CHANGE: (#7167) Stop using PID namespaces with SingularityCE
+
+*Resources
+
+FIX: (#7160) default providerType if not found in IdProviderFactory
+
+*WorkloadManagementSystem
+
+FIX: (#7155) Adding Owner as JDL requirement
+CHANGE: (#7151) factorize some utilities of JobSubmit into functions
+
 [v8.1.0a16]
 
 *FrameworkSystem

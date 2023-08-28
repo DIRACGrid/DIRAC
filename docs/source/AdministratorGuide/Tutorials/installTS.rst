@@ -92,6 +92,10 @@ Using the ``Configuration Manager`` application in the WebApp, create a new sect
 After restarting the ``ProxyManager``, you should now be able to get a proxy belonging to the ``dirac_prod`` group that
 will be automatically uploaded.
 
+The ``ProductionManagement`` property allows users in the group to access and change all transformations. There is also
+a ``ProductionSharing`` property to only allow access to transformations in the same group and ``ProductionUser`` to
+only allow users to access their own transformations.
+
 Add a ProdManager Shifter
 =========================
 

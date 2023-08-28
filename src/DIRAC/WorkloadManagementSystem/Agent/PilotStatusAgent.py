@@ -208,7 +208,7 @@ class PilotStatusAgent(AgentModule):
                 pA.setValueByKey("Site", "Unknown")
             pA.setValueByKey("GridCE", pData["DestinationSite"])
             pA.setValueByKey("GridMiddleware", pData["GridType"])
-            pA.setValueByKey("GridResourceBroker", pData["Broker"])
+            pA.setValueByKey("GridResourceBroker", "DIRAC")
             pA.setValueByKey("GridStatus", pData["Status"])
             if "Jobs" not in pData:
                 pA.setValueByKey("Jobs", 0)
