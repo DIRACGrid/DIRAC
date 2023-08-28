@@ -1,0 +1,125 @@
+#cloud-config
+
+disable_ec2_metadata: true
+timezone: UTC
+
+fs_setup:
+ - filesystem: ext4
+   device: ephemeral0
+   partition: none
+   overwrite: true
+
+write_files:
+ - encoding: gz+b64
+   path: /etc/pki/rpm-gpg/RPM-GPG-KEY-CernVM
+   content: |
+      H4sIABpPZl0CA32Vya6z1haE5zzFGd4r9Idm00bKgN4bMH0/A4xpDAYb0z59zkmi3NldUk2qarSk
+      T/Xr1/eJigatL0dzvpxQNKH0ZSjpl2jakvGT/kKi6j234/P3L+25ONrXSv6G/0aSX//RrBAz2+ey
+      /xdBBldrRWXRHCb1REGOOL4sVGoZlYTjXW7Z7UcP5UhvbF1QjQwA07+dlxW0dvHsRnqjkK0oOLX1
+      2zc1xnX+FsqRWvCHRxxGd9EBGCOR3AfHPmNgxeMFsrmjsh+pHlk15RtrlBDKUh7WUa7F3R8lv5xX
+      8kjp10m+yDklzFjLtCJMOnE1ikHwK37WVUOPWGseNqlmmRhD8mt+9tXlkD/jKHOfB8jidTJKGfNq
+      mrDzG5qZJdtQ9CZfL1Mur7ZYaeMxoQ9Wr90bxyKXe9LqnxpzmfMItncEVsldr9MGNK/zHplYOrUX
+      F8w7fDDczeTuOVkGewP9hMZk6J4lMgyLnONKLWmaYIQZVVxeebWr6nPCRDQyRGfVl93M8VKUb0xV
+      bbu1fS46jyv5tRJP7YYwZ0h+f9/m0yJplevLe9wj87msMq0BAov1bL3fE2mfp6d/r3kSyAU045xa
+      rZi/mtfZQGB0WY/ojQ+Zyu23w7UiJ0wARi15Y1ypZlvU1604usXUFKiCkAU51HE0lasJQyFzhIiu
+      XZ77wSk7mhMJbHSi8SGLjnnv3z7ohk0KQMmre4R3X3b8JBKA6aIuGR1Fn1lQUR9IEfdLnlh4Oah4
+      AWBtaBZZxOrjxzd8gUt/ys/sYw5/e//r6sJPhhQt3eUyA5PaDRQXCpcaFsKWmpJbX4QNyqoLZWFP
+      JcGF1beSWgilaLPTRy0Ykid0iBy0t3bxShpXCEHnhXS9YOVxk1mc5LtdK2fO4Nh+BJ0g3ZSmkDpQ
+      ds48kSEW36faIBDRta/tVtFCjSs+lWIvUYCCCebYSFxjKqA9bQk6WAkJIzLZLfEKjLRLbaVtGabl
+      8wlxRiAKgM/5eODXhnik8BI8Gt59FdxGg6akBOsRBWiZnntyfBpN7OLR/GzSaUjOGxYs4rm6V/I0
+      Y3/wF/Ua+jJUtJY+q7sPRz3z6O7w2Hfmo4Rj6SnE6T0lUSVviIUP93d/isiFlqV5DV+BZRBk/HZg
+      WwzmyC3oAWW92+qGt+kUBhJafbCaYi3znt1aQXNMpVt11WsRVl9Q7thsQN78SHR0V3583rQo8TQu
+      G9lF4J/orDOgVUHvYLkUKNK07+EriaJXO47FhtT08ekZvNl4yM/3TXSYk3c8HvfKIyB6qm5b8eTN
+      CDWmUhC2EApGJezCW8v1/YzP1kBmVuaCYFFo3NpQH3haE52bbxwswYGMIFr7m49iILFzmxh6Ux/P
+      j2QMpiE/tTmoVWtC5g881E0fOkAJ+8RawNBeyTOAqA/dGxMNp0tMzX6X7I2D2lLZHpNC1ie0NP6w
+      8jhXSGaclBLf1kSyH67QFPsLuwRkCdpmn5f9rbz3k3U/Vp7aatIuZgeG9MIn3ywrFec8ehQ5Di9Y
+      j9Dqr3DBWpZ/3VE37OeWwJ9SOHBc6Sdua8S2TmltOAZoJ7OTRY3NTTC9qMc/SI8phxNsaD5roHcb
+      J0PnsV/1ZEJb1lDZ5/Y8EllkQGxdCNonJte8Pl/SoknqUdV3pkOeth7iwgv6rpv+wCS5sJD/Aabe
+      /gbmX14A1QmGvGC8mIXg3b6V6xuRF60YLLD04RUNa+lesX1Nv95aEp5Zr6vBM8iD2gcZ7tV/IH/c
+      52lA/hodxZL/zyL9CUAskc+3BgAA
+ - encoding: gz+b64
+   path: /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7
+   content: |
+      H4sIAEFTZl0CA31VR67z6AHb6xRvmcCYsaxqBfgXn3rvfaduVau3089LDhACXJHghgT411+/oDlB
+      0n9MwfwxPVqVmB+Fi35o1WCU/6p/QX4xL/V3+M+PMGym8LO//sb+fr1+/iXo3lOth+38NwT1lqTT
+      vLIlkkVzgHl54yc8tIkByWx64jNeDH7pkrRwfQMZ2RaPBoMiysdcxTR5gpmGDKewWpKm4Hpy5Df+
+      zEjEAANmhNHuEmhVMkU4yguukUUftuaiW0HgNBtFdcEDTI7eQ00UfHq7U22hgw2DrKSjIUkil8I9
+      03S+ux2zgWEdOcHUaGnTDT4yIEkKOLyaCH+cTGjnQ/8qZz95bkn3rVi/L4kPsmJ2Ptbl9J5ccRF5
+      Dz1H5n64xDMXAkWwMCS2SjdRB1aDGvcLlj6CwVXsrZSGRB376y3syRCNZhYEWAjbrJmNU8nrcUtg
+      6Clh3RI/IoSbqWjDIef5PuHueqx9L33bhIOPI829jcTgyI0bpljmbxTUdoXfm4WcpXLKXx/nHtzn
+      sUaHwMrQQIhl8LGrYctt+9g3GcPvNfJXZeuU421ZY444bjBnlsXKiR30g/b9hk8TuG7D0NxJQ1Te
+      3uibnbe9JaVW1NZFmroWGJaWL+ErR93vTtAcErKNJMA3f6r5Jgupf2RPYpYyCodcGMcblOBuWJyb
+      Mx9dwTDE0540Be+psuPT5DxXdnDIgySD6Q5IseFnFvYL90T2oWkgYco+ImeNJTvyxp2+VZf/VFGd
+      X7bulZ0VoXigGreq+4/RRwsLlavXy+OPonN0dSqtEtp4W8ged3a0eiN+8Mvce+qb2y9aKieZWBTB
+      FNLV1MMvydmafY3BZd/wXcPrAWxgARpamY8QB/ae9Vxl+zTvMuCrX21lCv4RByeIe79NUfmTifKe
+      9H6TM/ivN3vUloTRtEZDoAI1bcnO3Ncc+CwmXS0yAzIWVJHPAElmqoXjK4kFllT8MqwAUBibnlSC
+      qHXnbCE8KwX2iS3jNC5us7IaOY3XqqiiMm/xum9BPa24Xe4udRyU4Hm8FmNxLITY4IUVRk1QfbJq
+      cgX2O8+F54K3l1GjDLyFT6Ie7iS67OpBf0g4nSfFU14Y/6Ln2awRqkiUUngIG6Txa5jTApKQxmr2
+      B3ptSj9R3PjbPtybBIcrTr47tjPJwSpkgDhs53mwdyhzujjicwFR0tKjTHTl4wULqg3w44uVJo1v
+      au59VM5j9w+iKM9nqTVNgn5h9eHo91uHEza+BhycEONRNo1yYuYWGV99L3zr7Yai6HguUvulGw+s
+      oud6l8p8Z7FS1kudFsPj44gUYARG3yFxCP1GtHiqFgMwKq0tFZ83PyMDnq+lzPGkw4VvIQ1JPl2C
+      L0K1oTb7lT6J+sUO5e8O/K+5pZWVr3Ist34M2kScte0NrvVwCcTCCn3qZemVBGls6RLeBNGUEbay
+      MQrx5KnfFtYP71KVbLzIx2VvKuHtyHOvbt9+2UJ++KpydF4jmKCJym5krCPQAHDOeqc284pMMYO4
+      2ZlTW4CPRiqBje7b8jIc40TPWIzHkC97y11Yk/xNNNTbp942Kh88OGXseU6FoWPQzpi8RxiLi3aB
+      9T7IusO/n4jCj35rypno2jfVcrecG+6dDSRLp968oShjaYISo9y+QnazMCTPpir8IqfTecQ+eIpC
+      e5X1hmVj5b99b0inDi9A/HipHcEef/5Afz65mUD/+w5OZ//PsfwDIDTlCX4GAAA=
+ - path: /etc/cvmfs/default.local
+   content: |
+     CVMFS_CACHE_BASE=/mnt/cvmfs
+     CVMFS_HTTP_PROXY="auto;DIRECT"
+     CVMFS_PAC_URLS="http://grid-wpad/wpad.dat;http://wpad/wpad.dat;http://cernvm-wpad.cern.ch/wpad.dat;http://cernvm-wpad.fnal.gov/wpad.dat"
+ - path: /root/proxy.pem
+   permissions: '0600'
+   content: PROXY_STR
+ - path: /root/run_pilot.sh
+   permissions: '0755'
+   content: EXECUTABLE_STR
+ - path: /root/startup.sh
+   permissions: '0755'
+   content: |
+     #!/bin/bash
+     cd /mnt/dirac
+     export X509_USER_PROXY=/mnt/proxy.pem
+     export PILOT_UUID="cloud://$(cat /var/lib/cloud/data/instance-id)"
+     export DIRAC_PILOT_STAMP="STAMP_STR"
+     bash /mnt/run_pilot.sh &> /mnt/dirac/startup.log
+
+yum_repos:
+  cernvm:
+    name: CernVM packages
+    baseurl: http://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs/EL/$releasever/$basearch/
+    enabled: true
+    gpgcheck: true
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CernVM
+  epel:
+    name: Extra Packages for Enterprise Linux 7 - $basearch
+    baseurl: http://download.fedoraproject.org/pub/epel/7/$basearch
+    mirrorlist: https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch
+    failovermethod: priority
+    enabled: true
+    gpgcheck: true
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7
+
+packages:
+ - cvmfs
+
+runcmd:
+ # Allow nested singularity
+ - [ sysctl, user.max_user_namespaces=150000 ]
+ - [ sysctl, user.max_net_namespaces=0 ]
+ # Enable CVMFS
+ - [ mkdir, -p, /mnt/cvmfs ]
+ - [ cvmfs_config, setup ]
+ # Create DIRAC user
+ - [ useradd, -m, -d, /mnt/dirac, dirac ]
+ - [ passwd, -l, dirac ]
+ - [ mkdir, -p, /mnt/dirac/etc/grid-security ]
+ - [ cp, /root/proxy.pem, /mnt/proxy.pem ]
+ - [ chmod, 600, /mnt/proxy.pem ]
+ - [ chown, "dirac:dirac", /mnt/proxy.pem ]
+ - [ chown, -R, "dirac:dirac", /mnt/dirac/etc ]
+ - [ ln, -s, /cvmfs/grid.cern.ch/etc/grid-security/certificates, /mnt/dirac/etc/grid-security/certificates ]
+ - [ cp, /root/run_pilot.sh, /mnt/run_pilot.sh ]
+ - [ cp, /root/startup.sh, /mnt/startup.sh ]
+ - [ sudo, -u, dirac, /mnt/startup.sh ]
+ - [ poweroff ]

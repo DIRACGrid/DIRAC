@@ -1,0 +1,2 @@
+""" DIRAC.ResourceStatusSystem.Client package
+"""

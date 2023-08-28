@@ -1,0 +1,3 @@
+"""
+   DIRAC.RequestManagementSystem.Client package
+"""

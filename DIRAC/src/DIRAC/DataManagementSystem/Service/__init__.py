@@ -1,0 +1,3 @@
+"""
+   DIRAC.DataManagementSystem.Service package
+"""

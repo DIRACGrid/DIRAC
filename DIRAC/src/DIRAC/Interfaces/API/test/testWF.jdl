@@ -1,0 +1,34 @@
+ 
+    Arguments = "jobDescription.xml -o LogLevel=DEBUG  -p JOB_ID=%(JOB_ID)s  -p InputData=%(InputData)s";
+    Executable = "dirac-jobexec";
+    InputData = %(InputData)s;
+    InputSandbox = jobDescription.xml;
+    JOB_ID = %(JOB_ID)s;
+    JobName = Name;
+    JobType = User;
+    LogLevel = DEBUG;
+    OutputSandbox = 
+        {
+            Script1_CodeOutput.log,
+            std.err,
+            std.out
+        };
+    Parameters = 3;
+    Parameters.InputData = 
+        {
+            {/lhcb/data/data1,
+            /lhcb/data/data2},
+            {/lhcb/data/data3,
+            /lhcb/data/data4},
+            {/lhcb/data/data5,
+            /lhcb/data/data6}
+        };
+    Parameters.JOB_ID = 
+        {
+            1,
+            2,
+            3
+        };
+    Priority = 1;
+    StdError = std.err;
+    StdOutput = std.out;

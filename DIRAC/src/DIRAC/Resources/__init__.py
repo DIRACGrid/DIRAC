@@ -1,0 +1,4 @@
+"""
+DIRAC.Resources package
+
+"""

@@ -1,0 +1,3 @@
+"""
+   DIRAC.ConfigurationSystem.Client package
+"""

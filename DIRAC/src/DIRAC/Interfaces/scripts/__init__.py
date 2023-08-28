@@ -1,0 +1,3 @@
+"""
+   DIRAC.Interfaces.scripts package
+"""

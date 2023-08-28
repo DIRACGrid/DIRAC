@@ -1,0 +1,18 @@
+ 
+    Arguments = "jobDescription.xml -o LogLevel=INFO";
+    Executable = "dirac-jobexec";
+    JobGroup = jobGroup;
+    JobName = jobName;
+    JobType = jobType;
+    LogLevel = INFO;
+    OutputSandbox = 
+        {
+            Script1_CodeOutput.log,
+            std.err,
+            std.out
+        };
+    Owner = ownerName;
+    OwnerGroup = ownerGroup;
+    Priority = 1;
+    StdError = std.err;
+    StdOutput = std.out;

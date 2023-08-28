@@ -1,0 +1,33 @@
+@startuml
+group ServiceReactor.__acceptIncomingConnection()
+	Client -> ServiceReactor: connect
+	note over ServiceReactor: checking IP
+	ServiceReactor -> Service: handleConnection()
+	Service -> Service: generateJobAndQueueIt()
+end
+== In another thread ==
+group Service._processInThread()
+	Client <-> Service: Handshake
+	note right: Client send his certificate \n during the handshake.
+	Client -> Service: proposalTuple
+	Service -> Service: _receiveAndCheckProposal()
+	note over Service: Check authorization
+	Service -> RequestHandler: initialize()
+	note right: Here the function initialize() is overrided\nin your DIRAC service.
+	Service -> Service: _processProposal()
+	Client <- Service: S_OK
+	note right: Here the server say's to client:\n"I'm ready !"
+	Service -> RequestHandler: _rh_executeAction()
+
+	group RequestHandler._rh_executeAction()
+		RequestHandler -> RequestHandler: __doRPC()
+		note right: There is also __doConnection() and \n __doFileTransfer() who can be called \n at this point.
+		Client -> RequestHandler: args
+		RequestHandler -> RequestHandler: export_method(args)
+		note right: export_method() came from\nthe service you write.
+		Client <-RequestHandler: S_OK/S_ERROR
+	end
+	Client <- RequestHandler: Close
+end
+
+@enduml

@@ -1,0 +1,20 @@
+[ req ]
+default_bits           = 2048
+encrypt_key            = yes
+distinguished_name     = req_dn
+prompt                 = no
+req_extensions        = v3_req
+
+# Generates the following subject
+# Subject: O=DIRAC CI, O=CERN, CN=ciuser
+[ req_dn ]
+C                      = ch
+O                      = DIRAC
+OU                     = DIRAC CI
+CN                     = ciuser
+
+[ v3_req ]
+# Extensions for client certificates (`man x509v3_config`).
+nsComment = "OpenSSL Generated Client Certificate"
+keyUsage = critical, nonRepudiation, digitalSignature, keyEncipherment
+extendedKeyUsage = clientAuth

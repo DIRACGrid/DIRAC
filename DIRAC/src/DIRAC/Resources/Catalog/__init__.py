@@ -1,0 +1,1 @@
+""" DIRAC.Resources.Catalog package """

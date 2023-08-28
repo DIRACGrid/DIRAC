@@ -1,0 +1,93 @@
+LocalSite
+{
+  Site = DIRAC.DevBox.org
+}
+DIRAC
+{
+  Setup = DeveloperSetup
+  Setups
+  {
+    DeveloperSetup
+    {
+      Framework = DevInstance
+      Test = DevInstance
+    }
+  }
+}
+Systems
+{
+  Database
+  {
+    User = Dirac
+    Password = Dirac
+    RootPwd = Dirac
+    Host = localhost
+    RootUser = root
+  }
+  Framework
+  {
+    DevInstance
+    {
+      URLs
+      {
+      }
+      Services
+      {
+      }
+    }
+  }
+  Test
+  {
+    DevInstance
+    {
+    }
+  }
+}
+Registry
+{
+  DefaultGroup = users
+  Users
+  {
+    diracuser
+    {
+      DN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=diracuser/emailAddress=diracuser@diracgrid.org
+      Email = diracuser@diracgrid.org
+    }
+  }
+  Groups
+  {
+    users
+    {
+      Users = diracuser
+      Properties = NormalUser
+    }
+  }
+  Hosts
+  {
+    DIRACDockerDevBox
+    {
+      DN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=DIRACDockerDevBox/emailAddress=DIRACDockerDevBox@diracgrid.org
+      Properties = JobAdministrator
+      Properties += FullDelegation
+      Properties += Operator
+      Properties += CSAdministrator
+      Properties += ProductionManagement
+      Properties += AlarmsManagement
+      Properties += TrustedHost
+      Properties += SiteManager
+    }
+    DIRACVMDevBox
+    {
+      DN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=DIRACVMDevBox/emailAddress=DIRACVMDevBox@diracgrid.org
+      Properties = JobAdministrator
+      Properties += FullDelegation
+      Properties += Operator
+      Properties += CSAdministrator
+      Properties += ProductionManagement
+      Properties += AlarmsManagement
+      Properties += TrustedHost
+      Properties += SiteManager
+    }
+  }
+  DefaultGroup = users
+}

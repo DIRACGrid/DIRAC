@@ -1,0 +1,17 @@
+comment: off
+
+ignore:
+  - ".*/[Tt]ests/.*"
+  - ".*/[Tt]est/.*"
+  - "^docs"
+  - "^container"
+  - "^tests"
+
+coverage:
+  status:
+    project:
+      default:
+        threshold: 0.03
+    patch:
+      default:
+        target: 0

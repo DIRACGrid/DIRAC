@@ -1,0 +1,93 @@
+[build-system]
+requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.4"]
+build-backend = "setuptools.build_meta"
+
+# Enable setuptools_scm to compute the version number from the most recent tag
+# https://github.com/pypa/setuptools_scm/#pyprojecttoml-usage
+[tool.setuptools_scm]
+# Avoid letting setuptools_scm use old style tags (i.e. vXrYpZ)
+git_describe_command = "git describe --dirty --tags --long --match *[0-9].[0-9]* --exclude v[0-9]r* --exclude v[0-9][0-9]r*"
+
+[tool.black]
+line-length = 120
+target-version = ['py39']
+
+
+[tool.mypy]
+allow_redefinition = true
+strict = true
+check_untyped_defs = true
+ignore_missing_imports = true
+no_incremental=true
+implicit_reexport=true
+files = [
+    'src/DIRAC/Core/Utilities/ReturnValues.py',
+    'src/DIRAC/Core/Security/Properties.py'
+]
+exclude = [
+    '/tests/'
+]
+
+[tool.pylint.basic]
+
+# We mostly have CamelCase, with a few differences.
+# In tests we have quite some snake_case, mostly due to pytest
+# We can instruct pylint to understand both, but the problem is that it
+# will stick to one style per file (i.e if the first variable is snake,
+# all the following must be snake)
+# It's not quite the case yet...
+# For the time being, I wrote the regex that matches best our code.
+# (except for the services with their export_ and types_ ...)
+# We will see about tests later...
+# See https://pylint.readthedocs.io/en/latest/user_guide/messages/convention/invalid-name.html#multiple-naming-styles-for-custom-regular-expressions
+
+# Camel case with capital letter first
+class-rgx = '([A-Z][a-z]*)+$'
+module-rgx = '([A-Z][a-z]*)+$'
+
+# Attributes, variables, functions and methods
+# are camelCase, but can start with one or two understcore
+attr-rgx = '(?:_*[a-z]+([A-Z][a-z]*)*)$'
+variable-rgx = '(?:_*[a-z]+([A-Z][a-z]*)*)$'
+function-rgx = '(?:_*[a-z]+([A-Z][a-z]*)*)$'
+method-rgx = '(?:_*[a-z]+([A-Z][a-z]*)*)$'
+
+argument-naming-style = "camelCase"
+
+[tool.pylint.main]
+# Files or directories to be skipped. They should be base names, not paths.
+ignore = [".svn", ".git", "integration_tests.py"]
+
+# List of module names for which member attributes should not be checked (useful
+# for modules/projects where namespaces are manipulated during runtime and thus
+# existing member attributes cannot be deduced by static analysis). It supports
+# qualified module names, as well as Unix pattern matching.
+ignored-modules = ["MySQLdb", "numpy"]
+
+# Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
+# number of processors available to use, and will cap the count on Windows to
+# avoid hangs.
+jobs = 0
+
+# This allows pylint to not display the following false error :
+# No name 'BaseModel' in module 'pydantic' (no-name-in-module)
+# Related issue: https://github.com/pydantic/pydantic/issues/1961
+extension-pkg-whitelist = ["pydantic"]
+
+[tool.pylint.typecheck]
+# List of decorators that change the signature of a decorated function.
+signature-mutators = []
+
+[tool.pylint.format]
+
+# Maximum number of characters on a single line.
+max-line-length = 130
+
+[tool.pylint."messages control"]
+disable = ["R0903","I0011","c-extension-no-member"]
+
+[tool.pylint.reports]
+# Set the output format. Available formats are text, parseable, colorized, json
+# and msvs (visual studio). You can also give a reporter class, e.g.
+# mypackage.mymodule.MyReporterClass.
+output-format = "colorized"

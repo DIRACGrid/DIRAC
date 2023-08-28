@@ -1,0 +1,113 @@
+name: dirac-development
+
+channels:
+  - diracgrid
+  - conda-forge
+  - nodefaults
+
+dependencies:
+  # Temporary workarounds
+  # runtime
+  - python =3.11
+  - pip
+  - apache-libcloud
+  - boto3
+  - cachetools
+  - certifi
+  - cmreshandler >1.0.0b4
+  - db12
+  - elasticsearch <7.14
+  - elasticsearch-dsl
+  - opensearch-py
+  - fts3
+  - gitpython >=2.1.0
+  - m2crypto >=0.38.0
+  - matplotlib
+  - numpy
+  - pexpect >=4.0.1
+  - pillow
+  - prompt-toolkit >=3,<4
+  - psutil >=4.2.0
+  - pyasn1 >0.4.1
+  - pyasn1-modules
+  - pydantic <2
+  - python-json-logger >=0.1.8
+  - pytz >=2015.7
+  - pyyaml
+  - recommonmark
+  - requests >=2.9.1
+  - sqlalchemy
+  - stomp.py
+  - suds >=0.6
+  # Workaround for suds-jurko no longer being maintained
+  - suds-jurko-compat
+  - xmltodict
+  - pycurl
+  - voms
+  - python-gfal2
+  - mysqlclient
+  - diraccfg
+  - ldap3
+  - importlib_resources
+  - typing_extensions >=4.3.0
+  # testing and development
+  - pre-commit
+  - coverage
+  - docker-compose
+  - hypothesis
+  - ipython
+  - make
+  - mock
+  - parameterized
+  - pylint
+  - pyparsing >=2.0.6
+  - pytest >=3.6
+  - pytest-cov >=2.2.0
+  - pytest-mock
+  - setuptools-scm
+  - shellcheck
+  - typer
+  - typer-cli
+  - flaky
+  # docs
+  - pygments >=1.5
+  - sphinx
+  - graphviz
+  # RTD Sphinx theme
+  - sphinx_rtd_theme
+  # Bootstrap and new elements fo Sphinx
+  - sphinx-design
+  # unused
+  - funcsigs
+  - jinja2
+  # PyPI deployment
+  - readme_renderer
+  - twine
+  - uritemplate
+  # - readline >=6.2.4 in the standard library
+  - simplejson >=3.8.1
+  #- tornado >=5.0.0,<6.0.0
+  - typing >=3.6.6
+  - pyyaml
+  - rucio-clients
+  # For mypy
+  - mypy >=0.982
+  - types-cachetools
+  - types-python-dateutil
+  - types-pytz
+  - types-PyYAML
+  - types-requests
+  - types-setuptools
+  - pip:
+    # Prerelease of the required package for integration of OAuth2
+    - Authlib>=1.0.0.a2
+    - dominate
+    - pyjwt
+    # This is a fork of tornado with a patch to allow for configurable iostream
+    - git+https://github.com/DIRACGrid/tornado.git@iostreamConfigurable
+    # This is an extension of Tornado to use M2Crypto
+    # It should eventually be part of DIRACGrid
+    - git+https://github.com/DIRACGrid/tornado_m2crypto
+    - -e .[server]
+    # Add diracdoctools
+    - -e docs/

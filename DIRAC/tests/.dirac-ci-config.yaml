@@ -1,0 +1,12 @@
+config:
+  DIRAC_CI_SETUP_SCRIPT: DIRAC/tests/Jenkins/dirac_ci.sh
+
+# List of feature variables which must be passed when preparing
+required-feature-flags: []
+
+# Additional services to use in docker-compose
+extra-services: {}
+
+# Additional shell commands to run
+commands:
+  post-prepare: []

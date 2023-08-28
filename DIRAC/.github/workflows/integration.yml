@@ -1,0 +1,77 @@
+name: Integration tests
+
+on:
+  push:
+    paths-ignore:
+      # Docs
+      - 'docs/**'
+      - 'README.rst'
+      # When push new release
+      - 'release.notes'
+      - 'src/DIRAC/__init__.py'  # It is expected that only the version number will change here
+      - 'releases.cfg'
+  pull_request:
+    paths-ignore:
+      # RPs with docs
+      - 'docs/**'
+      - 'README.rst'
+      - 'release.notes'
+
+jobs:
+  Integration:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash -l {0}
+
+    strategy:
+      fail-fast: False
+      matrix:
+        # TEST_NAME is a dummy variable used to make it easier to read the web interface
+        include:
+          - TEST_NAME: "MariaDB 10.6, opensearch:2.1.0"
+            ARGS: MYSQL_VER=mariadb:10.6.3 ES_VER=opensearchproject/opensearch:2.1.0
+          - TEST_NAME: "DIPS"
+            ARGS: TEST_HTTPS=No
+          - TEST_NAME: "Force DEncode"
+            ARGS: DIRAC_USE_JSON_ENCODE=NO
+          - TEST_NAME: "Backward Compatibility"
+            ARGS: CLIENT_INSTALLATION_BRANCH=rel-v8r0
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Fail-fast for outdated pipelines
+      run: .github/workflows/fail-fast.sh
+    - run: |
+        git fetch --prune --unshallow
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.11'
+    - name: Installing dependencies
+      run: |
+        python -m pip install \
+            gitpython \
+            packaging \
+            pyyaml \
+            requests \
+            typer
+    - name: Prepare environment
+      run: ./integration_tests.py prepare-environment ${{ matrix.ARGS }}
+    - name: Install server
+      run: ./integration_tests.py install-server
+    - name: Install client
+      run: ./integration_tests.py install-client
+    - name: Server tests
+      run: ./integration_tests.py test-server || touch server-tests-failed
+    - name: Client tests
+      run: ./integration_tests.py test-client || touch client-tests-failed
+    - name: Elasticsearch logs
+      run: docker logs elasticsearch
+    - name: Check test status
+      run: |
+        has_error=0
+        if [ -f server-tests-failed ]; then has_error=1; echo "Server tests failed"; fi
+        if [ -f client-tests-failed ]; then has_error=1; echo "Client tests failed"; fi
+        if [ ${has_error} = 1 ]; then exit 1; fi

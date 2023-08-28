@@ -1,0 +1,3 @@
+"""
+   DIRAC.WorkloadManagementSystem.Service package
+"""

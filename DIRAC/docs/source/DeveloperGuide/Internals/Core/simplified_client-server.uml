@@ -1,0 +1,12 @@
+@startuml
+Client -> Service: Connect
+note over Service: Check IP address
+Client <->Service: Handshake SSL/TLS
+Client -> Service: propose action
+note over Service: Check authorizations
+Client <- Service: S_OK
+Client -> Service: Arguments
+note over Service: Execute task
+Client <- Service: Response
+Client <- Service: Close
+@enduml

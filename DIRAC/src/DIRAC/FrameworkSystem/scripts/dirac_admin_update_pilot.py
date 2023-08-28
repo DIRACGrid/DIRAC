@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+"""
+Script to update pilot version in CS
+"""
+import DIRAC
+from DIRAC.Core.Base.Script import Script
+
+
+@Script()
+def main():
+    Script.registerSwitch(
+        "v:",
+        "vo=",
+        "Location of pilot version in CS /Operations/<vo>/Pilot/Version",
+    )
+    # Registering arguments will automatically add their description to the help menu
+    Script.registerArgument("version: pilot version you want to update to")
+    Script.parseCommandLine(ignoreErrors=False)
+
+    # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
+    version = Script.getPositionalArgs(group=True)
+
+    vo = None
+    for switch in Script.getUnprocessedSwitches():
+        if switch[0] == "v" or switch[0] == "vo":
+            vo = switch[1]
+
+    from DIRAC import S_OK, S_ERROR
+    from DIRAC import gConfig, gLogger
+    from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+
+    def updatePilot(version, vo):
+        """
+        Update in the CS the pilot version used,
+        If only one version present in CS it's overwritten.
+        If two versions present, the new one is added and the last removed
+
+        :param version: version vArBpC of pilot you want to use
+        :param vo: Location of pilot version in CS /Operations/<vo>/Pilot/Version
+        """
+        # FIXME: use Operations() object
+        pilotVersion = gConfig.getValue(f"Operations/{vo}/Pilot/Version", [])
+        if not pilotVersion:
+            return S_ERROR(f"No pilot version set under Operations/{vo}/Pilot/Version in CS")
+
+        pilotVersion.pop()
+        pilotVersion.insert(0, version)
+        api = CSAPI()
+        api.setOption(f"Operations/{vo}/Pilot/Version", ", ".join(pilotVersion))
+        result = api.commit()
+        if not result["OK"]:
+            gLogger.fatal("Could not commit new version of pilot!")
+            return result
+
+        newVersion = gConfig.getValue(f"Operations/{vo}/Pilot/Version")
+        return S_OK(f"New version of pilot set to {newVersion}")
+
+    result = updatePilot(version, vo)
+    if not result["OK"]:
+        gLogger.fatal(result["Message"])
+        DIRAC.exit(1)
+    gLogger.notice(result["Value"])
+    DIRAC.exit(0)
+
+
+if __name__ == "__main__":
+    main()
