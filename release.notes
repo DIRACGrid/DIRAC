@@ -1,3 +1,13 @@
+[v8.1.0a19]
+
+*ConfigurationSystem
+
+CHANGE: (#7182) VOMS2CS agent only sends a mail in case of change in the CS
+
+*WorkloadManagementSystem
+
+FIX: (#7180) passing pilotDN instead of owner in getPilotProxyFromVOMSGroup()
+
 [v8.1.0a18]
 
 *Production
