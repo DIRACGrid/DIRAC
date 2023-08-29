@@ -79,7 +79,7 @@ class PilotManagerHandler(RequestHandler):
     ):
         """Add a new pilot job reference"""
 
-        return cls.pilotAgentsDB.addPilotTQReference(pilotRef, taskQueueID, gridType, pilotStampDict)
+        return cls.pilotAgentsDB.addPilotTQReference(pilotRef, taskQueueID, ownerGroup, gridType, pilotStampDict)
 
     types_addPilotTQRef = [list, int, str]
 

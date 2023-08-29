@@ -1,22 +1,21 @@
 """ A set of utilities used in the WMS services
     Requires the Nordugrid ARC plugins. In particular : nordugrid-arc-python
 """
-from tempfile import mkdtemp
 import shutil
+from tempfile import mkdtemp
 
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     getDNForUsername,
     getGroupOption,
     getVOForGroup,
 )
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.PilotScopes import PILOT_SCOPES
-
 
 # List of files to be inserted/retrieved into/from pilot Output Sandbox
 # first will be defined as StdOut in JDL and the second as StdErr
