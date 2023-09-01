@@ -21,6 +21,9 @@ DIRAC_DEPRECATED_FAIL
 DIRAC_ENABLE_DIRACX_JOB_MONITORING
   If set, calls the diracx job monitoring service. Off by default.
 
+DIRAC_ENABLE_DIRACX_LOGIN
+  If set, retrieve a DiracX token when calling dirac-proxy-init or dirac-login
+
 DIRAC_FEWER_CFG_LOCKS
   If ``true`` or ``yes`` or ``on`` or ``1`` or ``y`` or ``t``, DIRAC will reduce the number of locks used when accessing the CS for better performance (default, ``no``).
 

@@ -16,6 +16,9 @@ Example:
 import os
 import sys
 import copy
+import datetime
+import json
+from pathlib import Path
 from prompt_toolkit import prompt, print_formatted_text as print, HTML
 
 import DIRAC
@@ -26,6 +29,13 @@ from DIRAC.Core.Security.ProxyFile import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Base.Script import Script
+from DIRAC.Core.Base.Client import Client
+
+
+# token location
+DIRAC_TOKEN_FILE = Path.home() / ".cache" / "diracx" / "credentials.json"
+EXPIRES_GRACE_SECONDS = 15
+
 
 # At this point, we disable CS synchronization so that an error related
 # to the lack of a proxy certificate does not occur when trying to synchronize.
@@ -304,7 +314,27 @@ class Params:
             # Upload proxy to the server if it longer that uploaded one
             if credentials["secondsLeft"] > uploadedProxyLifetime:
                 gLogger.notice("Upload proxy to server.")
-                return gProxyManager.uploadProxy(proxy)
+                res = gProxyManager.uploadProxy(proxy)
+                if not res["OK"]:
+                    return res
+
+            # Get a token for use with diracx
+            if os.getenv("DIRAC_ENABLE_DIRACX_LOGIN", "No").lower() in ("yes", "true"):
+                res = Client(url="Framework/ProxyManager").exchangeProxyForToken()
+                if not res["OK"]:
+                    return res
+                DIRAC_TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
+                expires = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(
+                    seconds=res["Value"]["expires_in"] - EXPIRES_GRACE_SECONDS
+                )
+                credential_data = {
+                    "access_token": res["Value"]["access_token"],
+                    # TODO: "refresh_token":
+                    # TODO: "refresh_token_expires":
+                    "expires": expires.isoformat(),
+                }
+                DIRAC_TOKEN_FILE.write_text(json.dumps(credential_data))
+
         return S_OK()
 
     def __enableCS(self):

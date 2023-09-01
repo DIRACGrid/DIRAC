@@ -9,6 +9,7 @@ Example:
 import os
 import sys
 import glob
+import json
 import time
 import datetime
 
@@ -21,6 +22,12 @@ from DIRAC.Core.Security import X509Chain, ProxyInfo, VOMS
 from DIRAC.Core.Security.Locations import getCAsLocation
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
+from DIRAC.Core.Base.Client import Client
+from pathlib import Path
+
+
+DIRAC_TOKEN_FILE = Path.home() / ".cache" / "diracx" / "credentials.json"
+EXPIRES_GRACE_SECONDS = 15
 
 
 class Params(ProxyGeneration.CLIParams):
@@ -236,6 +243,22 @@ class ProxyInit:
             if not resultProxyUpload["OK"]:
                 if self.__piParams.strict:
                     return resultProxyUpload
+
+        if os.getenv("DIRAC_ENABLE_DIRACX_LOGIN", "No").lower() in ("yes", "true"):
+            res = Client(url="Framework/ProxyManager").exchangeProxyForToken()
+            if not res["OK"]:
+                return res
+            DIRAC_TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
+            expires = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(
+                seconds=res["Value"]["expires_in"] - EXPIRES_GRACE_SECONDS
+            )
+            credential_data = {
+                "access_token": res["Value"]["access_token"],
+                # TODO: "refresh_token":
+                # TODO: "refresh_token_expires":
+                "expires": expires.isoformat(),
+            }
+            DIRAC_TOKEN_FILE.write_text(json.dumps(credential_data))
 
         return S_OK()
 
