@@ -29,13 +29,16 @@ FEATURE_VARIABLES = {
     "DIRACOSVER": "master",
     "DIRACOS_TARBALL_PATH": None,
     "TEST_HTTPS": "Yes",
+    "TEST_DIRACX": "No",
     "DIRAC_FEWER_CFG_LOCKS": None,
     "DIRAC_USE_JSON_ENCODE": None,
     "INSTALLATION_BRANCH": "",
 }
-DEFAULT_MODULES = {
-    "DIRAC": Path(__file__).parent.absolute(),
-}
+DIRACX_OPTIONS = (
+    "DIRAC_ENABLE_DIRACX_LOGIN",
+    "DIRAC_ENABLE_DIRACX_JOB_MONITORING",
+)
+DEFAULT_MODULES = {"DIRAC": Path(__file__).parent.absolute()}
 
 # Static configuration
 DB_USER = "Dirac"
@@ -180,7 +183,7 @@ def destroy():
     with _gen_docker_compose(DEFAULT_MODULES) as docker_compose_fn:
         os.execvpe(
             "docker-compose",
-            ["docker-compose", "-f", docker_compose_fn, "down", "--remove-orphans", "-t", "0"],
+            ["docker-compose", "-f", docker_compose_fn, "down", "--remove-orphans", "-t", "0", "--volumes"],
             _make_env({}),
         )
 
@@ -193,7 +196,6 @@ def prepare_environment(
     release_var: Optional[str] = None,
 ):
     """Prepare the local environment for installing DIRAC."""
-
     _check_containers_running(is_up=False)
     if editable is None:
         editable = sys.stdout.isatty()
@@ -224,7 +226,7 @@ def prepare_environment(
     typer.secho("Running docker-compose to create containers", fg=c.GREEN)
     with _gen_docker_compose(modules) as docker_compose_fn:
         subprocess.run(
-            ["docker-compose", "-f", docker_compose_fn, "up", "-d"],
+            ["docker-compose", "-f", docker_compose_fn, "up", "-d", "dirac-server", "dirac-client"],
             check=True,
             env=docker_compose_env,
         )
@@ -313,6 +315,27 @@ def prepare_environment(
             )
             subprocess.run(command, check=True, shell=True)
 
+    docker_compose_fn_final = Path(tempfile.mkdtemp()) / "ci"
+    typer.secho("Running docker-compose to create DiracX containers", fg=c.GREEN)
+    typer.secho(f"Will eave a folder behind: {docker_compose_fn_final}", fg=c.YELLOW)
+
+    with _gen_docker_compose(modules) as docker_compose_fn:
+        # We cannot use the temporary directory created in the context manager because
+        # we don't stay in the contect manager (Popen)
+        # So we need something that outlives it.
+        shutil.copytree(docker_compose_fn.parent, docker_compose_fn_final, dirs_exist_ok=True)
+        # We use Popen because we don't want to wait for this command to finish.
+        # It is going to start all the diracx containers, including one which waits
+        # for the DIRAC installation to be over.
+        subprocess.Popen(
+            ["docker-compose", "-f", docker_compose_fn_final / "docker-compose.yml", "up", "-d", "diracx"],
+            env=docker_compose_env,
+            stdin=None,
+            stdout=None,
+            stderr=None,
+            close_fds=True,
+        )
+
 
 @app.command()
 def install_server():
@@ -323,6 +346,15 @@ def install_server():
     base_cmd = _build_docker_cmd("server", tty=False)
     subprocess.run(
         base_cmd + ["bash", "/home/dirac/LocalRepo/TestCode/DIRAC/tests/CI/install_server.sh"],
+        check=True,
+    )
+
+    # This runs a continuous loop that exports the config in yaml
+    # for the diracx container to use
+    typer.secho("Starting configuration export loop for diracx", fg=c.GREEN)
+    base_cmd = _build_docker_cmd("server", tty=False, daemon=True)
+    subprocess.run(
+        base_cmd + ["bash", "/home/dirac/LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/CI/exportCSLoop.sh"],
         check=True,
     )
 
@@ -508,13 +540,24 @@ def _gen_docker_compose(modules):
     # Load the docker-compose configuration and mount the necessary volumes
     input_fn = Path(__file__).parent / "tests/CI/docker-compose.yml"
     docker_compose = yaml.safe_load(input_fn.read_text())
+    # diracx-wait-for-db needs the volume to be able to run the witing script
+    for ctn in ("dirac-server", "dirac-client", "diracx-wait-for-db"):
+        if "volumes" not in docker_compose["services"][ctn]:
+            docker_compose["services"][ctn]["volumes"] = []
     volumes = [f"{path}:/home/dirac/LocalRepo/ALTERNATIVE_MODULES/{name}" for name, path in modules.items()]
     volumes += [f"{path}:/home/dirac/LocalRepo/TestCode/{name}" for name, path in modules.items()]
-    docker_compose["services"]["dirac-server"]["volumes"] = volumes[:]
-    docker_compose["services"]["dirac-client"]["volumes"] = volumes[:]
+    docker_compose["services"]["dirac-server"]["volumes"].extend(volumes[:])
+    docker_compose["services"]["dirac-client"]["volumes"].extend(volumes[:])
+    docker_compose["services"]["diracx-wait-for-db"]["volumes"].extend(volumes[:])
+
+    module_configs = _load_module_configs(modules)
+    if "diracx" in module_configs:
+        docker_compose["services"]["diracx"]["volumes"].append(
+            f"{modules['diracx']}/src/diracx:{module_configs['diracx']['install-location']}"
+        )
 
     # Add any extension services
-    for module_name, module_configs in _load_module_configs(modules).items():
+    for module_name, module_configs in module_configs.items():
         for service_name, service_config in module_configs["extra-services"].items():
             typer.secho(f"Adding service {service_name} for {module_name}", err=True, fg=c.GREEN)
             docker_compose["services"][service_name] = service_config.copy()
@@ -981,6 +1024,8 @@ def _make_config(modules, flags, release_var, editable):
         "CLIENT_HOST": "client",
         # Test specific variables
         "WORKSPACE": "/home/dirac",
+        # DiracX variable
+        "DIRACX_URL": "http://diracx:8000",
     }
 
     if editable:
@@ -1006,6 +1051,12 @@ def _make_config(modules, flags, release_var, editable):
         except KeyError:
             typer.secho(f"Required feature variable {key!r} is missing", err=True, fg=c.RED)
             raise typer.Exit(code=1)
+
+    # If we test DiracX, enable all the options
+    if config["TEST_DIRACX"].lower() in ("yes", "true"):
+        for key in DIRACX_OPTIONS:
+            config[key] = "Yes"
+
     config["TESTREPO"] = [f"/home/dirac/LocalRepo/TestCode/{name}" for name in modules]
     config["ALTERNATIVE_MODULES"] = [f"/home/dirac/LocalRepo/ALTERNATIVE_MODULES/{name}" for name in modules]
 
@@ -1027,7 +1078,7 @@ def _load_module_configs(modules):
     return module_ci_configs
 
 
-def _build_docker_cmd(container_name, *, use_root=False, cwd="/home/dirac", tty=True):
+def _build_docker_cmd(container_name, *, use_root=False, cwd="/home/dirac", tty=True, daemon=False):
     if use_root or os.getuid() == 0:
         user = "root"
     else:
@@ -1042,6 +1093,8 @@ def _build_docker_cmd(container_name, *, use_root=False, cwd="/home/dirac", tty=
                 err=True,
                 fg=c.YELLOW,
             )
+    if daemon:
+        cmd += ["-d"]
     cmd += [
         "-e=TERM=xterm-color",
         "-e=INSTALLROOT=/home/dirac",
