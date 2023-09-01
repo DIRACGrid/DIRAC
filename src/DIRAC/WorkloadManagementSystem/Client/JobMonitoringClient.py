@@ -1,5 +1,6 @@
 """ Class that contains client access to the job monitoring handler. """
 
+import os
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
@@ -10,6 +11,13 @@ class JobMonitoringClient(Client):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.setServer("WorkloadManagement/JobMonitoring")
+
+    if os.getenv("DIRAC_ENABLE_DIRACX_JOB_MONITORING", "No").lower() in ("yes", "true"):
+        from DIRAC.WorkloadManagementSystem.FutureClient.JobMonitoringClient import (
+            JobMonitoringClient as futureJobMonitoringClient,
+        )
+
+        httpsClient = futureJobMonitoringClient
 
     @ignoreEncodeWarning
     def getJobsStatus(self, jobIDs):
