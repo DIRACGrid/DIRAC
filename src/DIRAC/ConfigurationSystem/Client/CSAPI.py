@@ -612,25 +612,15 @@ class CSAPI:
             Where is the shifters section?
             """
             vo = CSGlobals.getVO()
-            setup = CSGlobals.getSetup()
 
             if vo:
-                res = gConfig.getSections(f"/Operations/{vo}/{setup}/Shifter")
+                res = gConfig.getSections(f"/Operations/{vo}/Shifter")
                 if res["OK"]:
-                    return S_OK(f"/Operations/{vo}/{setup}/Shifter")
+                    return S_OK(f"/Operations/{vo}/Shifter")
 
-                res = gConfig.getSections(f"/Operations/{vo}/Defaults/Shifter")
-                if res["OK"]:
-                    return S_OK(f"/Operations/{vo}/Defaults/Shifter")
-
-            else:
-                res = gConfig.getSections(f"/Operations/{setup}/Shifter")
-                if res["OK"]:
-                    return S_OK(f"/Operations/{setup}/Shifter")
-
-                res = gConfig.getSections("/Operations/Defaults/Shifter")
-                if res["OK"]:
-                    return S_OK("/Operations/Defaults/Shifter")
+            res = gConfig.getSections("/Operations/Defaults/Shifter")
+            if res["OK"]:
+                return S_OK("/Operations/Defaults/Shifter")
 
             return S_ERROR("No shifter section")
 
@@ -671,7 +661,7 @@ class CSAPI:
                 gLogger.info("Adding shifter section")
                 vo = CSGlobals.getVO()
                 if vo:
-                    section = f"/Operations/{vo}/Defaults/Shifter"
+                    section = f"/Operations/{vo}/Shifter"
                 else:
                     section = "/Operations/Defaults/Shifter"
                 res = self.__csMod.createSection(section)
