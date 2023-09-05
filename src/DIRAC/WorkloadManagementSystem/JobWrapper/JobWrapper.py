@@ -789,9 +789,9 @@ class JobWrapper:
             self.outputSandboxSize = getGlobbedTotalSize(fileList)
             self.log.info("Attempting to upload Sandbox with limit:", self.sandboxSizeLimit)
             sandboxClient = SandboxStoreClient()
-            result_sbUpload = sandboxClient.uploadFilesAsSandboxForJob(
-                fileList, self.jobID, "Output", self.sandboxSizeLimit
-            )  # 1024*1024*10
+            result_sbUpload = sandboxClient.uploadFilesAsSandbox(
+                fileList, self.sandboxSizeLimit, assignTo={f"Job:{self.jobID}": "Output"}
+            )
             if not result_sbUpload["OK"]:
                 self.log.error("Output sandbox upload failed with message", result_sbUpload["Message"])
                 outputSandboxData = result_sbUpload.get("SandboxFileName")
