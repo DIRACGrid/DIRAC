@@ -40,11 +40,14 @@ def getSystemInstance(system, setup=False):
 
     :return: str
     """
-    optionPath = Path.cfgPath("/DIRAC/Setups", setup or getDIRACSetup(), system)
-    instance = gConfigurationData.extractOptionFromCFG(optionPath)
-    if not instance:
-        raise RuntimeError(f"Option {optionPath} is not defined")
-    return instance
+    if "Setups" in gConfigurationData.getSectionsFromCFG("/DIRAC"):
+        optionPath = Path.cfgPath("/DIRAC/Setups", setup or getDIRACSetup(), system)
+        instance = gConfigurationData.extractOptionFromCFG(optionPath)
+        if not instance:
+            raise RuntimeError(f"Option {optionPath} is not defined")
+        return instance
+    # If /DIRAC/Setups is not present in the CS return empty instance string
+    return ""
 
 
 def getSystemSection(system, instance=False, setup=False):
