@@ -16,6 +16,9 @@ Example:
 import os
 import sys
 import copy
+import datetime
+import json
+from pathlib import Path
 from prompt_toolkit import prompt, print_formatted_text as print, HTML
 
 import DIRAC
@@ -26,6 +29,8 @@ from DIRAC.Core.Security.ProxyFile import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Base.Script import Script
+from DIRAC.Core.Base.Client import Client
+
 
 # At this point, we disable CS synchronization so that an error related
 # to the lack of a proxy certificate does not occur when trying to synchronize.
@@ -304,7 +309,30 @@ class Params:
             # Upload proxy to the server if it longer that uploaded one
             if credentials["secondsLeft"] > uploadedProxyLifetime:
                 gLogger.notice("Upload proxy to server.")
-                return gProxyManager.uploadProxy(proxy)
+                res = gProxyManager.uploadProxy(proxy)
+                if not res["OK"]:
+                    return res
+
+            # Get a token for use with diracx
+            if os.getenv("DIRAC_ENABLE_DIRACX_LOGIN", "No").lower() in ("yes", "true"):
+                from diracx.cli import EXPIRES_GRACE_SECONDS  # pylint: disable=import-error
+                from diracx.cli.utils import CREDENTIALS_PATH  # pylint: disable=import-error
+
+                res = Client(url="Framework/ProxyManager").exchangeProxyForToken()
+                if not res["OK"]:
+                    return res
+                CREDENTIALS_PATH.parent.mkdir(parents=True, exist_ok=True)
+                expires = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(
+                    seconds=res["Value"]["expires_in"] - EXPIRES_GRACE_SECONDS
+                )
+                credential_data = {
+                    "access_token": res["Value"]["access_token"],
+                    # TODO: "refresh_token":
+                    # TODO: "refresh_token_expires":
+                    "expires": expires.isoformat(),
+                }
+                CREDENTIALS_PATH.write_text(json.dumps(credential_data))
+
         return S_OK()
 
     def __enableCS(self):

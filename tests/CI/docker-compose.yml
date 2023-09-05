@@ -1,5 +1,11 @@
 version: '3.4'
 
+volumes:
+  # Volume used to store the config of diracx
+  diracx-cs-store:
+  # Volume used to store the pair of keys to sign the tokens
+  diracx-key-store:
+
 services:
   mysql:
     image: ${MYSQL_VER}
@@ -42,7 +48,6 @@ services:
       retries: 15
       start_period: 60s
 
-
   # Mock of an S3 storage
   s3-direct:
     image: adobe/s3mock
@@ -55,18 +60,45 @@ services:
       - initialBuckets=my-first-bucket
       - debug=true
 
+
+  diracx-wait-for-db:
+
+    image: ${MYSQL_VER}
+    container_name: diracx-wait-for-db
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: /home/dirac/LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/CI/check_db_initialized.sh
+
+
+
   dirac-server:
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
     container_name: server
     hostname: server
     user: "${DIRAC_UID}:${DIRAC_GID}"
+
     depends_on:
       mysql:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
+      s3-direct:
+        condition: service_started
+      iam-login-service:
+        condition: service_started
+      diracx-init-key:
+        condition: service_completed_successfully # Let the init container create the cs
+      diracx-init-cs:
+        condition: service_completed_successfully # Let the init container create the cs
     ulimits:
       nofile: 8192
+    volumes:
+      - diracx-cs-store:/cs_store
+      - diracx-key-store:/signing-key
+    environment:
+      - DIRACX_CONFIG_BACKEND_URL=git+file:///cs_store/initialRepo
+      - DIRACX_SERVICE_AUTH_TOKEN_KEY=file:///signing-key/rs256.key
 
   dirac-client:
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
@@ -77,3 +109,54 @@ services:
       - dirac-server
     ulimits:
       nofile: 8192
+
+
+
+  diracx-init-key:
+    image: ghcr.io/diracgrid/diracx/server
+    container_name: diracx-init-key
+    environment:
+      - DIRACX_SERVICE_AUTH_TOKEN_KEY="file:///signing-key/rs256.key"
+    volumes:
+      - diracx-key-store:/signing-key/
+    # We need to allow everybody to read the private keys
+    # Because the users are different between the DIRAC and DiracX containers
+    entrypoint: |
+      /dockerMicroMambaEntrypoint.sh bash -c "ssh-keygen -P '' -trsa -b4096 -mPEM -f/signing-key/rs256.key && /dockerMicroMambaEntrypoint.sh chmod o+r /signing-key/rs256.*"
+
+  diracx-init-cs:
+    image: ghcr.io/diracgrid/diracx/server
+    container_name: diracx-init-cs
+    environment:
+      - DIRACX_CONFIG_BACKEND_URL=git+file:///cs_store/initialRepo
+      - DIRACX_SERVICE_AUTH_TOKEN_KEY=file:///signing-key/rs256.key
+    volumes:
+      - diracx-cs-store:/cs_store/
+      - diracx-key-store:/signing-key/
+    entrypoint: |
+      /dockerMicroMambaEntrypoint.sh dirac internal generate-cs /cs_store/initialRepo --vo=diracAdmin --user-group=admin --idp-url=http://dsdsd.csds/a/b
+
+  diracx:
+    image: ghcr.io/diracgrid/diracx/server
+    container_name: diracx
+    environment:
+      - DIRACX_CONFIG_BACKEND_URL=git+file:///cs_store/initialRepo
+      - "DIRACX_DB_URL_AUTHDB=sqlite+aiosqlite:///:memory:"
+      - DIRACX_DB_URL_JOBDB=mysql+aiomysql://Dirac:Dirac@mysql/JobDB
+      - DIRACX_SERVICE_AUTH_TOKEN_KEY=file:///signing-key/rs256.key
+      - DIRACX_SERVICE_AUTH_ALLOWED_REDIRECTS=["http://diracx:8000/docs/oauth2-redirect"]
+    ports:
+      - 8000:8000
+    depends_on:
+      diracx-wait-for-db:
+        condition: service_completed_successfully
+    volumes:
+      - diracx-cs-store:/cs_store/
+      - diracx-key-store:/signing-key/
+
+    healthcheck:
+      test: ["CMD", "/dockerMicroMambaEntrypoint.sh", "curl", "-f", "http://localhost:8000/.well-known/openid-configuration"]
+      interval: 5s
+      timeout: 2s
+      retries: 15
+      start_period: 60s

@@ -6,6 +6,7 @@
       :dedent: 2
       :caption: ProxyManager options
 """
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Security import Properties
@@ -405,6 +406,45 @@ class ProxyManagerHandlerMixin:
             return result
         self.__proxyDB.logAction("download voms proxy with token", credDict["DN"], credDict["group"], userDN, userGroup)
         return self.__getVOMSProxy(userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, True)
+
+    types_exchangeProxyForToken = []
+
+    def export_exchangeProxyForToken(self):
+        """Exchange a proxy for an equivalent token to be used with diracx"""
+        try:
+            from diracx.routers.auth import (  # pylint: disable=import-error
+                AuthSettings,
+                create_access_token,
+                TokenResponse,
+            )  # pylint: disable=import-error
+
+            authSettings = AuthSettings()
+
+            from uuid import uuid4
+
+            credDict = self.getRemoteCredentials()
+            vo = Registry.getVOForGroup(credDict["group"])
+            payload = {
+                "sub": f"{vo}:{credDict['username']}",
+                "vo": vo,
+                "aud": authSettings.token_audience,
+                "iss": authSettings.token_issuer,
+                "dirac_properties": list(
+                    set(credDict.get("groupProperties", [])) | set(credDict.get("properties", []))
+                ),
+                "jti": str(uuid4()),
+                "preferred_username": credDict["username"],
+                "dirac_group": credDict["group"],
+            }
+            return S_OK(
+                TokenResponse(
+                    access_token=create_access_token(payload, authSettings),
+                    expires_in=authSettings.access_token_expire_minutes * 60,
+                    state="None",
+                ).dict()
+            )
+        except Exception as e:
+            return S_ERROR(f"Could not get token: {e!r}")
 
 
 class ProxyManagerHandler(ProxyManagerHandlerMixin, RequestHandler):
