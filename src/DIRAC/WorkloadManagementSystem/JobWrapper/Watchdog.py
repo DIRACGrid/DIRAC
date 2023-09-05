@@ -25,7 +25,7 @@ import psutil
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
+from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection
 from DIRAC.Core.Utilities import MJF
 from DIRAC.Core.Utilities.Os import getDiskSpace
 from DIRAC.Core.Utilities.Profiler import Profiler
@@ -107,10 +107,7 @@ class Watchdog:
         setup = gConfig.getValue("/DIRAC/Setup", "")
         if not setup:
             return S_ERROR("Can not get the DIRAC Setup value")
-        wms_instance = getSystemInstance("WorkloadManagement")
-        if not wms_instance:
-            return S_ERROR("Can not get the WorkloadManagement system instance")
-        self.section = f"/Systems/WorkloadManagement/{wms_instance}/JobWrapper"
+        self.section = f"{getSystemSection('WorkloadManagement')}/JobWrapper"
 
         self.log.verbose("Watchdog initialization")
         # Test control flags
