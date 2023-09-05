@@ -104,9 +104,6 @@ class Watchdog:
         else:
             self.initialized = True
 
-        setup = gConfig.getValue("/DIRAC/Setup", "")
-        if not setup:
-            return S_ERROR("Can not get the DIRAC Setup value")
         self.section = f"{getSystemSection('WorkloadManagement')}/JobWrapper"
 
         self.log.verbose("Watchdog initialization")
