@@ -1,6 +1,6 @@
 #!/bin/bash
 dbMissing=true;
-allDBs=(JobDB FileCatalogDB)
+allDBs=(AccountingDB FTS3DB JobDB JobLoggingDB PilotAgentsDB ProductionDB ProxyDB ReqDB ResourceManagementDB ResourceStatusDB SandboxMetadataDB StorageManagementDB TaskQueueDB TransformationDB)
 while ${dbMissing};
 do
     dbMissing=false;
