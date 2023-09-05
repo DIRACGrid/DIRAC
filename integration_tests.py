@@ -317,7 +317,7 @@ def prepare_environment(
 
     docker_compose_fn_final = Path(tempfile.mkdtemp()) / "ci"
     typer.secho("Running docker-compose to create DiracX containers", fg=c.GREEN)
-    typer.secho(f"Will eave a folder behind: {docker_compose_fn_final}", fg=c.YELLOW)
+    typer.secho(f"Will leave a folder behind: {docker_compose_fn_final}", fg=c.YELLOW)
 
     with _gen_docker_compose(modules) as docker_compose_fn:
         # We cannot use the temporary directory created in the context manager because

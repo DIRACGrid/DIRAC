@@ -26,10 +26,6 @@ from DIRAC.Core.Base.Client import Client
 from pathlib import Path
 
 
-DIRAC_TOKEN_FILE = Path.home() / ".cache" / "diracx" / "credentials.json"
-EXPIRES_GRACE_SECONDS = 15
-
-
 class Params(ProxyGeneration.CLIParams):
     addVOMSExt = False
     uploadProxy = True
@@ -245,10 +241,13 @@ class ProxyInit:
                     return resultProxyUpload
 
         if os.getenv("DIRAC_ENABLE_DIRACX_LOGIN", "No").lower() in ("yes", "true"):
+            from diracx.cli import EXPIRES_GRACE_SECONDS  # pylint: disable=import-error
+            from diracx.cli.utils import CREDENTIALS_PATH  # pylint: disable=import-error
+
             res = Client(url="Framework/ProxyManager").exchangeProxyForToken()
             if not res["OK"]:
                 return res
-            DIRAC_TOKEN_FILE.parent.mkdir(parents=True, exist_ok=True)
+            CREDENTIALS_PATH.parent.mkdir(parents=True, exist_ok=True)
             expires = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(
                 seconds=res["Value"]["expires_in"] - EXPIRES_GRACE_SECONDS
             )
@@ -258,7 +257,7 @@ class ProxyInit:
                 # TODO: "refresh_token_expires":
                 "expires": expires.isoformat(),
             }
-            DIRAC_TOKEN_FILE.write_text(json.dumps(credential_data))
+            CREDENTIALS_PATH.write_text(json.dumps(credential_data))
 
         return S_OK()
 
