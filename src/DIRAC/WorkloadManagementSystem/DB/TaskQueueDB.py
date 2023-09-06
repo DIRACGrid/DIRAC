@@ -97,6 +97,7 @@ class TaskQueueDB(DB):
                 "Owner": "VARCHAR(255) NOT NULL",
                 "OwnerDN": "VARCHAR(255)",
                 "OwnerGroup": "VARCHAR(32) NOT NULL",
+                "VO": "VARCHAR(32) NOT NULL",
                 "CPUTime": "BIGINT(20) UNSIGNED NOT NULL",
                 "Priority": "FLOAT NOT NULL",
                 "Enabled": "TINYINT(1) NOT NULL DEFAULT 0",
@@ -251,6 +252,8 @@ class TaskQueueDB(DB):
         for field in singleValueDefFields:
             sqlSingleFields.append(field)
             sqlValues.append(tqDefDict[field])
+        sqlSingleFields.append("VO")
+        sqlValues.append(Registry.getVOForGroup(tqDefDict["OwnerGroup"]))
         # Insert the TQ Disabled
         sqlSingleFields.append("Enabled")
         sqlValues.append("0")
