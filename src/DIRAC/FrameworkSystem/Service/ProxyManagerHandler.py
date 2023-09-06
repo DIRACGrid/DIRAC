@@ -414,7 +414,7 @@ class ProxyManagerHandlerMixin:
         try:
             from diracx.routers.auth import (  # pylint: disable=import-error
                 AuthSettings,
-                create_access_token,
+                create_token,
                 TokenResponse,
             )  # pylint: disable=import-error
 
@@ -438,7 +438,7 @@ class ProxyManagerHandlerMixin:
             }
             return S_OK(
                 TokenResponse(
-                    access_token=create_access_token(payload, authSettings),
+                    access_token=create_token(payload, authSettings),
                     expires_in=authSettings.access_token_expire_minutes * 60,
                     state="None",
                 ).dict()
