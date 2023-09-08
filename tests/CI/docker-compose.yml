@@ -19,6 +19,7 @@ services:
       timeout: 20s
       retries: 10
       start_period: 60s
+    pull_policy: always
 
   elasticsearch:
     image: ${ES_VER}
@@ -33,6 +34,7 @@ services:
       timeout: 2s
       retries: 15
       start_period: 60s
+    pull_policy: always
 
   iam-login-service:
     image: ${IAM_VER}
@@ -47,6 +49,7 @@ services:
       timeout: 2s
       retries: 15
       start_period: 60s
+    pull_policy: always
 
   # Mock of an S3 storage
   s3-direct:
@@ -59,7 +62,7 @@ services:
     environment:
       - initialBuckets=my-first-bucket
       - debug=true
-
+    pull_policy: always
 
   diracx-wait-for-db:
 
@@ -69,7 +72,7 @@ services:
       mysql:
         condition: service_healthy
     command: /home/dirac/LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/CI/check_db_initialized.sh
-
+    pull_policy: always
 
 
   dirac-server:
@@ -99,6 +102,7 @@ services:
     environment:
       - DIRACX_CONFIG_BACKEND_URL=git+file:///cs_store/initialRepo
       - DIRACX_SERVICE_AUTH_TOKEN_KEY=file:///signing-key/rs256.key
+    pull_policy: always
 
   dirac-client:
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
@@ -109,6 +113,7 @@ services:
       - dirac-server
     ulimits:
       nofile: 8192
+    pull_policy: always
 
 
 
@@ -123,6 +128,7 @@ services:
     # Because the users are different between the DIRAC and DiracX containers
     entrypoint: |
       /dockerMicroMambaEntrypoint.sh bash -c "ssh-keygen -P '' -trsa -b4096 -mPEM -f/signing-key/rs256.key && /dockerMicroMambaEntrypoint.sh chmod o+r /signing-key/rs256.*"
+    pull_policy: always
 
   diracx-init-cs:
     image: ghcr.io/diracgrid/diracx/server
@@ -135,6 +141,7 @@ services:
       - diracx-key-store:/signing-key/
     entrypoint: |
       /dockerMicroMambaEntrypoint.sh dirac internal generate-cs /cs_store/initialRepo --vo=diracAdmin --user-group=admin --idp-url=http://dsdsd.csds/a/b
+    pull_policy: always
 
   diracx:
     image: ghcr.io/diracgrid/diracx/server
@@ -160,3 +167,4 @@ services:
       timeout: 2s
       retries: 15
       start_period: 60s
+    pull_policy: always
