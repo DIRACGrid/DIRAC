@@ -8,7 +8,7 @@ from os.path import dirname, join
 import pytest
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC.Interfaces.API.Job import Job
+from DIRAC.Interfaces.API.Job import Job, BadJobParameterError
 
 
 def test_basicJob():
@@ -74,29 +74,41 @@ def test_SimpleParametricJob():
     "proc, minProc, maxProc, expectedProc, expectedMinProc, expectedMaxProc",
     [
         (4, None, None, 4, None, 4),
-        (4, 2, None, 4, None, 4),
-        (4, 2, 8, 4, None, 4),
-        (4, 8, 6, 8, None, 8),  # non-sense
         (None, 2, 8, None, 2, 8),
         (None, 1, None, None, 1, None),
         (None, None, 8, None, 1, 8),
         (None, 8, 8, 8, None, 8),
-        (None, 12, 8, 8, None, 8),  # non-sense
     ],
 )
-def test_setNumberOfProcessors(proc, minProc, maxProc, expectedProc, expectedMinProc, expectedMaxProc):
-    # Arrange
+def test_setNumberOfProcessors_successful(proc, minProc, maxProc, expectedProc, expectedMinProc, expectedMaxProc):
     job = Job()
-
-    # Act
     res = job.setNumberOfProcessors(proc, minProc, maxProc)
 
-    # Assert
     assert res["OK"], res["Message"]
     jobDescription = ClassAd(f"[{job._toJDL()}]")
     assert expectedProc == jobDescription.getAttributeInt("NumberOfProcessors")
     assert expectedMinProc == jobDescription.getAttributeInt("MinNumberOfProcessors")
     assert expectedMaxProc == jobDescription.getAttributeInt("MaxNumberOfProcessors")
+
+
+@pytest.mark.parametrize(
+    "proc, minProc, maxProc",
+    [
+        (4, 2, None),
+        (4, 2, 8),
+        (4, 8, 6),
+        (None, 12, 8),
+    ],
+)
+def test_setNumberOfProcessors_unsuccessful(proc, minProc, maxProc):
+    job = Job()
+    with pytest.raises(BadJobParameterError):
+        job.setNumberOfProcessors(proc, minProc, maxProc)
+
+    jobDescription = ClassAd(f"[{job._toJDL()}]")
+    assert jobDescription.getAttributeInt("NumberOfProcessors") is None
+    assert jobDescription.getAttributeInt("MinNumberOfProcessors") is None
+    assert jobDescription.getAttributeInt("MaxNumberOfProcessors") is None
 
 
 @pytest.mark.parametrize(

@@ -48,6 +48,10 @@ from DIRAC.Workflow.Utilities.Utils import getStepDefinition, addStepToWorkflow
 COMPONENT_NAME = "/Interfaces/API/Job"
 
 
+class BadJobParameterError(ValueError):
+    pass
+
+
 class Job(API):
     """DIRAC jobs"""
 
@@ -517,7 +521,10 @@ class Job(API):
 
     #############################################################################
     def setNumberOfProcessors(self, numberOfProcessors=None, minNumberOfProcessors=None, maxNumberOfProcessors=None):
-        """Helper function.
+        """Helper function to set the number of processors required by the job.
+
+        The DIRAC_JOB_PROCESSORS environment variable can be used by the job to
+        determine how many processors are actually assigned.
 
         Example usage:
 
@@ -551,75 +558,50 @@ class Job(API):
 
         >>> job = Job()
         >>> job.setNumberOfProcessors(numberOfProcessors=3, maxNumberOfProcessors=4)
-        will lead to ignore the second parameter
+        will result in a BadJobParameterError
 
         >>> job = Job()
         >>> job.setNumberOfProcessors(numberOfProcessors=3, minNumberOfProcessors=2)
-        will lead to ignore the second parameter
+        will result in a BadJobParameterError
 
         :param int processors: number of processors required by the job (exact number, unless a min/max are set)
         :param int minNumberOfProcessors: optional min number of processors the job applications can use
         :param int maxNumberOfProcessors: optional max number of processors the job applications can use
 
-        :return: S_OK/S_ERROR
+        :return: S_OK
+
+        :raises BadJobParameterError: If the function arguments are not valid.
         """
-        if numberOfProcessors:
-            if not minNumberOfProcessors:
-                nProc = numberOfProcessors
-            else:
-                nProc = max(numberOfProcessors, minNumberOfProcessors)
-            if nProc > 1:
-                self._addParameter(
-                    self.workflow, "NumberOfProcessors", "JDL", nProc, "Exact number of processors requested"
-                )
-                self._addParameter(
-                    self.workflow,
-                    "MaxNumberOfProcessors",
-                    "JDL",
-                    nProc,
-                    "Max Number of processors the job applications may use",
-                )
-            return S_OK()
+        # If min and max are the same then that's the same as setting numberOfProcessors
+        if minNumberOfProcessors and maxNumberOfProcessors and minNumberOfProcessors == maxNumberOfProcessors:
+            numberOfProcessors = minNumberOfProcessors
+            minNumberOfProcessors = maxNumberOfProcessors = None
 
-        if maxNumberOfProcessors and not minNumberOfProcessors:
-            minNumberOfProcessors = 1
+        if numberOfProcessors is not None:
+            if minNumberOfProcessors is not None:
+                raise BadJobParameterError("minNumberOfProcessors cannot be used with numberOfProcessors")
+            if maxNumberOfProcessors is not None:
+                raise BadJobParameterError("maxNumberOfProcessors cannot be used with numberOfProcessors")
 
-        if minNumberOfProcessors and maxNumberOfProcessors and minNumberOfProcessors >= maxNumberOfProcessors:
-            minNumberOfProcessors = maxNumberOfProcessors
-
-        if (
-            minNumberOfProcessors
-            and maxNumberOfProcessors
-            and minNumberOfProcessors == maxNumberOfProcessors
-            and minNumberOfProcessors > 1
-        ):
             self._addParameter(
-                self.workflow,
-                "NumberOfProcessors",
-                "JDL",
-                minNumberOfProcessors,
-                "Exact number of processors requested",
+                self.workflow, "NumberOfProcessors", "JDL", numberOfProcessors, "Exact number of processors requested"
             )
             self._addParameter(
                 self.workflow,
                 "MaxNumberOfProcessors",
                 "JDL",
-                minNumberOfProcessors,
+                numberOfProcessors,
                 "Max Number of processors the job applications may use",
             )
             return S_OK()
 
-        # By this point there should be a min
-        self._addParameter(
-            self.workflow,
-            "MinNumberOfProcessors",
-            "JDL",
-            minNumberOfProcessors,
-            "Min Number of processors the job applications may use",
-        )
+        if minNumberOfProcessors is None and maxNumberOfProcessors is None:
+            return S_OK()
 
-        # If not set, will be "all"
-        if maxNumberOfProcessors:
+        minNumberOfProcessors = minNumberOfProcessors or 1
+        if maxNumberOfProcessors is not None:
+            if maxNumberOfProcessors < minNumberOfProcessors:
+                raise BadJobParameterError("minNumberOfProcessors must be less than or equal to maxNumberOfProcessors")
             self._addParameter(
                 self.workflow,
                 "MaxNumberOfProcessors",
@@ -627,6 +609,14 @@ class Job(API):
                 maxNumberOfProcessors,
                 "Max Number of processors the job applications may use",
             )
+
+        self._addParameter(
+            self.workflow,
+            "MinNumberOfProcessors",
+            "JDL",
+            minNumberOfProcessors,
+            "Min Number of processors the job applications may use",
+        )
 
         return S_OK()
 
