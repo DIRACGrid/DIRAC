@@ -104,6 +104,26 @@ class FileCacheLoggingPlugin(PilotLoggingPlugin):
             return S_OK(self.meta)
         return S_ERROR("No Pilot logging directory defined")
 
+    def getLogs(self, logfile, vo):
+        """
+        Get the "instant" logs from Tornado log storage area. There are not finalised (incomplete) logs.
+
+        :return:  Dirac S_OK containing the logs
+        :rtype: dict
+        """
+
+        filename = os.path.join(self.meta["LogPath"], vo, logfile)
+        resultDict = {}
+        try:
+            with open(filename) as f:
+                stdout = f.read()
+                resultDict["StdOut"] = stdout
+        except FileNotFoundError as err:
+            sLog.error(f"Error opening a log file:{filename}", err)
+            return S_ERROR(repr(err))
+
+        return S_OK(resultDict)
+
     def _verifyUUIDPattern(self, logfile):
         """
         Verify if the name of the log file matches the required pattern.

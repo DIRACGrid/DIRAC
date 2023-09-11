@@ -80,6 +80,16 @@ class TornadoPilotLoggingHandler(TornadoService):
         """
         return self.loggingPlugin.getMeta()
 
+    def export_getLogs(self, logfile, vo):
+        """
+        Get (not yet finalised) logs from the server.
+
+        :return:  S_OK containing a metadata dictionary
+        :rtype: dict
+        """
+
+        return self.loggingPlugin.getLogs(logfile, vo)
+
     def export_finaliseLogs(self, payload, pilotUUID):
         """
         Finalise a log file. Finalised logfile can be copied to a secure location, if a file cache is used.
