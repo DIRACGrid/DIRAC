@@ -1,3 +1,15 @@
+[v8.0.28]
+
+Please follow the template:
+
+*WorkloadManagementSystem
+
+FIX: (#7195) do not try to insert nan values in AccountingDB
+
+*ConfigurationSystem
+
+CHANGE: (#7181) VOMS2CS agent only sends a mail in case of change in the CS
+
 [v8.0.27]
 
 *WorkloadManagement
