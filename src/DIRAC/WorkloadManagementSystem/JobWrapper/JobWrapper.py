@@ -1242,8 +1242,16 @@ class JobWrapper:
         self.log.info("EXECUTION_RESULT[CPU] in sendJobAccounting", cpuString)
 
         utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT["CPU"]
-        cpuTime = utime + stime + cutime + cstime
-        execTime = elapsed
+        try:
+            cpuTime = int(utime + stime + cutime + cstime)
+        except ValueError:
+            cpuTime = 0
+
+        try:
+            execTime = int(elapsed)
+        except ValueError:
+            execTime = 0
+
         diskSpaceConsumed = getGlobbedTotalSize(os.path.join(self.root, str(self.jobID)))
         # Fill the data
         acData = {
