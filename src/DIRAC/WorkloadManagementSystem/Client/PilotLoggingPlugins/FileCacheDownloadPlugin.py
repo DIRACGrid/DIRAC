@@ -9,6 +9,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.WorkloadManagementSystem.Client.PilotLoggingPlugins.DownloadPlugin import DownloadPlugin
+from DIRAC.WorkloadManagementSystem.Client.TornadoPilotLoggingClient import TornadoPilotLoggingClient
 
 sLog = gLogger.getSubLogger(__name__)
 
@@ -20,10 +21,10 @@ class FileCacheDownloadPlugin(DownloadPlugin):
 
     def __init__(self):
         """
-        Sets the pilot log files location for a WebServer.
+        Sets the client for downloading incomplete log files from the server cache.
 
         """
-        pass
+        self.tornadoClient = TornadoPilotLoggingClient()
 
     def getRemotePilotLogs(self, pilotStamp, vo=None):
         """
@@ -39,8 +40,7 @@ class FileCacheDownloadPlugin(DownloadPlugin):
         uploadPath = opsHelper.getValue("Pilot/UploadPath", "")
         lfn = os.path.join(uploadPath, pilotStamp + ".log")
         sLog.info("LFN to download: ", lfn)
-        filepath = tempfile.TemporaryDirectory().name
-        os.makedirs(filepath, exist_ok=True)
+
         # get pilot credentials which uploaded logs to an external storage:
         res = opsHelper.getOptionsDict("Shifter/DataManager")
         if not res["OK"]:
@@ -53,9 +53,22 @@ class FileCacheDownloadPlugin(DownloadPlugin):
 
         sLog.info(f"Proxy used for retrieving pilot logs: VO: {vo}, User: {proxyUser}, Group: {proxyGroup}")
 
-        res = self._downloadLogs(  # pylint: disable=unexpected-keyword-arg
-            lfn, filepath, proxyUserName=proxyUser, proxyUserGroup=proxyGroup
-        )
+        # attempt to get logs from server first:
+        res = self._getLogsFromServer(pilotStamp, vo)
+        if not res["OK"]:
+            # from SE:
+            res = self._downloadLogs(  # pylint: disable=unexpected-keyword-arg
+                lfn, pilotStamp, proxyUserName=proxyUser, proxyUserGroup=proxyGroup
+            )
+
+        return res
+
+    @executeWithUserProxy
+    def _downloadLogs(self, lfn, pilotStamp):
+        filepath = tempfile.TemporaryDirectory().name
+        os.makedirs(filepath, exist_ok=True)
+
+        res = DataManager().getFile(lfn, destinationDir=filepath)
         sLog.debug("getFile result:", res)
         if not res["OK"]:
             sLog.error(f"Failed to contact storage")
@@ -76,5 +89,19 @@ class FileCacheDownloadPlugin(DownloadPlugin):
         return S_OK(resultDict)
 
     @executeWithUserProxy
-    def _downloadLogs(self, lfn, filepath):
-        return DataManager().getFile(lfn, destinationDir=filepath)
+    def _getLogsFromServer(self, logfile, vo):
+        """
+        Get a file from the server cache area. The file is most likely not finalised, since finalised files
+        are copied to an SE and deleted. Both logfile.log and logfile are tried should the finalised file still
+        be on the server.
+
+        :param str logfile: pilot log filename
+        :param str vo: VO name
+        :return: S_OK or S_ERROR
+        :rtype: dict
+        """
+
+        res = self.tornadoClient.getLogs(logfile, vo)
+        if not res["OK"]:
+            res = self.tornadoClient.getLogs(logfile + ".log", vo)
+        return res
