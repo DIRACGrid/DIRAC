@@ -1,23 +1,16 @@
 # pylint: disable=import-error
-from diracx.client import Dirac
+from diracx.client import DiracClient
 from diracx.client.models import JobSearchParams
-
-from diracx.cli.utils import get_auth_headers
-from diracx.core.preferences import DiracxPreferences
 
 from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue
 
 
 class JobMonitoringClient:
-    def __init__(self, *args, **kwargs):
-        self.endpoint = DiracxPreferences().url
-
     def fetch(self, parameters, jobIDs):
-        with Dirac(endpoint=self.endpoint) as api:
+        with DiracClient() as api:
             jobs = api.jobs.search(
                 parameters=["JobID"] + parameters,
                 search=[{"parameter": "JobID", "operator": "in", "values": jobIDs}],
-                headers=get_auth_headers(),
             )
             return {j["JobID"]: {param: j[param] for param in parameters} for j in jobs}
 
