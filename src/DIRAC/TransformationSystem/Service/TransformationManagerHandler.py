@@ -207,15 +207,11 @@ class TransformationManagerHandlerMixin:
         tfDetails = self.transformationDB.getTransformation(transName, extraParams=extraParams)
         if not tfDetails["OK"]:
             return tfDetails
-        if not (result := self.checkPermissions(transName))["OK"]:
-            return result
         return tfDetails
 
     types_getTransformationParameters = [[int, str], [str, list]]
 
     def export_getTransformationParameters(self, transName, parameters):
-        if not (result := self.checkPermissions(transName))["OK"]:
-            return result
         return self.transformationDB.getTransformationParameters(transName, parameters)
 
     types_getTransformationWithStatus = [[str, list, tuple]]
@@ -275,15 +271,11 @@ class TransformationManagerHandlerMixin:
     types_getTransformationStats = [[int, str]]
 
     def export_getTransformationStats(self, transName):
-        if not (result := self.checkPermissions(transName))["OK"]:
-            return result
         return self.transformationDB.getTransformationStats(transName)
 
     types_getTransformationFilesCount = [[int, str], str]
 
     def export_getTransformationFilesCount(self, transName, field, selection={}):
-        if not (result := self.checkPermissions(transName))["OK"]:
-            return result
         return self.transformationDB.getTransformationFilesCount(transName, field, selection=selection)
 
     types_getTransformationFiles = []
@@ -360,8 +352,6 @@ class TransformationManagerHandlerMixin:
     types_getTransformationTaskStats = [[int, str]]
 
     def export_getTransformationTaskStats(self, transName):
-        if not (result := self.checkPermissions(transName))["OK"]:
-            return result
         return self.transformationDB.getTransformationTaskStats(transName)
 
     types_deleteTasks = [[int, str], int, int]
@@ -386,8 +376,6 @@ class TransformationManagerHandlerMixin:
 
     def export_getTasksToSubmit(self, transName, numTasks, site=""):
         """Get information necessary for submission for a given number of tasks for a given transformation"""
-        if not (result := self.checkPermissions(transName))["OK"]:
-            return result
         res = self.transformationDB.getTransformation(transName)
         if not res["OK"]:
             return res
@@ -435,8 +423,6 @@ class TransformationManagerHandlerMixin:
     types_getTransformationMetaQuery = [[int, str], str]
 
     def export_getTransformationMetaQuery(self, transName, queryType):
-        if not (result := self.checkPermissions(transName))["OK"]:
-            return result
         return self.transformationDB.getTransformationMetaQuery(transName, queryType)
 
     ####################################################################
@@ -447,8 +433,6 @@ class TransformationManagerHandlerMixin:
     types_getTransformationLogging = [[int, str]]
 
     def export_getTransformationLogging(self, transName):
-        if not (result := self.checkPermissions(transName))["OK"]:
-            return result
         return self.transformationDB.getTransformationLogging(transName)
 
     ####################################################################
@@ -459,8 +443,6 @@ class TransformationManagerHandlerMixin:
     types_getAdditionalParameters = [[int, str]]
 
     def export_getAdditionalParameters(self, transName):
-        if not (result := self.checkPermissions(transName))["OK"]:
-            return result
         return self.transformationDB.getAdditionalParameters(transName)
 
     ####################################################################
