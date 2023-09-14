@@ -98,7 +98,7 @@ class PilotManagerHandler(RequestHandler):
     def export_getPilotOutput(self, pilotReference):
         """
         Get the pilot job standard output and standard error files for a pilot reference.
-        Handles both classic, CE-based logs and remote logs. The type og logs returned is determined
+        Handles both classic, CE-based logs and remote logs. The type of logs returned is determined
         by the server.
 
         :param str pilotReference:
@@ -118,7 +118,8 @@ class PilotManagerHandler(RequestHandler):
         vo = getVOForGroup(pilotDict["OwnerGroup"])
         opsHelper = Operations(vo=vo)
         remote = opsHelper.getValue("Pilot/RemoteLogsPriority", False)
-        funcs = [self._getRemotePilotOutput, self._getPilotOutput]
+        # classic logs first, by default
+        funcs = [self._getPilotOutput, self._getRemotePilotOutput]
         if remote:
             funcs.reverse()
 
