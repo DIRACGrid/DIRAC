@@ -386,20 +386,24 @@ class TransformationCleaningAgent(AgentModule):
 
         # Executing with shifter proxy
         gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "false")
-        res = DataManager().removeFile(filesFound, force=True)
+        failed = {}
+        for chunkId, filesChunk in enumerate(breakListIntoChunks(filesFound, 500)):
+            self.log.info("Removing chunk", chunkId)
+            res = DataManager().removeFile(filesChunk, force=True)
+            if not res["OK"]:
+                failed.update(dict.fromkeys(filesChunk, res["Message"]))
+            failed.update(res["Value"]["Failed"])
         gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "true")
 
-        if not res["OK"]:
-            return res
         realFailure = False
-        for lfn, reason in res["Value"]["Failed"].items():
+        for lfn, reason in failed.items():
             if "File does not exist" in str(reason):
                 self.log.warn(f"File {lfn} not found in some catalog: ")
             else:
                 self.log.error("Failed to remove file found in the catalog", f"{lfn} {reason}")
                 realFailure = True
         if realFailure:
-            return S_ERROR("Failed to remove all files found in the catalog")
+            return S_ERROR("Failed to remove some files found in the catalog")
         return S_OK()
 
     def __getCatalogDirectoryContents(self, directories):
