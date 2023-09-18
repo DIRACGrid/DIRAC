@@ -1,3 +1,10 @@
+[v8.0.29]
+
+*TransformationSystem
+
+FIX: (#7199) Drop TS permission check for all read-only functions
+CHANGE: (#7184) TransformationCleaningAgent removes files by chunk
+
 [v8.0.28]
 
 Please follow the template:
