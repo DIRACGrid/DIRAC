@@ -11,6 +11,7 @@ import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
+from itertools import chain
 from pathlib import Path
 from typing import Optional
 
@@ -223,10 +224,15 @@ def prepare_environment(
     server_config = _make_config(modules, server_flags, release_var, editable)
     client_config = _make_config(modules, client_flags, release_var, editable)
 
+    # The dependencies of dirac-server and dirac-client will be automatically
+    # started but we need to add manually all the extra services
+    module_configs = _load_module_configs(modules)
+    extra_services = list(chain(*[config["extra-services"] for config in module_configs.values()]))
+
     typer.secho("Running docker-compose to create containers", fg=c.GREEN)
     with _gen_docker_compose(modules) as docker_compose_fn:
         subprocess.run(
-            ["docker-compose", "-f", docker_compose_fn, "up", "-d", "dirac-server", "dirac-client"],
+            ["docker-compose", "-f", docker_compose_fn, "up", "-d", "dirac-server", "dirac-client"] + extra_services,
             check=True,
             env=docker_compose_env,
         )
