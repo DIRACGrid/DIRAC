@@ -440,7 +440,6 @@ class ProxyManagerHandlerMixin:
                 TokenResponse(
                     access_token=create_token(payload, authSettings),
                     expires_in=authSettings.access_token_expire_minutes * 60,
-                    state="None",
                 ).dict()
             )
         except Exception as e:

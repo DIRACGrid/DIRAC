@@ -315,23 +315,21 @@ class Params:
 
             # Get a token for use with diracx
             if os.getenv("DIRAC_ENABLE_DIRACX_LOGIN", "No").lower() in ("yes", "true"):
-                from diracx.cli import EXPIRES_GRACE_SECONDS  # pylint: disable=import-error
-                from diracx.cli.utils import CREDENTIALS_PATH  # pylint: disable=import-error
+                from diracx.core.utils import write_credentials  # pylint: disable=import-error
+                from diracx.core.models import TokenResponse  # pylint: disable=import-error
 
                 res = Client(url="Framework/ProxyManager").exchangeProxyForToken()
                 if not res["OK"]:
                     return res
-                CREDENTIALS_PATH.parent.mkdir(parents=True, exist_ok=True)
-                expires = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(
-                    seconds=res["Value"]["expires_in"] - EXPIRES_GRACE_SECONDS
+                token_content = res["Value"]
+                write_credentials(
+                    TokenResponse(
+                        access_token=token_content["access_token"],
+                        expires_in=token_content["expires_in"],
+                        token_type=token_content.get("token_type"),
+                        refresh_token=token_content.get("refresh_token"),
+                    )
                 )
-                credential_data = {
-                    "access_token": res["Value"]["access_token"],
-                    # TODO: "refresh_token":
-                    # TODO: "refresh_token_expires":
-                    "expires": expires.isoformat(),
-                }
-                CREDENTIALS_PATH.write_text(json.dumps(credential_data))
 
         return S_OK()
 
