@@ -8,6 +8,7 @@ from __future__ import division
 from __future__ import print_function
 
 import datetime
+import six
 from pylab import setp
 from matplotlib.colors import Normalize
 import matplotlib.cm as cm
@@ -181,7 +182,10 @@ class QualityMapGraph(PlotBase):
         cb = ColorbarBase(
             cax, cmap=self.cmap, norm=self.norms, boundaries=self.cbBoundaries, values=self.cbValues, ticks=self.cbTicks
         )
-        cb.draw_all()
+        if six.PY2:
+            cb.draw_all()  # pylint: disable=no-member
+        else:
+            self.figure.draw_without_rendering()
         # cb = self.ax.colorbar( self.mapper, format="%d%%",
         #  orientation='horizontal', fraction=0.04, pad=0.1, aspect=40  )
         # setp( cb.outline, linewidth=.5 )

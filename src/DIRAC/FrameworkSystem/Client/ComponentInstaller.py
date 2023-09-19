@@ -74,7 +74,6 @@ import shutil
 import stat
 import time
 from collections import defaultdict
-
 import importlib_resources
 import six
 import subprocess32 as subprocess
@@ -845,7 +844,16 @@ class ComponentInstaller(object):
             for ext in extensions:
                 cfgTemplateModule = "%s.%sSystem" % (ext, system)
                 try:
-                    cfgTemplate = importlib_resources.read_text(cfgTemplateModule, "ConfigTemplate.cfg")
+                    if six.PY2:
+                        cfgTemplate = importlib_resources.read_text(
+                            cfgTemplateModule, "ConfigTemplate.cfg"
+                        )  # pylint: disable=no-member
+                    else:
+                        cfgTemplate = (
+                            importlib_resources.files(cfgTemplateModule)
+                            .joinpath("ConfigTemplate.cfg")
+                            .read_text(encoding="utf-8")
+                        )
                 except (ImportError, OSError):
                     continue
                 gLogger.notice("Loading configuration template from", cfgTemplateModule)
@@ -2195,7 +2203,10 @@ exec dirac-webapp-run -p < /dev/null
         systemName = databases[filename]
         moduleName = ".".join([extension, systemName, "DB"])
         gLogger.debug("Installing %s from %s" % (filename, moduleName))
-        dbSql = importlib_resources.read_text(moduleName, filename)
+        if six.PY2:
+            dbSql = importlib_resources.read_text(moduleName, filename)  # pylint: disable=no-member
+        else:
+            dbSql = importlib_resources.files(moduleName).joinpath(filename).read_text(encoding="utf-8")
 
         # just check
         result = self.execMySQL("SHOW STATUS")
@@ -2295,7 +2306,16 @@ exec dirac-webapp-run -p < /dev/null
                 sourcedDBbFileName = line.split(" ")[1].replace("\n", "")
                 gLogger.info("Found file to source: %s" % sourcedDBbFileName)
                 module, filename = sourcedDBbFileName.rsplit("/", 1)
-                dbSourced = importlib_resources.read_text(module.replace("/", "."), filename)
+                if six.PY2:
+                    dbSourced = importlib_resources.read_text(
+                        module.replace("/", "."), filename
+                    )  # pylint: disable=no-member
+                else:
+                    dbSourced = (
+                        importlib_resources.files(module.replace("/", "."))
+                        .joinpath(filename)
+                        .read_text(encoding="utf-8")
+                    )
                 for lineSourced in dbSourced.split("\n"):
                     if lineSourced.strip():
                         cmdLines.append(lineSourced.strip())
