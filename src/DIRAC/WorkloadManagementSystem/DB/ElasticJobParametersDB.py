@@ -1,22 +1,5 @@
 """ Module containing a front-end to the ElasticSearch-based ElasticJobParametersDB.
-    This module interacts with one ES index: "ElasticJobParametersDB",
     which is a drop-in replacement for MySQL-based table JobDB.JobParameters.
-    While JobDB.JobParameters in MySQL is defined as::
-
-      CREATE TABLE `JobParameters` (
-        `JobID` INT(11) UNSIGNED NOT NULL,
-        `Name` VARCHAR(100) NOT NULL,
-        `Value` TEXT NOT NULL,
-        PRIMARY KEY (`JobID`,`Name`),
-        FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-    Here we define a dynamic mapping with the constant fields::
-
-    "JobID": {"type": "long"},
-    "timestamp": {"type": "date"},
-
-    and all other custom fields added dynamically.
 
     The reason for switching to a ES-based JobParameters lies in the extended searching
     capabilities of ES..
