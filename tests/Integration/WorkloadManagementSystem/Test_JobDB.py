@@ -78,11 +78,11 @@ def test_isValid(jobDB: JobDB):
     assert jobDB.isValid()
 
 
-def test_insertNewJobIntoDB(jobDB):
+def test_insertNewJobIntoDB(jobDB: JobDB):
     """Test the insertNewJobIntoDB method"""
 
     # Act
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup", vo="vo")
 
     # Assert
     assert res["OK"], res["Message"]
@@ -105,9 +105,9 @@ def test_insertNewJobIntoDB(jobDB):
     assert res["Value"] == {}
 
 
-def test_removeJobFromDB(jobDB):
+def test_removeJobFromDB(jobDB: JobDB):
     # Arrange
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup", vo="vo")
     assert res["OK"], res["Message"]
     jobID = int(res["JobID"])
 
@@ -122,7 +122,7 @@ def test_getJobJDL_original(jobDB: JobDB):
     """Test of the getJobJDL method with the original parameter set to True"""
 
     # Arrange
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup", vo="vo")
     assert res["OK"], res["Message"]
     jobID = int(res["JobID"])
 
@@ -139,7 +139,7 @@ def test_getJobJDL_nonOriginal(jobDB: JobDB):
     """Test of the getJobJDL method with the original parameter set to True"""
 
     # Arrange
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup", vo="vo")
     assert res["OK"], res["Message"]
     jobID = int(res["JobID"])
 
@@ -191,13 +191,13 @@ def test_getJobJDL_nonOriginal(jobDB: JobDB):
     )
 
 
-def test_getJobsAttributes(jobDB):
+def test_getJobsAttributes(jobDB: JobDB):
     # Arrange
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup", vo="vo")
     assert res["OK"], res["Message"]
     jobID_1 = int(res["JobID"])
 
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup", vo="vo")
     assert res["OK"], res["Message"]
     jobID_2 = int(res["JobID"])
 
@@ -214,7 +214,7 @@ def test_getJobsAttributes(jobDB):
 
 def test_rescheduleJob(jobDB):
     # Arrange
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup", vo="vo")
     assert res["OK"], res["Message"]
     jobID = res["JobID"]
 
@@ -261,7 +261,7 @@ def test_getCounters(jobDB):
 
 
 def test_heartBeatLogging(jobDB):
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup", vo="vo")
     assert res["OK"], res["Message"]
     jobID = res["JobID"]
 
@@ -303,7 +303,7 @@ def test_heartBeatLogging(jobDB):
 
 
 def test_getJobParameters(jobDB):
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup", vo="vo")
     assert res["OK"], res["Message"]
     jobID = res["JobID"]
 
@@ -321,10 +321,10 @@ def test_getJobParameters(jobDB):
 
 
 def test_setJobsMajorStatus(jobDB):
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup", vo="vo")
     assert res["OK"], res["Message"]
     jobID_1 = res["JobID"]
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup", vo="vo")
     assert res["OK"], res["Message"]
     jobID_2 = res["JobID"]
 
@@ -367,10 +367,10 @@ def test_setJobsMajorStatus(jobDB):
 
 
 def test_attributes(jobDB):
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup", vo="vo")
     assert res["OK"], res["Message"]
     jobID_1 = res["JobID"]
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup")
+    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup", vo="vo")
     assert res["OK"], res["Message"]
     jobID_2 = res["JobID"]
 
