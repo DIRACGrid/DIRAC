@@ -1,3 +1,40 @@
+[v8.1.0a20]
+
+*Test
+
+FIX: (#7206) manually start the extra services when running the integration test
+NEW: (#7143) allow integration tests to run against DiracX
+
+*TransformationSystem
+
+CHANGE: (#7204) TransformationCleaningAgent removes files by chunk
+FIX: (#7200) Drop TS permission check for all read-only functions
+
+*WorkloadManagement
+
+FIX: (#7201) JobMonitoringClient uses the new DiracClient class
+CHANGE: (#7194) Job.setNumberOfProcessors raises an exception if the function arguments aren't valid.
+
+Please follow the template:
+
+*WorkloadManagementSystem
+
+FIX: (#7196) do not try to insert nan values in AccountingDB
+NEW: (#7143) call the diracx Job Monitoring endpoint
+NEW: (#7105) Enhance dirac-admin-get-pilot-output to download remote pilot logs. Currently only from a SE.
+
+*FrameworkSystem
+
+FIX: (#7192) replace create_access_token with create_token
+
+*ConfigurationSystem
+
+CHANGE: (#7143) do not look for the shifter under the Default or <Setup> section
+
+*Core
+
+NEW: (#7143) get a token for a proxy
+
 [v8.1.0a19]
 
 *ConfigurationSystem
