@@ -905,7 +905,6 @@ pilotMonitoringData = [
 
 pilotsHistoryData = [
     {
-        "TaskQueueID": "1240451",
         "GridSite": "LCG.CNAF.it",
         "GridType": "",
         "Status": "failed",
@@ -913,7 +912,6 @@ pilotsHistoryData = [
         "timestamp": 1649161714000,
     },
     {
-        "TaskQueueID": "12401",
         "GridSite": "LCG.CNAF.it",
         "GridType": "",
         "Status": "failed",

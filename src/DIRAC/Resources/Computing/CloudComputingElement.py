@@ -355,7 +355,7 @@ class CloudComputingElement(ComputingElement):
             template = yaml.safe_load(template_fd)
         for filedef in template["write_files"]:
             if filedef["content"] == "PROXY_STR":
-                filedef["content"] = self.proxy
+                filedef["content"] = self.proxy.dumpAllToString()["Value"]
             elif filedef["content"] == "EXECUTABLE_STR":
                 filedef["content"] = exe_str
             elif "STAMP_STR" in filedef["content"]:
@@ -398,11 +398,7 @@ class CloudComputingElement(ComputingElement):
         if not res["OK"]:
             self.log.error("Could not download proxy", res["Message"])
             return False
-        resdump = res["Value"].dumpAllToString()
-        if not resdump["OK"]:
-            self.log.error("Failed to dump proxy to string", resdump["Message"])
-            return False
-        self.proxy = resdump["Value"]
+        self.proxy = res["Value"]
         self.valid = datetime.datetime.utcnow() + proxyLifetime * datetime.timedelta(seconds=1)
         return True
 

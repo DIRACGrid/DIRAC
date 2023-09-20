@@ -17,7 +17,7 @@ class PilotsHistory(BaseType):
 
         super().__init__()
 
-        self.keyFields = ["TaskQueueID", "GridSite", "GridType", "Status"]
+        self.keyFields = ["GridSite", "GridType", "Status"]
 
         self.monitoringFields = ["NumOfPilots"]
 
@@ -25,7 +25,6 @@ class PilotsHistory(BaseType):
 
         self.addMapping(
             {
-                "TaskQueueID": {"type": "keyword"},
                 "GridSite": {"type": "keyword"},
                 "GridType": {"type": "keyword"},
                 "Status": {"type": "keyword"},

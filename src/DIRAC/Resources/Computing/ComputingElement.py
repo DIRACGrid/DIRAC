@@ -263,6 +263,7 @@ class ComputingElement:
         self.log.verbose("Max Number of Jobs:", maxTotalJobs)
         self.log.verbose("Max Waiting Jobs:", maxWaitingJobs)
 
+        result["CEInfoDict"] = ceInfoDict
         # If we reached the maximum number of total jobs, then the CE is not available
         totalJobs = runningJobs + waitingJobs
         if totalJobs >= maxTotalJobs:
@@ -283,8 +284,6 @@ class ComputingElement:
         if availableProcessors is not None:
             additionalJobs = min(additionalJobs, availableProcessors)
         result["Value"] = additionalJobs
-
-        result["CEInfoDict"] = ceInfoDict
         return result
 
     #############################################################################

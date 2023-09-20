@@ -5,7 +5,7 @@
 
     Available methods are:
 
-    addPilotReference()
+    addPilotReferences()
     setPilotStatus()
     deletePilot()
     clearPilots()
@@ -39,7 +39,7 @@ class PilotAgentsDB(DB):
 
     ##########################################################################################
 
-    def addPilotReference(self, pilotRef, ownerGroup, gridType="DIRAC", pilotStampDict={}):
+    def addPilotReferences(self, pilotRef, ownerGroup, gridType="DIRAC", pilotStampDict={}):
         """Add a new pilot job reference"""
         for ref in pilotRef:
             stamp = ""
@@ -58,7 +58,7 @@ class PilotAgentsDB(DB):
                 return result
 
             if "lastRowId" not in result:
-                return S_ERROR("PilotAgentsDB.addPilotReference: Failed to retrieve a new Id.")
+                return S_ERROR("PilotAgentsDB.addPilotReferences: Failed to retrieve a new Id.")
 
         return S_OK()
 
@@ -276,7 +276,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
                 "SubmissionTime",
                 "PilotID",
                 "LastUpdateTime",
-                "TaskQueueID",
                 "GridSite",
                 "PilotStamp",
                 "Queue",
@@ -467,31 +466,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
                 resDict[row[0]] = []
             resDict[row[0]].append(row[1])
         return S_OK(resDict)
-
-    ##########################################################################################
-    def getPilotsForTaskQueue(self, taskQueueID, gridType=None, limit=None):
-        """Get IDs of Pilot Agents that were submitted for the given taskQueue,
-        specify optionally the grid type, results are sorted by Submission time
-        an Optional limit can be set.
-        """
-
-        if gridType:
-            req = f"SELECT PilotID FROM PilotAgents WHERE TaskQueueID={taskQueueID} AND GridType='{gridType}' "
-        else:
-            req = f"SELECT PilotID FROM PilotAgents WHERE TaskQueueID={taskQueueID} "
-
-        req += "ORDER BY SubmissionTime DESC "
-
-        if limit:
-            req += f"LIMIT {limit}"
-
-        result = self._query(req)
-        if not result["OK"]:
-            return result
-        if result["Value"]:
-            pilotList = [x[0] for x in result["Value"]]
-            return S_OK(pilotList)
-        return S_ERROR(f"PilotJobReferences for TaskQueueID {taskQueueID} not found")
 
     ##########################################################################################
     def getPilotsForJobID(self, jobID):
@@ -1044,7 +1018,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             "PilotID",
             "LastUpdateTime",
             "CurrentJobID",
-            "TaskQueueID",
             "GridSite",
         ]
 
@@ -1082,7 +1055,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
     def getSummarySnapshot(self, requestedFields=False):
         """Get the summary snapshot for a given combination"""
         if not requestedFields:
-            requestedFields = ["TaskQueueID", "GridSite", "GridType", "Status"]
+            requestedFields = ["GridSite", "GridType", "Status"]
         valueFields = ["COUNT(PilotID)"]
         defString = ", ".join(requestedFields)
         valueString = ", ".join(valueFields)

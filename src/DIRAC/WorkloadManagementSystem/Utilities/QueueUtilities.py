@@ -11,7 +11,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 
 
-def getQueuesResolved(siteDict, queueCECache, checkPlatform=False, instantiateCEs=False):
+def getQueuesResolved(siteDict, queueCECache, vo=None, checkPlatform=False, instantiateCEs=False):
     """Get the list of relevant CEs (what is in siteDict) and their descriptions.
     The main goal of this method is to return a dictionary of queues
     """
@@ -30,6 +30,8 @@ def getQueuesResolved(siteDict, queueCECache, checkPlatform=False, instantiateCE
                 queueDict[queueName]["ParametersDict"]["Queue"] = queue
                 queueDict[queueName]["ParametersDict"]["GridCE"] = ce
                 queueDict[queueName]["ParametersDict"]["Site"] = site
+                if vo:
+                    queueDict[queueName]["ParametersDict"]["Community"] = vo
 
                 # Evaluate the CPU limit of the queue according to the Glue convention
                 computeQueueCPULimit(queueDict[queueName]["ParametersDict"])

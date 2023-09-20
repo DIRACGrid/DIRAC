@@ -27,7 +27,7 @@ def test_PilotsDB():
     for jobID in ["aPilot", "anotherPilot"]:
         pilots.deletePilots(jobID)
 
-    res = pilots.addPilotTQRef(["aPilot"], 1, "a/owner/Group")
+    res = pilots.addPilotReferences(["aPilot"], "a/owner/Group")
     assert res["OK"], res["Message"]
     res = pilots.getCurrentPilotCounters({})
     assert res["OK"], res["Message"]
@@ -38,7 +38,7 @@ def test_PilotsDB():
     assert res["OK"], res["Message"]
     assert res["Value"] == {}
 
-    res = pilots.addPilotTQRef(["anotherPilot"], 1, "a/owner/Group")
+    res = pilots.addPilotReferences(["anotherPilot"], "a/owner/Group")
     assert res["OK"], res["Message"]
     res = pilots.storePilotOutput("anotherPilot", "This is an output", "this is an error")
     assert res["OK"], res["Message"]

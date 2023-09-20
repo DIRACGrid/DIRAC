@@ -9,9 +9,9 @@
 """
 import datetime
 import os
-import socket
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any
 
 import DIRAC
 from DIRAC import S_ERROR, S_OK, gConfig
@@ -24,6 +24,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping, getQueues
 from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Security import X509Chain
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.TimeUtilities import second, toEpochMilliSeconds
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
@@ -42,13 +44,9 @@ from DIRAC.WorkloadManagementSystem.Utilities.PilotWrapper import (
     pilotWrapperScript,
 )
 from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
+from DIRAC.WorkloadManagementSystem.Utilities.SubmissionPolicy import WAITING_SUPPORTED_JOBS
 
 MAX_PILOTS_TO_SUBMIT = 100
-
-# Submission policies
-AGGRESSIVE_FILLING = "AggressiveFilling"
-WAITING_SUPPORTED_JOBS = "WaitingSupportedJobs"
-SUBMISSION_POLICIES = [AGGRESSIVE_FILLING, WAITING_SUPPORTED_JOBS]
 
 
 class SiteDirector(AgentModule):
@@ -135,7 +133,6 @@ class SiteDirector(AgentModule):
         result = self._loadSubmissionPolicy()
         if not result:
             return result
-        self.submissionPolicy = result["Value"]()
 
         # Flags
         self.sendAccounting = self.am_getOption("SendPilotAccounting", self.sendAccounting)
@@ -192,14 +189,22 @@ class SiteDirector(AgentModule):
         """Load a submission policy"""
         objectLoader = ObjectLoader()
         result = objectLoader.loadObject(
-            f"WorkloadManagementSystem.Agent.SiteDirector.{self.submissionPolicyName}", self.submissionPolicyName
+            "WorkloadManagementSystem.Utilities.SubmissionPolicy", f"{self.submissionPolicyName}Policy"
         )
         if not result["OK"]:
             self.log.error(f"Failed to load submission policy: {result['Message']}")
             return result
-        return S_OK(result["Value"])
 
-    def _buildQueueDict(self, siteNames, ces, ceTypes, tags):
+        self.submissionPolicy = result["Value"]()
+        return S_OK()
+
+    def _buildQueueDict(
+        self,
+        siteNames: list[str] | None = None,
+        ces: list[str] | None = None,
+        ceTypes: list[str] | None = None,
+        tags: list[str] | None = None,
+    ):
         """Build the queueDict dictionary containing information about the queues that will be provisioned"""
         # Get details about the resources
         result = getQueues(community=self.vo, siteList=siteNames, ceList=ces, ceTypeList=ceTypes, tags=tags)
@@ -210,6 +215,7 @@ class SiteDirector(AgentModule):
         result = getQueuesResolved(
             siteDict=result["Value"],
             queueCECache=self.queueCECache,
+            vo=self.vo,
             instantiateCEs=True,
         )
         if not result["OK"]:
@@ -260,15 +266,14 @@ class SiteDirector(AgentModule):
 
         It basically just submits pilots and gets their status
         """
-        result = self.submitPilots()
-        if not result["OK"]:
-            self.log.error("Errors in the pilot submission:", result["Message"])
-            return result
+        submissionResult = self.submitPilots()
+        monitoringResult = self.monitorPilots()
 
-        result = self.monitorPilots()
-        if not result["OK"]:
-            self.log.error("Errors in pilot monitoring:", result["Message"])
-            return result
+        if not submissionResult["OK"]:
+            return submissionResult
+
+        if not monitoringResult["OK"]:
+            return monitoringResult
 
         return S_OK()
 
@@ -297,7 +302,7 @@ class SiteDirector(AgentModule):
 
         return S_OK()
 
-    def _submitPilotsPerQueue(self, queueName):
+    def _submitPilotsPerQueue(self, queueName: str):
         """Submit pilots within a given computing elements
 
         :return: S_OK/S_ERROR
@@ -326,6 +331,13 @@ class SiteDirector(AgentModule):
         # Get CE instance
         ce = self.queueDict[queueName]["CE"]
 
+        # Set credentials
+        cpuTime = queueCPUTime + 86400
+        result = self._setCredentials(ce, cpuTime)
+        if not result["OK"]:
+            self.log.error("Failed to set credentials:", result["Message"])
+            return result
+
         # Get the number of available slots on the target site/queue
         totalSlots = self._getQueueSlots(queueName)
         if totalSlots <= 0:
@@ -334,17 +346,10 @@ class SiteDirector(AgentModule):
         self.log.info(f"{queueName}: to submit={totalSlots}")
 
         # Apply the submission policy
-        totalSlots = self.submissionPolicy.apply(totalSlots)
+        totalSlots = self.submissionPolicy.apply(totalSlots, ceParameters=self.queueDict[queueName]["CE"].ceParameters)
 
         # Limit the number of pilots to submit to self.maxPilotsToSubmit
         pilotsToSubmit = min(self.maxPilotsToSubmit, totalSlots)
-
-        # Set credentials
-        cpuTime = queueCPUTime + 86400
-        result = self._setCredentials(ce, cpuTime)
-        if not result["OK"]:
-            self.log.error("Failed to set credentials:", result["Message"])
-            return result
 
         # Now really submitting
         result = self._submitPilotsToQueue(pilotsToSubmit, ce, queueName)
@@ -354,7 +359,7 @@ class SiteDirector(AgentModule):
         pilotList, stampDict = result["Value"]
 
         # updating the pilotAgentsDB... done by default but maybe not strictly necessary
-        result = self._addPilotReference(queueName, pilotList, stampDict)
+        result = self._addPilotReferences(queueName, pilotList, stampDict)
         if not result["OK"]:
             return result
 
@@ -362,7 +367,7 @@ class SiteDirector(AgentModule):
         self.log.info("Total number of pilots submitted in this cycle", f"{len(pilotList)} to {queueName}")
         return S_OK()
 
-    def _getQueueSlots(self, queue):
+    def _getQueueSlots(self, queue: str):
         """Get the number of available slots in the queue"""
         ce = self.queueDict[queue]["CE"]
         ceName = self.queueDict[queue]["CEName"]
@@ -411,14 +416,12 @@ class SiteDirector(AgentModule):
         totalSlots = min((maxTotalJobs - totalJobs), (maxWaitingJobs - waitingJobs))
         return totalSlots
 
-    def _submitPilotsToQueue(self, pilotsToSubmit, ce, queue):
+    def _submitPilotsToQueue(self, pilotsToSubmit: int, ce: ComputingElement, queue: str):
         """Method that really submits the pilots to the ComputingElements' queue
 
         :param pilotsToSubmit: number of pilots to submit.
-        :type pilotsToSubmit: int
         :param ce: computing element object to where we submit
-        :type ce: ComputingElement
-        :param str queue: queue where to submit
+        :param queue: queue where to submit
 
         :return: S_OK/S_ERROR.
                  If S_OK, returns tuple with (pilotList, stampDict)
@@ -513,18 +516,14 @@ class SiteDirector(AgentModule):
 
         return S_OK((pilotList, stampDict))
 
-    def _addPilotReference(self, queue, pilotList, stampDict):
+    def _addPilotReferences(self, queue: str, pilotList: list[str], stampDict: dict[str, str]):
         """Add pilotReference to pilotAgentsDB
 
-        :param str queue: the queue name
+        :param queue: the queue name
         :param pilotList: list of pilots
-        :type pilotList: list
         :param stampDict: dictionary of pilots timestamps
-        :type stampDict: dict
-
-        :return: None
         """
-        result = self.pilotAgentsDB.addPilotReference(
+        result = self.pilotAgentsDB.addPilotReferences(
             pilotList,
             self.pilotGroup,
             self.queueDict[queue]["CEType"],
@@ -548,18 +547,19 @@ class SiteDirector(AgentModule):
                 return result
         return S_OK()
 
-    def _getExecutable(self, queue, proxy=None, jobExecDir="", envVariables=None, **kwargs):
+    def _getExecutable(
+        self, queue: str, proxy: X509Chain = None, jobExecDir: str = "", envVariables: dict[str, str] = None
+    ):
         """Prepare the full executable for queue
 
-        :param str queue: queue name
-        :param bool proxy: flag that say if to bundle or not the proxy
-        :param str jobExecDir: pilot execution dir (normally an empty string)
+        :param queue: queue name
+        :param proxy: flag that say if to bundle or not the proxy
+        :param jobExecDir: pilot execution dir (normally an empty string)
 
         :returns: a string the options for the pilot
-        :rtype: str
         """
 
-        pilotOptions = self._getPilotOptions(queue, **kwargs)
+        pilotOptions = self._getPilotOptions(queue)
         if not pilotOptions:
             self.log.warn("Pilots will be submitted without additional options")
             pilotOptions = []
@@ -584,13 +584,12 @@ class SiteDirector(AgentModule):
         )
         return executable
 
-    def _getPilotOptions(self, queue, **kwargs):
+    def _getPilotOptions(self, queue: str) -> list[str]:
         """Prepare pilot options
 
-        :param str queue: queue name
+        :param queue: queue name
 
         :returns: pilotOptions is a list of strings, each one is an option to the dirac-pilot script invocation
-        :rtype: list
         """
         queueDict = self.queueDict[queue]["ParametersDict"]
         pilotOptions = []
@@ -663,16 +662,22 @@ class SiteDirector(AgentModule):
 
         return pilotOptions
 
-    def _writePilotScript(self, workingDirectory, pilotOptions, proxy=None, pilotExecDir="", envVariables=None):
+    def _writePilotScript(
+        self,
+        workingDirectory: str,
+        pilotOptions: str,
+        proxy: X509Chain = None,
+        pilotExecDir: str = "",
+        envVariables: dict[str, str] = None,
+    ):
         """Bundle together and write out the pilot executable script, admix the proxy if given
 
-        :param str workingDirectory: pilot wrapper working directory
-        :param str pilotOptions: options with which to start the pilot
-        :param str proxy: proxy file we are going to bundle
-        :param str pilotExecDir: pilot executing directory
+        :param workingDirectory: pilot wrapper working directory
+        :param pilotOptions: options with which to start the pilot
+        :param proxy: proxy file we are going to bundle
+        :param pilotExecDir: pilot executing directory
 
         :returns: file name of the pilot wrapper created
-        :rtype: str
         """
 
         try:
@@ -717,17 +722,16 @@ class SiteDirector(AgentModule):
 
         return S_OK()
 
-    def _monitorPilotsPerQueue(self, queueName):
+    def _monitorPilotsPerQueue(self, queue: str):
         """Update status of pilots in transient state for a given queue
 
         :param queue: queue name
-        :param proxy: proxy to check the pilot status and renewals
         """
-        ce = self.queueDict[queueName]["CE"]
-        ceName = self.queueDict[queueName]["CEName"]
-        queueName = self.queueDict[queueName]["QueueName"]
-        ceType = self.queueDict[queueName]["CEType"]
-        siteName = self.queueDict[queueName]["Site"]
+        ce = self.queueDict[queue]["CE"]
+        ceName = self.queueDict[queue]["CEName"]
+        queueName = self.queueDict[queue]["QueueName"]
+        ceType = self.queueDict[queue]["CEType"]
+        siteName = self.queueDict[queue]["Site"]
 
         # Select pilots in a transient states
         result = self.pilotAgentsDB.selectPilots(
@@ -769,11 +773,14 @@ class SiteDirector(AgentModule):
             return result
         pilotCEDict = result["Value"]
 
-        # Update pilot status in DB
-        abortedPilots = self._updatePilotStatus(pilotRefs, pilotDict, pilotCEDict)
+        # Get updated pilots
+        updatedPilots = self._getUpdatedPilotStatus(pilotDict, pilotCEDict)
         # If something wrong in the queue, make a pause for the job submission
+        abortedPilots = self._getAbortedPilots(updatedPilots)
         if abortedPilots:
-            self.failedQueues[queueName] += 1
+            self.failedQueues[queue] += 1
+        # Update the status of the pilots in the DB
+        self._updatePilotsInDB(updatedPilots)
 
         # FIXME: seems like it is only used by the CloudCE? Couldn't it be called from CloudCE.getJobStatus()?
         if callable(getattr(ce, "cleanupPilots", None)):
@@ -812,45 +819,42 @@ class SiteDirector(AgentModule):
 
         return S_OK()
 
-    def _updatePilotStatus(self, pilotRefs, pilotDict, pilotCEDict):
-        """Really updates the pilots status
+    def _getUpdatedPilotStatus(self, pilotDict: dict[str, Any], pilotCEDict: dict[str, Any]) -> dict[str, str]:
+        """Get the updated pilots, from a list of pilots, and their new status"""
+        updatedPilots = {}
+        for pilotReference, pilotInfo in pilotDict.items():
+            oldStatus = pilotInfo["Status"]
+            sinceLastUpdate = datetime.datetime.utcnow() - pilotInfo["LastUpdateTime"]
+            ceStatus = pilotCEDict.get(pilotReference, oldStatus)
 
-        :return: number of aborted pilots, flag for getting the pilot output
-        """
-        abortedPilots = 0
-
-        for pRef in pilotRefs:
-            newStatus = ""
-            oldStatus = pilotDict[pRef]["Status"]
-            lastUpdateTime = pilotDict[pRef]["LastUpdateTime"]
-            sinceLastUpdate = datetime.datetime.utcnow() - lastUpdateTime
-
-            ceStatus = pilotCEDict.get(pRef, oldStatus)
-
-            if oldStatus == ceStatus and ceStatus != PilotStatus.UNKNOWN:
-                # Normal status did not change, continue
+            if oldStatus != ceStatus:
+                # Normal case: update the pilot status to the new value
+                updatedPilots[pilotReference] = ceStatus
                 continue
-            if ceStatus == oldStatus == PilotStatus.UNKNOWN:
-                if sinceLastUpdate < 3600 * second:
-                    # Allow 1 hour of Unknown status assuming temporary problems on the CE
-                    continue
-                newStatus = PilotStatus.ABORTED
-            elif ceStatus == PilotStatus.UNKNOWN and oldStatus not in PilotStatus.PILOT_FINAL_STATES:
-                # Possible problems on the CE, let's keep the Unknown status for a while
-                newStatus = PilotStatus.UNKNOWN
-            elif ceStatus != PilotStatus.UNKNOWN:
-                # Update the pilot status to the new value
-                newStatus = ceStatus
 
-            if newStatus:
-                self.log.info("Updating status", f"to {newStatus} for pilot {pRef}")
-                result = self.pilotAgentsDB.setPilotStatus(pRef, newStatus, "", "Updated by SiteDirector")
-                if not result["OK"]:
-                    self.log.error(result["Message"])
-                if newStatus == "Aborted":
-                    abortedPilots += 1
+            if oldStatus == ceStatus and ceStatus == PilotStatus.UNKNOWN and sinceLastUpdate > 3600 * second:
+                # Pilots are not reachable, we mark them as aborted
+                updatedPilots[pilotReference] = PilotStatus.ABORTED
+                continue
+
+        return updatedPilots
+
+    def _getAbortedPilots(self, pilotsDict: dict[str, str]) -> list[str]:
+        """Get aborted pilots from a list of pilots and their status"""
+        abortedPilots = []
+        for pilotReference, status in pilotsDict.items():
+            if status == PilotStatus.ABORTED:
+                abortedPilots.append(pilotReference)
 
         return abortedPilots
+
+    def _updatePilotsInDB(self, updatedPilotsDict: dict[str, str]):
+        """Update the status of the pilots in the DB"""
+        for pilotReference, newStatus in updatedPilotsDict.items():
+            self.log.info("Updating status", f"to {newStatus} for pilot {pilotReference}")
+            result = self.pilotAgentsDB.setPilotStatus(pilotReference, newStatus, "", "Updated by SiteDirector")
+            if not result["OK"]:
+                self.log.error(result["Message"])
 
     #####################################################################################
 
@@ -923,7 +927,7 @@ class SiteDirector(AgentModule):
 
     #####################################################################################
 
-    def _sendPilotAccounting(self, pilotDict):
+    def _sendPilotAccounting(self, pilotDict: dict[str, Any]):
         """Send pilot accounting record"""
         for pRef in pilotDict:
             self.log.verbose("Preparing accounting record", f"for pilot {pRef}")
@@ -974,15 +978,17 @@ class SiteDirector(AgentModule):
 
         return S_OK()
 
-    def _sendPilotSubmissionAccounting(self, siteName, ceName, queueName, numTotal, numSucceeded, status):
+    def _sendPilotSubmissionAccounting(
+        self, siteName: str, ceName: str, queueName: str, numTotal: int, numSucceeded: int, status: str
+    ):
         """Send pilot submission accounting record
 
-        :param str siteName:     Site name
-        :param str ceName:       CE name
-        :param str queueName:    queue Name
-        :param int numTotal:     Total number of submission
-        :param int numSucceeded: Total number of submission succeeded
-        :param str status:       'Succeeded' or 'Failed'
+        :param siteName:     Site name
+        :param ceName:       CE name
+        :param queueName:    queue Name
+        :param numTotal:     Total number of submission
+        :param numSucceeded: Total number of submission succeeded
+        :param status:       'Succeeded' or 'Failed'
 
         :returns: S_OK / S_ERROR
         """
@@ -1011,15 +1017,17 @@ class SiteDirector(AgentModule):
             return result
         return S_OK()
 
-    def _sendPilotSubmissionMonitoring(self, siteName, ceName, queueName, numTotal, numSucceeded, status):
+    def _sendPilotSubmissionMonitoring(
+        self, siteName: str, ceName: str, queueName: str, numTotal: int, numSucceeded: int, status: str
+    ):
         """Sends pilot submission records to monitoring
 
-        :param str siteName:     Site name
-        :param str ceName:       CE name
-        :param str queueName:    queue Name
-        :param int numTotal:     Total number of submission
-        :param int numSucceeded: Total number of submission succeeded
-        :param str status:       'Succeeded' or 'Failed'
+        :param siteName:     Site name
+        :param ceName:       CE name
+        :param queueName:    queue Name
+        :param numTotal:     Total number of submission
+        :param numSucceeded: Total number of submission succeeded
+        :param status:       'Succeeded' or 'Failed'
 
         :returns: S_OK / S_ERROR
         """

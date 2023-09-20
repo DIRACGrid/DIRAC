@@ -90,9 +90,6 @@ The following columns are provided:
 **Benchmark**
     Estimation of the power of the Worker Node CPU which is running the Pilot Job. If 0, the estimation was not possible.
 
-**TaskQueueID**
-    Internal DIRAC WMS identifier of the Task Queue for which the Pilot Job is sent.
-
 **PilotID**
     Internal DIRAC WMS Pilot Job identifier
 
