@@ -1338,7 +1338,7 @@ class SiteDirector(AgentModule):
             pA = PilotAccounting()
             pA.setEndTime(pilotDict[pRef]["LastUpdateTime"])
             pA.setStartTime(pilotDict[pRef]["SubmissionTime"])
-            retVal = Registry.getUsernameForDN(pilotDict[pRef]["OwnerDN"])
+            retVal = Registry.getUsernameForDN(self.pilotDN)
             if not retVal["OK"]:
                 username = "unknown"
                 self.log.error("Can't determine username for dn", pilotDict[pRef]["OwnerDN"])
