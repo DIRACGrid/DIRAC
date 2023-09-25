@@ -190,16 +190,7 @@ class PilotStatusAgent(AgentModule):
             pA = PilotAccounting()
             pA.setEndTime(pData["LastUpdateTime"])
             pA.setStartTime(pData["SubmissionTime"])
-            retVal = Registry.getUsernameForDN(pData["OwnerDN"])
-            if not retVal["OK"]:
-                userName = "unknown"
-                self.log.error(
-                    "Can't determine username for dn",
-                    f": {pData['OwnerDN']} : {retVal['Message']}",
-                )
-            else:
-                userName = retVal["Value"]
-            pA.setValueByKey("User", userName)
+            pA.setValueByKey("User", "unknown")
             pA.setValueByKey("UserGroup", pData["OwnerGroup"])
             result = getCESiteMapping(pData["DestinationSite"])
             if result["OK"] and pData["DestinationSite"] in result["Value"]:
