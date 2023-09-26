@@ -2,22 +2,20 @@
     Will connect to the WorkloadManagement/SandboxStore service.
 """
 
-import os
-import tarfile
 import hashlib
-import tempfile
+import os
 import re
+import tarfile
+import tempfile
 from io import BytesIO, StringIO
 
-from DIRAC import gLogger, S_OK, S_ERROR
-
-from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
-from DIRAC.Core.Base.Client import Client
-from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
-from DIRAC.Core.Utilities.File import getGlobbedTotalSize
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
+from DIRAC.Core.Utilities.File import getGlobbedTotalSize, mkDir
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 
 class SandboxStoreClient:
@@ -65,8 +63,7 @@ class SandboxStoreClient:
         """Get RPC client for TransferClient"""
         if self.__transferClient:
             return self.__transferClient
-        else:
-            return TransferClient(self.__serviceName, **self.__kwargs)
+        return TransferClient(self.__serviceName, **self.__kwargs)
 
     # Upload sandbox to jobs and pilots
 
@@ -239,8 +236,18 @@ class SandboxStoreClient:
     # Jobs
 
     def assignSandboxesToJob(self, jobId, sbList, ownerName="", ownerGroup=""):
-        """Assign SB to a job"""
-        return self.__assignSandboxesToEntity(f"Job:{jobId}", sbList, ownerName, ownerGroup)
+        """
+        Assign sandboxes to a job.
+        sbList must be a list of sandboxes and relation types
+        sbList = [ ( "SB:SEName|SEPFN", "Input" ), ( "SB:SEName|SEPFN", "Output" ) ]
+        """
+        eId = f"Job:{jobId}"
+        for sbT in sbList:
+            if sbT[1] not in self.__validSandboxTypes:
+                return S_ERROR(f"Invalid Sandbox type {sbT[1]}")
+        if SandboxStoreClient.__smdb and ownerName and ownerGroup:
+            return SandboxStoreClient.__smdb.assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup)
+        return self.__getRPCClient().assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup)
 
     def unassignJobs(self, jobIdList):
         """Unassign SB to a job"""
@@ -249,11 +256,12 @@ class SandboxStoreClient:
         entitiesList = []
         for jobId in jobIdList:
             entitiesList.append(f"Job:{jobId}")
-        return self.__unassignEntities(entitiesList)
+        return self.__getRPCClient().unassignEntities(entitiesList)
 
     def downloadSandboxForJob(self, jobId, sbType, destinationPath="", inMemory=False, unpack=True):
         """Download SB for a job"""
-        result = self.__getSandboxesForEntity(f"Job:{jobId}")
+        result = self.__getRPCClient().getSandboxesAssignedToEntity(f"Job:{jobId}")
+
         if not result["OK"]:
             return result
         sbDict = result["Value"]
@@ -276,34 +284,3 @@ class SandboxStoreClient:
                 return result
             downloadedSandboxesLoc.append(result["Value"])
         return S_OK(downloadedSandboxesLoc)
-
-    ##############
-    # Entities
-
-    def __getSandboxesForEntity(self, eId):
-        """
-        Get the sandboxes assigned to jobs and the relation type
-        """
-        rpcClient = self.__getRPCClient()
-        return rpcClient.getSandboxesAssignedToEntity(eId)
-
-    def __assignSandboxesToEntity(self, eId, sbList, ownerName="", ownerGroup=""):
-        """
-        Assign sandboxes to a job.
-        sbList must be a list of sandboxes and relation types
-          sbList = [ ( "SB:SEName|SEPFN", "Input" ), ( "SB:SEName|SEPFN", "Output" ) ]
-        """
-        for sbT in sbList:
-            if sbT[1] not in self.__validSandboxTypes:
-                return S_ERROR(f"Invalid Sandbox type {sbT[1]}")
-        if SandboxStoreClient.__smdb and ownerName and ownerGroup:
-            return SandboxStoreClient.__smdb.assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup)
-        rpcClient = self.__getRPCClient()
-        return rpcClient.assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup)
-
-    def __unassignEntities(self, eIdList):
-        """
-        Unassign a list of jobs of their respective sandboxes
-        """
-        rpcClient = self.__getRPCClient()
-        return rpcClient.unassignEntities(eIdList)
