@@ -1,3 +1,18 @@
+[v8.1.0a21]
+
+*Core
+
+FIX: (#7216) replace ColorBar.draw_all() with figure.draw_without_rendering()
+
+*WorkloadManagement
+
+FIX: (#7213) emove OwnerDN from SiteDirector & PilotStatus
+
+*WorkloadManagementSystem
+
+CHANGE: (#7190) add VO info in TaskQueueDB
+FIX: (#7187) code simplification for SandboxStoreClient
+
 [v8.1.0a20]
 
 *Test
