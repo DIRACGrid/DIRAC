@@ -167,10 +167,16 @@ def createClient(serviceName):
         attrDict = dict(clientCls.__dict__)
         for extension in extensionsByPriority():
             try:
-                path = importlib_resources.path(
-                    "%s.%sSystem.Service" % (extension, systemName),
-                    "%s.py" % handlerModuleName,
-                )
+                if six.PY3:
+                    path = importlib_resources.as_file(
+                        importlib_resources.files("%s.%sSystem.Service" % (extension, systemName)).joinpath(
+                            "%s.py" % handlerModuleName
+                        )
+                    )
+                else:
+                    path = importlib_resources.path(
+                        "%s.%sSystem.Service" % (extension, systemName), "%s.py" % handlerModuleName
+                    )  # pylint: disable=no-member
                 fullHandlerClassPath = "%s.%s" % (extension, handlerClassPath)
                 with path as fp:
                     handlerAst = ast.parse(fp.read_text(), str(path))
