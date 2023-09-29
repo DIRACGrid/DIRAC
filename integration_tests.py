@@ -350,6 +350,12 @@ def install_server():
 
     # This runs a continuous loop that exports the config in yaml
     # for the diracx container to use
+    # It needs to be started and running before the DIRAC server installation
+    # because after installing the databases, the install server script
+    # calls dirac-login.
+    # At this point we need the new CS to have been updated
+    # already else the token exchange fails.
+
     typer.secho("Starting configuration export loop for diracx", fg=c.GREEN)
     base_cmd = _build_docker_cmd("server", tty=False, daemon=True, use_root=True)
     subprocess.run(

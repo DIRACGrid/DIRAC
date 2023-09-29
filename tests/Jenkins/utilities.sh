@@ -612,7 +612,7 @@ diracProxies() {
 
   # Make sure DiracX is running
   # And make sure it was synced
-  if [[ -n $DIRACX_URL ]]; then
+  if [[ -n $TEST_DIRACX ]]; then
     echo "Waiting for for DiracX to be available" >&2
     for i in {1..100}; do
       if dirac-login -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" -T 72 "${DEBUG}"; then
