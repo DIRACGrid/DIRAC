@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
-from __future__ import absolute_import
-from __future__ import division
-
 """ Agent for scout job framework to monitor scout status
     and update main job status according to scout status.
 """
