@@ -609,6 +609,19 @@ diracUserAndGroup() {
 
 diracProxies() {
   echo '==> [diracProxies]'
+
+  # Make sure DiracX is running
+  # And make sure it was synced
+  if [[ -n $DIRACX_URL ]]; then
+    echo "Waiting for for DiracX to be available" >&2
+    for i in {1..100}; do
+      if dirac-login -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" -T 72 "${DEBUG}"; then
+        break
+      fi
+      sleep 5
+    done
+  fi
+
   # User proxy
   if ! dirac-login -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" -T 72 "${DEBUG}"; then
     echo 'ERROR: dirac-login failed' >&2
