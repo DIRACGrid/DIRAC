@@ -15,7 +15,7 @@ and a monitoring system that accounts for CPU and memory usage, queries served, 
 Another very important functionality provided by the framework system is proxies management,
 via the ProxyManager service and database.
 
-ComponentMonitoring, SecurityLogging, and ProxyManager services are only part of the services that constitute the
+ComponentMonitoring and ProxyManager services are only part of the services that constitute the
 Framework of DIRAC.
 
 The following sections add some details for some of the Framework systems.
