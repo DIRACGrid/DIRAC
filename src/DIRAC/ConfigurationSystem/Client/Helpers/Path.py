@@ -18,7 +18,7 @@ def cfgPath(*args):
     return os.path.normpath(os.path.join(*(str(k) for k in args)))
 
 
-def cfgInstallPath(*args):
+def cfgInstallPath(*args) -> str:
     """
     Path to Installation/Configuration Options
     """
