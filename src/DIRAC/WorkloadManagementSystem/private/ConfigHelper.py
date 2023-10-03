@@ -1,8 +1,8 @@
 """ A set of utilities for getting configuration information for the WMS components
 """
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_ERROR, S_OK, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers import Operations, Registry
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry, Operations
 
 
 def findGenericPilotCredentials(vo=False, group=False, pilotDN="", pilotGroup=""):

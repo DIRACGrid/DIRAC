@@ -3,16 +3,14 @@
     It uses a Matcher and a Limiter object that encapsulates the matching logic.
     It connects to JobDB, TaskQueueDB, JobLoggingDB, and PilotAgentsDB.
 """
-from DIRAC import S_OK, S_ERROR
-
+from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-
-from DIRAC.WorkloadManagementSystem.Client.Matcher import Matcher, PilotVersionError
 from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
+from DIRAC.WorkloadManagementSystem.Client.Matcher import Matcher, PilotVersionError
 
 
 class MatcherHandlerMixin:

@@ -4,20 +4,18 @@
 """
 import time
 
-from DIRAC import gLogger, convertToPy3VersionNumber
-
-from DIRAC.Core.Utilities.PrettyPrint import printDict
-from DIRAC.Core.Security import Properties
+from DIRAC import convertToPy3VersionNumber, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.Core.Security import Properties
+from DIRAC.Core.Utilities.PrettyPrint import printDict
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC.WorkloadManagementSystem.Client import JobStatus, PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
-from DIRAC.WorkloadManagementSystem.Client import PilotStatus
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, singleValueDefFields, multiValueMatchFields
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, multiValueMatchFields, singleValueDefFields
 
 
 class PilotVersionError(Exception):
