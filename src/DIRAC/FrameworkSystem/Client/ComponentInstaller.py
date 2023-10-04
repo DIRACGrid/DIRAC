@@ -65,6 +65,7 @@ import importlib_resources
 import subprocess
 from diraccfg import CFG
 from prompt_toolkit import prompt
+from typing import cast
 
 import DIRAC
 from DIRAC import rootPath
@@ -170,7 +171,7 @@ class ComponentInstaller:
         gLogger.debug("DIRAC Root Path =", rootPath)
 
         self.mysqlMode = ""
-        self.localCfg = None
+        self.localCfg: CFG = None
         self.cfgFile = ""
         self.setup = ""
         self.instance = ""
@@ -1364,10 +1365,20 @@ class ComponentInstaller:
 
         # Now get the necessary info from self.localCfg
         setupSystems = self.localCfg.getOption(cfgInstallPath("Systems"), ["Configuration", "Framework"])
+
         setupDatabases = self.localCfg.getOption(cfgInstallPath("Databases"), [])
-        setupServices = [k.split("/") for k in self.localCfg.getOption(cfgInstallPath("Services"), [])]
-        setupAgents = [k.split("/") for k in self.localCfg.getOption(cfgInstallPath("Agents"), [])]
-        setupExecutors = [k.split("/") for k in self.localCfg.getOption(cfgInstallPath("Executors"), [])]
+        setupServices = [
+            k.split("/")
+            for k in self.localCfg.getOption(cfgInstallPath("Services"), [])  # pylint: disable=not-an-iterable
+        ]
+        setupAgents = [
+            k.split("/")
+            for k in self.localCfg.getOption(cfgInstallPath("Agents"), [])  # pylint: disable=not-an-iterable
+        ]
+        setupExecutors = [
+            k.split("/")
+            for k in self.localCfg.getOption(cfgInstallPath("Executors"), [])  # pylint: disable=not-an-iterable
+        ]
         setupWeb = self.localCfg.getOption(cfgInstallPath("WebPortal"), False)
         setupConfigurationMaster = self.localCfg.getOption(cfgInstallPath("ConfigurationMaster"), False)
         setupPrivateConfiguration = self.localCfg.getOption(cfgInstallPath("PrivateConfiguration"), False)
@@ -1382,7 +1393,7 @@ class ComponentInstaller:
                     DIRAC.exit(-1)
                 return S_ERROR(error)
             serviceSysInstance = serviceTuple[0]
-            if serviceSysInstance not in setupSystems:
+            if serviceSysInstance not in setupSystems:  # pylint: disable=unsupported-membership-test
                 setupSystems.append(serviceSysInstance)
 
         for agentTuple in setupAgents:
@@ -1393,7 +1404,7 @@ class ComponentInstaller:
                     DIRAC.exit(-1)
                 return S_ERROR(error)
             agentSysInstance = agentTuple[0]
-            if agentSysInstance not in setupSystems:
+            if agentSysInstance not in setupSystems:  # pylint: disable=unsupported-membership-test
                 setupSystems.append(agentSysInstance)
 
         for executorTuple in setupExecutors:
@@ -1404,7 +1415,7 @@ class ComponentInstaller:
                     DIRAC.exit(-1)
                 return S_ERROR(error)
             executorSysInstance = executorTuple[0]
-            if executorSysInstance not in setupSystems:
+            if executorSysInstance not in setupSystems:  # pylint: disable=unsupported-membership-test
                 setupSystems.append(executorSysInstance)
 
         # And to find out the available extensions
@@ -1521,7 +1532,7 @@ class ComponentInstaller:
         # info to be propagated, this may cause the later self.setup to fail
         if setupAddConfiguration:
             gLogger.notice("Registering System instances")
-            for system in setupSystems:
+            for system in setupSystems:  # pylint: disable=not-an-iterable
                 self.addSystemInstance(system, self.instance, self.setup, True)
             for system, service in setupServices:
                 if not self.addDefaultOptionsToCS(None, "service", system, service, extensions, overwrite=True)["OK"]:
@@ -1570,7 +1581,7 @@ class ComponentInstaller:
                 return result
             dbDict = result["Value"]
 
-            for dbName in setupDatabases:
+            for dbName in setupDatabases:  # pylint: disable=not-an-iterable
                 gLogger.verbose("Setting up database", dbName)
                 if dbName not in installedDatabases:
                     result = self.installDatabase(dbName)

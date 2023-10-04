@@ -43,10 +43,12 @@ def parseSwitches():
     args = Script.getPositionalArgs()
     if not args:
         error("Missing mandatory 'query' argument")
+        DIRACExit(1)
     elif not args[0].lower() in ("select", "add", "delete"):
         error("Missing mandatory argument")
-    else:
-        query = args[0].lower()
+        DIRACExit(1)
+
+    query = args[0].lower()
 
     switches = dict(Script.getUnprocessedSwitches())
 
