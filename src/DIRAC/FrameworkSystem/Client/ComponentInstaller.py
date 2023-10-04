@@ -487,6 +487,9 @@ class ComponentInstaller:
                     if not centralCfg["Registry"]["Groups"][group].isOption("Properties"):
                         centralCfg["Registry"]["Groups"][group].addKey("Properties", "", "")
 
+                    if vo and not centralCfg["Registry"]["Groups"][group].isOption("VO"):
+                        centralCfg["Registry"]["Groups"][group].addKey("VO", vo, "")
+
                 properties = centralCfg["Registry"]["Groups"][adminGroupName].getOption("Properties", [])
                 for prop in adminGroupProperties:
                     if prop not in properties:
