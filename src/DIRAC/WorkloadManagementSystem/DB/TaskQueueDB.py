@@ -170,6 +170,12 @@ class TaskQueueDB(DB):
         Check a task queue definition dict is valid
         """
 
+        if "OwnerGroup" in tqDefDict:
+            result = self._escapeString(Registry.getVOForGroup(tqDefDict["OwnerGroup"]))
+            if not result["OK"]:
+                return result
+            tqDefDict["VO"] = result["Value"]
+
         for field in singleValueDefFields:
             if field == "CPUTime":
                 if not isinstance(tqDefDict[field], int):
@@ -255,7 +261,7 @@ class TaskQueueDB(DB):
             sqlSingleFields.append(field)
             sqlValues.append(tqDefDict[field])
         sqlSingleFields.append("VO")
-        sqlValues.append(Registry.getVOForGroup(tqDefDict["OwnerGroup"]))
+        sqlValues.append(tqDefDict["VO"])
         # Insert the TQ Disabled
         sqlSingleFields.append("Enabled")
         sqlValues.append("0")
