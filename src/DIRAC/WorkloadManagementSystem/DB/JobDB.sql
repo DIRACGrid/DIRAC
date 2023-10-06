@@ -42,6 +42,7 @@ CREATE TABLE `Jobs` (
   `JobName` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `Owner` VARCHAR(64) NOT NULL DEFAULT 'Unknown',
   `OwnerGroup` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
+  `VO` VARCHAR(32) NOT NULL DEFAULT 'Unknown',
   `SubmissionTime` DATETIME DEFAULT NULL,
   `RescheduleTime` DATETIME DEFAULT NULL,
   `LastUpdateTime` DATETIME DEFAULT NULL,
