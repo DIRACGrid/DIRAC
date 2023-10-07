@@ -7,7 +7,9 @@
       :caption: ProxyManager options
 """
 
-from DIRAC import gLogger, S_OK, S_ERROR
+import os
+import requests
+from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -411,39 +413,37 @@ class ProxyManagerHandlerMixin:
 
     def export_exchangeProxyForToken(self):
         """Exchange a proxy for an equivalent token to be used with diracx"""
+
+        apiKey = gConfig.getValue("/DiracX/LegacyExchangeApiKey")
+        if not apiKey:
+            return S_ERROR("Missing mandatory /DiracX/LegacyExchangeApiKey configuration")
+
+        diracxUrl = gConfig.getValue("/DiracX/URL")
+        if not diracxUrl:
+            return S_ERROR("Missing mandatory /DiracX/URL configuration")
+
+        credDict = self.getRemoteCredentials()
+        vo = Registry.getVOForGroup(credDict["group"])
+        dirac_properties = list(set(credDict.get("groupProperties", [])) | set(credDict.get("properties", [])))
+        group = credDict["group"]
+        scopes = [f"vo:{vo}", f"group:{group}"] + [f"property:{prop}" for prop in dirac_properties]
+
         try:
-            from diracx.routers.auth import (  # pylint: disable=import-error
-                AuthSettings,
-                create_token,
-                TokenResponse,
-            )  # pylint: disable=import-error
-
-            authSettings = AuthSettings()
-
-            from uuid import uuid4
-
-            credDict = self.getRemoteCredentials()
-            vo = Registry.getVOForGroup(credDict["group"])
-            payload = {
-                "sub": f"{vo}:{credDict['username']}",
-                "vo": vo,
-                "aud": authSettings.token_audience,
-                "iss": authSettings.token_issuer,
-                "dirac_properties": list(
-                    set(credDict.get("groupProperties", [])) | set(credDict.get("properties", []))
-                ),
-                "jti": str(uuid4()),
-                "preferred_username": credDict["username"],
-                "dirac_group": credDict["group"],
-            }
-            return S_OK(
-                TokenResponse(
-                    access_token=create_token(payload, authSettings),
-                    expires_in=authSettings.access_token_expire_minutes * 60,
-                ).dict()
+            r = requests.get(
+                f"{diracxUrl}/auth/legacy-exchange",
+                params={
+                    "preferred_username": credDict["username"],
+                    "scope": " ".join(scopes),
+                },
+                headers={"Authorization": f"Bearer {apiKey}"},
             )
-        except Exception as e:
-            return S_ERROR(f"Could not get token: {e!r}")
+        except requests.exceptions.RequestException as exc:
+            return S_ERROR(f"Failed to contact DiracX: {exc}")
+        else:
+            if not r.ok:
+                return S_ERROR(f"Failed to contact DiracX: {r.status_code} {r.text}")
+
+        return S_OK(r.json())
 
 
 class ProxyManagerHandler(ProxyManagerHandlerMixin, RequestHandler):

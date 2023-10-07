@@ -76,6 +76,7 @@ class Params:
         self.outputFile = ""
         self.skipVOMSDownload = False
         self.extensions = ""
+        self.legacyExchangeApiKey = ""
 
     def setGateway(self, optionValue):
         self.gatewayServer = optionValue
@@ -172,6 +173,12 @@ class Params:
             optionValue = f"{optionValue.rstrip('/')}/auth"
         self.issuer = optionValue
         DIRAC.gConfig.setOptionValue("/DIRAC/Security/Authorization/issuer", self.issuer)
+        return DIRAC.S_OK()
+
+    def setLegacyExchangeApiKey(self, optionValue):
+        self.legacyExchangeApiKey = optionValue
+        Script.localCfg.addDefaultEntry("/DiracX/LegacyExchangeApiKey", self.legacyExchangeApiKey)
+        DIRAC.gConfig.setOptionValue(cfgInstallPath("LegacyExchangeApiKey"), self.legacyExchangeApiKey)
         return DIRAC.S_OK()
 
 
@@ -361,6 +368,9 @@ def runDiracConfigure(params):
     Script.registerSwitch("n:", "SiteName=", "Set <sitename> as DIRAC Site Name", params.setSiteName)
     Script.registerSwitch("N:", "CEName=", "Set <cename> as Computing Element name", params.setCEName)
     Script.registerSwitch("V:", "VO=", "Set the VO name", params.setVO)
+    Script.registerSwitch(
+        "K:", "LegacyExchangeApiKey=", "Set the Api Key to talk to DiracX", params.setLegacyExchangeApiKey
+    )
 
     Script.registerSwitch("W:", "gateway=", "Configure <gateway> as DIRAC Gateway for the site", params.setGateway)
 

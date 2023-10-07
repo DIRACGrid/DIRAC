@@ -348,19 +348,25 @@ def install_server():
     """Install DIRAC in the server container."""
     _check_containers_running()
 
+    # This runs a continuous loop that exports the config in yaml
+    # for the diracx container to use
+    # It needs to be started and running before the DIRAC server installation
+    # because after installing the databases, the install server script
+    # calls dirac-login.
+    # At this point we need the new CS to have been updated
+    # already else the token exchange fails.
+
+    typer.secho("Starting configuration export loop for diracx", fg=c.GREEN)
+    base_cmd = _build_docker_cmd("server", tty=False, daemon=True, use_root=True)
+    subprocess.run(
+        base_cmd + ["bash", "/home/dirac/LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/CI/exportCSLoop.sh"],
+        check=True,
+    )
+
     typer.secho("Running server installation", fg=c.GREEN)
     base_cmd = _build_docker_cmd("server", tty=False)
     subprocess.run(
         base_cmd + ["bash", "/home/dirac/LocalRepo/TestCode/DIRAC/tests/CI/install_server.sh"],
-        check=True,
-    )
-
-    # This runs a continuous loop that exports the config in yaml
-    # for the diracx container to use
-    typer.secho("Starting configuration export loop for diracx", fg=c.GREEN)
-    base_cmd = _build_docker_cmd("server", tty=False, daemon=True)
-    subprocess.run(
-        base_cmd + ["bash", "/home/dirac/LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/CI/exportCSLoop.sh"],
         check=True,
     )
 

@@ -65,7 +65,6 @@ services:
     pull_policy: always
 
   diracx-wait-for-db:
-
     image: ${MYSQL_VER}
     container_name: diracx-wait-for-db
     depends_on:
@@ -73,7 +72,6 @@ services:
         condition: service_healthy
     command: /home/dirac/LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/CI/check_db_initialized.sh
     pull_policy: always
-
 
   dirac-server:
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
@@ -91,7 +89,7 @@ services:
       iam-login-service:
         condition: service_started
       diracx-init-key:
-        condition: service_completed_successfully # Let the init container create the cs
+        condition: service_completed_successfully # Let the init container create the singing key
       diracx-init-cs:
         condition: service_completed_successfully # Let the init container create the cs
     ulimits:
@@ -114,8 +112,6 @@ services:
     ulimits:
       nofile: 8192
     pull_policy: always
-
-
 
   diracx-init-key:
     image: ghcr.io/diracgrid/diracx/server
@@ -140,7 +136,19 @@ services:
       - diracx-cs-store:/cs_store/
       - diracx-key-store:/signing-key/
     entrypoint: |
-      /dockerMicroMambaEntrypoint.sh dirac internal generate-cs /cs_store/initialRepo --vo=diracAdmin --user-group=admin --idp-url=http://dsdsd.csds/a/b
+      /dockerMicroMambaEntrypoint.sh bash -xc 'dirac internal generate-cs /cs_store/initialRepo --vo=vo --user-group=dirac_user --idp-url=http://dsdsd.csds/a/b'
+    pull_policy: always
+
+  diracx-init-db:
+    image: ghcr.io/diracgrid/diracx/server
+    container_name: diracx-init-db
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - DIRACX_DB_URL_AUTHDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXAuthDB
+    entrypoint: |
+      /dockerMicroMambaEntrypoint.sh bash -xc 'micromamba install --yes -c conda-forge mysql-client && mysql -h mysql -u root --password=password -e "CREATE DATABASE DiracXAuthDB" && mysql -h mysql -u root --password=password -e "GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES,CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE ON DiracXAuthDB.* TO Dirac@'"'"'%'"'"'" && python -m diracx.db init-sql'
     pull_policy: always
 
   diracx:
@@ -148,13 +156,19 @@ services:
     container_name: diracx
     environment:
       - DIRACX_CONFIG_BACKEND_URL=git+file:///cs_store/initialRepo
-      - "DIRACX_DB_URL_AUTHDB=sqlite+aiosqlite:///:memory:"
+      - DIRACX_DB_URL_AUTHDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXAuthDB
       - DIRACX_DB_URL_JOBDB=mysql+aiomysql://Dirac:Dirac@mysql/JobDB
+      - DIRACX_DB_URL_JOBLOGGINGDB=mysql+aiomysql://Dirac:Dirac@mysql/JobLoggingDB
+      - DIRACX_DB_URL_SANDBOXMETADATADB=mysql+aiomysql://Dirac:Dirac@mysql/SandboxMetadataDB
       - DIRACX_SERVICE_AUTH_TOKEN_KEY=file:///signing-key/rs256.key
       - DIRACX_SERVICE_AUTH_ALLOWED_REDIRECTS=["http://diracx:8000/docs/oauth2-redirect"]
+      # Obtained with echo 'InsecureChangeMe' | base64 -d | openssl sha256
+      - DIRACX_LEGACY_EXCHANGE_HASHED_API_KEY=07cddf6948d316ac9d186544dc3120c4c6697d8f994619665985c0a5bf76265a
     ports:
       - 8000:8000
     depends_on:
+      diracx-init-db:
+        condition: service_completed_successfully
       diracx-wait-for-db:
         condition: service_completed_successfully
     volumes:
