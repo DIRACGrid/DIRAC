@@ -135,7 +135,12 @@ installSite() {
 
   echo "==> Done installing, now configuring"
   source "${SERVERINSTALLDIR}/bashrc"
-  if ! dirac-configure --cfg "${SERVERINSTALLDIR}/install.cfg" --LegacyExchangeApiKey='diracx:legacy:InsecureChangeMe' "${DEBUG}"; then
+  configureArgs=()
+  if [[ -n "${TEST_DIRACX:-}" ]]; then
+    configureArgs+=("--LegacyExchangeApiKey=diracx:legacy:InsecureChangeMe")
+    configureArgs+=("--DiracxUrl=${DIRACX_URL}")
+  fi
+  if ! dirac-configure --cfg "${SERVERINSTALLDIR}/install.cfg" "${configureArgs[@]}" "${DEBUG}"; then
     echo "ERROR: dirac-configure failed" >&2
     exit 1
   fi
