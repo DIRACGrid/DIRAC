@@ -14,7 +14,10 @@ git config --global user.name "DIRAC Server CI"
 git config --global user.email "dirac-server-ci@invalid"
 
 while true; do
-    curl -L https://gitlab.cern.ch/chaen/chris-hackaton-cs/-/raw/integration-tests/convert-from-legacy.py |DIRAC_COMPAT_ENABLE_CS_CONVERSION=True  /home/dirac/ServerInstallDIR/diracos/bin/python - /home/dirac/ServerInstallDIR/etc/Production.cfg /cs_store/initialRepo/
+    DIRAC_COMPAT_ENABLE_CS_CONVERSION=x dirac internal legacy cs-sync \
+        "$DIRACOS/etc/Production.cfg" \
+        /home/dirac/TestCode/diracx/tests/cli/legacy/cs_sync/convert_integration_test.yaml \
+        /cs_store/initialRepo/default.yml
     git --git-dir=.git -C /cs_store/initialRepo/ commit -am "export $(date)"
     if [[ "${1}" == "--once" ]]; then
         break
