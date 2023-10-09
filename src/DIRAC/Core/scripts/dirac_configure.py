@@ -181,6 +181,12 @@ class Params:
         DIRAC.gConfig.setOptionValue(cfgInstallPath("LegacyExchangeApiKey"), self.legacyExchangeApiKey)
         return DIRAC.S_OK()
 
+    def setDiracxUrl(self, optionValue):
+        self.diracxUrl = optionValue
+        Script.localCfg.addDefaultEntry("/DiracX/URL", self.diracxUrl)
+        DIRAC.gConfig.setOptionValue(cfgInstallPath("URL"), self.diracxUrl)
+        return DIRAC.S_OK()
+
 
 def _runConfigurationWizard(setups, defaultSetup):
     """The implementation of the configuration wizard"""
@@ -371,6 +377,7 @@ def runDiracConfigure(params):
     Script.registerSwitch(
         "K:", "LegacyExchangeApiKey=", "Set the Api Key to talk to DiracX", params.setLegacyExchangeApiKey
     )
+    Script.registerSwitch("", "DiracxUrl=", "Set the URL to talk to DiracX", params.setDiracxUrl)
 
     Script.registerSwitch("W:", "gateway=", "Configure <gateway> as DIRAC Gateway for the site", params.setGateway)
 

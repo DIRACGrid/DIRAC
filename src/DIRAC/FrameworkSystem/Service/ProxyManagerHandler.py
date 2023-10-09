@@ -430,7 +430,7 @@ class ProxyManagerHandlerMixin:
 
         try:
             r = requests.get(
-                f"{diracxUrl}/auth/legacy-exchange",
+                f"{diracxUrl}/api/auth/legacy-exchange",
                 params={
                     "preferred_username": credDict["username"],
                     "scope": " ".join(scopes),

@@ -562,17 +562,17 @@ diracUserAndGroup() {
     exit 1
   fi
 
-  if ! dirac-admin-add-group -G prod -U adminusername,ciuser,trialUser -P Operator,FullDelegation,ProxyManagement,ServiceAdministrator,JobAdministrator,CSAdministrator,AlarmsManagement,FileCatalogManagement,SiteManager,NormalUser,ProductionManagement "${DEBUG}"; then
+  if ! dirac-admin-add-group -G prod -U adminusername,ciuser,trialUser -P Operator,FullDelegation,ProxyManagement,ServiceAdministrator,JobAdministrator,CSAdministrator,AlarmsManagement,FileCatalogManagement,SiteManager,NormalUser,ProductionManagement VO=vo "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-group failed' >&2
     exit 1
   fi
 
-  if ! dirac-admin-add-group -G jenkins_fcadmin -U adminusername,ciuser,trialUser -P FileCatalogManagement,NormalUser "${DEBUG}"; then
+  if ! dirac-admin-add-group -G jenkins_fcadmin -U adminusername,ciuser,trialUser -P FileCatalogManagement,NormalUser VO=vo "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-group failed' >&2
     exit 1
   fi
 
-  if ! dirac-admin-add-group -G jenkins_user -U adminusername,ciuser,trialUser -P NormalUser "${DEBUG}"; then
+  if ! dirac-admin-add-group -G jenkins_user -U adminusername,ciuser,trialUser -P NormalUser VO=vo "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-group failed' >&2
     exit 1
   fi

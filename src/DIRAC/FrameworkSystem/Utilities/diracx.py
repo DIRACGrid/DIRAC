@@ -42,7 +42,7 @@ def _get_token(credDict, diracxUrl, /) -> Path:
     scopes = [f"vo:{vo}", f"group:{group}"] + [f"property:{prop}" for prop in dirac_properties]
 
     r = requests.get(
-        f"{diracxUrl}/auth/legacy-exchange",
+        f"{diracxUrl}/api/auth/legacy-exchange",
         params={
             "preferred_username": credDict["username"],
             "scope": " ".join(scopes),
@@ -71,6 +71,8 @@ def TheImpersonator(credDict: dict[str, Any]) -> DiracClient:
     """
 
     diracxUrl = gConfig.getValue("/DiracX/URL")
+    if not diracxUrl:
+        raise ValueError("Missing mandatory /DiracX/URL configuration")
     token_location = _get_token(credDict, diracxUrl)
     pref = DiracxPreferences(url=diracxUrl, credentials_path=token_location)
 
