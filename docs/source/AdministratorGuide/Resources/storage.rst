@@ -266,7 +266,7 @@ The ``OccupancyPlugin`` allows to change the way space occupancy is measured. Se
 * BDIIOccupancy: :py:mod:`~DIRAC.Resources.Storage.OccupancyPlugins.BDIIOccupancy`
 * WLCGAccountingJson: :py:mod:`~DIRAC.Resources.Storage.OccupancyPlugins.WLCGAccountingJson`
 * WLCGAccountingHTTPJson: :py:mod:`~DIRAC.Resources.Storage.OccupancyPlugins.WLCGAccountingHTTPJson` (likely to become the default in the future)
-
+* XRootOccupancy: :py:mod:`~DIRAC.Resources.Storage.OccupancyPlugins.XRootOccupancy`
 
 
 .. _multiProtocol:
