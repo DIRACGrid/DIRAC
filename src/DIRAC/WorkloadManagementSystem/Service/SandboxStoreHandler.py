@@ -151,6 +151,11 @@ class SandboxStoreHandlerMixin:
                         return S_ERROR("Error uploading sandbox", repr(e))
                 else:
                     gLogger.debug("Sandbox already exists in storage backend", res.pfn)
+
+                assignTo = {key: [(res.pfn, assignTo[key])] for key in assignTo}
+                result = self.export_assignSandboxesToEntities(assignTo)
+                if not result["OK"]:
+                    return result
                 return S_OK(res.pfn)
 
         sbPath = self.__getSandboxPath(f"{aHash}.{extension}")
