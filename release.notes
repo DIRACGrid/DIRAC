@@ -1,3 +1,26 @@
+[v8.1.0a22]
+
+*WorkloadManagementSystem
+
+FIX: (#7238) Output sandbox are assigned when using DiracX
+CHANGE: (#7237) Removed interaction with MJF
+FIX: (#7226) SiteDirector adds wnVO Pilot options, if needed
+CHANGE: (#7215) add VO info in the table Jobs of JobDB
+
+*WorkloadManagement
+
+FIX: (#7234) AREX does not return an error if delegation not found
+FIX: (#7230) Group to vo conversion in TaskQueueDB
+
+*ConfigurationSystem
+
+CHANGE: (#7225) explicitly state the VO in each default group upon installation
+
+*DiracX
+
+CHANGE: (#7222) Get a access/refresh token pair when generating a proxy
+NEW: (#7222) Support using diracx as backend for the SandboxStoreHandler
+
 [v8.1.0a21]
 
 *Core
