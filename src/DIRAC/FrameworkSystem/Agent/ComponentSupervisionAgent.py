@@ -121,7 +121,7 @@ class ComponentSupervisionAgent(AgentModule):
 
     def beginExecution(self):
         """Reload the configurations before every cycle."""
-        self.setup = self.am_getOption("Setup", self.setup)
+        self.setup = gConfig.getValue("/DIRAC/Setup", self.setup)
         self.enabled = self.am_getOption("EnableFlag", self.enabled)
         self.restartAgents = self.am_getOption("RestartAgents", self.restartAgents)
         self.restartExecutors = self.am_getOption("RestartExecutors", self.restartExecutors)
