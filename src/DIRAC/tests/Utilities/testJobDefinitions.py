@@ -65,6 +65,22 @@ def helloWorld():
     return endOfAllJobs(J)
 
 
+def helloWorldJenkins():
+    """simple hello world job to Jenkins"""
+
+    J = baseToAllJobs("helloWorldJenkins")
+    try:
+        J.setInputSandbox([find_all("exe-script.py", rootPath, "DIRAC/tests/Workflow")[0]])
+    except IndexError:
+        try:
+            J.setInputSandbox([find_all("exe-script.py", ".", "DIRAC/tests/Workflow")[0]])
+        except IndexError:  # we are in Jenkins
+            J.setInputSandbox([find_all("exe-script.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]])
+    J.setExecutable("exe-script.py", "", "helloWorld.log")
+    J.setDestination("DIRAC.Jenkins.ch")
+    return endOfAllJobs(J)
+
+
 def helloWorldCERN():
     """simple hello world job to CERN"""
 

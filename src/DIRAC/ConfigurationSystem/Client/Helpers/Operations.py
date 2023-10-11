@@ -33,12 +33,13 @@
     but this works iff the object is instantiated by a proxy (and not, e.g., using a server certificate)
 
 """
-import os
 import _thread
+
 from diraccfg import CFG
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals
+
+from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Core.Utilities import LockRing
 from DIRAC.Core.Utilities.DErrno import ESECTION

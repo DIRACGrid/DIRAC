@@ -3,12 +3,11 @@ Handling the download of the shifter Proxy
 """
 import os
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_ERROR, S_OK, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry, cfgPath
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 
 def getShifterProxy(shifterType, fileName=False):
