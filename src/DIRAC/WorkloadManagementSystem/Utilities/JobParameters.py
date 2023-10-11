@@ -1,10 +1,10 @@
 """ DIRAC Workload Management System utility module to get available memory and processors from mjf
 """
-import os
 import multiprocessing
+import os
 from urllib.request import urlopen
 
-from DIRAC import gLogger, gConfig
+from DIRAC import gConfig, gLogger
 from DIRAC.Core.Utilities.List import fromChar
 
 
@@ -134,44 +134,6 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
         return multiprocessing.cpu_count()
 
     # 5) return the default
-    return 1
-
-
-def getNumberOfPayloadProcessors(siteName=None, gridCE=None, queue=None):
-    """Gets the number of processors allowed for a single JobAgent (so for a "inner" CE).
-    (NB: this does not refer to the job processors).
-    This is normally used ONLY when a pilot instantiates more than one JobAgent (MultiLaunchAgent pilot command).
-
-    The siteName/gridCE/queue parameters are normally not necessary.
-
-    Tries to find it in this order:
-    1) from the /Resources/Computing/CEDefaults/NumberOfPayloadProcessors (which is what pilot 3 fills up)
-    2) if not present but there's WholeNode tag, use the getNumberOfProcessors function above
-    3) otherwise returns 1
-    """
-
-    # 1) from /Resources/Computing/CEDefaults/NumberOfPayloadProcessors
-    gLogger.info("Getting NumberOfPayloadProcessors from /Resources/Computing/CEDefaults/NumberOfPayloadProcessors")
-    NumberOfPayloadProcessors = gConfig.getValue("/Resources/Computing/CEDefaults/NumberOfPayloadProcessors")
-    if NumberOfPayloadProcessors:
-        return NumberOfPayloadProcessors
-
-    # 2) Checks if 'WholeNode' is one of the used tags
-    # Tags of the CE
-    tags = fromChar(
-        gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/CEs/{gridCE}/Tag", "")
-    ) + fromChar(gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/Cloud/{gridCE}/Tag", ""))
-    # Tags of the Queue
-    tags += fromChar(
-        gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/CEs/{gridCE}/Queues/{queue}/Tag", "")
-    ) + fromChar(
-        gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/Cloud/{gridCE}/VMTypes/{queue}/Tag", "")
-    )
-
-    if "WholeNode" in tags:
-        return getNumberOfProcessors()
-
-    # 3) Just returns a conservative "1"
     return 1
 
 
