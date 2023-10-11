@@ -84,7 +84,6 @@ class TestComponentSupervisionAgent(unittest.TestCase):
         self.restartAgent.accounting["Junk"]["Funk"] = 1
         self.restartAgent.am_getOption = MagicMock()
         getOptionCalls = [
-            call("Setup", self.restartAgent.setup),
             call("EnableFlag", True),
             call("MailTo", self.restartAgent.addressTo),
             call("MailFrom", self.restartAgent.addressFrom),
