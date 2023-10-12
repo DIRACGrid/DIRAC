@@ -374,7 +374,7 @@ class TransformationCleaningAgent(AgentModule):
     # These are the methods for performing the cleaning of catalogs and storage
     #
 
-    def cleanContent(self, directory):
+    def cleanContent(self, directory, transID):
         """wipe out everything from catalog under folder :directory:
 
         :param self: self reference
@@ -390,11 +390,7 @@ class TransformationCleaningAgent(AgentModule):
             return S_OK()
         self.log.info("Attempting to remove possible remnants from the catalog and storage", f"(n={len(filesFound)})")
 
-        # Executing with shifter proxy
-        gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "false")
-        res = self.__submitRemovalRequests(filesFound, 0)
-        gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "true")
-        return res
+        return self.__submitRemovalRequests(filesFound, transID)
 
     def __getCatalogDirectoryContents(self, directories):
         """get catalog contents under paths :directories:
@@ -458,7 +454,7 @@ class TransformationCleaningAgent(AgentModule):
         directories = res["Value"]
         for directory in directories:
             if not re.search("/LOG/", directory):
-                res = self.cleanContent(directory)
+                res = self.cleanContent(directory, transID)
                 if not res["OK"]:
                     return res
 
@@ -527,7 +523,7 @@ class TransformationCleaningAgent(AgentModule):
                 res = self.cleanTransformationLogFiles(directory)
                 if not res["OK"]:
                     return res
-            res = self.cleanContent(directory)
+            res = self.cleanContent(directory, transID)
             if not res["OK"]:
                 return res
 
