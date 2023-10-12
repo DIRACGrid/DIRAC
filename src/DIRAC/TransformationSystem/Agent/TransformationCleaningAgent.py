@@ -581,7 +581,7 @@ class TransformationCleaningAgent(AgentModule):
             return S_OK()
 
         if self.cleanWithRMS:
-            res = self.__submitRemovalRequests(fileToRemove, transID)
+            return self.__submitRemovalRequests(fileToRemove, transID)
         else:
             # Executing with shifter proxy
             gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "false")
@@ -723,7 +723,7 @@ class TransformationCleaningAgent(AgentModule):
         """
         for index, lfnList in enumerate(breakListIntoChunks(lfns, 300)):
             oRequest = Request()
-            requestName = "TCA_{transID}_{index}_{md5(repr(time.time())).hexdigest()[:5]}"
+            requestName = "TCA_{transID}_{index}_{md5(repr(time.time()).encode()).hexdigest()[:5]}"
             oRequest.RequestName = requestName
             oOperation = Operation()
             oOperation.Type = "RemoveFile"
