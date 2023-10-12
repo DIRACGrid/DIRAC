@@ -24,13 +24,11 @@ DEFAULT_TOKEN_CACHE_TTL = 5 * 60
 _token_cache = TTLCache(maxsize=100, ttl=DEFAULT_TOKEN_CACHE_TTL)
 
 
-@cached(_token_cache, key=lambda x, y: repr(x))
-def _get_token(credDict, diracxUrl, /) -> Path:
-    """
-    Write token to a temporary file and return the path to that file
-
-    """
-
+def get_token(credDict, *, expires_minutes=None):
+    """Do a legacy exchange to get a DiracX access_token+refresh_token"""
+    diracxUrl = gConfig.getValue("/DiracX/URL")
+    if not diracxUrl:
+        raise ValueError("Missing mandatory /DiracX/URL configuration")
     apiKey = gConfig.getValue("/DiracX/LegacyExchangeApiKey")
     if not apiKey:
         raise ValueError("Missing mandatory /DiracX/LegacyExchangeApiKey configuration")
@@ -46,17 +44,23 @@ def _get_token(credDict, diracxUrl, /) -> Path:
         params={
             "preferred_username": credDict["username"],
             "scope": " ".join(scopes),
+            "expires_minutes": expires_minutes,
         },
         headers={"Authorization": f"Bearer {apiKey}"},
         timeout=10,
     )
+    if not r.ok:
+        raise RuntimeError(f"Error getting token from DiracX: {r.status_code} {r.text}")
 
-    r.raise_for_status()
+    return r.json()
 
+
+@cached(_token_cache, key=lambda x, y: repr(x))
+def _get_token_file(credDict) -> Path:
+    """Write token to a temporary file and return the path to that file"""
+    data = get_token(credDict)
     token_location = Path(NamedTemporaryFile().name)
-
-    write_credentials(TokenResponse(**r.json()), location=token_location)
-
+    write_credentials(TokenResponse(**data), location=token_location)
     return token_location
 
 
@@ -69,11 +73,10 @@ def TheImpersonator(credDict: dict[str, Any]) -> DiracClient:
 
     Use as a context manager
     """
-
     diracxUrl = gConfig.getValue("/DiracX/URL")
     if not diracxUrl:
         raise ValueError("Missing mandatory /DiracX/URL configuration")
-    token_location = _get_token(credDict, diracxUrl)
+    token_location = _get_token_file(credDict)
     pref = DiracxPreferences(url=diracxUrl, credentials_path=token_location)
 
     return DiracClient(diracx_preferences=pref)

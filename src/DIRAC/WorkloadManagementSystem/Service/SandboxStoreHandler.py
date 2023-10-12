@@ -14,7 +14,8 @@ import tempfile
 import threading
 import time
 
-from DIRAC import S_ERROR, S_OK, gLogger
+from DIRAC import S_ERROR, S_OK, gLogger, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security import Locations, Properties, X509Certificate
 from DIRAC.Core.Utilities.File import mkDir
@@ -108,8 +109,10 @@ class SandboxStoreHandlerMixin:
         gLogger.info("Upload requested", f"for {aHash} [{extension}]")
 
         credDict = self.getRemoteCredentials()
+        vo = Registry.getVOForGroup(credDict["group"])
 
-        if self._useDiracXBackend:
+        enabledVOs = gConfig.getValue("/DiracX/EnabledVOs", [])
+        if self._useDiracXBackend and vo in enabledVOs:
             from DIRAC.FrameworkSystem.Utilities.diracx import TheImpersonator
             from diracx.client.models import SandboxInfo  # pylint: disable=import-error
 

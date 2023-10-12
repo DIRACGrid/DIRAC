@@ -6,10 +6,8 @@
       :dedent: 2
       :caption: ProxyManager options
 """
-
-import os
-import requests
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -411,39 +409,12 @@ class ProxyManagerHandlerMixin:
 
     types_exchangeProxyForToken = []
 
+    @convertToReturnValue
     def export_exchangeProxyForToken(self):
         """Exchange a proxy for an equivalent token to be used with diracx"""
+        from DIRAC.FrameworkSystem.Utilities.diracx import get_token
 
-        apiKey = gConfig.getValue("/DiracX/LegacyExchangeApiKey")
-        if not apiKey:
-            return S_ERROR("Missing mandatory /DiracX/LegacyExchangeApiKey configuration")
-
-        diracxUrl = gConfig.getValue("/DiracX/URL")
-        if not diracxUrl:
-            return S_ERROR("Missing mandatory /DiracX/URL configuration")
-
-        credDict = self.getRemoteCredentials()
-        vo = Registry.getVOForGroup(credDict["group"])
-        dirac_properties = list(set(credDict.get("groupProperties", [])) | set(credDict.get("properties", [])))
-        group = credDict["group"]
-        scopes = [f"vo:{vo}", f"group:{group}"] + [f"property:{prop}" for prop in dirac_properties]
-
-        try:
-            r = requests.get(
-                f"{diracxUrl}/api/auth/legacy-exchange",
-                params={
-                    "preferred_username": credDict["username"],
-                    "scope": " ".join(scopes),
-                },
-                headers={"Authorization": f"Bearer {apiKey}"},
-            )
-        except requests.exceptions.RequestException as exc:
-            return S_ERROR(f"Failed to contact DiracX: {exc}")
-        else:
-            if not r.ok:
-                return S_ERROR(f"Failed to contact DiracX: {r.status_code} {r.text}")
-
-        return S_OK(r.json())
+        return get_token(self.getRemoteCredentials())
 
 
 class ProxyManagerHandler(ProxyManagerHandlerMixin, RequestHandler):

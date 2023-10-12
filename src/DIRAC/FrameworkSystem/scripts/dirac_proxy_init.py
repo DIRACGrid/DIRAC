@@ -9,13 +9,12 @@ Example:
 import os
 import sys
 import glob
-import json
 import time
 import datetime
 
 import DIRAC
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.Script import Script
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
 from DIRAC.Core.Security import X509Chain, ProxyInfo, VOMS
@@ -23,7 +22,6 @@ from DIRAC.Core.Security.Locations import getCAsLocation
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 from DIRAC.Core.Base.Client import Client
-from pathlib import Path
 
 
 class Params(ProxyGeneration.CLIParams):
@@ -240,7 +238,9 @@ class ProxyInit:
                 if self.__piParams.strict:
                     return resultProxyUpload
 
-        if os.getenv("DIRAC_ENABLE_DIRACX_LOGIN", "No").lower() in ("yes", "true"):
+        vo = Registry.getVOMSVOForGroup(self.__piParams.diracGroup)
+        enabledVOs = gConfig.getValue("/DiracX/EnabledVOs", [])
+        if vo in enabledVOs:
             from diracx.core.utils import write_credentials  # pylint: disable=import-error
             from diracx.core.models import TokenResponse  # pylint: disable=import-error
             from diracx.core.preferences import DiracxPreferences  # pylint: disable=import-error
@@ -248,7 +248,6 @@ class ProxyInit:
             res = Client(url="Framework/ProxyManager").exchangeProxyForToken()
             if not res["OK"]:
                 return res
-            from DIRAC import gConfig
 
             diracxUrl = gConfig.getValue("/DiracX/URL")
             if not diracxUrl:
