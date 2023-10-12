@@ -553,16 +553,7 @@ class TransformationCleaningAgent(AgentModule):
             self.log.info("No files found for transID", transID)
             return S_OK()
 
-        res = self.__submitRemovalRequests(fileToRemove, transID)
-
-        if not res["OK"]:
-            return res
-        for lfn, reason in res["Value"]["Failed"].items():
-            self.log.error("Failed to remove file found in metadata catalog", f"{lfn} {reason}")
-        if res["Value"]["Failed"]:
-            return S_ERROR("Failed to remove all files found in the metadata catalog")
-        self.log.info("Successfully removed all files found in the DFC")
-        return S_OK()
+        return self.__submitRemovalRequests(fileToRemove, transID)
 
     #############################################################################
     #
