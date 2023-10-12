@@ -80,7 +80,6 @@ class TransformationCleaningAgent(AgentModule):
         self.logSE = "LogSE"
         # # enable/disable execution
         self.enableFlag = "True"
-        self.cleanWithRMS = False
 
         self.dataProcTTypes = ["MCSimulation", "Merge"]
         self.dataManipTTypes = ["Replication", "Removal"]
@@ -120,7 +119,6 @@ class TransformationCleaningAgent(AgentModule):
         self.logSE = Operations().getValue("/LogStorage/LogSE", self.logSE)
         self.log.info(f"Will remove logs found on storage element: {self.logSE}")
 
-        self.cleanWithRMS = self.am_getOption("CleanWithRMS", self.cleanWithRMS)
         # # transformation client
         self.transClient = TransformationClient()
         # # wms client
@@ -394,30 +392,9 @@ class TransformationCleaningAgent(AgentModule):
 
         # Executing with shifter proxy
         gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "false")
-        failed = {}
-        if self.cleanWithRMS:
-            res = self.__submitRemovalRequests(filesFound, 0)
-            gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "true")
-            return res
-
-        for chunkId, filesChunk in enumerate(breakListIntoChunks(filesFound, 500)):
-            self.log.info("Removing chunk", chunkId)
-            res = DataManager().removeFile(filesChunk, force=True)
-            if not res["OK"]:
-                failed.update(dict.fromkeys(filesChunk, res["Message"]))
-            failed.update(res["Value"]["Failed"])
+        res = self.__submitRemovalRequests(filesFound, 0)
         gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "true")
-
-        realFailure = False
-        for lfn, reason in failed.items():
-            if "File does not exist" in str(reason):
-                self.log.warn(f"File {lfn} not found in some catalog: ")
-            else:
-                self.log.error("Failed to remove file found in the catalog", f"{lfn} {reason}")
-                realFailure = True
-        if realFailure:
-            return S_ERROR("Failed to remove some files found in the catalog")
-        return S_OK()
+        return res
 
     def __getCatalogDirectoryContents(self, directories):
         """get catalog contents under paths :directories:
@@ -580,13 +557,7 @@ class TransformationCleaningAgent(AgentModule):
             self.log.info("No files found for transID", transID)
             return S_OK()
 
-        if self.cleanWithRMS:
-            res = self.__submitRemovalRequests(fileToRemove, transID)
-        else:
-            # Executing with shifter proxy
-            gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "false")
-            res = DataManager().removeFile(fileToRemove, force=True)
-            gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "true")
+        res = self.__submitRemovalRequests(fileToRemove, transID)
 
         if not res["OK"]:
             return res
