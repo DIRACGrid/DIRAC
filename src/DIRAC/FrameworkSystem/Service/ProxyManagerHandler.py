@@ -414,7 +414,12 @@ class ProxyManagerHandlerMixin:
         """Exchange a proxy for an equivalent token to be used with diracx"""
         from DIRAC.FrameworkSystem.Utilities.diracx import get_token
 
-        return get_token(self.getRemoteCredentials())
+        credDict = self.getRemoteCredentials()
+        return get_token(
+            credDict["username"],
+            credDict["group"],
+            set(credDict.get("groupProperties", []) + credDict.get("properties", [])),
+        )
 
 
 class ProxyManagerHandler(ProxyManagerHandlerMixin, RequestHandler):
