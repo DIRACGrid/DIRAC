@@ -319,18 +319,26 @@ class Params:
             if vo in enabledVOs:
                 from diracx.core.utils import write_credentials  # pylint: disable=import-error
                 from diracx.core.models import TokenResponse  # pylint: disable=import-error
+                from diracx.core.preferences import DiracxPreferences  # pylint: disable=import-error
+
+                diracxUrl = gConfig.getValue("/DiracX/URL")
+                if not diracxUrl:
+                    return S_ERROR("Missing mandatory /DiracX/URL configuration")
 
                 res = Client(url="Framework/ProxyManager").exchangeProxyForToken()
                 if not res["OK"]:
                     return res
                 token_content = res["Value"]
+                preferences = DiracxPreferences(url=diracxUrl)
+
                 write_credentials(
                     TokenResponse(
                         access_token=token_content["access_token"],
                         expires_in=token_content["expires_in"],
                         token_type=token_content.get("token_type"),
                         refresh_token=token_content.get("refresh_token"),
-                    )
+                    ),
+                    location=preferences.credentials_path,
                 )
 
         return S_OK()
