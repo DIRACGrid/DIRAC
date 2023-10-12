@@ -581,7 +581,7 @@ class TransformationCleaningAgent(AgentModule):
             return S_OK()
 
         if self.cleanWithRMS:
-            res = self.__submitRemovalRequests(fileToRemove, transID)
+            return self.__submitRemovalRequests(fileToRemove, transID)
         else:
             # Executing with shifter proxy
             gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "false")
