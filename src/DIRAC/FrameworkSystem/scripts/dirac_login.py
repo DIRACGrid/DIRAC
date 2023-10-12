@@ -314,7 +314,9 @@ class Params:
                     return res
 
             # Get a token for use with diracx
-            if os.getenv("DIRAC_ENABLE_DIRACX_LOGIN", "No").lower() in ("yes", "true"):
+            vo = getVOMSVOForGroup(self.group)
+            enabledVOs = gConfig.getValue("/DiracX/EnabledVOs", [])
+            if vo in enabledVOs:
                 from diracx.core.utils import write_credentials  # pylint: disable=import-error
                 from diracx.core.models import TokenResponse  # pylint: disable=import-error
 
