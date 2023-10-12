@@ -1,3 +1,9 @@
+[v8.1.0a23]
+
+*TransformationSystem
+
+NEW: (#7239) TransformationCleaningAgent: Use the RequestManagementSystem to asynchronously remove files, rather than serially in the agent run
+
 [v8.1.0a22]
 
 *WorkloadManagementSystem
