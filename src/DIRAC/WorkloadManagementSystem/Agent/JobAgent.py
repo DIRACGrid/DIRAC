@@ -254,7 +254,7 @@ class JobAgent(AgentModule):
                 )
 
         self.jobReport.setJobStatus(minorStatus="Job Received by Agent", sendFlag=False)
-        ownerDN = getDNForUsername(owner)["Value"]
+        ownerDN = getDNForUsername(owner)["Value"][0]
         result_setupProxy = self._setupProxy(ownerDN, jobGroup)
         if not result_setupProxy["OK"]:
             result = self._rescheduleFailedJob(jobID, result_setupProxy["Message"])

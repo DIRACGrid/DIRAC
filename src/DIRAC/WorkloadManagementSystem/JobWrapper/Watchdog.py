@@ -32,7 +32,6 @@ import psutil
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
-from DIRAC.Core.Utilities import MJF
 from DIRAC.Core.Utilities.Os import getDiskSpace
 from DIRAC.Core.Utilities.Profiler import Profiler
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
@@ -217,7 +216,6 @@ class Watchdog:
             and (time.time() - self.initialValues["StartTime"]) > self.wallClockCheckSeconds * self.wallClockCheckCount
         ):
             self.wallClockCheckCount += 1
-            self._performWallClockChecks()
 
         if self.littleTimeLeft:
             # if we have gone over enough iterations query again
@@ -241,35 +239,6 @@ class Watchdog:
         else:
             # self.log.debug('Application thread is alive: checking count is %s' %(self.checkCount))
             return S_OK()
-
-    #############################################################################
-    def _performWallClockChecks(self):
-        """Watchdog performs the wall clock checks based on MJF. Signals are sent
-        to processes if we need to stop, but function always returns S_OK()
-        """
-        mjf = MJF.MJF()
-
-        try:
-            wallClockSecondsLeft = mjf.getWallClockSecondsLeft()
-        except Exception:
-            # Just stop if we can't get the wall clock seconds left
-            return S_OK()
-
-        jobstartSeconds = mjf.getIntJobFeature("jobstart_secs")
-        if jobstartSeconds is None:
-            # Just stop if we don't know when the job started
-            return S_OK()
-
-        if (int(time.time()) > jobstartSeconds + self.stopSigStartSeconds) and (
-            wallClockSecondsLeft < self.stopSigFinishSeconds + self.wallClockCheckSeconds
-        ):
-            # Need to send the signal! Assume it works to avoid sending the signal more than once
-            self.log.info("Sending signal to JobWrapper children", f"({self.stopSigNumber})")
-            self.stopSigSent = True
-
-            kill_proc_tree(self.wrapperPID, includeParent=False)
-
-        return S_OK()
 
     #############################################################################
     def _performChecks(self):

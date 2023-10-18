@@ -6,56 +6,19 @@
 
       Operations/
           Defaults/
+                someOption = someValue
+                aSecondOption = aSecondValue
+          specificVo/
               someSection/
-                  someOption = someValue
-                  aSecondOption = aSecondValue
-          Production/
-              someSection/
-                  someOption = someValueInProduction
-                  aSecondOption = aSecondValueInProduction
-          Certification/
-              someSection/
-                  someOption = someValueInCertification
+                  someOption = someValueInVO
 
     The following calls would give different results based on the setup::
 
       Operations().getValue('someSection/someOption')
-        - someValueInProduction if we are in 'Production' setup
-        - someValueInCertification if we are in 'Certification' setup
+        - someValueInVO if we are in 'specificVo' vo
+        - someValue if we are in any other VO
 
-      Operations().getValue('someSection/aSecondOption')
-        - aSecondValueInProduction if we are in 'Production' setup
-        - aSecondValue if we are in 'Certification' setup    <- looking in Defaults
-                                                                since there's no Certification/someSection/aSecondOption
-
-
-    At the same time, for multi-VO installations, it is also possible to specify different options per-VO,
-    like the following::
-
-      Operations/
-          aVOName/
-              Defaults/
-                  someSection/
-                      someOption = someValue
-                      aSecondOption = aSecondValue
-              Production/
-                  someSection/
-                      someOption = someValueInProduction
-                      aSecondOption = aSecondValueInProduction
-              Certification/
-                  someSection/
-                      someOption = someValueInCertification
-          anotherVOName/
-              Defaults/
-                  someSectionName/
-                      someOptionX = someValueX
-                      aSecondOption = aSecondValue
-              setupName/
-                  someSection/
-                      someOption = someValueInProduction
-                      aSecondOption = aSecondValueInProduction
-
-    For this case it becomes then important for the Operations() objects to know the VO name
+    It becomes then important for the Operations() objects to know the VO name
     for which we want the information, and this can be done in the following ways.
 
     1. by specifying the VO name directly::
@@ -70,12 +33,13 @@
     but this works iff the object is instantiated by a proxy (and not, e.g., using a server certificate)
 
 """
-import os
 import _thread
+
 from diraccfg import CFG
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals
+
+from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Core.Utilities import LockRing
 from DIRAC.Core.Utilities.DErrno import ESECTION
@@ -98,9 +62,7 @@ class Operations:
         """
         self.__uVO = vo
         self.__uGroup = group
-        self.__uSetup = setup
         self.__vo = False
-        self.__setup = False
         self.__discoverSettings()
 
     def __discoverSettings(self):
@@ -119,12 +81,6 @@ class Operations:
             result = getVOfromProxyGroup()
             if result["OK"]:
                 self.__vo = result["Value"]
-        # Set the setup
-        self.__setup = False
-        if self.__uSetup:
-            self.__setup = self.__uSetup
-        else:
-            self.__setup = CSGlobals.getSetup()
 
     def __getCache(self):
         Operations.__cacheLock.acquire()
@@ -134,7 +90,7 @@ class Operations:
                 Operations.__cache = {}
                 Operations.__cacheVersion = currentVersion
 
-            cacheKey = (self.__vo, self.__setup)
+            cacheKey = (self.__vo,)
             if cacheKey in Operations.__cache:
                 return Operations.__cache[cacheKey]
 
@@ -155,14 +111,13 @@ class Operations:
                 pass
 
     def __getSearchPaths(self):
-        paths = ["/Operations/Defaults", f"/Operations/{self.__setup}"]
+        paths = ["/Operations/Defaults"]
         if not self.__vo:
             globalVO = CSGlobals.getVO()
             if not globalVO:
                 return paths
             self.__vo = CSGlobals.getVO()
-        paths.append(f"/Operations/{self.__vo}/Defaults")
-        paths.append(f"/Operations/{self.__vo}/{self.__setup}")
+        paths.append(f"/Operations/{self.__vo}/")
         return paths
 
     def getValue(self, optionPath, defaultValue=None):
@@ -201,26 +156,6 @@ class Operations:
         for opName in sectionCFG.listOptions():
             data[opName] = sectionCFG[opName]
         return S_OK(data)
-
-    def getPath(self, option, vo=False, setup=False):
-        """
-        Generate the CS path for an option:
-
-          - if vo is not defined, the helper's vo will be used for multi VO installations
-          - if setup evaluates False (except None) -> The helpers setup will  be used
-          - if setup is defined -> whatever is defined will be used as setup
-          - if setup is None -> Defaults will be used
-
-        :param option: path with respect to the Operations standard path
-        :type option: string
-        """
-
-        for path in self.__getSearchPaths():
-            optionPath = os.path.join(path, option)
-            value = gConfig.getValue(optionPath, "NoValue")
-            if value != "NoValue":
-                return optionPath
-        return ""
 
     def getMonitoringBackends(self, monitoringType=None):
         """

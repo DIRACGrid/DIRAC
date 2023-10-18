@@ -1,8 +1,8 @@
 """ Collection of user jobs for testing purposes
 """
 # pylint: disable=wrong-import-position, invalid-name
-import unittest
 import time
+import unittest
 
 import DIRAC
 
@@ -34,6 +34,10 @@ class submitSuccess(GridSubmissionTestCase):
     def test_submit(self):
         """submit jobs defined in DIRAC.tests.Utilities.testJobDefinitions"""
         res = helloWorld()
+        self.assertTrue(res["OK"])
+        jobsSubmittedList.append(res["Value"])
+
+        res = helloWorldJenkins()
         self.assertTrue(res["OK"])
         jobsSubmittedList.append(res["Value"])
 

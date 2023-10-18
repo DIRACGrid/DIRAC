@@ -2,8 +2,8 @@
 """
 Determine number of processors and memory for the worker node
 """
-from DIRAC.Core.Base.Script import Script
 from DIRAC import gLogger
+from DIRAC.Core.Base.Script import Script
 from DIRAC.WorkloadManagementSystem.Utilities import JobParameters
 
 ceName = ""
@@ -39,11 +39,8 @@ def main():
     gLogger.info("Getting number of processors")
     numberOfProcessor = JobParameters.getNumberOfProcessors(Site, ceName, Queue)
 
-    gLogger.info("Getting memory (RAM) from MJF")
-    maxRAM = JobParameters.getMemoryFromMJF()
-    if not maxRAM:
-        gLogger.info("maxRAM could not be found in MJF, using JobParameters.getMemoryFromProc()")
-        maxRAM = JobParameters.getMemoryFromProc()
+    gLogger.info("Getting memory (RAM)")
+    maxRAM = JobParameters.getMemoryFromProc()
 
     gLogger.info("Getting number of GPUs")
     numberOfGPUs = JobParameters.getNumberOfGPUs(Site, ceName, Queue)

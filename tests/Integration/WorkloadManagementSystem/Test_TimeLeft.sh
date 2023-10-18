@@ -17,7 +17,7 @@ fi
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 ###############################################################################
-# Can't find anywhere a batch plugin, not even MJF
+# Can't find anywhere a batch plugin
 
 dirac-wms-get-queue-cpu-time --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
 
@@ -27,37 +27,3 @@ else
   echo -e "\nSomething wrong!\n\n" >&2
   exit 1
 fi
-
-
-###############################################################################
-# Found MJF, not reading it (not a directory)
-
-export MACHINEFEATURES="${SCRIPT_DIR}/sb.cfg"
-export JOBFEATURES="${SCRIPT_DIR}/sb.cfg"
-
-dirac-wms-get-queue-cpu-time --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
-
-if [[ "${?}" -eq 0 ]]; then
-  echo -e "\nSuccess\n\n"
-else
-  echo -e "\nSomething wrong!\n\n" >&2
-  exit 1
-fi
-
-
-###############################################################################
-# Found MJF, gave proper values
-
-export MACHINEFEATURES=${SCRIPT_DIR}/MJF/
-export JOBFEATURES=${SCRIPT_DIR}/MJF/
-
-dirac-wms-get-queue-cpu-time --cfg "${SCRIPT_DIR}/pilot.cfg" $DEBUG
-
-if [[ "${?}" -eq 0 ]]; then
-  echo -e "\nSuccess\n\n"
-else
-  echo -e "\nSomething wrong!\n\n" >&2
-  exit 1
-fi
-
-exit 0

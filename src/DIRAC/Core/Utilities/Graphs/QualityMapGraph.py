@@ -168,10 +168,11 @@ class QualityMapGraph(PlotBase):
         setp(self.ax.get_yticklines(), markersize=0.0)  # pylint: disable=not-callable
 
         cax, kw = make_axes(self.ax, orientation="vertical", fraction=0.07)
-        cb = ColorbarBase(
+        # ColorbarBase is used to generate the colors within the legend at the right of the plot
+        ColorbarBase(
             cax, cmap=self.cmap, norm=self.norms, boundaries=self.cbBoundaries, values=self.cbValues, ticks=self.cbTicks
         )
-        cb.draw_all()
+        self.figure.draw_without_rendering()
         # cb = self.ax.colorbar( self.mapper, format="%d%%",
         #  orientation='horizontal', fraction=0.04, pad=0.1, aspect=40  )
         # setp( cb.outline, linewidth=.5 )

@@ -1,5 +1,11 @@
 version: '3.4'
 
+volumes:
+  # Volume used to store the config of diracx
+  diracx-cs-store:
+  # Volume used to store the pair of keys to sign the tokens
+  diracx-key-store:
+
 services:
   mysql:
     image: ${MYSQL_VER}
@@ -13,6 +19,7 @@ services:
       timeout: 20s
       retries: 10
       start_period: 60s
+    pull_policy: always
 
   elasticsearch:
     image: ${ES_VER}
@@ -27,6 +34,7 @@ services:
       timeout: 2s
       retries: 15
       start_period: 60s
+    pull_policy: always
 
   iam-login-service:
     image: ${IAM_VER}
@@ -41,7 +49,7 @@ services:
       timeout: 2s
       retries: 15
       start_period: 60s
-
+    pull_policy: always
 
   # Mock of an S3 storage
   s3-direct:
@@ -54,19 +62,45 @@ services:
     environment:
       - initialBuckets=my-first-bucket
       - debug=true
+    pull_policy: always
+
+  diracx-wait-for-db:
+    image: ${MYSQL_VER}
+    container_name: diracx-wait-for-db
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command: /home/dirac/LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/CI/check_db_initialized.sh
+    pull_policy: always
 
   dirac-server:
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
     container_name: server
     hostname: server
     user: "${DIRAC_UID}:${DIRAC_GID}"
+
     depends_on:
       mysql:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
+      s3-direct:
+        condition: service_started
+      iam-login-service:
+        condition: service_started
+      diracx-init-key:
+        condition: service_completed_successfully # Let the init container create the singing key
+      diracx-init-cs:
+        condition: service_completed_successfully # Let the init container create the cs
     ulimits:
       nofile: 8192
+    volumes:
+      - diracx-cs-store:/cs_store
+      - diracx-key-store:/signing-key
+    environment:
+      - DIRACX_CONFIG_BACKEND_URL=git+file:///cs_store/initialRepo
+      - DIRACX_SERVICE_AUTH_TOKEN_KEY=file:///signing-key/rs256.key
+    pull_policy: always
 
   dirac-client:
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
@@ -77,3 +111,75 @@ services:
       - dirac-server
     ulimits:
       nofile: 8192
+    pull_policy: always
+
+  diracx-init-key:
+    image: ghcr.io/diracgrid/diracx/server
+    container_name: diracx-init-key
+    environment:
+      - DIRACX_SERVICE_AUTH_TOKEN_KEY="file:///signing-key/rs256.key"
+    volumes:
+      - diracx-key-store:/signing-key/
+    # We need to allow everybody to read the private keys
+    # Because the users are different between the DIRAC and DiracX containers
+    entrypoint: |
+      /dockerMicroMambaEntrypoint.sh bash -c "ssh-keygen -P '' -trsa -b4096 -mPEM -f/signing-key/rs256.key && /dockerMicroMambaEntrypoint.sh chmod o+r /signing-key/rs256.*"
+    pull_policy: always
+
+  diracx-init-cs:
+    image: ghcr.io/diracgrid/diracx/server
+    container_name: diracx-init-cs
+    environment:
+      - DIRACX_CONFIG_BACKEND_URL=git+file:///cs_store/initialRepo
+      - DIRACX_SERVICE_AUTH_TOKEN_KEY=file:///signing-key/rs256.key
+    volumes:
+      - diracx-cs-store:/cs_store/
+      - diracx-key-store:/signing-key/
+    entrypoint: |
+      /dockerMicroMambaEntrypoint.sh bash -xc 'dirac internal generate-cs /cs_store/initialRepo --vo=vo --user-group=dirac_user --idp-url=http://dsdsd.csds/a/b'
+    pull_policy: always
+
+  diracx-init-db:
+    image: ghcr.io/diracgrid/diracx/server
+    container_name: diracx-init-db
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      - DIRACX_DB_URL_AUTHDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXAuthDB
+    entrypoint: |
+      /dockerMicroMambaEntrypoint.sh bash -xc 'micromamba install --yes -c conda-forge mysql-client && mysql -h mysql -u root --password=password -e "CREATE DATABASE DiracXAuthDB" && mysql -h mysql -u root --password=password -e "GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES,CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE ON DiracXAuthDB.* TO Dirac@'"'"'%'"'"'" && python -m diracx.db init-sql'
+    pull_policy: always
+
+  diracx:
+    image: ghcr.io/diracgrid/diracx/server
+    container_name: diracx
+    environment:
+      - DIRACX_CONFIG_BACKEND_URL=git+file:///cs_store/initialRepo
+      - DIRACX_DB_URL_AUTHDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXAuthDB
+      - DIRACX_DB_URL_JOBDB=mysql+aiomysql://Dirac:Dirac@mysql/JobDB
+      - DIRACX_DB_URL_JOBLOGGINGDB=mysql+aiomysql://Dirac:Dirac@mysql/JobLoggingDB
+      - DIRACX_DB_URL_SANDBOXMETADATADB=mysql+aiomysql://Dirac:Dirac@mysql/SandboxMetadataDB
+      - DIRACX_SERVICE_AUTH_TOKEN_KEY=file:///signing-key/rs256.key
+      - DIRACX_SERVICE_AUTH_ALLOWED_REDIRECTS=["http://diracx:8000/docs/oauth2-redirect"]
+      # Obtained with echo 'InsecureChangeMe' | base64 -d | openssl sha256
+      - DIRACX_LEGACY_EXCHANGE_HASHED_API_KEY=07cddf6948d316ac9d186544dc3120c4c6697d8f994619665985c0a5bf76265a
+      - DIRACX_SERVICE_JOBS_ENABLED=false
+    ports:
+      - 8000:8000
+    depends_on:
+      diracx-init-db:
+        condition: service_completed_successfully
+      diracx-wait-for-db:
+        condition: service_completed_successfully
+    volumes:
+      - diracx-cs-store:/cs_store/
+      - diracx-key-store:/signing-key/
+
+    healthcheck:
+      test: ["CMD", "/dockerMicroMambaEntrypoint.sh", "curl", "-f", "http://localhost:8000/.well-known/openid-configuration"]
+      interval: 5s
+      timeout: 2s
+      retries: 15
+      start_period: 60s
+    pull_policy: always

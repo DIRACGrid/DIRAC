@@ -425,6 +425,7 @@ class DiracAdmin(API):
 
         :param job: JobID
         :type job: integer or string
+        :param str directory: a directory to download logs to.
         :return: S_OK,S_ERROR
         """
         if not directory:
@@ -468,13 +469,13 @@ class DiracAdmin(API):
 
     #############################################################################
     def getPilotOutput(self, gridReference, directory=""):
-        """Retrieve the pilot output  (std.out and std.err) for an existing job in the WMS.
+        """Retrieve the pilot output  (std.out and std.err) for an existing pilot reference.
 
           >>> gLogger.notice(dirac.getJobPilotOutput(12345))
           {'OK': True, 'Value': {}}
 
-        :param job: JobID
-        :type job: integer or string
+        :param str gridReference: pilot reference
+        :param str directory: a directory to download logs to.
         :return: S_OK,S_ERROR
         """
         if not isinstance(gridReference, str):

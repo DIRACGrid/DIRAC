@@ -7,6 +7,7 @@
       :caption: ProxyManager options
 """
 from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -405,6 +406,20 @@ class ProxyManagerHandlerMixin:
             return result
         self.__proxyDB.logAction("download voms proxy with token", credDict["DN"], credDict["group"], userDN, userGroup)
         return self.__getVOMSProxy(userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, True)
+
+    types_exchangeProxyForToken = []
+
+    @convertToReturnValue
+    def export_exchangeProxyForToken(self):
+        """Exchange a proxy for an equivalent token to be used with diracx"""
+        from DIRAC.FrameworkSystem.Utilities.diracx import get_token
+
+        credDict = self.getRemoteCredentials()
+        return get_token(
+            credDict["username"],
+            credDict["group"],
+            set(credDict.get("groupProperties", []) + credDict.get("properties", [])),
+        )
 
 
 class ProxyManagerHandler(ProxyManagerHandlerMixin, RequestHandler):

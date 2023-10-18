@@ -1,3 +1,94 @@
+[v8.1.0a23]
+
+*TransformationSystem
+
+NEW: (#7239) TransformationCleaningAgent: Use the RequestManagementSystem to asynchronously remove files, rather than serially in the agent run
+
+[v8.1.0a22]
+
+*WorkloadManagementSystem
+
+FIX: (#7238) Output sandbox are assigned when using DiracX
+CHANGE: (#7237) Removed interaction with MJF
+FIX: (#7226) SiteDirector adds wnVO Pilot options, if needed
+CHANGE: (#7215) add VO info in the table Jobs of JobDB
+
+*WorkloadManagement
+
+FIX: (#7234) AREX does not return an error if delegation not found
+FIX: (#7230) Group to vo conversion in TaskQueueDB
+
+*ConfigurationSystem
+
+CHANGE: (#7225) explicitly state the VO in each default group upon installation
+
+*DiracX
+
+CHANGE: (#7222) Get a access/refresh token pair when generating a proxy
+NEW: (#7222) Support using diracx as backend for the SandboxStoreHandler
+
+[v8.1.0a21]
+
+*Core
+
+FIX: (#7216) replace ColorBar.draw_all() with figure.draw_without_rendering()
+
+*WorkloadManagement
+
+FIX: (#7213) emove OwnerDN from SiteDirector & PilotStatus
+
+*WorkloadManagementSystem
+
+CHANGE: (#7190) add VO info in TaskQueueDB
+FIX: (#7187) code simplification for SandboxStoreClient
+
+[v8.1.0a20]
+
+*Test
+
+FIX: (#7206) manually start the extra services when running the integration test
+NEW: (#7143) allow integration tests to run against DiracX
+
+*TransformationSystem
+
+CHANGE: (#7204) TransformationCleaningAgent removes files by chunk
+FIX: (#7200) Drop TS permission check for all read-only functions
+
+*WorkloadManagement
+
+FIX: (#7201) JobMonitoringClient uses the new DiracClient class
+CHANGE: (#7194) Job.setNumberOfProcessors raises an exception if the function arguments aren't valid.
+
+Please follow the template:
+
+*WorkloadManagementSystem
+
+FIX: (#7196) do not try to insert nan values in AccountingDB
+NEW: (#7143) call the diracx Job Monitoring endpoint
+NEW: (#7105) Enhance dirac-admin-get-pilot-output to download remote pilot logs. Currently only from a SE.
+
+*FrameworkSystem
+
+FIX: (#7192) replace create_access_token with create_token
+
+*ConfigurationSystem
+
+CHANGE: (#7143) do not look for the shifter under the Default or <Setup> section
+
+*Core
+
+NEW: (#7143) get a token for a proxy
+
+[v8.1.0a19]
+
+*ConfigurationSystem
+
+CHANGE: (#7182) VOMS2CS agent only sends a mail in case of change in the CS
+
+*WorkloadManagementSystem
+
+FIX: (#7180) passing pilotDN instead of owner in getPilotProxyFromVOMSGroup()
+
 [v8.1.0a18]
 
 *Production

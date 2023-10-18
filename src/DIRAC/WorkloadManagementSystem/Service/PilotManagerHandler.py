@@ -6,12 +6,12 @@ import datetime
 
 from DIRAC import S_OK, S_ERROR
 import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
-
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Utilities.Decorators import deprecated
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+from DIRAC.Core.DISET.RequestHandler import getServiceOption
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import (
     getPilotCE,
@@ -35,6 +35,10 @@ class PilotManagerHandler(RequestHandler):
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp}")
 
+        # prepare remote pilot plugin initialization
+        defaultOption, defaultClass = "DownloadPlugin", "FileCacheDownloadPlugin"
+        cls.configValue = getServiceOption(serviceInfoDict, defaultOption, defaultClass)
+        cls.loggingPlugin = None
         return S_OK()
 
     ##############################################################################
@@ -79,7 +83,7 @@ class PilotManagerHandler(RequestHandler):
     ):
         """Add a new pilot job reference"""
 
-        return cls.pilotAgentsDB.addPilotTQReference(pilotRef, taskQueueID, gridType, pilotStampDict)
+        return cls.pilotAgentsDB.addPilotTQReference(pilotRef, taskQueueID, ownerGroup, gridType, pilotStampDict)
 
     types_addPilotTQRef = [list, int, str]
 
@@ -92,9 +96,16 @@ class PilotManagerHandler(RequestHandler):
     types_getPilotOutput = [str]
 
     def export_getPilotOutput(self, pilotReference):
-        """Get the pilot job standard output and standard error files for the Grid
-        job reference
         """
+        Get the pilot job standard output and standard error files for a pilot reference.
+        Handles both classic, CE-based logs and remote logs. The type of logs returned is determined
+        by the server.
+
+        :param str pilotReference:
+        :return: S_OK or S_ERROR Dirac object
+        :rtype: dict
+        """
+
         result = self.pilotAgentsDB.getPilotInfo(pilotReference)
         if not result["OK"]:
             self.log.error("Failed to get info for pilot", result["Message"])
@@ -104,6 +115,26 @@ class PilotManagerHandler(RequestHandler):
             return S_ERROR("Pilot info is empty")
 
         pilotDict = result["Value"][pilotReference]
+        vo = getVOForGroup(pilotDict["OwnerGroup"])
+        opsHelper = Operations(vo=vo)
+        remote = opsHelper.getValue("Pilot/RemoteLogsPriority", False)
+        # classic logs first, by default
+        funcs = [self._getPilotOutput, self._getRemotePilotOutput]
+        if remote:
+            funcs.reverse()
+
+        result = funcs[0](pilotReference, pilotDict)
+        if not result["OK"]:
+            self.log.warn("Pilot log retrieval failed (first attempt), remote ?", remote)
+            result = funcs[1](pilotReference, pilotDict)
+            return result
+        else:
+            return result
+
+    def _getPilotOutput(self, pilotReference, pilotDict):
+        """Get the pilot job standard output and standard error files for the Grid
+        job reference
+        """
 
         group = pilotDict["OwnerGroup"]
 
@@ -157,6 +188,39 @@ class PilotManagerHandler(RequestHandler):
         resultDict["FileList"] = []
         shutil.rmtree(ce.ceParameters["WorkingDirectory"])
         return S_OK(resultDict)
+
+    def _getRemotePilotOutput(self, pilotReference, pilotDict):
+        """
+        Get remote pilot log files.
+
+        :param str pilotReference:
+        :return: S_OK Dirac object
+        :rtype: dict
+        """
+
+        pilotStamp = pilotDict["PilotStamp"]
+        group = pilotDict["OwnerGroup"]
+        vo = getVOForGroup(group)
+
+        if self.loggingPlugin is None:
+            result = ObjectLoader().loadObject(
+                f"WorkloadManagementSystem.Client.PilotLoggingPlugins.{self.configValue}", self.configValue
+            )
+            if not result["OK"]:
+                self.log.error("Failed to load LoggingPlugin", f"{self.configValue}: {result['Message']}")
+                return result
+
+            componentClass = result["Value"]
+            self.loggingPlugin = componentClass()
+            self.log.info("Loaded: PilotLoggingPlugin class", self.configValue)
+
+        res = self.loggingPlugin.getRemotePilotLogs(pilotStamp, vo)
+
+        if res["OK"]:
+            res["Value"]["OwnerGroup"] = group
+            res["Value"]["FileList"] = []
+        # return res, correct or not
+        return res
 
     ##############################################################################
     types_getPilotInfo = [[list, str]]

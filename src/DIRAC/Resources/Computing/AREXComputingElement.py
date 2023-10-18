@@ -285,8 +285,8 @@ class AREXComputingElement(ARCComputingElement):
         # Submit the POST request to get the delegation
         result = self._request("get", query)
         if not result["OK"]:
-            self.log.error("Issue while interacting with the delegations.", result["Message"])
-            return S_ERROR("Issue while interacting with the delegations")
+            self.log.warn("Issue while interacting with the delegations.", result["Message"])
+            return S_OK([])
         response = result["Value"]
 
         # If there is no delegation, response.json is expected to return an exception
@@ -320,7 +320,7 @@ class AREXComputingElement(ARCComputingElement):
         # Submit the POST request to get the delegation
         result = self._request("post", query, params=params)
         if not result["OK"]:
-            self.log.error("Issue while interacting with the delegations.", result["Message"])
+            self.log.error("Issue while interacting with delegation ", f"{delegationID}: {result['Message']}")
             return S_ERROR("Issue while interacting with the delegations")
         response = result["Value"]
 
@@ -414,7 +414,7 @@ class AREXComputingElement(ARCComputingElement):
 
         self.log.verbose(f"Executable file path: {executableFile}")
 
-        # Get a delegation and use the same delegation for all the jobs
+        # Get existing delegations
         result = self._getDelegationIDs()
         if not result["OK"]:
             self.log.error("Could not get delegation IDs.", result["Message"])
@@ -428,7 +428,7 @@ class AREXComputingElement(ARCComputingElement):
             # Get the proxy attached to the delegationID
             result = self._getProxyFromDelegationID(delegationID)
             if not result["OK"]:
-                return result
+                continue
             proxy = result["Value"]
 
             if proxy.getDIRACGroup() != proxyGroup:

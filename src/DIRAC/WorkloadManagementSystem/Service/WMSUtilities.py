@@ -1,18 +1,21 @@
 """ A set of utilities used in the WMS services
     Requires the Nordugrid ARC plugins. In particular : nordugrid-arc-python
 """
-from tempfile import mkdtemp
 import shutil
+from tempfile import mkdtemp
 
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN, getVOForGroup
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
+    getDNForUsername,
+    getGroupOption,
+    getVOForGroup,
+)
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.PilotScopes import PILOT_SCOPES
-
 
 # List of files to be inserted/retrieved into/from pilot Output Sandbox
 # first will be defined as StdOut in JDL and the second as StdErr
@@ -56,13 +59,20 @@ def getPilotProxy(pilotDict):
     :param dict pilotDict: pilot parameters
     :return: S_OK/S_ERROR with proxy as Value
     """
-    ownerDN = pilotDict["OwnerDN"]
-    group = pilotDict["OwnerGroup"]
+    pilotGroup = pilotDict["OwnerGroup"]
 
-    groupVOMS = getGroupOption(group, "VOMSRole", group)
-    result = gProxyManager.getPilotProxyFromVOMSGroup(ownerDN, groupVOMS)
+    pilotDN = Operations(vo=getVOForGroup(pilotGroup)).getValue("Pilot/GenericPilotDN")
+    if not pilotDN:
+        owner = Operations(vo=getVOForGroup(pilotGroup)).getValue("Pilot/GenericPilotUser")
+        res = getDNForUsername(owner)
+        if not res["OK"]:
+            return S_ERROR(f"Cannot get the generic pilot DN: {res['Message']}")
+        pilotDN = res["Value"][0]
+
+    groupVOMS = getGroupOption(pilotGroup, "VOMSRole", pilotGroup)
+    result = gProxyManager.getPilotProxyFromVOMSGroup(pilotDN, groupVOMS)
     if not result["OK"]:
-        gLogger.error("Could not get proxy:", f"User \"{ownerDN}\" Group \"{groupVOMS}\" : {result['Message']}")
+        gLogger.error("Could not get proxy:", f"User \"{pilotDN}\" Group \"{groupVOMS}\" : {result['Message']}")
         return S_ERROR("Failed to get the pilot's owner proxy")
     return result
 
@@ -124,19 +134,20 @@ def killPilotsInQueues(pilotRefDict):
         ce = result["Value"]
 
         pilotDN = Operations(vo=getVOForGroup(pilotGroup)).getValue("Pilot/GenericPilotDN")
-
-        if pilotGroup and pilotDN:
-            res = getUsernameForDN(pilotDN)
+        if not pilotDN:
+            owner = Operations(vo=getVOForGroup(pilotGroup)).getValue("Pilot/GenericPilotUser")
+            res = getDNForUsername(owner)
             if not res["OK"]:
-                return res
-            owner = res["Value"]
-            group = getGroupOption(pilotGroup, "VOMSRole", pilotGroup)
-            ret = gProxyManager.getPilotProxyFromVOMSGroup(owner, group)
-            if not ret["OK"]:
-                gLogger.error("Could not get proxy:", f"User '{owner}' Group '{group}' : {ret['Message']}")
-                return S_ERROR("Failed to get the pilot's owner proxy")
-            proxy = ret["Value"]
-            ce.setProxy(proxy)
+                return S_ERROR(f"Cannot get the generic pilot DN: {res['Message']}")
+            pilotDN = res["Value"][0]
+
+        group = getGroupOption(pilotGroup, "VOMSRole", pilotGroup)
+        ret = gProxyManager.getPilotProxyFromVOMSGroup(pilotDN, group)
+        if not ret["OK"]:
+            gLogger.error("Could not get proxy:", f"User '{pilotDN}' Group '{group}' : {ret['Message']}")
+            return S_ERROR("Failed to get the pilot's owner proxy")
+        proxy = ret["Value"]
+        ce.setProxy(proxy)
 
         pilotList = pilotDict["PilotList"]
         result = ce.killJob(pilotList)

@@ -16,6 +16,9 @@ Example:
 import os
 import sys
 import copy
+import datetime
+import json
+from pathlib import Path
 from prompt_toolkit import prompt, print_formatted_text as print, HTML
 
 import DIRAC
@@ -26,6 +29,8 @@ from DIRAC.Core.Security.ProxyFile import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Base.Script import Script
+from DIRAC.Core.Base.Client import Client
+
 
 # At this point, we disable CS synchronization so that an error related
 # to the lack of a proxy certificate does not occur when trying to synchronize.
@@ -304,7 +309,38 @@ class Params:
             # Upload proxy to the server if it longer that uploaded one
             if credentials["secondsLeft"] > uploadedProxyLifetime:
                 gLogger.notice("Upload proxy to server.")
-                return gProxyManager.uploadProxy(proxy)
+                res = gProxyManager.uploadProxy(proxy)
+                if not res["OK"]:
+                    return res
+
+            # Get a token for use with diracx
+            vo = getVOMSVOForGroup(self.group)
+            enabledVOs = gConfig.getValue("/DiracX/EnabledVOs", [])
+            if vo in enabledVOs:
+                from diracx.core.utils import write_credentials  # pylint: disable=import-error
+                from diracx.core.models import TokenResponse  # pylint: disable=import-error
+                from diracx.core.preferences import DiracxPreferences  # pylint: disable=import-error
+
+                res = Client(url="Framework/ProxyManager").exchangeProxyForToken()
+                if not res["OK"]:
+                    return res
+                token_content = res["Value"]
+
+                diracxUrl = gConfig.getValue("/DiracX/URL")
+                if not diracxUrl:
+                    return S_ERROR("Missing mandatory /DiracX/URL configuration")
+
+                preferences = DiracxPreferences(url=diracxUrl)
+                write_credentials(
+                    TokenResponse(
+                        access_token=token_content["access_token"],
+                        expires_in=token_content["expires_in"],
+                        token_type=token_content.get("token_type"),
+                        refresh_token=token_content.get("refresh_token"),
+                    ),
+                    location=preferences.credentials_path,
+                )
+
         return S_OK()
 
     def __enableCS(self):

@@ -842,7 +842,6 @@ class SiteDirector(AgentModule):
                 pilotsList,
                 tqID,
                 self.pilotGroup,
-                self.localhost,
                 self.queueDict[queue]["CEType"],
                 stampDict,
             )
@@ -1032,6 +1031,9 @@ class SiteDirector(AgentModule):
         pilotOptions.append(f"-Q {self.queueDict[queue]['QueueName']}")
         # SiteName
         pilotOptions.append(f"-n {queueDict['Site']}")
+        # VO
+        if self.vo:
+            pilotOptions.append(f"--wnVO={self.vo}")
 
         # Generic Options
         if "GenericOptions" in queueDict:
@@ -1339,7 +1341,7 @@ class SiteDirector(AgentModule):
             pA = PilotAccounting()
             pA.setEndTime(pilotDict[pRef]["LastUpdateTime"])
             pA.setStartTime(pilotDict[pRef]["SubmissionTime"])
-            retVal = Registry.getUsernameForDN(pilotDict[pRef]["OwnerDN"])
+            retVal = Registry.getUsernameForDN(self.pilotDN)
             if not retVal["OK"]:
                 username = "unknown"
                 self.log.error("Can't determine username for dn", pilotDict[pRef]["OwnerDN"])

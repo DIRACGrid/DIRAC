@@ -1,61 +1,9 @@
-""" DIRAC Workload Management System utility module to get available memory and processors from mjf
+""" DIRAC Workload Management System utility module to get available memory and processors
 """
-import os
 import multiprocessing
-from urllib.request import urlopen
 
-from DIRAC import gLogger, gConfig
+from DIRAC import gConfig, gLogger
 from DIRAC.Core.Utilities.List import fromChar
-
-
-def getJobFeatures():
-    features = {}
-    if "JOBFEATURES" not in os.environ:
-        return features
-    for item in (
-        "allocated_cpu",
-        "hs06_job",
-        "shutdowntime_job",
-        "grace_secs_job",
-        "jobstart_secs",
-        "job_id",
-        "wall_limit_secs",
-        "cpu_limit_secs",
-        "max_rss_bytes",
-        "max_swap_bytes",
-        "scratch_limit_bytes",
-    ):
-        fname = os.path.join(os.environ["JOBFEATURES"], item)
-        try:
-            val = urlopen(fname).read()
-        except Exception:
-            val = 0
-        features[item] = val
-    return features
-
-
-def getProcessorFromMJF():
-    jobFeatures = getJobFeatures()
-    if jobFeatures:
-        try:
-            return int(jobFeatures["allocated_cpu"])
-        except KeyError:
-            gLogger.error(
-                "MJF is available but allocated_cpu is not an integer", repr(jobFeatures.get("allocated_cpu"))
-            )
-    return None
-
-
-def getMemoryFromMJF():
-    jobFeatures = getJobFeatures()
-    if jobFeatures:
-        try:
-            return int(jobFeatures["max_rss_bytes"])
-        except KeyError:
-            gLogger.error(
-                "MJF is available but max_rss_bytes is not an integer", repr(jobFeatures.get("max_rss_bytes"))
-            )
-    return None
 
 
 def getMemoryFromProc():
@@ -72,10 +20,9 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
 
     Tries to find it in this order:
     1) from the /Resources/Computing/CEDefaults/NumberOfProcessors (which is what the pilot fills up)
-    2) if not present from JobFeatures
-    3) if not present looks in CS for "NumberOfProcessors" Queue or CE option
-    4) if not present but there's WholeNode tag, look what the WN provides using multiprocessing.cpu_count()
-    5) return 1
+    2) if not present looks in CS for "NumberOfProcessors" Queue or CE option
+    3) if not present but there's WholeNode tag, look what the WN provides using multiprocessing.cpu_count()
+    4) return 1
     """
 
     # 1) from /Resources/Computing/CEDefaults/NumberOfProcessors
@@ -84,14 +31,7 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
     if numberOfProcessors:
         return numberOfProcessors
 
-    # 2) from MJF
-    gLogger.info("Getting numberOfProcessors from MJF")
-    numberOfProcessors = getProcessorFromMJF()
-    if numberOfProcessors:
-        return numberOfProcessors
-    gLogger.info("NumberOfProcessors could not be found in MJF")
-
-    # 3) looks in CS for "NumberOfProcessors" Queue or CE or site option
+    # 2) looks in CS for "NumberOfProcessors" Queue or CE or site option
     if not siteName:
         siteName = gConfig.getValue("/LocalSite/Site", "")
     if not gridCE:
@@ -116,7 +56,7 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
         if numberOfProcessors:
             return numberOfProcessors
 
-    # 4) looks in CS for tags
+    # 3) looks in CS for tags
     gLogger.info(f"Getting tagsfor {siteName}: {gridCE}: {queue}")
     # Tags of the CE
     tags = fromChar(
@@ -133,45 +73,7 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
         gLogger.info("Found WholeNode tag, using multiprocessing.cpu_count()")
         return multiprocessing.cpu_count()
 
-    # 5) return the default
-    return 1
-
-
-def getNumberOfPayloadProcessors(siteName=None, gridCE=None, queue=None):
-    """Gets the number of processors allowed for a single JobAgent (so for a "inner" CE).
-    (NB: this does not refer to the job processors).
-    This is normally used ONLY when a pilot instantiates more than one JobAgent (MultiLaunchAgent pilot command).
-
-    The siteName/gridCE/queue parameters are normally not necessary.
-
-    Tries to find it in this order:
-    1) from the /Resources/Computing/CEDefaults/NumberOfPayloadProcessors (which is what pilot 3 fills up)
-    2) if not present but there's WholeNode tag, use the getNumberOfProcessors function above
-    3) otherwise returns 1
-    """
-
-    # 1) from /Resources/Computing/CEDefaults/NumberOfPayloadProcessors
-    gLogger.info("Getting NumberOfPayloadProcessors from /Resources/Computing/CEDefaults/NumberOfPayloadProcessors")
-    NumberOfPayloadProcessors = gConfig.getValue("/Resources/Computing/CEDefaults/NumberOfPayloadProcessors")
-    if NumberOfPayloadProcessors:
-        return NumberOfPayloadProcessors
-
-    # 2) Checks if 'WholeNode' is one of the used tags
-    # Tags of the CE
-    tags = fromChar(
-        gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/CEs/{gridCE}/Tag", "")
-    ) + fromChar(gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/Cloud/{gridCE}/Tag", ""))
-    # Tags of the Queue
-    tags += fromChar(
-        gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/CEs/{gridCE}/Queues/{queue}/Tag", "")
-    ) + fromChar(
-        gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/Cloud/{gridCE}/VMTypes/{queue}/Tag", "")
-    )
-
-    if "WholeNode" in tags:
-        return getNumberOfProcessors()
-
-    # 3) Just returns a conservative "1"
+    # 4) return the default
     return 1
 
 

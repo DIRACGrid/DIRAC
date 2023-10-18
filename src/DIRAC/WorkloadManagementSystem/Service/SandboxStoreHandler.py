@@ -9,11 +9,13 @@
 """
 import hashlib
 import os
+import requests
 import tempfile
 import threading
 import time
 
-from DIRAC import S_ERROR, S_OK, gLogger
+from DIRAC import S_ERROR, S_OK, gLogger, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security import Locations, Properties, X509Certificate
 from DIRAC.Core.Utilities.File import mkDir
@@ -49,6 +51,7 @@ class SandboxStoreHandlerMixin:
     def initializeRequest(self):
         self.__backend = self.getCSOption("Backend", "local")
         self.__localSEName = self.getCSOption("LocalSE", "SandboxSE")
+        self._useDiracXBackend = self.getCSOption("UseDiracXBackend", False)
         self._maxUploadBytes = self.getCSOption("MaxSandboxSizeMiB", 10) * 1048576
         if self.__backend.lower() == "local" or self.__backend == self.__localSEName:
             self.__useLocalStorage = True
@@ -106,6 +109,58 @@ class SandboxStoreHandlerMixin:
         gLogger.info("Upload requested", f"for {aHash} [{extension}]")
 
         credDict = self.getRemoteCredentials()
+        vo = Registry.getVOForGroup(credDict["group"])
+
+        enabledVOs = gConfig.getValue("/DiracX/EnabledVOs", [])
+        if self._useDiracXBackend and vo in enabledVOs:
+            from DIRAC.FrameworkSystem.Utilities.diracx import TheImpersonator
+            from diracx.client.models import SandboxInfo  # pylint: disable=import-error
+
+            gLogger.info("Forwarding to DiracX")
+            with tempfile.TemporaryFile(mode="w+b") as tar_fh:
+                result = fileHelper.networkToDataSink(tar_fh, maxFileSize=self._maxUploadBytes)
+                if not result["OK"]:
+                    return result
+                tar_fh.seek(0)
+
+                hasher = hashlib.sha256()
+                while data := tar_fh.read(512 * 1024):
+                    hasher.update(data)
+                checksum = hasher.hexdigest()
+                tar_fh.seek(0)
+                gLogger.debug("Sandbox checksum is", checksum)
+
+                sandbox_info = SandboxInfo(
+                    checksum_algorithm="sha256",
+                    checksum=checksum,
+                    size=os.stat(tar_fh.fileno()).st_size,
+                    format=extension,
+                )
+
+                with TheImpersonator(credDict) as client:
+                    res = client.jobs.initiate_sandbox_upload(sandbox_info)
+
+                if res.url:
+                    gLogger.debug("Uploading sandbox for", res.pfn)
+                    files = {"file": ("file", tar_fh)}
+
+                    response = requests.post(res.url, data=res.fields, files=files, timeout=300)
+
+                    gLogger.debug("Sandbox uploaded", f"for {res.pfn} with status code {response.status_code}")
+                    # TODO: Handle this error better
+                    try:
+                        response.raise_for_status()
+                    except Exception as e:
+                        return S_ERROR("Error uploading sandbox", repr(e))
+                else:
+                    gLogger.debug("Sandbox already exists in storage backend", res.pfn)
+
+                assignTo = {key: [(res.pfn, assignTo[key])] for key in assignTo}
+                result = self.export_assignSandboxesToEntities(assignTo)
+                if not result["OK"]:
+                    return result
+                return S_OK(res.pfn)
+
         sbPath = self.__getSandboxPath(f"{aHash}.{extension}")
         # Generate the location
         result = self.__generateLocation(sbPath)
@@ -431,6 +486,27 @@ class SandboxStoreHandlerMixin:
         credDict = self.getRemoteCredentials()
         serviceURL = self.serviceInfoDict["URL"]
         filePath = fileID.replace(serviceURL, "")
+
+        # If the PFN starts with S3, we know it has been uploaded to the
+        # S3 sandbox store, so download it from there before sending it
+        if filePath.startswith("/S3"):
+            from DIRAC.FrameworkSystem.Utilities.diracx import TheImpersonator
+
+            with TheImpersonator(credDict) as client:
+                res = client.jobs.get_sandbox_file(pfn=filePath)
+                r = requests.get(res.url)
+                r.raise_for_status()
+                sbData = r.content
+                if fileHelper:
+                    from io import BytesIO
+
+                    result = fileHelper.DataSourceToNetwork(BytesIO(sbData))
+                    # fileHelper.oFile.close()
+                    return result
+                if raw:
+                    return sbData
+                return S_OK(sbData)
+
         result = self.sandboxDB.getSandboxId(self.__localSEName, filePath, credDict["username"], credDict["group"])
         if not result["OK"]:
             return result

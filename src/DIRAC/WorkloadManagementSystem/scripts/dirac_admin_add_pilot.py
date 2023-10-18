@@ -12,7 +12,8 @@ Example:
 
 """
 
-from DIRAC import S_OK, S_ERROR, gLogger, exit as DIRACExit
+from DIRAC import S_ERROR, S_OK, gLogger
+from DIRAC import exit as DIRACExit
 from DIRAC.Core.Base.Script import Script
 
 

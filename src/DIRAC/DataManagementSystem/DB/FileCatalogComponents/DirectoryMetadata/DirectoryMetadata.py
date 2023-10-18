@@ -350,11 +350,8 @@ class DirectoryMetadata:
             return S_OK({})
         metaDict = {}
         for _dID, key, value in result["Value"]:
-            if key in metaDict:
-                if isinstance(metaDict[key], list):
-                    metaDict[key].append(value)
-                else:
-                    metaDict[key] = [metaDict[key]].append(value)
+            if isinstance(metaDict.get(key), list):
+                metaDict[key].append(value)
             else:
                 metaDict[key] = value
 

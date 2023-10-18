@@ -336,9 +336,7 @@ class StorageBase:
         # 2. VO name must not appear as any subdirectory or file name
         lfnSplitList = lfn.split("/")
         voLFN = lfnSplitList[1]
-        # TODO comparison to Sandbox below is for backward compatibility, should
-        # be removed in the next release
-        if voLFN != self.se.vo and voLFN != "SandBox" and voLFN != "Sandbox":
+        if voLFN != self.se.vo and voLFN != "SandBox" and voLFN != "S3":
             return S_ERROR(f"LFN ({lfn}) path must start with VO name ({self.se.vo})")
 
         urlDict = dict(self.protocolParameters)

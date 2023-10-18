@@ -203,6 +203,7 @@ class JobManagerHandlerMixin:
                 self.ownerGroup,
                 initialStatus=initialStatus,
                 initialMinorStatus=initialMinorStatus,
+                vo=getVOForGroup(self.ownerGroup),
             )
             if not result["OK"]:
                 return result

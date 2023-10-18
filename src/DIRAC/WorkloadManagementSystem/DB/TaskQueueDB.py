@@ -1,7 +1,9 @@
 """ TaskQueueDB class is a front-end to the task queues db
 """
+from collections import defaultdict
 import random
 import string
+from typing import Any
 
 from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -97,6 +99,7 @@ class TaskQueueDB(DB):
                 "Owner": "VARCHAR(255) NOT NULL",
                 "OwnerDN": "VARCHAR(255)",
                 "OwnerGroup": "VARCHAR(32) NOT NULL",
+                "VO": "VARCHAR(32) NOT NULL",
                 "CPUTime": "BIGINT(20) UNSIGNED NOT NULL",
                 "Priority": "FLOAT NOT NULL",
                 "Enabled": "TINYINT(1) NOT NULL DEFAULT 0",
@@ -166,6 +169,12 @@ class TaskQueueDB(DB):
         """
         Check a task queue definition dict is valid
         """
+
+        if "OwnerGroup" in tqDefDict:
+            result = self._escapeString(Registry.getVOForGroup(tqDefDict["OwnerGroup"]))
+            if not result["OK"]:
+                return result
+            tqDefDict["VO"] = result["Value"]
 
         for field in singleValueDefFields:
             if field == "CPUTime":
@@ -251,6 +260,8 @@ class TaskQueueDB(DB):
         for field in singleValueDefFields:
             sqlSingleFields.append(field)
             sqlValues.append(tqDefDict[field])
+        sqlSingleFields.append("VO")
+        sqlValues.append(tqDefDict["VO"])
         # Insert the TQ Disabled
         sqlSingleFields.append("Enabled")
         sqlValues.append("0")
@@ -1159,57 +1170,13 @@ FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
         tqDict = dict(result["Value"])
         if not tqDict:
             return S_OK()
-        # Calculate Sum of priorities
-        totalPrio = 0
-        for k in tqDict:
-            if tqDict[k] > 0.1 or not allowBgTQs:
-                totalPrio += tqDict[k]
-        # Update prio for each TQ
-        for tqId in tqDict:
-            if tqDict[tqId] > 0.1 or not allowBgTQs:
-                prio = (share / totalPrio) * tqDict[tqId]
-            else:
-                prio = TQ_MIN_SHARE
-            prio = max(prio, TQ_MIN_SHARE)
-            tqDict[tqId] = prio
 
-        # Generate groups of TQs that will have the same prio=sum(prios) maomenos
         result = self.retrieveTaskQueues(list(tqDict))
         if not result["OK"]:
             return result
         allTQsData = result["Value"]
-        tqGroups = {}
-        for tqid in allTQsData:
-            tqData = allTQsData[tqid]
-            for field in ("Jobs", "Priority") + priorityIgnoredFields:
-                if field in tqData:
-                    tqData.pop(field)
-            tqHash = []
-            for f in sorted(tqData):
-                tqHash.append(f"{f}:{tqData[f]}")
-            tqHash = "|".join(tqHash)
-            if tqHash not in tqGroups:
-                tqGroups[tqHash] = []
-            tqGroups[tqHash].append(tqid)
-        tqGroups = [tqGroups[td] for td in tqGroups]
 
-        # Do the grouping
-        for tqGroup in tqGroups:
-            totalPrio = 0
-            if len(tqGroup) < 2:
-                continue
-            for tqid in tqGroup:
-                totalPrio += tqDict[tqid]
-            for tqid in tqGroup:
-                tqDict[tqid] = totalPrio
-
-        # Group by priorities
-        prioDict = {}
-        for tqId in tqDict:
-            prio = tqDict[tqId]
-            if prio not in prioDict:
-                prioDict[prio] = []
-            prioDict[prio].append(tqId)
+        prioDict = calculate_priority(tqDict, allTQsData, share, allowBgTQs)
 
         # Execute updates
         for prio, tqs in prioDict.items():
@@ -1232,3 +1199,61 @@ FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
         for group in groups:
             shares[group] = gConfig.getValue(f"/Registry/Groups/{group}/JobShare", DEFAULT_GROUP_SHARE)
         return shares
+
+
+def calculate_priority(
+    tq_dict: dict[int, float], all_tqs_data: dict[int, dict[str, Any]], share: float, allow_bg_tqs: bool
+) -> dict[float, list[int]]:
+    """
+    Calculate the priority for each TQ given a share
+
+    :param tq_dict: dict of {tq_id: prio}
+    :param all_tqs_data: dict of {tq_id: {tq_data}}, where tq_data is a dict of {field: value}
+    :param share: share to be distributed among TQs
+    :param allow_bg_tqs: allow background TQs to be used
+    :return: dict of {priority: [tq_ids]}
+    """
+
+    def is_background(tq_priority: float, allow_bg_tqs: bool) -> bool:
+        """
+        A TQ is background if its priority is below a threshold and background TQs are allowed
+        """
+        return tq_priority <= 0.1 and allow_bg_tqs
+
+    # Calculate Sum of priorities of non background TQs
+    total_prio = sum([prio for prio in tq_dict.values() if not is_background(prio, allow_bg_tqs)])
+
+    # Update prio for each TQ
+    for tq_id, tq_priority in tq_dict.items():
+        if is_background(tq_priority, allow_bg_tqs):
+            prio = TQ_MIN_SHARE
+        else:
+            prio = max((share / total_prio) * tq_priority, TQ_MIN_SHARE)
+        tq_dict[tq_id] = prio
+
+    # Generate groups of TQs that will have the same prio=sum(prios) maomenos
+    tq_groups: dict[str, list[int]] = defaultdict(list)
+    for tq_id, tq_data in all_tqs_data.items():
+        for field in ("Jobs", "Priority") + priorityIgnoredFields:
+            if field in tq_data:
+                tq_data.pop(field)
+        tq_hash = []
+        for f in sorted(tq_data):
+            tq_hash.append(f"{f}:{tq_data[f]}")
+        tq_hash = "|".join(tq_hash)
+        # if tq_hash not in tq_groups:
+        #     tq_groups[tq_hash] = []
+        tq_groups[tq_hash].append(tq_id)
+
+    # Do the grouping
+    for tq_group in tq_groups.values():
+        total_prio = sum(tq_dict[tq_id] for tq_id in tq_group)
+        for tq_id in tq_group:
+            tq_dict[tq_id] = total_prio
+
+    # Group by priorities
+    result: dict[float, list[int]] = defaultdict(list)
+    for tq_id, tq_priority in tq_dict.items():
+        result[tq_priority].append(tq_id)
+
+    return result
