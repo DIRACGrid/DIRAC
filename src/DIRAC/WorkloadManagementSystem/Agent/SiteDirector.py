@@ -471,10 +471,10 @@ class SiteDirector(AgentModule):
     def __supportToken(self, ce: ComputingElement) -> bool:
         """Check whether the SiteDirector is able to submit pilots with tokens.
 
-        * the CE is able to receive tokens. Validation: Tag = Token should be included in the CE parameters.
-        * the VO is able to produce tokens. Validation: IdProvider option is set in /Registry/VO/<VO name>/.
+        * the CE is able to receive any token. Validation: Tag = Token should be included in the CE parameters.
+        * the CE is able to receive VO-specifc tokens. Validation: Tag = Token:<VO> should be included in the CE parameters.
         """
-        return "Token" in ce.ceParameters.get("Tag", []) and Registry.getIdPForGroup(self.pilotGroup)
+        return "Token" in ce.ceParameters.get("Tag", []) or f"Token:{self.vo}" in ce.ceParameters.get("Tag", [])
 
     def __getPilotToken(self, audience: str, scope: list[str] = None):
         """Get the token corresponding to the pilot user identity
