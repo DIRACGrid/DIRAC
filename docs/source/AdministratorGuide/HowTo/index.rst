@@ -15,3 +15,4 @@ FIXME: These sections describes things
    multiVO
    pitExport
    dedicateddfc
+   pilotsWithTokens
