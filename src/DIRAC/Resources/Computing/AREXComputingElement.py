@@ -427,8 +427,19 @@ class AREXComputingElement(ARCComputingElement):
         for delegationID in delegationIDs:
             # Get the proxy attached to the delegationID
             result = self._getProxyFromDelegationID(delegationID)
-            if not result["OK"]:
+
+            # Bug in AREX, sometimes delegationID does not exist anymore,
+            # but still appears in the list of delegationIDs.
+            # Issue submitted here: https://bugzilla.nordugrid.org/show_bug.cgi?id=4133
+            # In this case, we just try with the next one
+            if not result["OK"] and "404" in result["Message"]:
                 continue
+
+            # Else, it means there was an issue with the CE,
+            # we stop the execution
+            if not result["OK"]:
+                return result
+
             proxy = result["Value"]
 
             if proxy.getDIRACGroup() != proxyGroup:
