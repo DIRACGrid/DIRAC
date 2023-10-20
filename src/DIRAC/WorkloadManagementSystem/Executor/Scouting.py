@@ -49,11 +49,12 @@ class Scouting(OptimizerExecutor):
         else:
             result = jobState.getManifest()
             if not result['OK']:
-              return S_ERROR('Could not retrieve job manifest: %s' % result['Message'])
+                return S_ERROR('Could not retrieve job manifest: %s' % result['Message'])
             jobManifest = result['Value']
             scoutID = jobManifest.getOption('ScoutID', None)
             if not scoutID:
-                self.jobLog.info('Skipping optimizer, since no scout corresponding to this job group')
+                self.jobLog.info('Skipping optimizer, since no scout \
+                                 corresponding to this job group')
                 return self.setNextOptimizer(jobState)
 
             scoutFlag = 0
@@ -78,8 +79,8 @@ class Scouting(OptimizerExecutor):
                               % (scoutID, scoutFlag))
             result = self.__setScoutparamsInJobParameters(jid, scoutID, scoutFlag, jobState)
             if not result['OK']:
-              self.jobLog.info('Skipping, since failed in setting scoutparams of JobParameters.')
-              return self.setNextOptimizer(jobState)
+                self.jobLog.info('Skipping, since failed in setting scoutparams of JobParameters.')
+                return self.setNextOptimizer(jobState)
 
         if int(scoutFlag) == 1:
             self.jobLog.info('Skipping optimizer, since corresponding scout jobs complete \
@@ -122,10 +123,12 @@ class Scouting(OptimizerExecutor):
 
         opName = self.ex_optimizerName()
         result = jobState.setStatus(self.ex_getOption('WaitingStatus', 'Scouting'),
-                                    minorStatus=self.ex_getOption('WaitingMinorStatus', 
+                                    minorStatus=self.ex_getOption('WaitingMinorStatus',
                                                                   'Waiting for Scout Job Completion'),
                                     appStatus="Unknown",
                                     source=opName)
         if not result['OK']:
             return result
+        
         return S_OK()
+    
