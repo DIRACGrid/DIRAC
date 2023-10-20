@@ -51,9 +51,12 @@ class ScoutingJobStatusAgent(AgentModule):
         self.criteriaFailedRate = Operations().getValue('WorkloadManagement/Scouting/criteriaFailedRate', 0.5)
         self.criteriaSucceededRate = Operations().getValue('WorkloadManagement/Scouting/criteriaSucceededRate', 0.3)
         self.criteriaStalledRate = Operations().getValue('WorkloadManagement/Scouting/criteriaStalledRate', 1.0)
-        self.criteriaFailed = Operations().getValue('WorkloadManagement/Scouting/criteriaFailed', int(self.totalScoutJobs * self.criteriaFailedRate))
-        self.criteriaSucceeded = Operations().getValue('WorkloadManagement/Scouting/criteriaSucceeded', int(self.totalScoutJobs * self.criteriaSucceededRate))
-        self.criteriaStalled = Operations().getValue('WorkloadManagement/Scouting/criteriaStalled', int(self.totalScoutJobs * self.criteriaStalledRate))
+        self.criteriaFailed = Operations().getValue('WorkloadManagement/Scouting/criteriaFailed', 
+                                                    int(self.totalScoutJobs * self.criteriaFailedRate))
+        self.criteriaSucceeded = Operations().getValue('WorkloadManagement/Scouting/criteriaSucceeded', 
+                                                       int(self.totalScoutJobs * self.criteriaSucceededRate))
+        self.criteriaStalled = Operations().getValue('WorkloadManagement/Scouting/criteriaStalled', 
+                                                     int(self.totalScoutJobs * self.criteriaStalledRate))
 
         if int(self.totalScoutJobs * self.criteriaFailedRate) > self.criteriaFailed:
             self.criteriaFailedRate = int(self.criteriaFailed / self.totalScoutJobs)
