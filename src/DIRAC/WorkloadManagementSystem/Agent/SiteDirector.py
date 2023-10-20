@@ -31,6 +31,7 @@ from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotScopes import PILOT_SCOPES
 
@@ -446,7 +447,7 @@ class SiteDirector(AgentModule):
             ce.setProxy(proxy, lifetime_secs)
 
             # Get valid token if needed
-            if "Token" in ce.ceParameters.get("Tag", []):
+            if self.__supportToken(ce):
                 result = self.__getPilotToken(audience=ce.audienceName)
                 if not result["OK"]:
                     return result
@@ -466,6 +467,14 @@ class SiteDirector(AgentModule):
         self.log.info("Total number of pilots submitted in this cycle", f"{self.totalSubmittedPilots}")
 
         return S_OK()
+
+    def __supportToken(self, ce: ComputingElement) -> bool:
+        """Check whether the SiteDirector is able to submit pilots with tokens.
+
+        * the CE is able to receive any token. Validation: Tag = Token should be included in the CE parameters.
+        * the CE is able to receive VO-specifc tokens. Validation: Tag = Token:<VO> should be included in the CE parameters.
+        """
+        return "Token" in ce.ceParameters.get("Tag", []) or f"Token:{self.vo}" in ce.ceParameters.get("Tag", [])
 
     def __getPilotToken(self, audience: str, scope: list[str] = None):
         """Get the token corresponding to the pilot user identity
@@ -1234,7 +1243,7 @@ class SiteDirector(AgentModule):
             ce.setProxy(proxy, 23300)
 
         # Get valid token if needed
-        if "Token" in ce.ceParameters.get("Tag", []):
+        if self.__supportToken(ce):
             result = self.__getPilotToken(audience=ce.audienceName)
             if not result["OK"]:
                 self.log.error("Failed to get token", f"{ceName}: {result['Message']}")
