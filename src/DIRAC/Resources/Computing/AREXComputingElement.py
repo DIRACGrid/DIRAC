@@ -329,7 +329,7 @@ class AREXComputingElement(ARCComputingElement):
         result = self._request("post", query, params=params)
         if not result["OK"]:
             self.log.error("Issue while interacting with delegation ", f"{delegationID}: {result['Message']}")
-            return S_ERROR("Issue while interacting with the delegations")
+            return S_ERROR(f"Issue while interacting with delegation {delegationID}: {result['Message']}")
         response = result["Value"]
 
         proxyContent = response.text
