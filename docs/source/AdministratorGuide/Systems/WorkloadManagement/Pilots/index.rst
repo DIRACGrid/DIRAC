@@ -33,11 +33,11 @@ A pilot has, at a minimum, to:
 - configure DIRAC
 - run the JobAgent
 
-A pilot has to run on each and every computing resource type, provided that:
+A pilot has to run on each and every computing resource type, provided that the worker node contains:
 
-- Python 2.6+ on the WN
-- It is an OS onto which we can install a DIRAC client.
-  - if that's not possible, we plan to add support for singularity
+- Python 2.7+
+- Linux distribution with glibc 2.17 or later
+- A x86_64, aarch64 or ppc64le CPU
 
 The same pilot script can be used everywhere.
 

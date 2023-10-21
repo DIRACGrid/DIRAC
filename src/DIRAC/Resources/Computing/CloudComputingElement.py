@@ -23,7 +23,7 @@ the DIRAC group, but no VOMS (as this would likely expire too quickly).
 By default it is assumed that a generic CentOS7 base image is being used. This
 will be fully contextualised using cloud-init:
 
-- CVMFS & Singularity will be installed.
+- CVMFS will be installed.
 - A dirac user will be created to run the jobs.
 - Pilot proxy and start-up scripts will be installed in /mnt.
 - The usual pilot script will be placed in the dirac home directory and
@@ -112,7 +112,7 @@ Context_Template:
 
 Context_ExtPackages:
   (Optional) Comma separated list of extra packages to install on the VM.
-  Note: It is highly recommended to use SingularityCE with a container
+  Note: It is highly recommended to use ApptainerCE with a container
   image with the required packages instead.
 
 Context_ProxyLifetime:

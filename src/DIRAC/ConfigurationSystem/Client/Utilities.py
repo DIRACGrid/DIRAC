@@ -320,7 +320,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
                     tag = queueDict.get("Tag", "")
                     reqTag = queueDict.get("RequiredTag", "")
                     # LocalCEType can be empty (equivalent to "InProcess")
-                    # or "Pool", "Singularity", but also "Pool/Singularity"
+                    # or "Pool", "Apptainer", but also "Pool/Apptainer"
                     localCEType = queueDict.get("LocalCEType", "")
                     try:
                         localCEType_inner = localCEType.split("/")[1]
