@@ -1,8 +1,6 @@
 """ Executor to set status "Scouting" for a main job which has scout jobs
 """
 
-__RCSID__ = "$Id: $"
-
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor

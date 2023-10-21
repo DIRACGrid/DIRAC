@@ -1,12 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 """ Agent for scout job framework to monitor scout status
     and update main job status according to scout status.
 """
-
-__RCSID__ = "$Id$"
-
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -38,7 +32,6 @@ class ScoutingJobStatusAgent(AgentModule):
         """Sets defaults
         """
 
-        self.am_setOption('PollingTime', 120)
         self.jobDB = JobDB()
         self.logDB = JobLoggingDB()
 
@@ -75,7 +68,7 @@ class ScoutingJobStatusAgent(AgentModule):
         """
         result = self.jobDB.selectJobs({'Status': 'Scouting'})
         if not result['OK']:
-            return S_ERROR()
+            return result
 
         joblist = result['Value']
         if not joblist:
@@ -123,7 +116,7 @@ class ScoutingJobStatusAgent(AgentModule):
 
         result = self.jobDB.getJobsAttributes(scoutjoblist, ['Status', 'Site'])
         if not result['OK']:
-            return S_ERROR(result['Message'])
+            return result
 
         donejoblist = []
         donesitelist = []
@@ -203,7 +196,7 @@ class ScoutingJobStatusAgent(AgentModule):
                         % (job, appstatus))
         result = self.jobDB.setJobAttribute(job, 'ApplicationStatus', appstatus, update=True)
         if not result['OK']:
-            return S_ERROR(result['Message'])
+            return result
 
         # Update MinorStatus
         if not minorstatus:
