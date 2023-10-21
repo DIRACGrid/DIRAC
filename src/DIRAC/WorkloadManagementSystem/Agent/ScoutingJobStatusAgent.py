@@ -207,12 +207,12 @@ class ScoutingJobStatusAgent(AgentModule):
         self.log.verbose("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % (job, minorstatus))
         result = self.jobDB.setJobAttribute(job, 'MinorStatus', minorstatus, update=True)
         if not result['OK']:
-            return S_ERROR(result['Message'])
+            return result
 
         # Update ScoutFlag
         result = self.jobDB.setJobParameter(int(job), 'ScoutFlag', 1)
         if not result['OK']:
-            return S_ERROR(result['Message'])
+            return result
 
         # Update Status
         if not status:  # Retain last minor status for stalled jobs
@@ -223,7 +223,7 @@ class ScoutingJobStatusAgent(AgentModule):
         self.log.verbose("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" % (job, status))
         result = self.jobDB.setJobAttribute(job, 'Status', status, update=True)
         if not result['OK']:
-            return S_ERROR(result['Message'])
+            return result
 
         logStatus = status
         result = self.logDB.addLoggingRecord(job, status=logStatus, minor=minorstatus,
