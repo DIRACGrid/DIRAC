@@ -58,9 +58,9 @@ class ScoutingJobStatusAgent(AgentModule):
         if int(self.totalScoutJobs * self.criteriaStalledRate) > self.criteriaStalled:
             self.criteriaStalledRate = int(self.criteriaStalled / self.totalScoutJobs)
 
-        self.log.info('Scouting parameters: Total: %s, Succeeded: %s(%s), Failed: %s(%s), Stalled: %s(%s), '
-                  % (self.totalScoutJobs, self.criteriaSucceeded, self.criteriaSucceededRate, self.criteriaFailed, self.criteriaFailedRate, self.criteriaStalled, self.criteriaStalledRate))
-
+        self.log.info(f'Scouting parameters: Total: {self.totalScoutJobs}, Succeeded: {self.criteriaSucceeded}({self.criteriaSucceededRate}),
+                      Failed: {self.criteriaFailed}({self.criteriaFailedRate}), Stalled" {self.criteriaStalled}({self.criteriaStalledRate})')
+        
         return S_OK()
 
     def execute(self):
@@ -75,8 +75,8 @@ class ScoutingJobStatusAgent(AgentModule):
             self.log.info('No Jobs with scouting status. Skipping this cycle')
             return S_OK()
 
-        self.log.info('Check %s Scouting jobs' % len(joblist))
-        self.log.debug('joblist: ' % joblist)
+        self.log.info(f'Check {len(joblist)} scouting jobs')
+        self.log.debug('joblist: ', joblist)
 
         scoutIDdict = {}
         for jobID in joblist:
