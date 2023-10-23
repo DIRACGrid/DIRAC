@@ -20,7 +20,6 @@ class Scouting(OptimizerExecutor):
     def initializeOptimizer(cls):
         """ Initialization of the optimizer.
         """
-        cls.siteClient = SiteStatus()
         cls.__jobDB = JobDB()
         return S_OK()
 
