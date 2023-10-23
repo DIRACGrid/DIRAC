@@ -59,6 +59,8 @@ class Scouting(OptimizerExecutor):
             result = jobState.getAttribute('RescheduleCounter')
             if not result['OK']:
                 return S_ERROR('Could not retrieve RescheduleCounter')
+            if result['Value'] == None:
+                return S_ERROR('Reschedule Counter not found')
 
             rCounter = result['Value']
             if int(rCounter) > 0:
