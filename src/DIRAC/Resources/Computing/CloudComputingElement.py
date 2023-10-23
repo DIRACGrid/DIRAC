@@ -79,6 +79,9 @@ loaded from the CE level, but can be overridden by the queue.
 CloudType:
   (Required) This should match the libcloud driver name for the Cloud you're
   trying to access. e.g. For OpenStack this should be "OPENSTACK".
+  You can also specify a fully qualified class name to register and use as
+  a driver: For example if your class is "MyNodeDriver" in
+  "MyPkg/Prov/Driver.py", use "MyPkg.Prov.Driver.MyNodeDriver" here.
 
 CloudAuth:
   (Optional) This sets the path to the authentication ini file as described
@@ -151,7 +154,7 @@ import yaml
 import configparser
 import datetime
 from libcloud.compute.types import Provider, NodeState
-from libcloud.compute.providers import get_driver
+from libcloud.compute.providers import get_driver, set_driver
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -234,13 +237,25 @@ class CloudComputingElement(ComputingElement):
         if self._cloudDriver and not refresh:
             return self._cloudDriver
 
-        provName = self.ceParameters.get(OPT_PROVIDER, "").upper()
-        # check if provider (type of cloud) exists
-        if not provName or not hasattr(Provider, provName):
-            self.log.error(f"Provider '{provName}' not found in libcloud for CE {self.ceName}.")
-            raise RuntimeError(f"Provider '{provName}' not found in libcloud for CE {self.ceName}.")
-        provIntName = getattr(Provider, provName)
-        provCls = get_driver(provIntName)
+        provName = self.ceParameters.get(OPT_PROVIDER, "")
+        if "." in provName:
+            # Custom driver class: register the class with libcloud if it isn't already there
+            try:
+                provCls = get_driver(provName)
+            except AttributeError:
+                # Driver not registered yet
+                provModule, provClass = provName.rsplit(".", 1)
+                set_driver(provName, provModule, provClass)
+                provCls = get_driver(provName)
+        else:
+            # Standard driver class: use the in-build libcloud provider library
+            # check if provider (type of cloud) exists
+            provName = provName.upper()
+            if not provName or not hasattr(Provider, provName):
+                self.log.error(f"Provider '{provName}' not found in libcloud for CE {self.ceName}.")
+                raise RuntimeError(f"Provider '{provName}' not found in libcloud for CE {self.ceName}.")
+            provIntName = getattr(Provider, provName)
+            provCls = get_driver(provIntName)
         driverOpts = self._getDriverOptions()
         driverKey, driverOpts["secret"] = self._getDriverAuth()
         self._cloudDriver = provCls(driverKey, **driverOpts)
