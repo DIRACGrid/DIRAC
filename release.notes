@@ -1,3 +1,32 @@
+[v8.0.31]
+
+*Resources
+
+NEW: (#7248) Add support for loading external providers in CloudCE
+NEW: (#7248) Add OpenNebula6 (XMLRPC) provider for CloudCE/libcloud
+
+*Subsystem
+
+FIX: (#7247) prevent AREXCE from creationg delegations each time a CE got a small and temporary issue
+
+*TransformationSystem
+
+FIX: (#7242) TransformationCleaningAgent: fix two exceptions for CleanWithRMS: encoding before hashing, accessing res["Value"]["Failed"] when Value is None
+NEW: (#7223) TransformationCleaningAgent: add CleanWithRMS option to clean files via the RequestManagementSystem asynchronously rather than serially in the agent run itself
+
+*FrameworkSystem
+
+CHANGE: (#7236) ComponentSupervisionAgent: use gConfig to get the setup from /DIRAC/Setup
+CHANGE: (#7236) ComponentSupervisionAgent remove Setup option
+
+*WorkloadManagement
+
+CHANGE: (#7208) pilot submission with tokens in a multi-VO context
+
+*docs
+
+NEW: (#7176) add documentation about setting up DIRAC to submit pilots with tokens
+
 [v8.0.30]
 
 *WorkloadManagement
