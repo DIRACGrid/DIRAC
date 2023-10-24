@@ -4,7 +4,7 @@
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 
 
@@ -32,7 +32,7 @@ class ScoutingJobStatusAgent(AgentModule):
         """Sets defaults
         """
 
-        self.jobDB = JobDB()
+        self.jobDB = JobStateUpdateClient()
         self.logDB = JobLoggingDB()
 
         return S_OK()

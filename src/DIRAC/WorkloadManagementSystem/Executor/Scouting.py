@@ -5,7 +5,7 @@ from DIRAC import S_OK, S_ERROR
 
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
 
 class Scouting(OptimizerExecutor):
@@ -20,7 +20,7 @@ class Scouting(OptimizerExecutor):
     def initializeOptimizer(cls):
         """ Initialization of the optimizer.
         """
-        cls.__jobDB = JobDB()
+        cls.__jobDB = JobStateUpdateClient()
         return S_OK()
 
     def optimizeJob(self, jid, jobState):
