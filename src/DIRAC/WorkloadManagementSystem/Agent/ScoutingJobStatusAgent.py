@@ -10,13 +10,8 @@ from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 
 class ScoutingJobStatusAgent(AgentModule):
     """
-        The specific agents must provide the following methods:
-          - initialize() for initial settings
-          - beginExecution()
-          -  execute() - the main method called in the agent cycle
-          - endExecution()
-          - finalize() - the graceful exit of the method, this one is usually used
-                     for the agent restart
+        This agent checks for jobs with Scouting status 
+        and manages the job status in relation to associated scout jobs
     """
 
     def __init__(self, *args, **kwargs):
