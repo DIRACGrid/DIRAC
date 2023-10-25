@@ -46,7 +46,7 @@ class PilotLoggingAgent(AgentModule):
         """
         # pilot logs lifetime in days
         self.clearPilotsDelay = self.am_getOption("ClearPilotsDelay", self.clearPilotsDelay)
-        # configured VOs and setup
+        # configured VOs
         res = getVOs()
         if not res["OK"]:
             return res
@@ -64,7 +64,6 @@ class PilotLoggingAgent(AgentModule):
             if pilotLogging:
                 res = opsHelper.getOptionsDict("Shifter/DataManager")
                 if not res["OK"]:
-                    # voRes[vo] = "No shifter defined - skipped"
                     self.log.error(f"No shifter defined for VO: {vo} - skipping ...")
                     continue
 
@@ -84,6 +83,7 @@ class PilotLoggingAgent(AgentModule):
                     continue
                 userDNs = result["Value"]  # a same user may have more than one DN
                 fd, filename = tempfile.mkstemp(prefix=vo + "__")
+                print("filename", filename)
                 os.close(fd)
                 vomsAttr = getVOMSAttributeForGroup(proxyGroup)
                 result = getProxy(userDNs, proxyGroup, vomsAttr=vomsAttr, proxyFilePath=filename)
@@ -92,7 +92,7 @@ class PilotLoggingAgent(AgentModule):
                     self.log.error(
                         f"Could not download a proxy for DN {userDNs}, group {proxyGroup} for VO {vo}, skipped"
                     )
-                    return result
+                    continue
                 self.proxyDict[vo] = result["Value"]
 
         return S_OK()
