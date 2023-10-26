@@ -78,7 +78,15 @@ def pla(mocker, plaBase):
 @pytest.mark.parametrize(
     "remoteLogging, options, getDN, getVOMS, getProxy, resDict, expectedRes",
     [
-        ([True, False], upDict, S_OK(["myDN"]), S_OK(), S_OK("proxyfilename"), {"gridpp": "proxyfilename"}, S_OK()),
+        (
+            [True, False],
+            upDict,
+            S_OK(["myDN"]),
+            S_OK(),
+            S_OK("proxyfilename"),
+            {"gridpp": {"DN": ["myDN"], "group": "proxyGroup", "proxy": "proxyfilename"}},
+            S_OK(),
+        ),
         ([False, False], upDict, S_OK(["myDN"]), S_OK(), S_OK(), {}, S_OK()),
         ([True, False], upDict, S_ERROR("Could not obtain a DN"), S_OK(), S_OK(), {}, S_OK()),
         ([True, False], upDict, S_ERROR("Could not download proxy"), S_OK(), S_ERROR("Failure"), {}, S_OK()),
@@ -110,9 +118,9 @@ def test_initialize(plaBase, remoteLogging, options, getDN, getVOMS, getProxy, r
     "proxyDict, execVORes, expectedResult",
     [
         ({}, S_OK(), S_OK()),
-        ({"gridpp": "gridpp_proxyfile"}, S_OK(), S_OK()),
+        ({"gridpp": {"DN": ["myDN"], "group": "proxyGroup", "proxy": "proxyfilename"}}, S_OK(), S_OK()),
         (
-            {"gridpp": "gridpp_proxyfile"},
+            {"gridpp": {"DN": ["myDN"], "group": "proxyGroup", "proxy": "proxyfilename"}},
             S_ERROR("Execute for VO failed"),
             S_ERROR("Agent cycle for some VO finished with errors"),
         ),
@@ -122,6 +130,8 @@ def test_execute(plaBase, proxyDict, execVORes, expectedResult):
     """Testing a thin version of execute (executeForVO is mocked)"""
 
     plaBase.executeForVO = MagicMock()
+    plaBase._isProxyExpired = MagicMock()
+    plaBase._isProxyExpired.return_value = False
     plaBase.proxyDict = proxyDict
     plaBase.executeForVO.return_value = execVORes
     res = plaBase.execute()
