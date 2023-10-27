@@ -114,7 +114,7 @@ services:
     pull_policy: always
 
   diracx-init-key:
-    image: ghcr.io/diracgrid/diracx/server
+    image: ghcr.io/diracgrid/diracx/secret-generation:latest
     container_name: diracx-init-key
     environment:
       - DIRACX_SERVICE_AUTH_TOKEN_KEY="file:///signing-key/rs256.key"
@@ -123,7 +123,7 @@ services:
     # We need to allow everybody to read the private keys
     # Because the users are different between the DIRAC and DiracX containers
     entrypoint: |
-      /entrypoint.sh bash -c "ssh-keygen -P '' -trsa -b4096 -mPEM -f/signing-key/rs256.key && /entrypoint.sh chmod o+r /signing-key/rs256.*"
+      bash -c "ssh-keygen -P '' -trsa -b4096 -mPEM -f/signing-key/rs256.key && chmod o+r /signing-key/rs256.*"
     pull_policy: always
 
   diracx-init-cs:
