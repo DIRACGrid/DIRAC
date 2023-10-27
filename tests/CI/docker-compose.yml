@@ -123,7 +123,7 @@ services:
     # We need to allow everybody to read the private keys
     # Because the users are different between the DIRAC and DiracX containers
     entrypoint: |
-      /dockerMicroMambaEntrypoint.sh bash -c "ssh-keygen -P '' -trsa -b4096 -mPEM -f/signing-key/rs256.key && /dockerMicroMambaEntrypoint.sh chmod o+r /signing-key/rs256.*"
+      /entrypoint.sh bash -c "ssh-keygen -P '' -trsa -b4096 -mPEM -f/signing-key/rs256.key && /entrypoint.sh chmod o+r /signing-key/rs256.*"
     pull_policy: always
 
   diracx-init-cs:
@@ -136,7 +136,7 @@ services:
       - diracx-cs-store:/cs_store/
       - diracx-key-store:/signing-key/
     entrypoint: |
-      /dockerMicroMambaEntrypoint.sh bash -xc 'dirac internal generate-cs /cs_store/initialRepo --vo=vo --user-group=dirac_user --idp-url=http://dsdsd.csds/a/b'
+      /entrypoint.sh bash -xc 'dirac internal generate-cs /cs_store/initialRepo --vo=vo --user-group=dirac_user --idp-url=http://dsdsd.csds/a/b'
     pull_policy: always
 
   diracx-init-db:
@@ -148,7 +148,7 @@ services:
     environment:
       - DIRACX_DB_URL_AUTHDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXAuthDB
     entrypoint: |
-      /dockerMicroMambaEntrypoint.sh bash -xc 'micromamba install --yes -c conda-forge mysql-client && mysql -h mysql -u root --password=password -e "CREATE DATABASE DiracXAuthDB" && mysql -h mysql -u root --password=password -e "GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES,CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE ON DiracXAuthDB.* TO Dirac@'"'"'%'"'"'" && python -m diracx.db init-sql'
+      /entrypoint.sh bash -xc 'micromamba install --yes -c conda-forge mysql-client && mysql -h mysql -u root --password=password -e "CREATE DATABASE DiracXAuthDB" && mysql -h mysql -u root --password=password -e "GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES,CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE ON DiracXAuthDB.* TO Dirac@'"'"'%'"'"'" && python -m diracx.db init-sql'
     pull_policy: always
 
   diracx:
@@ -177,7 +177,7 @@ services:
       - diracx-key-store:/signing-key/
 
     healthcheck:
-      test: ["CMD", "/dockerMicroMambaEntrypoint.sh", "curl", "-f", "http://localhost:8000/.well-known/openid-configuration"]
+      test: ["CMD", "/entrypoint.sh", "curl", "-f", "http://localhost:8000/.well-known/openid-configuration"]
       interval: 5s
       timeout: 2s
       retries: 15
