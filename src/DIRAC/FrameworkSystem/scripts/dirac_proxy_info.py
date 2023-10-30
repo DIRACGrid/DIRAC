@@ -77,6 +77,7 @@ def main():
     from DIRAC.Core.Security import VOMS
     from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
     from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+    from DIRAC.Core.Security.DiracX import DiracXClient
 
     if params.csEnabled:
         retVal = Script.enableCS()
@@ -151,6 +152,12 @@ def main():
                 invalidProxy(f"Cannot determine life time of VOMS attributes: {result['Message']}")
             if int(result["Value"].strip()) == 0:
                 invalidProxy("VOMS attributes are expired")
+        # Ensure the proxy is working with DiracX
+        try:
+            with DiracXClient() as api:
+                api.auth.userinfo()
+        except Exception as e:
+            invalidProxy(f"Failed to access DiracX: {e}")
 
     sys.exit(0)
 

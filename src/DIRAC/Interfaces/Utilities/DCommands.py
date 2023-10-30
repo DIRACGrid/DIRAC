@@ -495,15 +495,20 @@ class DSession(DConfig):
         params.diracGroup = retVal["Value"]
 
         result = ProxyGeneration.generateProxy(params)
-
         if not result["OK"]:
             raise Exception(result["Message"])
+        filename = result["Value"]
+
         self.checkCAs()
+
         try:
-            self.addVomsExt(result["Value"])
+            self.addVomsExt(filename)
         except:
             # silently skip VOMS errors
             pass
+
+        if not (result := addProxyToPEM(filename, params.diracGroup))["OK"]:
+            raise Exception(result["Message"])
 
     def addVomsExt(self, proxy):
         retVal = self.getEnv("group_name")

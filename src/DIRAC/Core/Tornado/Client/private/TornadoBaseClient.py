@@ -511,10 +511,12 @@ class TornadoBaseClient:
         # getting certificate
         # Do we use the server certificate ?
         if self.kwargs[self.KW_USE_CERTIFICATES]:
+            # TODO: Does this code path need to work with DiracX?
             auth = {"cert": Locations.getHostCertificateAndKeyLocation()}
 
         # Use access token?
         elif self.__useAccessToken:
+            # TODO: Remove this code path?
             from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
                 getLocalTokenDict,
                 writeTokenDictToTokenFile,
@@ -543,13 +545,13 @@ class TornadoBaseClient:
 
             auth = {"headers": {"Authorization": f"Bearer {token['access_token']}"}}
         elif self.kwargs.get(self.KW_PROXY_STRING):
+            # TODO: This code path cannot work with DiracX
             tmpHandle, cert = tempfile.mkstemp()
             fp = os.fdopen(tmpHandle, "w")
             fp.write(self.kwargs[self.KW_PROXY_STRING])
             fp.close()
-
-        # CHRIS 04.02.21
-        # TODO: add proxyLocation check ?
+        elif self.kwargs.get(self.KW_PROXY_LOCATION):
+            auth = {"cert": self.kwargs[self.KW_PROXY_LOCATION]}
         else:
             auth = {"cert": Locations.getProxyLocation()}
             if not auth["cert"]:
