@@ -21,9 +21,6 @@ SUMMARY_STATUSES = {"Waiting", "Running", "Stalled", "Done", "Failed"}
 
 class JobMonitoringClient:
     def _fetch_summary(self, grouping, search=None):
-        diracxUrl = gConfig.getValue("/DiracX/URL")
-        if not diracxUrl:
-            raise ValueError("Missing mandatory /DiracX/URL configuration")
         with DiracXClient() as api:
             return api.jobs.summary(grouping=grouping, search=search)
 
@@ -31,9 +28,6 @@ class JobMonitoringClient:
         if not isinstance(jobIDs, list):
             jobIDs = [jobIDs]
 
-        diracxUrl = gConfig.getValue("/DiracX/URL")
-        if not diracxUrl:
-            raise ValueError("Missing mandatory /DiracX/URL configuration")
         with DiracXClient() as api:
             jobs = api.jobs.search(
                 parameters=(["JobID"] + parameters) if parameters else None,
