@@ -4,6 +4,7 @@
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
@@ -28,7 +29,7 @@ class Scouting(OptimizerExecutor):
 
         result = self.__jobDB.getJobParameters(jid, ['ScoutFlag', 'ScoutID'])
         if not result['OK']:
-            return S_ERROR('Could not retrieve scoutparams')
+            return result
 
         rCounter = 0
         if result['Value']:
@@ -46,7 +47,7 @@ class Scouting(OptimizerExecutor):
         else:
             result = jobState.getManifest()
             if not result['OK']:
-                return S_ERROR('Could not retrieve job manifest: %s' % result['Message'])
+                return result
             jobManifest = result['Value']
             scoutID = jobManifest.getOption('ScoutID', None)
             if not scoutID:
@@ -87,8 +88,7 @@ class Scouting(OptimizerExecutor):
             return self.setNextOptimizer(jobState)
 
         self.jobLog.info('Job %s set scouting status' % jid)
-        result = self.__setScoutingStatus(jobState)
-        return result
+        return self.__setScoutingStatus(jobState)
 
     def __getIDandFlag(self, scoutparams):
 
@@ -107,9 +107,8 @@ class Scouting(OptimizerExecutor):
         result = self.__jobDB.setJobParameters(jid, paramList)
         if not result['OK']:
             self.jobLog.info('Skipping, since failed in recovering scoutparams of JobParameters.')
-            return result
-
-        return S_OK()
+            
+        return result
 
     def __setScoutingStatus(self, jobState=None):
 
@@ -117,11 +116,11 @@ class Scouting(OptimizerExecutor):
             jobState = self.__jobData.jobState
 
         result = jobState.getStatus()
-        if not result['OK']:
+        if not (result := jobState.getStatus())['OK']:
             return result
 
         opName = self.ex_optimizerName()
-        result = jobState.setStatus(self.ex_getOption('WaitingStatus', 'Scouting'),
+        result = jobState.setStatus(self.ex_getOption('WaitingStatus', JobStatus.SCOUTING),
                                     minorStatus=self.ex_getOption('WaitingMinorStatus',
                                                                   'Waiting for Scout Job Completion'),
                                     appStatus="Unknown",

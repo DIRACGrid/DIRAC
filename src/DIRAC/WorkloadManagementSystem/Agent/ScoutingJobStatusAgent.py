@@ -3,6 +3,7 @@
 """
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -59,7 +60,7 @@ class ScoutingJobStatusAgent(AgentModule):
         return S_OK()
 
     def execute(self):
-        """The PilotAgent execution method.
+        """The ScoutingJobStatus execution method.
         """
         result = self.jobDB.selectJobs({'Status': 'Scouting'})
         if not result['OK']:
@@ -93,7 +94,7 @@ class ScoutingJobStatusAgent(AgentModule):
 
             scoutIDdict[scoutID] = scoutStatus
             if scoutStatus['Status'] == 'NotComplete':
-                self.log.verbose("%s: skipping since corresponding scout does not complete yet." % jobID)
+                self.log.verbose(f"{jobID}: skipping since corresponding scout does not complete yet.")
                 continue
             else:
                 result = self.__updateJobStatus(jobID, status=scoutStatus['Status'],
@@ -123,52 +124,52 @@ class ScoutingJobStatusAgent(AgentModule):
             status = result['Value'][scoutjob]['Status']
             site = result['Value'][scoutjob]['Site']
             jobid = scoutjob
-            if status == 'Done':
+            if status == JobStatus.DONE:
                 donejoblist.append(jobid)
                 donesitelist.append(site)
-            elif status == 'Failed':
+            elif status == JobStatus.FAILED:
                 failedjoblist.append(jobid)
                 failedsitelist.append(site)
-            elif status == 'Stalled':
+            elif status == JobStatus.STALLED:
                 stalledjoblist.append(jobid)
 
         if self.criteriaSucceeded > len(scoutjobs):
             criteriaSucceeded = max(int(len(scoutjobs) * self.criteriaSucceededRate), 1)
-            self.log.verbose('criteriaSucceeded = %s' % self.criteriaSucceeded)
+            self.log.verbose(f'criteriaSucceeded = {self.criteriaSucceeded}')
         else:
             criteriaSucceeded = self.criteriaSucceeded
-            self.log.debug('criteriaSucceeded = %s' % self.criteriaSucceeded)
+            self.log.debug(f'criteriaSucceeded = {self.criteriaSucceeded}')
 
         if self.criteriaFailed > len(scoutjobs):
             criteriaFailed = max(int(len(scoutjobs) * self.criteriaFailedRate), 1)
-            self.log.verbose('criteriaFailed = %s' % self.criteriaFailed)
+            self.log.verbose(f'criteriaFailed = {self.criteriaFailed}')
         else:
             criteriaFailed = self.criteriaFailed
-            self.log.debug('criteriaFailed = %s' % self.criteriaFailed)
+            self.log.debug(f'criteriaFailed = {self.criteriaFailed}')
 
         if self.criteriaStalled > len(scoutjobs):
             criteriaStalled = max(int(len(scoutjobs) * self.criteriaStalledRate), 1)
-            self.log.verbose('criteriaStalled = %s' % self.criteriaStalled)
+            self.log.verbose(f'criteriaStalled = {self.criteriaStalled}')
         else:
             criteriaStalled = self.criteriaStalled
-            self.log.debug('criteriaStalled = %s' % self.criteriaStalled)
+            self.log.debug(f'criteriaStalled = {self.criteriaStalled}')
 
         if len(donejoblist) >= criteriaSucceeded:
-            self.log.verbose('Scout (ID = %s) are done.' % scoutid)
+            self.log.verbose(f'Scout (ID = {scoutid}) are done.')
             scoutStatus = {'Status': 'Checking', 'MinorStatus': 'Scouting', 'appstatus': 'Scout Complete'}
 
         elif len(failedjoblist) >= criteriaFailed:
-            self.log.verbose('Scout (ID = %s) are failed.' % scoutid)
+            self.log.verbose(f'Scout (ID = {scoutid}) are failed.')
             msg = 'Failed scout job ' + str(failedjoblist)
             scoutStatus = {'Status': 'Failed', 'MinorStatus': 'Failed in scouting', 'appstatus': msg}
 
         elif len(stalledjoblist) >= criteriaStalled:
-            self.log.verbose('Scout (ID = %s) are stalled.' % scoutid)
+            self.log.verbose(f'Scout (ID = {scoutid}) are stalled.')
             msg = 'Stalled scout job ' + str(stalledjoblist)
             scoutStatus = {'Status': 'Stalled', 'MinorStatus': 'Stalled in scouting', 'appstatus': msg}
 
         else:
-            self.log.verbose('Scout (ID = %s) did not completed.' % scoutid)
+            self.log.verbose(f'Scout (ID = {scoutid}) did not completed.')
             scoutStatus = {'Status': 'NotComplete'}
 
         return S_OK(scoutStatus)
@@ -176,8 +177,7 @@ class ScoutingJobStatusAgent(AgentModule):
     def __updateJobStatus(self, job, status=None, minorstatus=None, appstatus=None):
         """ This method updates the job status in the JobDB.
         """
-        self.log.info('Job %s set Status="%s", MinorStatus="%s", ApplicationStatus="%s".'
-                      % (job, status, minorstatus, appstatus))
+        self.log.info(f'Job {job} set Status="{status}", MinorStatus="{minorstatus}", ApplicationStatus="{appstatus}".')
         if not self.am_getOption('Enable', True):
             result = S_OK('DisabledMode')
 
@@ -187,8 +187,7 @@ class ScoutingJobStatusAgent(AgentModule):
             if result['OK']:
                 minorstatus = result['Value']['ApplicationStatus']
 
-        self.log.verbose("self.jobDB.setJobAttribute(%s,'ApplicationStatus','%s',update=True)"
-                        % (job, appstatus))
+        self.log.verbose(f"self.jobDB.setJobAttribute({job},'ApplicationStatus','{appstatus}',update=True)")
         result = self.jobDB.setJobAttribute(job, 'ApplicationStatus', appstatus, update=True)
         if not result['OK']:
             return result
@@ -199,7 +198,7 @@ class ScoutingJobStatusAgent(AgentModule):
             if result['OK']:
                 minorstatus = result['Value']['MinorStatus']
 
-        self.log.verbose("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % (job, minorstatus))
+        self.log.verbose(f"self.jobDB.setJobAttribute({job},'MinorStatus','{minorstatus}',update=True)")
         result = self.jobDB.setJobAttribute(job, 'MinorStatus', minorstatus, update=True)
         if not result['OK']:
             return result
@@ -215,7 +214,7 @@ class ScoutingJobStatusAgent(AgentModule):
             if result['OK']:
                 status = result['Value']['Status']
 
-        self.log.verbose("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" % (job, status))
+        self.log.verbose(f"self.jobDB.setJobAttribute({job},'Status','{status}',update=True)")
         result = self.jobDB.setJobAttribute(job, 'Status', status, update=True)
         if not result['OK']:
             return result
