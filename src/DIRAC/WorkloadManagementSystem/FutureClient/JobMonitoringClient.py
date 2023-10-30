@@ -1,9 +1,7 @@
 from collections import defaultdict
 from datetime import datetime
-from diracx.client import DiracClient
-from diracx.core.preferences import DiracxPreferences
 
-from DIRAC import gConfig
+from DIRAC.Core.Security.DiracX import DiracXClient
 from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue
 
 DATETIME_PARAMETERS = [
@@ -21,22 +19,14 @@ SUMMARY_STATUSES = {"Waiting", "Running", "Stalled", "Done", "Failed"}
 
 class JobMonitoringClient:
     def _fetch_summary(self, grouping, search=None):
-        diracxUrl = gConfig.getValue("/DiracX/URL")
-        if not diracxUrl:
-            raise ValueError("Missing mandatory /DiracX/URL configuration")
-        pref = DiracxPreferences(url=diracxUrl)
-        with DiracClient(diracx_preferences=pref) as api:
+        with DiracXClient() as api:
             return api.jobs.summary(grouping=grouping, search=search)
 
     def _fetch_search(self, parameters, jobIDs):
         if not isinstance(jobIDs, list):
             jobIDs = [jobIDs]
 
-        diracxUrl = gConfig.getValue("/DiracX/URL")
-        if not diracxUrl:
-            raise ValueError("Missing mandatory /DiracX/URL configuration")
-        pref = DiracxPreferences(url=diracxUrl)
-        with DiracClient(diracx_preferences=pref) as api:
+        with DiracXClient() as api:
             jobs = api.jobs.search(
                 parameters=(["JobID"] + parameters) if parameters else None,
                 search=[{"parameter": "JobID", "operator": "in", "values": jobIDs}],
