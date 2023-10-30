@@ -315,8 +315,8 @@ class Params:
 
             # Get a token for use with diracx
             vo = getVOMSVOForGroup(self.group)
-            enabledVOs = gConfig.getValue("/DiracX/EnabledVOs", [])
-            if vo in enabledVOs:
+            disabledVOs = gConfig.getValue("/DiracX/DisabledVOs", [])
+            if vo not in disabledVOs:
                 from diracx.core.utils import write_credentials  # pylint: disable=import-error
                 from diracx.core.models import TokenResponse  # pylint: disable=import-error
                 from diracx.core.preferences import DiracxPreferences  # pylint: disable=import-error

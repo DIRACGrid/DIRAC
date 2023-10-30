@@ -5,6 +5,13 @@ from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 
+try:
+    from DIRAC.WorkloadManagementSystem.FutureClient.JobMonitoringClient import (
+        JobMonitoringClient as futureJobMonitoringClient,
+    )
+except ImportError:
+    futureJobMonitoringClient = None
+
 
 @createClient("WorkloadManagement/JobMonitoring")
 class JobMonitoringClient(Client):
@@ -12,12 +19,7 @@ class JobMonitoringClient(Client):
         super().__init__(**kwargs)
         self.setServer("WorkloadManagement/JobMonitoring")
 
-    if os.getenv("DIRAC_ENABLE_DIRACX_JOB_MONITORING", "No").lower() in ("yes", "true"):
-        from DIRAC.WorkloadManagementSystem.FutureClient.JobMonitoringClient import (
-            JobMonitoringClient as futureJobMonitoringClient,
-        )
-
-        httpsClient = futureJobMonitoringClient
+    diracxClient = futureJobMonitoringClient
 
     @ignoreEncodeWarning
     def getJobsStatus(self, jobIDs):

@@ -18,9 +18,6 @@ DIRAC_DEPRECATED_FAIL
   If set, the use of functions or objects that are marked ``@deprecated`` will fail. Useful for example in continuous
   integration tests against future versions of DIRAC
 
-DIRAC_ENABLE_DIRACX_JOB_MONITORING
-  If set, calls the diracx job monitoring service. Off by default.
-
 DIRAC_FEWER_CFG_LOCKS
   If ``true`` or ``yes`` or ``on`` or ``1`` or ``y`` or ``t``, DIRAC will reduce the number of locks used when accessing the CS for better performance (default, ``no``).
 
