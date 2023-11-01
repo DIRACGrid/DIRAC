@@ -17,6 +17,9 @@ gLogger.setLevel("DEBUG")
 # Mock Objects
 mockReply = MagicMock()
 mockReply1 = MagicMock()
+mockGetDNForUsername = MagicMock()
+mockGetVomsAttr = MagicMock()
+mockGetProxy = MagicMock()
 mockOperations = MagicMock()
 mockTornadoClient = MagicMock()
 mockDataManager = MagicMock()
@@ -48,17 +51,14 @@ def plaBase(mocker):
     mocker.patch(
         "DIRAC.WorkloadManagementSystem.Agent.PilotLoggingAgent.Operations.getOptionsDict", side_effect=mockReply1
     )
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.PilotLoggingAgent.getDNForUsername", side_effect=mockGetDNForUsername
+    )
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotLoggingAgent.getProxy", side_effect=mockGetProxy)
     pla = PilotLoggingAgent()
     pla.log = gLogger
     pla._AgentModule__configDefaults = mockAM
     return pla
-
-
-@pytest.fixture
-def pla_initialised(mocker, plaBase):
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotLoggingAgent.PilotLoggingAgent.executeForVO")
-    plaBase.initialize()
-    return plaBase
 
 
 @pytest.fixture
@@ -72,42 +72,70 @@ def pla(mocker, plaBase):
         "DIRAC.WorkloadManagementSystem.Agent.PilotLoggingAgent.DataManager",
         side_effect=mockDataManager,
     )
-    plaBase.initialize()
     return plaBase
 
 
-def test_initialize(plaBase):
+@pytest.mark.parametrize(
+    "remoteLogging, options, getDN, getVOMS, getProxy, resDict, expectedRes",
+    [
+        (
+            [True, False],
+            upDict,
+            S_OK(["myDN"]),
+            S_OK(),
+            S_OK("proxyfilename"),
+            {"gridpp": {"DN": ["myDN"], "group": "proxyGroup", "proxy": "proxyfilename"}},
+            S_OK(),
+        ),
+        ([False, False], upDict, S_OK(["myDN"]), S_OK(), S_OK(), {}, S_OK()),
+        ([True, False], upDict, S_ERROR("Could not obtain a DN"), S_OK(), S_OK(), {}, S_OK()),
+        ([True, False], upDict, S_ERROR("Could not download proxy"), S_OK(), S_ERROR("Failure"), {}, S_OK()),
+    ],
+)
+def test_initialize(plaBase, remoteLogging, options, getDN, getVOMS, getProxy, resDict, expectedRes):
+    """
+    After a successful initialisation the proxyDict should contain proxy filenames key by a VO name.
+    test loops: gridpp enabled, lz disabled, proxy obtained, result proxyDict contains a proxy filename.
+            both VOs disabled => proxyDict empty
+            gridpp enabled, by getDNForUsername fails => proxyDict empty
+            gridpp enabled, lz disabled, getProxy fails => proxyDict empty
+
+    """
+    mockReply.side_effect = remoteLogging  # Operations.getValue("/Pilot/RemoteLogging", False)
+    mockReply1.return_value = options  # Operations.getOptionsDict("Shifter/DataManager")
+    mockGetDNForUsername.return_value = getDN
+    mockGetVomsAttr.return_value = getVOMS
+    mockGetProxy.return_value = getProxy
+
     res = plaBase.initialize()
+
     assert plaBase.voList == plaModule.getVOs()["Value"]
-    assert res == S_OK()
+    assert resDict == plaBase.proxyDict
+    assert res == expectedRes
 
 
 @pytest.mark.parametrize(
-    "mockReplyInput, expected, expectedExecOut, expected2",
+    "proxyDict, execVORes, expectedResult",
     [
-        ("/Pilot/RemoteLogging", [True, False], S_OK(), upDict),
-        ("/Pilot/RemoteLogging", [False, False], S_OK(), upDict),
-        ("/Pilot/RemoteLogging", [True, False], S_ERROR("Execute for VO failed"), upDict),
+        ({}, S_OK(), S_OK()),
+        ({"gridpp": {"DN": ["myDN"], "group": "proxyGroup", "proxy": "proxyfilename"}}, S_OK(), S_OK()),
+        (
+            {"gridpp": {"DN": ["myDN"], "group": "proxyGroup", "proxy": "proxyfilename"}},
+            S_ERROR("Execute for VO failed"),
+            S_ERROR("Agent cycle for some VO finished with errors"),
+        ),
     ],
 )
-def test_execute(pla_initialised, mockReplyInput, expected, expectedExecOut, expected2):
+def test_execute(plaBase, proxyDict, execVORes, expectedResult):
     """Testing a thin version of execute (executeForVO is mocked)"""
-    assert pla_initialised.voList == plaModule.getVOs()["Value"]
-    mockReply.side_effect = expected
-    mockReply1.return_value = expected2
-    # remote pilot logging on (gridpp only) and off.
-    pla_initialised.executeForVO.return_value = expectedExecOut
-    res = pla_initialised.execute()
-    if not any(expected):
-        pla_initialised.executeForVO.assert_not_called()
-    else:
-        assert pla_initialised.executeForVO.called
-        pla_initialised.executeForVO.assert_called_with(
-            "gridpp",
-            proxyUserName=upDict["Value"]["User"],
-            proxyUserGroup=upDict["Value"]["Group"],
-        )
-    assert res["OK"] == expectedExecOut["OK"]
+
+    plaBase.executeForVO = MagicMock()
+    plaBase._isProxyExpired = MagicMock()
+    plaBase._isProxyExpired.return_value = False
+    plaBase.proxyDict = proxyDict
+    plaBase.executeForVO.return_value = execVORes
+    res = plaBase.execute()
+    assert res["OK"] == expectedResult["OK"]
 
 
 @pytest.mark.parametrize(
