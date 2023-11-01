@@ -1024,6 +1024,14 @@ class SiteDirector(AgentModule):
         else:
             self.log.info("DIRAC project will be installed by pilots")
 
+        # Preinstalled environment defined ?
+        preinstalledEnv = opsHelper.getValue("Pilot/PreinstalledEnv", "")
+        preinstalledEnvPrefix = opsHelper.getValue("Pilot/PreinstalledEnvPrefix", "")
+        if preinstalledEnvPrefix:
+            pilotOptions.append(f"--preinstalledEnvPrefix={preinstalledEnvPrefix}")
+        elif preinstalledEnv:
+            pilotOptions.append(f"--preinstalledEnv={preinstalledEnv}")
+
         # Pilot Logging defined?
         if opsHelper.getValue("/Services/JobMonitoring/usePilotsLoggingFlag", False):
             pilotOptions.append("-z ")
