@@ -1027,10 +1027,10 @@ class SiteDirector(AgentModule):
         # Preinstalled environment defined ?
         preinstalledEnv = opsHelper.getValue("Pilot/PreinstalledEnv", "")
         preinstalledEnvPrefix = opsHelper.getValue("Pilot/PreinstalledEnvPrefix", "")
-        if preinstalledEnvPrefix:
-            pilotOptions.append(f"--preinstalledEnvPrefix={preinstalledEnvPrefix}")
-        elif preinstalledEnv:
+        if preinstalledEnv:
             pilotOptions.append(f"--preinstalledEnv={preinstalledEnv}")
+        elif preinstalledEnvPrefix:
+            pilotOptions.append(f"--preinstalledEnvPrefix={preinstalledEnvPrefix}")
 
         # Pilot Logging defined?
         if opsHelper.getValue("/Services/JobMonitoring/usePilotsLoggingFlag", False):
