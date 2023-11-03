@@ -570,7 +570,7 @@ class Job(API):
 
         :return: S_OK
 
-        :raises BadJobParameterError: If the function arguments are not valid.
+        :raises ~DIRAC.Interfaces.API.Job.BadJobParameterError: If the function arguments are not valid.
         """
         # If min and max are the same then that's the same as setting numberOfProcessors
         if minNumberOfProcessors and maxNumberOfProcessors and minNumberOfProcessors == maxNumberOfProcessors:
