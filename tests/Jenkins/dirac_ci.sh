@@ -136,9 +136,8 @@ installSite() {
   echo "==> Done installing, now configuring"
   source "${SERVERINSTALLDIR}/bashrc"
   configureArgs=()
-  if [[ -n "${TEST_DIRACX:-}" ]]; then
+  if [[ "${TEST_DIRACX:-}" = "Yes" ]]; then
     configureArgs+=("--LegacyExchangeApiKey=diracx:legacy:InsecureChangeMe")
-    configureArgs+=("--DiracxUrl=${DIRACX_URL}")
   fi
   if ! dirac-configure --cfg "${SERVERINSTALLDIR}/install.cfg" "${configureArgs[@]}" "${DEBUG}"; then
     echo "ERROR: dirac-configure failed" >&2
@@ -147,6 +146,18 @@ installSite() {
 
   if ! dirac-setup-site "${DEBUG}"; then
     echo "ERROR: dirac-setup-site failed" >&2
+    exit 1
+  fi
+
+  echo "==> Setting up DiracX"
+  diracxSetupArgs=("--credentials-dir" "$SERVERINSTALLDIR/etc/grid-security")
+  if [[ "${TEST_DIRACX:-}" = "Yes" ]]; then
+    diracxSetupArgs+=("--url=${DIRACX_URL}")
+  else
+    diracxSetupArgs+=("--disable-vo" "vo")
+  fi
+  if ! python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-setup-diracx.py" "${diracxSetupArgs[@]}"; then
+    echo "ERROR: dirac-cfg-setup-diracx.py failed" >&2
     exit 1
   fi
 

@@ -248,6 +248,19 @@ def getServiceURLs(system, service=None, setup=False, failover=False):
     return resList
 
 
+def useLegacyAdapter(system, service=None) -> bool:
+    """Should DiracX be used for this service via the legacy adapter mechanism
+
+    :param str system: system name or full name e.g.: Framework/ProxyManager
+    :param str service: service name, like 'ProxyManager'.
+
+    :return: bool -- True if DiracX should be used
+    """
+    system, service = divideFullName(system, service)
+    value = gConfigurationData.extractOptionFromCFG(f"/DiracX/LegacyClientEnabled/{system}/{service}")
+    return (value or "no").lower() in ("y", "yes", "true", "1")
+
+
 def getServiceURL(system, service=None, setup=False):
     """Generate url.
 
@@ -297,3 +310,9 @@ def getGatewayURLs(system="", service=None):
         return False
     gateways = List.randomize(List.fromChar(gateways, ","))
     return [checkComponentURL(u, system, service) for u in gateways if u] if system and service else gateways
+
+
+def getDisabledDiracxVOs() -> list[str]:
+    """Get the list of VOs for which DiracX is enabled"""
+    vos = gConfigurationData.extractOptionFromCFG("/DiracX/DisabledVOs")
+    return List.fromChar(vos or "", ",")

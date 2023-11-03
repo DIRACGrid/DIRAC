@@ -109,7 +109,10 @@ class Client:
                 timeout = self.timeout
 
             self.__kwargs["timeout"] = timeout
-            rpc = RPCClientSelector(url, httpsClient=self.httpsClient, **self.__kwargs)
+
+            rpc = RPCClientSelector(
+                url, httpsClient=self.httpsClient, diracxClient=getattr(self, "diracxClient", None), **self.__kwargs
+            )
         return rpc
 
 

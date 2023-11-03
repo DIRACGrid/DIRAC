@@ -111,8 +111,8 @@ class SandboxStoreHandlerMixin:
         credDict = self.getRemoteCredentials()
         vo = Registry.getVOForGroup(credDict["group"])
 
-        enabledVOs = gConfig.getValue("/DiracX/EnabledVOs", [])
-        if self._useDiracXBackend and vo in enabledVOs:
+        disabledVOs = gConfig.getValue("/DiracX/DisabledVOs", [])
+        if self._useDiracXBackend and vo not in disabledVOs:
             from DIRAC.FrameworkSystem.Utilities.diracx import TheImpersonator
             from diracx.client.models import SandboxInfo  # pylint: disable=import-error
 

@@ -35,7 +35,7 @@ FEATURE_VARIABLES = {
     "DIRAC_USE_JSON_ENCODE": None,
     "INSTALLATION_BRANCH": "",
 }
-DIRACX_OPTIONS = ("DIRAC_ENABLE_DIRACX_JOB_MONITORING",)
+DIRACX_OPTIONS = ()
 DEFAULT_MODULES = {"DIRAC": Path(__file__).parent.absolute()}
 
 # Static configuration
