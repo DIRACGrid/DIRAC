@@ -67,18 +67,9 @@ Setting up an ``IdProvider``
 Launching the ``TokenManagerHandler``
 -------------------------------------
 
-Run the following commands from a DIRAC client to install the ``Framework/TokenManager`` Tornado service:
+Install the ``Framework/TokenManager`` Tornado service, following :ref:`these instructions <httpsTornadoInstall>`
 
-.. code-block:: console
-
-   $ dirac-proxy-init -g dirac_admin
-
-   $ dirac-admin-sysadmin-cli --host <dirac host>
-
-   > install service Framework TokenManager
-
-.. note:: ``Tornado`` and then ``TokenManager`` might need to be restarted.
-.. note:: Get more details about the system administrator interface from the :ref:`System Administrator Interface <system-admin-console>` section.
+.. note:: the ``Tornado/Tornado`` service might need to be restarted.
 
 Marking computing resources and VOs as token-ready
 --------------------------------------------------
