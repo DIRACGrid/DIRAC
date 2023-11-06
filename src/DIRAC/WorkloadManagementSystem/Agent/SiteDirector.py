@@ -1022,6 +1022,14 @@ class SiteDirector(AgentModule):
         else:
             self.log.info("DIRAC project will be installed by pilots")
 
+        # Preinstalled environment defined ?
+        preinstalledEnv = opsHelper.getValue("Pilot/PreinstalledEnv", "")
+        preinstalledEnvPrefix = opsHelper.getValue("Pilot/PreinstalledEnvPrefix", "")
+        if preinstalledEnv:
+            pilotOptions.append(f"--preinstalledEnv={preinstalledEnv}")
+        elif preinstalledEnvPrefix:
+            pilotOptions.append(f"--preinstalledEnvPrefix={preinstalledEnvPrefix}")
+
         pilotOptions.append("--pythonVersion=3")
 
         # DIRAC Extensions to be used in pilots
