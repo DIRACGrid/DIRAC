@@ -2,28 +2,34 @@
 ########################################################################
 """ System Administrator Client Command Line Interface """
 
-import sys
-import pprint
-import os
 import atexit
-import readline
 import datetime
+import os
+import pprint
+import readline
+import sys
 import time
 
 from DIRAC import gConfig, gLogger
 from DIRAC.Core.Base.CLI import CLI, colorize
-from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
-from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
-from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority
+from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.Core.Utilities.PromptUser import promptUser
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
+from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import (
+    ComponentMonitoringClient,
+)
+from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import (
+    SystemAdministratorClient,
+)
+from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import (
+    SystemAdministratorIntegrator,
+)
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
-from DIRAC.Core.Utilities.Extensions import extensionsByPriority
-from DIRAC.Core.Utilities import List
-from DIRAC.Core.Utilities.PromptUser import promptUser
-from DIRAC.Core.Utilities.PrettyPrint import printTable
-from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 
 class SystemAdministratorClientCLI(CLI):
@@ -198,7 +204,7 @@ class SystemAdministratorClientCLI(CLI):
                         for component in components:
                             record = []
                             if rDict[compType][system][component]["Installed"]:
-                                module = str(rDict[compType][system][component]["DIRACModule"])
+                                module = str(rDict[compType][system][component]["Module"])
                                 record += [system, component, module, compType.lower()[:-1]]
                                 if rDict[compType][system][component]["Setup"]:
                                     record += ["Setup"]
