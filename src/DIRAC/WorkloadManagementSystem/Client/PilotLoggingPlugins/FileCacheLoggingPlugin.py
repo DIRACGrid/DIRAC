@@ -24,8 +24,8 @@ class FileCacheLoggingPlugin(PilotLoggingPlugin):
         """
         # UUID pattern
         self.pattern = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
-        # pilot stamp pattern
-        self.stamppattern = re.compile(r"^[0-9a-f]{32}$")
+        # pilot stamp pattern (relax to a-z to allow test specific names)
+        self.stamppattern = re.compile(r"^[0-9a-z]{32}$")
         self.meta = {}
         logPath = os.path.join(os.getcwd(), "pilotlogs")
         self.meta["LogPath"] = logPath
