@@ -1,3 +1,30 @@
+[v9.0.0a1]
+
+*Core
+
+NEW: (#7258) Support using DiracX as a backend for RPC calls
+
+*WorkloadManagementSystem
+
+CHANGE: (#7257) Refactor PilotLoggingAgent: download proxies at initialisation. Renew a proxy if it is about to expire.
+
+*Resources
+
+NEW: (#7256) Add support for loading external providers in CloudCE
+NEW: (#7256) Add OpenNebula6 (XMLRPC) provider for CloudCE/libcloud
+
+*Subsystem
+
+FIX: (#7253) prevent AREXCE from creationg delegations each time a CE got a small and temporary issue
+
+*docs
+
+NEW: (#7252) add documentation about setting up DIRAC to submit pilots with tokens
+
+*WorkloadManagement
+
+CHANGE: (#7250) pilot submission with tokens in a multi-VO context
+
 [v8.1.0a23]
 
 *TransformationSystem
