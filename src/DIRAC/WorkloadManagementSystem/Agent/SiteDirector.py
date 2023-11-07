@@ -81,7 +81,6 @@ class SiteDirector(AgentModule):
 
         self.gridEnv = ""
         self.vo = ""
-        self.group = ""
         self.pilotDN = ""
         self.pilotGroup = ""
         self.platforms = []
@@ -1045,9 +1044,6 @@ class SiteDirector(AgentModule):
 
         if "PipInstallOptions" in queueDict:
             pilotOptions.append(f"--pipInstallOptions={queueDict['PipInstallOptions']}")
-
-        if self.group:
-            pilotOptions.append(f"-G {self.group}")
 
         return pilotOptions
 
