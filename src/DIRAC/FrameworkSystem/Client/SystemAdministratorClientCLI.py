@@ -20,9 +20,15 @@ from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
-from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
-from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
-from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import SystemAdministratorIntegrator
+from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import (
+    ComponentMonitoringClient,
+)
+from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import (
+    SystemAdministratorClient,
+)
+from DIRAC.FrameworkSystem.Client.SystemAdministratorIntegrator import (
+    SystemAdministratorIntegrator,
+)
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 
@@ -199,7 +205,7 @@ class SystemAdministratorClientCLI(CLI):
                         for component in components:
                             record = []
                             if rDict[compType][system][component]["Installed"]:
-                                module = str(rDict[compType][system][component]["DIRACModule"])
+                                module = str(rDict[compType][system][component]["Module"])
                                 record += [system, component, module, compType.lower()[:-1]]
                                 if rDict[compType][system][component]["Setup"]:
                                     record += ["Setup"]

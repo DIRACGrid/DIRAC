@@ -159,8 +159,8 @@ def createClient(serviceName):
 
             # loop over all the nodes (classes, functions, imports) in the handlerModule
             for node in ast.iter_child_nodes(handlerAst):
-                # find only a class with the name of the handlerClass
-                if not (isinstance(node, ast.ClassDef) and node.name == handlerClassName):
+                # find only a class that starts with the name of the handlerClass
+                if not (isinstance(node, ast.ClassDef) and node.name.startswith(handlerClassName)):
                     continue
                 for member in ast.iter_child_nodes(node):
                     # only look at functions
