@@ -8,15 +8,14 @@
 
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
-import pytest
 
 import DIRAC
+import pytest
 
 DIRAC.initialize()  # Initialize configuration
 
-from DIRAC import gLogger, S_OK
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
+from DIRAC import S_OK, gLogger
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
 
 # sut
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -317,13 +316,19 @@ def test_setJobsMajorStatus(jobDB):
     assert res["OK"] is True, res["Message"]
     res = jobDB.getJobsAttributes([jobID_1, jobID_2], ["Status"])
     assert res["OK"] is True, res["Message"]
-    assert res["Value"] == {jobID_1: {"Status": JobStatus.WAITING}, jobID_2: {"Status": JobStatus.CHECKING}}
+    assert res["Value"] == {jobID_1: {"Status": JobStatus.KILLED}, jobID_2: {"Status": JobStatus.CHECKING}}
 
-    res = jobDB.setJobsMajorStatus([jobID_1], JobStatus.KILLED, force=True)
+    res = jobDB.setJobsMajorStatus([jobID_1], JobStatus.RUNNING)
     assert res["OK"] is True, res["Message"]
     res = jobDB.getJobsAttributes([jobID_1, jobID_2], ["Status"])
     assert res["OK"] is True, res["Message"]
     assert res["Value"] == {jobID_1: {"Status": JobStatus.KILLED}, jobID_2: {"Status": JobStatus.CHECKING}}
+
+    res = jobDB.setJobsMajorStatus([jobID_1], JobStatus.RUNNING, force=True)
+    assert res["OK"] is True, res["Message"]
+    res = jobDB.getJobsAttributes([jobID_1, jobID_2], ["Status"])
+    assert res["OK"] is True, res["Message"]
+    assert res["Value"] == {jobID_1: {"Status": JobStatus.RUNNING}, jobID_2: {"Status": JobStatus.CHECKING}}
 
 
 def test_attributes(jobDB):
