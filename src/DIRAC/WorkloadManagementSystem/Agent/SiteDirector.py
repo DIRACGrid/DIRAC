@@ -1058,6 +1058,9 @@ class SiteDirector(AgentModule):
         pilotOptions.append(f"-Q {self.queueDict[queue]['QueueName']}")
         # SiteName
         pilotOptions.append(f"-n {queueDict['Site']}")
+        # VO
+        if self.vo:
+            pilotOptions.append(f"--wnVO={self.vo}")
 
         # Generic Options
         if "GenericOptions" in queueDict:
