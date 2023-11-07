@@ -62,56 +62,12 @@ from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import writeToTokenFile
 from DIRAC.Core.Security.Locations import getCAsLocation
-from DIRAC.Resources.Computing.BatchSystems.Condor import parseCondorStatus
+from DIRAC.Resources.Computing.BatchSystems.Condor import HOLD_REASON_SUBCODE, subTemplate, parseCondorStatus
 
 MANDATORY_PARAMETERS = ["Queue"]
 DEFAULT_WORKINGDIRECTORY = "/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT"
 DEFAULT_DAYSTOKEEPREMOTELOGS = 1
 DEFAULT_DAYSTOKEEPLOGS = 15
-
-
-def logDir(ceName, stamp):
-    """Return path to log and output files for pilot.
-
-    :param str ceName: Name of the CE
-    :param str stamp: pilot stamp from/for jobRef
-    """
-    return os.path.join(ceName, stamp[0], stamp[1:3])
-
-
-def condorIDAndPathToResultFromJobRef(jobRef):
-    """Extract tuple of jobURL and jobID from the jobRef string.
-    The condorID as well as the path leading to the job results are also extracted from the jobID.
-
-    :param str jobRef: PilotJobReference of the following form: ``htcondorce://<ceName>/<condorID>:::<pilotStamp>``
-
-    :return: tuple composed of the jobURL, the path to the job results and the condorID of the given jobRef
-    """
-    splits = jobRef.split(":::")
-    jobURL = splits[0]
-    stamp = splits[1] if len(splits) > 1 else ""
-    _, _, ceName, condorID = jobURL.split("/")
-
-    # Reconstruct the path leading to the result (log, output)
-    # Construction of the path can be found in submitJob()
-    pathToResult = logDir(ceName, stamp) if len(stamp) >= 3 else ""
-
-    return jobURL, pathToResult, condorID
-
-
-def findFile(workingDir, fileName, pathToResult):
-    """Find a file in a file system.
-
-    :param str workingDir: the name of the directory containing the given file to search for
-    :param str fileName: the name of the file to find
-    :param str pathToResult: the path to follow from workingDir to find the file
-
-    :return: path leading to the file
-    """
-    path = os.path.join(workingDir, pathToResult, fileName)
-    if os.path.exists(path):
-        return S_OK(path)
-    return S_ERROR(errno.ENOENT, f"Could not find {path}")
 
 
 class HTCondorCEComputingElement(ComputingElement):
@@ -151,11 +107,49 @@ class HTCondorCEComputingElement(ComputingElement):
         self.tokenFile = None
 
     #############################################################################
-    def __writeSub(self, executable, nJobs, location, processors, pilotStamps, tokenFile=None):
+
+    def _jobReferenceToCondorID(self, jobReference):
+        """Convert a job reference into a Condor jobID.
+        Example: htcondorce://<ce>/1234.0 becomes 1234.0
+
+        :param str: job reference, a condor jobID with additional details
+        :return: Condor jobID
+        """
+        # Remove CE and protocol information from arc Job ID
+        if "://" in jobReference:
+            condorJobID = jobReference.split("/")[-1]
+            return condorJobID
+        return jobReference
+
+    def _condorIDToJobReference(self, condorJobIDs):
+        """Get the job references from the condor job IDs.
+        Cluster ids look like " 107.0 - 107.0 " or " 107.0 - 107.4 "
+
+        :param str condorJobIDs: the output of condor_submit
+
+        :return: job references such as htcondorce://<ce>/<clusterID>.<i>
+        """
+        clusterIDs = condorJobIDs.split("-")
+        if len(clusterIDs) != 2:
+            return S_ERROR(f"Something wrong with the condor_submit output: {condorJobIDs}")
+        clusterIDs = [clu.strip() for clu in clusterIDs]
+        self.log.verbose("Cluster IDs parsed:", clusterIDs)
+        try:
+            clusterID = clusterIDs[0].split(".")[0]
+            numJobs = clusterIDs[1].split(".")[1]
+        except IndexError:
+            return S_ERROR(f"Something wrong with the condor_submit output: {condorJobIDs}")
+
+        cePrefix = f"htcondorce://{self.ceName}/"
+        jobReferences = [f"{cePrefix}{clusterID}.{i}" for i in range(int(numJobs) + 1)]
+        return S_OK(jobReferences)
+
+    #############################################################################
+
+    def __writeSub(self, executable, location, processors, pilotStamps, tokenFile=None):
         """Create the Sub File for submission.
 
         :param str executable: name of the script to execute
-        :param int nJobs: number of desired jobs
         :param str location: directory that should contain the result of the jobs
         :param int processors: number of CPU cores to allocate
         :param list pilotStamps: list of pilot stamps (strings)
@@ -165,7 +159,6 @@ class HTCondorCEComputingElement(ComputingElement):
         mkDir(os.path.join(self.workingDirectory, location))
 
         self.log.debug("InitialDir:", os.path.join(self.workingDirectory, location))
-
         self.log.debug(f"ExtraSubmitString:\n### \n {self.extraSubmitString} \n###")
 
         fd, name = tempfile.mkstemp(suffix=".sub", prefix="HTCondorCE_", dir=self.workingDirectory)
@@ -174,6 +167,7 @@ class HTCondorCEComputingElement(ComputingElement):
         executable = os.path.join(self.workingDirectory, executable)
 
         useCredentials = "use_x509userproxy = true"
+        # If tokenFile is present, then we transfer it to the worker node
         if tokenFile:
             useCredentials += textwrap.dedent(
                 f"""
@@ -182,55 +176,25 @@ class HTCondorCEComputingElement(ComputingElement):
                 """
             )
 
-        # This is used to remove outputs from the remote schedd
-        # Used in case a local schedd is not used
-        periodicRemove = "periodic_remove = "
-        periodicRemove += "(JobStatus == 4) && "
-        periodicRemove += f"(time() - EnteredCurrentStatus) > ({self.daysToKeepRemoteLogs} * 24 * 3600)"
+        # Remote schedd options by default
+        targetUniverse = "vanilla"
+        scheddOptions = ""
+        if self.useLocalSchedd:
+            targetUniverse = "grid"
+            scheddOptions = f"grid_resource = condor {self.ceName} {self.ceName}:{self.port}"
 
-        localScheddOptions = (
-            """
-ShouldTransferFiles = YES
-WhenToTransferOutput = ON_EXIT_OR_EVICT
-"""
-            if self.useLocalSchedd
-            else periodicRemove
-        )
-
-        targetUniverse = "grid" if self.useLocalSchedd else "vanilla"
-
-        sub = """
-executable = %(executable)s
-universe = %(targetUniverse)s
-%(useCredentials)s
-output = $(Cluster).$(Process).out
-error = $(Cluster).$(Process).err
-log = $(Cluster).$(Process).log
-environment = "HTCONDOR_JOBID=$(Cluster).$(Process) DIRAC_PILOT_STAMP=$(stamp)"
-initialdir = %(initialDir)s
-grid_resource = condor %(ceName)s %(ceName)s:%(port)s
-transfer_output_files = ""
-request_cpus = %(processors)s
-%(localScheddOptions)s
-
-kill_sig=SIGTERM
-
-%(extraString)s
-
-Queue stamp in %(pilotStampList)s
-
-""" % dict(
-            executable=executable,
-            nJobs=nJobs,
-            processors=processors,
-            ceName=self.ceName,
-            port=self.port,
-            extraString=self.extraSubmitString,
-            initialDir=os.path.join(self.workingDirectory, location),
-            localScheddOptions=localScheddOptions,
+        sub = subTemplate % dict(
             targetUniverse=targetUniverse,
-            pilotStampList=",".join(pilotStamps),
+            executable=executable,
+            initialDir=os.path.join(self.workingDirectory, location),
+            environment="HTCONDOR_JOBID=$(Cluster).$(Process)",
             useCredentials=useCredentials,
+            holdReasonSubcode=HOLD_REASON_SUBCODE,
+            processors=processors,
+            daysToKeepRemoteLogs=self.daysToKeepRemoteLogs,
+            scheddOptions=scheddOptions,
+            extraString=self.extraSubmitString,
+            pilotStampList=",".join(pilotStamps),
         )
         subFile.write(sub)
         subFile.close()
@@ -261,7 +225,7 @@ Queue stamp in %(pilotStampList)s
 
         :param list cmd: list of the condor command elements
         :param bool keepTokenFile: flag to reuse or not the previously created token file
-        :return: S_OK/S_ERROR - the result of the executeGridCommand() call
+        :return: S_OK/S_ERROR - the stdout parameter of the executeGridCommand() call
         """
         if not self.token and not self.proxy:
             return S_ERROR(f"Cannot execute the command, token and proxy not found: {cmd}")
@@ -290,15 +254,28 @@ Queue stamp in %(pilotStampList)s
             if cas := getCAsLocation():
                 htcEnv["_CONDOR_AUTH_SSL_CLIENT_CADIR"] = cas
 
+        # Execute the command
         result = executeGridCommand(
             cmd,
             gridEnvScript=self.gridEnv,
             gridEnvDict=htcEnv,
         )
+        if not result["OK"]:
+            self.tokenFile = None
+            self.log.error("Command", f"{cmd} failed with: {result['Message']}")
+            return result
+
+        status, stdout, stderr = result["Value"]
+        if status:
+            self.tokenFile = None
+            # We have got a non-zero status code
+            errorString = stderr if stderr else stdout
+            return S_ERROR(f"Command {cmd} failed with: {status} - {errorString.strip()}")
+
         # Remove token file if we do not want to keep it
         self.tokenFile = self.tokenFile if keepTokenFile else None
 
-        return result
+        return S_OK(stdout.strip())
 
     #############################################################################
     def submitJob(self, executableFile, proxy, numberOfJobs=1):
@@ -317,16 +294,14 @@ Queue stamp in %(pilotStampList)s
             jobStamps.append(jobStamp)
 
         # We randomize the location of the pilot output and log, because there are just too many of them
-        location = logDir(self.ceName, commonJobStampPart)
+        location = os.path.join(self.ceName, commonJobStampPart[0], commonJobStampPart[1:3])
         nProcessors = self.ceParameters.get("NumberOfProcessors", 1)
         if self.token:
             self.tokenFile = tempfile.NamedTemporaryFile(
                 suffix=".token", prefix="HTCondorCE_", dir=self.workingDirectory
             )
             writeToTokenFile(self.token["access_token"], self.tokenFile.name)
-        subName = self.__writeSub(
-            executableFile, numberOfJobs, location, nProcessors, jobStamps, tokenFile=self.tokenFile
-        )
+        subName = self.__writeSub(executableFile, location, nProcessors, jobStamps, tokenFile=self.tokenFile)
 
         cmd = ["condor_submit", "-terse", subName]
         # the options for submit to remote are different than the other remoteScheddOptions
@@ -336,30 +311,22 @@ Queue stamp in %(pilotStampList)s
             cmd.insert(-1, op)
 
         result = self._executeCondorCommand(cmd, keepTokenFile=True)
-        self.log.verbose(result)
         os.remove(subName)
-        self.tokenFile = None
         if not result["OK"]:
             self.log.error("Failed to submit jobs to htcondor", result["Message"])
             return result
 
-        status, stdout, stderr = result["Value"]
-
-        if status:
-            # We have got a non-zero status code
-            errorString = stderr if stderr else stdout
-            return S_ERROR(f"Pilot submission failed with error: {errorString.strip()}")
-
-        pilotJobReferences = self.__getPilotReferences(stdout.strip())
-        if not pilotJobReferences["OK"]:
-            return pilotJobReferences
-        pilotJobReferences = pilotJobReferences["Value"]
+        stdout = result["Value"]
+        jobReferences = self._condorIDToJobReference(stdout)
+        if not jobReferences["OK"]:
+            return jobReferences
+        jobReferences = jobReferences["Value"]
 
         self.log.verbose("JobStamps:", jobStamps)
-        self.log.verbose("pilotRefs:", pilotJobReferences)
+        self.log.verbose("pilotRefs:", jobReferences)
 
-        result = S_OK(pilotJobReferences)
-        result["PilotStampDict"] = dict(zip(pilotJobReferences, jobStamps))
+        result = S_OK(jobReferences)
+        result["PilotStampDict"] = dict(zip(jobReferences, jobStamps))
         if self.useLocalSchedd:
             # Executable is transferred afterward
             # Inform the caller that Condor cannot delete it before the end of the execution
@@ -376,27 +343,20 @@ Queue stamp in %(pilotStampList)s
             jobIDList = [jobIDList]
 
         self.log.verbose("KillJob jobIDList", jobIDList)
-
         self.tokenFile = None
 
-        for jobRef in jobIDList:
-            job, _, jobID = condorIDAndPathToResultFromJobRef(jobRef)
-            self.log.verbose("Killing pilot", job)
+        for jobReference in jobIDList:
+            condorJobID = self._jobReferenceToCondorID(jobReference.split(":::")[0])
+            self.log.verbose("Killing pilot", jobReference)
             cmd = ["condor_rm"]
             cmd.extend(self.remoteScheddOptions.strip().split(" "))
-            cmd.append(jobID)
+            cmd.append(condorJobID)
             result = self._executeCondorCommand(cmd, keepTokenFile=True)
             if not result["OK"]:
-                self.tokenFile = None
-                return S_ERROR(f"condor_rm failed completely: {result['Message']}")
-            status, stdout, stderr = result["Value"]
-            if status != 0:
-                self.log.warn("Failed to kill pilot", f"{job}: {stdout}, {stderr}")
-                self.tokenFile = None
-                return S_ERROR(f"Failed to kill pilot {job}: {stderr}")
+                self.log.error("Failed to kill pilot", f"{jobReference}: {result['Message']}")
+                return result
 
         self.tokenFile = None
-
         return S_OK()
 
     #############################################################################
@@ -442,76 +402,47 @@ Queue stamp in %(pilotStampList)s
         resultDict = {}
         condorIDs = {}
         # Get all condorIDs so we can just call condor_q and condor_history once
-        for jobRef in jobIDList:
-            job, _, jobID = condorIDAndPathToResultFromJobRef(jobRef)
-            condorIDs[job] = jobID
+        for jobReference in jobIDList:
+            jobReference = jobReference.split(":::")[0]
+            condorIDs[jobReference] = self._jobReferenceToCondorID(jobReference)
 
         self.tokenFile = None
 
         qList = []
         for _condorIDs in breakListIntoChunks(condorIDs.values(), 100):
-            # This will return a list of 1245.75 3
+            # This will return a list of 1245.75 3 undefined undefined undefined
             cmd = ["condor_q"]
             cmd.extend(self.remoteScheddOptions.strip().split(" "))
             cmd.extend(_condorIDs)
-            cmd.extend(["-af:j", "JobStatus"])
+            cmd.extend(["-af:j", "JobStatus", "HoldReasonCode", "HoldReasonSubCode", "HoldReason"])
             result = self._executeCondorCommand(cmd, keepTokenFile=True)
             if not result["OK"]:
-                self.tokenFile = None
-                return S_ERROR(f"condor_q failed completely: {result['Message']}")
-            status, stdout, stderr = result["Value"]
-            if status != 0:
-                self.tokenFile = None
-                return S_ERROR(stdout + stderr)
-            _qList = stdout.strip().split("\n")
-            qList.extend(_qList)
+                return result
 
-            # FIXME: condor_history does only support j for autoformat from 8.5.3,
-            # format adds whitespace for each field This will return a list of 1245 75 3
-            # needs to concatenate the first two with a dot
+            qList.extend(result["Value"].split("\n"))
+
             condorHistCall = ["condor_history"]
             condorHistCall.extend(self.remoteScheddOptions.strip().split(" "))
             condorHistCall.extend(_condorIDs)
-            condorHistCall.extend(["-af", "ClusterId", "ProcId", "JobStatus"])
+            condorHistCall.extend(["-af:j", "JobStatus", "HoldReasonCode", "HoldReasonSubCode", "HoldReason"])
+            result = self._executeCondorCommand(cmd, keepTokenFile=True)
+            if not result["OK"]:
+                return result
 
-            self._treatCondorHistory(condorHistCall, qList)
+            qList.extend(result["Value"].split("\n"))
 
         for job, jobID in condorIDs.items():
-            pilotStatus = parseCondorStatus(qList, jobID)
-            if pilotStatus == "HELD":
-                # make sure the pilot stays dead and gets taken out of the condor_q
-                cmd = f"condor_rm {self.remoteScheddOptions} {jobID}".split()
-                _result = self._executeCondorCommand(cmd, keepTokenFile=True)
-                pilotStatus = PilotStatus.ABORTED
+            jobStatus, reason = parseCondorStatus(qList, jobID)
 
-            resultDict[job] = pilotStatus
+            if jobStatus == PilotStatus.ABORTED:
+                self.log.verbose("Job", f"{jobID} held: {reason}")
+
+            resultDict[job] = jobStatus
 
         self.tokenFile = None
 
         self.log.verbose(f"Pilot Statuses: {resultDict} ")
         return S_OK(resultDict)
-
-    def _treatCondorHistory(self, condorHistCall, qList):
-        """concatenate clusterID and processID to get the same output as condor_q
-        until we can expect condor version 8.5.3 everywhere
-
-        :param str condorHistCall: condor_history command to run
-        :param list qList: list of jobID and status from condor_q output, will be modified in this function
-        :returns: None
-        """
-
-        result = self._executeCondorCommand(condorHistCall)
-        if not result["OK"]:
-            return S_ERROR(f"condorHistCall failed completely: {result['Message']}")
-
-        status_history, stdout_history, stderr_history = result["Value"]
-
-        # Join the ClusterId and the ProcId and add to existing list of statuses
-        if status_history == 0:
-            for line in stdout_history.split("\n"):
-                values = line.strip().split()
-                if len(values) == 3:
-                    qList.append("%s.%s %s" % tuple(values))
 
     def getJobLog(self, jobID):
         """Get pilot job logging info from HTCondor
@@ -539,13 +470,39 @@ Queue stamp in %(pilotStampList)s
 
         return S_OK((result["Value"]["output"], result["Value"]["error"]))
 
+    def _findFile(self, fileName, pathToResult):
+        """Find a file in a file system.
+
+        :param str workingDir: the name of the directory containing the given file to search for
+        :param str fileName: the name of the file to find
+        :param str pathToResult: the path to follow from workingDir to find the file
+
+        :return: path leading to the file
+        """
+        path = os.path.join(self.workingDirectory, pathToResult, fileName)
+        if os.path.exists(path):
+            return S_OK(path)
+        return S_ERROR(errno.ENOENT, f"Could not find {path}")
+
     def __getJobOutput(self, jobID, outTypes):
         """Get job outputs: output, error and logging files from HTCondor
 
         :param str jobID: job identifier
         :param list outTypes: output types targeted (output, error and/or logging)
         """
-        _job, pathToResult, condorID = condorIDAndPathToResultFromJobRef(jobID)
+        # Extract stamp from the Job ID
+        if ":::" in jobID:
+            jobReference, stamp = jobID.split(":::")
+        else:
+            return S_ERROR(f"DIRAC stamp not defined for {jobID}")
+
+        # Reconstruct the path leading to the result (log, output)
+        # Construction of the path can be found in submitJob()
+        if len(stamp) < 3:
+            return S_ERROR(f"Stamp is not long enough: {stamp}")
+        pathToResult = os.path.join(self.ceName, stamp[0], stamp[1:3])
+
+        condorJobID = self._jobReferenceToCondorID(jobReference)
         iwd = os.path.join(self.workingDirectory, pathToResult)
 
         try:
@@ -556,30 +513,19 @@ Queue stamp in %(pilotStampList)s
             return S_ERROR(e.errno, f"{errorMessage} ({iwd})")
 
         if not self.useLocalSchedd:
-            cmd = ["condor_transfer_data", "-pool", f"{self.ceName}:{self.port}", "-name", self.ceName, condorID]
+            cmd = ["condor_transfer_data", "-pool", f"{self.ceName}:{self.port}", "-name", self.ceName, condorJobID]
             result = self._executeCondorCommand(cmd)
-            self.log.verbose(result)
 
             # Getting 'logging' without 'error' and 'output' is possible but will generate command errors
             # We do not check the command errors if we only want 'logging'
             if "error" in outTypes or "output" in outTypes:
-                errorMessage = "Failed to get job output from htcondor"
                 if not result["OK"]:
-                    self.log.error(errorMessage, result["Message"])
                     return result
-                # Even if result is OK, the actual exit code of cmd can still be an error
-                status, stdout, stderr = result["Value"]
-                if status != 0:
-                    outMessage = stdout.strip()
-                    errMessage = stderr.strip()
-                    varMessage = outMessage + " " + errMessage
-                    self.log.error(errorMessage, varMessage)
-                    return S_ERROR(f"{errorMessage}: {varMessage}")
 
         outputsSuffix = {"output": "out", "error": "err", "logging": "log"}
         outputs = {}
         for output, suffix in outputsSuffix.items():
-            resOut = findFile(self.workingDirectory, f"{condorID}.{suffix}", pathToResult)
+            resOut = self._findFile(f"{condorJobID}.{suffix}", pathToResult)
             if not resOut["OK"]:
                 # Return an error if the output type was targeted, else we continue
                 if output in outTypes:
@@ -601,29 +547,6 @@ Queue stamp in %(pilotStampList)s
                 return S_ERROR(f"Failed to get pilot {output}")
 
         return S_OK(outputs)
-
-    def __getPilotReferences(self, jobString):
-        """Get the references from the condor_submit output.
-        Cluster ids look like " 107.0 - 107.0 " or " 107.0 - 107.4 "
-
-        :param str jobString: the output of condor_submit
-
-        :return: job references such as htcondorce://<CE name>/<path to result>-<clusterID>.<i>
-        """
-        self.log.verbose("getPilotReferences:", jobString)
-        clusterIDs = jobString.split("-")
-        if len(clusterIDs) != 2:
-            return S_ERROR(f"Something wrong with the condor_submit output: {jobString}")
-        clusterIDs = [clu.strip() for clu in clusterIDs]
-        self.log.verbose("Cluster IDs parsed:", clusterIDs)
-        try:
-            clusterID = clusterIDs[0].split(".")[0]
-            numJobs = clusterIDs[1].split(".")[1]
-        except IndexError:
-            return S_ERROR(f"Something wrong with the condor_submit output: {jobString}")
-        cePrefix = f"htcondorce://{self.ceName}/"
-        jobReferences = [f"{cePrefix}{clusterID}.{i}" for i in range(int(numJobs) + 1)]
-        return S_OK(jobReferences)
 
     def __cleanup(self):
         """Clean the working directory of old jobs"""
