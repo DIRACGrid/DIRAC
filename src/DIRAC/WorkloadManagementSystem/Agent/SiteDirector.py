@@ -19,7 +19,9 @@ import DIRAC
 from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
-from DIRAC.AccountingSystem.Client.Types.PilotSubmission import PilotSubmission as PilotSubmissionAccounting
+from DIRAC.AccountingSystem.Client.Types.PilotSubmission import (
+    PilotSubmission as PilotSubmissionAccounting,
+)
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
@@ -29,15 +31,16 @@ from DIRAC.Core.Utilities.TimeUtilities import second, toEpochMilliSeconds
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
-from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
-from DIRAC.WorkloadManagementSystem.Client.PilotScopes import PILOT_SCOPES
-
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
+from DIRAC.WorkloadManagementSystem.Client.PilotScopes import PILOT_SCOPES
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import getPilotAgentsDB
-from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
+from DIRAC.WorkloadManagementSystem.private.ConfigHelper import (
+    findGenericPilotCredentials,
+)
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
 from DIRAC.WorkloadManagementSystem.Utilities.PilotWrapper import (
     _writePilotWrapperFile,
@@ -78,9 +81,6 @@ class SiteDirector(AgentModule):
 
         self.gridEnv = ""
         self.vo = ""
-        self.group = ""
-        # self.voGroups contain all the eligible user groups for pilots submitted by this SiteDirector
-        self.voGroups = []
         self.pilotDN = ""
         self.pilotGroup = ""
         self.platforms = []
@@ -126,27 +126,11 @@ class SiteDirector(AgentModule):
             self.gridEnv = getGridEnv()
 
         # The SiteDirector is for a particular user community
-        self.vo = self.am_getOption("VO", "")
-        if not self.vo:
-            self.vo = self.am_getOption("Community", "")
+        self.vo = self.am_getOption("VO", self.am_getOption("Community", ""))
         if not self.vo:
             self.vo = CSGlobals.getVO()
-        # The SiteDirector is for a particular user group
-        self.group = self.am_getOption("Group", "")
-
-        # Choose the group for which pilots will be submitted. This is a hack until
-        # we will be able to match pilots to VOs.
-        if not self.group:
-            if self.vo:
-                result = Registry.getGroupsForVO(self.vo)
-                if not result["OK"]:
-                    return result
-                self.voGroups = []
-                for group in result["Value"]:
-                    if "NormalUser" in Registry.getPropertiesForGroup(group):
-                        self.voGroups.append(group)
-        else:
-            self.voGroups = [self.group]
+        if not self.vo:
+            return S_ERROR("Need a VO")
 
         # Get the clients
         self.siteClient = SiteStatus()
@@ -225,8 +209,6 @@ class SiteDirector(AgentModule):
             tags = None
 
         self.log.always("VO:", self.vo)
-        if self.voGroups:
-            self.log.always("Group(s):", self.voGroups)
         self.log.always("Sites:", siteNames)
         self.log.always("CETypes:", ceTypes)
         self.log.always("CEs:", ces)
@@ -570,10 +552,7 @@ class SiteDirector(AgentModule):
         :returns dict: tqDict of task queue descriptions
         """
         tqDict = {"Setup": CSGlobals.getSetup(), "CPUTime": 9999999}
-        if self.vo:
-            tqDict["Community"] = self.vo
-        if self.voGroups:
-            tqDict["OwnerGroup"] = self.voGroups
+        tqDict["Community"] = self.vo
 
         if self.checkPlatform:
             platforms = self._getPlatforms()
@@ -667,10 +646,7 @@ class SiteDirector(AgentModule):
 
         if self.queueDict[queue]["Site"] not in self.siteMaskList:
             ceDict["JobType"] = "Test"
-        if self.vo:
-            ceDict["Community"] = self.vo
-        if self.voGroups:
-            ceDict["OwnerGroup"] = self.voGroups
+        ceDict["Community"] = self.vo
 
         if self.checkPlatform:
             platform = self.queueDict[queue]["ParametersDict"].get("Platform")
@@ -1049,8 +1025,7 @@ class SiteDirector(AgentModule):
         # SiteName
         pilotOptions.append(f"-n {queueDict['Site']}")
         # VO
-        if self.vo:
-            pilotOptions.append(f"--wnVO={self.vo}")
+        pilotOptions.append(f"--wnVO={self.vo}")
 
         # Generic Options
         if "GenericOptions" in queueDict:
@@ -1069,9 +1044,6 @@ class SiteDirector(AgentModule):
 
         if "PipInstallOptions" in queueDict:
             pilotOptions.append(f"--pipInstallOptions={queueDict['PipInstallOptions']}")
-
-        if self.group:
-            pilotOptions.append(f"-G {self.group}")
 
         return pilotOptions
 
