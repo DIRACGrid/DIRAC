@@ -82,8 +82,6 @@ class SiteDirector(AgentModule):
         self.gridEnv = ""
         self.vo = ""
         self.group = ""
-        # self.voGroups contain all the eligible user groups for pilots submitted by this SiteDirector
-        self.voGroups = []
         self.pilotDN = ""
         self.pilotGroup = ""
         self.platforms = []
@@ -134,21 +132,6 @@ class SiteDirector(AgentModule):
             self.vo = CSGlobals.getVO()
         if not self.vo:
             return S_ERROR("Need a VO")
-        # The SiteDirector is for a particular user group
-        self.group = self.am_getOption("Group", "")
-
-        # Choose the group for which pilots will be submitted. This is a hack until
-        # we will be able to match pilots to VOs.
-        if not self.group:
-            result = Registry.getGroupsForVO(self.vo)
-            if not result["OK"]:
-                return result
-            self.voGroups = []
-            for group in result["Value"]:
-                if "NormalUser" in Registry.getPropertiesForGroup(group):
-                    self.voGroups.append(group)
-        else:
-            self.voGroups = [self.group]
 
         # Get the clients
         self.siteClient = SiteStatus()
@@ -227,8 +210,6 @@ class SiteDirector(AgentModule):
             tags = None
 
         self.log.always("VO:", self.vo)
-        if self.voGroups:
-            self.log.always("Group(s):", self.voGroups)
         self.log.always("Sites:", siteNames)
         self.log.always("CETypes:", ceTypes)
         self.log.always("CEs:", ces)
@@ -573,8 +554,6 @@ class SiteDirector(AgentModule):
         """
         tqDict = {"Setup": CSGlobals.getSetup(), "CPUTime": 9999999}
         tqDict["Community"] = self.vo
-        if self.voGroups:
-            tqDict["OwnerGroup"] = self.voGroups
 
         if self.checkPlatform:
             platforms = self._getPlatforms()
@@ -669,8 +648,6 @@ class SiteDirector(AgentModule):
         if self.queueDict[queue]["Site"] not in self.siteMaskList:
             ceDict["JobType"] = "Test"
         ceDict["Community"] = self.vo
-        if self.voGroups:
-            ceDict["OwnerGroup"] = self.voGroups
 
         if self.checkPlatform:
             platform = self.queueDict[queue]["ParametersDict"].get("Platform")
