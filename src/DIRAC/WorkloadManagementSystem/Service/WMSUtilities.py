@@ -6,7 +6,7 @@ import shutil
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN, getVOForGroup
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
@@ -75,7 +75,8 @@ def setPilotCredentials(ce, pilotDict):
     :param pilotDict: pilot parameter dictionary
     :return: S_OK/S_ERROR
     """
-    if "Token" in ce.ceParameters.get("Tag", []):
+    vo = getVOForGroup(pilotDict["OwnerGroup"])
+    if "Token" in ce.ceParameters.get("Tag", []) or f"Token:{vo}" in ce.ceParameters.get("Tag", []):
         result = gTokenManager.getToken(
             userGroup=pilotDict["OwnerGroup"],
             scope=PILOT_SCOPES,
