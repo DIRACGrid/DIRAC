@@ -240,7 +240,7 @@ class ProxyInit:
 
         vo = Registry.getVOMSVOForGroup(self.__piParams.diracGroup)
         disabledVOs = gConfig.getValue("/DiracX/DisabledVOs", [])
-        if vo not in disabledVOs:
+        if vo and vo not in disabledVOs:
             from diracx.core.utils import write_credentials  # pylint: disable=import-error
             from diracx.core.models import TokenResponse  # pylint: disable=import-error
             from diracx.core.preferences import DiracxPreferences  # pylint: disable=import-error
