@@ -1,3 +1,26 @@
+[v9.0.0a2]
+
+*WorkloadManagementSystem
+
+FIX: (#7282) JobStatus: allow WAITING -> KILLED
+FIX: (#7263) SiteDirector acts for a VO
+
+*FrameworkSystem
+
+FIX: (#7280) show status SysAdminCLI KeyError
+
+*Resources
+
+FIX: (#7279) getting more details about failed/aborted pilots from HTCondor
+
+*Core
+
+FIX: (#7273) createClient: also look at HandlerMixin classes to find `export_`ed functions. Fixes the client Documentation creation, fixes #7265
+
+*WorkloadManagement
+
+NEW: (#7271) SiteDirector - added preinstalledEnv and preinstalledEnvPrefix pilot options
+
 [v9.0.0a1]
 
 *Core
