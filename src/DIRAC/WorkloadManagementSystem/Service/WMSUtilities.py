@@ -84,7 +84,8 @@ def setPilotCredentials(ce, pilotDict):
     :param pilotDict: pilot parameter dictionary
     :return: S_OK/S_ERROR
     """
-    if "Token" in ce.ceParameters.get("Tag", []):
+    vo = getVOForGroup(pilotDict["OwnerGroup"])
+    if "Token" in ce.ceParameters.get("Tag", []) or f"Token:{vo}" in ce.ceParameters.get("Tag", []):
         result = gTokenManager.getToken(
             userGroup=pilotDict["OwnerGroup"],
             scope=PILOT_SCOPES,
