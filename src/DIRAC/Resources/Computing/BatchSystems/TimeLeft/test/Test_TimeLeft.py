@@ -24,7 +24,7 @@ def test_batchSystemNotDefined(mocker):
     tl.cpuPower = 10
     res = tl.getTimeLeft()
     assert not res["OK"]
-    assert res["Message"] == "Current batch system is not supported"
+    assert "Current batch system is not supported" in res["Message"]
 
 
 def test_getScaledCPU(mocker):

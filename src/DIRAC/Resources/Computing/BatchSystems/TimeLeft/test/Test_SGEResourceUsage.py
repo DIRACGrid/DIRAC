@@ -46,7 +46,7 @@ def test_getResourceUsage(mocker):
         return_value=S_OK(RESULT_FROM_SGE),
     )
 
-    sgeResourceUsage = SGEResourceUsage()
+    sgeResourceUsage = SGEResourceUsage("1234", {"Queue": "Test"})
     res = sgeResourceUsage.getResourceUsage()
 
     assert res["OK"]

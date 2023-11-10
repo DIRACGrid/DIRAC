@@ -76,7 +76,6 @@ def test_getResourcUsage(mocker):
         side_effect=[S_OK(RRCKI_OUT)],
     )
     mocker.patch("os.path.isfile", return_value=True)
-    mocker.patch.dict(os.environ, {"PBS_O_QUEUE": "lhcb", "PBS_O_QPATH": "/some/path"})
 
     pbsRU = PBSResourceUsage("55755440.seer.t1.grid.kiae.ru", {"Queue": "lhcb", "BinaryPath": "/some/path"})
     res = pbsRU.getResourceUsage()
