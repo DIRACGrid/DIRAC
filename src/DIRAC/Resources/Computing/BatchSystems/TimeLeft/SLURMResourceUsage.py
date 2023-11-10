@@ -11,9 +11,9 @@ class SLURMResourceUsage(ResourceUsage):
     This is the SLURM plugin of the TimeLeft Utility
     """
 
-    def __init__(self):
+    def __init__(self, jobID, parameters):
         """Standard constructor"""
-        super().__init__("SLURM", "SLURM_JOB_ID")
+        super().__init__("SLURM", jobID, parameters)
 
         self.log.verbose(f"JOB_ID={self.jobID}")
 

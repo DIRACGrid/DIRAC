@@ -12,10 +12,16 @@ class ResourceUsage:
     (e.g. getting the time left in a Pilot)
     """
 
-    def __init__(self, batchSystemName, jobIdEnvVar):
+    def __init__(self, batchSystemName, jobID, parameters):
         """Standard constructor"""
         self.log = gLogger.getSubLogger(f"{batchSystemName}ResourceUsage")
-        self.jobID = os.environ.get(jobIdEnvVar)
+        self.jobID = jobID
+
+        # Parameters
+        self.binary_path = parameters.get("BinaryPath")
+        self.info_path = parameters.get("InfoPath")
+        self.host = parameters.get("Host")
+        self.queue = parameters.get("Queue")
 
     def getResourceUsage(self):
         """Returns S_OK with a dictionary that can contain entries:

@@ -15,9 +15,9 @@ class MJFResourceUsage(ResourceUsage):
     """
 
     #############################################################################
-    def __init__(self):
+    def __init__(self, jobID, parameters):
         """Standard constructor"""
-        super().__init__("MJF", "JOB_ID")
+        super().__init__("MJF", jobID, parameters)
 
         self.queue = os.environ.get("QUEUE")
 
