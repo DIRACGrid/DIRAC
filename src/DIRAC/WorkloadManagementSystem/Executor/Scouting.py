@@ -39,7 +39,7 @@ class Scouting(OptimizerExecutor):
                 self.jobLog.info('Skipping optimizer, since scoutparams are abnormal')
                 return self.setNextOptimizer(jobState)
 
-            scoutID, scoutFlag = self.__getIDandFlag(scoutparams)
+            scoutID, scoutFlag = scoutparams.get('ScoutID'),scoutparams.get('ScoutFlag')
             if not scoutID:
                 self.jobLog.info('Skipping optimizers, since this job has not enough scoutparams.')
                 return self.setNextOptimizer(jobState)
@@ -58,7 +58,7 @@ class Scouting(OptimizerExecutor):
             scoutFlag = 0
             result = jobState.getAttribute('RescheduleCounter')
             if not result['OK']:
-                return S_ERROR('Could not retrieve RescheduleCounter')
+                return result
             if result['Value'] == None:
                 return S_ERROR('Reschedule Counter not found')
 
@@ -67,7 +67,7 @@ class Scouting(OptimizerExecutor):
                 rCycle = int(rCounter) - 1
                 result = self.__jobDB.getAtticJobParameters(jid, ['"ScoutFlag"'],
                                                     rescheduleCounter=rCycle)
-                self.jobLog.info("From AtticJobParameter: %s" % result)
+                self.jobLog.info(f"From AtticJobParameter: {result}")
                 if result['OK']:
                     try:
                         scoutFlag = result['Value'].get(rCycle).get('ScoutFlag', 0)
@@ -75,19 +75,18 @@ class Scouting(OptimizerExecutor):
                         pass
                 else:
                     self.jobLog.info(result['Message'])
-            self.jobLog.info('Setting scoutparams (ID:%s, Flag:%s) to JobParamter'
-                              % (scoutID, scoutFlag))
+            self.jobLog.info(f'Setting scoutparams (ID:{scoutID}, Flag:{scoutFlag}) to JobParamter')
             result = self.__setScoutparamsInJobParameters(jid, scoutID, scoutFlag, jobState)
             if not result['OK']:
                 self.jobLog.info('Skipping, since failed in setting scoutparams of JobParameters.')
                 return self.setNextOptimizer(jobState)
 
         if int(scoutFlag) == 1:
-            self.jobLog.info('Skipping optimizer, since corresponding scout jobs complete \
-                             (ScoutFlag = %s)'% scoutFlag)
+            self.jobLog.info(f'Skipping optimizer, since corresponding scout jobs complete \
+                             (ScoutFlag = {scoutFlag})')
             return self.setNextOptimizer(jobState)
 
-        self.jobLog.info('Job %s set scouting status' % jid)
+        self.jobLog.info(f'Job {jid} set scouting status')
         return self.__setScoutingStatus(jobState)
 
     def __getIDandFlag(self, scoutparams):

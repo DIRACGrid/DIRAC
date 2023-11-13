@@ -199,8 +199,7 @@ class ScoutingJobStatusAgent(AgentModule):
                 minorstatus = result['Value']['MinorStatus']
 
         self.log.verbose(f"self.jobDB.setJobAttribute({job},'MinorStatus','{minorstatus}',update=True)")
-        result = self.jobDB.setJobAttribute(job, 'MinorStatus', minorstatus, update=True)
-        if not result['OK']:
+        if not (result := self.jobDB.setJobAttribute(job,'MinorStatus',minorstatus,update=True)['OK']):
             return result
 
         # Update ScoutFlag
