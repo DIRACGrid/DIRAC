@@ -1,25 +1,8 @@
 """ Module containing a front-end to the ElasticSearch-based ElasticJobParametersDB.
-    This module interacts with one ES index: "ElasticJobParametersDB",
-    which is a drop-in replacement for MySQL-based table JobDB.JobParameters.
-    While JobDB.JobParameters in MySQL is defined as::
-
-      CREATE TABLE `JobParameters` (
-        `JobID` INT(11) UNSIGNED NOT NULL,
-        `Name` VARCHAR(100) NOT NULL,
-        `Value` TEXT NOT NULL,
-        PRIMARY KEY (`JobID`,`Name`),
-        FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-    Here we define a dynamic mapping with the constant fields::
-
-    "JobID": {"type": "long"},
-    "timestamp": {"type": "date"},
-
-    and all other custom fields added dynamically.
+    This is a drop-in replacement for MySQL-based table JobDB.JobParameters.
 
     The reason for switching to a ES-based JobParameters lies in the extended searching
-    capabilities of ES..
+    capabilities of ES.
     This results in higher traceability for DIRAC jobs.
 
     The following class methods are provided for public usage
@@ -27,11 +10,10 @@
       - setJobParameter()
       - deleteJobParameters()
 """
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Utilities import TimeUtilities
-from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
+from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.Core.Base.ElasticDB import ElasticDB
+from DIRAC.Core.Utilities import TimeUtilities
 
 try:
     from opensearchpy.exceptions import NotFoundError, RequestError

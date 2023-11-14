@@ -11,33 +11,26 @@ The following options can be set in ``Systems/WorkloadManagement/<Setup>/Databas
 * *CompressJDLs*:        Enable compression of JDLs when they are stored in the database, default *False*.
 
 """
-import base64
-import zlib
 import datetime
-
 import operator
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteTier
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, convertToReturnValue
-from DIRAC.Core.Utilities.DErrno import EWMSSUBM, EWMSJMAN, cmpError
-from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Utilities.DErrno import EWMSJMAN, EWMSSUBM, cmpError
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
-from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.DB.JobDBUtils import (
     checkAndAddOwner,
-    fixJDL,
     checkAndPrepareJob,
-    createJDLWithInitialStatus,
     compressJDL,
+    createJDLWithInitialStatus,
     extractJDL,
+    fixJDL,
 )
 
 
