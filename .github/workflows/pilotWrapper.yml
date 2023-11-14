@@ -15,11 +15,20 @@ jobs:
           - 2.7.13
           - 3.6.8
           - 3.11.4
+        pilot_branch:
+          - master
+          - devel
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+    - uses: cvmfs-contrib/github-action-cvmfs@v3
+
+    - name: Test CernVM-FS
+      run: ls /cvmfs/dirac.egi.eu
+
     - name: Fail-fast for outdated pipelines
       run: .github/workflows/fail-fast.sh
+
     - name: prepare environment
       run: |
         conda config --set add_pip_as_python_dependency false
@@ -28,4 +37,4 @@ jobs:
       run: |
         cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py .
         eval "$(conda shell.bash hook)" && conda activate python_${{ matrix.python }}
-        python Test_GenerateAndExecutePilotWrapper.py file://${{ github.workspace }}/src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py
+        python Test_GenerateAndExecutePilotWrapper.py file://${{ github.workspace }}/src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py ${{ matrix.pilot_branch }}
