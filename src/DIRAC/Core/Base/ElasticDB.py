@@ -1,8 +1,8 @@
 """ ElasticDB is a base class used to connect an Elasticsearch database and manages queries.
 """
+from DIRAC.ConfigurationSystem.Client.Utilities import getElasticDBParameters
 from DIRAC.Core.Base.DIRACDB import DIRACDB
 from DIRAC.Core.Utilities.ElasticSearchDB import ElasticSearchDB
-from DIRAC.ConfigurationSystem.Client.Utilities import getElasticDBParameters
 
 
 class ElasticDB(DIRACDB, ElasticSearchDB):

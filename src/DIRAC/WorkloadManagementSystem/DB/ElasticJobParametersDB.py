@@ -1,20 +1,14 @@
 """ Module containing a front-end to the ElasticSearch-based ElasticJobParametersDB.
     This is a drop-in replacement for MySQL-based table JobDB.JobParameters.
 
-    The reason for switching to a ES-based JobParameters lies in the extended searching
-    capabilities of ES.
-    This results in higher traceability for DIRAC jobs.
-
     The following class methods are provided for public usage
       - getJobParameters()
       - setJobParameter()
       - deleteJobParameters()
 """
 from DIRAC import S_ERROR, S_OK
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC.Core.Utilities import TimeUtilities
-
 
 mapping = {
     "properties": {
@@ -38,24 +32,23 @@ class ElasticJobParametersDB(ElasticDB):
     def __init__(self, parentLogger=None):
         """Standard Constructor"""
 
-        try:
-            indexPrefix = CSGlobals.getSetup().lower()
+        self.fullname = "WorkloadManagement/ElasticJobParametersDB"
+        self.index_name = self.getCSOption("index_name", "job_parameters")
 
+        try:
             # Connecting to the ES cluster
-            super().__init__("WorkloadManagement/ElasticJobParametersDB", indexPrefix, parentLogger=parentLogger)
+            super().__init__(self.fullname, self.index_name, parentLogger=parentLogger)
         except Exception as ex:
             self.log.error("Can't connect to ElasticJobParametersDB", repr(ex))
             raise RuntimeError("Can't connect to ElasticJobParametersDB") from ex
-
-        self.indexName_base = f"{self.getIndexPrefix()}_elasticjobparameters_index"
 
     def _indexName(self, jobID: int) -> str:
         """construct the index name
 
         :param jobID: Job ID
         """
-        indexSplit = int(jobID) // 1e6
-        return f"{self.indexName_base}_{indexSplit}m"
+        indexSplit = int(jobID // 1e6)
+        return f"{self.index_name}_{indexSplit}m"
 
     def _createIndex(self, indexName: str) -> None:
         """Create a new index if needed
