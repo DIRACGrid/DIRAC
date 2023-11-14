@@ -134,7 +134,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.getRepositoryJobs()
+        >>> print(dirac.getRepositoryJobs())
         {'OK': True, 'Value': [1,2,3,4]}
 
         :return: S_OK,S_ERROR
@@ -152,7 +152,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.monitorRepository()
+        >>> print(dirac.monitorRepository())
         {'OK': True, 'Value': ''}
 
         :returns: S_OK,S_ERROR
@@ -179,7 +179,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.retrieveRepositorySandboxes(requestedStates=['Done','Failed'],destinationDirectory='sandboxes')
+        >>> print(dirac.retrieveRepositorySandboxes(requestedStates=['Done','Failed'],destinationDirectory='sandboxes'))
         {'OK': True, 'Value': ''}
 
         :param requestedStates: List of jobs states to be considered
@@ -214,7 +214,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.retrieveRepositoryData(requestedStates=['Done'],destinationDirectory='outputData')
+        >>> print(dirac.retrieveRepositoryData(requestedStates=['Done'],destinationDirectory='outputData'))
         {'OK': True, 'Value': ''}
 
         :param requestedStates: List of jobs states to be considered
@@ -245,7 +245,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.removeRepository()
+        >>> print(dirac.removeRepository())
         {'OK': True, 'Value': ''}
 
         :returns: S_OK,S_ERROR
@@ -272,7 +272,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.resetRepository(jobIDs = [1111,2222,'3333'])
+        >>> print(dirac.resetRepository(jobIDs = [1111,2222,'3333']))
         {'OK': True, 'Value': ''}
 
         :returns: S_OK,S_ERROR
@@ -304,7 +304,7 @@ class Dirac(API):
 
         Example usage:
 
-        >>> print dirac.submitJob(job)
+        >>> print(dirac.submitJob(job))
         {'OK': True, 'Value': '12345'}
 
         :param job: Instance of Job class or JDL string
@@ -401,7 +401,7 @@ class Dirac(API):
 
         Example usage:
 
-        >>> print print d.getInputDataCatalog('/lhcb/a/b/c/00001680_00000490_5.dst',None,'myCat.xml')
+        >>> print(getInputDataCatalog('/lhcb/a/b/c/00001680_00000490_5.dst',None,'myCat.xml'))
         {'Successful': {'<LFN>': {'pfntype': 'ROOT_All', 'protocol': 'SRM2',
          'pfn': '<PFN>', 'turl': '<TURL>', 'guid': '3E3E097D-0AC0-DB11-9C0A-00188B770645',
          'se': 'CERN-disk'}}, 'Failed': [], 'OK': True, 'Value': ''}
@@ -873,7 +873,7 @@ class Dirac(API):
 
         Example usage:
 
-        >>> print dirac.getReplicas('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst')
+        >>> print(dirac.getReplicas('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst'))
         {'OK': True, 'Value': {'Successful': {'/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst':
         {'CERN-RDST':
         'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst'}},
@@ -929,7 +929,7 @@ class Dirac(API):
 
         Example usage:
 
-        >>> print dirac.getReplicasForJobs('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst')
+        >>> print(dirac.getReplicasForJobs('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst'))
         {'OK': True, 'Value': {'Successful': {'/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst':
         {'CERN-RDST':
         'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst'}},
@@ -982,7 +982,7 @@ class Dirac(API):
 
         Example usage:
 
-        >>> print dirac.getAllReplicas('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst')
+        >>> print(dirac.getAllReplicas('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst'))
         {'OK': True, 'Value': {'Successful': {'/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst':
         {'CERN-RDST':
         'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst'}},
@@ -1104,7 +1104,7 @@ class Dirac(API):
 
         Example usage:
 
-        >>> print dirac.getLfnMetadata('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst')
+        >>> print(dirac.getLfnMetadata('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst'))
         {'OK': True, 'Value': {'Successful': {'/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst':
         {'Status': '-', 'Size': 619475828L, 'GUID': 'E871FBA6-71EA-DC11-8F0C-000E0C4DEB4B', 'ChecksumType': 'AD',
         'CheckSumValue': ''}}, 'Failed': {}}}
@@ -1158,7 +1158,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.addFile('/lhcb/user/p/paterson/myFile.tar.gz','myFile.tar.gz','CERN-USER')
+        >>> print(dirac.addFile('/lhcb/user/p/paterson/myFile.tar.gz','myFile.tar.gz','CERN-USER'))
         {'OK': True, 'Value':{'Failed': {},
          'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': {'put': 64.246301889419556,
                                                                      'register': 1.1102778911590576}}}}
@@ -1199,7 +1199,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.getFile('/lhcb/user/p/paterson/myFile.tar.gz')
+        >>> print(dirac.getFile('/lhcb/user/p/paterson/myFile.tar.gz'))
         {'OK': True, 'Value':{'Failed': {},
          'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': '/afs/cern.ch/user/p/paterson/myFile.tar.gz'}}}
 
@@ -1238,7 +1238,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.replicateFile('/lhcb/user/p/paterson/myFile.tar.gz','CNAF-USER')
+        >>> print(dirac.replicateFile('/lhcb/user/p/paterson/myFile.tar.gz','CNAF-USER'))
         {'OK': True, 'Value':{'Failed': {},
         'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': {'register': 0.44766902923583984,
                                                                    'replicate': 56.42345404624939}}}}
@@ -1301,7 +1301,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.replicate('/lhcb/user/p/paterson/myFile.tar.gz','CNAF-USER')
+        >>> print(dirac.replicate('/lhcb/user/p/paterson/myFile.tar.gz','CNAF-USER'))
         {'OK': True, 'Value':{'Failed': {},
         'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': {'register': 0.44766902923583984}}}}
 
@@ -1341,7 +1341,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.getAccessURL('/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst','CERN-RAW')
+        >>> print(dirac.getAccessURL('/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst','CERN-RAW'))
         {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
         :param lfn: Logical File Name (LFN)
@@ -1374,7 +1374,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.getPhysicalFileAccessURL('srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst','CERN_M-DST')
+        >>> print(dirac.getPhysicalFileAccessURL('srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst','CERN_M-DST'))
         {'OK': True, 'Value':{'Failed': {},
         'Successful': {'srm://srm-lhcb.cern.ch/castor/cern.ch/grid/lhcb/data/CCRC08/DST/00000151/0000/00000151_00004848_2.dst': {'RFIO': 'castor://...'}}}}
 
@@ -1406,7 +1406,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.getPhysicalFileMetadata('srm://srm.grid.sara.nl/pnfs/grid.sara.nl/data
+        >>> print(dirac.getPhysicalFileMetadata('srm://srm.grid.sara.nl/pnfs/grid.sara.nl/data)
         /lhcb/data/CCRC08/RAW/LHCb/CCRC/23341/023341_0000039571.raw','NIKHEF-RAW')
         {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
@@ -1437,7 +1437,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.removeFile('LFN:/lhcb/data/CCRC08/RAW/LHCb/CCRC/22808/022808_0000018443.raw')
+        >>> print(dirac.removeFile('LFN:/lhcb/data/CCRC08/RAW/LHCb/CCRC/22808/022808_0000018443.raw'))
         {'OK': True, 'Value':...}
 
         :param lfn: Logical File Name (LFN)
@@ -1465,7 +1465,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.removeReplica('LFN:/lhcb/user/p/paterson/myDST.dst','CERN-USER')
+        >>> print(dirac.removeReplica('LFN:/lhcb/user/p/paterson/myDST.dst','CERN-USER'))
         {'OK': True, 'Value':...}
 
         :param lfn: Logical File Name (LFN)
@@ -1496,7 +1496,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.getInputSandbox(12345)
+        >>> print(dirac.getInputSandbox(12345))
         {'OK': True, 'Value': ['Job__Sandbox__.tar.bz2']}
 
         :param jobID: JobID
@@ -1544,7 +1544,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.getOutputSandbox(12345)
+        >>> print(dirac.getOutputSandbox(12345))
         {'OK': True, 'Value': ['Job__Sandbox__.tar.bz2']}
 
         :param jobID: JobID
@@ -1639,7 +1639,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.deleteJob(12345)
+        >>> print(dirac.deleteJob(12345))
         {'OK': True, 'Value': [12345]}
 
         :param jobID: JobID
@@ -1676,7 +1676,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.rescheduleJob(12345)
+        >>> print(dirac.rescheduleJob(12345))
         {'OK': True, 'Value': [12345]}
 
         :param jobID: JobID
@@ -1745,7 +1745,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.getJobStatus(79241)
+        >>> print(dirac.getJobStatus(79241))
         {79241: {'Status': 'Done',
                  'MinorStatus': 'Execution Complete',
                  'ApplicationStatus': 'some app status'
@@ -2258,7 +2258,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.getJobAttributes(79241)
+        >>> print(dirac.getJobAttributes(79241))
         {'AccountedFlag': 'False','ApplicationNumStatus': '0',
         'ApplicationStatus': 'Job Finished Successfully',
         'CPUTime': '0.0','DIRACSetup': 'LHCb-Production'}
@@ -2295,7 +2295,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.getJobParameters(79241)
+        >>> print(dirac.getJobParameters(79241))
         {'OK': True, 'Value': {'JobPath': 'JobPath,JobSanity,JobPolicy,InputData,JobScheduling,TaskQueue',
         'JobSanityCheck': 'Job: 768 JDL: OK, InputData: 2 LFNs OK, '}
 
@@ -2334,7 +2334,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.getJobLoggingInfo(79241)
+        >>> print(dirac.getJobLoggingInfo(79241))
         {'OK': True, 'Value': [('Received', 'JobPath', 'Unknown', '2008-01-29 15:37:09', 'JobPathAgent'),
         ('Checking', 'JobSanity', 'Unknown', '2008-01-29 15:37:14', 'JobSanityAgent')]}
 
@@ -2377,7 +2377,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.peekJob(1484)
+        >>> print(dirac.peekJob(1484))
         {'OK': True, 'Value': 'Job peek result'}
 
         :param jobID: JobID
@@ -2415,7 +2415,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.pingService('WorkloadManagement','JobManager')
+        >>> print(dirac.pingService('WorkloadManagement','JobManager'))
         {'OK': True, 'Value': 'Job ping result'}
 
         :param system: system
@@ -2463,7 +2463,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print dirac.getJobJDL(12345)
+        >>> print(dirac.getJobJDL(12345))
         {'Arguments': 'jobDescription.xml',...}
 
         :param jobID: JobID
