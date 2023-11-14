@@ -20,9 +20,15 @@ jobs:
           - devel
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+    - uses: cvmfs-contrib/github-action-cvmfs@v3
+
+    - name: Test CernVM-FS
+      run: ls /cvmfs/dirac.egi.eu
+
     - name: Fail-fast for outdated pipelines
       run: .github/workflows/fail-fast.sh
+
     - name: prepare environment
       run: |
         conda config --set add_pip_as_python_dependency false
