@@ -119,9 +119,9 @@ class SystemAdministratorHandler(RequestHandler):
                 for component in statusDict[compType][system]:
                     result = gComponentInstaller.getComponentModule(system, component, compType)
                     if not result["OK"]:
-                        statusDict[compType][system][component]["Module"] = "Unknown"
+                        statusDict[compType][system][component]["DIRACModule"] = "Unknown"
                     else:
-                        statusDict[compType][system][component]["Module"] = result["Value"]
+                        statusDict[compType][system][component]["DIRACModule"] = result["Value"]
         return S_OK(statusDict)
 
     types_getStartupComponentStatus = [list]
