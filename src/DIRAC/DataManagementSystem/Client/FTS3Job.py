@@ -763,15 +763,13 @@ class FTS3Job(JSerializable):
             # decides that there is not enough timeleft.
             # At the moment, this is 1 hour, which effectively means that if you do
             # not submit a job for more than 1h, you have no valid proxy in FTS servers
-            # anymore. In future release of FTS3, the delegation will be triggered when
+            # anymore, and all the jobs failed.So we force it when
             # one third of the lifetime will be left.
             # Also, the proxy given as parameter might have less than "lifetime" left
             # since it is cached, but it does not matter, because in the FTS3Agent
             # we make sure that we renew it often enough
-            # Finally, FTS3 has an issue with handling the lifetime of the proxy,
-            # because it does not check all the chain. This is under discussion
-            # https://its.cern.ch/jira/browse/FTS-1575
-            fts3.delegate(context, lifetime=datetime.timedelta(seconds=lifetime))
+            td_lifetime = datetime.timedelta(seconds=lifetime)
+            fts3.delegate(context, lifetime=td_lifetime, delegate_when_lifetime_lt=td_lifetime / 3)
 
             return S_OK(context)
         except FTS3ClientException as e:
