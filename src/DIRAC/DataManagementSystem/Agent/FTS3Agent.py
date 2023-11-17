@@ -48,7 +48,10 @@ from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 AGENT_NAME = "DataManagement/FTS3Agent"
 
 # Lifetime in seconds of the proxy we download for submission
-PROXY_LIFETIME = 43200  # 12 hours
+# Because we force the redelegation if only a third is left,
+# and we want to have a quiet night (~12h)
+# let's make the lifetime 12*3 hours
+PROXY_LIFETIME = 36 * 3600  # 36 hours
 
 # Instead of querying many jobs at once,
 # which maximizes the possibility of race condition
