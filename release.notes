@@ -1,3 +1,32 @@
+[v8.0.32]
+
+*Core
+
+FIX: (#7296) convert exception object to string representation in ElasticSearchDB
+FIX: (#7272) createClient: also look at HandlerMixin classes to find `export_`ed functions. Fixes the client Documentation creation, fixes #7265
+
+*DataManagementSystem
+
+CHANGE: (#7296) default proxy lifetime for FTS is 36h and force the redelegation when 12h are left
+
+*WorkloadManagement
+
+FIX: (#7285) WMSUtilities supports VO-specific token tags
+NEW: (#7266) SiteDirector - added preinstalledEnv and preinstalledEnvPrefix pilot options
+
+*FrameworkSystem
+
+FIX: (#7277) show status SysAdminCLI KeyError
+
+*WorkloadManagementSystem
+
+FIX: (#7276) JobStatus: allow WAITING -> KILLED
+FIX: (#7262) SiteDirector: add the --wnVO option (backporting))
+
+*docs
+
+FIX: (#7275) clarify how to install TokenManager in v8
+
 [v8.0.31]
 
 *Resources
