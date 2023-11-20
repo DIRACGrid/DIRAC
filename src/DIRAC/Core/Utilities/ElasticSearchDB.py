@@ -503,7 +503,7 @@ class ElasticSearchDB:
             res = bulk(client=self.client, index=indexName, actions=generateDocs(data, withTimeStamp))
         except (BulkIndexError, RequestError) as e:
             sLog.exception()
-            return S_ERROR(e)
+            return S_ERROR(f"Failed to index by bulk {e!r}")
 
         if res[0] == len(data):
             # we have inserted all documents...
