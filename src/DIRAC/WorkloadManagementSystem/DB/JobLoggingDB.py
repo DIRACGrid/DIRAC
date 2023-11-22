@@ -71,7 +71,10 @@ class JobLoggingDB(DB):
         except Exception:
             self.log.exception("Exception while date evaluation")
             _date = datetime.datetime.utcnow()
-        epoc = time.mktime(_date.timetuple()) + _date.microsecond / 1000000.0 - MAGIC_EPOC_NUMBER
+
+        # We need to specify that timezone is UTC because otherwise timestamp
+        # assumes local time while we mean UTC.
+        epoc = _date.replace(tzinfo=datetime.timezone.utc).timestamp() - MAGIC_EPOC_NUMBER
 
         cmd = (
             "INSERT INTO LoggingInfo (JobId, Status, MinorStatus, ApplicationStatus, "
