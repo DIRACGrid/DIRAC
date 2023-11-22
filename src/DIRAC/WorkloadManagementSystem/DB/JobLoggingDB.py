@@ -62,7 +62,10 @@ class JobLoggingDB(DB):
         except Exception:
             self.log.exception("Exception while date evaluation")
             _date = datetime.datetime.utcnow()
-        epoc = time.mktime(_date.timetuple()) + _date.microsecond / 1000000.0 - MAGIC_EPOC_NUMBER
+
+        # We need to specify that timezone is UTC because otherwise timestamp
+        # assumes local time while we mean UTC.
+        epoc = _date.replace(tzinfo=datetime.timezone.utc).timestamp() - MAGIC_EPOC_NUMBER
 
         cmd = (
             "INSERT INTO LoggingInfo (JobId, Status, MinorStatus, ApplicationStatus, "
@@ -129,7 +132,7 @@ class JobLoggingDB(DB):
         # self.log.debug('getWMSTimeStamps: Retrieving Timestamps for Job %d' % int(jobID))
 
         result = {}
-        cmd = "SELECT Status,StatusTimeOrder FROM LoggingInfo WHERE JobID=%d" % int(jobID)
+        cmd = "SELECT Status,StatusTimeOrder FROM LoggingInfo WHERE JobID=%d ORDER BY StatusTimeOrder" % int(jobID)
         resCmd = self._query(cmd)
         if not resCmd["OK"]:
             return resCmd
