@@ -141,7 +141,7 @@ class JobLoggingDB(DB):
         # self.log.debug('getWMSTimeStamps: Retrieving Timestamps for Job %d' % int(jobID))
 
         result = {}
-        cmd = "SELECT Status,StatusTimeOrder FROM LoggingInfo WHERE JobID=%d" % int(jobID)
+        cmd = "SELECT Status,StatusTimeOrder FROM LoggingInfo WHERE JobID=%d ORDER BY StatusTimeOrder" % int(jobID)
         resCmd = self._query(cmd)
         if not resCmd["OK"]:
             return resCmd
