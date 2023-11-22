@@ -3,6 +3,7 @@
 import os
 import pytest
 import time
+from unittest.mock import MagicMock
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
@@ -498,6 +499,7 @@ def test_submitAndCheckJob(mocker, localCE, job, expectedResult1, expectedResult
 
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobAgent.am_stopExecution")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobMonitoringClient", return_value=MagicMock())
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.createJobWrapper", return_value=S_OK([jobName]))
     mocker.patch("DIRAC.Core.Security.X509Chain.X509Chain.dumpAllToString", return_value=S_OK())
 
