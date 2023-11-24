@@ -98,7 +98,9 @@ class PilotSyncAgent(AgentModule):
             self.log.info("Moving pilot files", f"to {self.saveDir}")
             for tf in allFiles:
                 # this overrides the destinations
-                shutil.move(tf, os.path.join(self.saveDir, os.path.basename(tf)))
+                # use copy & remove rather than move to reset SELinux context on files
+                shutil.copy(tf, os.path.join(self.saveDir, os.path.basename(tf)))
+                os.remove(tf)
 
         # Here, attempting upload somewhere, and somehow
         for server in self.uploadLocations:
