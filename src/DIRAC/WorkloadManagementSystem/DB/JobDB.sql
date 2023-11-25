@@ -28,7 +28,7 @@ CREATE TABLE `JobJDLs` (
   `JobRequirements` TEXT NOT NULL,
   `OriginalJDL` MEDIUMTEXT NOT NULL,
   PRIMARY KEY (`JobID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `Jobs`;
@@ -77,7 +77,7 @@ CREATE TABLE `Jobs` (
   KEY `ApplicationStatus` (`ApplicationStatus`),
   KEY `StatusSite` (`Status`,`Site`),
   KEY `LastUpdateTime` (`LastUpdateTime`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `InputData`;
@@ -87,7 +87,7 @@ CREATE TABLE `InputData` (
   `Status` VARCHAR(32) NOT NULL DEFAULT 'AprioriGood',
   PRIMARY KEY (`JobID`,`LFN`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `JobParameters`;
@@ -97,7 +97,7 @@ CREATE TABLE `JobParameters` (
   `Value` TEXT NOT NULL,
   PRIMARY KEY (`JobID`,`Name`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `OptimizerParameters`;
@@ -107,7 +107,7 @@ CREATE TABLE `OptimizerParameters` (
   `Value` MEDIUMTEXT NOT NULL,
   PRIMARY KEY (`JobID`,`Name`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `AtticJobParameters`;
@@ -118,7 +118,7 @@ CREATE TABLE `AtticJobParameters` (
   `RescheduleCycle` INT(11) UNSIGNED NOT NULL,
   PRIMARY KEY (`JobID`,`Name`,`RescheduleCycle`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `SiteMask`;
@@ -129,7 +129,7 @@ CREATE TABLE `SiteMask` (
   `Author` VARCHAR(255) NOT NULL,
   `Comment` TEXT NOT NULL,
   PRIMARY KEY (`Site`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `SiteMaskLogging`;
 CREATE TABLE `SiteMaskLogging` (
@@ -139,7 +139,7 @@ CREATE TABLE `SiteMaskLogging` (
   `Author` VARCHAR(255) NOT NULL,
   `Comment` TEXT NOT NULL,
   PRIMARY KEY (`Site`,`UpdateTime`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `HeartBeatLoggingInfo`;
@@ -150,7 +150,7 @@ CREATE TABLE `HeartBeatLoggingInfo` (
   `HeartBeatTime` DATETIME NOT NULL,
   PRIMARY KEY (`JobID`,`Name`,`HeartBeatTime`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `JobCommands`;
@@ -163,4 +163,4 @@ CREATE TABLE `JobCommands` (
   `ExecutionTime` DATETIME DEFAULT NULL,
   PRIMARY KEY (`JobID`,`Arguments`,`ReceptionTime`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

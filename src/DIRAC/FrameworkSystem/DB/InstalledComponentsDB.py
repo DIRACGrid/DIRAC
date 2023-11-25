@@ -27,7 +27,7 @@ class Component(componentsBase):
     """
 
     __tablename__ = "Components"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
     componentID = Column("ComponentID", Integer, primary_key=True)
     system = Column("DIRACSystem", String(32), nullable=False)
@@ -87,7 +87,7 @@ class Host(componentsBase):
     """
 
     __tablename__ = "Hosts"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
     hostID = Column("HostID", Integer, primary_key=True)
     hostName = Column("HostName", String(32), nullable=False)
@@ -138,7 +138,7 @@ class InstalledComponent(componentsBase):
     """
 
     __tablename__ = "InstalledComponents"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
     componentID = Column("ComponentID", Integer, ForeignKey("Components.ComponentID"), primary_key=True)
     hostID = Column("HostID", Integer, ForeignKey("Hosts.HostID"), primary_key=True)
@@ -217,7 +217,7 @@ class HostLogging(componentsBase):
     """
 
     __tablename__ = "HostLogging"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
     hostName = Column("HostName", String(32), nullable=False, primary_key=True)
     # status

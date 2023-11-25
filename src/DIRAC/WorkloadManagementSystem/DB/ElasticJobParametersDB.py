@@ -9,7 +9,7 @@
         `Value` TEXT NOT NULL,
         PRIMARY KEY (`JobID`,`Name`),
         FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
     Here we define a dynamic mapping with the constant fields::
 
