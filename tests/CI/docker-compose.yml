@@ -181,7 +181,7 @@ services:
       - diracx-cs-store:/cs_store/
       - diracx-key-store:/signing-key/
     entrypoint: |
-      /entrypoint.sh bash -xc 'uvicorn --factory diracx.routers:create_app'
+      /entrypoint.sh bash -xc 'uvicorn --factory diracx.routers:create_app --host=0.0.0.0'
 
     healthcheck:
       test: ["CMD", "/entrypoint.sh", "curl", "-f", "http://localhost:8000/.well-known/openid-configuration"]
