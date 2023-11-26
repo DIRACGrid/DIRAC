@@ -120,15 +120,20 @@ services:
       - DIRACX_SERVICE_AUTH_TOKEN_KEY="file:///signing-key/rs256.key"
     volumes:
       - diracx-key-store:/signing-key/
+      # As the diracx images don't run as root we need to change the permissions of the /cs_store/ directory as well
+      - diracx-cs-store:/cs_store/
     # We need to allow everybody to read the private keys
     # Because the users are different between the DIRAC and DiracX containers
     entrypoint: |
-      bash -c "ssh-keygen -P '' -trsa -b4096 -mPEM -f/signing-key/rs256.key && chmod o+r /signing-key/rs256.*"
+      bash -xc "ssh-keygen -P '' -trsa -b4096 -mPEM -f/signing-key/rs256.key && chmod o+r /signing-key/rs256.* && chmod -R o=u /cs_store"
     pull_policy: always
 
   diracx-init-cs:
-    image: ghcr.io/diracgrid/diracx/server
+    image: ghcr.io/diracgrid/diracx/client:dev
     container_name: diracx-init-cs
+    depends_on:
+      diracx-init-key:
+        condition: service_completed_successfully # Let the init container set the permission on /cs_store/
     environment:
       - DIRACX_CONFIG_BACKEND_URL=git+file:///cs_store/initialRepo
       - DIRACX_SERVICE_AUTH_TOKEN_KEY=file:///signing-key/rs256.key
@@ -140,7 +145,7 @@ services:
     pull_policy: always
 
   diracx-init-db:
-    image: ghcr.io/diracgrid/diracx/server
+    image: ghcr.io/diracgrid/diracx/services:dev
     container_name: diracx-init-db
     depends_on:
       mysql:
@@ -152,7 +157,7 @@ services:
     pull_policy: always
 
   diracx:
-    image: ghcr.io/diracgrid/diracx/server
+    image: ghcr.io/diracgrid/diracx/services:dev
     container_name: diracx
     environment:
       - DIRACX_CONFIG_BACKEND_URL=git+file:///cs_store/initialRepo
@@ -175,6 +180,8 @@ services:
     volumes:
       - diracx-cs-store:/cs_store/
       - diracx-key-store:/signing-key/
+    entrypoint: |
+      /entrypoint.sh bash -xc 'uvicorn --factory diracx.routers:create_app'
 
     healthcheck:
       test: ["CMD", "/entrypoint.sh", "curl", "-f", "http://localhost:8000/.well-known/openid-configuration"]
