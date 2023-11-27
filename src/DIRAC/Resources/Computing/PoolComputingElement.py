@@ -134,13 +134,6 @@ class PoolComputingElement(ComputingElement):
         # Here we define task kwargs: adding complex objects like thread.Lock can trigger errors in the task
         taskKwargs = {"InnerCESubmissionType": self.innerCESubmissionType}
         taskKwargs["jobDesc"] = kwargs.get("jobDesc", {})
-        if self.innerCESubmissionType == "Sudo":
-            for nUser in range(MAX_NUMBER_OF_SUDO_UNIX_USERS):
-                if nUser not in self.userNumberPerTask.values():
-                    break
-            taskKwargs["NUser"] = nUser
-            if "USER" in os.environ:
-                taskKwargs["PayloadUser"] = os.environ["USER"] + f"p{str(nUser).zfill(2)}"
 
         # Submission
         future = self.pPool.submit(executeJob, executableFile, proxy, self.taskID, inputs, **taskKwargs)
