@@ -94,6 +94,7 @@ ENV_VAR_WHITELIST = [
     r"Xrd.*",
     r"DIRAC_.*",
     r"BEARER_TOKEN.*",
+    r"OMP_NUM_TREADS",
 ]
 ENV_VAR_WHITELIST = re.compile(r"^(" + r"|".join(ENV_VAR_WHITELIST) + r")$")
 
@@ -373,6 +374,9 @@ class SingularityComputingElement(ComputingElement):
             return ret
         baseDir = ret["baseDir"]
         tmpDir = ret["tmpDir"]
+
+        if mp_threads := kwargs.get("numberOfProcessors"):
+            os.environ["OMP_NUM_THREADS"] = str(mp_threads)
 
         if proxy:
             payloadProxyLoc = ret["proxyLocation"]
