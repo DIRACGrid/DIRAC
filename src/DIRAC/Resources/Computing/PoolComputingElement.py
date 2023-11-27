@@ -134,6 +134,7 @@ class PoolComputingElement(ComputingElement):
         # Here we define task kwargs: adding complex objects like thread.Lock can trigger errors in the task
         taskKwargs = {"InnerCESubmissionType": self.innerCESubmissionType}
         taskKwargs["jobDesc"] = kwargs.get("jobDesc", {})
+        taskKwargs["numberOfProcessors"] = kwargs.get("numberOfProcessors")
 
         # Submission
         future = self.pPool.submit(executeJob, executableFile, proxy, self.taskID, inputs, **taskKwargs)

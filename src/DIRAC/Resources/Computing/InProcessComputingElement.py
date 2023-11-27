@@ -34,6 +34,8 @@ class InProcessComputingElement(ComputingElement):
         :return: S_OK(payload exit code) / S_ERROR() if submission issue
         """
         payloadEnv = dict(os.environ)
+        if mp_threads := kwargs.get("numberOfProcessors"):
+            payloadEnv["OMP_NUM_THREADS"] = mp_threads
         payloadProxy = ""
         if proxy:
             self.log.verbose("Setting up proxy for payload")
