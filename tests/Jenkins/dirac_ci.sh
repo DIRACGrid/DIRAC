@@ -133,8 +133,13 @@ installSite() {
   cd -
 
 
-  echo "==> Done installing, now configuring"
+  echo "==> Sourcing bashrc"
   source "${SERVERINSTALLDIR}/bashrc"
+
+  echo "==> Installing main branch of diracx"
+  installDIRACX core client cli
+
+  echo "==> Done installing, now configuring"
   configureArgs=()
   if [[ "${TEST_DIRACX:-}" = "Yes" ]]; then
     configureArgs+=("--LegacyExchangeApiKey=diracx:legacy:InsecureChangeMe")

@@ -22,12 +22,15 @@ from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.Service.StorageElementHandler import getDiskSpace
+from DIRAC.FrameworkSystem.Utilities.diracx import TheImpersonator
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize
+
+from diracx.client.models import SandboxInfo
 
 
 class SandboxStoreHandlerMixin:
@@ -113,9 +116,6 @@ class SandboxStoreHandlerMixin:
 
         disabledVOs = gConfig.getValue("/DiracX/DisabledVOs", [])
         if self._useDiracXBackend and vo not in disabledVOs:
-            from DIRAC.FrameworkSystem.Utilities.diracx import TheImpersonator
-            from diracx.client.models import SandboxInfo  # pylint: disable=import-error
-
             gLogger.info("Forwarding to DiracX")
             with tempfile.TemporaryFile(mode="w+b") as tar_fh:
                 result = fileHelper.networkToDataSink(tar_fh, maxFileSize=self._maxUploadBytes)
@@ -490,8 +490,6 @@ class SandboxStoreHandlerMixin:
         # If the PFN starts with S3, we know it has been uploaded to the
         # S3 sandbox store, so download it from there before sending it
         if filePath.startswith("/S3"):
-            from DIRAC.FrameworkSystem.Utilities.diracx import TheImpersonator
-
             with TheImpersonator(credDict) as client:
                 res = client.jobs.get_sandbox_file(pfn=filePath)
                 r = requests.get(res.url)

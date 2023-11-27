@@ -1,4 +1,3 @@
-# pylint: disable=import-error
 import requests
 
 from cachetools import TTLCache, cached

@@ -19,7 +19,7 @@ from diracx.core.models import TokenResponse
 from diracx.core.preferences import DiracxPreferences
 from diracx.core.utils import serialize_credentials
 
-from DIRAC import gConfig
+from DIRAC import gConfig, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security.Locations import getDefaultProxyLocation
 from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueOrRaise
@@ -31,7 +31,7 @@ RE_DIRACX_PEM = re.compile(rf"{PEM_BEGIN}\n(.*)\n{PEM_END}", re.MULTILINE | re.D
 
 
 @convertToReturnValue
-def addProxyToPEM(pemPath, group):
+def addTokenToPEM(pemPath, group):
     from DIRAC.Core.Base.Client import Client
 
     vo = Registry.getVOMSVOForGroup(group)
@@ -40,10 +40,6 @@ def addProxyToPEM(pemPath, group):
         token_content = returnValueOrRaise(
             Client(url="Framework/ProxyManager", proxyLocation=pemPath).exchangeProxyForToken()
         )
-
-        diracxUrl = gConfig.getValue("/DiracX/URL")
-        if not diracxUrl:
-            return S_ERROR("Missing mandatory /DiracX/URL configuration")
 
         token = TokenResponse(
             access_token=token_content["access_token"],

@@ -511,7 +511,7 @@ class TornadoBaseClient:
         # getting certificate
         # Do we use the server certificate ?
         if self.kwargs[self.KW_USE_CERTIFICATES]:
-            # TODO: Does this code path need to work with DiracX?
+            # TODO: make this code path work with DiracX for Agents and possibly webapp ?
             auth = {"cert": Locations.getHostCertificateAndKeyLocation()}
 
         # Use access token?

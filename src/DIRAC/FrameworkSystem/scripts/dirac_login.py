@@ -25,7 +25,7 @@ import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Security.Locations import getDefaultProxyLocation, getCertificateAndKeyLocation
 from DIRAC.Core.Security.VOMS import VOMS
-from DIRAC.Core.Security.DiracX import addProxyToPEM
+from DIRAC.Core.Security.DiracX import addTokenToPEM
 from DIRAC.Core.Security.ProxyFile import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
@@ -315,7 +315,7 @@ class Params:
                     return res
 
             # Get a token for use with diracx
-            if not (result := addProxyToPEM(self.outputFile, self.group))["OK"]:
+            if not (result := addTokenToPEM(self.outputFile, self.group))["OK"]:
                 return result
 
         return S_OK()

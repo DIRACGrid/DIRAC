@@ -18,7 +18,7 @@ from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.Script import Script
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
 from DIRAC.Core.Security import X509Chain, ProxyInfo, VOMS
-from DIRAC.Core.Security.DiracX import addProxyToPEM
+from DIRAC.Core.Security.DiracX import addTokenToPEM
 from DIRAC.Core.Security.Locations import getCAsLocation, getDefaultProxyLocation
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
@@ -223,7 +223,7 @@ class ProxyInit:
         resultProxyWithVOMS = pI.addVOMSExtIfNeeded()
 
         proxyLoc = self.__piParams.proxyLoc or getDefaultProxyLocation()
-        if not (result := addProxyToPEM(proxyLoc, self.__piParams.diracGroup))["OK"]:
+        if not (result := addTokenToPEM(proxyLoc, self.__piParams.diracGroup))["OK"]:
             return result
 
         if not resultProxyWithVOMS["OK"]:

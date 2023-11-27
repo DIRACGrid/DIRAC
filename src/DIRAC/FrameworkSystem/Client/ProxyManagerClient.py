@@ -10,7 +10,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Core.Security.DiracX import addProxyToPEM
+from DIRAC.Core.Security.DiracX import addTokenToPEM
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
@@ -550,7 +550,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         filename = retVal["Value"]
         if not (result := chain.getDIRACGroup())["OK"]:
             return result
-        if not (result := addProxyToPEM(filename, result["Value"]))["OK"]:
+        if not (result := addTokenToPEM(filename, result["Value"]))["OK"]:  # pylint: disable=unsubscriptable-object
             return result
         self.__filesCache.add(cHash, chain.getRemainingSecs()["Value"], filename)
         return S_OK(filename)
@@ -665,7 +665,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
                 return result
             if not (result := chain.getDIRACGroup())["OK"]:
                 return result
-            if not (result := addProxyToPEM(filename, result["Value"]))["OK"]:
+            if not (result := addTokenToPEM(filename, result["Value"]))["OK"]:  # pylint: disable=unsubscriptable-object
                 return result
             return S_OK(filename)
 
