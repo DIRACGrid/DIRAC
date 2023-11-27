@@ -12,7 +12,7 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-
+from DIRAC.FrameworkSystem.Utilities.diracx import get_token
 
 DEFAULT_MAIL_FROM = "proxymanager@diracgrid.org"
 
@@ -412,7 +412,6 @@ class ProxyManagerHandlerMixin:
     @convertToReturnValue
     def export_exchangeProxyForToken(self):
         """Exchange a proxy for an equivalent token to be used with diracx"""
-        from DIRAC.FrameworkSystem.Utilities.diracx import get_token
 
         credDict = self.getRemoteCredentials()
         return get_token(

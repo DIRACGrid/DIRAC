@@ -13,6 +13,9 @@ source /home/dirac/ServerInstallDIR/bashrc
 git config --global user.name "DIRAC Server CI"
 git config --global user.email "dirac-server-ci@invalid"
 
+mkdir -p /home/dirac/TestCode/diracx/tests/cli/legacy/cs_sync/
+curl -L https://raw.githubusercontent.com/DIRACGrid/diracx/main/diracx-cli/tests/legacy/cs_sync/convert_integration_test.yaml > /home/dirac/TestCode/diracx/tests/cli/legacy/cs_sync/convert_integration_test.yaml
+
 while true; do
     DIRAC_COMPAT_ENABLE_CS_CONVERSION=x dirac internal legacy cs-sync \
         "$DIRACOS/etc/Production.cfg" \

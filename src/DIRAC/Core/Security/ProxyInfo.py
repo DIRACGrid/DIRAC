@@ -8,6 +8,7 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security import Locations
+from DIRAC.Core.Security.DiracX import diracxTokenFromPEM
 
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
@@ -25,6 +26,7 @@ def getProxyInfo(proxy=False, disableVOMS=False):
           * 'validDN' : Valid DN in DIRAC
           * 'validGroup' : Valid Group in DIRAC
           * 'secondsLeft' : Seconds left
+          * 'hasDiracxToken'
       * values that can be there
           * 'path' : path to the file,
           * 'group' : DIRAC group
@@ -67,6 +69,11 @@ def getProxyInfo(proxy=False, disableVOMS=False):
             infoDict["VOMS"] = retVal["Value"]
         else:
             infoDict["VOMSError"] = retVal["Message"].strip()
+
+    infoDict["hasDiracxToken"] = False
+    if proxyLocation:
+        infoDict["hasDiracxToken"] = bool(diracxTokenFromPEM(proxyLocation))
+
     return S_OK(infoDict)
 
 
@@ -94,6 +101,7 @@ def formatProxyInfoAsString(infoDict):
         "subproxyUser",
         ("secondsLeft", "timeleft"),
         ("group", "DIRAC group"),
+        ("hasDiracxToken", "DiracX"),
         "rfc",
         "path",
         "username",

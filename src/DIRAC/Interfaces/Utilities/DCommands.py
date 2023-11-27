@@ -15,6 +15,7 @@ import DIRAC.FrameworkSystem.Client.ProxyGeneration as ProxyGeneration
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Security.Locations import getCAsLocation
 from DIRAC.Core.Security import Locations, VOMS
+from DIRAC.Core.Security.DiracX import addTokenToPEM
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -495,15 +496,20 @@ class DSession(DConfig):
         params.diracGroup = retVal["Value"]
 
         result = ProxyGeneration.generateProxy(params)
-
         if not result["OK"]:
             raise Exception(result["Message"])
+        filename = result["Value"]
+
         self.checkCAs()
+
         try:
-            self.addVomsExt(result["Value"])
+            self.addVomsExt(filename)
         except:
             # silently skip VOMS errors
             pass
+
+        if not (result := addTokenToPEM(filename, params.diracGroup))["OK"]:  # pylint: disable=unsubscriptable-object
+            raise Exception(result["Message"])  # pylint: disable=unsubscriptable-object
 
     def addVomsExt(self, proxy):
         retVal = self.getEnv("group_name")

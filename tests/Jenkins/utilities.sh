@@ -263,6 +263,11 @@ installDIRAC() {
     done
   fi
 
+
+
+  echo "==> Installing main branch of diracx"
+  installDIRACX core client
+
   echo "$DIRAC"
   echo "$PATH"
 
@@ -274,6 +279,25 @@ installDIRAC() {
   fi
 
   echo '==> Done installDIRAC'
+}
+
+##############################################################################
+# Install DiracX either from wheels or from github
+# Arguments: list of DiracX submodule module names to install (core, client, etc.)
+
+function installDIRACX() {
+  for wheel_name in "$@"; do
+    if [[ -n "${DIRACX_CUSTOM_SOURCE_PREFIXES:-}" ]]; then
+      wheels=( $(find "${DIRACX_CUSTOM_SOURCE_PREFIXES}" -name "diracx_${wheel_name}-*.whl") )
+      if [[ ! ${#wheels[@]} -eq 1 ]]; then
+          echo "ERROR: Multiple wheels found for ${package_name} in ${dir}"
+          exit 1
+      fi
+      pip install "${wheels[0]}"
+    else
+      pip install "git+https://github.com/DIRACGrid/diracx.git@main#egg=diracx-${wheel_name}&subdirectory=diracx-${wheel_name}"
+    fi
+  done
 }
 
 ##############################################################################

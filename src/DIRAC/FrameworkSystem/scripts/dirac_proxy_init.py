@@ -18,10 +18,10 @@ from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.Script import Script
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
 from DIRAC.Core.Security import X509Chain, ProxyInfo, VOMS
-from DIRAC.Core.Security.Locations import getCAsLocation
+from DIRAC.Core.Security.DiracX import addTokenToPEM
+from DIRAC.Core.Security.Locations import getCAsLocation, getDefaultProxyLocation
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
-from DIRAC.Core.Base.Client import Client
 
 
 class Params(ProxyGeneration.CLIParams):
@@ -221,6 +221,11 @@ class ProxyInit:
         self.checkCAs()
         pI.certLifeTimeCheck()
         resultProxyWithVOMS = pI.addVOMSExtIfNeeded()
+
+        proxyLoc = self.__piParams.proxyLoc or getDefaultProxyLocation()
+        if not (result := addTokenToPEM(proxyLoc, self.__piParams.diracGroup))["OK"]:
+            return result
+
         if not resultProxyWithVOMS["OK"]:
             if "returning a valid AC for the user" in resultProxyWithVOMS["Message"]:
                 gLogger.error(resultProxyWithVOMS["Message"])
@@ -237,33 +242,6 @@ class ProxyInit:
             if not resultProxyUpload["OK"]:
                 if self.__piParams.strict:
                     return resultProxyUpload
-
-        vo = Registry.getVOMSVOForGroup(self.__piParams.diracGroup)
-        disabledVOs = gConfig.getValue("/DiracX/DisabledVOs", [])
-        if vo and vo not in disabledVOs:
-            from diracx.core.utils import write_credentials  # pylint: disable=import-error
-            from diracx.core.models import TokenResponse  # pylint: disable=import-error
-            from diracx.core.preferences import DiracxPreferences  # pylint: disable=import-error
-
-            res = Client(url="Framework/ProxyManager").exchangeProxyForToken()
-            if not res["OK"]:
-                return res
-
-            diracxUrl = gConfig.getValue("/DiracX/URL")
-            if not diracxUrl:
-                return S_ERROR("Missing mandatory /DiracX/URL configuration")
-
-            token_content = res["Value"]
-            preferences = DiracxPreferences(url=diracxUrl)
-            write_credentials(
-                TokenResponse(
-                    access_token=token_content["access_token"],
-                    expires_in=token_content["expires_in"],
-                    token_type=token_content.get("token_type"),
-                    refresh_token=token_content.get("refresh_token"),
-                ),
-                location=preferences.credentials_path,
-            )
 
         return S_OK()
 

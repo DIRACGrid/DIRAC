@@ -1,6 +1,5 @@
-# pylint: disable=import-error
 from diracx.client import DiracClient
-from diracx.client.models import JobSearchParams
+
 
 from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue
 

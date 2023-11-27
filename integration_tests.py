@@ -146,12 +146,13 @@ def create(
     flags: Optional[list[str]] = typer.Argument(None),
     editable: Optional[bool] = None,
     extra_module: Optional[list[str]] = None,
+    diracx_dist_dir: Optional[str] = None,
     release_var: Optional[str] = None,
     run_server_tests: bool = True,
     run_client_tests: bool = True,
 ):
     """Start a local instance of the integration tests"""
-    prepare_environment(flags, editable, extra_module, release_var)
+    prepare_environment(flags, editable, extra_module, diracx_dist_dir, release_var)
     install_server()
     install_client()
     exit_code = 0
@@ -191,6 +192,7 @@ def prepare_environment(
     flags: Optional[list[str]] = typer.Argument(None),
     editable: Optional[bool] = None,
     extra_module: Optional[list[str]] = None,
+    diracx_dist_dir: Optional[str] = None,
     release_var: Optional[str] = None,
 ):
     """Prepare the local environment for installing DIRAC."""
@@ -227,7 +229,7 @@ def prepare_environment(
     extra_services = list(chain(*[config["extra-services"] for config in module_configs.values()]))
 
     typer.secho("Running docker-compose to create containers", fg=c.GREEN)
-    with _gen_docker_compose(modules) as docker_compose_fn:
+    with _gen_docker_compose(modules, diracx_dist_dir=diracx_dist_dir) as docker_compose_fn:
         subprocess.run(
             ["docker-compose", "-f", docker_compose_fn, "up", "-d", "dirac-server", "dirac-client"] + extra_services,
             check=True,
@@ -322,7 +324,7 @@ def prepare_environment(
     typer.secho("Running docker-compose to create DiracX containers", fg=c.GREEN)
     typer.secho(f"Will leave a folder behind: {docker_compose_fn_final}", fg=c.YELLOW)
 
-    with _gen_docker_compose(modules) as docker_compose_fn:
+    with _gen_docker_compose(modules, diracx_dist_dir=diracx_dist_dir) as docker_compose_fn:
         # We cannot use the temporary directory created in the context manager because
         # we don't stay in the contect manager (Popen)
         # So we need something that outlives it.
@@ -545,7 +547,7 @@ class TestExit(typer.Exit):
 
 
 @contextmanager
-def _gen_docker_compose(modules):
+def _gen_docker_compose(modules, *, diracx_dist_dir=None):
     # Load the docker-compose configuration and mount the necessary volumes
     input_fn = Path(__file__).parent / "tests/CI/docker-compose.yml"
     docker_compose = yaml.safe_load(input_fn.read_text())
@@ -560,10 +562,12 @@ def _gen_docker_compose(modules):
     docker_compose["services"]["diracx-wait-for-db"]["volumes"].extend(volumes[:])
 
     module_configs = _load_module_configs(modules)
-    if "diracx" in module_configs:
-        docker_compose["services"]["diracx"]["volumes"].append(
-            f"{modules['diracx']}/src/diracx:{module_configs['diracx']['install-location']}"
-        )
+    if diracx_dist_dir is not None:
+        for container_name in ["dirac-client", "dirac-server", "diracx-init-cs", "diracx-wait-for-db", "diracx"]:
+            docker_compose["services"][container_name]["volumes"].append(f"{diracx_dist_dir}:/diracx_sources")
+            docker_compose["services"][container_name].setdefault("environment", []).append(
+                "DIRACX_CUSTOM_SOURCE_PREFIXES=/diracx_sources"
+            )
 
     # Add any extension services
     for module_name, module_configs in module_configs.items():
