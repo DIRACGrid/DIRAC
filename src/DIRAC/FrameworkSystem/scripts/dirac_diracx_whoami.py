@@ -13,9 +13,12 @@ from DIRAC.Core.Security.DiracX import DiracXClient
 def main():
     Script.parseCommandLine()
 
-    with DiracXClient() as api:
-        user_info = api.auth.userinfo()
-        print(json.dumps(user_info.as_dict(), indent=2))
+    try:
+        with DiracXClient() as api:
+            user_info = api.auth.userinfo()
+            print(json.dumps(user_info.as_dict(), indent=2))
+    except Exception as e:
+        print(f"Failed to access DiracX: {e}")
 
 
 if __name__ == "__main__":
