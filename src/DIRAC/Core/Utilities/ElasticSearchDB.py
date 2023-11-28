@@ -15,21 +15,25 @@ import certifi
 try:
     from opensearchpy import OpenSearch as Elasticsearch
     from opensearchpy.exceptions import (
-        ConnectionError as ElasticConnectionError,
-        TransportError,
+        ConflictError,
         NotFoundError,
         RequestError,
-        ConflictError,
+        TransportError,
+    )
+    from opensearchpy.exceptions import (
+        ConnectionError as ElasticConnectionError,
     )
     from opensearchpy.helpers import BulkIndexError, bulk
 except ImportError:
     from elasticsearch import Elasticsearch
     from elasticsearch.exceptions import (
-        ConnectionError as ElasticConnectionError,
-        TransportError,
+        ConflictError,
         NotFoundError,
         RequestError,
-        ConflictError,
+        TransportError,
+    )
+    from elasticsearch.exceptions import (
+        ConnectionError as ElasticConnectionError,
     )
     from elasticsearch.helpers import BulkIndexError, bulk
 
@@ -39,7 +43,7 @@ try:
     except ImportError:
         from opensearch_dsl import A, Q, Search
 except ImportError:
-    from elasticsearch_dsl import Search, Q, A
+    from elasticsearch_dsl import A, Q, Search
 
 
 from DIRAC import S_ERROR, S_OK, gLogger

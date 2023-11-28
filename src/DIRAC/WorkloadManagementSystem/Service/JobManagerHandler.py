@@ -11,11 +11,10 @@
 """
 from pydantic import ValidationError
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC import S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getVOForGroup
 from DIRAC.Core.DISET.MessageClient import MessageClient
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
 from DIRAC.Core.Utilities.JDL import jdlToBaseJobDescriptionModel
@@ -352,7 +351,6 @@ class JobManagerHandlerMixin:
         )
         for jobID in validJobList:
             self.taskQueueDB.deleteJob(jobID)
-            # gJobDB.deleteJobFromQueue(jobID)
             result = self.jobDB.rescheduleJob(jobID)
             self.log.debug(str(result))
             if not result["OK"]:
