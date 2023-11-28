@@ -1,3 +1,31 @@
+[v9.0.0a3]
+
+*WorkloadManagement
+
+FIX: (#7305) Use copy+remove in PilotSync agent to avoid SELinux problems
+FIX: (#7288) WMSUtilities supports VO-specific token tags
+
+*WorkloadManagementSystem
+
+FIX: (#7301) correctly handle UTC in JobLoggingDB float timestamp
+
+*Core
+
+FIX: (#7297) convert exception object to string representation in ElasticSearchDB
+
+*DataManagementSystem
+
+CHANGE: (#7297) default proxy lifetime for FTS is 36h and force the redelegation when 12h are left
+
+*FrameworkSystem
+
+FIX: (#7284) disabledVOs not available when doing dirac-configure
+
+*DiracX
+
+NEW: (#7261) DiracX credentials are now included in proxy PEM files created by DIRAC
+NEW: (#7261) DiracX is now mandatory 🎉
+
 [v9.0.0a2]
 
 *WorkloadManagementSystem
