@@ -48,17 +48,12 @@ class OptimizerModule(AgentModule):
         if not self.jobDB.isValid():
             dExit(1)
 
-        useESForJobParametersFlag = Operations().getValue("/Services/JobMonitoring/useESForJobParametersFlag", False)
-        if useESForJobParametersFlag:
-            try:
-                result = ObjectLoader().loadObject(
-                    "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
-                )
-                if not result["OK"]:
-                    return result
-                self.elasticJobParametersDB = result["Value"]()
-            except RuntimeError as excp:
-                return S_ERROR(f"Can't connect to DB: {excp}")
+        result = ObjectLoader().loadObject(
+            "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
+        )
+        if not result["OK"]:
+            return result
+        self.elasticJobParametersDB = result["Value"]()
 
         self.logDB = JobLoggingDB() if logDB is None else logDB
 
@@ -244,9 +239,7 @@ class OptimizerModule(AgentModule):
             return S_OK()
 
         self.log.debug(f"setJobParameter({job},'{reportName}','{value}')")
-        if self.elasticJobParametersDB:
-            return self.elasticJobParametersDB.setJobParameter(int(job), reportName, value)
-        return self.jobDB.setJobParameter(job, reportName, value)
+        return self.elasticJobParametersDB.setJobParameter(int(job), reportName, value)
 
     #############################################################################
     def setFailedJob(self, job, msg, classAdJob=None):

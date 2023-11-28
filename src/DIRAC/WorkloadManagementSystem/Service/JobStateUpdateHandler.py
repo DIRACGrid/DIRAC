@@ -12,7 +12,6 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Utilities.JobStatusUtility import JobStatusUtility
 
@@ -37,17 +36,12 @@ class JobStateUpdateHandlerMixin:
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp}")
 
-        cls.elasticJobParametersDB = None
-        if Operations().getValue("/Services/JobMonitoring/useESForJobParametersFlag", False):
-            try:
-                result = ObjectLoader().loadObject(
-                    "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
-                )
-                if not result["OK"]:
-                    return result
-                cls.elasticJobParametersDB = result["Value"]()
-            except RuntimeError as excp:
-                return S_ERROR(f"Can't connect to DB: {excp}")
+        result = ObjectLoader().loadObject(
+            "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
+        )
+        if not result["OK"]:
+            return result
+        cls.elasticJobParametersDB = result["Value"]()
 
         cls.jsu = JobStatusUtility(cls.jobDB, cls.jobLoggingDB, cls.elasticJobParametersDB)
 
@@ -165,10 +159,7 @@ class JobStateUpdateHandlerMixin:
         for job specified by its JobId
         """
 
-        if cls.elasticJobParametersDB:
-            return cls.elasticJobParametersDB.setJobParameter(int(jobID), name, value)  # pylint: disable=no-member
-
-        return cls.jobDB.setJobParameter(int(jobID), name, value)
+        return cls.elasticJobParametersDB.setJobParameter(int(jobID), name, value)  # pylint: disable=no-member
 
     ###########################################################################
     types_setJobsParameter = [dict]
@@ -182,23 +173,13 @@ class JobStateUpdateHandlerMixin:
         failed = False
 
         for jobID in jobsParameterDict:
-            if cls.elasticJobParametersDB:
-                res = cls.elasticJobParametersDB.setJobParameter(
-                    int(jobID), str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1])
-                )
-                if not res["OK"]:
-                    cls.log.error("Failed to add Job Parameter to elasticJobParametersDB", res["Message"])
-                    failed = True
-                    message = res["Message"]
-
-            else:
-                res = cls.jobDB.setJobParameter(
-                    jobID, str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1])
-                )
-                if not res["OK"]:
-                    cls.log.error("Failed to add Job Parameter to MySQL", res["Message"])
-                    failed = True
-                    message = res["Message"]
+            res = cls.elasticJobParametersDB.setJobParameter(
+                int(jobID), str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1])
+            )
+            if not res["OK"]:
+                cls.log.error("Failed to add Job Parameter to elasticJobParametersDB", res["Message"])
+                failed = True
+                message = res["Message"]
 
         if failed:
             return S_ERROR(message)
@@ -213,14 +194,9 @@ class JobStateUpdateHandlerMixin:
         """Set arbitrary parameters specified by a list of name/value pairs
         for job specified by its JobId
         """
-        if cls.elasticJobParametersDB:
-            result = cls.elasticJobParametersDB.setJobParameters(int(jobID), parameters)
-            if not result["OK"]:
-                cls.log.error("Failed to add Job Parameters to ElasticJobParametersDB", result["Message"])
-        else:
-            result = cls.jobDB.setJobParameters(int(jobID), parameters)
-            if not result["OK"]:
-                cls.log.error("Failed to add Job Parameters to MySQL", result["Message"])
+        result = cls.elasticJobParametersDB.setJobParameters(int(jobID), parameters)
+        if not result["OK"]:
+            cls.log.error("Failed to add Job Parameters to ElasticJobParametersDB", result["Message"])
 
         return result
 
@@ -235,15 +211,10 @@ class JobStateUpdateHandlerMixin:
         if not result["OK"]:
             cls.log.warn("Failed to set the heart beat data", f"for job {jobID} ")
 
-        if cls.elasticJobParametersDB:
-            for key, value in staticData.items():
-                result = cls.elasticJobParametersDB.setJobParameter(int(jobID), key, value)
-                if not result["OK"]:
-                    cls.log.error("Failed to add Job Parameters to ElasticSearch", result["Message"])
-        else:
-            result = cls.jobDB.setJobParameters(int(jobID), list(staticData.items()))
+        for key, value in staticData.items():
+            result = cls.elasticJobParametersDB.setJobParameter(int(jobID), key, value)
             if not result["OK"]:
-                cls.log.error("Failed to add Job Parameters to MySQL", result["Message"])
+                cls.log.error("Failed to add Job Parameters to ElasticSearch", result["Message"])
 
         # Restore the Running status if necessary
         result = cls.jobDB.getJobAttributes(jobID, ["Status"])

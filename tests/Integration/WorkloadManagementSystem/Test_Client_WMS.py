@@ -487,7 +487,7 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn: str) -> None:
 
     jobIDs = []
     lfnss = [[], [lfn]]
-    types = ["User", "MCSimulation"]
+    types = ["user", "MCSimulation"]
 
     for lfns in lfnss:
         for jobType in types:
