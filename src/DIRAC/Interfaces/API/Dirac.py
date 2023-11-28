@@ -1652,14 +1652,15 @@ class Dirac(API):
             return ret
         jobIDs = ret["Value"]
 
-        jobIDsToDelete = []
-        for jobID in jobIDs:
-            can_kill = JobStatus.checkJobStateTransition(jobID, JobStatus.KILLED)["OK"]
-            can_del = JobStatus.checkJobStateTransition(jobID, JobStatus.DELETED)["OK"]
-            if can_kill or can_del:
-                jobIDsToDelete.append(jobID)
+        # Remove any job IDs that can't change to the Killed or Deleted states
+        filteredJobs = set()
+        for filterState in (JobStatus.KILLED, JobStatus.DELETED):
+            filterRes = JobStatus.filterJobStateTransition(jobIDs, filterState)
+            if not filterRes["OK"]:
+                return filterRes
+            filteredJobs.update(filterRes["Value"])
 
-        result = WMSClient(useCertificates=self.useCertificates).deleteJob(jobIDsToDelete)
+        result = WMSClient(useCertificates=self.useCertificates).deleteJob(list(filteredJobs))
         if result["OK"]:
             if self.jobRepo:
                 for jID in result["Value"]:
@@ -1689,11 +1690,11 @@ class Dirac(API):
             return ret
         jobIDs = ret["Value"]
 
-        jobIDsToReschedule = []
-        for jobID in jobIDs:
-            res = JobStatus.checkJobStateTransition(jobID, JobStatus.RESCHEDULED)
-            if res["OK"]:
-                jobIDsToReschedule.append(jobID)
+        # Remove any job IDs that can't change to the rescheduled state
+        filterRes = JobStatus.filterJobStateTransition(jobIDs, JobStatus.RESCHEDULED)
+        if not filterRes["OK"]:
+            return filterRes
+        jobIDsToReschedule = filterRes["Value"]
 
         result = WMSClient(useCertificates=self.useCertificates).rescheduleJob(jobIDsToReschedule)
         if result["OK"]:
@@ -1724,14 +1725,15 @@ class Dirac(API):
             return ret
         jobIDs = ret["Value"]
 
-        jobIDsToKill = []
-        for jobID in jobIDs:
-            can_kill = JobStatus.checkJobStateTransition(jobID, JobStatus.KILLED)["OK"]
-            can_del = JobStatus.checkJobStateTransition(jobID, JobStatus.DELETED)["OK"]
-            if can_kill or can_del:
-                jobIDsToKill.append(jobID)
+        # Remove any job IDs that can't change to the Killed or Deleted states
+        filteredJobs = set()
+        for filterState in (JobStatus.KILLED, JobStatus.DELETED):
+            filterRes = JobStatus.filterJobStateTransition(jobIDs, filterState)
+            if not filterRes["OK"]:
+                return filterRes
+            filteredJobs.update(filterRes["Value"])
 
-        result = WMSClient(useCertificates=self.useCertificates).killJob(jobIDsToKill)
+        result = WMSClient(useCertificates=self.useCertificates).killJob(list(filteredJobs))
         if result["OK"]:
             if self.jobRepo:
                 for jID in result["Value"]:

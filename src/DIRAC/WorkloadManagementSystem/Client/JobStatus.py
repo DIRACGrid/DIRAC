@@ -4,6 +4,7 @@ This module contains constants and lists for the possible job states.
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.StateMachine import State, StateMachine
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 
 #:
@@ -97,6 +98,7 @@ class JobsStateMachine(StateMachine):
         }
 
 
+@deprecated("Use filterJobStateTransition instead")
 def checkJobStateTransition(jobID, candidateState, currentStatus=None, jobMonitoringClient=None):
     """Utility to check if a job state transition is allowed"""
     if not currentStatus:
@@ -125,3 +127,31 @@ def checkJobStateTransition(jobID, candidateState, currentStatus=None, jobMonito
         )
         return S_ERROR("Job state transition not allowed")
     return S_OK()
+
+
+def filterJobStateTransition(jobIDs, candidateState, jobMonitoringClient=None):
+    """Given a list of jobIDs, return a list that are allowed to transition
+    to the given candidate state.
+    """
+    allowedJobs = []
+
+    if not isinstance(jobIDs, list):
+        jobIDs = [jobIDs]
+
+    if not jobMonitoringClient:
+        from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+
+        jobMonitoringClient = JobMonitoringClient()
+
+    res = jobMonitoringClient.getJobsStatus(jobIDs)
+    if not res["OK"]:
+        return res
+
+    for jobID in jobIDs:
+        if jobID in res["Value"]:
+            curState = res["Value"][jobID]["Status"]
+            stateRes = JobsStateMachine(curState).getNextState(candidateState)
+            if stateRes["OK"]:
+                if stateRes["Value"] == candidateState:
+                    allowedJobs.append(jobID)
+    return S_OK(allowedJobs)
