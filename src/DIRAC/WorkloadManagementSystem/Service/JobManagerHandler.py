@@ -9,26 +9,26 @@
     killJob()
 
 """
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.MessageClient import MessageClient
-from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
-    JobPolicy,
-    RIGHT_SUBMIT,
-    RIGHT_RESCHEDULE,
     RIGHT_DELETE,
     RIGHT_KILL,
+    RIGHT_RESCHEDULE,
     RIGHT_RESET,
+    RIGHT_SUBMIT,
+    JobPolicy,
 )
+from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
 
 MAX_PARAMETRIC_JOBS = 20
 
@@ -340,7 +340,6 @@ class JobManagerHandlerMixin:
         )
         for jobID in validJobList:
             self.taskQueueDB.deleteJob(jobID)
-            # gJobDB.deleteJobFromQueue(jobID)
             result = self.jobDB.rescheduleJob(jobID)
             self.log.debug(str(result))
             if not result["OK"]:
