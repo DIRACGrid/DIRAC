@@ -2306,7 +2306,7 @@ class Dirac(API):
     #############################################################################
     def __printInfo(self):
         """Internal function to print the DIRAC API version and related information."""
-        self.log.info(f"<====={self.diracInfo}=====>")
+        self.log.verbose(f"<====={self.diracInfo}=====>")
         self.log.verbose(f"DIRAC is running at {DIRAC.siteName()} in setup {self.setup}")
 
     def getConfigurationValue(self, option, default):
