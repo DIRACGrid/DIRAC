@@ -3,6 +3,7 @@ import argparse
 import inspect
 import importlib
 from itertools import zip_longest
+import subprocess
 
 BASE_EXPORTS = {"export_whoami", "export_refreshConfiguration", "export_ping", "export_echo"}
 
@@ -22,6 +23,8 @@ def main(system, component):
     handler = getattr(
         importlib.import_module(f"DIRAC.{system}System.Service.{component}Handler"), f"{component}Handler"
     )
+
+    dirac_location = importlib.import_module("DIRAC").__path__[0]
 
     print("from functools import partial")
     print()
@@ -53,7 +56,15 @@ def main(system, component):
             else:
                 default = f" = {parameter.default}"
             type_infos += [f"{parameter.name}{dtype}{default}"]
+
+        cmd_check_used = ["grep", "-R", rf"\.{method_name}(", dirac_location]
+
+        res = subprocess.run(cmd_check_used, capture_output=True)
+        is_method_used = bool(res.stdout)
+
         print(f"def test_{method_name}(monkeypatch):")
+        if not is_method_used:
+            print(f"    # WARNING: possibly unused")
         print(f"    # {client_name}().{method_name}({', '.join(type_infos)})")
         print(f"    method = {client_name}().{method_name}")
         print(f"    pytest.skip()")
