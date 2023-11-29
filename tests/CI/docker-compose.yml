@@ -141,7 +141,7 @@ services:
       - diracx-cs-store:/cs_store/
       - diracx-key-store:/signing-key/
     entrypoint: |
-      /entrypoint.sh bash -xc 'dirac internal generate-cs /cs_store/initialRepo --vo=vo --user-group=dirac_user --idp-url=http://dsdsd.csds/a/b'
+      /entrypoint.sh bash -xc 'dirac internal generate-cs /cs_store/initialRepo'
     pull_policy: always
 
   diracx-init-db:
