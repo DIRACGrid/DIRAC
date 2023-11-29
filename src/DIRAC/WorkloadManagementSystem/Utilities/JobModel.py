@@ -152,7 +152,7 @@ class BaseJobDescriptionModel(BaseModel):
             res = getSites()
             if not res["OK"]:
                 raise ValueError(res["Message"])
-            invalidSites = v - set(res["Value"])
+            invalidSites = v - set(res["Value"]).union({"ANY"})
             if invalidSites:
                 raise ValueError(f"Invalid sites: {' '.join(invalidSites)}")
         return v
