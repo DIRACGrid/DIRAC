@@ -3,12 +3,9 @@
 import re
 from urllib import parse
 
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry, Operations
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
-from DIRAC.Core.Utilities.List import uniqueElements, fromChar
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-
+from DIRAC.Core.Utilities.List import fromChar, uniqueElements
 
 gBaseResourcesSection = "/Resources"
 
