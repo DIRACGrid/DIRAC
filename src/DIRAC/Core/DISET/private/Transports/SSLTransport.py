@@ -40,7 +40,9 @@ def checkSanity(urlTuple, kwargs):
     """
     useCerts = False
     certFile = ""
-    if "useCertificates" in kwargs and kwargs["useCertificates"]:
+    if kwargs.get("proxyLocation"):
+        certFile = kwargs["proxyLocation"]
+    elif "useCertificates" in kwargs and kwargs["useCertificates"]:
         certTuple = Locations.getHostCertificateAndKeyLocation()
         if not certTuple:
             gLogger.error("No cert/key found! ")
@@ -52,10 +54,7 @@ def checkSanity(urlTuple, kwargs):
             gLogger.error("proxyString parameter is not a valid type", str(type(kwargs["proxyString"])))
             return S_ERROR("proxyString parameter is not a valid type")
     else:
-        if "proxyLocation" in kwargs:
-            certFile = kwargs["proxyLocation"]
-        else:
-            certFile = Locations.getProxyLocation()
+        certFile = Locations.getProxyLocation()
         if not certFile:
             gLogger.error("No proxy found")
             return S_ERROR("No proxy found")
