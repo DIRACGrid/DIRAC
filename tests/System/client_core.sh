@@ -52,8 +52,20 @@ if dirac-proxy-info; then
 fi
 
 echo " "
-echo "dirac-login"
-if ! dirac-login; then
+echo "dirac-proxy-init"
+if ! dirac-proxy-init; then
+   exit 1
+fi
+
+echo " "
+echo "dirac-proxy-init -g gridpp_user"
+if ! dirac-proxy-init -g gridpp_user; then
+   exit 1
+fi
+
+echo " "
+echo "dirac-diracx-whoami"
+if ! dirac-diracx-whoami; then
    exit 1
 fi
 
