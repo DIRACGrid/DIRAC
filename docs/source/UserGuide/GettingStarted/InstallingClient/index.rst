@@ -21,9 +21,9 @@ So, you first install DIRACOS2 and only then install DIRAC in it::
 
 and now DIRAC::
 
-  $ pip install DIRAC==8.0
+  $ pip install DIRAC
 
-(Just `pip install DIRAC` will install the most recent production version found on https://pypi.org/project/DIRAC/)
+will install the most recent production version found on https://pypi.org/project/DIRAC/
 
 And for the configuration::
 
