@@ -28,6 +28,7 @@ from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValida
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
@@ -688,7 +689,7 @@ class JobAgent(AgentModule):
         payloadErrors = []
         originalJobID = self.jobReport.jobID
         for jobID, taskID in self.submissionDict.items():
-            if not taskID in self.computingElement.taskResults:
+            if taskID not in self.computingElement.taskResults:
                 continue
 
             result = self.computingElement.taskResults[taskID]
@@ -711,7 +712,12 @@ class JobAgent(AgentModule):
 
             # The payload failed (if result["Value"] is not 0)
             elif result["Value"]:
-                self.jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Payload failed")
+                # In order to avoid overriding perfectly valid states, the status is updated iff the job was running
+                res = JobMonitoringClient().getJobsStatus(jobID)
+                if not res["OK"]:
+                    return res
+                if res["Value"][jobID]["Status"] == JobStatus.RUNNING:
+                    self.jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Payload failed")
 
                 # Do not keep running and do not overwrite the Payload error
                 message = f"Payload execution failed with error code {result['Value']}"
