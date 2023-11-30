@@ -1,12 +1,11 @@
-from diracx.client import DiracClient
-
-
 from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue
+
+from DIRAC.Core.Security.DiracX import DiracXClient
 
 
 class JobMonitoringClient:
     def fetch(self, parameters, jobIDs):
-        with DiracClient() as api:
+        with DiracXClient() as api:
             jobs = api.jobs.search(
                 parameters=["JobID"] + parameters,
                 search=[{"parameter": "JobID", "operator": "in", "values": jobIDs}],
