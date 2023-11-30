@@ -3,12 +3,12 @@ import os
 import selectors
 import threading
 
+from diraccfg import CFG
 from pytest import fixture
 
-from diraccfg import CFG
-from DIRAC.Core.Security.test.x509TestUtilities import CERTDIR, USERCERT, getCertOption
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.DISET.private.Transports import PlainTransport, M2SSLTransport
+from DIRAC.Core.DISET.private.Transports import M2SSLTransport, PlainTransport
+from DIRAC.Core.Security.test.x509TestUtilities import CERTDIR, USERCERT, getCertOption
 
 # TODO: Expired hostcert
 # TODO: Expired usercert
