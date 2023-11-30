@@ -1,3 +1,21 @@
+[v9.0.0a4]
+
+*docs
+
+FIX: (#7330) just use `pip install DIRAC` for DIRAC client install
+FIX: (#7330) updated picture for py3 stack
+
+*Interfaces
+
+FIX: (#7328) Improve performance of job delete/kill/reschedule API
+FIX: (#7322) Lower log level for printing version in submitJob
+
+*WorkloadManagementSystem
+
+FIX: (#7327) Allow "ANY" in the valid sites list
+NEW: (#7318) initial FutureClient for JobStateUpdate
+FIX: (#7316) ElasticJobParametersDB: do not configure the IndexPrefix name
+
 [v9.0.0a3]
 
 *WorkloadManagement
