@@ -253,7 +253,11 @@ class BaseClient:
         :return: S_OK()/S_ERROR()
         """
         # which extra credentials to use?
-        self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST if self.__useCertificates else ""
+        self.__extraCredentials = (
+            self.VAL_EXTRA_CREDENTIALS_HOST
+            if (self.__useCertificates and not self.kwargs.get(self.KW_PROXY_LOCATION))
+            else ""
+        )
         if self.KW_EXTRA_CREDENTIALS in self.kwargs:
             self.__extraCredentials = self.kwargs[self.KW_EXTRA_CREDENTIALS]
 

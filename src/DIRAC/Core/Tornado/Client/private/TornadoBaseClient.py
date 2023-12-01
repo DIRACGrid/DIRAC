@@ -277,7 +277,7 @@ class TornadoBaseClient:
         WARNING: COPY/PASTE FROM Core/Diset/private/BaseClient
         """
         # which extra credentials to use?
-        if self.__useCertificates:
+        if self.__useCertificates and not self.kwargs.get(self.KW_PROXY_LOCATION):
             self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST
         else:
             self.__extraCredentials = ""
@@ -508,10 +508,11 @@ class TornadoBaseClient:
             return url
         url = url["Value"]
 
+        if self.kwargs.get(self.KW_PROXY_LOCATION):
+            auth = {"cert": self.kwargs[self.KW_PROXY_LOCATION]}
         # getting certificate
         # Do we use the server certificate ?
-        if self.kwargs[self.KW_USE_CERTIFICATES]:
-            # TODO: make this code path work with DiracX for Agents and possibly webapp ?
+        elif self.kwargs[self.KW_USE_CERTIFICATES]:
             auth = {"cert": Locations.getHostCertificateAndKeyLocation()}
 
         # Use access token?
@@ -550,8 +551,6 @@ class TornadoBaseClient:
             fp = os.fdopen(tmpHandle, "w")
             fp.write(self.kwargs[self.KW_PROXY_STRING])
             fp.close()
-        elif self.kwargs.get(self.KW_PROXY_LOCATION):
-            auth = {"cert": self.kwargs[self.KW_PROXY_LOCATION]}
         else:
             auth = {"cert": Locations.getProxyLocation()}
             if not auth["cert"]:
