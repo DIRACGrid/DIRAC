@@ -45,7 +45,9 @@ CREATE TABLE Transformations(
     EventsPerTask INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY(TransformationID),
     INDEX(TransformationName),
-    INDEX(TransformationFamily)
+    INDEX(TransformationFamily),
+    INDEX(Status),
+    INDEX(Type)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
 -- -------------------------------------------------------------------------------
