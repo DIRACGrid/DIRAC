@@ -12,15 +12,14 @@
     It can also be used to set alarms to be promptly forwarded to those
     subscribing to them.
 """
-from DIRAC import gConfig, S_OK, S_ERROR
-
+from DIRAC import S_ERROR, S_OK, gConfig
+from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Security import Properties
+from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.Mail import Mail
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Security import Properties
-from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.DB.NotificationDB import NotificationDB
-from DIRAC.Core.Utilities.DictCache import DictCache
 
 
 class NotificationHandler(RequestHandler):
