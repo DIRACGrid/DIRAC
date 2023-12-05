@@ -176,7 +176,7 @@ class Condor(object):
             ] = "The WholeNode option is deprecated and not applied anymore, please remove it from the CS to continue"
             return resultDict
 
-        jdlFile = tempfile.NamedTemporaryFile(dir=outputDir, suffix=".jdl")
+        jdlFile = tempfile.NamedTemporaryFile(dir=outputDir, suffix=".jdl", mode="wt")
         scheddOptions = 'requirements = OpSys == "LINUX"\n'
         scheddOptions += "gentenv = False"
         jdlFile.write(
