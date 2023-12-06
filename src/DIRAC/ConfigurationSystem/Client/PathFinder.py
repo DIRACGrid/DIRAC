@@ -256,9 +256,20 @@ def useLegacyAdapter(system, service=None) -> bool:
 
     :return: bool -- True if DiracX should be used
     """
+    from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+
+    # Check if DiracX is enabled for this service
     system, service = divideFullName(system, service)
     value = gConfigurationData.extractOptionFromCFG(f"/DiracX/LegacyClientEnabled/{system}/{service}")
-    return (value or "no").lower() in ("y", "yes", "true", "1")
+    isServiceEnabled = (value or "no").lower() in ("y", "yes", "true", "1")
+    # Check if DiracX is enabled for this VO
+    result = getProxyInfo()
+    if not result["OK"]:
+        return False
+    value = gConfigurationData.extractOptionFromCFG(f"/Registry/Groups/{result['Value']['group']}/VO")
+    isVOEnabled = value not in getDisabledDiracxVOs()
+
+    return isServiceEnabled and isVOEnabled
 
 
 def getServiceURL(system, service=None, setup=False):

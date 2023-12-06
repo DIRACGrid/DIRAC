@@ -75,7 +75,7 @@ def DiracXClient() -> _DiracClient:
     proxyLocation = getDefaultProxyLocation()
     diracxToken = diracxTokenFromPEM(proxyLocation)
     if not diracxToken:
-        raise ValueError(f"No dirax token in the proxy file {proxyLocation}")
+        raise ValueError(f"No diracx token in the proxy file {proxyLocation}")
 
     with NamedTemporaryFile(mode="wt") as token_file:
         token_file.write(json.dumps(diracxToken))
