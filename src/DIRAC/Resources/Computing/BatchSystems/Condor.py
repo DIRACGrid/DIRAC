@@ -170,7 +170,7 @@ class Condor(object):
         submitOptions = kwargs["SubmitOptions"]
         preamble = kwargs.get("Preamble")
 
-        jdlFile = tempfile.NamedTemporaryFile(dir=outputDir, suffix=".jdl")
+        jdlFile = tempfile.NamedTemporaryFile(dir=outputDir, suffix=".jdl", mode="wt")
         scheddOptions = 'requirements = OpSys == "LINUX"\n'
         scheddOptions += "gentenv = False"
         jdlFile.write(
