@@ -29,7 +29,7 @@ or IAAC (Infrastructure as a Client) provided that these machines are properly c
 
 A pilot has, at a minimum, to:
 
-- install/setup DIRAC, or its extension
+- install or setup DIRAC, or an extension of it
 - configure DIRAC
 - run the JobAgent
 
