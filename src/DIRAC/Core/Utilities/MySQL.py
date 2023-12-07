@@ -327,7 +327,21 @@ class ConnectionPool:
     Management of connections per thread
     """
 
-    def __init__(self, host, user, passwd, port=3306, graceTime=600):
+    # The idea of the grace time is that a given thread should not keep a connection object for too long
+    # However, in case of long running queries, this is unavoidable.
+    # If the DISET/HTTPs connection timeout is longer than the MySQL grace time,
+    # the connection will be reallocated to another thread, and that does not go down well
+    # From the mysqlclient doc ("threadsafety" of https://mysqlclient.readthedocs.io/user_guide.html#mysqldb)
+    # "The general upshot of this is: Don’t share connections between threads."
+    # The best thing to do, if we don't want to have a lock, is to set this value to 0
+    # so it is not used. LHCb will run in prod with the value 0 for a while, and if no issue arrises,
+    # it will become the default
+    try:
+        MYSQL_CONNECTION_GRACE_TIME = int(os.environ.get("DIRAC_MYSQL_CONNECTION_GRACE_TIME"))
+    except Exception:
+        MYSQL_CONNECTION_GRACE_TIME = 600
+
+    def __init__(self, host, user, passwd, port=3306, graceTime=MYSQL_CONNECTION_GRACE_TIME):
         self.__host = host
         self.__user = user
         self.__passwd = passwd
@@ -446,7 +460,7 @@ class ConnectionPool:
                 data = self.__assigned[thid]
             except KeyError:
                 continue
-            if now - data[2] > self.__graceTime:
+            if self.__graceTime and now - data[2] > self.__graceTime:
                 self.__pop(thid)
 
     def transactionStart(self, dbName):
