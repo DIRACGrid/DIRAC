@@ -102,9 +102,8 @@ class ComputingElement:
         self.proxy = proxy
         self.valid = datetime.datetime.utcnow() + second * valid
 
-    def setToken(self, token, valid=0):
+    def setToken(self, token):
         self.token = token
-        self.valid = datetime.datetime.utcnow() + second * valid
 
     def _prepareProxy(self):
         """Set the environment variable X509_USER_PROXY"""
