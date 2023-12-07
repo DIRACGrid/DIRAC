@@ -66,7 +66,7 @@ def ClientSelector(disetClient, *args, **kwargs):  # We use same interface as RP
         # If we are not already given a URL, resolve it
         if serviceName.startswith(("http", "dip")):
             completeUrl = serviceName
-        elif useLegacyAdapter(serviceName):
+        elif useLegacyAdapter(serviceName, useCertificates=kwargs.get("useCertificates")):
             sLog.debug(f"Using legacy adapter for service {serviceName}")
             if diracxClient is None:
                 raise NotImplementedError(

@@ -248,7 +248,7 @@ def getServiceURLs(system, service=None, setup=False, failover=False):
     return resList
 
 
-def useLegacyAdapter(system, service=None) -> bool:
+def useLegacyAdapter(system, service=None, useCertificates=None) -> bool:
     """Should DiracX be used for this service via the legacy adapter mechanism
 
     :param str system: system name or full name e.g.: Framework/ProxyManager
@@ -261,15 +261,22 @@ def useLegacyAdapter(system, service=None) -> bool:
     # Check if DiracX is enabled for this service
     system, service = divideFullName(system, service)
     value = gConfigurationData.extractOptionFromCFG(f"/DiracX/LegacyClientEnabled/{system}/{service}")
-    isServiceEnabled = (value or "no").lower() in ("y", "yes", "true", "1")
-    # Check if DiracX is enabled for this VO
+    if (value or "no").lower() not in ("y", "yes", "true", "1"):
+        return False
+
+    # Check if we are using a server certificate: in this case we cannot use DiracX
+    if useCertificates is None:
+        useCertificates = gConfigurationData.useServerCertificate()
+    if useCertificates:
+        return False
+
+    # We are using a proxy: check if DiracX is enabled for this VO
     result = getProxyInfo()
     if not result["OK"]:
         return False
     value = gConfigurationData.extractOptionFromCFG(f"/Registry/Groups/{result['Value']['group']}/VO")
-    isVOEnabled = value not in getDisabledDiracxVOs()
 
-    return isServiceEnabled and isVOEnabled
+    return value not in getDisabledDiracxVOs()
 
 
 def getServiceURL(system, service=None, setup=False):
