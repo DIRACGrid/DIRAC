@@ -193,7 +193,7 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
         startTime = self._startTime
         dInfo["service start time"] = self._startTime
         serviceUptime = datetime.utcnow() - startTime
-        dInfo["service uptime"] = serviceUptime.days * 3600 + serviceUptime.seconds
+        dInfo["service uptime"] = int(serviceUptime.total_seconds())
         # Load average
         try:
             with open("/proc/loadavg") as oFD:
