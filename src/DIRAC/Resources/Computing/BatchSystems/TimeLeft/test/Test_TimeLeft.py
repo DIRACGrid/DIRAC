@@ -1,7 +1,5 @@
 """ Test TimeLeft utility
 """
-import pytest
-
 from DIRAC import S_OK
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 
@@ -25,6 +23,23 @@ def test_batchSystemNotDefined(mocker):
     res = tl.getTimeLeft()
     assert not res["OK"]
     assert "Current batch system is not supported" in res["Message"]
+
+
+def test_batchSystemNotDefinedInConfigButInEnvironmentVariables(mocker, monkeypatch):
+    """Test batch system not defined but present in environment variables (should fail from v9.0)"""
+    mocker.patch(
+        "DIRAC.Resources.Computing.BatchSystems.TimeLeft.HTCondorResourceUsage.runCommand",
+        return_value=S_OK("9000 800"),
+    )
+    mocker.patch("DIRAC.gConfig.getSections", return_value={})
+    monkeypatch.setenv("HTCONDOR_JOBID", "12345.0")
+    monkeypatch.setenv("_CONDOR_JOB_AD", "/path/to/config")
+
+    tl = TimeLeft()
+    tl.cpuPower = 10
+    res = tl.getTimeLeft()
+    assert res["OK"]
+    assert res["Value"] == 82000
 
 
 def test_getScaledCPU(mocker):
