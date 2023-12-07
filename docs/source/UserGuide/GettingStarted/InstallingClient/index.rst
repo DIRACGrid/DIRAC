@@ -34,7 +34,7 @@ Using a user proxy
 
 If you want to use a user proxy, we assume that you already have a user certificate,
 so in this case create a directory *.globus* in your home directory and copy the certificate files
-(public and private keys in .pem (Privacy Enhanced Mail format) to this directory::
+`usercert.pem` and `userkey.pem` -- public and private keys in .pem (Privacy Enhanced Mail)  format to this directory::
 
    $ mkdir ~/.globus
    $ cp <<certificate files>> ~/.globus/
