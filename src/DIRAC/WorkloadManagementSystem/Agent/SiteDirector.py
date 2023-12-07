@@ -451,7 +451,7 @@ class SiteDirector(AgentModule):
                 result = self.__getPilotToken(audience=ce.audienceName)
                 if not result["OK"]:
                     return result
-                ce.setToken(result["Value"], 3500)
+                ce.setToken(result["Value"])
 
             # now really submitting
             res = self._submitPilotsToQueue(pilotsToSubmit, ce, queueName)
@@ -1267,7 +1267,7 @@ class SiteDirector(AgentModule):
             if not result["OK"]:
                 self.log.error("Failed to get token", f"{ceName}: {result['Message']}")
                 return
-            ce.setToken(result["Value"], 3500)
+            ce.setToken(result["Value"])
 
         result = ce.getJobStatus(stampedPilotRefs)
         if not result["OK"]:
