@@ -8,7 +8,7 @@ DIRAC pilots
    :keywords: Pilots3, Pilot3, Pilot
 
 This page describes what are DIRAC pilots, and how they work.
-To know how to develop DIRAC pilots, please refer to the Developers documentation
+To know how to develop DIRAC pilots, please refer to the Developers documentation.
 
 Pilot development is done in https://github.com/DIRACGrid/Pilot
 
@@ -29,16 +29,18 @@ or IAAC (Infrastructure as a Client) provided that these machines are properly c
 
 A pilot has, at a minimum, to:
 
-- install DIRAC
+- install or setup DIRAC, or an extension of it
 - configure DIRAC
 - run the JobAgent
 
-A pilot has to run on each and every computing resource type, provided that:
+where:
 
-- Python 2.6+ on the WN
-- It is an OS onto which we can install a DIRAC client.
-  - if that's not possible, we plan to add support for singularity
+- install means installing DIRAC like described in :ref:`dirac_install`
+- setup means that DIRAC code can already be found in the current file system, and it is only a matter of invoking a rc file that would add DIRAC paths
+- configure means adding dirac specific configuration files (which, at a minimum, should include the location of a DIRAC configuration service)
 
+
+A pilot has to run on each and every computing resource type, provided that Python 2.6+ is on the WN.
 The same pilot script can be used everywhere.
 
 .. image:: Pilots2.png
@@ -72,18 +74,20 @@ Administration
 
 The following CS section is used for administering the DIRAC pilots::
 
-   Operations/<Setup>/Pilot
+   Operations/Defaults/Pilot
 
 These parameters will be interpreted by the WorkloadManagementSystem/SiteDirector agents, and by the WorkloadManagementSystem/Matcher.
 They can also be accessed by other services/agents, e.g. for syncing purposes.
 
 Inside this section, you should define the following options, and give them a meaningful value (here, an example is given)::
 
-   # Needed by the SiteDirector:
-   Version = v7r2p1  # DIRAC version(s)
+   # For the SiteDirector:
+   Version = 8.0.32  # DIRAC version(s) -- a comma-separated list can be provided
    Project = myVO  # Your project name: this will end up in the /LocalSite/ReleaseProject option of the pilot cfg, and will be used at matching time
    Extensions = myVO # The DIRAC extension (if any)
    Installation = mycfg.cfg # For an optional configuration file, used by the installation script.
+   PreInstalledEnv = /cvmfs/some/where/specific/bashrc # A specific rc file to source for setting up DIRAC
+   PreInstalledEnvPrefix = /cvmfs/some/where/ # Location where DIRAC installations can be found. The Pilot will then try and find the following: /cvmfs/some/where/{Version/}{platform}/diracosrc
    # For the Matcher
    CheckVersion = False # True by default, if false any version would be accepted at matching level (this is a check done by the WorkloadManagementSystem/Matcher service).
 
@@ -242,9 +246,6 @@ A simple example using the LHCbPilot extension follows::
   DIRAC_PILOT='https://lhcb-portal-dirac.cern.ch/pilot/dirac-pilot.py'
   DIRAC_PILOT_TOOLS='https://lhcb-portal-dirac.cern.ch/pilot/pilotTools.py'
   DIRAC_PILOT_COMMANDS='https://lhcb-portal-dirac.cern.ch/pilot/pilotCommands.py'
-  DIRAC_PILOT_LOGGER='https://lhcb-portal-dirac.cern.ch/pilot/PilotLogger.py'
-  DIRAC_PILOT_LOGGERTOOLS='https://lhcb-portal-dirac.cern.ch/pilot/PilotLoggerTools.py'
-  DIRAC_PILOT_MESSAGESENDER='https://lhcb-portal-dirac.cern.ch/pilot/MessageSender.py'
   LHCbDIRAC_PILOT_COMMANDS='https://lhcb-portal-dirac.cern.ch/pilot/LHCbPilotCommands.py'
 
   #
@@ -252,9 +253,6 @@ A simple example using the LHCbPilot extension follows::
   wget --no-check-certificate -O dirac-pilot.py $DIRAC_PILOT
   wget --no-check-certificate -O pilotTools.py $DIRAC_PILOT_TOOLS
   wget --no-check-certificate -O pilotCommands.py $DIRAC_PILOT_COMMANDS
-  wget --no-check-certificate -O PilotLogger.py $DIRAC_PILOT_LOGGER
-  wget --no-check-certificate -O PilotLoggerTools.py $DIRAC_PILOT_LOGGERTOOLS
-  wget --no-check-certificate -O MessageSender.py $DIRAC_PILOT_MESSAGESENDER
   wget --no-check-certificate -O LHCbPilotCommands.py $LHCbDIRAC_PILOT_COMMANDS
 
   #run the dirac-pilot script
