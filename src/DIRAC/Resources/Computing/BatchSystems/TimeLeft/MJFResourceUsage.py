@@ -15,11 +15,9 @@ class MJFResourceUsage(ResourceUsage):
     """
 
     #############################################################################
-    def __init__(self):
+    def __init__(self, jobID, parameters):
         """Standard constructor"""
-        super().__init__("MJF", "JOB_ID")
-
-        self.queue = os.environ.get("QUEUE")
+        super().__init__("MJF", jobID, parameters)
 
         self.log.verbose(f"jobID={self.jobID}, queue={self.queue}")
         self.startTime = time.time()

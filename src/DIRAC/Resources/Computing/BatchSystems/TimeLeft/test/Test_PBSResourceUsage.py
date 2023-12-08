@@ -70,34 +70,16 @@ Job Id: 55755440.seer.t1.grid.kiae.ru
 """
 
 
-@pytest.mark.parametrize(
-    "runCommandResult, \
-    cpuLimitExpected, wallClockLimitExpected",
-    [
-        (
-            [S_OK(RRCKI_OUT)],
-            154967.0,
-            156150.0,
-        )
-    ],
-)
-def test_getResourcUsage(
-    mocker,
-    runCommandResult,
-    cpuLimitExpected,
-    wallClockLimitExpected,
-):
+def test_getResourcUsage(mocker):
     mocker.patch(
         "DIRAC.Resources.Computing.BatchSystems.TimeLeft.PBSResourceUsage.runCommand",
-        side_effect=runCommandResult,
+        side_effect=[S_OK(RRCKI_OUT)],
     )
     mocker.patch("os.path.isfile", return_value=True)
-    mocker.patch.dict(os.environ, {"PBS_O_QUEUE": "lhcb", "PBS_O_QPATH": "/some/path"})
 
-    pbsRU = PBSResourceUsage()
-    pbsRU.jobID = "55755440.seer.t1.grid.kiae.ru"
+    pbsRU = PBSResourceUsage("55755440.seer.t1.grid.kiae.ru", {"Queue": "lhcb", "BinaryPath": "/some/path"})
     res = pbsRU.getResourceUsage()
     assert res["OK"], res["Message"]
     assert len(res["Value"]) == 4
-    assert res["Value"]["CPU"] == cpuLimitExpected  # pylint: disable=invalid-sequence-index
-    assert res["Value"]["WallClock"] == wallClockLimitExpected  # pylint: disable=invalid-sequence-index
+    assert res["Value"]["CPU"] == 154967.0  # pylint: disable=invalid-sequence-index
+    assert res["Value"]["WallClock"] == 156150.0  # pylint: disable=invalid-sequence-index

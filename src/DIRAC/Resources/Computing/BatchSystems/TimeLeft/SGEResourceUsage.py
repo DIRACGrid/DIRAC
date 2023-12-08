@@ -16,14 +16,12 @@ class SGEResourceUsage(ResourceUsage):
     This is the SGE plugin of the TimeLeft Utility
     """
 
-    def __init__(self):
+    def __init__(self, jobID, parameters):
         """Standard constructor"""
-        super().__init__("SGE", "JOB_ID")
+        super().__init__("SGE", jobID, parameters)
 
-        self.queue = os.environ.get("QUEUE")
-        sgePath = os.environ.get("SGE_BINARY_PATH")
-        if sgePath:
-            os.environ["PATH"] += ":" + sgePath
+        if self.binary_path and self.binary_path != "Unknown":
+            os.environ["PATH"] += ":" + self.binary_path
 
         self.log.verbose(f"JOB_ID={self.jobID}, QUEUE={self.queue}")
         self.startTime = time.time()
