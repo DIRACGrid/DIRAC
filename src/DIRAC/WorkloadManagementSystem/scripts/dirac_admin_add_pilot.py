@@ -51,6 +51,9 @@ class Params:
 
         :return: S_OK()/S_ERROR()
         """
+        # TODO: remove this comment from v9.0
+        gLogger.notice("Notice: 'TaskQueueID' will be removed from the pilotAgentsDB in v9.0.")
+
         try:
             self.taskQueueID = int(value)
         except ValueError:
