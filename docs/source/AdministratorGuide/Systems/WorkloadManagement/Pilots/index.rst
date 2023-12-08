@@ -88,6 +88,7 @@ Inside this section, you should define the following options, and give them a me
    Installation = mycfg.cfg # For an optional configuration file, used by the installation script.
    PreInstalledEnv = /cvmfs/some/where/specific/bashrc # A specific rc file to source for setting up DIRAC
    PreInstalledEnvPrefix = /cvmfs/some/where/ # Location where DIRAC installations can be found. The Pilot will then try and find the following: /cvmfs/some/where/{Version/}{platform}/diracosrc
+   CVMFS_locations = /cvmfs/some/ # Comma-separated list of locations where DIRAC installations, CAs and CRLs can be found. The Pilot will then try and find the following: /cvmfs/some/{releaseProject}dirac/{Version/}{platform}/diracosrc and /cvmfs/some/etc/grid-security/certificates
    # For the Matcher
    CheckVersion = False # True by default, if false any version would be accepted at matching level (this is a check done by the WorkloadManagementSystem/Matcher service).
 
@@ -96,7 +97,7 @@ Further details:
 - *Version* is the version of DIRAC that the pilots will install. Add the version of your DIRAC extension if you have one. A list of versions can also be added here, meaning that all these versions will be accepted by the Matcher (see below), while only the first in the list will be the one used by the pilots for knowing which DIRAC version to install (e.g. if Version=v7r0p2,v7r0p1 then pilots will install version v7r0p2)
 - *Project* is, normally, the same as *Extensions*
 - When the *CheckVersion* option is "True", the version checking done at the Matcher level will be strict, which means that pilots running different versions from those listed in the *Versions* option will refuse to match any job. There is anyway the possibility to list more than one version in *Versions*; in this case, all of them will be accepted by the Matcher.
-
+- DIRAC versions are pre-installed on CVMFS in the following location: `/cvmfs/dirac.egi.eu`. From there `/cvmfs/dirac.egi.eu/dirac` contains DIRAC installations, like `/cvmfs/dirac.egi.eu/dirac/v8.0.32`, which can be sourced with `. /cvmfs/dirac.egi.eu/dirac/v8.0.32/Linux-x86_64/diracosrc`
 
 
 Pilot Commands
