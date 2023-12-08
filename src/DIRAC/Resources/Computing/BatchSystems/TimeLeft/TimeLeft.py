@@ -15,6 +15,7 @@ import shlex
 import DIRAC
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.Subprocess import systemCall
 
@@ -30,7 +31,7 @@ class TimeLeft:
         if not self.cpuPower:
             self.log.warn(f"/LocalSite/CPUNormalizationFactor not defined for site {DIRAC.siteName()}")
 
-        result = self.__getBatchSystemPlugin()
+        result = self._getBatchSystemPlugin()
         if result["OK"]:
             self.batchPlugin = result["Value"]
         else:
@@ -66,7 +67,9 @@ class TimeLeft:
         """
         # Quit if no norm factor available
         if not self.cpuPower:
-            return S_ERROR(f"/LocalSite/CPUNormalizationFactor not defined for site {DIRAC.siteName()}")
+            return S_ERROR(
+                DErrno.ESECTION, f"/LocalSite/CPUNormalizationFactor not defined for site {DIRAC.siteName()}"
+            )
 
         if not self.batchPlugin:
             return S_ERROR(self.batchError)
@@ -127,33 +130,24 @@ class TimeLeft:
         self.log.verbose(f"Remaining CPU in normalized units is: {cpuWorkLeft:.2f}")
         return S_OK(cpuWorkLeft)
 
-    def __getBatchSystemPlugin(self):
+    def _getBatchSystemPlugin(self):
         """Using the name of the batch system plugin, will return an instance of the plugin class."""
-        batchSystems = {
-            "LSF": "LSB_JOBID",
-            "PBS": "PBS_JOBID",
-            "BQS": "QSUB_REQNAME",
-            "SGE": "SGE_TASK_ID",
-            "SLURM": "SLURM_JOB_ID",
-            "HTCondor": "_CONDOR_JOB_AD",
-        }  # more to be added later
-        name = None
-        for batchSystem, envVar in batchSystems.items():
-            if envVar in os.environ:
-                name = batchSystem
-                break
+        batchSystemInfo = gConfig.getSections("/LocalSite/BatchSystem")
+        type = batchSystemInfo.get("Type")
+        jobID = batchSystemInfo.get("JobID")
+        parameters = batchSystemInfo.get("Parameters")
 
-        if name is None:
+        if not type or type == "Unknown":
             self.log.warn(f"Batch system type for site {DIRAC.siteName()} is not currently supported")
-            return S_ERROR("Current batch system is not supported")
+            return S_ERROR(DErrno.ERESUNK, "Current batch system is not supported")
 
-        self.log.debug(f"Creating plugin for {name} batch system")
+        self.log.debug(f"Creating plugin for {type} batch system")
 
-        result = ObjectLoader().loadObject(f"DIRAC.Resources.Computing.BatchSystems.TimeLeft.{name}ResourceUsage")
+        result = ObjectLoader().loadObject(f"DIRAC.Resources.Computing.BatchSystems.TimeLeft.{type}ResourceUsage")
         if not result["OK"]:
             return result
         batchClass = result["Value"]
-        batchInstance = batchClass()
+        batchInstance = batchClass(jobID, parameters)
 
         return S_OK(batchInstance)
 

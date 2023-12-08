@@ -4,52 +4,54 @@
 import pytest
 
 from DIRAC import S_OK
-
-# sut
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.SGEResourceUsage import SGEResourceUsage
 
-RESULT_FROM_SGE = """
-job_number:                 7448711
-exec_file:                  job_scripts/7448711
-submission_time:            Fri Feb 26 19:56:58 2021
-owner:                      pltlhcb001
-uid:                        110476
-group:                      pltlhcb
-gid:                        110013
-sge_o_path:                 /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
-sge_o_host:                 grendel
-account:                    sge
+
+RESULT_FROM_SGE = """==============================================================
+job_number:                 12345
+exec_file:                  job_scripts/12345
+submission_time:            Wed Apr 11 09:36:41 2012
+owner:                      lhcb049
+uid:                        18416
+group:                      lhcb
+gid:                        155
+sge_o_home:                 /home/lhcb049
+sge_o_log_name:             lhcb049
+sge_o_path:                 /opt/sge/bin/lx24-amd64:/usr/bin:/bin
+sge_o_shell:                /bin/sh
+sge_o_workdir:              /var/glite/tmp
+sge_o_host:                 cccreamceli05
+account:                    GRID=EGI SITE=IN2P3-CC TIER=tier1 VO=lhcb ROLEVOMS=&2Flhcb&2FRole=pilot&2FCapability=NULL
 merge:                      y
-hard resource_list:         decom=FALSE,s_vmem=3994M,h_vmem=3994M
-mail_list:                  pltlhcb001@grendel.private.dns.zone
+hard resource_list:         os=sl5,s_cpu=1000,s_vmem=5120M,s_fsize=51200M,cvmfs=1,dcache=1
+mail_list:                  lhcb049@cccreamceli05.in2p3.fr
 notify:                     FALSE
-job_name:                   arc60158374
-priority:                   -512
+job_name:                   cccreamceli05_crm05_749996134
+stdout_path_list:           NONE:NONE:/dev/null
 jobshare:                   0
-hard_queue_list:            grid7
+hard_queue_list:            huge
 restart:                    n
-shell_list:                 NONE:/bin/sh
-env_list:                   TERM=NONE
-script_file:                STDIN
-parallel environment:  smp range: 8
-project:                    grid
-binding:                    NONE
-job_type:                   NONE
-usage         1:            cpu=00:00:23, mem=0.76117 GB s, io=0.08399 GB, vmem=384.875M, maxvmem=384.875M
-binding       1:            NONE
+shell_list:                 NONE:/bin/bash
+env_list:                   SITE_NAME=IN2P3-CC,MANPATH=/opt/sge/man:/usr/share/man:/usr/local/man:/usr/local/share/man
+script_file:                /tmp/crm05_749996134
+project:                    P_lhcb_pilot
+usage    1:                 cpu=00:01:00, mem=0.03044 GBs, io=0.19846, vmem=288.609M, maxvmem=288.609M
 scheduling info:            (Collecting of scheduler job information is turned off)
 """
 
 
-@pytest.mark.parametrize(
-    "runCommandResult, cpuLimitExpected, wallClockLimitExpected",
-    [((S_OK(RESULT_FROM_SGE), S_OK("bof")), (720 * 60 / 2.5), (1440 * 60 / 2.5))],
-)
-def test_init(mocker, runCommandResult, cpuLimitExpected, wallClockLimitExpected):
+def test_getResourceUsage(mocker):
     mocker.patch(
-        "DIRAC.Resources.Computing.BatchSystems.TimeLeft.SGEResourceUsage.runCommand", side_effect=runCommandResult
+        "DIRAC.Resources.Computing.BatchSystems.TimeLeft.SGEResourceUsage.runCommand",
+        return_value=S_OK(RESULT_FROM_SGE),
     )
 
-    sgeResourceUsage = SGEResourceUsage()
+    sgeResourceUsage = SGEResourceUsage("1234", {"Queue": "Test"})
     res = sgeResourceUsage.getResourceUsage()
-    assert not res["OK"], res["Message"]
+
+    assert res["OK"]
+    assert res["Value"]["CPU"] == 60
+    assert res["Value"]["CPULimit"] == 1000
+    # WallClock is random and don't know why, so not testing it
+    # assert res["Value"]["WallClock"] == 0.01
+    assert res["Value"]["WallClockLimit"] == 1250

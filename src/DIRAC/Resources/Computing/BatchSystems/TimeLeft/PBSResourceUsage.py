@@ -15,14 +15,12 @@ class PBSResourceUsage(ResourceUsage):
     This is the PBS plugin of the TimeLeft Utility
     """
 
-    def __init__(self):
+    def __init__(self, jobID, parameters):
         """Standard constructor"""
-        super().__init__("PBS", "PBS_JOBID")
+        super().__init__("PBS", jobID, parameters)
 
-        self.queue = os.environ.get("PBS_O_QUEUE")
-        pbsPath = os.environ.get("PBS_O_PATH")
-        if pbsPath:
-            os.environ["PATH"] += ":" + pbsPath
+        if self.binary_path and self.binary_path != "Unknown":
+            os.environ["PATH"] += ":" + self.binary_path
 
         self.log.verbose(f"PBS_JOBID={self.jobID}, PBS_O_QUEUE={self.queue}")
         self.startTime = time.time()
