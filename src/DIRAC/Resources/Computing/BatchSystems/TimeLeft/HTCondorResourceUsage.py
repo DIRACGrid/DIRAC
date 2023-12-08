@@ -17,9 +17,9 @@ class HTCondorResourceUsage(ResourceUsage):
     allow us to get an estimation of the resources usage.
     """
 
-    def __init__(self):
+    def __init__(self, jobID, parameters):
         """Standard constructor"""
-        super().__init__("HTCondor", "_CONDOR_JOB_AD")
+        super().__init__("HTCondor", jobID, parameters)
 
     def getResourceUsage(self):
         """Returns S_OK with a dictionary containing the entries WallClock, WallClockLimit, and Unit for current slot."""
@@ -29,8 +29,7 @@ class HTCondorResourceUsage(ResourceUsage):
         #   only present on some Sites
         # - CurrentTime: current time
         # - JobCurrentStartDate: start of the job execution
-        jobDescription = os.environ.get("_CONDOR_JOB_AD")
-        cmd = f"condor_status -ads {jobDescription} -af MaxRuntime CurrentTime-JobCurrentStartDate"
+        cmd = f"condor_status -ads {self.info_path} -af MaxRuntime CurrentTime-JobCurrentStartDate"
         result = runCommand(cmd)
         if not result["OK"]:
             return S_ERROR("Current batch system is not supported")

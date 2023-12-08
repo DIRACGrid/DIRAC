@@ -19,17 +19,14 @@ class LSFResourceUsage(ResourceUsage):
     This is the LSF plugin of the TimeLeft Utility
     """
 
-    def __init__(self):
+    def __init__(self, jobID, parameters):
         """Standard constructor"""
-        super().__init__("LSF", "LSB_JOBID")
+        super().__init__("LSF", jobID, parameters)
 
-        self.queue = os.environ.get("LSB_QUEUE")
-        self.bin = os.environ.get("LSF_BINDIR")
-        self.host = os.environ.get("LSB_HOSTS")
         self.year = time.strftime("%Y", time.gmtime())
         self.log.verbose(
             "LSB_JOBID={}, LSB_QUEUE={}, LSF_BINDIR={}, LSB_HOSTS={}".format(
-                self.jobID, self.queue, self.bin, self.host
+                self.jobID, self.queue, self.binary_path, self.host
             )
         )
 
@@ -39,7 +36,7 @@ class LSFResourceUsage(ResourceUsage):
         self.wallClockLimit = None
         self.hostNorm = None
 
-        cmd = f"{self.bin}/bqueues -l {self.queue}"
+        cmd = f"{self.binary_path}/bqueues -l {self.queue}"
         result = runCommand(cmd)
         if not result["OK"]:
             return
@@ -73,7 +70,7 @@ class LSFResourceUsage(ResourceUsage):
             # Now try to get the CPU_FACTOR for this reference CPU,
             # it must be either a Model, a Host or the largest Model
 
-            cmd = f"{self.bin}/lshosts -w {self.cpuRef}"
+            cmd = f"{self.binary_path}/lshosts -w {self.cpuRef}"
             result = runCommand(cmd)
             if result["OK"]:
                 # At CERN this command will return an error since there is no host defined
@@ -97,7 +94,7 @@ class LSFResourceUsage(ResourceUsage):
 
             if not self.normRef:
                 # Try if there is a model define with the name of cpuRef
-                cmd = f"{self.bin}/lsinfo -m"
+                cmd = f"{self.binary_path}/lsinfo -m"
                 result = runCommand(cmd)
                 if result["OK"]:
                     lines = str(result["Value"]).split("\n")
@@ -120,7 +117,7 @@ class LSFResourceUsage(ResourceUsage):
             if not self.normRef:
                 # Now parse LSF configuration files
                 if not os.path.isfile("./lsf.sh"):
-                    os.symlink(os.path.join(os.environ["LSF_ENVDIR"], "lsf.conf"), "./lsf.sh")
+                    os.symlink(os.path.join(self.info_path, "lsf.conf"), "./lsf.sh")
                 # As the variables are not exported, we must force it
                 ret = sourceEnv(10, ["./lsf", "&& export LSF_CONFDIR"])
                 if ret["OK"]:
@@ -170,7 +167,7 @@ class LSFResourceUsage(ResourceUsage):
 
         # Now get the Normalization for the current Host
         if self.host:
-            cmd = f"{self.bin}/lshosts -w {self.host}"
+            cmd = f"{self.binary_path}/lshosts -w {self.host}"
             result = runCommand(cmd)
             if result["OK"]:
                 lines = str(result["Value"]).split("\n")
@@ -201,7 +198,7 @@ class LSFResourceUsage(ResourceUsage):
         """Returns S_OK with a dictionary containing the entries CPU, CPULimit,
         WallClock, WallClockLimit, and Unit for current slot.
         """
-        if not self.bin:
+        if not self.binary_path:
             return S_ERROR("Could not determine bin directory for LSF")
         if not self.hostNorm:
             return S_ERROR("Could not determine host Norm factor")
@@ -209,7 +206,7 @@ class LSFResourceUsage(ResourceUsage):
         cpu = None
         wallClock = None
 
-        cmd = f"{self.bin}/bjobs -W {self.jobID}"
+        cmd = f"{self.binary_path}/bjobs -W {self.jobID}"
         result = runCommand(cmd)
         if not result["OK"]:
             return result

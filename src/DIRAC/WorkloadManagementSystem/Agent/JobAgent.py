@@ -283,6 +283,9 @@ class JobAgent(AgentModule):
         if queue:
             self.jobReport.setJobParameter(par_name="CEQueue", par_value=queue, sendFlag=False)
 
+        if batchSystem := gConfig.getValue("/LocalSite/BatchSystem/Type", ""):
+            self.jobReport.setJobParameter(par_name="BatchSystem", par_value=batchSystem, sendFlag=False)
+
         self.log.debug(f"Before self._submitJob() ({self.ceName}CE)")
         result = self._submitJob(
             jobID=jobID,
