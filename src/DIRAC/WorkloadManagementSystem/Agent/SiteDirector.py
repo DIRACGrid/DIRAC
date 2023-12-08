@@ -1024,13 +1024,16 @@ class SiteDirector(AgentModule):
         else:
             self.log.info("DIRAC project will be installed by pilots")
 
-        # Preinstalled environment defined ?
+        # Preinstalled environment or list of CVMFS locations defined ?
         preinstalledEnv = opsHelper.getValue("Pilot/PreinstalledEnv", "")
         preinstalledEnvPrefix = opsHelper.getValue("Pilot/PreinstalledEnvPrefix", "")
+        CVMFS_locations = opsHelper.getValue("Pilot/CVMFS_locations", "")
         if preinstalledEnv:
             pilotOptions.append(f"--preinstalledEnv={preinstalledEnv}")
         elif preinstalledEnvPrefix:
             pilotOptions.append(f"--preinstalledEnvPrefix={preinstalledEnvPrefix}")
+        elif CVMFS_locations:
+            pilotOptions.append(f"--CVMFS_locations={CVMFS_locations}")
 
         # Pilot Logging defined?
         if opsHelper.getValue("/Services/JobMonitoring/usePilotsLoggingFlag", False):
