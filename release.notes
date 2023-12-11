@@ -1,3 +1,35 @@
+[v9.0.0a5]
+
+*FrameworkSystem
+
+FIX: (#7360) wrong service uptime calculation
+
+*Resources
+
+FIX: (#7357) get batch system details from local cfg instead of environment variables
+FIX: (#7349) remove valid argument from setToken
+
+*docs
+
+NEW: (#7356) added doc for PreInstalledPilotEnv
+
+*Core
+
+NEW: (#7344) Introduce DIRAC_MYSQL_CONNECTION_GRACE_TIME to specify the grace time of the MySQL connection pool
+
+*TransformationSystem
+
+NEW: (#7337) add an index on Status and Type for the TransformationDB.Transformations table
+
+*WorkloadManagementSystem
+
+FIX: (#7332) basic JobMonitoring client fixes
+FIX: (#7331) JobAgents will set jobStatus=Failed/Payload failed if and only if the job was previously Running
+
+*CORE
+
+FIX: (#7332) allow for proxyLocation to work with host certificate
+
 [v9.0.0a4]
 
 *docs
