@@ -2410,7 +2410,7 @@ class Dirac(API):
 
     #############################################################################
 
-    def pingService(self, system, service, printOutput=False, url=None):
+    def pingService(self, system=None, service=None, printOutput=False, url=None):
         """The ping function will attempt to return standard information from a system
         service if this is available.  If the ping() command is unsuccessful it could
         indicate a period of service unavailability.
@@ -2430,8 +2430,7 @@ class Dirac(API):
         :type url: string
         :returns: S_OK,S_ERROR
         """
-
-        if not isinstance(system, str) and isinstance(service, str) and not isinstance(url, str):
+        if not (system and service) and not url:
             return self._errorReport("Expected string for system and service or a url to ping()")
         result = S_ERROR()
         try:
@@ -2446,9 +2445,14 @@ class Dirac(API):
             else:
                 serviceURL = url
                 client = Client(url=url)
+
+            startTime = time.time()
             result = client.ping()
+            roudtrip_time = time.time() - startTime
             if result["OK"]:
                 result["Value"]["service url"] = serviceURL
+                result["Value"]["roundtrip_time"] = roudtrip_time
+
         except Exception as x:
             self.log.warn(f"ping for {system}/{service} failed with exception:\n{str(x)}")
             result["Message"] = str(x)
