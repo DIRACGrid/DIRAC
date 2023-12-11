@@ -136,7 +136,6 @@ jobs:
         with:
           miniforge-variant: Mambaforge
           use-mamba: true
-          python-version: 3.11
           mamba-version: "*"
           channels: conda-forge,defaults
           channel-priority: true
@@ -148,4 +147,10 @@ jobs:
           mamba install gct
           echo "$CVMFS_PROXY_BASE64" | base64 --decode > cvmfs.proxy
           export X509_USER_PROXY=cvmfs.proxy
+
+          echo $PATH
+          type -a openssl
+          type -a gsissh
+          openssl version
+
           gsissh -p 1975 -t cvmfs-upload01.gridpp.rl.ac.uk /home/diracsgm/cvmfs_repo/admin/sync_packages.sh
