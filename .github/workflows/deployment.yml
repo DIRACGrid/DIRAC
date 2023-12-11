@@ -143,6 +143,7 @@ jobs:
         env:
           CVMFS_PROXY_BASE64: ${{ secrets.CVMFS_PROXY_BASE64 }}
         run: |
+          conda init bash
           conda create -n CVMFS_deploy openssl=3.0.0 gct
           conda activate CVMFS_deploy
           echo "$CVMFS_PROXY_BASE64" | base64 --decode > cvmfs.proxy
