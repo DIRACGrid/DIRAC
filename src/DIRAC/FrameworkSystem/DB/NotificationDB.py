@@ -2,11 +2,11 @@
 """
 import time
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.Mail import Mail
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DEncode
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.Core.Utilities.Mail import Mail
 
 
 class NotificationDB(DB):

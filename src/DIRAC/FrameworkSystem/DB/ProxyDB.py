@@ -11,21 +11,20 @@
     * ProxyDB_VOMSProxies -- proxy storage table with VOMS extension already added.
     * ProxyDB_Log -- table with logs.
     * ProxyDB_Tokens -- token storage table for proxy requests.
-    * ProxyDB_ExpNotifs -- a table for accumulating proxy expiration notifications.
 """
-import time
-import random
 import hashlib
+import random
+import textwrap
+import time
 from urllib.request import urlopen
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Security import Properties
-from DIRAC.Core.Security.VOMS import VOMS
-from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
-from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn  # pylint: disable=import-error
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.Core.Base.DB import DB
+from DIRAC.Core.Security.VOMS import VOMS
+from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn  # pylint: disable=import-error
+from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
@@ -137,17 +136,6 @@ class ProxyDB(DB):
                     "UsesLeft": "SMALLINT UNSIGNED DEFAULT 1",
                 },
                 "PrimaryKey": "Token",
-            }
-
-        if "ProxyDB_ExpNotifs" not in tablesInDB:
-            tablesD["ProxyDB_ExpNotifs"] = {
-                "Fields": {
-                    "UserDN": "VARCHAR(255) NOT NULL",
-                    "UserGroup": "VARCHAR(255) NOT NULL",
-                    "LifeLimit": "INTEGER UNSIGNED DEFAULT 0",
-                    "ExpirationTime": "DATETIME NOT NULL",
-                },
-                "PrimaryKey": ["UserDN", "UserGroup"],
             }
 
         return self._createTables(tablesD)
@@ -412,8 +400,7 @@ class ProxyDB(DB):
             purged += result["Value"]
             self.log.info(f"Purged {result['Value']} expired proxies from {tableName}")
         if sendNotifications:
-            result = self.sendExpirationNotifications()
-            if not result["OK"]:
+            if not (result := self.sendExpirationNotifications())["OK"]:
                 return result
         return S_OK(purged)
 
@@ -1184,134 +1171,76 @@ class ProxyDB(DB):
             return result
         return S_OK(result["Value"] > 0)
 
-    def __cleanExpNotifs(self):
-        """Clean expired notifications from the db
-
-        :return: S_OK()/S_ERROR()
-        """
-        cmd = "DELETE FROM `ProxyDB_ExpNotifs` WHERE ExpirationTime < UTC_TIMESTAMP()"
-        return self._update(cmd)
-
-    # FIXME: Add clean proxy
     def sendExpirationNotifications(self):
         """Send notification about expiration
 
         :return: S_OK(list)/S_ERROR() -- tuple list of user DN, group and proxy left time
         """
-        result = self.__cleanExpNotifs()
-        if not result["OK"]:
-            return result
-        cmd = "SELECT UserDN, UserGroup, LifeLimit FROM `ProxyDB_ExpNotifs`"
-        result = self._query(cmd)
-        if not result["OK"]:
-            return result
-        notifDone = {(row[0], row[1]): row[2] for row in result["Value"]}
         notifLimits = sorted(int(x) for x in self.getCSOption("NotificationTimes", ProxyDB.NOTIFICATION_TIMES))
-        sqlSel = "UserDN, UserGroup, TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime )"
-        sqlCond = "TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) < %d" % max(notifLimits)
-        cmd = f"SELECT {sqlSel} FROM `ProxyDB_Proxies` WHERE {sqlCond}"
-        result = self._query(cmd)
-        if not result["OK"]:
-            return result
-        pilotProps = (Properties.GENERIC_PILOT, Properties.PILOT)
-        data = result["Value"]
-        sent = []
-        for row in data:
-            userDN, group, lTime = row
-            # If it's a pilot proxy, skip it
-            if Registry.groupHasProperties(group, pilotProps):
-                continue
-            # IF it dosn't hace the auto upload proxy, skip it
-            if not Registry.getGroupOption(group, "AutoUploadProxy", False):
-                continue
-            notKey = (userDN, group)
-            for notifLimit in notifLimits:
-                if notifLimit < lTime:
-                    # Not yet in this notification limit
-                    continue
-                if notKey in notifDone and notifDone[notKey] <= notifLimit:
-                    # Already notified for this notification limit
-                    break
-                if not self._notifyProxyAboutToExpire(userDN, lTime):
-                    # Cannot send notification, retry later
-                    break
-                try:
-                    sUserDN = self._escapeString(userDN)["Value"]
-                    sGroup = self._escapeString(group)["Value"]
-                except KeyError:
-                    return S_ERROR("OOPS")
-                if notKey not in notifDone:
-                    values = "( %s, %s, %d, TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() ) )" % (
-                        sUserDN,
-                        sGroup,
-                        notifLimit,
-                        lTime,
-                    )
-                    cmd = (
-                        "INSERT INTO `ProxyDB_ExpNotifs` ( UserDN, UserGroup, LifeLimit, ExpirationTime ) VALUES %s"
-                        % values
-                    )
-                    result = self._update(cmd)
-                    if not result["OK"]:
-                        gLogger.error("Could not mark notification as sent", result["Message"])
-                else:
-                    values = "LifeLimit = %d, ExpirationTime = TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP() )" % (
-                        notifLimit,
-                        lTime,
-                    )
-                    cmd = "UPDATE `ProxyDB_ExpNotifs` SET {} WHERE UserDN = {} AND UserGroup = {}".format(
-                        values,
-                        sUserDN,
-                        sGroup,
-                    )
-                    result = self._update(cmd)
-                    if not result["OK"]:
-                        gLogger.error("Could not mark notification as sent", result["Message"])
-                sent.append((userDN, group, lTime))
-                notifDone[notKey] = notifLimit
-        return S_OK(sent)
 
-    def _notifyProxyAboutToExpire(self, userDN, lTime):
+        for notifLimit in notifLimits:
+            sqlSel = "UserName, TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime )"
+            sqlCond = "TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) < %d" % notifLimit
+            sqlCond += " AND TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > %d" % (notifLimit - 86400)
+
+            if not (result := self._query(f"SELECT {sqlSel} FROM `ProxyDB_CleanProxies` WHERE {sqlCond}"))["OK"]:
+                return result
+            for userName, lTime in result["Value"]:
+                if not self._notifyProxyAboutToExpire(userName, lTime):
+                    self.log.warn("Cannot send notification, will retry later")
+                    break
+
+        return S_OK()
+
+    def _notifyProxyAboutToExpire(self, userName, lTime):
         """Send notification mail about to expire
 
-        :param str userDN: user DN
-        :param int lTime: left proxy live time in a seconds
+        :param str userName: user name
+        :param int lTime: left proxy live time in seconds
 
         :return: boolean
         """
-        result = Registry.getUsernameForDN(userDN)
-        if not result["OK"]:
-            return False
-        userName = result["Value"]
-        userEMail = Registry.getUserOption(userName, "Email", "")
-        if not userEMail:
+        if not (userEMail := Registry.getUserOption(userName, "Email")):
             gLogger.error("Could not discover user email", userName)
+            return False
+        if not (userDN := Registry.getUserOption(userName, "DN")):
+            gLogger.error("Could not discover user DN", userName)
             return False
         daysLeft = int(lTime / 86400)
         if daysLeft <= 0:
             return True  # Don't annoy users with -1 messages
         msgSubject = "Your proxy uploaded to DIRAC will expire in %d days" % daysLeft
-        msgBody = """\
-Dear %s,
+        msgBody = textwrap.dedent(
+            """\
+                Dear %s,
 
-  The proxy you uploaded to DIRAC will expire in aproximately %d days. The proxy
-  information is:
+                The proxy you uploaded to DIRAC will expire in aproximately %d days. The proxy
+                information is:
 
-  DN:    %s
+                DN: %s
 
-  If you have been issued different certificate, please make sure you have a
-  proxy uploaded with that certificate.
+                If you plan on keep using this credentials, please upload a newer proxy by executing:
 
-Cheers,
- DIRAC's Proxy Manager
-""" % (
-            userName,
-            daysLeft,
-            userDN,
+                $ dirac-proxy-init
+
+                If you have been issued different certificate, please make sure you have a
+                proxy uploaded with that certificate.
+
+                Cheers,
+                DIRAC's Proxy Manager
+            """
+            % (
+                userName,
+                daysLeft,
+                userDN,
+            )
         )
         fromAddr = self._mailFrom
-        result = self.__notifClient.sendMail(userEMail, msgSubject, msgBody, fromAddress=fromAddr)
-        if not result["OK"]:
+        if not (
+            result := self.__notifClient.sendMail(
+                userEMail, msgSubject, msgBody, fromAddress=fromAddr, localAttempt=False
+            )
+        )["OK"]:
             gLogger.error("Could not send email", result["Message"])
             return False
         return True

@@ -1,7 +1,7 @@
 """ DIRAC Notification Client class encapsulates the methods exposed
     by the Notification service.
 """
-from DIRAC import gLogger, S_ERROR
+from DIRAC import S_ERROR, gLogger
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.Mail import Mail
 
