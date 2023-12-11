@@ -44,6 +44,10 @@ class WLCGAccountingJson:
                     continue
                 occupancyURL = res["Value"]
                 ctx.filecopy(params, occupancyURL, "file://" + filePath)
+                # Just make sure the file is json, and not SSO HTML
+                with open(filePath) as f:
+                    json.load(f)
+
                 return
             except gfal2.GError as e:
                 detailMsg = "Failed to copy file %s to destination url %s: [%d] %s" % (
@@ -53,6 +57,9 @@ class WLCGAccountingJson:
                     e.message,
                 )
                 self.log.debug("Exception while copying", detailMsg)
+                continue
+            except json.decoder.JSONDecodeError as e:
+                self.log.debug("Downloaded file is not json")
                 continue
 
     def getOccupancy(self, **kwargs):
