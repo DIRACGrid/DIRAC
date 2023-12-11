@@ -149,8 +149,10 @@ jobs:
           export X509_USER_PROXY=cvmfs.proxy
 
           echo $PATH
+          exprt PATH=$PATH:/usr/share/miniconda3/bin:/opt/conda/bin/:/opt/conda/condabin
           type -a openssl
-          type -a gsissh
           openssl version
+          ./bin/openssl version
+          type -a gsissh
 
           gsissh -p 1975 -t cvmfs-upload01.gridpp.rl.ac.uk /home/diracsgm/cvmfs_repo/admin/sync_packages.sh
