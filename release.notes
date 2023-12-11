@@ -1,3 +1,9 @@
+[v9.0.0a7]
+
+*Resources
+
+FIX: (#7366) make sure the WLCG accounting file is json
+
 [v9.0.0a6]
 
 *WorkloadManagementSystem
