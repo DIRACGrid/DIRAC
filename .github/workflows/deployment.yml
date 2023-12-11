@@ -149,7 +149,7 @@ jobs:
           export X509_USER_PROXY=cvmfs.proxy
 
           echo $PATH
-          exprt PATH=$PATH:/usr/share/miniconda3/bin:/opt/conda/bin/:/opt/conda/condabin
+          export PATH=$PATH:/usr/share/miniconda3/bin:/opt/conda/bin/:/opt/conda/condabin
           type -a openssl
           openssl version
           ./bin/openssl version
