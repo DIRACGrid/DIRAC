@@ -500,7 +500,7 @@ class RequestHandler:
         startTime = self.serviceInfoDict["serviceStartTime"]
         dInfo["service start time"] = self.serviceInfoDict["serviceStartTime"]
         serviceUptime = datetime.datetime.utcnow() - startTime
-        dInfo["service uptime"] = serviceUptime.days * 3600 + serviceUptime.seconds
+        dInfo["service uptime"] = int(serviceUptime.total_seconds())
         # Load average
         dInfo["load"] = " ".join([str(lx) for lx in os.getloadavg()])
         dInfo["name"] = self.serviceInfoDict["serviceName"]
