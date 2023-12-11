@@ -553,6 +553,9 @@ class DiracAdmin(API):
         if not isinstance(gridReference, str):
             return self._errorReport("Expected string for pilot reference")
 
+        # TODO: to remove from v9.0
+        gLogger.notice("Notice: 'TaskQueueID' will be removed from the output in v9.0.")
+
         result = PilotManagerClient().getPilotInfo(gridReference)
         return result
 
@@ -599,13 +602,15 @@ class DiracAdmin(API):
         :param job: JobID
         :type job: integer or string
         :return: S_OK,S_ERROR
-
         """
         if isinstance(jobID, str):
             try:
                 jobID = int(jobID)
             except ValueError as x:
                 return self._errorReport(str(x), "Expected integer or string for existing jobID")
+
+        # TODO: remove this comment from v9.0
+        gLogger.notice("Notice: 'TaskQueueID' will be removed from the output in v9.0.")
 
         result = PilotManagerClient().getPilots(jobID)
         if result["OK"]:

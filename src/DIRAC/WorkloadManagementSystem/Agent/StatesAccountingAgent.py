@@ -79,6 +79,10 @@ class StatesAccountingAgent(AgentModule):
         # PilotsHistory to Monitoring
         if "Monitoring" in self.pilotMonitoringOption:
             self.log.info("Committing PilotsHistory to Monitoring")
+
+            # TODO: remove this comment from v9.0
+            self.log.notice("Notice: 'TaskQueueID' will be removed from the pilotAgentsDB in v9.0.")
+
             result = PilotAgentsDB().getSummarySnapshot()
             now = datetime.datetime.utcnow()
             if not result["OK"]:

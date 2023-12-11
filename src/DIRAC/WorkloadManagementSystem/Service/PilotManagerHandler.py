@@ -5,6 +5,7 @@ import shutil
 import datetime
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.Decorators import deprecated
 import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -80,9 +81,17 @@ class PilotManagerHandler(RequestHandler):
         return S_OK(resultDict)
 
     ##########################################################################################
+    types_addPilotReferences = [list, str]
+
+    @classmethod
+    def export_addPilotReferences(cls, pilotRef, ownerGroup, gridType="DIRAC", pilotStampDict={}):
+        """Add a new pilot job reference"""
+        return cls.pilotAgentsDB.addPilotReferences(pilotRef, ownerGroup, gridType, pilotStampDict)
+
     types_addPilotTQReference = [list, int, str, str]
 
     @classmethod
+    @deprecated("Use addPilotReferences instead")
     def export_addPilotTQReference(
         cls, pilotRef, taskQueueID, ownerDN, ownerGroup, broker="Unknown", gridType="DIRAC", pilotStampDict={}
     ):

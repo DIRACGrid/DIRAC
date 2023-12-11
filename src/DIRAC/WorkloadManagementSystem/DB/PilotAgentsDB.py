@@ -5,6 +5,7 @@
 
     Available methods are:
 
+    addPilotReferences()
     addPilotTQReference()
     setPilotStatus()
     deletePilot()
@@ -20,6 +21,7 @@
 import datetime
 import decimal
 import threading
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
 from DIRAC import S_ERROR, S_OK
@@ -38,6 +40,30 @@ class PilotAgentsDB(DB):
         self.lock = threading.Lock()
 
     ##########################################################################################
+    def addPilotReferences(self, pilotRef, ownerGroup, gridType="DIRAC", pilotStampDict={}):
+        """Add a new pilot job reference"""
+        for ref in pilotRef:
+            stamp = ""
+            if ref in pilotStampDict:
+                stamp = pilotStampDict[ref]
+
+            req = (
+                "INSERT INTO PilotAgents( PilotJobReference, TaskQueueID, OwnerDN, "
+                + "OwnerGroup, Broker, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp ) "
+                + "VALUES ('%s',%d,%s,'%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')"
+                % (ref, 0, "Unknown", ownerGroup, "Unknown", gridType, stamp)
+            )
+
+            result = self._update(req)
+            if not result["OK"]:
+                return result
+
+            if "lastRowId" not in result:
+                return S_ERROR("PilotAgentsDB.addPilotReferences: Failed to retrieve a new Id.")
+
+        return S_OK()
+
+    @deprecated("Use addPilotReferences instead")
     def addPilotTQReference(
         self, pilotRef, taskQueueID, ownerDN, ownerGroup, broker="Unknown", gridType="DIRAC", pilotStampDict={}
     ):
