@@ -1,3 +1,47 @@
+[v8.0.33]
+
+*Resources
+
+FIX: (#7365) make sure the WLCG accounting file is json
+FIX: (#7348) remove valid argument from setToken
+FIX: (#7289) get batch system details from local cfg instead of environment variables
+
+*WorkloadManagementSystem
+
+FIX: (#7359) added SiteDirector option for CVMFS_locations
+FIX: (#7302) JobAgents will set jobStatus=Failed/Payload failed if and only if the job was previously Running
+FIX: (#7300) correctly handle UTC in JobLoggingDB float timestamp
+FIX: (#7291) ElasticJobParametersDB: do not configure the IndexPrefix name
+
+*WorkloadManagement
+
+NEW: (#7358) introduce addPilotReferences() in PilotAgentsDB
+FIX: (#7304) Use copy+remove in PilotSync agent to avoid SELinux problems
+
+*FrameworkSystem
+
+FIX: (#7353) wrong service uptime calculation
+FIX: (#7339) send notifications for expiring proxies
+
+*Core
+
+NEW: (#7342) Introduce DIRAC_MYSQL_CONNECTION_GRACE_TIME to specify the grace time of the MySQL connection pool
+
+*docs
+
+NEW: (#7341) added doc for PreInstalledPilotEnv
+FIX: (#7309) just use `pip install DIRAC` for DIRAC client install
+FIX: (#7309) updated picture for py3 stack
+
+*TransformationSystem
+
+NEW: (#7336) add an index on Status and Type for the TransformationDB.Transformations table
+
+*Interfaces
+
+FIX: (#7320) Lower log level for printing version in submitJob
+FIX: (#7317) Improve performance of job delete/kill/reschedule API
+
 [v8.0.32]
 
 *Core
