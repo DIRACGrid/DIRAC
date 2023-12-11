@@ -1,3 +1,9 @@
+[v9.0.0a6]
+
+*WorkloadManagementSystem
+
+FIX: (#7364) added SiteDirector option for CVMFS_locations
+
 [v9.0.0a5]
 
 *FrameworkSystem
