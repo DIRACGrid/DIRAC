@@ -143,7 +143,6 @@ jobs:
         env:
           CVMFS_PROXY_BASE64: ${{ secrets.CVMFS_PROXY_BASE64 }}
         run: |
-          conda info | grep -i 'base environment'
           source /usr/share/miniconda3/etc/profile.d/conda.sh
 
           conda create -n CVMFS_deploy openssl=3.0.0 gct
@@ -156,4 +155,4 @@ jobs:
           openssl version
           type -a gsissh
 
-          gsissh -p 1975 -t cvmfs-upload01.gridpp.rl.ac.uk /home/diracsgm/cvmfs_repo/admin/sync_packages.sh
+          gsissh -p 1975 -t cvmfs-upload01.gridpp.rl.ac.uk /home/diracsgm/cvmfs_repo/admin/sync_packages.sh -v
