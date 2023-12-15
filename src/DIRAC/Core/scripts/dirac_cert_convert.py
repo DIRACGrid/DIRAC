@@ -6,10 +6,12 @@ Creates the necessary directory, $HOME/.globus, if needed. Backs-up old pem file
 import os
 import sys
 import shutil
+import subprocess
 from datetime import datetime
+from subprocess import PIPE, run, STDOUT
+from tempfile import TemporaryDirectory
 
 from DIRAC import gLogger
-from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Base.Script import Script
 
 
@@ -38,15 +40,19 @@ def main():
             shutil.move(old, old + nowPrefix)
 
     # new OpenSSL version require OPENSSL_CONF to point to some accessible location',
-    gLogger.notice("Converting p12 key to pem format")
-    result = shellCall(900, f"export OPENSSL_CONF=/tmp && openssl pkcs12 -nocerts -in {p12} -out {key}")
-    # The last command was successful
-    if result["OK"] and result["Value"][0] == 0:
-        gLogger.notice("Converting p12 certificate to pem format")
-        result = shellCall(900, f"export OPENSSL_CONF=/tmp && openssl pkcs12 -clcerts -nokeys -in {p12} -out {cert}")
+    with TemporaryDirectory() as tmpdir:
+        env = os.environ | {"OPENSSL_CONF": tmpdir}
+        gLogger.notice("Converting p12 key to pem format")
+        cmd = ["openssl", "pkcs12", "-nocerts", "-in", p12, "-out", key]
+        res = run(cmd, env=env, check=False, timeout=900, text=True, stdout=PIPE, stderr=STDOUT)
+        # The last command was successful
+        if res.returncode == 0:
+            gLogger.notice("Converting p12 certificate to pem format")
+            cmd = ["openssl", "pkcs12", "-clcerts", "-nokeys", "-in", p12, "-out", cert]
+            res = run(cmd, env=env, check=False, timeout=900, text=True, stdout=PIPE, stderr=STDOUT)
     # Something went wrong
-    if not result["OK"] or result["Value"][0] != 0:
-        gLogger.fatal(result.get("Message", result["Value"][2]))
+    if res.returncode != 0:
+        gLogger.fatal(res.stdout)
         for old in [cert, key]:
             if os.path.isfile(old + nowPrefix):
                 gLogger.notice(f"Restore {old} file from the {old + nowPrefix}")
