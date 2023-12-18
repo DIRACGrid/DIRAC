@@ -1,9 +1,9 @@
 """ This is a test of the creation of the pilot wrapper
 """
 
-import os
 import base64
 import bz2
+import os
 
 from DIRAC.WorkloadManagementSystem.Utilities.PilotWrapper import pilotWrapperScript
 
@@ -87,3 +87,37 @@ def test_scriptPilot3():
 
     assert 'os.environ["someName"]="someValue"' in res
     assert "lhcb-portal.cern.ch" in res
+    assert """locations += ["file:/cvmfs/dirac.egi.eu/pilot"]""" in res
+
+
+def test_scriptPilot3_2():
+    """test script creation"""
+    res = pilotWrapperScript(
+        pilotFilesCompressedEncodedDict={"proxy": "thisIsSomeProxy"},
+        pilotOptions="-c 123 --foo bar",
+        envVariables={"someName": "someValue", "someMore": "oneMore"},
+        location="lhcb-portal.cern.ch",
+        CVMFS_locations=["/cvmfs/lhcb.cern.ch", "/cvmfs/dirac.egi.eu"],
+    )
+
+    assert 'os.environ["someName"]="someValue"' in res
+    assert "lhcb-portal.cern.ch" in res
+    assert """locations += ["file:/cvmfs/lhcb.cern.ch/dirac/pilot","file:/cvmfs/dirac.egi.eu/dirac/pilot"]""" in res
+
+
+def test_scriptPilot3_3():
+    """test script creation"""
+    res = pilotWrapperScript(
+        pilotFilesCompressedEncodedDict={"proxy": "thisIsSomeProxy"},
+        pilotOptions="-c 123 --foo bar -l LHCb -h pippo",
+        envVariables={"someName": "someValue", "someMore": "oneMore"},
+        location="lhcb-portal.cern.ch",
+        CVMFS_locations=["/cvmfs/lhcb.cern.ch", "/cvmfs/dirac.egi.eu"],
+    )
+
+    assert 'os.environ["someName"]="someValue"' in res
+    assert "lhcb-portal.cern.ch" in res
+    assert (
+        """locations += ["file:/cvmfs/lhcb.cern.ch/lhcbdirac/pilot","file:/cvmfs/dirac.egi.eu/lhcbdirac/pilot"]"""
+        in res
+    )
