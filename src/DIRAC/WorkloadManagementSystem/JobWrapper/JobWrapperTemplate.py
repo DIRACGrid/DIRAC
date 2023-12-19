@@ -256,12 +256,12 @@ try:
     ret = execute(jobArgs)
     gJobReport.commit()
 except Exception as exc:  # pylint: disable=broad-except
-    gLogger.exception("JobWrapperTemplate exception", lException=exc)
+    gLogger.exception("JobWrapperTemplate exception")
     try:
         gJobReport.commit()
         ret = -1
     except Exception as exc:  # pylint: disable=broad-except
-        gLogger.exception("Could not commit the job report", lException=exc)
+        gLogger.exception("Could not commit the job report")
         ret = -2
 
 sys.exit(ret)
