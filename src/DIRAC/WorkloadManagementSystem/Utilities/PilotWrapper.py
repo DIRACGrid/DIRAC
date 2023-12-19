@@ -8,17 +8,15 @@
         localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict,
                                         pilotOptions,
                                         pilotExecDir)
-        _writePilotWrapperFile(localPilot=localPilot)
+       _writePilotWrapperFile(localPilot=localPilot)
 
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
-import os
-import tempfile
 import base64
 import bz2
+import os
+import tempfile
 
 pilotWrapperContent = """#!/bin/bash
 if command -v python &> /dev/null; then
@@ -122,7 +120,12 @@ logger.info("Launching dirac-pilot script from %%s" %%os.getcwd())
 
 
 def pilotWrapperScript(
-    pilotFilesCompressedEncodedDict=None, pilotOptions="", pilotExecDir="", envVariables=None, location=""
+    pilotFilesCompressedEncodedDict=None,
+    pilotOptions="",
+    pilotExecDir="",
+    envVariables=None,
+    location="",
+    CVMFS_locations=None,
 ):
     """Returns the content of the pilot wrapper script.
 
@@ -139,6 +142,8 @@ def pilotWrapperScript(
     :type envVariables: dict
     :param location: location where to get the pilot files
     :type location: string
+    :param CVMFS_locations: optional CVMFS locations of where to get the pilot files
+    :type CVMFS_locations: list
 
     :returns: content of the pilot wrapper
     :rtype: string
@@ -149,6 +154,20 @@ def pilotWrapperScript(
 
     if envVariables is None:
         envVariables = {}
+
+    if CVMFS_locations is None:
+        # What is in this location is almost certainly incorrect, especially the pilot.json
+        CVMFS_locs = '["file:/cvmfs/dirac.egi.eu/pilot"]'
+    else:
+        # Here we are making the assumption that, if CVMFS_locations is, e.g., ['/cvmfs/somewhere', '/cvmfs/elsewhere']
+        # and the project is 'LHCb',
+        # then the pilot can maybe be found at locations
+        # - file:/cvmfs/somewhere/lhcbdirac/pilot
+        # - file:/cvmfs/elsewhere/lhcbdirac/pilot
+        project = "dirac"
+        if "-l" in pilotOptions:
+            project = pilotOptions.split(" ")[pilotOptions.split(" ").index("-l") + 1].lower() + "dirac"
+        CVMFS_locs = "[" + ",".join('"file:' + os.path.join(loc, project, 'pilot"') for loc in CVMFS_locations) + "]"
 
     compressedString = ""
     # are there some pilot files to unpack? Then we create the unpacking string
@@ -222,8 +241,8 @@ random.shuffle(location)
 # we try from the available locations
 locs = [os.path.join('https://', loc) for loc in location]
 locations = locs + [os.path.join(loc, 'pilot') for loc in locs]
-# adding also, as last the cvmfs location dirac.egi.eu, but this won't contain a valid JSON
-locations += ['file:/cvmfs/dirac.egi.eu/pilot/']
+# adding also the cvmfs locations
+locations += %(CVMFS_locs)s
 
 for loc in locations:
   print('Trying %%s' %% loc)
@@ -306,7 +325,8 @@ if os.path.exists('checksums.sha512'):
     logger.debug('Checksum matched')
 
 """ % {
-            "location": location
+            "location": location,
+            "CVMFS_locs": CVMFS_locs,
         }
 
     localPilot += (
