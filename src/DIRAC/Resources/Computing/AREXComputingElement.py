@@ -280,7 +280,7 @@ class AREXComputingElement(ARCComputingElement):
     def _getDelegationIDs(self):
         """Query and return the delegation IDs.
 
-        This happens when the call is from self.renewDelegations.
+        This happens when the call is from self.renewDelegation.
         More info at
         https://www.nordugrid.org/arc/arc6/tech/rest/rest.html#jobs-management
         https://www.nordugrid.org/arc/arc6/tech/rest/rest.html#delegations-management
@@ -293,7 +293,7 @@ class AREXComputingElement(ARCComputingElement):
         result = self._request("get", query)
         if not result["OK"]:
             self.log.warn("Issue while interacting with the delegations.", result["Message"])
-            return S_OK([])
+            return result
         response = result["Value"]
 
         # If there is no delegation, response.json is expected to return an exception
@@ -327,18 +327,17 @@ class AREXComputingElement(ARCComputingElement):
         # Submit the POST request to get the delegation
         result = self._request("post", query, params=params)
         if not result["OK"]:
-            self.log.error("Issue while interacting with delegation ", f"{delegationID}: {result['Message']}")
-            return S_ERROR(f"Issue while interacting with delegation {delegationID}: {result['Message']}")
+            self.log.error("Could not get a proxy for", f"delegation {delegationID}: {result['Message']}")
+            return S_ERROR(f"Could not get a proxy for delegation {delegationID}: {result['Message']}")
         response = result["Value"]
 
-        proxyContent = response.text
         proxy = X509Chain()
-        result = proxy.loadChainFromString(proxyContent)
+        result = proxy.loadChainFromString(response.text)
         if not result["OK"]:
             self.log.error(
                 "Issue while trying to load proxy content from delegation", f"{delegationID}: {result['Message']}"
             )
-            return S_ERROR("Issue while trying to load proxy content from delegation")
+            return result
 
         return S_OK(proxy)
 
@@ -454,6 +453,7 @@ class AREXComputingElement(ARCComputingElement):
 
             # If we are here, we have found the right delegationID to use
             currentDelegationID = delegationID
+            break
 
         if not currentDelegationID:
             # No existing delegation, we need to prepare one
@@ -650,28 +650,20 @@ class AREXComputingElement(ARCComputingElement):
     #############################################################################
 
     def _renewDelegation(self, delegationID):
-        """Renew the delegation
+        """Renew the delegation if needed
 
         :params delegationID: delegation ID to renew
         """
-        # Prepare the command
-        params = {"action": "get"}
-        query = self._urlJoin(os.path.join("delegations", delegationID))
-
-        # Submit the POST request to get the proxy
-        result = self._request("post", query, params=params)
+        result = self._getProxyFromDelegationID(delegationID)
         if not result["OK"]:
-            self.log.error("Could not get a proxy for", f"delegation {delegationID}: {result['Message']}")
-            return S_ERROR(f"Could not get a proxy for delegation {delegationID}")
-        response = result["Value"]
+            return result
+        proxy = result["Value"]
 
-        proxy = X509Chain()
-        result = proxy.loadChainFromString(response.text)
-        if not result["OK"]:
-            self.log.error("Could not load proxy for", f"delegation {delegationID}: {result['Message']}")
-            return S_ERROR(f"Could not load proxy for delegation {delegationID}")
+        # Do we have the right proxy to perform a delegation renewal?
+        if self.proxy.getDIRACGroup() != proxy.getDIRACGroup():
+            return S_OK()
 
-        # Now test and renew the proxy
+        # Check if the proxy is long enough
         result = proxy.getRemainingSecs()
         if not result["OK"]:
             self.log.error(
@@ -685,11 +677,12 @@ class AREXComputingElement(ARCComputingElement):
             # No need to renew. Proxy is long enough
             return S_OK()
 
-        self.log.verbose(
+        self.log.notice(
             "Renewing delegation",
             f"{delegationID} whose proxy expires at {timeLeft}",
         )
         # Proxy needs to be renewed - try to renew it
+
         # First, get a new CSR from the delegation
         params = {"action": "renew"}
         query = self._urlJoin(os.path.join("delegations", delegationID))
