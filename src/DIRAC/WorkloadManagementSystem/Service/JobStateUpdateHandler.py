@@ -69,7 +69,7 @@ class JobStateUpdateHandlerMixin:
         infoStr = None
         trials = 10
         for i in range(trials):
-            result = cls.jobDB.getJobAttributes(jobID, ["Status"])
+            result = cls.jobDB.getJobAttributes(int(jobID), ["Status"])
             if not result["OK"]:
                 return result
             if not result["Value"]:
