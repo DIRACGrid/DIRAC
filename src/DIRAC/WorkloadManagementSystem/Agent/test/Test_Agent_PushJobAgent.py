@@ -47,21 +47,64 @@ def test__allowedToSubmit(mocker, queue, failedQueues, failedQueueCycleFactor, e
 
 
 @pytest.mark.parametrize(
-    "ceDict, pilotVersion, pilotProject, expected",
+    "ceDict, pilotVersion, pilotProject, submissionPolicy, expected",
     [
-        ({}, None, None, {"RemoteExecution": True}),
-        ({}, "8.0.0", None, {"DIRACVersion": "8.0.0", "ReleaseVersion": "8.0.0", "RemoteExecution": True}),
-        ({}, ["8.0.0", "7.3.7"], None, {"DIRACVersion": "8.0.0", "ReleaseVersion": "8.0.0", "RemoteExecution": True}),
-        ({}, None, "Project", {"ReleaseProject": "Project", "RemoteExecution": True}),
+        # Test empty ceDict, pilotVersion, pilotProject, submissionPolicy
+        ({}, None, None, None, {"RemoteExecution": True, "SubmissionPolicy": "Application"}),
+        # Test empty ceDict, pilotProject, submissionPolicy but a pilotVersion is set
+        (
+            {},
+            "8.0.0",
+            None,
+            None,
+            {
+                "DIRACVersion": "8.0.0",
+                "ReleaseVersion": "8.0.0",
+                "RemoteExecution": True,
+                "SubmissionPolicy": "Application",
+            },
+        ),
+        # Test empty ceDict, pilotProject, submissionPolicy but multiple pilot versions are set
+        (
+            {},
+            ["8.0.0", "7.3.7"],
+            None,
+            None,
+            {
+                "DIRACVersion": "8.0.0",
+                "ReleaseVersion": "8.0.0",
+                "RemoteExecution": True,
+                "SubmissionPolicy": "Application",
+            },
+        ),
+        # Test empty ceDict, pilotProject, submissionPolicy but a pilotProject is set
+        (
+            {},
+            None,
+            "Project",
+            None,
+            {"ReleaseProject": "Project", "RemoteExecution": True, "SubmissionPolicy": "Application"},
+        ),
+        # Test empty ceDict, pilotVersion, pilotProject, submissionPolicy but a submissionPolicy is set
+        ({}, None, None, "Application", {"RemoteExecution": True, "SubmissionPolicy": "Application"}),
+        # Test empty ceDict, pilotVersion, pilotProject, submissionPolicy but another submissionPolicy is set
+        ({}, None, None, "JobWrapper", {"SubmissionPolicy": "JobWrapper"}),
+        # Test ceDict with some values, pilotVersion, pilotProject, submissionPolicy
         (
             {},
             "8.0.0",
             "Project",
-            {"DIRACVersion": "8.0.0", "ReleaseVersion": "8.0.0", "ReleaseProject": "Project", "RemoteExecution": True},
+            "JobWrapper",
+            {
+                "DIRACVersion": "8.0.0",
+                "ReleaseVersion": "8.0.0",
+                "ReleaseProject": "Project",
+                "SubmissionPolicy": "JobWrapper",
+            },
         ),
     ],
 )
-def test__setCEDict(mocker, ceDict, pilotVersion, pilotProject, expected):
+def test__setCEDict(mocker, ceDict, pilotVersion, pilotProject, submissionPolicy, expected):
     """Test JobAgent()._setCEDict()"""
     opsSideEffect = [pilotVersion, pilotProject]
     mocker.patch("DIRAC.ConfigurationSystem.Client.Helpers.Operations.Operations.getValue", side_effect=opsSideEffect)
@@ -73,6 +116,9 @@ def test__setCEDict(mocker, ceDict, pilotVersion, pilotProject, expected):
     )
 
     jobAgent = PushJobAgent("Test", "Test1")
+    if submissionPolicy:
+        jobAgent.submissionPolicy = submissionPolicy
+
     jobAgent.log = gLogger
     jobAgent.log.setLevel("DEBUG")
     jobAgent.opsHelper = Operations()

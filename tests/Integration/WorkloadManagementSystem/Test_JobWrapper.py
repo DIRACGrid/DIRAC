@@ -1,8 +1,7 @@
 """ JobWrapper test
 """
-import unittest
 import os
-import sys
+import pytest
 
 from DIRAC import gLogger
 
@@ -11,66 +10,46 @@ from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 
-class JobWrapperTestCase(unittest.TestCase):
-    """Base class for the jobWrapper test cases"""
+@pytest.fixture
+def setup():
+    gLogger.setLevel("DEBUG")
 
-    def setUp(self):
-        gLogger.setLevel("DEBUG")
-        self.wrapperFile = None
+    # get proxy
+    proxyInfo = getProxyInfo(disableVOMS=True)
+    proxyChain = proxyInfo["Value"]["chain"]
+    proxyDumped = proxyChain.dumpAllToString()
+    payloadProxy = proxyDumped["Value"]
 
-        # get proxy
-        proxyInfo = getProxyInfo(disableVOMS=True)
-        proxyChain = proxyInfo["Value"]["chain"]
-        proxyDumped = proxyChain.dumpAllToString()
-        self.payloadProxy = proxyDumped["Value"]
-
-    def tearDown(self):
-        pass
+    yield payloadProxy
 
 
-class JobWrapperSubmissionCase(JobWrapperTestCase):
-    """JobWrapperSubmissionCase represents a test suite for"""
+def test_CreateAndSubmit(setup):
+    jobParams = {
+        "JobID": "1",
+        "JobType": "Merge",
+        "CPUTime": "1000000",
+        "Executable": "dirac-jobexec",
+        "Arguments": "helloWorld.xml -o LogLevel=DEBUG --cfg pilot.cfg",
+        "InputSandbox": ["helloWorld.xml", "exe-script.py"],
+    }
+    resourceParams = {}
+    optimizerParams = {}
 
-    def test_CreateAndSubmit(self):
-        jobParams = {
-            "JobID": "1",
-            "JobType": "Merge",
-            "CPUTime": "1000000",
-            "Executable": "dirac-jobexec",
-            "Arguments": "helloWorld.xml -o LogLevel=DEBUG --cfg pilot.cfg",
-            "InputSandbox": ["helloWorld.xml", "exe-script.py"],
-        }
-        resourceParams = {}
-        optimizerParams = {}
+    ceFactory = ComputingElementFactory()
+    ceInstance = ceFactory.getCE("InProcess")
+    assert ceInstance["OK"]
+    computingElement = ceInstance["Value"]
 
-        #     res = createJobWrapper( 1, jobParams, resourceParams, optimizerParams, logLevel = 'DEBUG' )
-        #     self.assertTrue( res['OK'] )
-        #     wrapperFile = res['Value']
+    if "pilot.cfg" in os.listdir("."):
+        jobParams.setdefault("ExtraOptions", "pilot.cfg")
+        res = createJobWrapper(
+            2, jobParams, resourceParams, optimizerParams, extraOptions="pilot.cfg", logLevel="DEBUG"
+        )
+    else:
+        res = createJobWrapper(2, jobParams, resourceParams, optimizerParams, logLevel="DEBUG")
+    assert res["OK"], res.get("Message")
+    wrapperFile = res["Value"]["JobExecutablePath"]
 
-        ceFactory = ComputingElementFactory()
-        ceInstance = ceFactory.getCE("InProcess")
-        self.assertTrue(ceInstance["OK"])
-        computingElement = ceInstance["Value"]
-
-        #     res = computingElement.submitJob( wrapperFile, self.payloadProxy )
-        #     self.assertTrue( res['OK'] )
-
-        if "pilot.cfg" in os.listdir("."):
-            jobParams.setdefault("ExtraOptions", "pilot.cfg")
-            res = createJobWrapper(
-                2, jobParams, resourceParams, optimizerParams, extraOptions="pilot.cfg", logLevel="DEBUG"
-            )
-        else:
-            res = createJobWrapper(2, jobParams, resourceParams, optimizerParams, logLevel="DEBUG")
-        self.assertTrue(res["OK"], res.get("Message"))
-        wrapperFile = res["Value"][0]
-
-        res = computingElement.submitJob(wrapperFile, self.payloadProxy)
-        self.assertTrue(res["OK"], res.get("Message"))
-
-
-if __name__ == "__main__":
-    suite = unittest.defaultTestLoader.loadTestsFromTestCase(JobWrapperTestCase)
-    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobWrapperSubmissionCase))
-    testResult = unittest.TextTestRunner(verbosity=2).run(suite)
-    sys.exit(not testResult.wasSuccessful())
+    res = computingElement.submitJob(wrapperFile, setup)
+    assert res["OK"], res.get("Message")
+    assert res["Value"] == 0, res.get("Value")

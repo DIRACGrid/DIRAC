@@ -47,7 +47,6 @@ from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValida
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Catalog.PoolXMLFile import getGUID
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
-from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
@@ -320,6 +319,7 @@ class JobWrapper:
 
     def __prepareEnvironment(self):
         """Prepare the environment to be used by the payload."""
+        os.environ["JOBID"] = str(self.jobID)
         os.environ["DIRACJOBID"] = str(self.jobID)
 
         diracSite = DIRAC.siteName()
@@ -377,7 +377,7 @@ class JobWrapper:
         )
 
     #############################################################################
-    def process(self, command, output, error, env):
+    def process(self, command: str, output: str, error: str, env: dict[str, str]):
         """This method calls the payload."""
         self.log.info(f"Job Wrapper is starting the processing phase for job {self.jobID}")
 
@@ -494,7 +494,13 @@ class JobWrapper:
 
     #############################################################################
     def postProcess(
-        self, payloadStatus, payloadOutput, payloadExecutorError, cpuTimeConsumed, watchdogError, watchdogStats
+        self,
+        payloadStatus: int | None,
+        payloadOutput: str,
+        payloadExecutorError: str,
+        cpuTimeConsumed: list[int],
+        watchdogError: str | None,
+        watchdogStats: dict,
     ):
         """This method is called after the payload has finished running."""
         self.log.info(f"Job Wrapper is starting the post processing phase for job {self.jobID}")
@@ -1594,40 +1600,3 @@ class ExecutionThread(threading.Thread):
                 self.outputLines = self.outputLines[cut:]
             return S_OK(self.outputLines)
         return S_ERROR("No Job output found")
-
-
-def rescheduleFailedJob(jobID, minorStatus, jobReport=None):
-    """Function for rescheduling a jobID, setting a minorStatus"""
-
-    rescheduleResult = JobStatus.RESCHEDULED
-
-    try:
-        gLogger.warn("Failure during", minorStatus)
-
-        # Setting a job parameter does not help since the job will be rescheduled,
-        # instead set the status with the cause and then another status showing the
-        # reschedule operation.
-
-        if not jobReport:
-            gLogger.info("Creating a new JobReport Object")
-            jobReport = JobReport(int(jobID), "JobWrapper")
-
-        jobReport.setApplicationStatus(f"Failed {minorStatus} ", sendFlag=False)
-        jobReport.setJobStatus(status=JobStatus.RESCHEDULED, minorStatus=minorStatus, sendFlag=False)
-
-        # We must send Job States and Parameters before it gets reschedule
-        jobReport.sendStoredStatusInfo()
-        jobReport.sendStoredJobParameters()
-
-        gLogger.info("Job will be rescheduled after exception during execution of the JobWrapper")
-
-        result = JobManagerClient().rescheduleJob(int(jobID))
-        if not result["OK"]:
-            gLogger.warn(result["Message"])
-            if "Maximum number of reschedulings is reached" in result["Message"]:
-                rescheduleResult = JobStatus.FAILED
-
-        return rescheduleResult
-    except Exception:
-        gLogger.exception("JobWrapperTemplate failed to reschedule Job")
-        return JobStatus.FAILED

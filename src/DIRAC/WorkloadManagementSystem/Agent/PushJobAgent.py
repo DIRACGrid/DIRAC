@@ -9,19 +9,33 @@
 
 """
 
+import hashlib
+import json
+import os
 import random
+import shutil
 import sys
 from collections import defaultdict
+import time
 
-from DIRAC import S_OK
+from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.Resources.Computing import ComputingElement
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus, PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
+from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapperUtilities import (
+    getJobWrapper,
+    resolveInputData,
+    transferInputSandbox,
+)
+from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
+from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
+from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
 from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
 
@@ -48,9 +62,26 @@ class PushJobAgent(JobAgent):
         self.failedQueueCycleFactor = 10
         self.failedQueues = defaultdict(int)
 
+        # Choose the submission policy
+        # - Application: the agent will submit a workflow to a PoolCE, the workflow is responsible for interacting with the remote site
+        # - JobWrapper: the agent will submit a JobWrapper directly to the remote site, it is responsible of the remote execution
+        self.submissionPolicy = "Workflow"
+
+        # cleanTask is used to clean the task in the remote site
+        self.cleanTask = True
+
+        self.payloadResultFile = "payloadResult.json"
+        self.checkSumResultsFile = "checksums.json"
+
     def initialize(self):
         """Sets default parameters and creates CE instance"""
         super().initialize()
+
+        # Get the submission policy
+        # Initialized here because it cannot be dynamically modified during the execution
+        self.submissionPolicy = self.am_getOption("SubmissionPolicy", self.submissionPolicy)
+        if self.submissionPolicy not in ["Workflow", "JobWrapper"]:
+            return S_ERROR("SubmissionPolicy must be either Workflow or JobWrapper")
 
         result = self._initializeComputingElement("Pool")
         if not result["OK"]:
@@ -84,6 +115,7 @@ class PushJobAgent(JobAgent):
         self.computingElement.setParameters({"NumberOfProcessors": self.maxJobsToSubmit})
 
         self.failedQueueCycleFactor = self.am_getOption("FailedQueueCycleFactor", self.failedQueueCycleFactor)
+        self.cleanTask = self.am_getOption("CleanTask", self.cleanTask)
 
         # Get target queues from the configuration
         siteNames = None
@@ -129,16 +161,16 @@ class PushJobAgent(JobAgent):
         queueDictItems = list(self.queueDict.items())
         random.shuffle(queueDictItems)
 
-        # Check that there is enough slots locally
-        result = self._checkCEAvailability(self.computingElement)
-        if not result["OK"] or result["Value"]:
-            return result
-
-        # Check errors that could have occurred during job submission and/or execution
-        # Status are handled internally, and therefore, not checked outside of the method
-        result = self._checkSubmittedJobs()
-        if not result["OK"]:
-            return result
+        if self.submissionPolicy == "Application":
+            # Check that there is enough slots locally
+            result = self._checkCEAvailability(self.computingElement)
+            if not result["OK"] or result["Value"]:
+                return result
+            # Check errors that could have occurred during job submission and/or execution
+            # Status are handled internally, and therefore, not checked outside of the method
+            result = self._checkSubmittedJobs()
+            if not result["OK"]:
+                return result
 
         for queueName, queueDictionary in queueDictItems:
             # Make sure there is no problem with the queue before trying to submit
@@ -154,11 +186,13 @@ class PushJobAgent(JobAgent):
             if not result["OK"]:
                 return result
             proxy = result["Value"]
-            result = proxy.getRemainingSecs()  # pylint: disable=no-member
-            if not result["OK"]:
-                return result
-            lifetime_secs = result["Value"]
-            ce.setProxy(proxy, lifetime_secs)
+            ce.setProxy(proxy)
+
+            if self.submissionPolicy == "JobWrapper":
+                # Check errors that could have occurred during job submission and/or execution
+                result = self._checkSubmittedJobWrappers(ce)
+                if not result["OK"]:
+                    self.failedQueues[queueName] += 1
 
             # Check that there is enough slots in the remote CE to match a job
             result = self._checkCEAvailability(ce)
@@ -233,7 +267,7 @@ class PushJobAgent(JobAgent):
                 )
 
                 # Setup proxy
-                ownerDN = getDNForUsername(owner)["Value"]
+                ownerDN = getDNForUsername(owner)["Value"][0]
                 result_setupProxy = self._setupProxy(ownerDN, jobGroup)
                 if not result_setupProxy["OK"]:
                     result = self._rescheduleFailedJob(jobID, result_setupProxy["Message"])
@@ -255,21 +289,35 @@ class PushJobAgent(JobAgent):
 
                 # Submit the job to the CE
                 self.log.debug(f"Before self._submitJob() ({self.ceName}CE)")
-                resultSubmission = self._submitJob(
-                    jobID=jobID,
-                    jobParams=params,
-                    resourceParams=ceDict,
-                    optimizerParams=optimizerParams,
-                    proxyChain=proxyChain,
-                    processors=submissionParams["processors"],
-                    wholeNode=submissionParams["wholeNode"],
-                    maxNumberOfProcessors=submissionParams["maxNumberOfProcessors"],
-                    mpTag=submissionParams["mpTag"],
-                )
-                if not result["OK"]:
-                    result = self._rescheduleFailedJob(jobID, resultSubmission["Message"])
-                    self.failedQueues[queueName] += 1
-                    break
+                if self.submissionPolicy == "Workflow":
+                    resultSubmission = self._submitJob(
+                        jobID=jobID,
+                        jobParams=params,
+                        resourceParams=ceDict,
+                        optimizerParams=optimizerParams,
+                        proxyChain=proxyChain,
+                        processors=submissionParams["processors"],
+                        wholeNode=submissionParams["wholeNode"],
+                        maxNumberOfProcessors=submissionParams["maxNumberOfProcessors"],
+                        mpTag=submissionParams["mpTag"],
+                    )
+                    if not result["OK"]:
+                        result = self._rescheduleFailedJob(jobID, resultSubmission["Message"])
+                        self.failedQueues[queueName] += 1
+                        break
+                else:
+                    resultSubmission = self._submitJobWrapper(
+                        jobID=jobID,
+                        ce=ce,
+                        jobParams=params,
+                        resourceParams=ceDict,
+                        optimizerParams=optimizerParams,
+                        processors=submissionParams["processors"],
+                    )
+                    if not result["OK"]:
+                        self.failedQueues[queueName] += 1
+                        break
+
                 self.log.debug(f"After {self.ceName}CE submitJob()")
 
                 # Check that there is enough slots locally
@@ -352,7 +400,8 @@ class PushJobAgent(JobAgent):
             ceDict["ReleaseProject"] = project
 
         # Add a RemoteExecution entry, which can be used in the next stages
-        ceDict["RemoteExecution"] = True
+        if self.submissionPolicy == "Workflow":
+            ceDict["RemoteExecution"] = True
 
     def _checkMatchingIssues(self, jobRequest):
         """Check the source of the matching issue
@@ -366,5 +415,252 @@ class PushJobAgent(JobAgent):
             self.log.error("Timeout while requesting job", jobRequest["Message"])
         else:
             self.log.notice("Failed to get jobs", jobRequest["Message"])
+
+        return S_OK()
+
+    def _submitJobWrapper(
+        self,
+        jobID: str,
+        ce: ComputingElement,
+        jobParams: dict,
+        resourceParams: dict,
+        optimizerParams: dict,
+        processors: int,
+    ):
+        """Submit a JobWrapper to the remote site
+
+        :param jobID: job ID
+        :param ce: ComputingElement instance
+        :param jobParams: job parameters
+        :param resourceParams: resource parameters
+        :param optimizerParams: optimizer parameters
+        :param proxyChain: proxy chain
+        :param processors: number of processors
+
+        :return: S_OK
+        """
+        # Add the number of requested processors to the job environment
+        if "ExecutionEnvironment" in jobParams:
+            if isinstance(jobParams["ExecutionEnvironment"], str):
+                jobParams["ExecutionEnvironment"] = jobParams["ExecutionEnvironment"].split(";")
+        jobParams.setdefault("ExecutionEnvironment", []).append("DIRAC_JOB_PROCESSORS=%d" % processors)
+
+        # Add necessary parameters to get the payload result and analyze its integrity
+        jobParams["PayloadResults"] = self.payloadResultFile
+        jobParams["Checksum"] = self.checkSumResultsFile
+
+        # Save the current directory location, as getJobWrapper is going to change it
+        agentWorkingDirectory = os.getcwd()
+
+        # Prepare the job for submission
+        self.log.verbose("Getting a JobWrapper")
+        arguments = {"Job": jobParams, "CE": resourceParams, "Optimizer": optimizerParams}
+        job = getJobWrapper(jobID, arguments, self.jobReport)
+        if not job:
+            os.chdir(agentWorkingDirectory)
+            return S_ERROR(f"Cannot get a JobWrapper instance for job {jobID}")
+
+        if "InputSandbox" in jobParams:
+            self.log.verbose("Getting the inputSandbox of the job")
+            if not transferInputSandbox(job, jobParams["InputSandbox"], self.jobReport):
+                os.chdir(agentWorkingDirectory)
+                return S_ERROR(f"Cannot get input sandbox of job {jobID}")
+            self.jobReport.commit()
+
+        if "InputData" in jobParams and jobParams["InputData"]:
+            self.log.verbose("Getting the inputData of the job")
+            if not resolveInputData(job, self.jobReport):
+                os.chdir(agentWorkingDirectory)
+                return S_ERROR(f"Cannot get input data of job {jobID}")
+            self.jobReport.commit()
+
+        # Preprocess the payload
+        result = job.preProcess()
+        if not result["OK"]:
+            os.chdir(agentWorkingDirectory)
+            return result
+        payloadParams = result["Value"]
+        self.jobReport.commit()
+
+        # Save the current directory location, which should be <jobID>
+        jobWrapperWorkingDirectory = os.getcwd()
+        # Restore the agent working directory
+        os.chdir(agentWorkingDirectory)
+
+        # Generate a light JobWrapper executor script
+        jobDesc = {
+            "jobID": jobID,
+            "jobParams": jobParams,
+            "resourceParams": resourceParams,
+            "optimizerParams": optimizerParams,
+            "payloadParams": payloadParams,
+            "extraOptions": self.extraOptions,
+        }
+        result = createJobWrapper(
+            log=self.log,
+            logLevel=self.logLevel,
+            defaultWrapperLocation="DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperLightTemplate.py",
+            pythonPath="python",
+            rootLocation=".",
+            **jobDesc,
+        )
+        if not result["OK"]:
+            return result
+        jobWrapperRunner = result["Value"]["JobExecutablePath"]
+        jobWrapperCode = result["Value"]["JobWrapperPath"]
+        jobWrapperConfig = result["Value"]["JobWrapperConfigPath"]
+
+        # Get inputs from the JobWrapper working directory and add the JobWrapper deps
+        jobInputs = os.listdir(jobWrapperWorkingDirectory)
+        inputs = [os.path.join(jobWrapperWorkingDirectory, input) for input in jobInputs]
+        inputs.append(jobWrapperCode)
+        inputs.append(jobWrapperConfig)
+        self.log.verbose("The executable will be sent along with the following inputs:", ",".join(inputs))
+
+        # Request the whole directory as output
+        outputs = ["/"]
+
+        self.jobReport.setJobStatus(minorStatus="Submitting To CE")
+        self.log.info("Submitting JobWrapper", f"{os.path.basename(jobWrapperRunner)} to {ce.ceName}CE")
+
+        # Submit the job
+        result = ce.submitJob(
+            executableFile=jobWrapperRunner,
+            proxy=None,
+            inputs=inputs,
+            outputs=outputs,
+        )
+        if not result["OK"]:
+            self._rescheduleFailedJob(jobID, result["Message"])
+            return result
+
+        taskID = result["Value"][0]
+        stamp = result["PilotStampDict"][taskID]
+        self.log.info("Job being submitted", f"(DIRAC JobID: {jobID}; Task ID: {taskID})")
+
+        self.submissionDict[taskID] = {"JobWrapper": job, "Stamp": stamp}
+        time.sleep(self.jobSubmissionDelay)
+        return S_OK()
+
+    def _checkOutputIntegrity(self, workingDirectory: str):
+        """Make sure that output files are not corrupted.
+
+        :param workingDirectory: path of the outputs
+        """
+        checkSumOutput = os.path.join(workingDirectory, self.checkSumResultsFile)
+        if not os.path.exists(checkSumOutput):
+            return S_ERROR(f"Cannot guarantee the integrity of the outputs: {checkSumOutput} unavailable")
+
+        with open(checkSumOutput) as f:
+            checksums = json.load(f)
+
+        # for each output file, compute the md5 checksum
+        for output, checksum in checksums.items():
+            hash = hashlib.md5()
+            localOutput = os.path.join(workingDirectory, output)
+            if not os.path.exists(localOutput):
+                return S_ERROR(f"{localOutput} was expected but not found")
+
+            with open(localOutput, "rb") as f:
+                while chunk := f.read(128 * hash.block_size):
+                    hash.update(chunk)
+            if checksum != hash.hexdigest():
+                return S_ERROR(f"{localOutput} is corrupted")
+
+        return S_OK()
+
+    def _checkSubmittedJobWrappers(self, ce: ComputingElement):
+        """Check the status of the submitted tasks.
+        If the task is finished, get the output and post process the job.
+        Finally, remove from the submission dictionary.
+
+        :return: S_OK/S_ERROR
+        """
+        if not self.submissionDict:
+            return S_OK()
+
+        if not (result := ce.getJobStatus(list(self.submissionDict.keys())))["OK"]:
+            self.log.error("Failed to get job status", result["Message"])
+            return result
+
+        for taskID, status in result["Value"].items():
+            job = self.submissionDict[taskID]["JobWrapper"]
+            stamp = self.submissionDict[taskID]["Stamp"]
+            if status not in PilotStatus.PILOT_FINAL_STATES:
+                self.log.info("Job still running", f"(JobID: {job.jobID}, DIRAC taskID: {taskID}; Status: {status})")
+                continue
+
+            self.log.info("Job execution finished", f"(JobID: {job.jobID}, DIRAC taskID: {taskID}; Status: {status})")
+
+            # Save the current directory location, and change to the job directory
+            agentWorkingDirectory = os.getcwd()
+            os.chdir(job.jobID)
+
+            # Get the output of the job
+            self.log.info(f"Getting the outputs of taskID {taskID}")
+            if not (result := ce.getJobOutput(f"{taskID}:::{stamp}", os.path.abspath(".")))["OK"]:
+                os.chdir(agentWorkingDirectory)
+                self.log.error("Failed to get the output of taskID", f"{taskID}: {result['Message']}")
+                return result
+
+            # Make sure the output is correct
+            self.log.info(f"Checking the integrity of the outputs of {taskID}")
+            if not (result := self._checkOutputIntegrity("."))["OK"]:
+                os.chdir(agentWorkingDirectory)
+                self.log.error(
+                    "Failed to check the integrity of the output of taskID", f"{taskID}: {result['Message']}"
+                )
+                self._rescheduleFailedJob(
+                    job.jobID, message=f"{JobMinorStatus.JOB_WRAPPER_INITIALIZATION}: {result['Message']}"
+                )
+                shutil.rmtree(job.jobID)
+                del self.submissionDict[taskID]
+                return result
+            self.log.info("The output has been retrieved and declared complete")
+
+            with open(self.payloadResultFile) as f:
+                payloadResults = json.load(f)
+            result = job.postProcess(**payloadResults)
+            if not result["OK"]:
+                os.chdir(agentWorkingDirectory)
+                self.log.error("Failed to post process the job", f"{job.jobID}: {result['Message']}")
+                return result
+
+            # Restore the agent working directory
+            os.chdir(agentWorkingDirectory)
+
+            # Clean job wrapper locally
+            job.finalize()
+
+            # Clean job in the remote resource
+            if self.cleanTask:
+                if not (result := ce.cleanJob(taskID))["OK"]:
+                    self.log.warn("Failed to clean the output remotely", result["Message"])
+                self.log.info(f"TaskID {taskID} has been remotely removed")
+
+            # Remove the job from the submission dictionary
+            del self.submissionDict[taskID]
+        return S_OK()
+
+    def finalize(self):
+        """PushJob Agent finalization method"""
+
+        if self.submissionPolicy == "Application":
+            # wait for all jobs to be completed
+            res = self.computingElement.shutdown()
+            if not res["OK"]:
+                self.log.error("CE could not be properly shut down", res["Message"])
+
+            # Check the submitted jobs a last time
+            result = self._checkSubmittedJobs()
+            if not result["OK"]:
+                self.log.error("Problem while trying to get status of the last submitted jobs")
+        else:
+            for _, queueDictionary in self.queueDict.items():
+                ce = queueDictionary["CE"]
+                # Check the submitted JobWrappers a last time
+                result = self._checkSubmittedJobWrappers(ce)
+                if not result["OK"]:
+                    self.log.error("Problem while trying to get status of the last submitted JobWrappers")
 
         return S_OK()

@@ -632,8 +632,8 @@ class JobAgent(AgentModule):
         if not result["OK"]:
             return result
 
-        wrapperFile = result["Value"][0]
-        inputs = list(result["Value"][1:])
+        wrapperFile = result["Value"]["JobExecutablePath"]
+        inputs = [result["Value"]["JobWrapperPath"], result["Value"]["JobWrapperConfigPath"]]
         self.jobs[jobID]["JobReport"].setJobStatus(minorStatus="Submitting To CE")
 
         self.log.info("Submitting JobWrapper", f"{os.path.basename(wrapperFile)} to {self.ceName}CE")

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """ This template will become the job wrapper that's actually executed.
 
-    The JobWrapperTemplate is completed and invoked by the jobAgent and uses functionalities from JobWrapper module.
-    It has to be an executable.
+    The JobWrapperLighTemplate is completed and invoked by the PushJobAgent and uses functionalities from JobWrapper module.
+    It is executed in environment where external connections are not allowed.
 
     The JobWrapperTemplate will reschedule the job according to certain criteria:
     - the working directory could not be created
@@ -11,20 +11,13 @@
     - the resolution of the inpt data failed
     - the JobWrapper ended with the status DErrno.EWMSRESC
 """
+import hashlib
 import sys
 import json
 import ast
 import os
 
-from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapperUtilities import (
-    createAndEnterWorkingDirectory,
-    executePayload,
-    finalize,
-    getJobWrapper,
-    processJobOutputs,
-    resolveInputData,
-    transferInputSandbox,
-)
+from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapperUtilities import getJobWrapper
 
 sitePython = os.path.realpath("@SITEPYTHON@")
 if sitePython:
@@ -43,46 +36,36 @@ os.umask(0o22)
 
 def execute(jobID: str, arguments: dict, jobReport: JobReport):
     """The only real function executed here"""
-
-    if "WorkingDirectory" in arguments:
-        if not createAndEnterWorkingDirectory(jobID, arguments["WorkingDirectory"], jobReport):
-            return 1
+    payloadParams = arguments.pop("Payload", {})
+    if not payloadParams:
+        return 1
 
     job = getJobWrapper(jobID, arguments, jobReport)
-    if not job:
+    payloadResult = job.process(**payloadParams)
+    if not payloadResult["OK"]:
         return 1
 
-    if "InputSandbox" in arguments["Job"]:
-        jobReport.commit()
-        if not transferInputSandbox(job, arguments["Job"]["InputSandbox"], jobReport):
-            return 1
-    else:
-        gLogger.verbose("Job has no InputSandbox requirement")
-
-    jobReport.commit()
-
-    if "InputData" in arguments["Job"]:
-        if arguments["Job"]["InputData"]:
-            if not resolveInputData(job, jobReport):
-                return 1
-        else:
-            gLogger.verbose("Job has a null InputData requirement:")
-            gLogger.verbose(arguments)
-    else:
-        gLogger.verbose("Job has no InputData requirement")
-
-    jobReport.commit()
-
-    if not executePayload(job, jobReport):
+    if not "PayloadResults" in arguments["Job"] or not "Checksum" in arguments["Job"]:
         return 1
 
-    if "OutputSandbox" in arguments["Job"] or "OutputData" in arguments["Job"]:
-        if not processJobOutputs(job, jobReport):
-            return 2
-    else:
-        gLogger.verbose("Job has no OutputData or OutputSandbox requirement")
+    # Store the payload result
+    with open(arguments["Job"]["PayloadResults"], "w") as f:
+        json.dump(payloadResult, f)
 
-    return finalize(job)
+    # Generate the checksum of the files present in the current directory
+    checksums = {}
+    for file in os.listdir("."):
+        if os.path.isfile(file):
+            hash_md5 = hashlib.md5()
+            with open(file, "rb") as f:
+                while chunk := f.read(128 * hash.block_size):
+                    hash_md5.update(chunk)
+            checksums[file] = hash_md5.hexdigest()
+
+    with open(arguments["Job"]["Checksum"], "w") as f:
+        json.dump(checksums, f)
+
+    return 0
 
 
 ##########################################################

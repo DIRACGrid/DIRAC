@@ -8,6 +8,7 @@ import pytest
 from unittest.mock import MagicMock
 
 from DIRAC import gLogger
+import DIRAC
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 
@@ -130,7 +131,7 @@ def test_preProcess(mocker):
     assert result["OK"]
     expectedOptions = [
         "-o /LocalSite/CPUNormalizationFactor=0.0",
-        "-o /LocalSite/Site=DIRAC.Client.local",
+        f"-o /LocalSite/Site={DIRAC.siteName()}",
         "-o /LocalSite/GridCE=",
         "-o /LocalSite/CEQueue=",
         "-o /LocalSite/RemoteExecution=False",
@@ -152,7 +153,7 @@ def test_preProcess(mocker):
     assert result["OK"]
     expectedOptions = [
         "-o /LocalSite/CPUNormalizationFactor=0.0",
-        "-o /LocalSite/Site=DIRAC.Client.local",
+        f"-o /LocalSite/Site={DIRAC.siteName()}",
         "-o /LocalSite/GridCE=CE",
         "-o /LocalSite/CEQueue=Queue",
         "-o /LocalSite/RemoteExecution=True",
