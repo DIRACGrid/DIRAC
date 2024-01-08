@@ -11,6 +11,7 @@ from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.Resources.Computing.test.Test_PoolComputingElement import badJobScript, jobScript
 from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 
 gLogger.setLevel("DEBUG")
@@ -496,13 +497,20 @@ def test_submitAndCheckJob(mocker, localCE, job, expectedResult1, expectedResult
         execFile.write(job)
     os.chmod(jobName, 0o755)
 
+    jobID = "123"
+
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobAgent.am_stopExecution")
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobMonitoringClient", return_value=MagicMock())
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobMonitoringClient.getJobsStatus",
+        return_value=S_OK({int(jobID): {"Status": JobStatus.RUNNING}}),
+    )
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.createJobWrapper", return_value=S_OK([jobName]))
     mocker.patch("DIRAC.Core.Security.X509Chain.X509Chain.dumpAllToString", return_value=S_OK())
-
-    jobID = 123
+    mocker.patch(
+        "DIRAC.Resources.Computing.SingularityComputingElement.SingularityComputingElement._SingularityComputingElement__hasSingularity",
+        return_value=False,
+    )
 
     jobAgent = JobAgent("JobAgent", "Test")
     jobAgent.log = gLogger.getSubLogger("JobAgent")
