@@ -40,6 +40,8 @@ def addTokenToPEM(pemPath, group):
         token_content = returnValueOrRaise(
             Client(url="Framework/ProxyManager", proxyLocation=pemPath).exchangeProxyForToken()
         )
+        if not token_content:
+            return
 
         token = TokenResponse(
             access_token=token_content["access_token"],
