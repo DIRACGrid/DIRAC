@@ -14,5 +14,6 @@ This sections contains the documentation for installing new DIRAC Servers or ser
    InstallingWebAppDIRAC
    HTTPSServices
    centralizedLogging
+   tornadoComponentsLogs
    scalingAndLimitations
    environment_variable_configuration
