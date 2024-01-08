@@ -412,6 +412,12 @@ class ProxyManagerHandlerMixin:
         self.__proxyDB.logAction("download voms proxy with token", credDict["DN"], credDict["group"], userDN, userGroup)
         return self.__getVOMSProxy(userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, True)
 
+    types_exchangeProxyForToken = []
+
+    def export_exchangeProxyForToken(self):
+        """No-op method for backward compatibility"""
+        return S_OK()
+
 
 class ProxyManagerHandler(ProxyManagerHandlerMixin, RequestHandler):
     pass
