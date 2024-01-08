@@ -1,3 +1,13 @@
+[v8.0.35]
+
+*WorkloadManagement
+
+FIX: (#7380) JobAgent interaction with JobMonitoringClient
+
+*WorkloadManagementSystem
+
+FIX: (#7378) The callback for the Stager was failing, because of a type mismatch in the jobID used to retrieve the status. Jobs never came out of Staging.
+
 [v8.0.34]
 
 *Core
