@@ -1,0 +1,325 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
+        "type": "dashboard"
+      }
+    ]
+  },
+  "description": "",
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 57,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "BcHFbIBVz"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "color-text",
+            "filterable": false,
+            "inspect": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "componentname"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 136
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "@timestamp"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 168
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_id"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 57
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_index"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 81
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "_type"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 58
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "asctime"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 80
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "customname"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 289
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "highlight"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 78
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "levelname"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 102
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "varmessage"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 708
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "message"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 1445
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 23,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 4,
+      "options": {
+        "footer": {
+          "enablePagination": true,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "@timestamp"
+          }
+        ]
+      },
+      "pluginVersion": "9.3.6",
+      "targets": [
+        {
+          "alias": "",
+          "bucketAggs": [],
+          "datasource": {
+            "type": "elasticsearch",
+            "uid": "BcHFbIBVz"
+          },
+          "metrics": [
+            {
+              "id": "1",
+              "settings": {
+                "size": "1000"
+              },
+              "type": "raw_data"
+            }
+          ],
+          "query": "levelname:$levelname",
+          "refId": "A",
+          "timeField": "@timestamp"
+        }
+      ],
+      "title": "Logs Table",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "_id": true,
+              "_index": true,
+              "_type": true,
+              "asctime": true,
+              "highlight": true,
+              "sort": true,
+              "tornadoComponent": true
+            },
+            "indexByName": {
+              "@timestamp": 0,
+              "_id": 1,
+              "_index": 2,
+              "_type": 3,
+              "asctime": 4,
+              "componentname": 5,
+              "customname": 6,
+              "highlight": 7,
+              "hostname": 12,
+              "levelname": 8,
+              "message": 9,
+              "sort": 10,
+              "varmessage": 11
+            },
+            "renameByName": {}
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "schemaVersion": 37,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": true,
+          "text": [
+            "DEV"
+          ],
+          "value": [
+            "DEV"
+          ]
+        },
+        "datasource": {
+          "type": "elasticsearch",
+          "uid": "BcHFbIBVz"
+        },
+        "definition": "{\"find\":\"terms\", \"field\":\"levelname.keyword\",\"query\":\"*\"}",
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "levelname",
+        "options": [],
+        "query": "{\"find\":\"terms\", \"field\":\"levelname.keyword\",\"query\":\"*\"}",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Dirac Logs DEV",
+  "uid": "SXvsbSBVm",
+  "version": 5,
+  "weekStart": ""
+}

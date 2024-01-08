@@ -14,6 +14,7 @@ This sections constains the documentation for installing new DIRAC Servers or se
    InstallingWebAppDIRAC
    HTTPSServices
    centralizedLogging
+   tornadoComponentsLogs
    rabbitmq
    scalingAndLimitations
    environment_variable_configuration
