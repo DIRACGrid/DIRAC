@@ -719,7 +719,7 @@ class JobAgent(AgentModule):
                 res = JobMonitoringClient().getJobsStatus(jobID)
                 if not res["OK"]:
                     return res
-                if res["Value"][jobID]["Status"] == JobStatus.RUNNING:
+                if res["Value"][int(jobID)]["Status"] == JobStatus.RUNNING:
                     self.jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Payload failed")
 
                 # Do not keep running and do not overwrite the Payload error
