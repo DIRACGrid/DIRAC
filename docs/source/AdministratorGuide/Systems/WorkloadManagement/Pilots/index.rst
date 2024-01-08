@@ -88,7 +88,7 @@ Inside this section, you should define the following options, and give them a me
    Installation = mycfg.cfg # For an optional configuration file, used by the installation script.
    PreInstalledEnv = /cvmfs/some/where/specific/bashrc # A specific rc file to source for setting up DIRAC
    PreInstalledEnvPrefix = /cvmfs/some/where/ # Location where DIRAC installations can be found. The Pilot will then try and find the following: /cvmfs/some/where/{Version/}{platform}/diracosrc
-   CVMFS_locations = /cvmfs/some/ # Comma-separated list of locations where DIRAC installations, CAs and CRLs can be found. The Pilot will then try and find the following: /cvmfs/some/{releaseProject}dirac/{Version/}{platform}/diracosrc and /cvmfs/some/etc/grid-security/certificates
+   CVMFS_locations = /cvmfs/some/ # Comma-separated list of locations where DIRAC installations, CAs and CRLs can be found. The Pilot will then try and find the following: /cvmfs/some/{releaseProject}dirac/{Version/}{platform}/diracosrc and /cvmfs/some/etc/grid-security/certificates. Those same locations will also be used by the Pilot Wrapper to try and find the pilot files in /cvmfs/some/{releaseProject}dirac/pilot/.
    # For the Matcher
    CheckVersion = False # True by default, if false any version would be accepted at matching level (this is a check done by the WorkloadManagementSystem/Matcher service).
 
