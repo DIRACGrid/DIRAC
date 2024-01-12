@@ -25,10 +25,8 @@ class Params:
     def __init__(self):
         """C'or"""
         self.status = False
-        self.taskQueueID = 0
         self.switches = [
             ("", "status=", "sets the pilot status", self.setStatus),
-            ("t:", "taskQueueID=", "sets the taskQueueID", self.setTaskQueueID),
         ]
 
     def setStatus(self, value):
@@ -43,19 +41,6 @@ class Params:
         if value not in PILOT_STATES:
             return S_ERROR(f"{value} is not a valid pilot status")
         self.status = value
-        return S_OK()
-
-    def setTaskQueueID(self, value):
-        """sets self.taskQueueID
-
-        :param value: option argument
-
-        :return: S_OK()/S_ERROR()
-        """
-        try:
-            self.taskQueueID = int(value)
-        except ValueError:
-            return S_ERROR("TaskQueueID has to be a number")
         return S_OK()
 
 
@@ -89,7 +74,7 @@ def main():
         if not DErrno.cmpError(res, DErrno.EWMSNOPILOT):
             gLogger.error(res["Message"])
             DIRACExit(1)
-        res = pmc.addPilotTQRef([pilotRef], params.taskQueueID, ownerGroup, gridType, {pilotRef: pilotStamp})
+        res = pmc.addPilotReferences([pilotRef], ownerGroup, gridType, {pilotRef: pilotStamp})
         if not res["OK"]:
             gLogger.error(res["Message"])
             DIRACExit(1)

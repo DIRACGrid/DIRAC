@@ -36,9 +36,8 @@ def preparePilots(stateCount, testSite, testCE, testGroup):
     for i in range(nPilots):
         pilotRef.append("pilotRef_" + str(i))
 
-    res = paDB.addPilotTQReference(
+    res = paDB.addPilotReferences(
         pilotRef,
-        123,
         testGroup,
     )
     assert res["OK"] is True, res["Message"]
@@ -80,7 +79,7 @@ def cleanUpPilots(pilotRef):
 
 def test_basic():
     """usual insert/verify"""
-    res = paDB.addPilotTQReference(["pilotRef"], 123, "ownerGroup")
+    res = paDB.addPilotReferences(["pilotRef"], "ownerGroup")
     assert res["OK"] is True
 
     res = paDB.deletePilot("pilotRef")

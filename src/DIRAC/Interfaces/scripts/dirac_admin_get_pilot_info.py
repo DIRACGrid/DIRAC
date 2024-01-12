@@ -15,8 +15,7 @@ Example:
                                                           'PilotJobReference': 'https://marlb.in2p3.fr:9000/2KHFrQjkw',
                                                           'PilotStamp': '',
                                                           'Status': 'Done',
-                                                          'SubmissionTime': datetime.datetime(2011, 2, 21, 12, 27, 52),
-                                                          'TaskQueueID': 399L}}
+                                                          'SubmissionTime': datetime.datetime(2011, 2, 21, 12, 27, 52)}}
 """
 from DIRAC.Core.Base.Script import Script
 

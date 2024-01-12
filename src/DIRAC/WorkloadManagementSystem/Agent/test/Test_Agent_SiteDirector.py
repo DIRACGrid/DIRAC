@@ -2,214 +2,271 @@
 """
 # pylint: disable=protected-access
 
-# imports
 import datetime
+import os
 import pytest
-from unittest.mock import MagicMock
+from diraccfg import CFG
 
-from DIRAC import gLogger
+from DIRAC import gLogger, gConfig
+from DIRAC.ConfigurationSystem.Client import ConfigurationData
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
-# sut
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import SiteDirector
+from DIRAC.WorkloadManagementSystem.Client import PilotStatus
+from DIRAC.WorkloadManagementSystem.Utilities.SubmissionPolicy import SUBMISSION_POLICIES
 
-mockAM = MagicMock()
-mockGCReply = MagicMock()
-mockGCReply.return_value = "TestSetup"
-mockOPSObject = MagicMock()
-mockOPSObject.getValue.return_value = "123"
-mockOPSReply = MagicMock()
-mockOPSReply.return_value = "123"
 
-mockOPS = MagicMock()
-mockOPS.return_value = mockOPSObject
-# mockOPS.Operations = mockOPSObject
-mockPM = MagicMock()
-mockPM.requestToken.return_value = {"OK": True, "Value": ("token", 1)}
-mockPMReply = MagicMock()
-mockPMReply.return_value = {"OK": True, "Value": ("token", 1)}
-
-mockCSGlobalReply = MagicMock()
-mockCSGlobalReply.return_value = "TestSetup"
-mockResourcesReply = MagicMock()
-mockResourcesReply.return_value = {"OK": True, "Value": ["x86_64-slc6", "x86_64-slc5"]}
-
-mockPilotAgentsDB = MagicMock()
-mockPilotAgentsDB.setPilotStatus.return_value = {"OK": True}
-
-gLogger.setLevel("DEBUG")
+CONFIG = """
+Resources
+{
+  Sites
+  {
+    LCG
+    {
+      LCG.Site1.com
+      {
+        VO = dteam
+        CEs
+        {
+          ce1.site1.com
+          {
+            architecture = x86_64
+            OS = linux_AlmaLinux_9
+            CEType = HTCondorCE
+            LocalCEType = Singularity
+            MaxRAM = 6974
+            Queues
+            {
+              condor
+              {
+                MaxTotalJobs = 1000
+                MaxWaitingJobs = 100
+                maxCPUTime = 1152
+                VO = dteam
+                NumberOfProcessors = 1
+              }
+            }
+            Tag = Token
+          }
+          ce2.site1.com
+          {
+            architecture = x86_64
+            OS = linux_AlmaLinux_9
+            CEType = HTCondorCE
+            LocalCEType = Singularity
+            MaxRAM = 6974
+            Queues
+            {
+              condor
+              {
+                MaxTotalJobs = 1000
+                MaxWaitingJobs = 100
+                maxCPUTime = 1152
+                VO = dteam
+                NumberOfProcessors = 1
+              }
+            }
+          }
+        }
+      }
+      LCG.Site2.site2
+      {
+        CEs
+        {
+          ce1.site2.com
+          {
+            architecture = x86_64
+            OS = linux_AlmaLinux_9
+            CEType = HTCondorCE
+            LocalCEType = Singularity
+            MaxRAM = 6974
+            Queues
+            {
+              condor
+              {
+                MaxTotalJobs = 1000
+                MaxWaitingJobs = 100
+                maxCPUTime = 1152
+                VO = dteam
+                NumberOfProcessors = 1
+              }
+            }
+            Tag = Token
+          }
+        }
+      }
+    }
+    DIRAC
+    {
+      DIRAC.Site3.site3
+      {
+        CEs
+        {
+          ce1.site3.com
+          {
+            architecture = x86_64
+            OS = linux_AlmaLinux_9
+            CEType = HTCondorCE
+            LocalCEType = Singularity
+            MaxRAM = 6974
+            Queues
+            {
+              condor
+              {
+                MaxTotalJobs = 1000
+                MaxWaitingJobs = 100
+                maxCPUTime = 1152
+                VO = dteam
+                NumberOfProcessors = 1
+              }
+            }
+            Tag = Token
+          }
+        }
+      }
+    }
+  }
+}
+"""
 
 
 @pytest.fixture
-def sd(mocker):
-    """mocker for SiteDirector"""
+def config():
+    """Load a fake configuration"""
+    ConfigurationData.localCFG = CFG()
+    cfg = CFG()
+    cfg.loadFromBuffer(CONFIG)
+    gConfig.loadCFG(cfg)
+
+
+@pytest.fixture
+def sd(mocker, config):
+    """Basic configuration of a SiteDirector. It tests the _buildQueueDict() method at the same time"""
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__")
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect=mockGCReply)
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.Operations", side_effect=mockOPS)
-    mocker.patch(
-        "DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gProxyManager.requestToken", side_effect=mockPMReply
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.Operations.getValue", return_value="123")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.getPilotAgentsDB")
+
+    usableSites = (
+        gConfig.getSections("Resources/Sites/LCG")["Value"] + gConfig.getSections("Resources/Sites/DIRAC")["Value"]
     )
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.SiteDirector.SiteStatus.getUsableSites", return_values=usableSites
+    )
     sd = SiteDirector()
+
+    # Set logger
     sd.log = gLogger
-    sd.am_getOption = mockAM
     sd.log.setLevel("DEBUG")
-    sd.rpcMatcher = MagicMock()
-    sd.rssClient = MagicMock()
-    sd.pilotAgentsDB = MagicMock()
+
+    # Set basic parameters
     sd.workingDirectory = ""
-    sd.queueDict = {
-        "aQueue": {
-            "Site": "LCG.CERN.cern",
-            "CEName": "aCE",
-            "CEType": "SSH",
-            "QueueName": "aQueue",
-            "ParametersDict": {
-                "CPUTime": 12345,
-                "Community": "lhcb",
-                "OwnerGroup": ["lhcb_user"],
-                "Setup": "LHCb-Production",
-                "Site": "LCG.CERN.cern",
-            },
-        }
-    }
+
+    # Set VO
+    sd.vo = "dteam"
+
+    # Set queueDict
+    sd.siteClient = SiteStatus()
+    sd._buildQueueDict()
     return sd
 
 
-def test__getPilotOptions(sd):
-    """Testing SiteDirector()._getPilotOptions()"""
-    res = sd._getPilotOptions("aQueue")
-    assert {"-S TestSetup", "-V 123", "-l 123", "-n LCG.CERN.cern"} <= set(res)
+@pytest.fixture(scope="session")
+def pilotWrapperDirectory(tmp_path_factory):
+    """Create a temporary directory"""
+    fn = tmp_path_factory.mktemp("pilotWrappers")
+    return fn
 
 
-@pytest.mark.parametrize(
-    "mockMatcherReturnValue, expected, anyExpected, sitesExpected",
-    [
-        ({"OK": False, "Message": "boh"}, False, True, set()),
-        ({"OK": True, "Value": None}, False, True, set()),
-        ({"OK": True, "Value": {"1": {"Jobs": 10}, "2": {"Jobs": 20}}}, True, True, set()),
-        ({"OK": True, "Value": {"1": {"Jobs": 10, "Sites": ["Site1"]}, "2": {"Jobs": 20}}}, True, True, {"Site1"}),
-        (
-            {"OK": True, "Value": {"1": {"Jobs": 10, "Sites": ["Site1", "Site2"]}, "2": {"Jobs": 20}}},
-            True,
-            True,
-            {"Site1", "Site2"},
-        ),
-        (
-            {
-                "OK": True,
-                "Value": {"1": {"Jobs": 10, "Sites": ["Site1", "Site2"]}, "2": {"Jobs": 20, "Sites": ["Site1"]}},
-            },
-            True,
-            False,
-            {"Site1", "Site2"},
-        ),
-        (
-            {
-                "OK": True,
-                "Value": {"1": {"Jobs": 10, "Sites": ["Site1", "Site2"]}, "2": {"Jobs": 20, "Sites": ["ANY"]}},
-            },
-            True,
-            False,
-            {"Site1", "Site2", "ANY"},
-        ),
-        (
-            {
-                "OK": True,
-                "Value": {"1": {"Jobs": 10, "Sites": ["Site1", "Site2"]}, "2": {"Jobs": 20, "Sites": ["ANY", "Site3"]}},
-            },
-            True,
-            False,
-            {"Site1", "Site2", "Site3", "ANY"},
-        ),
-        (
-            {
-                "OK": True,
-                "Value": {"1": {"Jobs": 10, "Sites": ["Site1", "Site2"]}, "2": {"Jobs": 20, "Sites": ["Any", "Site3"]}},
-            },
-            True,
-            False,
-            {"Site1", "Site2", "Site3", "Any"},
-        ),
-        (
-            {
-                "OK": True,
-                "Value": {
-                    "1": {"Jobs": 10, "Sites": ["Site1", "Site2"]},
-                    "2": {"Jobs": 20, "Sites": ["NotAny", "Site2"]},
-                },
-            },
-            True,
-            False,
-            {"Site1", "Site2", "NotAny"},
-        ),
-    ],
-)
-def test__ifAndWhereToSubmit(sd, mockMatcherReturnValue, expected, anyExpected, sitesExpected):
-    """Testing SiteDirector()._ifAndWhereToSubmit()"""
-    sd.matcherClient = MagicMock()
-    sd.matcherClient.getMatchingTaskQueues.return_value = mockMatcherReturnValue
-    res = sd._ifAndWhereToSubmit()
-    assert res[0] == expected
-    if res[0]:
-        assert res == (expected, anyExpected, sitesExpected, set())
+def test_loadSubmissionPolicy(sd):
+    """Load each submission policy and call it"""
+    for submissionPolicyName in SUBMISSION_POLICIES:
+        # Load the submission policy
+        sd.submissionPolicyName = submissionPolicyName
+        res = sd._loadSubmissionPolicy()
+        assert res["OK"]
+
+        # Call the submission policy with predefined parameters
+        targetQueue = "ce1.site1.com_condor"
+        res = sd.submissionPolicy.apply(50, ceParameters=sd.queueDict[targetQueue]["CE"].ceParameters)
+        assert res >= 0 and res <= 50
 
 
-def test__allowedToSubmit(sd):
-    """Testing SiteDirector()._allowedToSubmit()"""
-    submit = sd._allowedToSubmit("aQueue", True, {"LCG.CERN.cern"}, set())
-    assert submit is False
+def test_getPilotWrapper(mocker, sd, pilotWrapperDirectory):
+    """Get pilot options for a specific queue and check the result, then generate the pilot wrapper"""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", return_value="TestSetup")
 
-    sd.siteMaskList = ["LCG.CERN.cern", "DIRAC.CNAF.it"]
-    submit = sd._allowedToSubmit("aQueue", True, {"LCG.CERN.cern"}, set())
-    assert submit is True
+    # Get pilot options
+    pilotOptions = sd._getPilotOptions("ce1.site1.com_condor")
+    assert {
+        "--preinstalledEnv=123",
+        "--pythonVersion=3",
+        "--wnVO=dteam",
+        "-n LCG.Site1.com",
+        "-N ce1.site1.com",
+        "-Q condor",
+        "-S TestSetup",
+        "-V 123",
+        "-l 123",
+        "-e 1,2,3",
+    } == set(pilotOptions)
 
-    sd.rssFlag = True
-    submit = sd._allowedToSubmit("aQueue", True, {"LCG.CERN.cern"}, set())
-    assert submit is False
+    # Write pilot script
+    res = sd._writePilotScript(pilotWrapperDirectory, pilotOptions)
 
-    sd.ceMaskList = ["aCE", "anotherCE"]
-    submit = sd._allowedToSubmit("aQueue", True, {"LCG.CERN.cern"}, set())
-    assert submit is True
-
-
-def test__submitPilotsToQueue(sd):
-    """Testing SiteDirector()._submitPilotsToQueue()"""
-    # Create a MagicMock that does not have the workingDirectory
-    # attribute (https://cpython-test-docs.readthedocs.io/en/latest/library/unittest.mock.html#deleting-attributes)
-    # This is to use the SiteDirector's working directory, not the CE one
-    ceMock = MagicMock()
-    del ceMock.workingDirectory
-
-    sd.queueCECache = {"aQueue": {"CE": ceMock}}
-    sd.queueSlots = {"aQueue": {"AvailableSlots": 10}}
-    assert sd._submitPilotsToQueue(1, MagicMock(), "aQueue")["OK"]
+    # Make sure the file exists
+    assert os.path.exists(res) and os.path.isfile(res)
 
 
-@pytest.mark.parametrize(
-    "pilotRefs, pilotDict, pilotCEDict, expected",
-    [
-        ([], {}, {}, (0, [])),
-        (
-            ["aPilotRef"],
-            {"aPilotRef": {"Status": "Running", "LastUpdateTime": datetime.datetime(2000, 1, 1).utcnow()}},
-            {},
-            (0, []),
-        ),
-        (
-            ["aPilotRef"],
-            {"aPilotRef": {"Status": "Running", "LastUpdateTime": datetime.datetime(2000, 1, 1).utcnow()}},
-            {"aPilotRef": "Running"},
-            (0, []),
-        ),
-        (
-            ["aPilotRef"],
-            {"aPilotRef": {"Status": "Running", "LastUpdateTime": datetime.datetime(2000, 1, 1).utcnow()}},
-            {"aPilotRef": "Unknown"},
-            (0, []),
-        ),
-    ],
-)
-def test__updatePilotStatus(sd, pilotRefs, pilotDict, pilotCEDict, expected):
-    """Testing SiteDirector()._updatePilotStatus()"""
-    res = sd._updatePilotStatus(pilotRefs, pilotDict, pilotCEDict)
-    assert res == expected
+def test_updatePilotStatus(sd):
+    """Updating the status of some fake pilot references"""
+    # 1. We have not submitted any pilots, there is nothing to update
+    pilotDict = {}
+    pilotCEDict = {}
+    res = sd._getUpdatedPilotStatus(pilotDict, pilotCEDict)
+    assert not res
+
+    res = sd._getAbortedPilots(res)
+    assert not res
+
+    # 2. We just submitted a pilot, the remote system has not had the time to register the pilot
+    pilotDict["pilotRef1"] = {"Status": PilotStatus.SUBMITTED, "LastUpdateTime": datetime.datetime.utcnow()}
+    pilotCEDict = {}
+    res = sd._getUpdatedPilotStatus(pilotDict, pilotCEDict)
+    assert not res
+
+    res = sd._getAbortedPilots(res)
+    assert not res
+
+    # 3. The pilot is now registered
+    pilotCEDict["pilotRef1"] = PilotStatus.SUBMITTED
+    res = sd._getUpdatedPilotStatus(pilotDict, pilotCEDict)
+    assert not res
+
+    res = sd._getAbortedPilots(res)
+    assert not res
+
+    # 4. The pilot waits in the queue of the remote CE
+    pilotCEDict["pilotRef1"] = PilotStatus.WAITING
+    res = sd._getUpdatedPilotStatus(pilotDict, pilotCEDict)
+    assert res == {"pilotRef1": PilotStatus.WAITING}
+
+    res = sd._getAbortedPilots(res)
+    assert not res
+    pilotDict["pilotRef1"]["Status"] = PilotStatus.WAITING
+
+    # 5. CE issue: the pilot status becomes unknown
+    pilotCEDict["pilotRef1"] = PilotStatus.UNKNOWN
+    res = sd._getUpdatedPilotStatus(pilotDict, pilotCEDict)
+    assert res == {"pilotRef1": PilotStatus.UNKNOWN}
+
+    res = sd._getAbortedPilots(res)
+    assert not res
+    pilotDict["pilotRef1"]["Status"] = PilotStatus.UNKNOWN
+
+    # 6. Engineers do not manage to fix the issue, the CE is still under maintenance
+    pilotDict["pilotRef1"]["LastUpdateTime"] = datetime.datetime.utcnow() - datetime.timedelta(seconds=3610)
+    res = sd._getUpdatedPilotStatus(pilotDict, pilotCEDict)
+    assert res == {"pilotRef1": PilotStatus.ABORTED}
+
+    res = sd._getAbortedPilots(res)
+    assert res == ["pilotRef1"]

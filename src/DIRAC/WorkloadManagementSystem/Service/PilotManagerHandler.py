@@ -74,23 +74,12 @@ class PilotManagerHandler(RequestHandler):
         return S_OK(resultDict)
 
     ##########################################################################################
-    types_addPilotTQReference = [list, int, str, str]
-
-    @deprecated("Use addPilotTQRef")
-    @classmethod
-    def export_addPilotTQReference(
-        cls, pilotRef, taskQueueID, ownerDN, ownerGroup, broker="Unknown", gridType="DIRAC", pilotStampDict={}
-    ):
-        """Add a new pilot job reference"""
-
-        return cls.pilotAgentsDB.addPilotTQReference(pilotRef, taskQueueID, ownerGroup, gridType, pilotStampDict)
-
-    types_addPilotTQRef = [list, int, str]
+    types_addPilotReferences = [list, str]
 
     @classmethod
-    def export_addPilotTQRef(cls, pilotRef, taskQueueID, ownerGroup, gridType="DIRAC", pilotStampDict={}):
+    def export_addPilotReferences(cls, pilotRef, ownerGroup, gridType="DIRAC", pilotStampDict={}):
         """Add a new pilot job reference"""
-        return cls.pilotAgentsDB.addPilotTQReference(pilotRef, taskQueueID, ownerGroup, gridType, pilotStampDict)
+        return cls.pilotAgentsDB.addPilotReferences(pilotRef, ownerGroup, gridType, pilotStampDict)
 
     ##############################################################################
     types_getPilotOutput = [str]
@@ -347,41 +336,12 @@ class PilotManagerHandler(RequestHandler):
 
     @classmethod
     def export_getPilots(cls, jobID):
-        """Get pilot references and their states for :
-        - those pilots submitted for the TQ where job is sitting
-        - (or) the pilots executing/having executed the Job
-        """
-
-        pilots = []
+        """Get pilots executing/having executed the Job"""
         result = cls.pilotAgentsDB.getPilotsForJobID(int(jobID))
-        if not result["OK"]:
-            if result["Message"].find("not found") == -1:
-                return S_ERROR("Failed to get pilot: " + result["Message"])
-        else:
-            pilots += result["Value"]
-        if not pilots:
-            # Pilots were not found try to look in the Task Queue
-            taskQueueID = 0
-            try:
-                result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.TaskQueueDB", "TaskQueueDB")
-                if not result["OK"]:
-                    return result
-                tqDB = result["Value"]()
-            except RuntimeError as excp:
-                return S_ERROR(f"Can't connect to DB: {excp}")
-            result = tqDB.getTaskQueueForJob(int(jobID))
-            if result["OK"] and result["Value"]:
-                taskQueueID = result["Value"]
-            if taskQueueID:
-                result = cls.pilotAgentsDB.getPilotsForTaskQueue(taskQueueID, limit=10)
-                if not result["OK"]:
-                    return S_ERROR("Failed to get pilot: " + result["Message"])
-                pilots += result["Value"]
+        if not result["OK"] or not result["Value"]:
+            return S_ERROR(f"Failed to get pilot for Job {int(jobID)}: {result.get('Message', '')}")
 
-        if not pilots:
-            return S_ERROR("Failed to get pilot for Job %d" % int(jobID))
-
-        return cls.pilotAgentsDB.getPilotInfo(pilotID=pilots)
+        return cls.pilotAgentsDB.getPilotInfo(pilotID=result["Value"])
 
     ##############################################################################
     types_killPilot = [[str, list]]

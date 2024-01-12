@@ -22,7 +22,6 @@ expectedQueueDict1 = {
     "CE1_Queue1": {
         "CEName": "CE1",
         "CEType": "Type1",
-        "QueryCEFlag": False,
         "QueueName": "Queue1",
         "Site": "Site1",
         "ParametersDict": {
@@ -39,7 +38,6 @@ expectedQueueDict1 = {
     "CE1_Queue2": {
         "CEName": "CE1",
         "CEType": "Type1",
-        "QueryCEFlag": False,
         "QueueName": "Queue2",
         "Site": "Site1",
         "ParametersDict": {
@@ -56,7 +54,6 @@ expectedQueueDict1 = {
     "CE2_Queue1": {
         "CEName": "CE2",
         "CEType": "Type2",
-        "QueryCEFlag": False,
         "QueueName": "Queue1",
         "Site": "Site1",
         "ParametersDict": {
@@ -73,7 +70,6 @@ expectedQueueDict1 = {
     "CE3_Queue1": {
         "CEName": "CE3",
         "CEType": "Type2",
-        "QueryCEFlag": False,
         "QueueName": "Queue1",
         "Site": "Site2",
         "ParametersDict": {

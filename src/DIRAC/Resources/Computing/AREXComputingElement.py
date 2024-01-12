@@ -92,7 +92,6 @@ class AREXComputingElement(ARCComputingElement):
         """Set the token and update the headers
 
         :param token: OAuth2Token object or dictionary containing token structure
-        :param int valid: validity period in seconds
         """
         super().setToken(token)
         self.headers["Authorization"] = "Bearer " + self.token["access_token"]
@@ -619,7 +618,11 @@ class AREXComputingElement(ARCComputingElement):
             self.log.error("Failed getting the status of the CE.", result["Message"])
             return S_ERROR("Failed getting the status of the CE")
         response = result["Value"]
-        ceData = response.json()
+        try:
+            ceData = response.json()
+        except requests.JSONDecodeError:
+            self.log.exception("Failed decoding the status of the CE")
+            return S_ERROR(f"Failed decoding the status of the CE")
 
         # Look only in the relevant section out of the headache
         queueInfo = ceData["Domains"]["AdminDomain"]["Services"]["ComputingService"]["ComputingShare"]

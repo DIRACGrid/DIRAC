@@ -5,7 +5,7 @@
 
     Available methods are:
 
-    addPilotTQReference()
+    addPilotReferences()
     setPilotStatus()
     deletePilot()
     clearPilots()
@@ -38,11 +38,9 @@ class PilotAgentsDB(DB):
         self.lock = threading.Lock()
 
     ##########################################################################################
-    def addPilotTQReference(self, pilotRef, taskQueueID, ownerGroup, gridType="DIRAC", pilotStampDict={}):
+
+    def addPilotReferences(self, pilotRef, ownerGroup, gridType="DIRAC", pilotStampDict={}):
         """Add a new pilot job reference"""
-
-        err = "PilotAgentsDB.addPilotTQReference: Failed to retrieve a new Id."
-
         for ref in pilotRef:
             stamp = ""
             if ref in pilotStampDict:
@@ -50,9 +48,9 @@ class PilotAgentsDB(DB):
 
             req = (
                 "INSERT INTO PilotAgents "
-                + "(PilotJobReference, TaskQueueID, OwnerGroup, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp) "
-                + "VALUES ('%s',%d,'%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')"
-                % (ref, int(taskQueueID), ownerGroup, gridType, stamp)
+                + "(PilotJobReference, OwnerGroup, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp) "
+                + "VALUES ('%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')"
+                % (ref, ownerGroup, gridType, stamp)
             )
 
             result = self._update(req)
@@ -60,7 +58,7 @@ class PilotAgentsDB(DB):
                 return result
 
             if "lastRowId" not in result:
-                return S_ERROR(f"{err}")
+                return S_ERROR("PilotAgentsDB.addPilotReferences: Failed to retrieve a new Id.")
 
         return S_OK()
 
@@ -278,7 +276,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
                 "SubmissionTime",
                 "PilotID",
                 "LastUpdateTime",
-                "TaskQueueID",
                 "GridSite",
                 "PilotStamp",
                 "Queue",
@@ -469,31 +466,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
                 resDict[row[0]] = []
             resDict[row[0]].append(row[1])
         return S_OK(resDict)
-
-    ##########################################################################################
-    def getPilotsForTaskQueue(self, taskQueueID, gridType=None, limit=None):
-        """Get IDs of Pilot Agents that were submitted for the given taskQueue,
-        specify optionally the grid type, results are sorted by Submission time
-        an Optional limit can be set.
-        """
-
-        if gridType:
-            req = f"SELECT PilotID FROM PilotAgents WHERE TaskQueueID={taskQueueID} AND GridType='{gridType}' "
-        else:
-            req = f"SELECT PilotID FROM PilotAgents WHERE TaskQueueID={taskQueueID} "
-
-        req += "ORDER BY SubmissionTime DESC "
-
-        if limit:
-            req += f"LIMIT {limit}"
-
-        result = self._query(req)
-        if not result["OK"]:
-            return result
-        if result["Value"]:
-            pilotList = [x[0] for x in result["Value"]]
-            return S_OK(pilotList)
-        return S_ERROR(f"PilotJobReferences for TaskQueueID {taskQueueID} not found")
 
     ##########################################################################################
     def getPilotsForJobID(self, jobID):
@@ -1046,7 +1018,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             "PilotID",
             "LastUpdateTime",
             "CurrentJobID",
-            "TaskQueueID",
             "GridSite",
         ]
 
@@ -1084,7 +1055,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
     def getSummarySnapshot(self, requestedFields=False):
         """Get the summary snapshot for a given combination"""
         if not requestedFields:
-            requestedFields = ["TaskQueueID", "GridSite", "GridType", "Status"]
+            requestedFields = ["GridSite", "GridType", "Status"]
         valueFields = ["COUNT(PilotID)"]
         defString = ", ".join(requestedFields)
         valueString = ", ".join(valueFields)

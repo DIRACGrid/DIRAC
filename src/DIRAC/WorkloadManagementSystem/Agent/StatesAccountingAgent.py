@@ -43,7 +43,7 @@ class StatesAccountingAgent(AgentModule):
     __renameFieldsMapping = {"JobType": "JobSplitType"}
 
     # PilotsHistory fields
-    __pilotsMapping = ["TaskQueueID", "GridSite", "GridType", "Status", "NumOfPilots"]
+    __pilotsMapping = ["GridSite", "GridType", "Status", "NumOfPilots"]
 
     def initialize(self):
         """Standard initialization"""

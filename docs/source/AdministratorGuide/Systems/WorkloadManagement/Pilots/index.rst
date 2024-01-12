@@ -163,6 +163,21 @@ you should carefully read the RFC 18, and what follows.
 
 Pilot commands can be extended. A custom list of commands can be added starting the pilot with the -X option.
 
+Pilots started when controlled by the SiteDirector
+==================================================
+
+The :py:mod:`~DIRAC.WorkloadManagementSystem.Agent.SiteDirector` is a central component in DIRAC,
+responsible for managing and optimizing the submission of pilot jobs to various computing resources. It features:
+
+- *Parallel Submission*: Capable of submitting pilot jobs in parallel across different Computing Elements (CEs) to enhance throughput.
+- :py:mod:`~DIRAC.WorkloadManagementSystem.Utilities.SubmissionPolicy`: It utilizes various submission policies to optimize pilot-job distribution:
+   - *AggressiveFilling*: Fills available slots regardless of waiting jobs, ideal for continuously busy sites.
+   - *WaitingSupportedJobs* (default one): Fills slots based on the number of waiting jobs, suitable for intermittently busy sites.
+- *Monitoring and Accounting*: Features parallel monitoring and accounting for efficient tracking and management of pilot jobs.
+- *Pilot Wrapping*: Creates pilot wrappers that facilitate the execution of pilot scripts in diverse environments, including Grid, cloud, and virtualized resources.
+- *Resource Status Handling*: Integrates with the Resource Status System to ensure that pilots are only submitted to operational and enabled resources.
+
+The Site Director is controlled through different parameters set in the DIRAC configuration. More details in :py:mod:`~DIRAC.WorkloadManagementSystem.Agent.SiteDirector`.
 
 Pilots started when not controlled by the SiteDirector
 ======================================================

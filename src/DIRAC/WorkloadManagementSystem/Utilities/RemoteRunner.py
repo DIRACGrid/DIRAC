@@ -169,11 +169,7 @@ class RemoteRunner:
         if not result["OK"]:
             return result
         proxy = result["Value"]["chain"]
-        result = proxy.getRemainingSecs()
-        if not result["OK"]:
-            return result
-        lifetime_secs = result["Value"]
-        workloadCE.setProxy(proxy, lifetime_secs)
+        workloadCE.setProxy(proxy)
 
         return S_OK(workloadCE)
 

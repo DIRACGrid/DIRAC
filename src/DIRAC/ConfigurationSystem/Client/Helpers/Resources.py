@@ -252,10 +252,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, tags=
         for site in sites:
             if siteList and site not in siteList:
                 continue
-            if community:
-                comList = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/VO", [])
-                if comList and community.lower() not in [cl.lower() for cl in comList]:
-                    continue
+
             siteCEParameters = {}
             result = gConfig.getOptionsDict(f"/Resources/Sites/{grid}/{site}/CEs")
             if result["OK"]:
@@ -272,10 +269,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, tags=
                         continue
                 if ceList and ce not in ceList:
                     continue
-                if community:
-                    comList = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/VO", [])
-                    if comList and community.lower() not in [cl.lower() for cl in comList]:
-                        continue
+
                 ceOptionsDict = dict(siteCEParameters)
                 result = gConfig.getOptionsDict(f"/Resources/Sites/{grid}/{site}/CEs/{ce}")
                 if not result["OK"]:
@@ -287,9 +281,23 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, tags=
                 queues = result["Value"]
                 for queue in queues:
                     if community:
-                        comList = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/Queues/{queue}/VO", [])
+                        # Community can be defined on site, CE or queue level
+                        paths = [
+                            f"/Resources/Sites/{grid}/{site}/CEs/{ce}/Queues/{queue}/VO",
+                            f"/Resources/Sites/{grid}/{site}/CEs/{ce}/VO",
+                            f"/Resources/Sites/{grid}/{site}/VO",
+                        ]
+
+                        # Try each path in order, stopping when we find a non-empty list
+                        for path in paths:
+                            comList = gConfig.getValue(path, [])
+                            if comList:
+                                break
+
+                        # If we found a list and the community is not in it, skip this iteration
                         if comList and community.lower() not in [cl.lower() for cl in comList]:
                             continue
+
                     if tags:
                         queueTags = gConfig.getValue(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/Queues/{queue}/Tag", [])
                         queueTags = set(ceTags + queueTags)
