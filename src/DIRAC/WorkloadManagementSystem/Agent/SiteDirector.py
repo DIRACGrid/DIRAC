@@ -251,13 +251,13 @@ class SiteDirector(AgentModule):
             return result
 
         self.queueDict = result["Value"]
+        self.platforms = []
         for __queueName, queueDict in self.queueDict.items():
             # Update self.sites
             if queueDict["Site"] not in self.sites:
                 self.sites.append(queueDict["Site"])
 
             # Update self.platforms, keeping entries unique and squashing lists
-            self.platforms = []
             if "Platform" in queueDict["ParametersDict"]:
                 platform = queueDict["ParametersDict"]["Platform"]
                 oldPlatforms = set(self.platforms)
