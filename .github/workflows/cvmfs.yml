@@ -34,4 +34,4 @@ jobs:
           ssh-keygen -R cvmfs-upload01.gridpp.rl.ac.uk
           ssh-keyscan cvmfs-upload01.gridpp.rl.ac.uk >> ~/.ssh/known_hosts
 
-          gsissh -p 1975 -t cvmfs-upload01.gridpp.rl.ac.uk /home/diracsgm/cvmfs_repo/admin/sync_packages.sh -v
+          gsissh -p 1975 -t diracgsm@cvmfs-upload01.gridpp.rl.ac.uk /home/diracsgm/cvmfs_repo/admin/sync_packages.sh -v
