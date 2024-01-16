@@ -59,20 +59,22 @@ def getPilotProxy(pilotDict):
     :param dict pilotDict: pilot parameters
     :return: S_OK/S_ERROR with proxy as Value
     """
-    pilotGroup = pilotDict["OwnerGroup"]
 
-    pilotDN = Operations(vo=getVOForGroup(pilotGroup)).getValue("Pilot/GenericPilotDN")
+    opsH = Operations(vo=pilotDict["VO"])
+
+    pilotDN = opsH.getValue("Pilot/GenericPilotDN")
     if not pilotDN:
-        owner = Operations(vo=getVOForGroup(pilotGroup)).getValue("Pilot/GenericPilotUser")
+        owner = Operations(vo=pilotDict["VO"]).getValue("Pilot/GenericPilotUser")
         res = getDNForUsername(owner)
         if not res["OK"]:
             return S_ERROR(f"Cannot get the generic pilot DN: {res['Message']}")
         pilotDN = res["Value"][0]
+    pilotGroup = Operations(vo=pilotDict["VO"]).getValue("Pilot/GenericPilotGroup")
 
-    groupVOMS = getGroupOption(pilotGroup, "VOMSRole", pilotGroup)
+    groupVOMS = getGroupOption(pilotGroup, "VOMSRole")
     result = gProxyManager.getPilotProxyFromVOMSGroup(pilotDN, groupVOMS)
     if not result["OK"]:
-        gLogger.error("Could not get proxy:", f"User \"{pilotDN}\" Group \"{groupVOMS}\" : {result['Message']}")
+        gLogger.error("Could not get proxy from VOMS:", f"DN \"{pilotDN}\" Group \"{groupVOMS}\" : {result['Message']}")
         return S_ERROR("Failed to get the pilot's owner proxy")
     return result
 
@@ -84,10 +86,11 @@ def setPilotCredentials(ce, pilotDict):
     :param pilotDict: pilot parameter dictionary
     :return: S_OK/S_ERROR
     """
-    vo = getVOForGroup(pilotDict["OwnerGroup"])
+    vo = pilotDict["VO"]
     if "Token" in ce.ceParameters.get("Tag", []) or f"Token:{vo}" in ce.ceParameters.get("Tag", []):
+        pilotGroup = Operations(vo=vo).getValue("Pilot/GenericPilotGroup")
         result = gTokenManager.getToken(
-            userGroup=pilotDict["OwnerGroup"],
+            userGroup=pilotGroup,
             scope=PILOT_SCOPES,
             audience=ce.audienceName,
             requiredTimeLeft=150,
@@ -123,7 +126,7 @@ def killPilotsInQueues(pilotRefDict):
     ceFactory = ComputingElementFactory()
 
     for key, pilotDict in pilotRefDict.items():
-        pilotGroup, site, ce, queue = key.split("@@@")
+        vo, site, ce, queue = key.split("@@@")
         result = getQueue(site, ce, queue)
         if not result["OK"]:
             return result
@@ -134,15 +137,18 @@ def killPilotsInQueues(pilotRefDict):
             return result
         ce = result["Value"]
 
-        pilotDN = Operations(vo=getVOForGroup(pilotGroup)).getValue("Pilot/GenericPilotDN")
+        opsH = Operations(vo=vo)
+
+        pilotDN = opsH.getValue("Pilot/GenericPilotDN")
         if not pilotDN:
-            owner = Operations(vo=getVOForGroup(pilotGroup)).getValue("Pilot/GenericPilotUser")
+            owner = opsH.getValue("Pilot/GenericPilotUser")
             res = getDNForUsername(owner)
             if not res["OK"]:
                 return S_ERROR(f"Cannot get the generic pilot DN: {res['Message']}")
             pilotDN = res["Value"][0]
 
-        group = getGroupOption(pilotGroup, "VOMSRole", pilotGroup)
+        pilotGroup = opsH.getValue("Pilot/GenericPilotGroup")
+        group = getGroupOption(pilotGroup, "VOMSRole")
         ret = gProxyManager.getPilotProxyFromVOMSGroup(pilotDN, group)
         if not ret["OK"]:
             gLogger.error("Could not get proxy:", f"User '{pilotDN}' Group '{group}' : {ret['Message']}")

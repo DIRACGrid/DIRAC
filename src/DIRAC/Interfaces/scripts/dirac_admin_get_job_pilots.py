@@ -12,7 +12,7 @@ Example:
                                                           'Jobs': [1848L],
                                                           'LastUpdateTime': datetime.datetime(2011, 2, 21, 12, 39, 10),
                                                           'OutputReady': 'True',
-                                                          'OwnerGroup': '/biomed',
+                                                          'VO': 'biomed',
                                                           'PilotJobReference': 'https://marlb.in2p3.fr:9000/biq6KT45Q',
                                                           'PilotStamp': '',
                                                           'Status': 'Done',

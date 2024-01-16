@@ -4,10 +4,10 @@
   efficiency.
 
 """
-from DIRAC import S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getCESiteMapping
-from DIRAC.ResourceStatusSystem.Command.Command import Command
+from DIRAC import S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping, getSites
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
 
@@ -93,9 +93,9 @@ class PilotCommand(Command):
             return S_ERROR(f'"{element}" is not  Site nor Resource')
 
         if element == "Resource":
-            pilotsResultPivot = self.pilots.getGroupedPilotSummary(["GridSite", "DestinationSite", "OwnerGroup"])
+            pilotsResultPivot = self.pilots.getGroupedPilotSummary(["GridSite", "DestinationSite", "VO"])
         elif element == "Site":
-            pilotsResultPivot = self.pilots.getGroupedPilotSummary(["GridSite", "OwnerGroup"])
+            pilotsResultPivot = self.pilots.getGroupedPilotSummary(["GridSite", "VO"])
         else:
             # You should never see this error
             return S_ERROR(f'"{element}" is not  Site nor Resource')

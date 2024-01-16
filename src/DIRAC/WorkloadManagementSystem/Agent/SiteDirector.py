@@ -33,7 +33,6 @@ from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
-from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotScopes import PILOT_SCOPES
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import getPilotAgentsDB
@@ -525,7 +524,7 @@ class SiteDirector(AgentModule):
         """
         result = self.pilotAgentsDB.addPilotReferences(
             pilotList,
-            self.pilotGroup,
+            self.vo,
             self.queueDict[queue]["CEType"],
             stampDict,
         )
@@ -946,7 +945,7 @@ class SiteDirector(AgentModule):
             else:
                 username = retVal["Value"]
             pA.setValueByKey("User", username)
-            pA.setValueByKey("UserGroup", pilotDict[pRef]["OwnerGroup"])
+            pA.setValueByKey("UserGroup", pilotDict[pRef]["VO"])
             result = getCESiteMapping(pilotDict[pRef]["DestinationSite"])
             if result["OK"] and result["Value"]:
                 pA.setValueByKey("Site", result["Value"][pilotDict[pRef]["DestinationSite"]].strip())

@@ -1,23 +1,20 @@
 """
 This is the interface to DIRAC PilotAgentsDB.
 """
-import shutil
 import datetime
+import shutil
 
-from DIRAC import S_OK, S_ERROR
 import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
-from DIRAC.Core.Utilities.Decorators import deprecated
+from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.Core.DISET.RequestHandler import getServiceOption
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import (
     getPilotCE,
-    setPilotCredentials,
     getPilotRef,
     killPilotsInQueues,
+    setPilotCredentials,
 )
 
 
@@ -77,9 +74,9 @@ class PilotManagerHandler(RequestHandler):
     types_addPilotReferences = [list, str]
 
     @classmethod
-    def export_addPilotReferences(cls, pilotRef, ownerGroup, gridType="DIRAC", pilotStampDict={}):
+    def export_addPilotReferences(cls, pilotRef, VO, gridType="DIRAC", pilotStampDict={}):
         """Add a new pilot job reference"""
-        return cls.pilotAgentsDB.addPilotReferences(pilotRef, ownerGroup, gridType, pilotStampDict)
+        return cls.pilotAgentsDB.addPilotReferences(pilotRef, VO, gridType, pilotStampDict)
 
     ##############################################################################
     types_getPilotOutput = [str]
@@ -90,8 +87,8 @@ class PilotManagerHandler(RequestHandler):
         Handles both classic, CE-based logs and remote logs. The type of logs returned is determined
         by the server.
 
-        :param str pilotReference:
-        :return: S_OK or S_ERROR Dirac object
+        :param str pilotReference: pilot reference (e.g. htcondorce://ce13.pic.es/19126986.5)
+        :return: S_OK or S_ERROR
         :rtype: dict
         """
 
@@ -104,8 +101,7 @@ class PilotManagerHandler(RequestHandler):
             return S_ERROR("Pilot info is empty")
 
         pilotDict = result["Value"][pilotReference]
-        vo = getVOForGroup(pilotDict["OwnerGroup"])
-        opsHelper = Operations(vo=vo)
+        opsHelper = Operations(vo=pilotDict["VO"])
         remote = opsHelper.getValue("Pilot/RemoteLogsPriority", False)
         # classic logs first, by default
         funcs = [self._getPilotOutput, self._getRemotePilotOutput]
@@ -125,8 +121,6 @@ class PilotManagerHandler(RequestHandler):
         job reference
         """
 
-        group = pilotDict["OwnerGroup"]
-
         # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
         result = self.pilotAgentsDB.getPilotOutput(pilotReference)
         if result["OK"]:
@@ -136,7 +130,7 @@ class PilotManagerHandler(RequestHandler):
                 resultDict = {}
                 resultDict["StdOut"] = stdout
                 resultDict["StdErr"] = error
-                resultDict["OwnerGroup"] = group
+                resultDict["VO"] = pilotDict["VO"]
                 resultDict["FileList"] = []
                 return S_OK(resultDict)
             else:
@@ -173,7 +167,7 @@ class PilotManagerHandler(RequestHandler):
         resultDict = {}
         resultDict["StdOut"] = stdout
         resultDict["StdErr"] = error
-        resultDict["OwnerGroup"] = group
+        resultDict["VO"] = pilotDict["VO"]
         resultDict["FileList"] = []
         shutil.rmtree(ce.ceParameters["WorkingDirectory"])
         return S_OK(resultDict)
@@ -188,8 +182,6 @@ class PilotManagerHandler(RequestHandler):
         """
 
         pilotStamp = pilotDict["PilotStamp"]
-        group = pilotDict["OwnerGroup"]
-        vo = getVOForGroup(group)
 
         if self.loggingPlugin is None:
             result = ObjectLoader().loadObject(
@@ -203,10 +195,10 @@ class PilotManagerHandler(RequestHandler):
             self.loggingPlugin = componentClass()
             self.log.info("Loaded: PilotLoggingPlugin class", self.configValue)
 
-        res = self.loggingPlugin.getRemotePilotLogs(pilotStamp, vo)
+        res = self.loggingPlugin.getRemotePilotLogs(pilotStamp, pilotDict["VO"])
 
         if res["OK"]:
-            res["Value"]["OwnerGroup"] = group
+            res["Value"]["VO"] = pilotDict["VO"]
             res["Value"]["FileList"] = []
         # return res, correct or not
         return res
@@ -363,7 +355,7 @@ class PilotManagerHandler(RequestHandler):
 
             pilotDict = result["Value"][pilotReference]
             queue = "@@@".join(
-                [pilotDict["OwnerGroup"], pilotDict["GridSite"], pilotDict["DestinationSite"], pilotDict["Queue"]]
+                [pilotDict["VO"], pilotDict["GridSite"], pilotDict["DestinationSite"], pilotDict["Queue"]]
             )
             gridType = pilotDict["GridType"]
             pilotRefDict.setdefault(queue, {})

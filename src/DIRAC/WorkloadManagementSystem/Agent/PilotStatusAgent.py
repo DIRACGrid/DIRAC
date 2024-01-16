@@ -10,17 +10,16 @@
 import datetime
 
 from DIRAC import S_OK, gConfig
-from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 
 
 class PilotStatusAgent(AgentModule):
@@ -191,7 +190,7 @@ class PilotStatusAgent(AgentModule):
             pA.setEndTime(pData["LastUpdateTime"])
             pA.setStartTime(pData["SubmissionTime"])
             pA.setValueByKey("User", "unknown")
-            pA.setValueByKey("UserGroup", pData["OwnerGroup"])
+            pA.setValueByKey("UserGroup", pData.get("VO", pData.get("OwnerGroup")))
             result = getCESiteMapping(pData["DestinationSite"])
             if result["OK"] and pData["DestinationSite"] in result["Value"]:
                 pA.setValueByKey("Site", result["Value"][pData["DestinationSite"]].strip())
