@@ -176,26 +176,6 @@ class PilotAgentsDB(DB):
 
         return S_OK(result["Value"][0][0])
 
-    #########################################################################################
-    def getPilotGroups(self, groupList=["Status", "OwnerGroup", "GridType"], condDict={}):
-        """
-        Get all exisiting combinations of groupList Values
-        """
-
-        cmd = f"SELECT {', '.join(groupList)} from PilotAgents "
-
-        condList = []
-        for cond in condDict:
-            condList.append('{} in ( "{}" )'.format(cond, '", "'.join([str(y) for y in condDict[cond]])))
-
-        # the conditions should be escaped before hand, so it is not really nice to expose it this way...
-        if condList:
-            cmd += f" WHERE {' AND '.join(condList)} "
-
-        cmd += f" GROUP BY {', '.join(groupList)}"
-
-        return self._query(cmd)
-
     ##########################################################################################
     def deletePilots(self, pilotIDs, conn=False):
         """Delete Pilots with IDs in the given list from the PilotAgentsDB"""
