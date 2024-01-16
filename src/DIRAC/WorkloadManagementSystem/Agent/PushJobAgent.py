@@ -65,7 +65,7 @@ class PushJobAgent(JobAgent):
         # Choose the submission policy
         # - Application: the agent will submit a workflow to a PoolCE, the workflow is responsible for interacting with the remote site
         # - JobWrapper: the agent will submit a JobWrapper directly to the remote site, it is responsible of the remote execution
-        self.submissionPolicy = "Workflow"
+        self.submissionPolicy = "Application"
 
         # cleanTask is used to clean the task in the remote site
         self.cleanTask = True
@@ -80,7 +80,7 @@ class PushJobAgent(JobAgent):
         # Get the submission policy
         # Initialized here because it cannot be dynamically modified during the execution
         self.submissionPolicy = self.am_getOption("SubmissionPolicy", self.submissionPolicy)
-        if self.submissionPolicy not in ["Workflow", "JobWrapper"]:
+        if self.submissionPolicy not in ["Application", "JobWrapper"]:
             return S_ERROR("SubmissionPolicy must be either Workflow or JobWrapper")
 
         result = self._initializeComputingElement("Pool")
@@ -289,7 +289,7 @@ class PushJobAgent(JobAgent):
 
                 # Submit the job to the CE
                 self.log.debug(f"Before self._submitJob() ({self.ceName}CE)")
-                if self.submissionPolicy == "Workflow":
+                if self.submissionPolicy == "Application":
                     resultSubmission = self._submitJob(
                         jobID=jobID,
                         jobParams=params,
@@ -400,8 +400,10 @@ class PushJobAgent(JobAgent):
             ceDict["ReleaseProject"] = project
 
         # Add a RemoteExecution entry, which can be used in the next stages
-        if self.submissionPolicy == "Workflow":
+        if self.submissionPolicy == "Application":
             ceDict["RemoteExecution"] = True
+
+        ceDict["SubmissionPolicy"] = self.submissionPolicy
 
     def _checkMatchingIssues(self, jobRequest):
         """Check the source of the matching issue

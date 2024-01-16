@@ -123,8 +123,7 @@ class Workflow(AttributeCollection):
             raise KeyError("Can not find StepDefinition " + type + " to create StepInstrance " + name)
 
     def removeStepInstance(self, name):
-        self.step_instances[name].setParent(None)
-        self.step_instances.delete(name)
+        self.step_instances = [step for step in self.step_instances if step.getName() != name]
 
     def updateParents(self):
         self.module_definitions.updateParents(self)
