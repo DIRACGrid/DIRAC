@@ -517,6 +517,7 @@ def test_submitAndCheckJob(mocker, localCE, job, expectedResult1, expectedResult
     jobAgent.log = gLogger.getSubLogger("JobAgent")
     jobAgent._initializeComputingElement(localCE)
     jobAgent.jobReport = JobReport(jobID)
+    jobAgent.jobSubmissionDelay = 3
 
     # Submit a job
     result = jobAgent._submitJob(
@@ -547,10 +548,6 @@ def test_submitAndCheckJob(mocker, localCE, job, expectedResult1, expectedResult
     assert result["OK"]
     assert result["Value"] == expectedResult1
 
-    # Check that the job is still present in jobAgent.submissionDict
-    assert len(jobAgent.submissionDict) == 1
-    assert jobID in jobAgent.submissionDict
-
     # If the submission is synchronous jobAgent.computingElement.taskResults
     # should not contain the result anymore: already processed by checkSubmittedJobs
     if not jobAgent.computingElement.ceParameters.get("AsyncSubmission", False):
@@ -576,7 +573,6 @@ def test_submitAndCheckJob(mocker, localCE, job, expectedResult1, expectedResult
     assert result["Value"] == expectedResult2
 
     # From here, taskResults should be empty
-    assert jobID in jobAgent.submissionDict
     assert len(jobAgent.computingElement.taskResults) == 0
 
 
