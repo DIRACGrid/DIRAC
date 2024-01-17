@@ -694,7 +694,10 @@ class JobAgent(AgentModule):
         submissionErrors = []
         payloadErrors = []
         originalJobID = self.jobReport.jobID
-        for jobID, taskID in self.submissionDict.items():
+        # Loop over the jobIDs submitted to the CE
+        # Here we iterate over a copy of the keys because we are modifying the dictionary within the loop
+        for jobID in list(self.submissionDict.keys()):
+            taskID = self.submissionDict[jobID]
             if taskID not in self.computingElement.taskResults:
                 continue
 
@@ -731,7 +734,9 @@ class JobAgent(AgentModule):
                 self.log.info(message)
 
             # Remove taskID from computingElement.taskResults as it has been treated
+            # Remove jobID from submissionDict as it has been treated
             del self.computingElement.taskResults[taskID]
+            del self.submissionDict[jobID]
 
         self.jobReport.setJob(originalJobID)
         return S_OK((submissionErrors, payloadErrors))
