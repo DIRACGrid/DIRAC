@@ -43,10 +43,14 @@ def getSystemInstance(system, setup=False):
        an empty string is returned
     """
 
-    setupPath = Path.cfgPath("/DIRAC/Setups", setup or getDIRACSetup())
-    optionPath = Path.cfgPath(setupPath, system)
+    # If Setup is None, it means that we have the case of configuration without Setup
+    setupToUse = setup or getDIRACSetup()
+    if setupToUse == "None":
+        return ""
+
+    optionPath = Path.cfgPath("/DIRAC/Setups", setupToUse, system)
     instance = gConfigurationData.extractOptionFromCFG(optionPath)
-    if not instance and system not in gConfigurationData.getOptionsFromCFG(setupPath):
+    if not instance:
         raise RuntimeError(f"Option {optionPath} is not defined")
     return instance
 
