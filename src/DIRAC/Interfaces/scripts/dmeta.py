@@ -40,6 +40,9 @@ class DMetaAdd(DMetaCommand):
         result = self.fcClient.setMetadataBulk({lfn: metadict})
         if not result["OK"]:
             print("Error:", result["Message"])
+        if result["Value"]["Failed"]:
+            for ff in result["Value"]["Failed"]:
+                print("Error:", ff, result["Value"]["Failed"][ff])
 
 
 class DMetaRm(DMetaCommand):
@@ -50,6 +53,9 @@ class DMetaRm(DMetaCommand):
         result = self.fcClient.removeMetadata({lfn: metas})
         if not result["OK"]:
             print("Error:", result["Message"])
+        if result["Value"]["Failed"]:
+            for ff in result["Value"]["Failed"]:
+                print("Error:", ff, result["Value"]["Failed"][ff])
 
 
 class DMetaList(DMetaCommand):
