@@ -5,7 +5,6 @@ from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     getGroupsForUser,
     getPropertiesForGroup,
-    getUsernameForDN,
     getUsersInGroup,
 )
 from DIRAC.Core.Security import Properties

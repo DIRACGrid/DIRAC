@@ -8,13 +8,12 @@ Example:
 import os
 
 import DIRAC
-from DIRAC import gLogger, S_OK
-from DIRAC.Core.Base.Script import Script
-
-from DIRAC.Core.Security import Locations, ProxyInfo
-from DIRAC.Core.Base.Client import Client
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC import S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Script import Script
+from DIRAC.Core.Security import Locations, ProxyInfo
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 
 class Params:

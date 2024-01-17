@@ -15,32 +15,30 @@ It is in charge of submitting and monitoring all the transfers. It can be duplic
 import datetime
 import errno
 import os
-from urllib import parse
 import time
-
-# from threading import current_thread
-from multiprocessing.pool import ThreadPool
 
 # We use the dummy module because we use the ThreadPool
 from multiprocessing.dummy import current_process
+
+# from threading import current_thread
+from multiprocessing.pool import ThreadPool
 from socket import gethostname
+from urllib import parse
 
-from DIRAC import S_OK, S_ERROR
-
-
-from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
+from DIRAC import S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as opHelper
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.TimeUtilities import fromString
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as opHelper
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
+from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
+from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
+from DIRAC.DataManagementSystem.private import FTS3Utilities
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.DataManagementSystem.private import FTS3Utilities
-from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
-from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
+from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 # pylint: disable=attribute-defined-outside-init

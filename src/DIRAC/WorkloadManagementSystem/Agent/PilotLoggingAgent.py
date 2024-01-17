@@ -11,17 +11,16 @@
 
 # # imports
 import os
-import time
 import tempfile
-from DIRAC import S_OK, S_ERROR, gConfig
+import time
+
+from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getVOMSAttributeForGroup, getVOs
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.Proxy import executeWithoutServerCertificate
-from DIRAC.Core.Utilities.Proxy import getProxy
+from DIRAC.Core.Utilities.Proxy import executeWithoutServerCertificate, getProxy
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
 from DIRAC.WorkloadManagementSystem.Client.TornadoPilotLoggingClient import TornadoPilotLoggingClient
 
 

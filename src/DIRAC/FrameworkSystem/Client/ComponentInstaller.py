@@ -64,7 +64,6 @@ import importlib_resources
 import MySQLdb
 from diraccfg import CFG
 from prompt_toolkit import prompt
-from typing import cast
 
 import DIRAC
 from DIRAC import gConfig, gLogger, rootPath
@@ -85,10 +84,10 @@ from DIRAC.Core.Security.Properties import (
     JOB_ADMINISTRATOR,
     NORMAL_USER,
     OPERATOR,
+    PRODUCTION_MANAGEMENT,
     PROXY_MANAGEMENT,
     SERVICE_ADMINISTRATOR,
     TRUSTED_HOST,
-    PRODUCTION_MANAGEMENT,
 )
 from DIRAC.Core.Utilities.Extensions import (
     extensionsByPriority,

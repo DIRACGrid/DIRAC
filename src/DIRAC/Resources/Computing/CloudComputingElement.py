@@ -147,24 +147,23 @@ The following is an example set of settings for an OpenStack based cloud::
 
 """
 
-import uuid
-import os
-import sys
-import yaml
 import configparser
 import datetime
-from libcloud.compute.types import Provider, NodeState
-from libcloud.compute.providers import get_driver, set_driver
-from email.mime.text import MIMEText
+import os
+import sys
+import uuid
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
-from DIRAC import S_OK, S_ERROR, gConfig, rootPath
-from DIRAC.Resources.Computing.ComputingElement import ComputingElement
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+import yaml
+from libcloud.compute.providers import get_driver, set_driver
+from libcloud.compute.types import NodeState, Provider
+
+from DIRAC import S_ERROR, S_OK, rootPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient, gProxyManager
+from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
 # Standard CE name
 CE_NAME = "CloudCE"

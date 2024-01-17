@@ -375,7 +375,7 @@ class SandboxMetadataDB(DB):
 
         :param SEName: name of the StorageElement
         :param SEPFN: PFN of the Sandbox
-        :param requestDN: host DN used as credentials
+        :param requesterDN: host DN used as credentials
         :param requesterGroup: group used to use as credentials (should be 'hosts')
 
         :returns: S_OK with tuple (owner, ownerGroup)

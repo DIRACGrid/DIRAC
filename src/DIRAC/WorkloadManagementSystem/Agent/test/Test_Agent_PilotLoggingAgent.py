@@ -46,7 +46,6 @@ def plaBase(mocker):
         "DIRAC.WorkloadManagementSystem.Agent.PilotLoggingAgent.getVOs",
         return_value={"OK": True, "Value": ["gridpp", "lz"]},
     )
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotLoggingAgent.gConfig.getValue", return_value="GridPP")
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotLoggingAgent.Operations.getValue", side_effect=mockReply)
     mocker.patch(
         "DIRAC.WorkloadManagementSystem.Agent.PilotLoggingAgent.Operations.getOptionsDict", side_effect=mockReply1

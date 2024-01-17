@@ -31,22 +31,21 @@ is taken and the **exchange token** request to Identity Provider is made. The re
 
 import pprint
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security import Properties
+from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.Core.Utilities import ThreadSafe
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.FrameworkSystem.DB.TokenDB import TokenDB
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.FrameworkSystem.Utilities.TokenManagementUtilities import (
-    getIdProviderClient,
+    DEFAULT_AT_EXPIRATION_TIME,
+    DEFAULT_RT_EXPIRATION_TIME,
     getCachedKey,
     getCachedToken,
-    DEFAULT_RT_EXPIRATION_TIME,
-    DEFAULT_AT_EXPIRATION_TIME,
+    getIdProviderClient,
 )
-
+from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
 # Used to synchronize the cache with user tokens
 gTokensSync = ThreadSafe.Synchronizer()
