@@ -1,3 +1,30 @@
+[v9.0.0a20]
+
+*WorkloadManagement
+
+FIX: (#7399) JobAgent rescheduling wrong jobs
+FIX: (#7387) JobAgent interaction with JobMonitoringClient
+
+*WorkloadManagementSystem
+
+CHANGE: (#7396) PilotAgentsDB: move from OwnerGroup to VO
+FIX: (#7379) The callback for the Stager was failing, because of a type mismatch in the jobID used to retrieve the status. Jobs never came out of Staging.
+NEW: (#7375) pilotWrapper: using CVMFS_locations for discovering the pilot files
+
+*FrameworkSystem
+
+FIX: (#7391) send notifications for expiring proxies
+
+Documentation on how to deploy a third party tool (fluent-bit) to grab, format and send Dirac current logs to ElasticSearch and/or splitted logs files
+
+*Resources
+
+FIX: (#7376) AREXCE should break when a valid delegation ID is found
+
+*Core
+
+FIX: (#7374) Converting p12 files with filenames containing special characters
+
 [v9.0.0a19]
 [v9.0.0a18]
 [v9.0.0a17]
