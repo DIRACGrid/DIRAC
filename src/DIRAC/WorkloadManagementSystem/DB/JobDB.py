@@ -1187,8 +1187,6 @@ class JobDB(DB):
 
         jobAttrs["ApplicationStatus"] = "Unknown"
 
-        jobAttrs["ApplicationNumStatus"] = 0
-
         jobAttrs["LastUpdateTime"] = str(datetime.datetime.utcnow())
 
         jobAttrs["RescheduleTime"] = str(datetime.datetime.utcnow())
