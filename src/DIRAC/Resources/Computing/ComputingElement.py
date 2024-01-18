@@ -354,7 +354,7 @@ class ComputingElement:
         pilotProps = pilotProxyDict["groupProperties"]
 
         # if running with a pilot proxy, use it to renew the proxy of the payload
-        if Properties.PILOT in pilotProps or Properties.GENERIC_PILOT in pilotProps:
+        if Properties.GENERIC_PILOT in pilotProps:
             self.log.info("Using Pilot credentials to get a new payload Proxy")
             return gProxyManager.renewProxy(
                 proxyToBeRenewed=payloadProxy,

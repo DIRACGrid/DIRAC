@@ -26,8 +26,6 @@ class SecurityProperty(str, Enum):
     JOB_MONITOR = "JobMonitor"
     #: Accounting Monitor - can see accounting data for all groups
     ACCOUNTING_MONITOR = "AccountingMonitor"
-    #: Private pilot
-    PILOT = "Pilot"
     #: Generic pilot
     GENERIC_PILOT = "GenericPilot"
     #: Site Manager
@@ -143,7 +141,6 @@ SERVICE_ADMINISTRATOR = SecurityProperty.SERVICE_ADMINISTRATOR.value
 JOB_ADMINISTRATOR = SecurityProperty.JOB_ADMINISTRATOR.value
 JOB_MONITOR = SecurityProperty.JOB_MONITOR.value
 ACCOUNTING_MONITOR = SecurityProperty.ACCOUNTING_MONITOR.value
-PILOT = SecurityProperty.PILOT.value
 GENERIC_PILOT = SecurityProperty.GENERIC_PILOT.value
 SITE_MANAGER = SecurityProperty.SITE_MANAGER.value
 USER_MANAGER = SecurityProperty.USER_MANAGER.value

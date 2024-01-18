@@ -5,28 +5,21 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Operations, Registry
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 
-def findGenericPilotCredentials(vo=False, group=False, pilotDN="", pilotGroup=""):
+def findGenericPilotCredentials(vo=False, pilotDN=""):
     """Looks into the Operations/<>/Pilot section of CS to find the pilot credentials.
     Then check if the user has a registered proxy in ProxyManager.
 
-    if pilotDN or pilotGroup are specified, use them
+    if pilotDN are specified, use them
 
     :param str vo: VO name
-    :param str group: group name
     :param str pilotDN: pilot DN
-    :param str pilotGroup: pilot group
 
     :return: S_OK(tuple)/S_ERROR()
     """
-    if not group and not vo:
-        return S_ERROR("Need a group or a VO to determine the Generic pilot credentials")
     if not vo:
-        vo = Registry.getVOForGroup(group)
-        if not vo:
-            return S_ERROR(f"Group {group} does not have a VO associated")
+        return S_ERROR("Need a VO to determine the Generic pilot credentials")
     opsHelper = Operations.Operations(vo=vo)
-    if not pilotGroup:
-        pilotGroup = opsHelper.getValue("Pilot/GenericPilotGroup", "")
+    pilotGroup = opsHelper.getValue("Pilot/GenericPilotGroup", "")
     if not pilotDN:
         pilotDN = opsHelper.getValue("Pilot/GenericPilotDN", "")
     if not pilotDN:
