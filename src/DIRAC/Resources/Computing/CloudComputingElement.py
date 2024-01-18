@@ -154,6 +154,7 @@ import sys
 import uuid
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import requests
 
 import yaml
 from libcloud.compute.providers import get_driver, set_driver
@@ -525,9 +526,14 @@ class CloudComputingElement(ComputingElement):
         """
         driver = self._getDriver()
         count = 0
-        for node in driver.list_nodes():
-            if node.name.startswith(VM_NAME_PREFIX):
-                count += 1
+        try:
+            for node in driver.list_nodes():
+                if node.name.startswith(VM_NAME_PREFIX):
+                    count += 1
+        except requests.exceptions.ConnectTimeout as err:
+            self.log.error("Cannot get CE Status. Connection timeout occurred:", str(err))
+            return S_ERROR("Cannot get CE Status. Connection timeout occurred")
+
         result = S_OK()
         result["SubmittedJobs"] = 0
         result["RunningJobs"] = count

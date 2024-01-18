@@ -282,6 +282,7 @@ class SiteDirector(AgentModule):
         self.log.verbose("Submission: Queues treated are", ",".join(self.queueDict))
 
         errors = []
+        totalSubmittedPilots = 0
         with ThreadPoolExecutor(max_workers=len(self.queueDict)) as executor:
             futures = []
             for queue in self.queueDict:
@@ -291,6 +292,10 @@ class SiteDirector(AgentModule):
                 result = future.result()
                 if not result["OK"]:
                     errors.append(result["Message"])
+                else:
+                    totalSubmittedPilots += result["Value"]
+
+        self.log.info("Total number of pilots submitted", f"to all queues: {totalSubmittedPilots}")
 
         if errors:
             self.log.error("The following errors occurred during the pilot submission operation", "\n".join(errors))
@@ -313,7 +318,7 @@ class SiteDirector(AgentModule):
                 f"{queueName} ==> {self.failedQueueCycleFactor - failedCount}",
             )
             self.failedQueues[queueName] += 1
-            return S_OK()
+            return S_OK(0)
 
         # Adjust queueCPUTime: needed to generate the proxy
         if "CPUTime" not in queueDictionary["ParametersDict"]:
@@ -338,14 +343,21 @@ class SiteDirector(AgentModule):
         totalSlots = self._getQueueSlots(queueName)
         if totalSlots <= 0:
             self.log.verbose(f"{queueName}: No slot available")
-            return S_ERROR(f"{queueName}: No slot available")
-        self.log.info(f"{queueName}: to submit={totalSlots}")
+            return S_OK(0)
 
         # Apply the submission policy
-        totalSlots = self.submissionPolicy.apply(totalSlots, ceParameters=self.queueDict[queueName]["CE"].ceParameters)
+        submittablePilots = self.submissionPolicy.apply(
+            totalSlots, ceParameters=self.queueDict[queueName]["CE"].ceParameters
+        )
+
+        if submittablePilots <= 0:
+            self.log.verbose(f"{queueName}: Nothing to submit")
+            return S_OK(0)
+
+        self.log.info(f"{queueName}: slots available={totalSlots} to submit={submittablePilots}")
 
         # Limit the number of pilots to submit to self.maxPilotsToSubmit
-        pilotsToSubmit = min(self.maxPilotsToSubmit, totalSlots)
+        pilotsToSubmit = min(self.maxPilotsToSubmit, submittablePilots)
 
         # Now really submitting
         result = self._submitPilotsToQueue(pilotsToSubmit, ce, queueName)
@@ -359,9 +371,9 @@ class SiteDirector(AgentModule):
         if not result["OK"]:
             return result
 
-        # Summary after the cycle over queues
-        self.log.info("Total number of pilots submitted in this cycle", f"{len(pilotList)} to {queueName}")
-        return S_OK()
+        submittedPilots = len(pilotList)
+        self.log.info("Total number of pilots submitted", f"to {queueName}: {submittedPilots}")
+        return S_OK(submittedPilots)
 
     def _getQueueSlots(self, queue: str):
         """Get the number of available slots in the queue"""
