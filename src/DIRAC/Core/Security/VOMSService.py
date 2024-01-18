@@ -37,27 +37,6 @@ class VOMSService:
 
         self.userDict = None
 
-    def attGetUserNickname(self, dn, _ca=None):
-        """Get user nickname for a given DN if any
-
-        :param str dn: user DN
-        :param str _ca: CA, kept for backward compatibility
-        :return:  S_OK with Value: nickname
-        """
-
-        if self.userDict is None:
-            result = self.getUsers()
-            if not result["OK"]:
-                return result
-
-        uDict = self.userDict.get(dn)
-        if not uDict:
-            return S_ERROR(DErrno.EVOMS, "No nickname defined")
-        nickname = uDict.get("nickname")
-        if not nickname:
-            return S_ERROR(DErrno.EVOMS, "No nickname defined")
-        return S_OK(nickname)
-
     def getUsers(self):
         """Get all the users of the VOMS VO with their detailed information
 

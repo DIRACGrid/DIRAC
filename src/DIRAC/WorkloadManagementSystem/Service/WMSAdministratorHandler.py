@@ -50,7 +50,7 @@ class WMSAdministratorHandlerMixin:
         """
         credDict = self.getRemoteCredentials()
         maskList = [(site, "Active") for site in siteList]
-        return self.jobDB.setSiteMask(maskList, credDict["DN"], "No comment")
+        return self.jobDB.setSiteMask(maskList, credDict["username"], "No comment")
 
     ##############################################################################
     types_getSiteMask = []
@@ -101,7 +101,7 @@ class WMSAdministratorHandlerMixin:
         :return: S_OK()/S_ERROR()
         """
         credDict = self.getRemoteCredentials()
-        author = credDict["username"] if credDict["username"] != "anonymous" else credDict["DN"]
+        author = credDict["username"] if credDict["username"] != "anonymous" else credDict["username"]
         return self.jobDB.banSiteInMask(site, author, comment)
 
     ##############################################################################
@@ -116,7 +116,7 @@ class WMSAdministratorHandlerMixin:
         :return: S_OK()/S_ERROR()
         """
         credDict = self.getRemoteCredentials()
-        author = credDict["username"] if credDict["username"] != "anonymous" else credDict["DN"]
+        author = credDict["username"] if credDict["username"] != "anonymous" else credDict["username"]
         return self.jobDB.allowSiteInMask(site, author, comment)
 
     ##############################################################################

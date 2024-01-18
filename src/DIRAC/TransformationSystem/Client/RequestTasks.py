@@ -1,14 +1,13 @@
 import time
 
-from DIRAC import S_OK, S_ERROR, gLogger
-
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.JEncode import decode
+from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.Client.Operation import Operation
-from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.TransformationSystem.Client.BodyPlugin.BaseBody import BaseBody

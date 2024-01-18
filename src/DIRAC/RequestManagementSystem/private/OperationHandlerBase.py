@@ -33,9 +33,9 @@
 
 import os
 
-from DIRAC import gLogger, gConfig, S_ERROR, S_OK
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute, getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getGroupsWithVOMSAttribute
 from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager

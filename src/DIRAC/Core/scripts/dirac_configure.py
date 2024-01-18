@@ -44,6 +44,7 @@
 import os
 import sys
 import warnings
+
 import urllib3
 
 import DIRAC
@@ -235,8 +236,9 @@ def runConfigurationWizard(params):
     """Interactively configure DIRAC using metadata from installed extensions"""
     import subprocess
 
-    from DIRAC.Core.Utilities.Extensions import extensionsByPriority, getExtensionMetadata
     from prompt_toolkit import HTML, print_formatted_text, prompt
+
+    from DIRAC.Core.Utilities.Extensions import extensionsByPriority, getExtensionMetadata
 
     for extension in extensionsByPriority():
         extensionMetadata = getExtensionMetadata(extension)
@@ -302,13 +304,14 @@ def main():
 
 
 def login(params):
+    from prompt_toolkit import HTML, print_formatted_text, prompt
+
     from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
         getTokenFileLocation,
         readTokenFromFile,
         writeTokenDictToTokenFile,
     )
     from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
-    from prompt_toolkit import HTML, print_formatted_text, prompt
 
     # Init authorization client
     result = IdProviderFactory().getIdProvider("DIRACCLI", issuer=params.issuer, scope=" ")

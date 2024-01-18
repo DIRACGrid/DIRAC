@@ -1338,18 +1338,18 @@ class JobDB(DB):
         return S_OK(siteDict)
 
     #############################################################################
-    def setSiteMask(self, siteMaskList, authorDN="Unknown", comment="No comment"):
+    def setSiteMask(self, siteMaskList, author="Unknown", comment="No comment"):
         """Set the Site Mask to the given mask in a form of a list of tuples (site,status)"""
 
         for site, status in siteMaskList:
-            result = self.__setSiteStatusInMask(site, status, authorDN, comment)
+            result = self.__setSiteStatusInMask(site, status, author, comment)
             if not result["OK"]:
                 return result
 
         return S_OK()
 
     #############################################################################
-    def __setSiteStatusInMask(self, site, status, authorDN="Unknown", comment="No comment"):
+    def __setSiteStatusInMask(self, site, status, author="Unknown", comment="No comment"):
         """Set the given site status to 'status' or add a new active site"""
 
         result = self._escapeString(site)
@@ -1362,10 +1362,10 @@ class JobDB(DB):
             return result
         status = result["Value"]
 
-        result = self._escapeString(authorDN)
+        result = self._escapeString(author)
         if not result["OK"]:
             return result
-        authorDN = result["Value"]
+        author = result["Value"]
 
         result = self._escapeString(comment)
         if not result["OK"]:
@@ -1384,14 +1384,14 @@ class JobDB(DB):
                         "UPDATE SiteMask SET Status=%s,LastUpdateTime=UTC_TIMESTAMP(),"
                         "Author=%s, Comment=%s WHERE Site=%s"
                     )
-                    req = req % (status, authorDN, comment, site)
+                    req = req % (status, author, comment, site)
             else:
-                req = f"INSERT INTO SiteMask VALUES ({site},{status},UTC_TIMESTAMP(),{authorDN},{comment})"
+                req = f"INSERT INTO SiteMask VALUES ({site},{status},UTC_TIMESTAMP(),{author},{comment})"
             result = self._update(req)
             if not result["OK"]:
                 return S_ERROR("Failed to update the Site Mask")
             # update the site mask logging record
-            req = f"INSERT INTO SiteMaskLogging VALUES ({site},{status},UTC_TIMESTAMP(),{authorDN},{comment})"
+            req = f"INSERT INTO SiteMaskLogging VALUES ({site},{status},UTC_TIMESTAMP(),{author},{comment})"
             result = self._update(req)
             if not result["OK"]:
                 self.log.warn("Failed to update site mask logging", f"for {site}")
@@ -1401,16 +1401,16 @@ class JobDB(DB):
         return S_OK()
 
     #############################################################################
-    def banSiteInMask(self, site, authorDN="Unknown", comment="No comment"):
+    def banSiteInMask(self, site, author="Unknown", comment="No comment"):
         """Forbid the given site in the Site Mask"""
 
-        return self.__setSiteStatusInMask(site, "Banned", authorDN, comment)
+        return self.__setSiteStatusInMask(site, "Banned", author, comment)
 
     #############################################################################
-    def allowSiteInMask(self, site, authorDN="Unknown", comment="No comment"):
+    def allowSiteInMask(self, site, author="Unknown", comment="No comment"):
         """Forbid the given site in the Site Mask"""
 
-        return self.__setSiteStatusInMask(site, "Active", authorDN, comment)
+        return self.__setSiteStatusInMask(site, "Active", author, comment)
 
     #############################################################################
     def removeSiteFromMask(self, site=None):

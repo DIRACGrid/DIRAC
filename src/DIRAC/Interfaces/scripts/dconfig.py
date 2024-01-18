@@ -7,14 +7,12 @@ Examples:
     $ dconfig (lists contents of ~/dirac/dcommands.conf)
 """
 import DIRAC
-from DIRAC import gLogger, S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.Script import Script
-
 from DIRAC.Interfaces.Utilities.DCommands import (
     DConfig,
     createMinimalConfig,
 )
-from DIRAC.Interfaces.Utilities.DCommands import getDNFromProxy
 
 
 class Params:
@@ -77,7 +75,7 @@ def main():
         else:
             section = arg
 
-        if value != None:
+        if value is not None:
             dconfig.set(section, option, value)
             modified = True
         else:

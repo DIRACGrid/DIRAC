@@ -1,26 +1,25 @@
 #!/usr/bin/env python
-import os.path
-import re
-import uuid
-import stat
-import json
-import random
 import glob
+import json
+import os.path
+import random
+import re
+import stat
 import time
-from configparser import ConfigParser, NoSectionError, NoOptionError
+import uuid
+from configparser import ConfigParser, NoOptionError, NoSectionError
 
 import DIRAC
 import DIRAC.Core.Security.ProxyInfo as ProxyInfo
 import DIRAC.FrameworkSystem.Client.ProxyGeneration as ProxyGeneration
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.Core.Security.Locations import getCAsLocation
-from DIRAC.Core.Security import Locations, VOMS
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.Core.Security import VOMS, Locations
 from DIRAC.Core.Security.DiracX import addTokenToPEM
+from DIRAC.Core.Security.Locations import getCAsLocation
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-
 
 # -----------------------------
 # Proxy manipulation functions
@@ -530,16 +529,6 @@ class DSession(DConfig):
         chain = result["Value"]
         chain.dumpAllToFile(proxy)
 
-    def checkProxyOrInit(self):
-        create = False
-        try:
-            create = not self.proxyIsValid()
-        except:
-            create = True
-
-        if create:
-            self.proxyInit()
-
     def getUserName(self):
         proxyPath = _getProxyLocation()
         if not proxyPath:
@@ -599,28 +588,6 @@ def guessConfigFromCS(config, section, userName, groupName):
             if defaultSESite:
                 # write to config
                 config.set(section, "default_se", defaultSESite)
-
-
-def sessionFromProxy(config=None, sessionDir=None):
-    session = DSession(None, config, sessionDir=sessionDir)
-    # force copy of config profile options to environment
-    session.copyProfile()
-    return session
-
-
-def getDNFromProxy():
-    proxyPath = _getProxyLocation()
-    if not proxyPath:
-        gLogger.error("No proxy found")
-        return None
-
-    retVal = _getProxyInfo(proxyPath)
-    if not retVal["OK"]:
-        return retVal
-
-    pi = retVal["Value"]
-
-    return S_OK(pi["identity"])
 
 
 # -------------------------

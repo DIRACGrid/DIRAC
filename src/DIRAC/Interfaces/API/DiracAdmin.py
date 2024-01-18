@@ -90,7 +90,7 @@ class DiracAdmin(API):
 
         Example usage:
 
-          >>> gLogger.notice(diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True ))
+          >>> gLogger.notice(diracAdmin.checkProxyUploaded( 'some DN', 'dirac group', True ))
           {'OK': True, 'Value' : True/False }
 
         :param userDN: User DN

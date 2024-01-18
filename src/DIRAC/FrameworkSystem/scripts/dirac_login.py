@@ -13,44 +13,41 @@ Example:
   # Return token
   $ dirac-login dirac_user --token
 """
+import copy
 import os
 import sys
-import copy
-import datetime
-import json
-from pathlib import Path
-from prompt_toolkit import prompt, print_formatted_text as print, HTML
+
+from prompt_toolkit import HTML, prompt
+from prompt_toolkit import print_formatted_text as print
 
 import DIRAC
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Security.Locations import getDefaultProxyLocation, getCertificateAndKeyLocation
-from DIRAC.Core.Security.VOMS import VOMS
-from DIRAC.Core.Security.DiracX import addTokenToPEM
-from DIRAC.Core.Security.ProxyFile import writeToProxyFile
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
-from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.Core.Base.Script import Script
-from DIRAC.Core.Base.Client import Client
-
+from DIRAC.Core.Security.DiracX import addTokenToPEM
+from DIRAC.Core.Security.Locations import getCertificateAndKeyLocation, getDefaultProxyLocation
+from DIRAC.Core.Security.ProxyFile import writeToProxyFile
+from DIRAC.Core.Security.ProxyInfo import formatProxyInfoAsString, getProxyInfo
+from DIRAC.Core.Security.VOMS import VOMS
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 
 # At this point, we disable CS synchronization so that an error related
 # to the lack of a proxy certificate does not occur when trying to synchronize.
 # Synchronization will take place after passing the authorization algorithm (creating a proxy).
 Script.disableCS()
 
-from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
-    writeTokenDictToTokenFile,
-    readTokenFromFile,
-    getTokenFileLocation,
-)
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
+    findDefaultGroupForDN,
     getGroupOption,
     getVOMSAttributeForGroup,
     getVOMSVOForGroup,
-    findDefaultGroupForDN,
 )
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
+    getTokenFileLocation,
+    readTokenFromFile,
+    writeTokenDictToTokenFile,
+)
+from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
 # This value shows what authorization way will be by default
 DEFAULT_AUTH_WAY = "certificate"  # possible values are "certificate", "diracas"
