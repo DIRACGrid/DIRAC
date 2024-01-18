@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-########################################################################
-# File :    dirac-wms-job-attributes
-# Author :  Stuart Paterson
-########################################################################
 """
 Retrieve attributes associated with the given DIRAC job
 
@@ -16,7 +12,6 @@ Example:
    'JobGroup': 'NoGroup',
    'JobID': '1',
    'JobName': 'DIRAC_vhamar_602138',
-   'JobSplitType': 'Single',
    'JobType': 'normal',
    'LastUpdateTime': '2011-02-14 11:28:11',
    'MinorStatus': 'Execution Complete',

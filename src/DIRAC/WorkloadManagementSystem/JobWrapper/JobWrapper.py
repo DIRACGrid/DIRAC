@@ -161,7 +161,6 @@ class JobWrapper:
         self.jobType = "unknown"
         self.processingType = "unknown"
         self.userGroup = "unknown"
-        self.jobClass = "unknown"
         self.inputDataFiles = 0
         self.outputDataFiles = 0
         self.inputDataSize = 0
@@ -201,7 +200,6 @@ class JobWrapper:
         self.outputDataFiles = len(dataParam)
         self.processingType = self.jobArgs.get("ProcessingType", self.processingType)
         self.userGroup = self.jobArgs.get("OwnerGroup", self.userGroup)
-        self.jobClass = self.jobArgs.get("JobSplitType", self.jobClass)
 
         if not self.cpuNormalizationFactor:
             self.cpuNormalizationFactor = float(self.ceArgs.get("CPUNormalizationFactor", self.cpuNormalizationFactor))
@@ -1259,7 +1257,7 @@ class JobWrapper:
             "UserGroup": self.userGroup,
             "JobGroup": self.jobGroup,
             "JobType": self.jobType,
-            "JobClass": self.jobClass,
+            "JobClass": "unknown",
             "ProcessingType": self.processingType,
             "Site": self.siteName,
             "FinalMajorStatus": self.wmsMajorStatus,

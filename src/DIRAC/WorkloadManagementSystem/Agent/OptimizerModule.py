@@ -277,9 +277,6 @@ class OptimizerModule(AgentModule):
         userGroup = classAdJob.getAttributeString("OwnerGroup")
         jobGroup = classAdJob.getAttributeString("JobGroup")
         jobType = classAdJob.getAttributeString("JobType")
-        jobClass = "unknown"
-        if classAdJob.lookupAttribute("JobSplitType"):
-            jobClass = classAdJob.getAttributeString("JobSplitType")
         inputData = []
         processingType = "unknown"
         if classAdJob.lookupAttribute("ProcessingType"):
@@ -297,7 +294,7 @@ class OptimizerModule(AgentModule):
             "UserGroup": userGroup,
             "JobGroup": jobGroup,
             "JobType": jobType,
-            "JobClass": jobClass,
+            "JobClass": "unknown",
             "ProcessingType": processingType,
             "FinalMajorStatus": self.failedStatus,
             "FinalMinorStatus": msg,
