@@ -33,24 +33,17 @@
 """
 
 import os
-import datetime
 
-from DIRAC import S_OK, S_ERROR, gLogger, version
-
-from DIRAC.Core.Security import Properties
-from DIRAC.Core.Security.VOMS import VOMS
-from DIRAC.Core.Security.ProxyFile import writeToProxyFile
-from DIRAC.Core.Security.ProxyInfo import getProxyInfoAsString
-from DIRAC.Core.Security.ProxyInfo import formatProxyInfoAsString
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.TimeUtilities import second
-from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC import S_ERROR, S_OK, gLogger, version
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.Core.Security import Properties
+from DIRAC.Core.Security.ProxyFile import writeToProxyFile
+from DIRAC.Core.Security.ProxyInfo import formatProxyInfoAsString, getProxyInfo, getProxyInfoAsString
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import (
-    getNumberOfProcessors,
     getNumberOfGPUs,
+    getNumberOfProcessors,
 )
 
 INTEGER_PARAMETERS = ["CPUTime", "NumberOfProcessors", "NumberOfPayloadProcessors", "MaxRAM"]
@@ -136,11 +129,11 @@ class ComputingElement:
             # List parameters cannot be updated as any other fields, they should be concatenated in a set(), not overriden
             for listParam in LIST_PARAMETERS:
                 # If listParam is not present or null, we remove it from ceParameters and continue
-                if not listParam in ceParameters or not ceParameters[listParam]:
+                if listParam not in ceParameters or not ceParameters[listParam]:
                     ceParameters.pop(listParam, [])
                     continue
                 # Initialize self.ceParameters[listParam] is not done and update the set
-                if not listParam in self.ceParameters:
+                if listParam not in self.ceParameters:
                     self.ceParameters[listParam] = set()
                 self.ceParameters[listParam].update(set(ceParameters.pop(listParam)))
 
@@ -370,45 +363,7 @@ class ComputingElement:
                 proxyToConnect=pilotProxy,
             )
 
-        # if we are running with other type of proxy check if they are for the same user and group
-        # and copy the pilot proxy if necessary
-
-        self.log.info("Trying to copy pilot Proxy to get a new payload Proxy")
-        pilotProxySecs = pilotProxyDict["chain"].getRemainingSecs()["Value"]
-        if pilotProxySecs <= payloadSecs:
-            errorStr = "Pilot Proxy is not longer than payload Proxy"
-            self.log.error(errorStr)
-            return S_ERROR(f"Can not renew by copy: {errorStr}")
-
-        # check if both proxies belong to the same user and group
-        pilotDN = pilotProxyDict["chain"].getIssuerCert()["Value"].getSubjectDN()["Value"]
-        retVal = pilotProxyDict["chain"].getDIRACGroup()
-        if not retVal["OK"]:
-            return retVal
-        pilotGroup = retVal["Value"]
-
-        payloadDN = payloadProxyDict["chain"].getIssuerCert()["Value"].getSubjectDN()["Value"]
-        retVal = payloadProxyDict["chain"].getDIRACGroup()
-        if not retVal["OK"]:
-            return retVal
-        payloadGroup = retVal["Value"]
-        if pilotDN != payloadDN or pilotGroup != payloadGroup:
-            errorStr = "Pilot Proxy and payload Proxy do not have same DN and Group"
-            self.log.error(errorStr)
-            return S_ERROR(f"Can not renew by copy: {errorStr}")
-
-        if pilotProxyDict.get("hasVOMS", False):
-            return pilotProxyDict["chain"].dumpAllToFile(payloadProxy)
-
-        attribute = Registry.getVOMSAttributeForGroup(payloadGroup)
-        vo = Registry.getVOMSVOForGroup(payloadGroup)
-
-        retVal = VOMS().setVOMSAttributes(pilotProxyDict["chain"], attribute=attribute, vo=vo)
-        if not retVal["OK"]:
-            return retVal
-
-        chain = retVal["Value"]
-        return chain.dumpAllToFile(payloadProxy)
+        return S_ERROR("Payload proxy can not be renewed")
 
     def getDescription(self):
         """Get CE description as a dictionary.
