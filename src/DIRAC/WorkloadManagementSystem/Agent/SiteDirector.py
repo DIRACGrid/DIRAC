@@ -33,7 +33,6 @@ from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
-from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotScopes import PILOT_SCOPES
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import getPilotAgentsDB
@@ -67,7 +66,6 @@ class SiteDirector(AgentModule):
 
         self.vo = ""
         self.pilotDN = ""
-        self.pilotGroup = ""
 
         self.sendAccounting = True
         self.sendSubmissionAccounting = True
@@ -116,11 +114,10 @@ class SiteDirector(AgentModule):
         # Which credentials to use?
         # Are they specific to the SD? (if not, get the generic ones)
         self.pilotDN = self.am_getOption("PilotDN", self.pilotDN)
-        self.pilotGroup = self.am_getOption("PilotGroup", self.pilotGroup)
-        result = findGenericPilotCredentials(vo=self.vo, pilotDN=self.pilotDN, pilotGroup=self.pilotGroup)
+        result = findGenericPilotCredentials(vo=self.vo, pilotDN=self.pilotDN)
         if not result["OK"]:
             return result
-        self.pilotDN, self.pilotGroup = result["Value"]
+        self.pilotDN, _ = result["Value"]
 
         # Parameters
         self.workingDirectory = self.am_getOption("WorkDirectory", self.workingDirectory)
@@ -157,7 +154,6 @@ class SiteDirector(AgentModule):
         self.log.always("CETypes:", ceTypes)
         self.log.always("CEs:", ces)
         self.log.always("PilotDN:", self.pilotDN)
-        self.log.always("PilotGroup:", self.pilotGroup)
         if self.sendAccounting:
             self.log.always("Pilot accounting sending requested")
         if self.sendSubmissionAccounting:
@@ -525,7 +521,7 @@ class SiteDirector(AgentModule):
         """
         result = self.pilotAgentsDB.addPilotReferences(
             pilotList,
-            self.pilotGroup,
+            self.vo,
             self.queueDict[queue]["CEType"],
             stampDict,
         )
@@ -599,7 +595,7 @@ class SiteDirector(AgentModule):
             self.log.error("Setup is not defined in the configuration")
             return [None, None]
         pilotOptions.append(f"-S {setup}")
-        opsHelper = Operations(group=self.pilotGroup, setup=setup)
+        opsHelper = Operations(vo=self.vo, setup=setup)
 
         # Installation defined?
         installationName = opsHelper.getValue("Pilot/Installation", "")
@@ -746,7 +742,7 @@ class SiteDirector(AgentModule):
                 "GridType": ceType,
                 "GridSite": siteName,
                 "Status": PilotStatus.PILOT_TRANSIENT_STATES,
-                "OwnerGroup": self.pilotGroup,
+                "VO": self.vo,
             }
         )
         if not result["OK"]:
@@ -876,7 +872,8 @@ class SiteDirector(AgentModule):
         if not scope:
             scope = PILOT_SCOPES
 
-        return gTokenManager.getToken(userGroup=self.pilotGroup, requiredTimeLeft=600, scope=scope, audience=audience)
+        pilotGroup = Operations(vo=self.vo).getValue("Pilot/GenericPilotGroup")
+        return gTokenManager.getToken(userGroup=pilotGroup, requiredTimeLeft=600, scope=scope, audience=audience)
 
     def __supportToken(self, ce: ComputingElement) -> bool:
         """Check whether the SiteDirector is able to submit pilots with tokens.
@@ -910,12 +907,9 @@ class SiteDirector(AgentModule):
 
         # Generate a new proxy if needed
         if getNewProxy:
-            self.log.verbose(
-                "Getting pilot proxy", f"for {self.pilotDN}/{self.pilotGroup} {proxyMinimumRequiredValidity} long"
-            )
-            result = gProxyManager.getPilotProxyFromDIRACGroup(
-                self.pilotDN, self.pilotGroup, proxyMinimumRequiredValidity
-            )
+            self.log.verbose("Getting pilot proxy", f"for {self.pilotDN}/{self.vo} {proxyMinimumRequiredValidity} long")
+            pilotGroup = Operations(vo=self.vo).getValue("Pilot/GenericPilotGroup")
+            result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, pilotGroup, proxyMinimumRequiredValidity)
             if not result["OK"]:
                 return result
             ce.setProxy(result["Value"])
@@ -946,7 +940,7 @@ class SiteDirector(AgentModule):
             else:
                 username = retVal["Value"]
             pA.setValueByKey("User", username)
-            pA.setValueByKey("UserGroup", pilotDict[pRef]["OwnerGroup"])
+            pA.setValueByKey("UserGroup", pilotDict[pRef]["VO"])
             result = getCESiteMapping(pilotDict[pRef]["DestinationSite"])
             if result["OK"] and result["Value"]:
                 pA.setValueByKey("Site", result["Value"][pilotDict[pRef]["DestinationSite"]].strip())

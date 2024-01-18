@@ -13,18 +13,17 @@ import random
 import sys
 from collections import defaultdict
 
-from DIRAC import S_OK, gConfig
-from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.Core.Utilities import DErrno
+from DIRAC import S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
+from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
-from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
 from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
+from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
 
 MAX_JOBS_MANAGED = 100
 
@@ -43,7 +42,6 @@ class PushJobAgent(JobAgent):
         self.queueCECache = {}
 
         self.pilotDN = ""
-        self.pilotGroup = ""
         self.vo = ""
 
         # self.failedQueueCycleFactor is the number of cycles a queue has to wait before getting pilots again
@@ -76,11 +74,10 @@ class PushJobAgent(JobAgent):
         # Can be specific to the agent, or generic
         self.vo = self.am_getOption("VO", self.vo)
         self.pilotDN = self.am_getOption("PilotDN", self.pilotDN)
-        self.pilotGroup = self.am_getOption("PilotGroup", self.pilotGroup)
-        result = findGenericPilotCredentials(vo=self.vo, pilotDN=self.pilotDN, pilotGroup=self.pilotGroup)
+        result = findGenericPilotCredentials(vo=self.vo, pilotDN=self.pilotDN)
         if not result["OK"]:
             return result
-        self.pilotDN, self.pilotGroup = result["Value"]
+        self.pilotDN, _ = result["Value"]
 
         # Maximum number of jobs that can be handled at the same time by the agent
         self.maxJobsToSubmit = self.am_getOption("MaxJobsToSubmit", self.maxJobsToSubmit)
@@ -151,8 +148,9 @@ class PushJobAgent(JobAgent):
             # Get a working proxy
             ce = queueDictionary["CE"]
             cpuTime = 86400 * 3
-            self.log.verbose("Getting pilot proxy", "for %s/%s %d long" % (self.pilotDN, self.pilotGroup, cpuTime))
-            result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, self.pilotGroup, cpuTime)
+            self.log.verbose("Getting pilot proxy", "for %s/%s %d long" % (self.pilotDN, self.vo, cpuTime))
+            pilotGroup = Operations(vo=self.vo).getValue("Pilot/GenericPilotGroup")
+            result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, pilotGroup, cpuTime)
             if not result["OK"]:
                 return result
             proxy = result["Value"]

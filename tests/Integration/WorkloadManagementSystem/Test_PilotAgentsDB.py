@@ -5,14 +5,14 @@
 """
 # pylint: disable=wrong-import-position
 
+from unittest.mock import patch
+
 import DIRAC
 
 DIRAC.initialize()  # Initialize configuration
 
-from unittest.mock import patch
 from DIRAC import gLogger
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PivotedPilotSummaryTable
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB, PivotedPilotSummaryTable
 
 gLogger.setLevel("DEBUG")
 
@@ -79,7 +79,7 @@ def cleanUpPilots(pilotRef):
 
 def test_basic():
     """usual insert/verify"""
-    res = paDB.addPilotReferences(["pilotRef"], "ownerGroup")
+    res = paDB.addPilotReferences(["pilotRef"], "VO")
     assert res["OK"] is True
 
     res = paDB.deletePilot("pilotRef")
@@ -95,21 +95,21 @@ def test_getGroupedPilotSummary(mocked_fcn):
     :return: None
     """
     stateCount = [10, 50, 7, 3, 12, 8, 6, 4]
-    testGroup = "ownerGroup"
+    testVO = "VO"
     testCE = "TestCE"
     testSite = "TestSite"
 
     mocked_fcn.return_value = "ownerGroupVO"
 
-    pilotRef = preparePilots(stateCount, testSite, testCE, testGroup)
-    columnList = ["GridSite", "DestinationSite", "OwnerGroup"]
+    pilotRef = preparePilots(stateCount, testSite, testCE, testVO)
+    columnList = ["GridSite", "DestinationSite", "VO"]
     res = paDB.getGroupedPilotSummary(columnList)
 
     cleanUpPilots(pilotRef)
     expectedParameterList = [
         "Site",
         "CE",
-        "OwnerGroup",
+        "VO",
         "Submitted",
         "Done",
         "Failed",
@@ -169,13 +169,13 @@ def test_PivotedPilotSummaryTable():
     # pstates = ['Submitted', 'Done', 'Failed', 'Aborted', 'Running', 'Waiting', 'Scheduled', 'Ready']
 
     stateCount = [10, 50, 7, 3, 12, 8, 6, 4]
-    testGroup = "ownerGroup"
+    testVO = "VO"
     testCE = "TestCE"
     testSite = "TestSite"
 
-    pilotRef = preparePilots(stateCount, testSite, testCE, testGroup)
+    pilotRef = preparePilots(stateCount, testSite, testCE, testVO)
 
-    table = PivotedPilotSummaryTable(["GridSite", "DestinationSite", "OwnerGroup"])
+    table = PivotedPilotSummaryTable(["GridSite", "DestinationSite", "VO"])
 
     sqlQuery = table.buildSQL()
     res = paDB._query(sqlQuery)
@@ -187,8 +187,8 @@ def test_PivotedPilotSummaryTable():
     assert columns.index("Site") == 0
     assert "CE" in columns
     assert columns.index("CE") == 1
-    assert "OwnerGroup" in columns
-    assert columns.index("OwnerGroup") == 2
+    assert "VO" in columns
+    assert columns.index("VO") == 2
 
     # pilot numbers by states:
     assert "Total" in columns
@@ -197,7 +197,7 @@ def test_PivotedPilotSummaryTable():
     row = res["Value"][0]
     assert row[0] == testSite
     assert row[1] == testCE
-    assert row[2] == testGroup
+    assert row[2] == testVO
 
     total = row[columns.index("Total")]
 

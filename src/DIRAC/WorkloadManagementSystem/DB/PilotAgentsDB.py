@@ -39,7 +39,7 @@ class PilotAgentsDB(DB):
 
     ##########################################################################################
 
-    def addPilotReferences(self, pilotRef, ownerGroup, gridType="DIRAC", pilotStampDict={}):
+    def addPilotReferences(self, pilotRef, VO, gridType="DIRAC", pilotStampDict={}):
         """Add a new pilot job reference"""
         for ref in pilotRef:
             stamp = ""
@@ -48,9 +48,9 @@ class PilotAgentsDB(DB):
 
             req = (
                 "INSERT INTO PilotAgents "
-                + "(PilotJobReference, OwnerGroup, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp) "
+                + "(PilotJobReference, VO, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp) "
                 + "VALUES ('%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')"
-                % (ref, ownerGroup, gridType, stamp)
+                % (ref, VO, gridType, stamp)
             )
 
             result = self._update(req)
@@ -176,26 +176,6 @@ class PilotAgentsDB(DB):
 
         return S_OK(result["Value"][0][0])
 
-    #########################################################################################
-    def getPilotGroups(self, groupList=["Status", "OwnerGroup", "GridType"], condDict={}):
-        """
-        Get all exisiting combinations of groupList Values
-        """
-
-        cmd = f"SELECT {', '.join(groupList)} from PilotAgents "
-
-        condList = []
-        for cond in condDict:
-            condList.append('{} in ( "{}" )'.format(cond, '", "'.join([str(y) for y in condDict[cond]])))
-
-        # the conditions should be escaped before hand, so it is not really nice to expose it this way...
-        if condList:
-            cmd += f" WHERE {' AND '.join(condList)} "
-
-        cmd += f" GROUP BY {', '.join(groupList)}"
-
-        return self._query(cmd)
-
     ##########################################################################################
     def deletePilots(self, pilotIDs, conn=False):
         """Delete Pilots with IDs in the given list from the PilotAgentsDB"""
@@ -266,7 +246,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         parameters = (
             [
                 "PilotJobReference",
-                "OwnerGroup",
+                "VO",
                 "GridType",
                 "Status",
                 "DestinationSite",
@@ -574,8 +554,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         rows = []
         columns = table.getColumnList()
         try:
-            groupIndex = columns.index("OwnerGroup")
-            # should probably change a column name to VO here as well to avoid confusion
+            groupIndex = columns.index("VO")
         except ValueError:
             groupIndex = None
         result = {"ParameterNames": columns}
@@ -948,7 +927,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
     def getPilotMonitorSelectors(self):
         """Get distinct values for the Pilot Monitor page selectors"""
 
-        paramNames = ["OwnerGroup", "GridType", "Status", "DestinationSite", "GridSite"]
+        paramNames = ["VO", "GridType", "Status", "DestinationSite", "GridSite"]
 
         resultDict = {}
         for param in paramNames:
@@ -1009,7 +988,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
 
         paramNames = [
             "PilotJobReference",
-            "OwnerGroup",
+            "VO",
             "GridType",
             "Status",
             "DestinationSite",

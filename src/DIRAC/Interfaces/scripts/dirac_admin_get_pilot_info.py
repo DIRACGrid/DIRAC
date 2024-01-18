@@ -11,7 +11,7 @@ Example:
                                                           'GridType': 'gLite',
                                                           'LastUpdateTime': datetime.datetime(2011, 2, 21, 12, 49, 14),
                                                           'OutputReady': 'False',
-                                                          'OwnerGroup': '/biomed',
+                                                          'VO': 'biomed',
                                                           'PilotJobReference': 'https://marlb.in2p3.fr:9000/2KHFrQjkw',
                                                           'PilotStamp': '',
                                                           'Status': 'Done',
@@ -53,7 +53,7 @@ def main():
                 for key in [
                     "PilotJobReference",
                     "Status",
-                    "OwnerGroup",
+                    "VO",
                     "SubmissionTime",
                     "DestinationSite",
                     "GridSite",
@@ -76,7 +76,7 @@ def main():
                         for key in [
                             "JobName",
                             "Status",
-                            "OwnerGroup",
+                            "VO",
                             "StartExecTime",
                             "LastUpdateTime",
                             "EndExecTime",
