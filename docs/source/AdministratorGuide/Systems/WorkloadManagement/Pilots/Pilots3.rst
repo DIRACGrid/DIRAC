@@ -47,8 +47,8 @@ Other options that can be set also in the Operations part of the CS include:
 | *pilotVORepoBranch*                | Branch to use, inside the Git repository,  | pilotVORepoBranch = master                                              |
 |                                    | of the pilot code extension to be used     | The value above is the default                                          |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
-| *uploadToWebApp*                   | Whether to try to upload the files to the  | uploadToWebApp = True                                                   |
-|                                    | list of server specified                   | The value above is the default                                          |
+| *CVMFS_locations*                  | CVMFS locations to use for finding pilot   | CVMFS_locations = /cvmfs/lhcb.cern.ch/,/cvmfs/lhcbdev.cern.ch           |
+|                                    | files, DIRAC installations, CAs, CRLS      |                                                                         |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 | *workDir*                          | Local directory of the master CS where the | workDir = /tmp/pilotSyncDir                                             |
 |                                    | files will be downloaded before the upload | There is no default (so /opt/dirac/runit/Configuration/Server)          |
@@ -79,7 +79,7 @@ For example::
 
    dirac-pilot.py --modules=https://github.com/chaen/DIRAC.git:::DIRAC:::rel-v7r3_FEAT_proxyStrength
 
-would end up installing a specific branch (``rel-v7r3_FEAT_proxyStrength``) pushed to github.
+would end up installing a specific branch (``rel-v7r3_FEAT_proxyStrength``) pushed to github by user `chaen`.
 
 An easy way to try is to add the ``Modules`` option in the CS configuration of one of your ComputingElements::
 
