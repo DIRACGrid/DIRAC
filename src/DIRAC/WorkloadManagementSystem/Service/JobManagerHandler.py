@@ -124,8 +124,6 @@ class JobManagerHandlerMixin:
         :return: S_OK/S_ERROR, a list of newly created job IDs in case of S_OK.
         """
 
-        ownerDN = getDNForUsername(self.owner)["Value"][0]
-
         if self.peerUsesLimitedProxy:
             return S_ERROR(EWMSSUBM, "Can't submit using a limited proxy")
 
@@ -188,7 +186,6 @@ class JobManagerHandlerMixin:
                 JobDescriptionModel(
                     **baseJobDescritionModel.dict(exclude_none=True),
                     owner=self.owner,
-                    ownerDN=ownerDN,
                     ownerGroup=self.ownerGroup,
                     vo=getVOForGroup(self.ownerGroup),
                 )
