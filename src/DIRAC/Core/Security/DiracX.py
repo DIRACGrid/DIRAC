@@ -19,7 +19,7 @@ from diracx.core.models import TokenResponse
 from diracx.core.preferences import DiracxPreferences
 from diracx.core.utils import serialize_credentials
 
-from DIRAC import gConfig, S_ERROR
+from DIRAC import gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security.Locations import getDefaultProxyLocation
 from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueOrRaise
@@ -35,6 +35,8 @@ def addTokenToPEM(pemPath, group):
     from DIRAC.Core.Base.Client import Client
 
     vo = Registry.getVOMSVOForGroup(group)
+    if not vo:
+        gLogger.error(f"ERROR: Could not find VO for group {group}, DiracX will not work!")
     disabledVOs = gConfig.getValue("/DiracX/DisabledVOs", [])
     if vo and vo not in disabledVOs:
         token_content = returnValueOrRaise(
