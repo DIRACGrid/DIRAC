@@ -6,6 +6,7 @@ import tempfile
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Security.DiracX import addTokenToPEM
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security.Locations import getProxyLocation
 
@@ -17,6 +18,7 @@ def writeToProxyFile(proxyContents, fileName=False):
       - proxyContents : string object to dump to file
       - fileName : filename to dump to
     """
+    # Write the X509 proxy to a file
     if not fileName:
         try:
             fd, proxyLocation = tempfile.mkstemp()
@@ -29,10 +31,25 @@ def writeToProxyFile(proxyContents, fileName=False):
             fd.write(proxyContents)
     except Exception as e:
         return S_ERROR(DErrno.EWF, f" {fileName}: {repr(e).replace(',)', ')')}")
+
+    # Set file permissions
     try:
         os.chmod(fileName, stat.S_IRUSR | stat.S_IWUSR)
     except Exception as e:
         return S_ERROR(DErrno.ESPF, f"{fileName}: {repr(e).replace(',)', ')')}")
+
+    # Add DiracX token to the file
+    proxy = X509Chain()
+    retVal = proxy.loadProxyFromFile(fileName)
+    if not retVal["OK"]:
+        return S_ERROR(DErrno.EPROXYREAD, f"ProxyLocation: {fileName}")
+    retVal = proxy.getDIRACGroup(ignoreDefault=True)
+    if not retVal["OK"]:
+        return S_ERROR(DErrno.EPROXYREAD, f"No DIRAC group found in proxy: {fileName}")
+    retVal = addTokenToPEM(fileName, retVal["Value"])  # pylint: disable=unsubscriptable-object
+    if not retVal["OK"]:  # pylint: disable=unsubscriptable-object
+        return retVal
+
     return S_OK(fileName)
 
 
