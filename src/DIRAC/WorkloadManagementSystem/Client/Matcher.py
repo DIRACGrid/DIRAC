@@ -335,13 +335,9 @@ class Matcher:
                 else:
                     raise RuntimeError(result["Message"])
         else:
-            # If it's a private pilot, the DN has to be the same
-            if Properties.PILOT in credDict["properties"]:
-                self.log.notice("Setting the resource DN to the credentials DN")
-                resourceDict["OwnerDN"] = credDict["DN"]
             # If it's a job sharing. The group has to be the same and just check that the DN (if any)
             # belongs to the same group
-            elif Properties.JOB_SHARING in credDict["properties"]:
+            if Properties.JOB_SHARING in credDict["properties"]:
                 resourceDict["OwnerGroup"] = credDict["group"]
                 self.log.notice("Setting the resource group to the credentials group")
                 if "OwnerDN" in resourceDict and resourceDict["OwnerDN"] != credDict["DN"]:
