@@ -631,10 +631,16 @@ class testDB(ProxyDBTestCase):
                 continue
             VOMS_PROXY_INIT_CMD = DIRAC.Core.Security.VOMS.VOMS_PROXY_INIT_CMD
             DIRAC.Core.Security.VOMS.VOMS_PROXY_INIT_CMD = "voms-proxy-fake"
+            clear_x509_env = False
+            if "X509_VOMS_DIR" not in os.environ:
+                os.environ["X509_VOMS_DIR"] = "/etc/grid-security/vomsdir"
+                clear_x509_env = True
             try:
                 result = db.getVOMSProxy(dn, group, time, role)
             finally:
                 DIRAC.Core.Security.VOMS.VOMS_PROXY_INIT_CMD = VOMS_PROXY_INIT_CMD
+                if clear_x509_env:
+                    del os.environ["X509_VOMS_DIR"]
 
             self.assertFalse(result["OK"], "Must be fail.")
             gLogger.info(f"Msg: {result['Message']}")

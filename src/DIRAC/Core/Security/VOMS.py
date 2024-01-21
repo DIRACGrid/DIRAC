@@ -8,6 +8,7 @@ import shutil
 
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Utilities.Subprocess import shellCall
@@ -188,34 +189,7 @@ class VOMS:
                 self._unlinkFiles(proxyDict["file"])
 
     def getVOMSESLocation(self):
-        # Transition code to new behaviour
-        if "DIRAC_VOMSES" not in os.environ and "X509_VOMSES" not in os.environ:
-            os.environ["X509_VOMSES"] = os.path.join(rootPath, "etc", "grid-security", "vomses")
-            gLogger.notice(
-                "You did not set X509_VOMSES in your bashrc. DIRAC searches $DIRAC/etc/grid-security/vomses . "
-                "Please use X509_VOMSES, this auto discovery will be dropped."
-            )
-        elif "DIRAC_VOMSES" in os.environ and "X509_VOMSES" in os.environ:
-            os.environ["X509_VOMSES"] = f"{os.environ['DIRAC_VOMSES']}:{os.environ['X509_VOMSES']}"
-            gLogger.notice(
-                "You set both variables DIRAC_VOMSES and X509_VOMSES in your bashrc. "
-                "DIRAC_VOMSES will be dropped in a future version, please use only X509_VOMSES"
-            )
-        elif "DIRAC_VOMSES" in os.environ and "X509_VOMSES" not in os.environ:
-            os.environ["X509_VOMSES"] = os.environ["DIRAC_VOMSES"]
-            gLogger.notice(
-                "You set the variables DIRAC_VOMSES in your bashrc. "
-                "DIRAC_VOMSES will be dropped in a future version, please use X509_VOMSES"
-            )
-        # End of transition code
-        if "X509_VOMSES" not in os.environ:
-            raise Exception(
-                "The env variable X509_VOMSES is not set. "
-                "DIRAC does not know where to look for etc/grid-security/vomses. "
-                "Please set X509_VOMSES in your bashrc."
-            )
-        vomsesPaths = os.environ["X509_VOMSES"].split(":")
-        for vomsesPath in vomsesPaths:
+        for vomsesPath in Locations.getVomsesLocation().split(":"):
             if not os.path.exists(vomsesPath):
                 continue
             if os.path.isfile(vomsesPath):
@@ -284,7 +258,15 @@ class VOMS:
             cmd += ["-r"]
         cmd += ["-timeout", "12"]
 
-        result = shellCall(self._secCmdTimeout, shlex.join(cmd))
+        result = shellCall(
+            self._secCmdTimeout,
+            shlex.join(cmd),
+            env=os.environ
+            | {
+                "X509_CERT_DIR": Locations.getCAsLocation(),
+                "X509_VOMS_DIR": Locations.getVomsdirLocation(),
+            },
+        )
 
         deleteMultiProxy(proxyDict)
 

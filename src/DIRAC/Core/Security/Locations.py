@@ -5,6 +5,10 @@ import DIRAC
 from DIRAC import gConfig
 
 g_SecurityConfPath = "/DIRAC/Security"
+DEFAULT_VOMSES_LOCATION = f"{DIRAC.rootPath}/etc/grid-security/vomses"
+SYSTEM_VOMSES_LOCATION = "/etc/vomses"
+DEFAULT_VOMSDIR_LOCATION = f"{DIRAC.rootPath}/etc/grid-security/vomsdir"
+SYSTEM_VOMSDIR_LOCATION = "/etc/grid-security/vomsdir"
 
 
 def getProxyLocation():
@@ -172,3 +176,35 @@ def getDefaultProxyLocation():
     # /tmp/x509up_u<uid>
     proxyName = "x509up_u%d" % os.getuid()
     return f"/tmp/{proxyName}"
+
+
+def getVomsesLocation():
+    """Get the location of the directory containing the vomses files"""
+    if "X509_VOMSES" in os.environ:
+        return os.environ["X509_VOMSES"]
+    elif os.path.isdir(DEFAULT_VOMSES_LOCATION):
+        return DEFAULT_VOMSES_LOCATION
+    elif os.path.isdir(SYSTEM_VOMSES_LOCATION):
+        return SYSTEM_VOMSES_LOCATION
+    else:
+        raise Exception(
+            "The env variable X509_VOMSES is not set. "
+            "DIRAC does not know where to look for etc/grid-security/vomses. "
+            "Please set X509_VOMSES."
+        )
+
+
+def getVomsdirLocation():
+    """Get the location of the directory containing the vomsdir files"""
+    if "X509_VOMS_DIR" in os.environ:
+        return os.environ["X509_VOMS_DIR"]
+    elif os.path.isdir(DEFAULT_VOMSDIR_LOCATION):
+        return DEFAULT_VOMSDIR_LOCATION
+    elif os.path.isdir(SYSTEM_VOMSDIR_LOCATION):
+        return SYSTEM_VOMSDIR_LOCATION
+    else:
+        raise Exception(
+            "The env variable X509_VOMS_DIR is not set. "
+            "DIRAC does not know where to look for etc/grid-security/vomsdir. "
+            "Please set X509_VOMS_DIR."
+        )
