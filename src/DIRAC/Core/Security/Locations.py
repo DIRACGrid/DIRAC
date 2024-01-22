@@ -45,6 +45,12 @@ def getCAsLocation():
         casPath = retVal["Value"]
         if os.path.isdir(casPath):
             return casPath
+    # Other locations
+    return getCAsLocationNoConfig()
+
+
+def getCAsLocationNoConfig():
+    """Retrieve the CA's files location"""
     # Look up the X509_CERT_DIR environment variable
     if "X509_CERT_DIR" in os.environ:
         casPath = os.environ["X509_CERT_DIR"]

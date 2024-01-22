@@ -18,6 +18,37 @@ from DIRAC.Core.Utilities import List
 VOMS_PROXY_INIT_CMD = "voms-proxy-init"
 
 
+def voms_init_cmd(
+    vo: str, attribute: str | None, chain: X509Chain, in_fn: str, out_fn: str, vomsesPath: str | None
+) -> list[str]:
+    secs = chain.getRemainingSecs()["Value"] - 300
+    if secs < 0:
+        return S_ERROR(DErrno.EVOMS, "Proxy length is less that 300 secs")
+    hours = int(secs / 3600)
+    mins = int((secs - hours * 3600) / 60)
+
+    bitStrength = chain.getStrength()["Value"]
+
+    cmd = [VOMS_PROXY_INIT_CMD]
+    if chain.isLimitedProxy()["Value"]:
+        cmd.append("-limited")
+    cmd += ["-cert", in_fn]
+    cmd += ["-key", in_fn]
+    cmd += ["-out", out_fn]
+    cmd += ["-voms"]
+    cmd += [f"{vo}:{attribute}" if attribute and attribute != "NoRole" else vo]
+    cmd += ["-valid", f"{hours}:{mins}"]
+    cmd += ["-bits", str(bitStrength)]
+    if vomsesPath:
+        cmd += ["-vomses", vomsesPath]
+
+    if chain.isRFC().get("Value"):
+        cmd += ["-r"]
+    cmd += ["-timeout", "12"]
+
+    return cmd
+
+
 class VOMS:
     def __init__(self, *args, **kwargs):
         """Create VOMS class, setting specific timeout for VOMS shell commands."""
@@ -225,38 +256,13 @@ class VOMS:
         chain = proxyDict["chain"]
         proxyLocation = proxyDict["file"]
 
-        secs = chain.getRemainingSecs()["Value"] - 300
-        if secs < 0:
-            return S_ERROR(DErrno.EVOMS, "Proxy length is less that 300 secs")
-        hours = int(secs / 3600)
-        mins = int((secs - hours * 3600) / 60)
-
-        # Ask VOMS a proxy the same strength as the one we already have
-        bitStrength = chain.getStrength()["Value"]
-
         retVal = self._generateTemporalFile()
         if not retVal["OK"]:
             deleteMultiProxy(proxyDict)
             return retVal
         newProxyLocation = retVal["Value"]
 
-        cmd = [VOMS_PROXY_INIT_CMD]
-        if chain.isLimitedProxy()["Value"]:
-            cmd.append("-limited")
-        cmd += ["-cert", proxyLocation]
-        cmd += ["-key", proxyLocation]
-        cmd += ["-out", newProxyLocation]
-        cmd += ["-voms"]
-        cmd += [f"{vo}:{attribute}" if attribute and attribute != "NoRole" else vo]
-        cmd += ["-valid", f"{hours}:{mins}"]
-        cmd += ["-bits", str(bitStrength)]
-        vomsesPath = self.getVOMSESLocation()
-        if vomsesPath:
-            cmd += ["-vomses", vomsesPath]
-
-        if chain.isRFC().get("Value"):
-            cmd += ["-r"]
-        cmd += ["-timeout", "12"]
+        cmd = voms_init_cmd(vo, attribute, chain, proxyLocation, newProxyLocation, self.getVOMSESLocation())
 
         result = shellCall(
             self._secCmdTimeout,
