@@ -58,6 +58,8 @@ class Refresher(RefresherBase, threading.Thread):
             except _thread.error:
                 pass
         # Launch the refresh
+        if os.environ.get("DIRAC_DISABLE_GCONFIG_REFRESH", "false").lower() in ("yes", "true"):
+            raise NotImplementedError("DIRAC_DISABLE_GCONFIG_REFRESH is set")
         thd = threading.Thread(target=self._refreshInThread)
         thd.daemon = True
         thd.start()

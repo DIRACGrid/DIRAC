@@ -135,6 +135,8 @@ def multiProxyArgument(proxy=False):
                 return S_ERROR(DErrno.EPROXYFIND)
         if isinstance(proxy, str):
             proxyLoc = proxy
+        else:
+            raise NotImplementedError(f"Unknown proxy type ({type(proxy)})")
         # Load proxy
         proxy = X509Chain()
         retVal = proxy.loadProxyFromFile(proxyLoc)
