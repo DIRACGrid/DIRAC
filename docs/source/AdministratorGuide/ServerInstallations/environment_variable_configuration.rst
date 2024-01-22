@@ -18,6 +18,10 @@ DIRAC_DEPRECATED_FAIL
   If set, the use of functions or objects that are marked ``@deprecated`` will fail. Useful for example in continuous
   integration tests against future versions of DIRAC
 
+DIRAC_DISABLE_GCONFIG_REFRESH
+  If set, attempting to start the ``gConfig`` refresh thread will result in an exception.
+  This is used by DiracX to accidental use of vanilla DIRAC in contexts where it won't work.
+
 DIRAC_FEWER_CFG_LOCKS
   If ``true`` or ``yes`` or ``on`` or ``1`` or ``y`` or ``t``, DIRAC will reduce the number of locks used when accessing the CS for better performance (default, ``no``).
 
