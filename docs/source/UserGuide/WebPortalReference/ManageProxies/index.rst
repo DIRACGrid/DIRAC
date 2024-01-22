@@ -37,9 +37,6 @@ Columns
 
        Date until user certificate is valid.
 
-  **Persistent**
-
-          Show if a proxy is persistent (value=true) or not (value=false).
 
   You can choose to display the proxies by group or grouping by field choosing them in the menu, activated by pressing on a menu button.
 

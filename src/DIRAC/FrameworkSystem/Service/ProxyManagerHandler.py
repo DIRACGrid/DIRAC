@@ -6,12 +6,12 @@
       :dedent: 2
       :caption: ProxyManager options
 """
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue
+from DIRAC import S_ERROR, S_OK, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue
 from DIRAC.FrameworkSystem.Utilities.diracx import get_token
 
 DEFAULT_MAIL_FROM = "proxymanager@diracgrid.org"
@@ -119,7 +119,7 @@ class ProxyManagerHandlerMixin:
         :param int validSecondsRequired: required seconds the proxy is valid for
 
         :return: S_OK(list)/S_ERROR() -- list contain dicts with user name, DN, group
-                                         expiration time, persistent flag
+                                         expiration time
         """
         credDict = self.getRemoteCredentials()
         if Properties.PROXY_MANAGEMENT not in credDict["properties"]:
@@ -240,26 +240,6 @@ class ProxyManagerHandlerMixin:
         # If possible we return a proxy 1.5 longer than requested
         requiredLifetime = int(min(secsLeft, requiredLifetime * self.__maxExtraLifeFactor))
         return chain.generateChainFromRequestString(requestPem, lifetime=requiredLifetime, requireLimited=forceLimited)
-
-    types_setPersistency = [str, str, bool]
-
-    def export_setPersistency(self, userDN, userGroup, persistentFlag):
-        """Set the persistency for a given dn/group
-
-        :param str userDN: user DN
-        :param str userGroup: DIRAC group
-        :param boolean persistentFlag: if proxy persistent
-
-        :return: S_OK()/S_ERROR()
-        """
-        retVal = self.__proxyDB.setPersistencyFlag(userDN, userGroup, persistentFlag)
-        if not retVal["OK"]:
-            return retVal
-        credDict = self.getRemoteCredentials()
-        self.__proxyDB.logAction(
-            f"set persistency to {bool(persistentFlag)}", credDict["DN"], credDict["group"], userDN, userGroup
-        )
-        return S_OK()
 
     types_deleteProxyBundle = [(list, tuple)]
 

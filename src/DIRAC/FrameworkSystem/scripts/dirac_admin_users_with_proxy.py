@@ -8,23 +8,20 @@ Example:
   DN         : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
   group      : dirac_admin
   not after  : 2011-06-29 12:04:25
-  persistent : False
   -
   DN         : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
   group      : dirac_pilot
   not after  : 2011-06-29 12:04:27
-  persistent : False
   -
   DN         : /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
   group      : dirac_user
   not after  : 2011-06-29 12:04:30
-  persistent : True
 """
 import datetime
 
 import DIRAC
-from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Base.Script import Script
+from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 
@@ -65,10 +62,10 @@ def main():
         dt = expirationDate - now
         secsLeft = dt.days * 86400 + dt.seconds
         if secsLeft > params.proxyLifeTime:
-            userName, userDN, userGroup, _, persistent = record
+            userName, userDN, userGroup, _ = record
             if userName not in dataDict:
                 dataDict[userName] = []
-            dataDict[userName].append((userDN, userGroup, expirationDate, persistent))
+            dataDict[userName].append((userDN, userGroup, expirationDate))
 
     for userName in dataDict:
         print(f"* {userName}")
@@ -77,7 +74,6 @@ def main():
             print(f" DN         : {data[0]}")
             print(f" group      : {data[1]}")
             print(f" not after  : {TimeUtilities.toString(data[2])}")
-            print(f" persistent : {data[3]}")
             if iP < len(dataDict[userName]) - 1:
                 print(" -")
 
