@@ -9,11 +9,11 @@ from diraccfg import CFG
 
 from DIRAC import gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client import ConfigurationData
+from DIRAC.Core.Utilities.ProcessPool import S_OK
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import SiteDirector
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
-from DIRAC.WorkloadManagementSystem.Utilities.SubmissionPolicy import SUBMISSION_POLICIES
 
 
 CONFIG = """
@@ -177,18 +177,40 @@ def pilotWrapperDirectory(tmp_path_factory):
     return fn
 
 
-def test_loadSubmissionPolicy(sd):
-    """Load each submission policy and call it"""
-    for submissionPolicyName in SUBMISSION_POLICIES:
-        # Load the submission policy
-        sd.submissionPolicyName = submissionPolicyName
-        res = sd._loadSubmissionPolicy()
-        assert res["OK"]
+def test_getNumberOfJobsNeedingPilots(sd, mocker):
+    """Make sure it returns the number of needed pilots"""
 
-        # Call the submission policy with predefined parameters
-        targetQueue = "ce1.site1.com_condor"
-        res = sd.submissionPolicy.apply(50, ceParameters=sd.queueDict[targetQueue]["CE"].ceParameters)
-        assert res >= 0 and res <= 50
+    # 1. No waiting job, no waiting pilot
+    # Because it requires an access to a DB, we mock the value returned by the Matcher
+    mocker.patch.object(sd, "matcherClient", autospec=True)
+    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK({})
+    numberToSubmit = sd._getNumberOfJobsNeedingPilots(waitingPilots=0, queue="ce1.site3.com_condor")
+    assert numberToSubmit == 0
+
+    # 2. 10 waiting jobs, no waiting pilot
+    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK({"TQ1": {"Jobs": 10}})
+    numberToSubmit = sd._getNumberOfJobsNeedingPilots(waitingPilots=0, queue="ce1.site3.com_condor")
+    assert numberToSubmit == 10
+
+    # 3. 10 waiting jobs split into 2 task queues, no waiting pilot
+    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK({"TQ1": {"Jobs": 8}, "TQ2": {"Jobs": 2}})
+    numberToSubmit = sd._getNumberOfJobsNeedingPilots(waitingPilots=0, queue="ce1.site3.com_condor")
+    assert numberToSubmit == 10
+
+    # 4. 10 waiting jobs, 5 waiting pilots
+    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK({"TQ1": {"Jobs": 10}})
+    numberToSubmit = sd._getNumberOfJobsNeedingPilots(waitingPilots=5, queue="ce1.site3.com_condor")
+    assert numberToSubmit == 5
+
+    # 5. 10 waiting jobs split into 2 task queues, 10 waiting pilots
+    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK({"TQ1": {"Jobs": 8}, "TQ2": {"Jobs": 2}})
+    numberToSubmit = sd._getNumberOfJobsNeedingPilots(waitingPilots=10, queue="ce1.site3.com_condor")
+    assert numberToSubmit == 0
+
+    # 6.10 waiting jobs, 20 waiting pilots
+    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK({"TQ1": {"Jobs": 10}})
+    numberToSubmit = sd._getNumberOfJobsNeedingPilots(waitingPilots=20, queue="ce1.site3.com_condor")
+    assert numberToSubmit == 0
 
 
 def test_getPilotWrapper(mocker, sd, pilotWrapperDirectory):
