@@ -418,6 +418,7 @@ class ProxyManagerHandlerMixin:
             credDict["username"],
             credDict["group"],
             set(credDict.get("groupProperties", []) + credDict.get("properties", [])),
+            expires_minutes=credDict["secondsLeft"] // 60 + 1,
         )
 
 
