@@ -18,7 +18,23 @@ from DIRAC.Core.Base.Script import Script
 @Script()
 def main():
     Script.registerArgument("P12: user certificate in the p12")
-    _, args = Script.parseCommandLine(ignoreErrors=True)
+    # Allow legacy pcks12 certificates (as for some providers)
+    # Only use long option, to show that this is not recommended,
+    # and may be deprecated later (if providers gets their acts together)
+    Script.registerSwitch("", "legacy", "Allow legacy crypto pcks12 certificates (may be deprecated in future)")
+
+    switches, args = Script.parseCommandLine(ignoreErrors=True)
+
+    # Handle legacy option
+    legacy = ""
+    for switch in switches:
+        # Check only for "legacy", not for "l"
+        # (otherwise would have "or switch[0].lower() == 'l'")
+        if switch[0].lower() == "legacy":
+            legacy = "-legacy"
+
+    if len(legacy) > 0:
+        gLogger.warn("Warning: using legacy crypto option: " + legacy + " ... May be deprecated in future")
 
     p12 = args[0]
     if not os.path.isfile(p12):
@@ -43,12 +59,12 @@ def main():
     with TemporaryDirectory() as tmpdir:
         env = os.environ | {"OPENSSL_CONF": tmpdir}
         gLogger.notice("Converting p12 key to pem format")
-        cmd = ["openssl", "pkcs12", "-nocerts", "-in", p12, "-out", key]
+        cmd = ["openssl", "pkcs12", "-nocerts", "-in", p12, "-out", key, legacy]
         res = run(cmd, env=env, check=False, timeout=900, text=True, stdout=PIPE, stderr=STDOUT)
         # The last command was successful
         if res.returncode == 0:
             gLogger.notice("Converting p12 certificate to pem format")
-            cmd = ["openssl", "pkcs12", "-clcerts", "-nokeys", "-in", p12, "-out", cert]
+            cmd = ["openssl", "pkcs12", "-clcerts", "-nokeys", "-in", p12, "-out", cert, legacy]
             res = run(cmd, env=env, check=False, timeout=900, text=True, stdout=PIPE, stderr=STDOUT)
     # Something went wrong
     if res.returncode != 0:
