@@ -4,7 +4,7 @@ config:
 # List of feature variables which must be passed when preparing
 required-feature-flags: []
 
-# Additional services to use in docker-compose
+# Additional services to use in docker compose
 extra-services: {}
 
 # Additional shell commands to run

@@ -181,8 +181,8 @@ def destroy():
     typer.secho("Shutting down and removing containers", err=True, fg=c.GREEN)
     with _gen_docker_compose(DEFAULT_MODULES) as docker_compose_fn:
         os.execvpe(
-            "docker-compose",
-            ["docker-compose", "-f", docker_compose_fn, "down", "--remove-orphans", "-t", "0", "--volumes"],
+            "docker",
+            ["docker", "compose", "-f", docker_compose_fn, "down", "--remove-orphans", "-t", "0", "--volumes"],
             _make_env({}),
         )
 
@@ -228,10 +228,10 @@ def prepare_environment(
     module_configs = _load_module_configs(modules)
     extra_services = list(chain(*[config["extra-services"] for config in module_configs.values()]))
 
-    typer.secho("Running docker-compose to create containers", fg=c.GREEN)
+    typer.secho("Running docker compose to create containers", fg=c.GREEN)
     with _gen_docker_compose(modules, diracx_dist_dir=diracx_dist_dir) as docker_compose_fn:
         subprocess.run(
-            ["docker-compose", "-f", docker_compose_fn, "up", "-d", "dirac-server", "dirac-client"] + extra_services,
+            ["docker", "compose", "-f", docker_compose_fn, "up", "-d", "dirac-server", "dirac-client"] + extra_services,
             check=True,
             env=docker_compose_env,
         )
@@ -321,7 +321,7 @@ def prepare_environment(
             subprocess.run(command, check=True, shell=True)
 
     docker_compose_fn_final = Path(tempfile.mkdtemp()) / "ci"
-    typer.secho("Running docker-compose to create DiracX containers", fg=c.GREEN)
+    typer.secho("Running docker compose to create DiracX containers", fg=c.GREEN)
     typer.secho(f"Will leave a folder behind: {docker_compose_fn_final}", fg=c.YELLOW)
 
     with _gen_docker_compose(modules, diracx_dist_dir=diracx_dist_dir) as docker_compose_fn:
@@ -333,7 +333,7 @@ def prepare_environment(
         # It is going to start all the diracx containers, including one which waits
         # for the DIRAC installation to be over.
         subprocess.Popen(
-            ["docker-compose", "-f", docker_compose_fn_final / "docker-compose.yml", "up", "-d", "diracx"],
+            ["docker", "compose", "-f", docker_compose_fn_final / "docker-compose.yml", "up", "-d", "diracx"],
             env=docker_compose_env,
             stdin=None,
             stdout=None,
@@ -548,7 +548,7 @@ class TestExit(typer.Exit):
 
 @contextmanager
 def _gen_docker_compose(modules, *, diracx_dist_dir=None):
-    # Load the docker-compose configuration and mount the necessary volumes
+    # Load the docker compose configuration and mount the necessary volumes
     input_fn = Path(__file__).parent / "tests/CI/docker-compose.yml"
     docker_compose = yaml.safe_load(input_fn.read_text())
     # diracx-wait-for-db needs the volume to be able to run the witing script
@@ -590,7 +590,7 @@ def _gen_docker_compose(modules, *, diracx_dist_dir=None):
 def _check_containers_running(*, is_up=True):
     with _gen_docker_compose(DEFAULT_MODULES) as docker_compose_fn:
         running_containers = subprocess.run(
-            ["docker-compose", "-f", docker_compose_fn, "ps", "-q", "-a"],
+            ["docker", "compose", "-f", docker_compose_fn, "ps", "-q", "-a"],
             stdout=subprocess.PIPE,
             env=_make_env({}),
             check=True,

@@ -18,7 +18,7 @@ To run a test locally using the default configuration, make sure that the local 
 
 After the test process has been run, the server and client installation logs, as well as the server/client test logs can be retrieved to $PWD from the docker containers using `source utils.sh && getLogs`.
 
-The command `docker-compose -f tests/CI/docker-compose.yml down -v` stops and removes the spawned containers (cleanup).
+The command `docker compose -f tests/CI/docker-compose.yml down -v` stops and removes the spawned containers (cleanup).
 
 ### System requirements
 
@@ -26,7 +26,6 @@ The officially supported operating system is CERN Centos 7 ([CC7](http://linux.w
 
 The following dependencies/softwares are required:
 * Docker v18+ (lower version should work, but no promises are made).
-* Docker-Compose v2.4+ format
 
 ```
 sudo yum install -y docker
@@ -36,7 +35,6 @@ sudo groupadd docker
 sudo usermod -aG docker $USER    # So that you don't need sudo docker
 
 sudo yum install -y python-pip python-devel libffi-devel openssl-devel gcc glibc-devel make curl
-pip install docker-compose
 ```
 
 ## Test environment configuration
