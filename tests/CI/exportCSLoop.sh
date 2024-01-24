@@ -19,7 +19,6 @@ curl -L https://raw.githubusercontent.com/DIRACGrid/diracx/main/diracx-cli/tests
 while true; do
     DIRAC_COMPAT_ENABLE_CS_CONVERSION=x dirac internal legacy cs-sync \
         "$DIRACOS/etc/Production.cfg" \
-        /home/dirac/TestCode/diracx/tests/cli/legacy/cs_sync/convert_integration_test.yaml \
         /cs_store/initialRepo/default.yml
     git --git-dir=.git -C /cs_store/initialRepo/ commit -am "export $(date)"
     if [[ "${1}" == "--once" ]]; then
