@@ -33,6 +33,7 @@ class SandboxMetadataDB(DB):
                 "OwnerId": "INTEGER(10) UNSIGNED AUTO_INCREMENT NOT NULL",
                 "Owner": "VARCHAR(32) NOT NULL",
                 "OwnerGroup": "VARCHAR(32) NOT NULL",
+                "VO": "VARCHAR(64) NOT NULL",
             },
             "PrimaryKey": "OwnerId",
         }
@@ -71,13 +72,16 @@ class SandboxMetadataDB(DB):
 
         return self._createTables(tablesToCreate)
 
-    def __registerAndGetOwnerId(self, owner, ownerGroup):
+    def __registerAndGetOwnerId(self, owner, ownerGroup, VO):
         """
         Get the owner ID and register it if it's not there
         """
         ownerEscaped = self._escapeString(owner)["Value"]
         ownerGroupEscaped = self._escapeString(ownerGroup)["Value"]
-        sqlCmd = f"SELECT OwnerId FROM `sb_Owners` WHERE Owner = {ownerEscaped} AND OwnerGroup = {ownerGroupEscaped}"
+        if not VO:
+            return S_ERROR("VO is not specified")
+        VOEscaped = self._escapeString(VO)["Value"]
+        sqlCmd = f"SELECT OwnerId FROM `sb_Owners` WHERE Owner = {ownerEscaped} AND OwnerGroup = {ownerGroupEscaped} AND VO = {VOEscaped}"
         result = self._query(sqlCmd)
         if not result["OK"]:
             return result
@@ -86,7 +90,7 @@ class SandboxMetadataDB(DB):
             return S_OK(data[0][0])
         # Its not there, insert it
         sqlCmd = (
-            f"INSERT INTO `sb_Owners` ( OwnerId, Owner, OwnerGroup ) VALUES ( 0, {ownerEscaped}, {ownerGroupEscaped} )"
+            f"INSERT INTO `sb_Owners` ( OwnerId, Owner, OwnerGroup, VO ) VALUES ( 0, {ownerEscaped}, {ownerGroupEscaped}, {VOEscaped} )"
         )
         result = self._update(sqlCmd)
         if not result["OK"]:
@@ -103,7 +107,7 @@ class SandboxMetadataDB(DB):
         Register a new sandbox in the metadata catalog
         Returns ( sbid, newSandbox )
         """
-        result = self.__registerAndGetOwnerId(owner, ownerGroup)
+        result = self.__registerAndGetOwnerId(owner, ownerGroup, VO)
         if not result["OK"]:
             return result
         ownerId = result["Value"]
@@ -272,7 +276,7 @@ class SandboxMetadataDB(DB):
             updated += 1
         return S_OK(updated)
 
-    def getSandboxesAssignedToEntity(self, entityId, requesterName, requesterGroup):
+    def getSandboxesAssignedToEntity(self, entityId, requesterName, requesterGroup, requestedVO):
         """
         Get the sandboxes and the type of assignation to the jobId
         """
@@ -289,11 +293,13 @@ class SandboxMetadataDB(DB):
             sqlTables.append("`sb_Owners` o")
             sqlCond.append(f"o.OwnerGroup='{requesterGroup}'")
             sqlCond.append("s.OwnerId=o.OwnerId")
+            sqlCond.append(f"o.VO='{requestedVO}'")
         elif Properties.NORMAL_USER in requesterProps:
             sqlTables.append("`sb_Owners` o")
             sqlCond.append(f"o.OwnerGroup='{requesterGroup}'")
             sqlCond.append(f"o.Owner='{requesterName}'")
             sqlCond.append("s.OwnerId=o.OwnerId")
+            sqlCond.append(f"o.VO='{requestedVO}'")
         else:
             return S_ERROR("Not authorized to access sandbox")
         sqlCmd = "SELECT DISTINCT s.SEName, s.SEPFN, e.Type FROM  {} WHERE {}".format(
@@ -375,14 +381,14 @@ class SandboxMetadataDB(DB):
         :param requesterDN: host DN used as credentials
         :param requesterGroup: group used to use as credentials (should be 'hosts')
 
-        :returns: S_OK with tuple (owner, ownerGroup)
+        :returns: S_OK with tuple (owner, ownerGroup, VO)
         """
         if not (res := self.getSandboxId(SEName, SEPFN, None, requesterGroup, "OwnerId", requesterDN=requesterDN))[
             "OK"
         ]:
             return res
 
-        sqlCmd = "SELECT `Owner`, `OwnerGroup` FROM `sb_Owners` WHERE `OwnerId` = %d" % res["Value"]
+        sqlCmd = "SELECT `Owner`, `OwnerGroup`, `VO` FROM `sb_Owners` WHERE `OwnerId` = %d" % res["Value"]
         if not (res := self._query(sqlCmd))["OK"]:
             return res
         return S_OK(res["Value"][0])

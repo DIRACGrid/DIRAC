@@ -199,6 +199,7 @@ class SandboxStoreHandlerMixin:
         result = self.sandboxDB.registerAndGetSandbox(
             credDict["username"],
             credDict["group"],
+            credDict["VO"],
             self.__localSEName,
             sbPath,
             fSize,
@@ -241,7 +242,7 @@ class SandboxStoreHandlerMixin:
             return S_OK(f"SB:{self.__localSEName}|{sbPath}")
 
         result = self.sandboxDB.registerAndGetSandbox(
-            credDict["username"], credDict["group"], self.__localSEName, sbPath, fileHelper.getTransferedBytes()
+            credDict["username"], credDict["group"], credDict["VO"], self.__localSEName, sbPath, fileHelper.getTransferedBytes()
         )
         if not result["OK"]:
             self.__secureUnlinkFile(tmpFilePath)
@@ -359,7 +360,7 @@ class SandboxStoreHandlerMixin:
         Get the sandboxes associated to a job and the association type
         """
         credDict = self.getRemoteCredentials()
-        result = self.sandboxDB.getSandboxesAssignedToEntity(entityId, credDict["username"], credDict["group"])
+        result = self.sandboxDB.getSandboxesAssignedToEntity(entityId, credDict["username"], credDict["group"], credDict["VO"])
         if not result["OK"]:
             return result
         sbDict = {}
