@@ -21,20 +21,21 @@ def main():
     # Allow legacy pcks12 certificates (as for some providers)
     # Only use long option, to show that this is not recommended,
     # and may be deprecated later (if providers gets their acts together)
-    Script.registerSwitch("", "legacy", "Allow legacy crypto pcks12 certificates (may be deprecated in future)")
+    Script.registerSwitch("", "legacy", "Allow legacy crypto pcks12 certificates "
+                          "(may be deprecated in future)")
 
     switches, args = Script.parseCommandLine(ignoreErrors=True)
-    
+
     # Handle legacy option
     legacy = ''
     for switch in switches:
-        # Check only for "legacy", not for "l" 
+        # Check only for "legacy", not for "l"
         # (otherwise would have "or switch[0].lower() == 'l'")
         if switch[0].lower() == "legacy":
             legacy = "-legacy"
 
     if len(legacy)>0:
-        gLogger.warn("Warning: using legacy crypto option: "+legacy
+        gLogger.warn("Warning: using legacy crypto option: -"+legacy
                      +" ... May be deprecated in future")
 
     p12 = args[0]
@@ -74,12 +75,16 @@ def main():
             if os.path.isfile(old + nowPrefix):
                 gLogger.notice(f"Restore {old} file from the {old + nowPrefix}")
                 shutil.move(old + nowPrefix, old)
+        # Provide guidance if crypto error
+        if "unsupported:crypto" in res.stdout:
+            gLogger.notice("Unsupported crypto; try with '--legacy' command-line option")
         sys.exit(1)
 
     os.chmod(key, 0o400)
     os.chmod(cert, 0o644)
 
-    gLogger.notice(f"{os.path.basename(cert)} and {os.path.basename(key)} was created in the {globus}")
+    gLogger.notice(f"{os.path.basename(cert)} and {os.path.basename(key)}"
+                   f" were created in the directory {globus}")
 
 
 if __name__ == "__main__":
