@@ -2033,7 +2033,7 @@ class Dirac(API):
         Example Usage:
 
         >>> print(dirac.getJobAttributes(79241))
-        {'AccountedFlag': 'False','ApplicationNumStatus': '0',
+        {'AccountedFlag': 'False',
         'ApplicationStatus': 'Job Finished Successfully',
         'CPUTime': '0.0'}
 

@@ -422,7 +422,7 @@ class StalledJobAgent(AgentModule):
             "UserGroup": jobDict["OwnerGroup"],
             "JobGroup": jobDict["JobGroup"],
             "JobType": jobDict["JobType"],
-            "JobClass": jobDict["JobSplitType"],
+            "JobClass": "unknown",
             "ProcessingType": processingType,
             "FinalMajorStatus": JobStatus.FAILED,
             "FinalMinorStatus": JobMinorStatus.STALLED_PILOT_NOT_RUNNING,

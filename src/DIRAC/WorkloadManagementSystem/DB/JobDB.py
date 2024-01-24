@@ -1187,8 +1187,6 @@ class JobDB(DB):
 
         jobAttrs["ApplicationStatus"] = "Unknown"
 
-        jobAttrs["ApplicationNumStatus"] = 0
-
         jobAttrs["LastUpdateTime"] = str(datetime.datetime.utcnow())
 
         jobAttrs["RescheduleTime"] = str(datetime.datetime.utcnow())
@@ -1830,7 +1828,7 @@ class JobDB(DB):
     def getSummarySnapshot(self, requestedFields=False):
         """Get the summary snapshot for a given combination"""
         if not requestedFields:
-            requestedFields = ["Status", "MinorStatus", "Site", "Owner", "OwnerGroup", "JobGroup", "JobSplitType"]
+            requestedFields = ["Status", "MinorStatus", "Site", "Owner", "OwnerGroup", "JobGroup"]
         valueFields = ["COUNT(JobID)", "SUM(RescheduleCounter)"]
         defString = ", ".join(requestedFields)
         valueString = ", ".join(valueFields)
