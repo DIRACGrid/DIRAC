@@ -360,7 +360,9 @@ class SandboxStoreHandlerMixin:
         Get the sandboxes associated to a job and the association type
         """
         credDict = self.getRemoteCredentials()
-        result = self.sandboxDB.getSandboxesAssignedToEntity(entityId, credDict["username"], credDict["group"], credDict["VO"])
+        result = self.sandboxDB.getSandboxesAssignedToEntity(
+            entityId, credDict["username"], credDict["group"], credDict["VO"]
+        )
         if not result["OK"]:
             return result
         sbDict = {}

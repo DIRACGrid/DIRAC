@@ -89,9 +89,7 @@ class SandboxMetadataDB(DB):
         if data:
             return S_OK(data[0][0])
         # Its not there, insert it
-        sqlCmd = (
-            f"INSERT INTO `sb_Owners` ( OwnerId, Owner, OwnerGroup, VO ) VALUES ( 0, {ownerEscaped}, {ownerGroupEscaped}, {VOEscaped} )"
-        )
+        sqlCmd = f"INSERT INTO `sb_Owners` ( OwnerId, Owner, OwnerGroup, VO ) VALUES ( 0, {ownerEscaped}, {ownerGroupEscaped}, {VOEscaped} )"
         result = self._update(sqlCmd)
         if not result["OK"]:
             return result
@@ -102,7 +100,7 @@ class SandboxMetadataDB(DB):
             return S_ERROR("Can't determine owner id after insertion")
         return S_OK(result["Value"][0][0])
 
-    def registerAndGetSandbox(self, owner, ownerGroup, sbSE, sbPFN, size=0):
+    def registerAndGetSandbox(self, owner, ownerGroup, VO, sbSE, sbPFN, size=0):
         """
         Register a new sandbox in the metadata catalog
         Returns ( sbid, newSandbox )
