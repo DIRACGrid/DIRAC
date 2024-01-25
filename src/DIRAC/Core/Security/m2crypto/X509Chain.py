@@ -3,28 +3,22 @@
 Link to the RFC 3820: https://tools.ietf.org/html/rfc3820
 In particular, limited proxy: https://tools.ietf.org/html/rfc3820#section-3.8
 
-There are also details available about Per-User Sub-Proxies (PUSP)
-here: https://wiki.egi.eu/wiki/Usage_of_the_per_user_sub_proxy_in_EGI
-
 """
 import copy
+import hashlib
 import os
+import re
 import stat
 import tempfile
-import hashlib
-
-import re
 
 import M2Crypto
 
-
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.Core.Security.m2crypto import DEFAULT_PROXY_STRENGTH, DIRAC_GROUP_OID, LIMITED_PROXY_OID, PROXY_OID
+from DIRAC.Core.Security.m2crypto.X509Certificate import X509Certificate
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.Decorators import executeOnlyIf
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Security.m2crypto import PROXY_OID, LIMITED_PROXY_OID, DIRAC_GROUP_OID, DEFAULT_PROXY_STRENGTH
-from DIRAC.Core.Security.m2crypto.X509Certificate import X509Certificate
-
 
 # Decorator to check that _certList is not empty
 needCertList = executeOnlyIf("_certList", S_ERROR(DErrno.ENOCHAIN))
@@ -687,11 +681,6 @@ class X509Chain:
         if not self.__isProxy:
             return S_ERROR(DErrno.EX509, "Chain does not contain a valid proxy")
 
-        # If it is a PUSP, we do a lookup based on the certificate
-        # (you can't do a PUSP out of a proxy)
-        if self.isPUSP()["Value"]:
-            return self._certList[self.__firstProxyStep - 2].getDIRACGroup(ignoreDefault=ignoreDefault)
-
         # The code below will find the first match of the DIRAC group
         for cert in reversed(self._certList):
             # We specifically say we do not want the default to first check inside the proxy
@@ -894,30 +883,6 @@ class X509Chain:
         """Object representation"""
         return self.__str__()
 
-    def isPUSP(self):
-        """Checks whether the current chain is a PUSP
-
-        :returns: S_OK(boolean).
-                  If True, the S_OK structure is enriched with:
-                  * Indentity: the DN
-                  * SubProxyUser: name of the user
-        """
-        if self.__isProxy:
-            # Check if we have a subproxy
-            dn = self._certList[self.__firstProxyStep].getSubjectDN()
-            if not dn["OK"]:
-                return dn
-            dn = dn["Value"]
-
-            subproxyUser = isPUSPdn(dn)
-            if subproxyUser:
-                result = S_OK(True)
-                result["Identity"] = dn
-                result["SubproxyUser"] = subproxyUser
-                return result
-
-        return S_OK(False)
-
     @needCertList
     def getCredentials(self, ignoreDefault=False, withRegistryInfo=True):
         """Returns a summary of the credentials contained in the current chain
@@ -943,7 +908,6 @@ class X509Chain:
 
                 Only for proxy:
                   * identity: If it is a normal proxy, it is the DN of the certificate.
-                              If it is a PUSP, it contains the identity as in :py:meth:`.isPUSP`
                   * username: DIRAC username associated to the DN (needs withRegistryInfo)
                               (see :py:func:`DIRAC.ConfigurationSystem.Client.Helpers.Registry.getUsernameForDN`)
                   * group: DIRAC group, depending on ignoreDefault param(see :py:meth:`.getDIRACGroup`)
@@ -981,12 +945,6 @@ class X509Chain:
             # if the chain is a proxy, then the DN we want to work with is the real one of the
             # user, not the one of his proxy
             credDict["DN"] = credDict["identity"]
-
-            # Check if we have the PUSP case
-            result = self.isPUSP()
-            if result["OK"] and result["Value"]:
-                credDict["identity"] = result["Identity"]
-                credDict["subproxyUser"] = result["SubproxyUser"]
 
             if withRegistryInfo:
                 retVal = Registry.getUsernameForDN(credDict["identity"])
@@ -1042,16 +1000,3 @@ class X509Chain:
                     sha1.update(attribute.encode())
         self.__hash = sha1.hexdigest()
         return S_OK(self.__hash)
-
-
-def isPUSPdn(userDN):
-    """Evaluate if the DN is of the PUSP type or not
-
-    :param str userDN: user DN string
-
-    :returns: the subproxy user name or None
-    """
-    lastEntry = userDN.split("/")[-1].split("=")
-    if lastEntry[0] == "CN" and lastEntry[1].startswith("user:"):
-        return userDN.split("/")[-1].split(":")[1]
-    return None

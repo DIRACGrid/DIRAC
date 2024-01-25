@@ -3,14 +3,13 @@
 """
 import base64
 
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-from DIRAC.Core.Security.VOMS import VOMS
+from DIRAC import S_ERROR, S_OK, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.DiracX import diracxTokenFromPEM
-
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.Core.Security.VOMS import VOMS
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
+from DIRAC.Core.Utilities import DErrno
 
 
 def getProxyInfo(proxy=False, disableVOMS=False):
@@ -98,7 +97,6 @@ def formatProxyInfoAsString(infoDict):
         "subject",
         "issuer",
         "identity",
-        "subproxyUser",
         ("secondsLeft", "timeleft"),
         ("group", "DIRAC group"),
         ("hasDiracxToken", "DiracX"),

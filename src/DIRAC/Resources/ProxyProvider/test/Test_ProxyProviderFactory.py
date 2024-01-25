@@ -26,8 +26,6 @@ def sf_getInfoAboutProviders(of, providerName, option, section):
                     "O": "DIRACCA",
                 }
             )
-        elif providerName == "MY_PUSP":
-            return S_OK({"ProviderType": "PUSP", "ServiceURL": "https://somedomain"})
     return S_ERROR("No proxy provider found")
 
 
@@ -37,7 +35,7 @@ class ProxyProviderFactoryTest(unittest.TestCase):
 
     def test_standalone(self):
         """Test loading a proxy provider element with everything defined in itself."""
-        for provider, resultOfGenerateDN in [("MY_DIRACCA", True), ("MY_PUSP", False)]:
+        for provider, resultOfGenerateDN in [("MY_DIRACCA", True)]:
             result = ProxyProviderFactory().getProxyProvider(provider)
             self.assertTrue(result["OK"], "\n" + result.get("Message", "Error message is absent."))
             proxyProviderObj = result["Value"]
