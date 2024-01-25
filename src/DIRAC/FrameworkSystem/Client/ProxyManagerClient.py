@@ -3,20 +3,20 @@
     This inherits the DIRAC base Client for direct execution of server functionality.
     Client also contain caching of the requested proxy information.
 """
-import os
 import datetime
+import os
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
-from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.DiracX import addTokenToPEM
-from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
+from DIRAC.Core.Security.ProxyFile import deleteMultiProxy, multiProxyArgument
+from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
-from DIRAC.Core.Security.VOMS import VOMS
-from DIRAC.Core.Security import Locations
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Utilities import DIRACSingleton, ThreadSafe
+from DIRAC.Core.Utilities.DictCache import DictCache
 
 gUsersSync = ThreadSafe.Synchronizer()
 gProxiesSync = ThreadSafe.Synchronizer()
@@ -112,57 +112,6 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
                 return S_OK(True)
 
         return S_OK(False)
-
-    @gUsersSync
-    def getUserPersistence(self, userDN, userGroup, validSeconds=0):
-        """Check if a user(DN-group) has a proxy in the proxy management
-        Updates internal cache if needed to minimize queries to the service
-
-        :param str userDN: user DN
-        :param str userGroup: user group
-        :param int validSeconds: proxy valid time in a seconds
-
-        :return: S_OK()/S_ERROR()
-        """
-        cacheKey = (userDN, userGroup)
-        userData = self.__usersCache.get(cacheKey, validSeconds)
-        if userData:
-            if userData["persistent"]:
-                return S_OK(True)
-        # Get list of users from the DB with proxys at least 300 seconds
-        gLogger.verbose("Updating list of users in proxy management")
-        retVal = self.__refreshUserCache(validSeconds)
-        if not retVal["OK"]:
-            return retVal
-        userData = self.__usersCache.get(cacheKey, validSeconds)
-        if userData:
-            return S_OK(userData["persistent"])
-        return S_OK(False)
-
-    def setPersistency(self, userDN, userGroup, persistent):
-        """Set the persistency for user/group
-
-        :param str userDN: user DN
-        :param str userGroup: user group
-        :param boolean persistent: presistent flag
-
-        :return: S_OK()/S_ERROR()
-        """
-        # Hack to ensure bool in the rpc call
-        persistentFlag = True
-        if not persistent:
-            persistentFlag = False
-        rpcClient = Client(url="Framework/ProxyManager", timeout=120)
-        retVal = rpcClient.setPersistency(userDN, userGroup, persistentFlag)
-        if not retVal["OK"]:
-            return retVal
-        # Update internal persistency cache
-        cacheKey = (userDN, userGroup)
-        record = self.__usersCache.get(cacheKey, 0)
-        if record:
-            record["persistent"] = persistentFlag
-            self.__usersCache.add(cacheKey, self.__getSecondsLeftToExpiration(record["expirationtime"]), record)
-        return retVal
 
     def uploadProxy(self, proxy=None, restrictLifeTime: int = 0, rfcIfPossible=None):
         """Upload a proxy to the proxy management service using delegation
@@ -690,17 +639,14 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         """
         return VOMS().getVOMSAttributes(chain)
 
-    def getUploadedProxyLifeTime(self, DN, group=None):
+    def getUploadedProxyLifeTime(self, DN):
         """Get the remaining seconds for an uploaded proxy
 
         :param str DN: user DN
-        :param str group: group
 
         :return: S_OK(int)/S_ERROR()
         """
         parameters = dict(UserDN=[DN])
-        if group:
-            parameters["UserGroup"] = [group]
         result = self.getDBContents(parameters)
         if not result["OK"]:
             return result
@@ -709,10 +655,9 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
             return S_OK(0)
         pNames = list(data["ParameterNames"])
         dnPos = pNames.index("UserDN")
-        groupPos = pNames.index("UserGroup")
         expiryPos = pNames.index("ExpirationTime")
         for row in data["Records"]:
-            if DN == row[dnPos] and group == row[groupPos]:
+            if DN == row[dnPos]:
                 td = row[expiryPos] - datetime.datetime.utcnow()
                 secondsLeft = td.days * 86400 + td.seconds
                 return S_OK(max(0, secondsLeft))

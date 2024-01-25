@@ -66,27 +66,8 @@ class DiracAdmin(API):
         return gProxyManager.uploadProxy()
 
     #############################################################################
-    def setProxyPersistency(self, userDN, userGroup, persistent=True):
-        """Set the persistence of a proxy in the Proxy Manager
-
-        Example usage:
-
-          >>> gLogger.notice(diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True ))
-          {'OK': True }
-
-        :param userDN: User DN
-        :type userDN: string
-        :param userGroup: DIRAC Group
-        :type userGroup: string
-        :param persistent: Persistent flag
-        :type persistent: boolean
-        :return: S_OK,S_ERROR
-        """
-        return gProxyManager.setPersistency(userDN, userGroup, persistent)
-
-    #############################################################################
     def checkProxyUploaded(self, userDN, userGroup, requiredTime):
-        """Set the persistence of a proxy in the Proxy Manager
+        """Checks that a user has a proxy in the Proxy Manager
 
         Example usage:
 

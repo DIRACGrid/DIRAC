@@ -320,19 +320,6 @@ def test_dumpChainToString_on_cert(cert_file, get_X509Chain_class):
 
 
 @parametrize("cert_file", CERTS)
-def test_isPUSP_on_cert(cert_file, get_X509Chain_class):
-    """ " Load a valid certificate in a chain, and check isPUSP"""
-
-    x509Chain = get_X509Chain_class()
-    x509Chain.loadChainFromFile(cert_file)
-
-    res = x509Chain.isPUSP()
-
-    assert res["OK"]
-    assert res["Value"] is False
-
-
-@parametrize("cert_file", CERTS)
 def test_getCredentials_on_cert(cert_file, get_X509Chain_class):
     """ " Load a valid certificate in a chain, and check the information returned.
     We do not check the values, they are already checked in other tests

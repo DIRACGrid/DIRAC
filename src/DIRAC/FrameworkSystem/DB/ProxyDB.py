@@ -22,7 +22,7 @@ from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security.VOMS import VOMS
-from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn  # pylint: disable=import-error
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
@@ -525,63 +525,6 @@ class ProxyDB(DB):
             userMask = userDN
         return S_ERROR(DErrno.EPROXYFIND, f"{userMask} has no proxy registered")
 
-    # WARN: this method will not be needed if CS section Users/<user>/DNProperties will be for every user
-    # in this case will be used proxy providers that described there
-    def __getPUSProxy(self, userDN, userGroup, requiredLifetime, requestedVOMSAttr=False):
-        result = Registry.getGroupsForDN(userDN)
-        if not result["OK"]:
-            return result
-
-        validGroups = result["Value"]
-        if userGroup not in validGroups:
-            return S_ERROR(f"Invalid group {userGroup} for user")
-
-        voName = Registry.getVOForGroup(userGroup)
-        if not voName:
-            return S_ERROR(f"Can not determine VO for group {userGroup}")
-
-        retVal = self.__getVOMSAttribute(userGroup, requestedVOMSAttr)
-        if not retVal["OK"]:
-            return retVal
-        vomsAttribute = retVal["Value"]["attribute"]
-        vomsVO = retVal["Value"]["VOMSVO"]
-
-        puspServiceURL = Registry.getVOOption(voName, "PUSPServiceURL")
-        if not puspServiceURL:
-            return S_ERROR(f"Can not determine PUSP service URL for VO {voName}")
-
-        user = userDN.split(":")[-1]
-
-        puspURL = "%s?voms=%s:%s&proxy-renewal=false&disable-voms-proxy=false" "&rfc-proxy=true&cn-label=user:%s" % (
-            puspServiceURL,
-            vomsVO,
-            vomsAttribute,
-            user,
-        )
-
-        try:
-            proxy = urlopen(puspURL).read()
-        except Exception:
-            return S_ERROR("Failed to get proxy from the PUSP server")
-
-        chain = X509Chain()
-        chain.loadChainFromString(proxy)
-        chain.loadKeyFromString(proxy)
-
-        result = chain.getCredentials()
-        if not result["OK"]:
-            return S_ERROR("Failed to get a valid PUSP proxy")
-        credDict = result["Value"]
-        if credDict["identity"] != userDN:
-            return S_ERROR("Requested DN does not match the obtained one in the PUSP proxy")
-        timeLeft = credDict["secondsLeft"]
-
-        result = chain.generateProxyToString(timeLeft, diracGroup=userGroup)
-        if not result["OK"]:
-            return result
-        proxyString = result["Value"]
-        return S_OK((proxyString, timeLeft))
-
     def __generateProxyFromProxyProvider(self, userDN, proxyProvider):
         """Get proxy from proxy provider
 
@@ -666,21 +609,6 @@ class ProxyDB(DB):
         if not Registry.isDownloadableGroup(userGroup):
             return S_ERROR(f'"{userGroup}" group is disable to download.')
 
-        # WARN: this block will not be needed if CS section Users/<user>/DNProperties will be for every user
-        # in this case will be used proxy providers that described there
-        # Get the Per User SubProxy if one is requested
-        if isPUSPdn(userDN):
-            result = self.__getPUSProxy(userDN, userGroup, requiredLifeTime)
-            if not result["OK"]:
-                return result
-            pemData = result["Value"][0]
-            timeLeft = result["Value"][1]
-            chain = X509Chain()
-            result = chain.loadProxyFromString(pemData)
-            if not result["OK"]:
-                return result
-            return S_OK((chain, timeLeft))
-
         # Standard proxy is requested
         self.log.verbose("Try to get proxy from ProxyDB_Proxies")
         retVal = self.__getPemAndTimeLeft(userDN, userGroup)
@@ -755,37 +683,24 @@ class ProxyDB(DB):
                     if requiredLifeTime and requiredLifeTime <= vomsTime and requiredLifeTime <= remainingSecs:
                         return S_OK((chain, min(vomsTime, remainingSecs)))
 
-        if isPUSPdn(userDN):
-            # Get the Per User SubProxy if one is requested
-            result = self.__getPUSProxy(userDN, userGroup, requiredLifeTime, requestedVOMSAttr)
-            if not result["OK"]:
-                return result
-            pemData = result["Value"][0]
-            chain = X509Chain()
-            result = chain.loadProxyFromString(pemData)
-            if not result["OK"]:
-                return result
+        # Get the stored proxy and dress it with the VOMS extension
+        retVal = self.getProxy(userDN, userGroup, requiredLifeTime)
+        if not retVal["OK"]:
+            return retVal
+        chain, _secsLeft = retVal["Value"]
 
+        vomsMgr = VOMS()
+        attrs = vomsMgr.getVOMSAttributes(chain).get("Value") or [""]
+        if attrs[0]:
+            if vomsAttr != attrs[0]:
+                return S_ERROR(
+                    f"Stored proxy has already a different VOMS attribute {attrs[0]} than requested {vomsAttr}"
+                )
         else:
-            # Get the stored proxy and dress it with the VOMS extension
-            retVal = self.getProxy(userDN, userGroup, requiredLifeTime)
+            retVal = vomsMgr.setVOMSAttributes(chain, vomsAttr, vo=vomsVO)
             if not retVal["OK"]:
                 return retVal
-            chain, _secsLeft = retVal["Value"]
-
-            vomsMgr = VOMS()
-            attrs = vomsMgr.getVOMSAttributes(chain).get("Value") or [""]
-            if attrs[0]:
-                if vomsAttr != attrs[0]:
-                    return S_ERROR(
-                        "Stored proxy has already a different VOMS attribute %s than requested %s"
-                        % (attrs[0], vomsAttr)
-                    )
-            else:
-                retVal = vomsMgr.setVOMSAttributes(chain, vomsAttr, vo=vomsVO)
-                if not retVal["OK"]:
-                    return retVal
-                chain = retVal["Value"]
+            chain = retVal["Value"]
 
         # We have got the VOMS proxy, store it into the cache
         result = self.__storeVOMSProxy(userDN, userGroup, vomsAttr, chain)

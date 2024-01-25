@@ -4,7 +4,7 @@
 ProxyProvider
 ==============
 
-This resource type provides an interface to obtain proxy certificates using a user identifier. The following proxy providers are presented here: ``DIRACCA``, ``PUSP``. When all users upload their proxies to proxy manager manually, you do not need to deploy these resources. The **/Registry/Users** section describes how to specify a proxy provifer for a user's DN.
+This resource type provides an interface to obtain proxy certificates using a user identifier. The following proxy providers are presented here: ``DIRACCA``. When all users upload their proxies to proxy manager manually, you do not need to deploy these resources. The **/Registry/Users** section describes how to specify a proxy provifer for a user's DN.
 
 ----------------------
 DIRACCA proxy provider
@@ -31,19 +31,6 @@ The Proxy provider supports the following distinguished names, `more details her
 * OU(organizationUnitName)
 * SP,ST(stateOrProvinceName)
 * SERIALNUMBER(serialNumber)
-
--------------------
-PUSP proxy provider
--------------------
-
-ProxyProvider implementation for a Per-User Sub-Proxy(PUSP) proxy generation using PUSP proxy server. `More details about PUSP here <https://wiki.egi.eu/wiki/Usage_of_the_per_user_sub_proxy_in_EGI>`_. Required parameters in the DIRAC configuration for its implementation:
-
-.. literalinclude:: /dirac.cfg
-  :start-after: ## PUSP type:
-  :end-before: ##
-  :dedent: 2
-  :caption: /Resources/ProxyProviders section
-
 
 Usage
 ^^^^^

@@ -164,11 +164,11 @@ Getting the proxy information
 
         $ dirac-proxy-get-uploaded-info
         Checking for DNs /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
-        --------------------------------------------------------------------------------------------------------
-        | UserDN                                          | UserGroup   | ExpirationTime      | PersistentFlag |
-        --------------------------------------------------------------------------------------------------------
-        | /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar | dirac_user  | 2011-06-29 12:04:25 | True           |
-        --------------------------------------------------------------------------------------------------------
+        -------------------------------------------------------------------------
+        | UserDN                                          | ExpirationTime      |
+        -------------------------------------------------------------------------
+        | /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar | 2011-06-29 12:04:25 |
+        -------------------------------------------------------------------------
 
 - The same can be checked in the Web Portal at the following location::
 

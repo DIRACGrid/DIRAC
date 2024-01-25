@@ -216,11 +216,6 @@ class JobManagerHandlerMixin:
 
             jobIDList.append(jobID)
 
-        # Set persistency flag
-        retVal = gProxyManager.getUserPersistence(ownerDN, self.ownerGroup)
-        if "Value" not in retVal or not retVal["Value"]:
-            gProxyManager.setPersistency(ownerDN, self.ownerGroup, True)
-
         if parametricJob:
             result = S_OK(jobIDList)
         else:
