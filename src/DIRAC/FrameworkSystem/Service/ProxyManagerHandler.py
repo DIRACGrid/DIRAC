@@ -54,14 +54,12 @@ class ProxyManagerHandlerMixin:
             return result
         contents = result["Value"]
         userDNIndex = contents["ParameterNames"].index("UserDN")
-        userGroupIndex = contents["ParameterNames"].index("UserGroup")
         expirationIndex = contents["ParameterNames"].index("ExpirationTime")
         for record in contents["Records"]:
             userDN = record[userDNIndex]
             if userDN not in proxiesInfo:
                 proxiesInfo[userDN] = {}
-            userGroup = record[userGroupIndex]
-            proxiesInfo[userDN][userGroup] = record[expirationIndex]
+            proxiesInfo[userDN] = record[expirationIndex]
         return proxiesInfo
 
     auth_getUserProxiesInfo = ["authenticated"]

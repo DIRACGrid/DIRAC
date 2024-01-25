@@ -639,17 +639,14 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         """
         return VOMS().getVOMSAttributes(chain)
 
-    def getUploadedProxyLifeTime(self, DN, group=None):
+    def getUploadedProxyLifeTime(self, DN):
         """Get the remaining seconds for an uploaded proxy
 
         :param str DN: user DN
-        :param str group: group
 
         :return: S_OK(int)/S_ERROR()
         """
         parameters = dict(UserDN=[DN])
-        if group:
-            parameters["UserGroup"] = [group]
         result = self.getDBContents(parameters)
         if not result["OK"]:
             return result
@@ -661,7 +658,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         expiryPos = pNames.index("ExpirationTime")
         for row in data["Records"]:
             if DN == row[dnPos]:
-                td = datetime.datetime.strptime(row[expiryPos], "%y/%m/%d %H:%M:%S") - datetime.datetime.utcnow()
+                td = row[expiryPos] - datetime.datetime.utcnow()
                 secondsLeft = td.days * 86400 + td.seconds
                 return S_OK(max(0, secondsLeft))
         return S_OK(0)

@@ -412,7 +412,7 @@ class ProxyDB(DB):
         req_template = f"DELETE FROM `ProxyDB_CleanProxies` WHERE UserDN={userDN}"
 
         # Clean Proxies
-        proxy_condition = "AND ProxyProvider=%s" if proxyProvider else ""
+        proxy_condition = f"AND ProxyProvider={proxyProvider}" if proxyProvider else ""
         clean_proxies_query = f"{req_template} {proxy_condition}"
         clean_proxies_result = self._update(clean_proxies_query)
         if not clean_proxies_result["OK"]:
@@ -887,7 +887,7 @@ class ProxyDB(DB):
     def getProxiesContent(self, selDict, sortList, start=0, limit=0):
         """Get the contents of the db, parameters are a filter to the db
 
-        :param dict selDict: selection dict that contain fields and their posible values
+        :param dict selDict: selection dict that contain fields and their possible values
         :param dict sortList: dict with sorting fields
         :param int start: search limit start
         :param int start: search limit amount
@@ -941,9 +941,6 @@ class ProxyDB(DB):
             return retVal
         for record in retVal["Value"]:
             record = list(record)
-            record.insert(2, "")
-            record.insert(4, False)
-            record[4] = record[4] == "True"
             data.append(record)
         totalRecords = len(data)
         return S_OK({"ParameterNames": fields, "Records": data, "TotalRecords": totalRecords})
