@@ -1,3 +1,29 @@
+[v9.0.0a21]
+
+*Test
+
+CHANGE: (#7417) write the diracx CsSync config in the CS instead of taking the yaml file from diracx repo
+
+*FrameworkSystem
+
+CHANGE: (#7413) removed Proxies persistency flag
+
+*Core
+
+FIX: (#7412) Adding VOMS extensions without having environment variables set
+NEW: (#7412) Add DIRAC_DISABLE_GCONFIG_REFRESH environment variable to prevent gConfig being accidentally used
+FIX: (#7409) Use proxy lifetime for tokens from legacy proxy exchange (https://github.com/DIRACGrid/diracx/issues/130)
+
+*WorkloadManagement
+
+FIX: (#7409) Add DiracX to payload proxies used by compute elements (#7402)
+FIX: (#7406) SiteDirector should not interact with CEs if there is 0 pilot to submit
+
+*WorkloadManagementSystem
+
+CHANGE: (#7407) JobDB simplifications
+CHANGE: (#7405) Removed Private Pilot functionality
+
 [v9.0.0a20]
 
 *WorkloadManagement
