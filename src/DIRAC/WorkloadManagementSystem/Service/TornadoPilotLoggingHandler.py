@@ -50,7 +50,7 @@ class TornadoPilotLoggingHandler(TornadoService):
             os.makedirs(logPath)
         cls.log.verbose("Pilot logging directory:", logPath)
 
-    def export_sendMessage(self, message, pilotUUID):
+    def export_sendMessage(self, message, pilotUUID, wnVO):
         # def export_sendMessage(self, message, pilotUUID):
         """
         The method logs messages to Tornado and forwards pilot log files, one per pilot, to a relevant plugin.
@@ -58,6 +58,7 @@ class TornadoPilotLoggingHandler(TornadoService):
 
         :param message: message sent by a client, a list of strings in JSON format
         :param pilotUUID: pilot UUID
+        :param pilotUUID: VO manually enforced by a client, used if no VO in a proxy/token
         :return: S_OK or S_ERROR if a plugin cannot process the message.
         :rtype: dict
         """
@@ -67,6 +68,9 @@ class TornadoPilotLoggingHandler(TornadoService):
 
         # determine client VO
         vo = self.__getClientVO()
+        if vo == "":
+            vo = wnVO
+
         # the plugin returns S_OK or S_ERROR
         # leave JSON decoding to the selected plugin:
         result = self.loggingPlugin.sendMessage(message, pilotUUID, vo)
@@ -90,18 +94,21 @@ class TornadoPilotLoggingHandler(TornadoService):
 
         return self.loggingPlugin.getLogs(logfile, vo)
 
-    def export_finaliseLogs(self, payload, pilotUUID):
+    def export_finaliseLogs(self, payload, pilotUUID, wnVO):
         """
         Finalise a log file. Finalised logfile can be copied to a secure location, if a file cache is used.
 
         :param payload: data passed to the plugin finaliser.
         :type payload: dict
         :param pilotUUID: pilot UUID
+        :param pilotUUID: VO manually enforced by a client, used if no VO in a proxy/token
         :return: S_OK or S_ERROR (via the plugin involved)
         :rtype: dict
         """
 
         vo = self.__getClientVO()
+        if vo == "":
+            vo = wnVO
 
         # The plugin returns the Dirac S_OK or S_ERROR object
         return self.loggingPlugin.finaliseLogs(payload, pilotUUID, vo)
