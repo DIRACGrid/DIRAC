@@ -51,6 +51,6 @@ class ServiceMonitoring(BaseType):
             }
         )
 
-        self.period = "month"
+        self.period = "week"
 
         self.checkType()
