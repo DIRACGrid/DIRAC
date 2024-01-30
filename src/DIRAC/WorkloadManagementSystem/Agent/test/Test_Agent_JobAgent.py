@@ -418,32 +418,101 @@ def test__getJDLParameters(mocker):
     assert result["Value"]["Tags"] == ["16Processors", "MultiProcessor"]
 
 
-@pytest.mark.parametrize(
-    "mockJMInput, expected",
-    [
-        ({"OK": True}, {"OK": True, "Value": "Problem Rescheduling Job"}),
-        (
-            {"OK": False, "Message": "Test"},
-            {"OK": True, "Value": "Problem Rescheduling Job"},
-        ),
-    ],
-)
-def test__rescheduleFailedJob(mocker, mockJMInput, expected):
-    """Testing JobAgent()._rescheduleFailedJob()"""
+#############################################################################
+
+
+def test__rescheduleFailedJob_success(mocker):
+    """Testing rescheduleFailedJob success"""
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Client.JobManagerClient.JobManagerClient.rescheduleJob", return_value=S_OK()
+    )
+
     jobAgent = JobAgent("Test", "Test1")
 
     jobID = 101
-    message = "Test"
+    message = "An error occurred"
 
     jobAgent.log = gLogger
     jobAgent.log.setLevel("DEBUG")
     jobAgent.jobReport = JobReport(jobID)
 
     result = jobAgent._rescheduleFailedJob(jobID, message)
-    result = jobAgent._finish(result["Message"], False)
 
-    assert result == expected
+    assert not result["OK"], result
+    assert result["Message"] == "Job Rescheduled", result
+
+    # Because the jobReport cannot communicate with the JobManager, we are supposed to have the report info here
+    assert len(jobAgent.jobReport.jobStatusInfo) == 1, jobAgent.jobReport.jobStatusInfo
+    assert jobAgent.jobReport.jobStatusInfo[0][0] == "Rescheduled", jobAgent.jobReport.jobStatusInfo[0][0]
+    assert jobAgent.jobReport.jobStatusInfo[0][1] == "", jobAgent.jobReport.jobStatusInfo[0][1]
+
+    assert len(jobAgent.jobReport.appStatusInfo) == 1, jobAgent.jobReport.appStatusInfo
+    assert jobAgent.jobReport.appStatusInfo[0][0] == message, jobAgent.jobReport.appStatusInfo[0][0]
+
+
+def test__rescheduleFailedJob_fail(mocker):
+    """Testing rescheduleFailedJob when the job fails to be rescheduled."""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Client.JobManagerClient.JobManagerClient.rescheduleJob",
+        return_value=S_ERROR("Cannot contact JobManager"),
+    )
+
+    jobAgent = JobAgent("Test", "Test1")
+
+    jobID = 101
+    message = "An error occurred"
+
+    jobAgent.log = gLogger
+    jobAgent.log.setLevel("DEBUG")
+    jobAgent.jobReport = JobReport(jobID)
+
+    result = jobAgent._rescheduleFailedJob(jobID, message)
+
+    assert not result["OK"], result
+    assert result["Message"] == "Problem Rescheduling Job"
+
+    # The JobManager could not be contacted to reschedule the jobs
+    # In such a case, we do not expect any status in the jobReport job/appStatusInfo
+    assert len(jobAgent.jobReport.jobStatusInfo) == 0
+    assert len(jobAgent.jobReport.appStatusInfo) == 0
+
+
+def test__rescheduleFailedJob_multipleJobIDs(mocker):
+    """Testing rescheduleFailedJob() with multiple jobIDs"""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Client.JobManagerClient.JobManagerClient.rescheduleJob",
+        return_value=S_ERROR("Cannot contact JobManager"),
+    )
+
+    jobAgent = JobAgent("Test", "Test1")
+
+    jobID1 = 101
+    jobID2 = 102
+    message = "An error occurred"
+
+    jobAgent.log = gLogger
+    jobAgent.log.setLevel("DEBUG")
+
+    # First rescheduled job
+    jobAgent.jobReport = JobReport(jobID1)
+    result = jobAgent._rescheduleFailedJob(jobID1, message)
+
+    # Second rescheduled job: here we use the same JobReport but we set the jobID to a different value
+    jobAgent.jobReport.setJob(jobID2)
+    result = jobAgent._rescheduleFailedJob(jobID2, message)
+
+    assert not result["OK"], result
+    assert result["Message"] == "Problem Rescheduling Job"
+
+    # Here we want to make sure that jobID1 is not part of the jobReport as we set another jobID
+    assert len(jobAgent.jobReport.jobStatusInfo) == 1, jobAgent.jobReport.jobStatusInfo
+    assert len(jobAgent.jobReport.appStatusInfo) == 1, jobAgent.jobReport.appStatusInfo
+
+
+#############################################################################
 
 
 @pytest.mark.parametrize(
