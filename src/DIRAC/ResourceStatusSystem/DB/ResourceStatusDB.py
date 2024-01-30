@@ -16,15 +16,15 @@
 
 """
 import datetime
+
+from sqlalchemy import BigInteger, Column, DateTime, String, exc
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import class_mapper
 from sqlalchemy.orm.query import Query
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, String, DateTime, exc, BigInteger
 
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-
 
 TABLESLIST = ["SiteStatus", "ResourceStatus", "NodeStatus"]
 

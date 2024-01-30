@@ -10,9 +10,9 @@
   determined by the PDP output ).
 
 """
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
 
 
 class PEP:

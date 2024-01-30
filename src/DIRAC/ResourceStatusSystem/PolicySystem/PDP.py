@@ -6,11 +6,11 @@
   all the information to the PEP which will enforce the actions.
 
 """
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
 from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine import RSSMachine
 from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import getPolicyActionsThatApply, getPoliciesThatApply
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import getPoliciesThatApply, getPolicyActionsThatApply
 
 
 class PDP:

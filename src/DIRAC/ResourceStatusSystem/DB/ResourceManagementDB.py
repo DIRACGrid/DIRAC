@@ -16,12 +16,13 @@
 
 """
 import datetime
+
+from sqlalchemy import Column, DateTime, Float, Integer, String, Text, exc
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import class_mapper
 from sqlalchemy.orm.query import Query
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, String, DateTime, exc, Text, Integer, Float
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
