@@ -823,18 +823,13 @@ class JobAgent(AgentModule):
 
         self.log.warn("Failure ==> rescheduling", f"(during {message})")
 
-        if direct:
-            JobStateUpdateClient().setJobStatus(
-                int(jobID), status=JobStatus.RESCHEDULED, applicationStatus=message, source="JobAgent@%s", force=True
-            )
-        else:
-            originalJobID = self.jobReport.jobID
-            self.jobReport.setJob(jobID)
-            # Setting a job parameter does not help since the job will be rescheduled,
-            # instead set the status with the cause and then another status showing the
-            # reschedule operation.
-            self.jobReport.setJobStatus(status=JobStatus.RESCHEDULED, applicationStatus=message, sendFlag=True)
-            self.jobReport.setJob(originalJobID)
+        originalJobID = self.jobReport.jobID
+        self.jobReport.setJob(jobID)
+        # Setting a job parameter does not help since the job will be rescheduled,
+        # instead set the status with the cause and then another status showing the
+        # reschedule operation.
+        self.jobReport.setJobStatus(status=JobStatus.RESCHEDULED, applicationStatus=message, sendFlag=True)
+        self.jobReport.setJob(originalJobID)
 
         self.log.info("Job will be rescheduled")
         result = JobManagerClient().rescheduleJob(jobID)
