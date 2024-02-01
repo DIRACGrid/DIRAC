@@ -252,7 +252,7 @@ class JobDB(DB):
         result = self.getJobsAttributes([jobID], attrList)
         if not result["OK"]:
             return result
-        return S_OK(result["Value"].get(jobID, {}))
+        return S_OK(result["Value"].get(int(jobID), {}))
 
     #############################################################################
     def getJobAttribute(self, jobID, attribute):
@@ -270,7 +270,7 @@ class JobDB(DB):
         result = self.getJobParameters(jobID, [parameter])
         if not result["OK"]:
             return result
-        return S_OK(result.get("Value", {}).get(jobID, {}).get(parameter))
+        return S_OK(result.get("Value", {}).get(int(jobID), {}).get(parameter))
 
     #############################################################################
     def getJobOptParameter(self, jobID, parameter):
@@ -1140,7 +1140,7 @@ class JobDB(DB):
         result = JobMonitoringClient().getJobParameters(jobID)
         if result["OK"]:
             parDict = result["Value"]
-            for key, value in parDict.get(jobID, {}).items():
+            for key, value in parDict.get(int(jobID), {}).items():
                 result = self.setAtticJobParameter(jobID, key, value, rescheduleCounter - 1)
                 if not result["OK"]:
                     break
