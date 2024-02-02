@@ -1,6 +1,8 @@
 """ The TokenManagerClient is a class representing the client of the DIRAC
 :py:mod:`TokenManager <DIRAC.FrameworkSystem.Service.TokenManagerHandler>` service.
 """
+import time
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import ThreadSafe
 from DIRAC.Core.Utilities.DictCache import DictCache
@@ -70,7 +72,7 @@ class TokenManagerClient(Client):
         if result["OK"]:
             token = OAuth2Token(dict(result["Value"]))
 
-            # Get the date at which the token will expire
+            # Get the date at which the token will expire (it is expressed as a Unix timestamp)
             # If the refresh token is present, we use it as we can easily generate an access token from it
             duration = token.get_claim("exp", "access_token") or DEFAULT_AT_EXPIRATION_TIME
             if token.get("refresh_token"):
@@ -78,7 +80,7 @@ class TokenManagerClient(Client):
 
             self.__tokensCache.add(
                 cachedKey,
-                duration,
+                duration - time.time(),
                 token,
             )
 
