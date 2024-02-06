@@ -96,7 +96,7 @@ If you use a proxy with the ``ProxyManagement`` permission, like the ``dirac_adm
   rfc          : True
   path         : /tmp/x509up_u501
   username     : ciuser
-  properties   : AlarmsManagement, ServiceAdministrator, CSAdministrator, JobAdministrator, FullDelegation, ProxyManagement, Operator
+  properties   : ServiceAdministrator, CSAdministrator, JobAdministrator, FullDelegation, ProxyManagement, Operator
   [diracuser@dirac-tuto ~]$ dirac-admin-get-proxy ciuser dirac_user
   Proxy downloaded to /home/diracuser/proxy.ciuser.dirac_user
 

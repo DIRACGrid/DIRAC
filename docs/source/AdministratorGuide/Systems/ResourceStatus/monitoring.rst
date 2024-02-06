@@ -146,7 +146,6 @@ Actions
 DIRAC.RSS has the following actions:
 
 * **EmailAction** : sends an email notification
-* **SMSAction** : sends a sms notification ( not certified yet ).
 * **LogStatusAction** : updates the <element>Status table with the new computed status
 * **LogPolicyResultAction** : updates the PolicyResult table with the results of the policies in singlePolicyResults.
 

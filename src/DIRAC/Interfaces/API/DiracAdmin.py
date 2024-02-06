@@ -796,8 +796,7 @@ class DiracAdmin(API):
         """
         Send mail to specified address with body.
         """
-        notification = NotificationClient()
-        return notification.sendMail(address, subject, body, fromAddress, localAttempt, html)
+        return NotificationClient().sendMail(address, subject, body, fromAddress, localAttempt, html)
 
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
