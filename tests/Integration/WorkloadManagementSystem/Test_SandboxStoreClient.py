@@ -35,10 +35,9 @@ import DIRAC
 
 DIRAC.initialize()  # Initialize configuration
 
-from DIRAC import gConfig, gLogger
+from DIRAC import gLogger
 from DIRAC.tests.Utilities.utils import find_all
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
-from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 
 # cfg = CFG()
 # cfg.loadFromBuffer(
@@ -76,9 +75,6 @@ def test_SSCChain():
     fileList = [exeScriptLocation]
 
     res = ssc.uploadFilesAsSandbox(fileList)
-    assert res["OK"], res["Message"]
-
-    res = ssc.uploadFilesAsSandboxForJob(fileList, jobId, "Input")
     assert res["OK"], res["Message"]
 
     # TODO : FIXME

@@ -29,8 +29,8 @@ import os
 import tempfile
 import time
 
-import pytest
 import DIRAC
+import pytest
 
 DIRAC.initialize()  # Initialize configuration
 
@@ -40,13 +40,12 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Interfaces.API.Dirac import Dirac
+from DIRAC.tests.Utilities.WMS import helloWorldJob, parametricJob
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
-
-from DIRAC.tests.Utilities.WMS import helloWorldJob, parametricJob
 
 gLogger.setLevel("DEBUG")
 
@@ -59,7 +58,7 @@ matcherClient = MatcherClient()
 
 
 @pytest.fixture(name="lfn")
-def lfnFixture():
+def lfnFixture() -> None:
     # Get VO
     res = getProxyInfo()
     assert res["OK"]
@@ -109,7 +108,7 @@ def lfnFixture():
         ("MCSimulation", {"SE-1": 1, "SE-2": 1}, "ANY"),
     ],
 )
-def test_submitJob(jobType, inputData, expectedSite):
+def test_submitJob(jobType: str, inputData: dict[str, int], expectedSite: str) -> None:
     """
     This test will check that a submitted job ends up in the WAITING state
     and that the job is inserted in the taskQueueDB and can be matched
@@ -235,7 +234,7 @@ def test_submitJob(jobType, inputData, expectedSite):
     jobManagerClient.removeJob(jobID)
 
 
-def test_submitJob_parametricJob():
+def test_submitJob_parametricJob() -> None:
     """This test will submit a parametric job which should generate 3 actual jobs"""
 
     # create the job
@@ -277,7 +276,7 @@ def test_submitJob_parametricJob():
         jobManagerClient.removeJob(jobIDList)
 
 
-def test_WMSClient_rescheduleJob():
+def test_WMSClient_rescheduleJob() -> None:
     # create the job
     job = helloWorldJob()
     job.setType("User")
@@ -378,7 +377,7 @@ def test_WMSClient_rescheduleJob():
         jobManagerClient.removeJob(jobID)
 
 
-def test_JobStateUpdateAndJobMonitoring():
+def test_JobStateUpdateAndJobMonitoring() -> None:
     """Verifying all JobStateUpdate and JobMonitoring functions"""
 
     # Create a job
@@ -483,7 +482,7 @@ def test_JobStateUpdateAndJobMonitoring():
         jobManagerClient.removeJob(jobID)
 
 
-def test_JobStateUpdateAndJobMonitoringMultiple(lfn):
+def test_JobStateUpdateAndJobMonitoringMultiple(lfn: str) -> None:
     """Now, let's submit some jobs. Different sites, types, inputs"""
 
     jobIDs = []
@@ -611,7 +610,7 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn):
         jobManagerClient.removeJob(jobIDs)
 
 
-def test_JobManagerClient_removeJob():
+def test_JobManagerClient_removeJob() -> None:
     # Arrange
     job = helloWorldJob()
     job.setType("User")
