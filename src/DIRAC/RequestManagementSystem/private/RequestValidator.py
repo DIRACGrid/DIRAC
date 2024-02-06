@@ -157,7 +157,7 @@ class RequestValidator(metaclass=DIRACSingleton):
     @staticmethod
     def _hasOwner(request):
         """required attributes Owner and OwnerGroup"""
-        if not (request.Owner or request.OwnerDN):
+        if not (request.Owner or getattr(request, "OwnerDN", None)):
             return S_ERROR(f"Request '{request.RequestName}' is missing both Owner and OwnerDN value")
         if not request.OwnerGroup:
             return S_ERROR(f"Request '{request.RequestName}' is missing OwnerGroup value")
