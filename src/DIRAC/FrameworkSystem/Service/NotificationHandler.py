@@ -73,65 +73,6 @@ class NotificationHandlerMixin:
         return result
 
     ###########################################################################
-    # ALARMS
-    ###########################################################################
-
-    types_newAlarm = [dict]
-
-    def export_newAlarm(self, alarmDefinition):
-        """Set a new alarm in the Notification database"""
-        credDict = self.getRemoteCredentials()
-        if "username" not in credDict:
-            return S_ERROR("OOps. You don't have a username! This shouldn't happen :P")
-        alarmDefinition["author"] = credDict["username"]
-        return self.notDB.newAlarm(alarmDefinition)
-
-    types_updateAlarm = [dict]
-
-    def export_updateAlarm(self, updateDefinition):
-        """update an existing alarm in the Notification database"""
-        credDict = self.getRemoteCredentials()
-        if "username" not in credDict:
-            return S_ERROR("OOps. You don't have a username! This shouldn't happen :P")
-        updateDefinition["author"] = credDict["username"]
-        return self.notDB.updateAlarm(updateDefinition)
-
-    types_getAlarmInfo = [int]
-
-    @classmethod
-    def export_getAlarmInfo(cls, alarmId):
-        """Get the extended info of an alarm"""
-        result = cls.notDB.getAlarmInfo(alarmId)
-        if not result["OK"]:
-            return result
-        alarmInfo = result["Value"]
-        result = cls.notDB.getAlarmLog(alarmId)
-        if not result["OK"]:
-            return result
-        return S_OK({"info": alarmInfo, "log": result["Value"]})
-
-    types_getAlarms = [dict, list, int, int]
-
-    @classmethod
-    def export_getAlarms(cls, selectDict, sortList, startItem, maxItems):
-        """Select existing alarms suitable for the Web monitoring"""
-        return cls.notDB.getAlarms(selectDict, sortList, startItem, maxItems)
-
-    types_deleteAlarmsByAlarmId = [(list, int)]
-
-    @classmethod
-    def export_deleteAlarmsByAlarmId(cls, alarmsIdList):
-        """Delete alarms by alarmId"""
-        return cls.notDB.deleteAlarmsByAlarmId(alarmsIdList)
-
-    types_deleteAlarmsByAlarmKey = [(str, list)]
-
-    @classmethod
-    def export_deleteAlarmsByAlarmKey(cls, alarmsKeyList):
-        """Delete alarms by alarmId"""
-        return cls.notDB.deleteAlarmsByAlarmKey(alarmsKeyList)
-
-    ###########################################################################
     # MANANGE ASSIGNEE GROUPS
     ###########################################################################
 

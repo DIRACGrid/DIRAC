@@ -60,37 +60,6 @@ class NotificationClient(Client):
         return result
 
     ###########################################################################
-    # ALARMS
-    ###########################################################################
-
-    def newAlarm(self, subject, status, notifications, assignee, body, priority, alarmKey=""):
-        if not isinstance(notifications, (list, tuple)):
-            return S_ERROR(
-                "Notifications parameter has to be a list or a tuple with a combination of [ 'Web', 'Mail', 'SMS' ]"
-            )
-        alarmDef = {
-            "subject": subject,
-            "status": status,
-            "notifications": notifications,
-            "assignee": assignee,
-            "priority": priority,
-            "body": body,
-        }
-        if alarmKey:
-            alarmDef["alarmKey"] = alarmKey
-        return self._getRPC().newAlarm(alarmDef)
-
-    def updateAlarm(self, id=-1, alarmKey="", comment=False, modDict={}):
-        if id == -1 and not alarmKey:
-            return S_ERROR("Need either alarm id or key to update an alarm!")
-        updateReq = {"comment": comment, "modifications": modDict}
-        if id != -1:
-            updateReq["id"] = id
-        if alarmKey:
-            updateReq["alarmKey"] = alarmKey
-        return self._getRPC().updateAlarm(updateReq)
-
-    ###########################################################################
     # MANAGE NOTIFICATIONS
     ###########################################################################
 
