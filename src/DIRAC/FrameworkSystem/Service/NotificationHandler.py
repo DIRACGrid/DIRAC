@@ -12,13 +12,11 @@
     It can also be used to set alarms to be promptly forwarded to those
     subscribing to them.
 """
-from DIRAC import S_ERROR, S_OK, gConfig
+from DIRAC import S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.Mail import Mail
-from DIRAC.FrameworkSystem.DB.NotificationDB import NotificationDB
 
 
 class NotificationHandlerMixin:
@@ -27,8 +25,6 @@ class NotificationHandlerMixin:
         """Handler initialization"""
 
         cls.mailCache = DictCache()
-        cls.notDB = NotificationDB()
-        cls.notDB.purgeExpiredNotifications()
 
         return S_OK()
 
@@ -71,47 +67,6 @@ class NotificationHandlerMixin:
             self.log.debug(result["Value"])
 
         return result
-
-    ###########################################################################
-    # MANANGE ASSIGNEE GROUPS
-    ###########################################################################
-
-    types_setAssigneeGroup = [str, list]
-
-    @classmethod
-    def export_setAssigneeGroup(cls, groupName, userList):
-        """Create a group of users to be used as an assignee for an alarm"""
-        return cls.notDB.setAssigneeGroup(groupName, userList)
-
-    types_getUsersInAssigneeGroup = [str]
-
-    @classmethod
-    def export_getUsersInAssigneeGroup(cls, groupName):
-        """Get users in assignee group"""
-        return cls.notDB.getUserAsignees(groupName)
-
-    types_deleteAssigneeGroup = [str]
-
-    @classmethod
-    def export_deleteAssigneeGroup(cls, groupName):
-        """Delete an assignee group"""
-        return cls.notDB.deleteAssigneeGroup(groupName)
-
-    types_getAssigneeGroups = []
-
-    @classmethod
-    def export_getAssigneeGroups(cls):
-        """Get all assignee groups and the users that belong to them"""
-        return cls.notDB.getAssigneeGroups()
-
-    types_getAssigneeGroupsForUser = [str]
-
-    def export_getAssigneeGroupsForUser(self, user):
-        """Get all assignee groups and the users that belong to them"""
-        credDict = self.getRemoteCredentials()
-        if Properties.ALARMS_MANAGEMENT not in credDict["properties"]:
-            user = credDict["username"]
-        return self.notDB.getAssigneeGroupsForUser(user)
 
 
 class NotificationHandler(NotificationHandlerMixin, RequestHandler):
