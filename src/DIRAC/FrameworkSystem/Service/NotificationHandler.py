@@ -113,56 +113,6 @@ class NotificationHandlerMixin:
             user = credDict["username"]
         return self.notDB.getAssigneeGroupsForUser(user)
 
-    ###########################################################################
-    # MANAGE NOTIFICATIONS
-    ###########################################################################
-
-    types_addNotificationForUser = [str, str]
-
-    def export_addNotificationForUser(self, user, message, lifetime=604800, deferToMail=True):
-        """Create a group of users to be used as an assignee for an alarm"""
-        try:
-            lifetime = int(lifetime)
-        except Exception:
-            return S_ERROR("Message lifetime has to be a non decimal number")
-        return self.notDB.addNotificationForUser(user, message, lifetime, deferToMail)
-
-    types_removeNotificationsForUser = [str, list]
-
-    def export_removeNotificationsForUser(self, user, notIds):
-        """Get users in assignee group"""
-        credDict = self.getRemoteCredentials()
-        if Properties.ALARMS_MANAGEMENT not in credDict["properties"]:
-            user = credDict["username"]
-        return self.notDB.removeNotificationsForUser(user, notIds)
-
-    types_markNotificationsAsRead = [str, list]
-
-    def export_markNotificationsAsRead(self, user, notIds):
-        """Delete an assignee group"""
-        credDict = self.getRemoteCredentials()
-        if Properties.ALARMS_MANAGEMENT not in credDict["properties"]:
-            user = credDict["username"]
-        return self.notDB.markNotificationsSeen(user, True, notIds)
-
-    types_markNotificationsAsNotRead = [str, list]
-
-    def export_markNotificationsAsNotRead(self, user, notIds):
-        """Delete an assignee group"""
-        credDict = self.getRemoteCredentials()
-        if Properties.ALARMS_MANAGEMENT not in credDict["properties"]:
-            user = credDict["username"]
-        return self.notDB.markNotificationsSeen(user, False, notIds)
-
-    types_getNotifications = [dict, list, int, int]
-
-    def export_getNotifications(self, selectDict, sortList, startItem, maxItems):
-        """Get all assignee groups and the users that belong to them"""
-        credDict = self.getRemoteCredentials()
-        if Properties.ALARMS_MANAGEMENT not in credDict["properties"]:
-            selectDict["user"] = [credDict["username"]]
-        return self.notDB.getNotifications(selectDict, sortList, startItem, maxItems)
-
 
 class NotificationHandler(NotificationHandlerMixin, RequestHandler):
     pass

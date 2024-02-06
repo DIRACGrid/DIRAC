@@ -58,14 +58,3 @@ class NotificationClient(Client):
                 self.log.verbose(result["Value"])
 
         return result
-
-    ###########################################################################
-    # MANAGE NOTIFICATIONS
-    ###########################################################################
-
-    def addNotificationForUser(self, user, message, lifetime=604800, deferToMail=True):
-        try:
-            lifetime = int(lifetime)
-        except Exception:
-            return S_ERROR("Message lifetime has to be a non decimal number")
-        return self._getRPC().addNotificationForUser(user, message, lifetime, deferToMail)
