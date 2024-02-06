@@ -59,20 +59,6 @@ class NotificationClient(Client):
 
         return result
 
-    def sendSMS(self, userName, body, fromAddress=None):
-        """Send an SMS with body to the specified DIRAC user name."""
-        if not fromAddress:
-            fromAddress = ""
-
-        self.log.verbose(f"Received signal to send the following SMS to {userName}:\n{body}")
-        result = self._getRPC().sendSMS(userName, body, fromAddress)
-        if not result["OK"]:
-            self.log.error("Could not send SMS via central Notification service", result["Message"])
-        else:
-            self.log.verbose(result["Value"])
-
-        return result
-
     ###########################################################################
     # ALARMS
     ###########################################################################

@@ -799,15 +799,5 @@ class DiracAdmin(API):
         notification = NotificationClient()
         return notification.sendMail(address, subject, body, fromAddress, localAttempt, html)
 
-    #############################################################################
-    def sendSMS(self, userName, body, fromAddress=None):
-        """
-        Send mail to specified address with body.
-        """
-        if len(body) > 160:
-            return S_ERROR("Exceeded maximum SMS length of 160 characters")
-        notification = NotificationClient()
-        return notification.sendSMS(userName, body, fromAddress)
-
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

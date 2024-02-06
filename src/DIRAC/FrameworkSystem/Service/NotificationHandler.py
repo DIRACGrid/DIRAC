@@ -73,45 +73,6 @@ class NotificationHandlerMixin:
         return result
 
     ###########################################################################
-    types_sendSMS = [str, str, str]
-
-    def export_sendSMS(self, userName, body, fromAddress):
-        """Send an SMS with supplied body to the specified DIRAC user using the Mail utility via an SMS switch.
-
-        :param str userName: user name
-        :param str body: message
-        :param str fromAddress: sender address
-
-        :return: S_OK()/S_ERROR()
-        """
-        self.log.verbose(f"Received signal to send the following SMS to {userName}:\n{body}")
-        mobile = gConfig.getValue(f"/Registry/Users/{userName}/Mobile", "")
-        if not mobile:
-            return S_ERROR(f"No registered mobile number for {userName}")
-
-        csSection = PathFinder.getServiceSection("Framework/Notification")
-        smsSwitch = gConfig.getValue(f"{csSection}/SMSSwitch", "")
-        if not smsSwitch:
-            return S_ERROR(f"No SMS switch is defined in CS path {csSection}/SMSSwitch")
-
-        address = f"{mobile}@{smsSwitch}"
-        subject = "DIRAC SMS"
-        eMail = Mail()
-        eMail._subject = subject
-        eMail._message = body
-        eMail._mailAddress = address
-        if fromAddress:
-            eMail._fromAddress = fromAddress
-        result = eMail._send()
-        if not result["OK"]:
-            self.log.warn(f"Could not send SMS to {userName} with the following message:\n{result['Message']}")
-        else:
-            self.log.info(f"SMS sent successfully to {userName} ")
-            self.log.debug(result["Value"])
-
-        return result
-
-    ###########################################################################
     # ALARMS
     ###########################################################################
 
