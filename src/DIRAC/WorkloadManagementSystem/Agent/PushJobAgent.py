@@ -19,9 +19,9 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
 from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
 
@@ -185,8 +185,9 @@ class PushJobAgent(JobAgent):
                 matcherParams = ["JDL", "Owner", "Group"]
                 matcherInfo = jobRequest["Value"]
                 jobID = matcherInfo["JobID"]
-                self.jobReport.setJob(jobID)
-                result = self._checkMatcherInfo(matcherInfo, matcherParams)
+                self.jobs[jobID] = {}
+                self.jobs[jobID]["JobReport"] = JobReport(jobID, f"{self.__class__.__name__}@{self.siteName}")
+                result = self._checkMatcherInfo(jobID, matcherInfo, matcherParams)
                 if not result["OK"]:
                     self.failedQueues[queueName] += 1
                     break
@@ -205,7 +206,9 @@ class PushJobAgent(JobAgent):
                 # Get JDL paramters
                 parameters = self._getJDLParameters(jobJDL)
                 if not parameters["OK"]:
-                    self.jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Could Not Extract JDL Parameters")
+                    self.jobs[jobID]["JobReport"].setJobStatus(
+                        status=JobStatus.FAILED, minorStatus="Could Not Extract JDL Parameters"
+                    )
                     self.log.warn("Could Not Extract JDL Parameters", parameters["Message"])
                     self.failedQueues[queueName] += 1
                     break
@@ -222,8 +225,10 @@ class PushJobAgent(JobAgent):
                 self.log.verbose("Job request successful: \n", jobRequest["Value"])
                 self.log.info("Received", f"JobID={jobID}, JobType={jobType}, Owner={owner}, JobGroup={jobGroup}")
 
-                self.jobReport.setJobParameter(par_name="MatcherServiceTime", par_value=str(matchTime), sendFlag=False)
-                self.jobReport.setJobStatus(
+                self.jobs[jobID]["JobReport"].setJobParameter(
+                    par_name="MatcherServiceTime", par_value=str(matchTime), sendFlag=False
+                )
+                self.jobs[jobID]["JobReport"].setJobStatus(
                     status=JobStatus.MATCHED, minorStatus="Job Received by Agent", sendFlag=False
                 )
 
@@ -237,7 +242,8 @@ class PushJobAgent(JobAgent):
                 proxyChain = result_setupProxy.get("Value")
 
                 # Check software and install them if required
-                software = self._checkInstallSoftware(jobID, params, ceDict)
+                self.jobs[jobID]["JobReport"].setJobStatus(minorStatus="Installing Software", sendFlag=False)
+                software = self._checkInstallSoftware(params, ceDict)
                 if not software["OK"]:
                     self.log.error("Failed to install software for job", f"{jobID}")
                     errorMsg = software["Message"]
@@ -265,24 +271,6 @@ class PushJobAgent(JobAgent):
                     self.failedQueues[queueName] += 1
                     break
                 self.log.debug(f"After {self.ceName}CE submitJob()")
-
-                # Committing the JobReport before evaluating the result of job submission
-                res = self.jobReport.commit()
-                if not res["OK"]:
-                    resFD = self.jobReport.generateForwardDISET()
-                    if not resFD["OK"]:
-                        self.log.error("Error generating ForwardDISET operation", resFD["Message"])
-                    elif resFD["Value"]:
-                        # Here we create the Request.
-                        op = resFD["Value"]
-                        request = Request()
-                        requestName = f"jobAgent_{jobID}"
-                        request.RequestName = requestName.replace('"', "")
-                        request.JobID = jobID
-                        request.SourceComponent = f"JobAgent_{jobID}"
-                        request.addOperation(op)
-                        # This might fail, but only a message would be printed.
-                        self._sendFailoverRequest(request)
 
                 # Check that there is enough slots locally
                 result = self._checkCEAvailability(self.computingElement)
