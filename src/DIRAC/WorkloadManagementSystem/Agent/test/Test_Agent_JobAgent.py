@@ -238,12 +238,15 @@ def test__checkMatcherInfo(mocker, matcherInfo, matcherParams, expectedResult):
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
     mocker.patch("DIRAC.WorkloadManagementSystem.Client.JobReport.JobReport.setJobStatus")
 
+    jobID = 123
     jobAgent = JobAgent("Test", "Test1")
     jobAgent.log = gLogger
     jobAgent.log.setLevel("DEBUG")
-    jobAgent.jobReport = JobReport(123)
 
-    result = jobAgent._checkMatcherInfo(matcherInfo, matcherParams)
+    jobAgent.jobs[jobID] = {}
+    jobAgent.jobs[jobID]["JobReport"] = JobReport(jobID)
+
+    result = jobAgent._checkMatcherInfo(jobID, matcherInfo, matcherParams)
     assert result["OK"] == expectedResult["OK"]
     if "Value" in result:
         assert result["Value"] == expectedResult["Value"]
@@ -353,12 +356,16 @@ def test__checkInstallSoftware(mocker):
 
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
 
+    jobID = 123
+
     jobAgent = JobAgent("Test", "Test1")
     jobAgent.log = gLogger
     jobAgent.log.setLevel("DEBUG")
-    jobAgent.jobReport = JobReport(123)
 
-    result = jobAgent._checkInstallSoftware(101, {}, {})
+    jobAgent.jobs[jobID] = {}
+    jobAgent.jobs[jobID]["JobReport"] = JobReport(jobID)
+
+    result = jobAgent._checkInstallSoftware({}, {})
 
     assert result["OK"], result["Message"]
     assert result["Value"] == "Job has no software installation requirement"
@@ -418,32 +425,121 @@ def test__getJDLParameters(mocker):
     assert result["Value"]["Tags"] == ["16Processors", "MultiProcessor"]
 
 
-@pytest.mark.parametrize(
-    "mockJMInput, expected",
-    [
-        ({"OK": True}, {"OK": True, "Value": "Problem Rescheduling Job"}),
-        (
-            {"OK": False, "Message": "Test"},
-            {"OK": True, "Value": "Problem Rescheduling Job"},
-        ),
-    ],
-)
-def test__rescheduleFailedJob(mocker, mockJMInput, expected):
-    """Testing JobAgent()._rescheduleFailedJob()"""
+#############################################################################
+
+
+def test__rescheduleFailedJob_success(mocker):
+    """Testing rescheduleFailedJob success"""
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Client.JobManagerClient.JobManagerClient.rescheduleJob", return_value=S_OK()
+    )
+
     jobAgent = JobAgent("Test", "Test1")
 
     jobID = 101
-    message = "Test"
+    message = "An error occurred"
 
     jobAgent.log = gLogger
     jobAgent.log.setLevel("DEBUG")
-    jobAgent.jobReport = JobReport(jobID)
+
+    jobAgent.jobs[jobID] = {}
+    jobAgent.jobs[jobID]["JobReport"] = JobReport(jobID)
 
     result = jobAgent._rescheduleFailedJob(jobID, message)
-    result = jobAgent._finish(result["Message"], False)
 
-    assert result == expected
+    assert not result["OK"], result
+    assert result["Message"] == "Job Rescheduled", result
+
+    # Because the jobReport cannot communicate with the JobManager, we are supposed to have the report info here
+    jobReport = jobAgent.jobs[jobID]["JobReport"]
+    assert len(jobReport.jobStatusInfo) == 1, jobReport.jobStatusInfo
+    assert jobReport.jobStatusInfo[0][0] == "Rescheduled", jobReport.jobStatusInfo[0][0]
+    assert jobReport.jobStatusInfo[0][1] == "", jobReport.jobStatusInfo[0][1]
+
+    assert len(jobReport.appStatusInfo) == 1, jobReport.appStatusInfo
+    assert jobReport.appStatusInfo[0][0] == message, jobReport.appStatusInfo[0][0]
+
+
+def test__rescheduleFailedJob_fail(mocker):
+    """Testing rescheduleFailedJob when the job fails to be rescheduled."""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Client.JobManagerClient.JobManagerClient.rescheduleJob",
+        return_value=S_ERROR("Cannot contact JobManager"),
+    )
+
+    jobAgent = JobAgent("Test", "Test1")
+
+    jobID = 101
+    message = "An error occurred"
+
+    jobAgent.log = gLogger
+    jobAgent.log.setLevel("DEBUG")
+
+    jobAgent.jobs[jobID] = {}
+    jobAgent.jobs[jobID]["JobReport"] = JobReport(jobID)
+
+    result = jobAgent._rescheduleFailedJob(jobID, message)
+
+    assert not result["OK"], result
+    assert result["Message"] == "Problem Rescheduling Job"
+
+    # The JobManager could not be contacted to reschedule the jobs
+    # In such a case, we do not expect any status in the jobReport job/appStatusInfo
+    # TODO: rescheduling is currently performed in 2 operations: setJobStatus and rescheduleJob
+    #       This should be changed to a single operation in the future, then we can adjust this test
+    # jobReport = jobAgent.jobs[jobID]["JobReport"]
+    # assert len(jobReport.jobStatusInfo) == 0
+    # assert len(jobReport.appStatusInfo) == 0
+
+
+def test__rescheduleFailedJob_multipleJobIDs(mocker):
+    """Testing rescheduleFailedJob() with multiple jobIDs"""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Client.JobManagerClient.JobManagerClient.rescheduleJob",
+        return_value=S_ERROR("Cannot contact JobManager"),
+    )
+
+    jobAgent = JobAgent("Test", "Test1")
+
+    jobID1 = 101
+    jobID2 = 102
+    message = "An error occurred"
+
+    jobAgent.log = gLogger
+    jobAgent.log.setLevel("DEBUG")
+
+    jobAgent.jobs[jobID1] = {}
+    jobAgent.jobs[jobID1]["JobReport"] = JobReport(jobID1)
+
+    jobAgent.jobs[jobID2] = {}
+    jobAgent.jobs[jobID2]["JobReport"] = JobReport(jobID2)
+
+    # First rescheduled job
+    result = jobAgent._rescheduleFailedJob(jobID1, message)
+
+    assert not result["OK"], result
+    assert result["Message"] == "Problem Rescheduling Job"
+
+    # Second rescheduled job
+    result = jobAgent._rescheduleFailedJob(jobID2, message)
+
+    assert not result["OK"], result
+    assert result["Message"] == "Problem Rescheduling Job"
+
+    # Here we want to make sure that rescheduleFailedJob created 2 distinct reports
+    jobReport1 = jobAgent.jobs[jobID1]["JobReport"]
+    assert len(jobReport1.jobStatusInfo) == 1
+    assert len(jobReport1.appStatusInfo) == 1
+
+    jobReport2 = jobAgent.jobs[jobID2]["JobReport"]
+    assert len(jobReport2.jobStatusInfo) == 1
+    assert len(jobReport2.appStatusInfo) == 1
+
+
+#############################################################################
 
 
 @pytest.mark.parametrize(
@@ -507,6 +603,7 @@ def test_submitAndCheckJob(mocker, localCE, job, expectedResult1, expectedResult
         return_value=S_OK({int(jobID): {"Status": JobStatus.RUNNING}}),
     )
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.createJobWrapper", return_value=S_OK([jobName]))
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobAgent._sendFailoverRequest", return_value=S_OK())
     mocker.patch("DIRAC.Core.Security.X509Chain.X509Chain.dumpAllToString", return_value=S_OK())
     mocker.patch(
         "DIRAC.Resources.Computing.SingularityComputingElement.SingularityComputingElement._SingularityComputingElement__hasSingularity",
@@ -516,8 +613,10 @@ def test_submitAndCheckJob(mocker, localCE, job, expectedResult1, expectedResult
     jobAgent = JobAgent("JobAgent", "Test")
     jobAgent.log = gLogger.getSubLogger("JobAgent")
     jobAgent._initializeComputingElement(localCE)
-    jobAgent.jobReport = JobReport(jobID)
     jobAgent.jobSubmissionDelay = 3
+
+    jobAgent.jobs[jobID] = {}
+    jobAgent.jobs[jobID]["JobReport"] = JobReport(jobID)
 
     # Submit a job
     result = jobAgent._submitJob(
@@ -527,9 +626,9 @@ def test_submitAndCheckJob(mocker, localCE, job, expectedResult1, expectedResult
     # at the level of the JobAgent
     assert result["OK"]
 
-    # Check that the job was added to jobAgent.submissionDict
-    assert len(jobAgent.submissionDict) == 1
-    assert jobID in jobAgent.submissionDict
+    # Check that the job was added to jobAgent.jobs
+    assert len(jobAgent.jobs) == 1
+    assert jobID in jobAgent.jobs
 
     # If the submission is synchronous jobAgent.computingElement.taskResults
     # should already contain the result
@@ -545,8 +644,8 @@ def test_submitAndCheckJob(mocker, localCE, job, expectedResult1, expectedResult
 
     # Check errors that could have occurred in the innerCE
     result = jobAgent._checkSubmittedJobs()
-    assert result["OK"]
-    assert result["Value"] == expectedResult1
+    assert result["OK"], result
+    assert result["Value"] == expectedResult1, result
 
     # If the submission is synchronous jobAgent.computingElement.taskResults
     # should not contain the result anymore: already processed by checkSubmittedJobs
@@ -586,6 +685,7 @@ def test_submitAndCheck2Jobs(mocker):
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobAgent.am_stopExecution")
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.createJobWrapper", return_value=S_OK(["jobWrapper.py"]))
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobAgent._sendFailoverRequest", return_value=S_OK())
     mocker.patch("DIRAC.Core.Security.X509Chain.X509Chain.dumpAllToString", return_value=S_OK())
     mocker.patch(
         "DIRAC.Resources.Computing.InProcessComputingElement.InProcessComputingElement.submitJob",
@@ -598,12 +698,12 @@ def test_submitAndCheck2Jobs(mocker):
     jobAgent.ceName = "InProcess"
     jobAgent.jobSubmissionDelay = 0
 
-    jobAgent.jobReport = JobReport(0)
-    mocker.patch.object(jobAgent, "jobReport", autospec=True)
     mock_rescheduleFailedJob = mocker.patch.object(jobAgent, "_rescheduleFailedJob")
 
     # Submit a first job: should be successful
     jobID = "123"
+    jobAgent.jobs[jobID] = {}
+    jobAgent.jobs[jobID]["JobReport"] = JobReport(jobID)
     result = jobAgent._submitJob(
         jobID=jobID, jobParams={}, resourceParams={}, optimizerParams={}, proxyChain=X509Chain()
     )
@@ -611,9 +711,9 @@ def test_submitAndCheck2Jobs(mocker):
     # at the level of the JobAgent
     assert result["OK"]
 
-    # Check that the job was added to jobAgent.submissionDict
-    assert len(jobAgent.submissionDict) == 1
-    assert jobID in jobAgent.submissionDict
+    # Check that the job was added to jobAgent.jobs
+    assert len(jobAgent.jobs) == 1
+    assert jobID in jobAgent.jobs
 
     # The submission is synchronous taskResults should already contain the result
     assert len(jobAgent.computingElement.taskResults) == 1
@@ -627,6 +727,8 @@ def test_submitAndCheck2Jobs(mocker):
 
     # Submit a second job: should fail
     jobID = "456"
+    jobAgent.jobs[jobID] = {}
+    jobAgent.jobs[jobID]["JobReport"] = JobReport(jobID)
     result = jobAgent._submitJob(
         jobID=jobID, jobParams={}, resourceParams={}, optimizerParams={}, proxyChain=X509Chain()
     )
