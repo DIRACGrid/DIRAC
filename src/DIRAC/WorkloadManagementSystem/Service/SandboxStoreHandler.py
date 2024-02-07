@@ -616,7 +616,7 @@ class SandboxStoreHandlerMixin:
                 result = self.sandboxDB.getSandboxOwner(SEName, SEPFN, hostDN, "hosts")
                 if not result["OK"]:
                     return result
-                owner, _ownerDN, ownerGroup = result["Value"]
+                owner, ownerGroup = result["Value"]
 
                 request = Request()
                 request.RequestName = f"RemoteSBDeletion:{SEName}|{SEPFN}:{time.time()}"

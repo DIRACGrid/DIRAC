@@ -40,7 +40,7 @@ An example of requirements include the following::
 
   JobRequirements =
   [
-    OwnerDN = "/some/DN/";
+    Owner = "user_x";
     VirtualOrganization = "VO";
     Setup = "VO-Certification";
     CPUTime = 17800;

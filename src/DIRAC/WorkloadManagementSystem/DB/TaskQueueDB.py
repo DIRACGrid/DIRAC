@@ -1,8 +1,8 @@
 """ TaskQueueDB class is a front-end to the task queues db
 """
-from collections import defaultdict
 import random
 import string
+from collections import defaultdict
 from typing import Any
 
 from DIRAC import S_ERROR, S_OK, gConfig
@@ -97,7 +97,6 @@ class TaskQueueDB(DB):
             "Fields": {
                 "TQId": "INTEGER(11) UNSIGNED AUTO_INCREMENT NOT NULL",
                 "Owner": "VARCHAR(255) NOT NULL",
-                "OwnerDN": "VARCHAR(255)",
                 "OwnerGroup": "VARCHAR(32) NOT NULL",
                 "VO": "VARCHAR(32) NOT NULL",
                 "CPUTime": "BIGINT(20) UNSIGNED NOT NULL",
@@ -1151,7 +1150,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId"
             res = self._escapeString(user)
             if not res["OK"]:
                 return res
-            userDN = res["Value"]
+            user = res["Value"]
             tqCond.append(f"t.Owner= {user} ")
         tqCond.append("t.TQId = j.TQId")
         if consolidationFunc == "AVG":

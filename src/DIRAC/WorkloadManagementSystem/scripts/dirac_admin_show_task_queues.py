@@ -8,7 +8,6 @@ Example:
   * TQ 401
           CPUTime: 360
              Jobs: 3
-          OwnerDN: /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar
        OwnerGroup: dirac_user
          Priority: 1.0
 """
@@ -16,11 +15,10 @@ Example:
 import sys
 
 from DIRAC import S_OK, gLogger
-from DIRAC.Core.Utilities.PrettyPrint import printTable
-
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
-from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.Core.Base.Script import Script
+from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 
 verbose = False
 
@@ -74,16 +72,7 @@ def main():
             record = [str(tqId)]
             tqData = tqDict[tqId]
             for key in fields[1:]:
-                if key == "Owner":
-                    value = tqData.get("OwnerDN", "-")
-                    if value != "-":
-                        result = getUsernameForDN(value)
-                        if not result["OK"]:
-                            value = "Unknown"
-                        else:
-                            value = result["Value"]
-                else:
-                    value = tqData.get(key, "-")
+                value = tqData.get(key, "-")
                 if isinstance(value, list):
                     if len(value) > 1:
                         record.append(str(value[0]) + "...")
