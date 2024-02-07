@@ -65,14 +65,6 @@ class SandboxStoreClient:
             return self.__transferClient
         return TransferClient(self.__serviceName, **self.__kwargs)
 
-    # Upload sandbox to jobs and pilots
-
-    def uploadFilesAsSandboxForJob(self, fileList, jobId, sbType, sizeLimit=0):
-        """Upload SB for a job"""
-        if sbType not in self.__validSandboxTypes:
-            return S_ERROR(f"Invalid Sandbox type {sbType}")
-        return self.uploadFilesAsSandbox(fileList, sizeLimit, assignTo={f"Job:{jobId}": sbType})
-
     # Upload generic sandbox
 
     def uploadFilesAsSandbox(self, fileList, sizeLimit=0, assignTo=None):

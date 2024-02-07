@@ -128,7 +128,10 @@ class SandboxMetadataDB(DB):
             if not result["Value"]:
                 return S_ERROR("SandBox already exists but doesn't belong to the user")
             sbId = result["Value"][0][0]
-            self.accessedSandboxById(sbId)
+            if not (
+                ret := self._update(f"UPDATE `sb_SandBoxes` SET LastAccessTime=UTC_TIMESTAMP() WHERE SBId = {sbId}")
+            )["OK"]:
+                return ret
             return S_OK((sbId, False))
         # Inserted, time to get the id
         if "lastRowId" in result:
@@ -142,11 +145,7 @@ class SandboxMetadataDB(DB):
         """
         Update last access time for sb id
         """
-        return self.__accessedSandboxByCond({"SBId": sbId})
-
-    def __accessedSandboxByCond(self, condDict):
-        sqlCond = [f"{key}={condDict[key]}" for key in condDict]
-        return self._update(f"UPDATE `sb_SandBoxes` SET LastAccessTime=UTC_TIMESTAMP() WHERE {' AND '.join(sqlCond)}")
+        return self._update(f"UPDATE `sb_SandBoxes` SET LastAccessTime=UTC_TIMESTAMP() WHERE SBId = {sbId}")
 
     def assignSandboxesToEntities(self, enDict, requesterName, requesterGroup, ownerName="", ownerGroup=""):
         """
@@ -184,8 +183,8 @@ class SandboxMetadataDB(DB):
         sbIds = []
         assigned = 0
         for entityId, SBType, SEName, SEPFN in entitiesToSandboxList:
-            result = self.getSandboxId(SEName, SEPFN, requesterName, requesterGroup)
             insertValues = []
+            result = self.getSandboxId(SEName, SEPFN, requesterName, requesterGroup)
             if not result["OK"]:
                 self.log.warn(
                     f"Cannot find id for {SEName}:",
@@ -205,8 +204,7 @@ class SandboxMetadataDB(DB):
 
             if not insertValues:
                 return S_ERROR(
-                    "Sandbox does not exist or you're not authorized to assign it being %s@%s"
-                    % (requesterName, requesterGroup)
+                    f"Sandbox does not exist or you're not authorized to assign it being {requesterName}@{requesterGroup}"
                 )
             sqlCmd = f"INSERT INTO `sb_EntityMapping` ( entityId, Type, SBId ) VALUES {', '.join(insertValues)}"
             result = self._update(sqlCmd)
@@ -215,8 +213,7 @@ class SandboxMetadataDB(DB):
                     return result
             assigned += 1
         sqlCmd = f"UPDATE `sb_SandBoxes` SET Assigned=1 WHERE SBId in ( {', '.join(sbIds)} )"
-        result = self._update(sqlCmd)
-        if not result["OK"]:
+        if not (result := self._update(sqlCmd))["OK"]:
             return result
         return S_OK(assigned)
 
@@ -380,12 +377,12 @@ class SandboxMetadataDB(DB):
 
         :returns: S_OK with tuple (owner, ownerGroup)
         """
-        res = self.getSandboxId(SEName, SEPFN, None, requesterGroup, "OwnerId", requesterDN=requesterDN)
-        if not res["OK"]:
+        if not (res := self.getSandboxId(SEName, SEPFN, None, requesterGroup, "OwnerId", requesterDN=requesterDN))[
+            "OK"
+        ]:
             return res
 
         sqlCmd = "SELECT `Owner`, `OwnerGroup` FROM `sb_Owners` WHERE `OwnerId` = %d" % res["Value"]
-        res = self._query(sqlCmd)
-        if not res["OK"]:
+        if not (res := self._query(sqlCmd))["OK"]:
             return res
         return S_OK(res["Value"][0])
