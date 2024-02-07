@@ -199,6 +199,7 @@ class SandboxStoreHandlerMixin:
         result = self.sandboxDB.registerAndGetSandbox(
             credDict["username"],
             credDict["group"],
+            credDict["VO"],
             self.__localSEName,
             sbPath,
             fSize,
@@ -209,8 +210,7 @@ class SandboxStoreHandlerMixin:
 
         sbURL = f"SB:{self.__localSEName}|{sbPath}"
         assignTo = {key: [(sbURL, assignTo[key])] for key in assignTo}
-        result = self.export_assignSandboxesToEntities(assignTo)
-        if not result["OK"]:
+        if not (result := self.export_assignSandboxesToEntities(assignTo))["OK"]:
             return result
         return S_OK(sbURL)
 
@@ -241,7 +241,12 @@ class SandboxStoreHandlerMixin:
             return S_OK(f"SB:{self.__localSEName}|{sbPath}")
 
         result = self.sandboxDB.registerAndGetSandbox(
-            credDict["username"], credDict["group"], self.__localSEName, sbPath, fileHelper.getTransferedBytes()
+            credDict["username"],
+            credDict["group"],
+            credDict["VO"],
+            self.__localSEName,
+            sbPath,
+            fileHelper.getTransferedBytes(),
         )
         if not result["OK"]:
             self.__secureUnlinkFile(tmpFilePath)
@@ -359,7 +364,9 @@ class SandboxStoreHandlerMixin:
         Get the sandboxes associated to a job and the association type
         """
         credDict = self.getRemoteCredentials()
-        result = self.sandboxDB.getSandboxesAssignedToEntity(entityId, credDict["username"], credDict["group"])
+        result = self.sandboxDB.getSandboxesAssignedToEntity(
+            entityId, credDict["username"], credDict["group"], credDict["VO"]
+        )
         if not result["OK"]:
             return result
         sbDict = {}
@@ -480,12 +487,10 @@ class SandboxStoreHandlerMixin:
         return S_OK()
 
     def __purgeSandbox(self, sbId, SEName, SEPFN):
-        result = self.__deleteSandboxFromBackend(SEName, SEPFN)
-        if not result["OK"]:
+        if not (result := self.__deleteSandboxFromBackend(SEName, SEPFN))["OK"]:
             gLogger.error("Cannot delete sandbox from backend", result["Message"])
             return
-        result = self.sandboxDB.deleteSandboxes([sbId])
-        if not result["OK"]:
+        if not (result := self.sandboxDB.deleteSandboxes([sbId]))["OK"]:
             gLogger.error("Cannot delete sandbox from DB", result["Message"])
 
     def __deleteSandboxFromBackend(self, SEName, SEPFN):

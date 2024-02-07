@@ -911,6 +911,7 @@ class X509Chain:
                   * username: DIRAC username associated to the DN (needs withRegistryInfo)
                               (see :py:func:`DIRAC.ConfigurationSystem.Client.Helpers.Registry.getUsernameForDN`)
                   * group: DIRAC group, depending on ignoreDefault param(see :py:meth:`.getDIRACGroup`)
+                  * VO: virtual organization
                   * validGroup: True if the group found is in the list of groups the user belongs to
                   * groupProperty: (only if validGroup) get the properties of the group
 
@@ -961,6 +962,7 @@ class X509Chain:
                     if retVal["OK"] and diracGroup in retVal["Value"]:
                         credDict["validGroup"] = True
                         credDict["groupProperties"] = Registry.getPropertiesForGroup(diracGroup)
+                credDict["VO"] = Registry.getVOForGroup(diracGroup)
         elif withRegistryInfo:
             retVal = Registry.getHostnameForDN(credDict["subject"])
             if retVal["OK"]:
