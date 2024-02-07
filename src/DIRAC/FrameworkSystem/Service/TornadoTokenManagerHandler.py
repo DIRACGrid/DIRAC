@@ -16,7 +16,7 @@ This is mainly about the :py:meth:`export_getToken` method.
 .. image:: /_static/Systems/FS/TokenManager_getToken.png
     :alt: https://dirac.readthedocs.io/en/integration/_images/TokenManager_getToken.png (source https://github.com/TaykYoku/DIRACIMGS/raw/main/TokenManagerService_getToken.ai)
 
-The service and its client have a mechanism for caching the received tokens.
+The client has a mechanism for caching the received tokens.
 This helps reduce the number of requests to both the service and the Identity Provider (IdP).
 
 If the client has a valid **access token** in the cache, it is used until it expires.
@@ -24,9 +24,8 @@ After that you need to update. The client can update it independently if on the 
 ``client_id`` and ``client_secret`` of the Identity Provider client are registered.
 
 Otherwise, the client makes an RPC call to the **TornadoManager** service.
-It in turn checks the cache and if the ``access token`` is already invalid tries to update it using a ``refresh token``.
-If the required token is not in the cache, then the ``refresh token`` from :py:class:`TokenDB <DIRAC.FrameworkSystem.DB.TokenDB.TokenDB>`
-is taken and the **exchange token** request to Identity Provider is made. The received tokens are cached.
+The ``refresh token`` from :py:class:`TokenDB <DIRAC.FrameworkSystem.DB.TokenDB.TokenDB>`
+is taken and the **exchange token** request to Identity Provider is made.
 """
 
 import pprint
@@ -47,9 +46,6 @@ from DIRAC.FrameworkSystem.Utilities.TokenManagementUtilities import (
 )
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
-# Used to synchronize the cache with user tokens
-gTokensSync = ThreadSafe.Synchronizer()
-
 
 class TornadoTokenManagerHandler(TornadoService):
     DEFAULT_AUTHORIZATION = ["authenticated"]
@@ -60,8 +56,6 @@ class TornadoTokenManagerHandler(TornadoService):
 
         :return: S_OK()/S_ERROR()
         """
-        # Cache containing tokens from scope requested by the client
-        cls.__tokensCache = DictCache()
 
         # The service plays an important OAuth 2.0 role, namely it is an Identity Provider client.
         # This allows you to manage tokens without the involvement of their owners.
@@ -180,7 +174,6 @@ class TornadoTokenManagerHandler(TornadoService):
         # Not authorized!
         return S_ERROR("You can't get tokens!")
 
-    @gTokensSync
     def export_getToken(
         self,
         username: str = None,
@@ -212,12 +205,8 @@ class TornadoTokenManagerHandler(TornadoService):
             return result
         idpObj = result["Value"]
 
-        # Search for an existing token in tokensCache
-        cachedKey = getCachedKey(idpObj, username, userGroup, scope, audience)
-        result = getCachedToken(self.__tokensCache, cachedKey, requiredTimeLeft)
-        if result["OK"]:
-            # A valid token has been found and is returned
-            return result
+        # getCachedKey is just used here to resolve the default scopes
+        _, scope, *_ = getCachedKey(idpObj, username, userGroup, scope, audience)
 
         # A client token is requested
         if not username:
@@ -226,19 +215,8 @@ class TornadoTokenManagerHandler(TornadoService):
                 return result
 
             # Get the client token with requested scope and audience
-            scope = cachedKey[1]
-            audience = cachedKey[2]
             result = idpObj.fetchToken(grant_type="client_credentials", scope=scope, audience=audience)
-            if not result["OK"]:
-                return result
-            token = result["Value"]
 
-            # Caching new token: only get an access token (no refresh token in this context)
-            self.__tokensCache.add(
-                cachedKey,
-                result["Value"].get_claim("exp", "access_token") or DEFAULT_AT_EXPIRATION_TIME,
-                token,
-            )
             return result
 
         # A user token is requested
@@ -261,12 +239,6 @@ class TornadoTokenManagerHandler(TornadoService):
                         # refresh token with requested scope
                         result = idpObj.refreshToken(tokens.get("refresh_token"), group=userGroup, scope=scope)
                         if result["OK"]:
-                            # caching new tokens
-                            self.__tokensCache.add(
-                                cachedKey,
-                                result["Value"].get_claim("exp", "refresh_token") or DEFAULT_RT_EXPIRATION_TIME,
-                                result["Value"],
-                            )
                             return result
                 # Did not find any token associated with the found user ID
                 err.append(result.get("Message", f"No token found for {uid}"))
