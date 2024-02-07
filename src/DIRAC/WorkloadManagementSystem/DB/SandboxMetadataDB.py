@@ -386,7 +386,8 @@ class SandboxMetadataDB(DB):
         ]:
             return res
 
-        sqlCmd = "SELECT `Owner`, `OwnerGroup`, `VO` FROM `sb_Owners` WHERE `OwnerId` = %d" % res["Value"]
-        if not (res := self._query(sqlCmd))["OK"]:
+        if not (
+            res := self._query(f"SELECT `Owner`, `OwnerGroup`, `VO` FROM `sb_Owners` WHERE `OwnerId` = {res['Value']}")
+        )["OK"]:
             return res
         return S_OK(res["Value"][0])
