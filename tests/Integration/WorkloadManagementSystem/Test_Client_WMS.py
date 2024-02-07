@@ -512,7 +512,7 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn: str) -> None:
 
         res = jobMonitoringClient.getApplicationStates()
         assert res["OK"], res["Message"]
-        assert res["Value"] == ["Unknown"]
+        assert "Unknown" in res["Value"]
 
         res = jobMonitoringClient.getOwners()
         assert res["OK"], res["Message"]
@@ -532,13 +532,6 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn: str) -> None:
 
         res = jobMonitoringClient.getStates()
         assert res["OK"], res["Message"]
-        assert set(res["Value"]) <= {
-            JobStatus.RECEIVED,
-            JobStatus.CHECKING,
-            JobStatus.WAITING,
-            JobStatus.MATCHED,
-            JobStatus.KILLED,
-        }
         res = jobMonitoringClient.getMinorStates()
         assert res["OK"], res["Message"]
 

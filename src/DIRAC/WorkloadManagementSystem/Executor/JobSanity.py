@@ -1,5 +1,5 @@
 """ The Job Sanity executor assigns sandboxes to the job """
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 
@@ -59,7 +59,7 @@ class JobSanity(OptimizerExecutor):
         result = self.sandboxClient.assignSandboxesToJob(jobState.jid, sbsToAssign, ownerName, ownerGroup)
         if not result["OK"]:
             self.jobLog.error("Could not assign sandboxes in the SandboxStore")
-            return S_ERROR("Cannot assign sandbox to job")
+            return result
         assigned = result["Value"]
         if assigned != numSBsToAssign:
             self.jobLog.error("Could not assign all sandboxes", f"({numSBsToAssign}). Only assigned {assigned}")
