@@ -25,7 +25,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping, getQueues
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Security import X509Chain
-from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.TimeUtilities import second, toEpochMilliSeconds
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
@@ -34,6 +33,7 @@ from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
+from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.PilotScopes import PILOT_SCOPES
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import getPilotAgentsDB
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
@@ -43,7 +43,6 @@ from DIRAC.WorkloadManagementSystem.Utilities.PilotWrapper import (
     pilotWrapperScript,
 )
 from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
-from DIRAC.WorkloadManagementSystem.Utilities.SubmissionPolicy import WAITING_SUPPORTED_JOBS
 
 MAX_PILOTS_TO_SUBMIT = 100
 
@@ -74,12 +73,16 @@ class SiteDirector(AgentModule):
         self.siteClient = None
         self.rssClient = None
         self.pilotAgentsDB = None
+        self.matcherClient = None
         self.rssFlag = None
 
         # self.failedQueueCycleFactor is the number of cycles a queue has to wait before getting pilots again
         self.failedQueueCycleFactor = 10
-        self.submissionPolicyName = WAITING_SUPPORTED_JOBS
-        self.submissionPolicy = None
+
+        # Every N cycles, pilot status update is performed by the SiteDirector
+        self.pilotStatusUpdateCycleFactor = 10
+        # Every N cycles, pilot submission is performed by the SiteDirector
+        self.pilotSubmissionCycleFactor = 1
 
         self.workingDirectory = None
         self.maxQueueLength = 86400 * 3
@@ -98,6 +101,7 @@ class SiteDirector(AgentModule):
         self.siteClient = SiteStatus()
         self.rssClient = ResourceStatus()
         self.pilotAgentsDB = getPilotAgentsDB()
+        self.matcherClient = MatcherClient()
 
         return S_OK()
 
@@ -124,12 +128,12 @@ class SiteDirector(AgentModule):
         self.maxQueueLength = self.am_getOption("MaxQueueLength", self.maxQueueLength)
         self.maxPilotsToSubmit = self.am_getOption("MaxPilotsToSubmit", self.maxPilotsToSubmit)
         self.failedQueueCycleFactor = self.am_getOption("FailedQueueCycleFactor", self.failedQueueCycleFactor)
-
-        # Load submission policy
-        self.submissionPolicyName = self.am_getOption("SubmissionPolicy", self.submissionPolicyName)
-        result = self._loadSubmissionPolicy()
-        if not result:
-            return result
+        self.pilotStatusUpdateCycleFactor = self.am_getOption(
+            "PilotStatusUpdateCycleFactor", self.pilotStatusUpdateCycleFactor
+        )
+        self.pilotSubmissionCycleFactor = self.am_getOption(
+            "PilotSubmissionCycleFactor", self.pilotSubmissionCycleFactor
+        )
 
         # Flags
         self.sendAccounting = self.am_getOption("SendPilotAccounting", self.sendAccounting)
@@ -179,19 +183,6 @@ class SiteDirector(AgentModule):
                 f"Site: {self.queueDict[queue]['Site']}, CE: {self.queueDict[queue]['CEName']}, Queue: {queue}"
             )
 
-        return S_OK()
-
-    def _loadSubmissionPolicy(self):
-        """Load a submission policy"""
-        objectLoader = ObjectLoader()
-        result = objectLoader.loadObject(
-            "WorkloadManagementSystem.Utilities.SubmissionPolicy", f"{self.submissionPolicyName}Policy"
-        )
-        if not result["OK"]:
-            self.log.error(f"Failed to load submission policy: {result['Message']}")
-            return result
-
-        self.submissionPolicy = result["Value"]()
         return S_OK()
 
     def _buildQueueDict(
@@ -262,14 +253,12 @@ class SiteDirector(AgentModule):
 
         It basically just submits pilots and gets their status
         """
-        submissionResult = self.submitPilots()
-        monitoringResult = self.monitorPilots()
+        cyclesDone = self.am_getModuleParam("cyclesDone")
+        if cyclesDone % self.pilotSubmissionCycleFactor == 0:
+            self.submitPilots()
 
-        if not submissionResult["OK"]:
-            return submissionResult
-
-        if not monitoringResult["OK"]:
-            return monitoringResult
+        if cyclesDone % self.pilotStatusUpdateCycleFactor == 0:
+            self.monitorPilots()
 
         return S_OK()
 
@@ -340,24 +329,23 @@ class SiteDirector(AgentModule):
             return result
 
         # Get the number of available slots on the target site/queue
-        totalSlots = self._getQueueSlots(queueName)
+        totalSlots, waitingPilots = self._getQueueSlots(queueName)
         if totalSlots <= 0:
             self.log.verbose(f"{queueName}: No slot available")
             return S_OK(0)
 
-        # Apply the submission policy
-        submittablePilots = self.submissionPolicy.apply(
-            totalSlots, ceParameters=self.queueDict[queueName]["CE"].ceParameters
-        )
-
-        if submittablePilots <= 0:
+        # Get the number of jobs that need pilots
+        waitingJobs = self._getNumberOfJobsNeedingPilots(waitingPilots, queueName)
+        if waitingJobs <= 0:
             self.log.verbose(f"{queueName}: Nothing to submit")
             return S_OK(0)
 
-        self.log.info(f"{queueName}: slots available={totalSlots} to submit={submittablePilots}")
-
-        # Limit the number of pilots to submit to self.maxPilotsToSubmit
+        # Get the number of pilots to submit
+        submittablePilots = min(totalSlots, waitingJobs)
         pilotsToSubmit = min(self.maxPilotsToSubmit, submittablePilots)
+        self.log.info(
+            f"{queueName}: slots available={totalSlots}; waiting jobs={waitingJobs}; to submit={pilotsToSubmit}"
+        )
 
         # Now really submitting
         result = self._submitPilotsToQueue(pilotsToSubmit, ce, queueName)
@@ -389,7 +377,7 @@ class SiteDirector(AgentModule):
                 "CE queue report",
                 f"({ceName}_{queueName}): Wait={ceInfoDict['WaitingJobs']}, Run={ceInfoDict['RunningJobs']}, Max={ceInfoDict['MaxTotalJobs']}",
             )
-            return result["Value"]
+            return (result["Value"], ceInfoDict["WaitingJobs"])
 
         # If we cannot get available slots from the CE, then we get them from the pilotAgentsDB
         maxWaitingJobs = int(self.queueDict[queue]["ParametersDict"].get("MaxWaitingJobs", 10))
@@ -402,7 +390,7 @@ class SiteDirector(AgentModule):
         if not result["OK"]:
             self.log.warn("Failed to check PilotAgentsDB", f"for queue {queue}: \n{result['Message']}")
             self.failedQueues[queue] += 1
-            return 0
+            return (0, 0)
         totalJobs = result["Value"]
 
         # Get the number of waiting pilots
@@ -412,7 +400,7 @@ class SiteDirector(AgentModule):
         if not result["OK"]:
             self.log.warn("Failed to check PilotAgentsDB", f"for queue {queue}: \n{result['Message']}")
             self.failedQueues[queue] += 1
-            return 0
+            return (0, 0)
         waitingJobs = result["Value"]
 
         runningJobs = totalJobs - waitingJobs
@@ -422,7 +410,26 @@ class SiteDirector(AgentModule):
         )
 
         totalSlots = min((maxTotalJobs - totalJobs), (maxWaitingJobs - waitingJobs))
-        return totalSlots
+        return (totalSlots, waitingJobs)
+
+    def _getNumberOfJobsNeedingPilots(self, waitingPilots: int, queue: str):
+        """Get the number of jobs needing pilots for the targeted queue.
+
+        :param waitingPilots: number of waiting pilots in the queue
+        :param queue: queue name
+        """
+        result = self.matcherClient.getMatchingTaskQueues(self.queueDict[queue]["CE"].ceParameters)
+        if not result["OK"]:
+            return 0
+        taskQueueDict = result["Value"]
+
+        # Get the number of jobs that would match the capability of the CE
+        waitingSupportedJobs = 0
+        for tq in taskQueueDict.values():
+            waitingSupportedJobs += tq["Jobs"]
+
+        # Get the number of jobs that need pilots
+        return max(0, waitingSupportedJobs - waitingPilots)
 
     def _submitPilotsToQueue(self, pilotsToSubmit: int, ce: ComputingElement, queue: str):
         """Method that really submits the pilots to the ComputingElements' queue
