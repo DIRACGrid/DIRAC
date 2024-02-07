@@ -1,3 +1,32 @@
+[v9.0.0a22]
+
+*WorkloadManagement
+
+FIX: (#7448) get pilot logging info with a token from an AREXCE
+
+*WorkloadManagementSystem
+
+FIX: (#7447) Each job has its own JobReport in JobAgent
+FIX: (#7447) JobAgent exits when all the jobs have been processed
+FIX: (#7446) StatesAccountingAgent: skip the first iteration in order to avoid double commit after a restart
+CHANGE: (#7439) SandboxStore: remove external SE feature
+FIX: (#7436) JobDB: fix mismatch of string and integer jobIDs. In some cases API calls would fail because JObDB.getJobParameters and JobDB.getJobsAttributes return dictionaries with integer keys, while the function was called with a string jobID. This fixes for example the StalledJobAgent being unable to reschedule matched jobs.
+NEW: (#7425) TornadoPilotLoggingHandler modify the handler to accept VO name sent by a pilot. Required in a case where the VO cannot be guessed from a proxy. This change requires https://github.com/DIRACGrid/Pilot/pull/230
+NEW: (#7421) SandboxDB: add VO field
+CHANGE: (#7414) move the content of SubmissionPolicy in SiteDirector
+
+*FrameworkSystem
+
+FIX: (#7443) correctly set the duration of tokens in cache
+
+*RequestManagementSystem
+
+FIX: (#7441) make sure OwnerDN is defined before trying to access its value
+
+*MonitoringSystem
+
+CHANGE: (#7432) moved to weekly indices for agent and service monitoring
+
 [v9.0.0a21]
 
 *Test
