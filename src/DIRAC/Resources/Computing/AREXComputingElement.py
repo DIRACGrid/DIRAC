@@ -174,7 +174,7 @@ class AREXComputingElement(ARCComputingElement):
         except requests.RequestException as e:
             return S_ERROR(f"Request exception: {e}")
 
-    def _checkSession(self):
+    def _checkSession(self, mandatoryProxy: bool = False):
         """Check that the session exists and carries a valid proxy."""
         if not self.session:
             return S_ERROR("REST interface not initialised.")
@@ -183,23 +183,33 @@ class AREXComputingElement(ARCComputingElement):
         self.session.cert = None
         self.headers.pop("Authorization", None)
 
-        # Get a proxy: still mandatory, even if tokens are used to authenticate
-        if not self.proxy:
-            self.log.error("Proxy not set")
-            return S_ERROR("Proxy not set")
+        # We need a token or a proxy to interact with the REST interface
+        if not (self.token or self.proxy):
+            self.log.error("Proxy or token not set")
+            return S_ERROR("Proxy or token not set")
 
-        result = self._prepareProxy()
-        if not result["OK"]:
-            self.log.error("Failed to set up proxy", result["Message"])
-            return result
+        # A proxy might be required: in this case, it should be present
+        if mandatoryProxy and not self.proxy:
+            self.log.error("Proxy is mandatory but not set")
+            return S_ERROR("Proxy is mandatory but not set")
 
+        # If a proxy is required or if no token is set
+        if mandatoryProxy or not self.token:
+            # Prepare the proxy in X509_USER_PROXY
+            if not (result := self._prepareProxy())["OK"]:
+                self.log.error("Failed to set up proxy", result["Message"])
+                return result
+
+            # Attach the proxy to the session
+            self.session.cert = os.environ.get("X509_USER_PROXY")
+            self.log.verbose("A proxy is attached to the session")
+
+        # If a token is set, we use it
         if self.token:
             # Attach the token to the headers if present
-            self.headers["Authorization"] = "Bearer " + self.token["access_token"]
-            return S_OK()
+            self.headers["Authorization"] = f"Bearer {self.token['access_token']}"
+            self.log.verbose("A token is attached to the header of the request(s)")
 
-        # Attach the proxy to the session, only if the token is unavailable
-        self.session.cert = os.environ["X509_USER_PROXY"]
         return S_OK()
 
     #############################################################################
@@ -413,7 +423,7 @@ class AREXComputingElement(ARCComputingElement):
         Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
         And none of our supported batch systems have a "-" in their name
         """
-        result = self._checkSession()
+        result = self._checkSession(mandatoryProxy=True)
         if not result["OK"]:
             self.log.error("Cannot submit jobs", result["Message"])
             return result
@@ -715,7 +725,7 @@ class AREXComputingElement(ARCComputingElement):
 
         :param list jobIDList: list of job references, followed by the DIRAC stamp.
         """
-        result = self._checkSession()
+        result = self._checkSession(mandatoryProxy=True)
         if not result["OK"]:
             self.log.error("Cannot get status of the jobs", result["Message"])
             return result
