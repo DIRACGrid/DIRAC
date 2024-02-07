@@ -9,12 +9,12 @@
 """
 import datetime
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK
+from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
+from DIRAC.AccountingSystem.Client.Types.WMSHistory import WMSHistory
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import TimeUtilities
-from DIRAC.AccountingSystem.Client.Types.WMSHistory import WMSHistory
-from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
@@ -76,6 +76,12 @@ class StatesAccountingAgent(AgentModule):
 
     def execute(self):
         """Main execution method"""
+
+        # on the first iteration of the agent, do nothing in order to avoid double committing after a restart
+        if self.am_getModuleParam("cyclesDone") == 0:
+            self.log.notice("Skipping the first iteration of the agent")
+            return S_OK()
+
         # PilotsHistory to Monitoring
         if "Monitoring" in self.pilotMonitoringOption:
             self.log.info("Committing PilotsHistory to Monitoring")
