@@ -200,5 +200,5 @@ def test_getQueue():
         "LocalCEType": "Pool/Singularity",
         "OS": "linux_AlmaLinux_9.4.2104",
     }
-
+    assert sorted(result["Value"].pop("Tag")) == sorted(expectedDict.pop("Tag"))
     assert result["Value"] == expectedDict

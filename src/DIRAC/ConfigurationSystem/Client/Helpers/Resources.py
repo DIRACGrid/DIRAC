@@ -200,29 +200,29 @@ def getSiteGrid(site):
 def getQueue(site, ce, queue):
     """Get parameters of the specified queue"""
     grid = site.split(".")[0]
-    result = gConfig.getOptionsDict(f"/Resources/Sites/{grid}/{site}/CEs/{ce}")
-    if not result["OK"]:
-        return result
-    resultDict = result["Value"]
 
-    # Get queue defaults
-    result = gConfig.getOptionsDict(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/Queues/{queue}")
-    if not result["OK"]:
+    # Get CE parameters
+    if not (result := gConfig.getOptionsDict(f"/Resources/Sites/{grid}/{site}/CEs/{ce}"))["OK"]:
         return result
-    resultDict.update(result["Value"])
+    ceDict = result["Value"]
 
-    # Handle tag lists for the queue
-    for tagFieldName in ("Tag", "RequiredTag"):
-        tags = []
-        ceTags = resultDict.get(tagFieldName)
-        if ceTags:
-            tags = fromChar(ceTags)
-        queueTags = resultDict.get(tagFieldName)
-        if queueTags:
-            queueTags = fromChar(queueTags)
-            tags = list(set(tags + queueTags))
-        if tags:
-            resultDict[tagFieldName] = tags
+    tags = set(fromChar(ceDict.get("Tag")) or [])
+    requiredTags = set(fromChar(ceDict.get("RequiredTag")) or [])
+
+    # Get queue parameters
+    if not (result := gConfig.getOptionsDict(f"/Resources/Sites/{grid}/{site}/CEs/{ce}/Queues/{queue}"))["OK"]:
+        return result
+    queueDict = result["Value"]
+
+    # Union the sets to combine tags and required tags from CE and queue
+    tags = tags.union(set(fromChar(queueDict.get("Tag")) or []))
+    requiredTags = requiredTags.union(set(fromChar(queueDict.get("RequiredTag")) or []))
+
+    resultDict = {**ceDict, **queueDict}
+    if tags:
+        resultDict["Tag"] = list(tags)
+    if requiredTags:
+        resultDict["RequiredTag"] = list(requiredTags)
 
     resultDict["Queue"] = queue
     return S_OK(resultDict)
