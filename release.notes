@@ -1,3 +1,24 @@
+[v8.0.37]
+
+*WorkloadManagement
+
+FIX: (#7444) get pilot logging info with a token from an AREXCE
+
+*FrameworkSystem
+
+FIX: (#7438) correctly set the duration of tokens in cache
+
+*WorkloadManagementSystem
+
+FIX: (#7435) JobDB: fix mismatch of string and integer jobIDs. In some cases API calls would fail because JobDB.getJobParameters and JobDB.getJobsAttributes return dictionaries with integer keys, while the function was called with a string jobID. This fixes for example the StalledJobAgent being unable to reschedule matched jobs.
+FIX: (#7434) StatesAccountingAgent: skip the first iteration in order to avoid double commit after a restart
+FIX: (#7415) Each job has its own JobReport in JobAgent
+FIX: (#7415) JobAgent exits when all the jobs have been processed
+
+*MonitoringSystem
+
+CHANGE: (#7431) moved to weekly indices for agent and service monitoring
+
 [v8.0.36]
 
 *WorkloadManagement
