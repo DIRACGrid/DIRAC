@@ -45,7 +45,8 @@ dependencies:
   - pycurl
   - voms
   - python-gfal2
-  - mysqlclient
+  # Workaround for https://github.com/DIRACGrid/DIRAC/issues/6978
+  - mysqlclient >=2.0.3,<2.1
   - diraccfg
   - ldap3
   - importlib_resources
@@ -88,7 +89,6 @@ dependencies:
   - simplejson >=3.8.1
   #- tornado >=5.0.0,<6.0.0
   - typing >=3.6.6
-  - pyyaml
   - rucio-clients
   # For mypy
   - mypy >=0.982
@@ -100,7 +100,7 @@ dependencies:
   - types-setuptools
   - pip:
     # Prerelease of the required package for integration of OAuth2
-    - Authlib>=1.0.0.a2
+    - Authlib >=1.0.0
     - dominate
     - pyjwt
     # This is a fork of tornado with a patch to allow for configurable iostream
