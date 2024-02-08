@@ -90,7 +90,7 @@ def test_createAndExecuteJobWrapperTemplate_success(extraOptions):
         jobParams=jobParams,
         resourceParams=resourceParams,
         optimizerParams=optimizerParams,
-        extraOptions=extraOptions
+        extraOptions=extraOptions,
     )
     assert res["OK"], res.get("Message")
 
@@ -159,12 +159,7 @@ def test_createAndExecuteJobWrapperTemplate_missingExtraOptions():
     This might happen when the pilot.cfg does not contain any extra options.
     """
     # Create job wrapper
-    res = createJobWrapper(
-        jobID=1,
-        jobParams=jobParams,
-        resourceParams=resourceParams,
-        optimizerParams=optimizerParams
-    )
+    res = createJobWrapper(jobID=1, jobParams=jobParams, resourceParams=resourceParams, optimizerParams=optimizerParams)
     assert res["OK"], res.get("Message")
 
     # Test job wrapper content
@@ -305,7 +300,9 @@ def test_createAndExecuteRelocatedJobWrapperTemplate_success(extraOptions):
 
     assert result.returncode == 2, result.stderr
     assert result.stdout == b"", result.stdout
-    assert f"can't open file '{os.path.join(rootLocation, os.path.basename(jobWrapperPath))}'".encode() in result.stderr, result.stderr
+    assert (
+        f"can't open file '{os.path.join(rootLocation, os.path.basename(jobWrapperPath))}'".encode() in result.stderr
+    ), result.stderr
 
     # 2. Execute the relocated executable file in a subprocess without relocating the files as a container bind mount would do
     # We expect it to fail because the relocated executable should not exist
@@ -527,7 +524,7 @@ def test_createAndExecuteJobWrapperLightTemplate_success(extraOptions):
 
     with open(os.path.join(rootLocation, "1", "payloadResults.json")) as f:
         payloadResults = json.load(f)
-    
+
     assert payloadResults["OK"]
     assert "cpuTimeConsumed" in payloadResults["Value"]
     assert "payloadExecutorError" in payloadResults["Value"]
