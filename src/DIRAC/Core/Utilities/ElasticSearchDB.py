@@ -412,12 +412,6 @@ class ElasticSearchDB:
             sLog.warn("The period is not provided, so using non-periodic indexes names")
             fullIndex = indexPrefix
 
-        res = self.existingIndex(fullIndex)
-        if not res["OK"]:
-            return res
-        elif res["Value"]:
-            return S_OK(fullIndex)
-
         try:
             sLog.info("Create index: ", fullIndex + str(mapping))
             self.client.indices.create(index=fullIndex, body={"mappings": mapping})  # ES7
