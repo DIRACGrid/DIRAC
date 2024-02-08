@@ -1,12 +1,16 @@
 from itertools import zip_longest
+from diraccfg import CFG
 
 import pytest
 from unittest.mock import MagicMock
 
+from DIRAC import gConfig
+from DIRAC.ConfigurationSystem.Client import ConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import (
     getDIRACPlatform,
     getCompatiblePlatforms,
     _platformSortKey,
+    getQueue,
 )
 
 
@@ -122,3 +126,79 @@ def test_getCompatiblePlatforms(mocker, mockGCReplyInput, requested, expectedRes
     assert res["OK"] is expectedRes, res
     if expectedRes:
         assert set(res["Value"]) == set(expectedValue), res["Value"]
+
+
+config = """
+Resources
+{
+    Sites
+    {
+        LHCb
+        {
+            LHCb.CERN.cern
+            {
+                CEs
+                {
+                    ce1.cern.ch
+                    {
+                        CEType = AREX
+                        architecture = x86_64
+                        OS = linux_CentOS_7.9.2009
+                        Tag = Token
+                        Queues
+                        {
+                            nordugrid-SLURM-grid
+                            {
+                                SI00 = 2775
+                                MaxRAM = 128534
+                                CPUTime = 3836159
+                                maxCPUTime = 5760
+                                Tag = MultiProcessor
+                                MaxWaitingJobs = 10
+                                MaxTotalJobs = 200
+                                LocalCEType = Pool/Singularity
+                                OS = linux_AlmaLinux_9.4.2104
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+"""
+
+
+def test_getQueue():
+    """Test getQueue function."""
+
+    # Set up the configuration file
+    ConfigurationData.localCFG = CFG()
+    cfg = CFG()
+    cfg.loadFromBuffer(config)
+    gConfig.loadCFG(cfg)
+
+    # Test getQueue
+    site = "LHCb.CERN.cern"
+    ce = "ce1.cern.ch"
+    queue = "nordugrid-SLURM-grid"
+
+    result = getQueue(site, ce, queue)
+    assert result["OK"]
+
+    expectedDict = {
+        "CEType": "AREX",
+        "Queue": "nordugrid-SLURM-grid",
+        "architecture": "x86_64",
+        "SI00": "2775",
+        "MaxRAM": "128534",
+        "CPUTime": "3836159",
+        "maxCPUTime": "5760",
+        "Tag": ["MultiProcessor", "Token"],
+        "MaxWaitingJobs": "10",
+        "MaxTotalJobs": "200",
+        "LocalCEType": "Pool/Singularity",
+        "OS": "linux_AlmaLinux_9.4.2104",
+    }
+    assert sorted(result["Value"].pop("Tag")) == sorted(expectedDict.pop("Tag"))
+    assert result["Value"] == expectedDict
