@@ -164,22 +164,11 @@ class ProxyInit:
         if self.__uploadedInfo:
             gLogger.notice("\nProxies uploaded:")
             maxDNLen = 0
-            maxGroupLen = 0
             for userDN in self.__uploadedInfo:
                 maxDNLen = max(maxDNLen, len(userDN))
-                for group in self.__uploadedInfo[userDN]:
-                    maxGroupLen = max(maxGroupLen, len(group))
-            gLogger.notice(f" {'DN'.ljust(maxDNLen)} | {'Group'.ljust(maxGroupLen)} | Until (GMT)")
+            gLogger.notice(f" {'DN'.ljust(maxDNLen)} | Until (GMT)")
             for userDN in self.__uploadedInfo:
-                for group in self.__uploadedInfo[userDN]:
-                    gLogger.notice(
-                        " %s | %s | %s"
-                        % (
-                            userDN.ljust(maxDNLen),
-                            group.ljust(maxGroupLen),
-                            self.__uploadedInfo[userDN][group].strftime("%Y/%m/%d %H:%M"),
-                        )
-                    )
+                gLogger.notice(f" {userDN.ljust(maxDNLen)} | {self.__uploadedInfo[userDN].strftime('%Y/%m/%d %H:%M')}")
 
     def checkCAs(self):
         caDir = getCAsLocation()
