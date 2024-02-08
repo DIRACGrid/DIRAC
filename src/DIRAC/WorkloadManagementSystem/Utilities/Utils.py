@@ -80,7 +80,7 @@ def createJobWrapper(
 
     jobWrapperJsonFile = jobWrapperFile + ".json"
     with open(jobWrapperJsonFile, "w", encoding="utf8") as jsonFile:
-        json.dump(str(arguments), jsonFile, ensure_ascii=False)
+        json.dump(arguments, jsonFile, ensure_ascii=False)
 
     with open(jobWrapperFile, "w") as wrapper:
         wrapper.write(wrapperTemplate)
@@ -93,7 +93,7 @@ def createJobWrapper(
 """.format(
         pythonPath,
         jobWrapperDirect,
-        extraOptions,
+        extraOptions if extraOptions else "",
         logLevel,
     )
     with open(jobExeFile, "w") as jobFile:
@@ -105,5 +105,5 @@ def createJobWrapper(
         "JobWrapperPath": jobWrapperFile,
     }
     if rootLocation != wrapperPath:
-        generatedFiles["JobExecutableRelocatedPath"] = jobWrapperDirect
+        generatedFiles["JobExecutableRelocatedPath"] = os.path.join(rootLocation, os.path.basename(jobExeFile))
     return S_OK(generatedFiles)

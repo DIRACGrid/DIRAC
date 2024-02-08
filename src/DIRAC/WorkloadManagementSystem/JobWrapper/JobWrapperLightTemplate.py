@@ -14,7 +14,6 @@
 import hashlib
 import sys
 import json
-import ast
 import os
 
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapperUtilities import getJobWrapper
@@ -40,12 +39,12 @@ def execute(jobID: str, arguments: dict, jobReport: JobReport):
     if not payloadParams:
         return 1
 
+    if not "PayloadResults" in arguments["Job"] or not "Checksum" in arguments["Job"]:
+        return 1
+
     job = getJobWrapper(jobID, arguments, jobReport)
     payloadResult = job.process(**payloadParams)
     if not payloadResult["OK"]:
-        return 1
-
-    if not "PayloadResults" in arguments["Job"] or not "Checksum" in arguments["Job"]:
         return 1
 
     # Store the payload result
@@ -58,7 +57,7 @@ def execute(jobID: str, arguments: dict, jobReport: JobReport):
         if os.path.isfile(file):
             hash_md5 = hashlib.md5()
             with open(file, "rb") as f:
-                while chunk := f.read(128 * hash.block_size):
+                while chunk := f.read(128 * hash_md5.block_size):
                     hash_md5.update(chunk)
             checksums[file] = hash_md5.hexdigest()
 
@@ -75,8 +74,7 @@ ret = -3
 try:
     jsonFileName = os.path.realpath(__file__) + ".json"
     with open(jsonFileName) as f:
-        jobArgsFromJSON = json.loads(f.readlines()[0])
-    jobArgs = ast.literal_eval(jobArgsFromJSON)
+        jobArgs = json.load(f)
     if not isinstance(jobArgs, dict):
         raise TypeError(f"jobArgs is of type {type(jobArgs)}")
     if "Job" not in jobArgs:
