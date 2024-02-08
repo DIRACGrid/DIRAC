@@ -43,7 +43,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 class MonitoringDB(ElasticDB):
     """Extension of ElasticDB for Monitoring system DB"""
 
-    def __init__(self, name="Monitoring/MonitoringDB", readOnly=False):
+    def __init__(self, name="Monitoring/MonitoringDB"):
         """Standard constructor"""
 
         try:
@@ -55,7 +55,6 @@ class MonitoringDB(ElasticDB):
             self.log.error("Can't connect to MonitoringDB", repr(ex))
             raise ex
 
-        self.__readonly = readOnly
         self.documentTypes = {}
 
         # loads all monitoring indexes and types.

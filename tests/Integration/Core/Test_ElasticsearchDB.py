@@ -88,7 +88,7 @@ def test_bulkindex():
     assert result["Value"] == 10
     time.sleep(5)
     indexes = elasticSearchDB.getIndexes()
-    assert type(indexes) == list
+    assert isinstance(indexes, list)  # it will be list
     for index in indexes:
         res = elasticSearchDB.deleteIndex(index)
         assert res["OK"]
@@ -101,7 +101,7 @@ def test_bulkindexMonthly():
     assert result["Value"] == 10
     time.sleep(5)
     indexes = elasticSearchDB.getIndexes()
-    assert type(indexes) == list
+    assert isinstance(indexes, list)  # it will be list
     for index in indexes:
         res = elasticSearchDB.deleteIndex(index)
         assert res["OK"]
@@ -496,8 +496,10 @@ def test_Search():
 #   assertEqual(result.aggregations['2'].buckets[1]['end_data'].buckets[0].avg_buckets, {u'value': 4})
 @pytest.fixture
 def setUpAndTearDown():
-    result = elasticSearchDB.createIndex("my-index", {})
-    assert result["OK"]
+    res = elasticSearchDB.existingIndex("my-index")
+    if not res["OK"] or not res["Value"]:
+        result = elasticSearchDB.createIndex("my-index", {}, period=None)
+        assert result["OK"]
     result = elasticSearchDB.index(
         indexName="my-index", body={"quantity": 1, "Product": "a", "timestamp": 1458226213000}, docID=1
     )
