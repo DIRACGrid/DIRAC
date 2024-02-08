@@ -454,13 +454,6 @@ class ElasticSearchDB:
             sLog.warn("The period is not provided, so using non-periodic indexes names")
             fullIndex = indexPrefix
 
-        res = self.existingIndex(fullIndex)
-        if not res["OK"]:
-            return res
-        elif res["Value"]:
-            return S_OK(fullIndex)
-
-        sLog.info(f"Create index {fullIndex}")
         try:
             if not mapping:
                 self.client.indices.create(index=fullIndex)
