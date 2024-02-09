@@ -251,7 +251,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
                 "Status",
                 "DestinationSite",
                 "BenchMark",
-                "OutputReady",
                 "AccountingSent",
                 "SubmissionTime",
                 "PilotID",
@@ -348,17 +347,13 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
 
         result = self._escapeString(output)
         if not result["OK"]:
-            return S_ERROR("Failed to escape output string")
+            return result
         e_output = result["Value"]
         result = self._escapeString(error)
         if not result["OK"]:
-            return S_ERROR("Failed to escape error string")
-        e_error = result["Value"]
-        req = "INSERT INTO PilotOutput (PilotID,StdOutput,StdError) VALUES (%d,%s,%s)" % (pilotID, e_output, e_error)
-        result = self._update(req)
-        if not result["OK"]:
             return result
-        req = "UPDATE PilotAgents SET OutputReady='True' where PilotID=%d" % pilotID
+        e_error = result["Value"]
+        req = f"INSERT INTO PilotOutput (PilotID,StdOutput,StdError) VALUES ({pilotID}, {e_output}, {e_error})"
         return self._update(req)
 
     ##########################################################################################

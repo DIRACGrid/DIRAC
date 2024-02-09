@@ -42,7 +42,6 @@ CREATE TABLE `PilotAgents` (
   `LastUpdateTime` DATETIME DEFAULT NULL,
   `Status` VARCHAR(32) NOT NULL DEFAULT 'Unknown',
   `StatusReason` VARCHAR(255) NOT NULL DEFAULT 'Unknown',
-  `OutputReady` ENUM('True','False') NOT NULL DEFAULT 'False',
   `AccountingSent` ENUM('True','False') NOT NULL DEFAULT 'False',
   PRIMARY KEY (`PilotID`),
   KEY `PilotJobReference` (`PilotJobReference`),
