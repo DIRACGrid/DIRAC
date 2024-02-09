@@ -209,7 +209,7 @@ class JobAgent(AgentModule):
         # Check matcher information returned
         matcherParams = ["JDL", "Owner", "Group"]
         matcherInfo = jobRequest["Value"]
-        jobID = matcherInfo["JobID"]
+        jobID = str(matcherInfo["JobID"])
 
         self.jobs[jobID] = {}
         self.jobs[jobID]["JobReport"] = JobReport(jobID, f"{self.__class__.__name__}@{self.siteName}")
@@ -249,7 +249,6 @@ class JobAgent(AgentModule):
             self.jobs[jobID]["JobReport"].setJobStatus(status=JobStatus.FAILED, minorStatus=result["Message"])
             return self._finish(result["Value"], self.stopOnApplicationFailure)
         submissionParams = result["Value"]
-        jobID = submissionParams["jobID"]
         jobType = submissionParams["jobType"]
 
         self.log.verbose("Job request successful: \n", jobRequest["Value"])
