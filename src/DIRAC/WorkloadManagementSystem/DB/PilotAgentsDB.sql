@@ -34,7 +34,6 @@ CREATE TABLE `PilotAgents` (
   `DestinationSite` VARCHAR(128) NOT NULL DEFAULT 'NotAssigned',
   `Queue` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `GridSite` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
-  `Broker` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `VO` VARCHAR(128) NOT NULL,
   `GridType` VARCHAR(32) NOT NULL DEFAULT 'LCG',
   `BenchMark` DOUBLE NOT NULL DEFAULT 0.0,
