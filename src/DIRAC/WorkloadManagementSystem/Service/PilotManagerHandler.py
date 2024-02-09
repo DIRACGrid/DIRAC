@@ -235,14 +235,13 @@ class PilotManagerHandler(RequestHandler):
         result = self.pilotAgentsDB.getPilotInfo(pilotReference)
         if not result["OK"]:
             self.log.error("Failed to get info for pilot", result["Message"])
-            return S_ERROR("Failed to get info for pilot")
+            result
         if not result["Value"]:
             self.log.warn("The pilot info is empty", pilotReference)
             return S_ERROR("Pilot info is empty")
 
         pilotDict = result["Value"][pilotReference]
-        result = getPilotCE(pilotDict)
-        if not result["OK"]:
+        if not (result := getPilotCE(pilotDict))["OK"]:
             return result
 
         ce = result["Value"]
@@ -251,12 +250,10 @@ class PilotManagerHandler(RequestHandler):
             return S_ERROR(f"Pilot logging not available for {pilotDict['GridType']} CEs")
 
         # Set proxy or token for the CE
-        result = setPilotCredentials(ce, pilotDict)
-        if not result["OK"]:
+        if not (result := setPilotCredentials(ce, pilotDict))["OK"]:
             return result
 
-        result = getPilotRef(pilotReference, pilotDict)
-        if not result["OK"]:
+        if not (result := getPilotRef(pilotReference, pilotDict))["OK"]:
             return result
         pRef = result["Value"]
 
