@@ -1,3 +1,17 @@
+[v8.0.38]
+
+*WorkloadManagement
+
+FIX: (#7457) jobID type issue in JobAgent
+
+*FrameworkSystem
+
+FIX: (#7452) dirac-proxy-init printInfo without the dirac group
+
+*ConfigurationSystem
+
+FIX: (#7449) getQueue() overriding the CE tags
+
 [v8.0.37]
 
 *WorkloadManagement
