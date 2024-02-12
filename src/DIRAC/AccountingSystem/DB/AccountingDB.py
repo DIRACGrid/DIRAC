@@ -498,7 +498,7 @@ class AccountingDB(DB):
             return retVal
         connection = retVal["Value"]
         self.log.info(f"Value {keyValue} for key {keyName} didn't exist, inserting")
-        retVal = self.insertFields(keyTable, ["id", "value"], [0, keyValue], conn=connection)
+        retVal = self.insertFields(keyTable, ["value"], [keyValue], conn=connection)
         if not retVal["OK"] and retVal["Message"].find("Duplicate key") == -1:
             return retVal
         result = self.__getIdForKeyValue(typeName, keyName, keyValue, conn=connection)
@@ -541,8 +541,8 @@ class AccountingDB(DB):
         return buckets
 
     def __insertInQueueTable(self, typeName, startTime, endTime, valuesList):
-        sqlFields = ["id", "taken", "takenSince"] + self.dbCatalog[typeName]["typeFields"]
-        sqlValues = ["0", "0", "UTC_TIMESTAMP()"] + valuesList + [startTime, endTime]
+        sqlFields = ["taken", "takenSince"] + self.dbCatalog[typeName]["typeFields"]
+        sqlValues = ["0", "UTC_TIMESTAMP()"] + valuesList + [startTime, endTime]
         if len(sqlFields) != len(sqlValues):
             numRcv = len(valuesList) + 2
             numExp = len(self.dbCatalog[typeName]["typeFields"])
