@@ -132,7 +132,7 @@ class TimeLeft:
 
     def _getBatchSystemPlugin(self):
         """Using the name of the batch system plugin, will return an instance of the plugin class."""
-        batchSystemInfo = gConfig.getSections("/LocalSite/BatchSystem")
+        batchSystemInfo = gConfig.getSections("/LocalSite/BatchSystemInfo")
         type = batchSystemInfo.get("Type")
         jobID = batchSystemInfo.get("JobID")
         parameters = batchSystemInfo.get("Parameters")
