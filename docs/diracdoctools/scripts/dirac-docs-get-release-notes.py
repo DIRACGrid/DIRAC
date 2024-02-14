@@ -92,11 +92,11 @@ def gitlabSetup(GITLABTOKEN=""):
         SESSION.headers.update({"PRIVATE-TOKEN": GITLABTOKEN})
 
 
-def req2Json(url, parameterDict=None, requestType="GET"):
+def req2Json(url, parameterDict=None, requestType="GET", queryParameters=None):
     """Call to github API using requests package."""
     log = LOGGER.getChild("Requests")
     log.debug("Running %s with %s ", requestType, parameterDict)
-    req = getattr(SESSION, requestType.lower())(url, json=parameterDict)
+    req = getattr(SESSION, requestType.lower())(url, json=parameterDict, params=queryParameters)
     if req.status_code not in (200, 201):
         log.error("Unable to access API: %s", req.text)
         raise RuntimeError("Failed to access API")
@@ -433,7 +433,7 @@ class GithubInterface:
         for var, val in sorted(vars(parsed).items()):
             log.info("Using options: %s = %s", var, pformat(val))
 
-    def _github(self, action):
+    def _github(self, action, per_page=None):
         """Return the url to perform actions on github.
 
         :param str action: command to use in the gitlab API, see documentation there
@@ -442,6 +442,7 @@ class GithubInterface:
         log = LOGGER.getChild("GitHub")
         options = dict(self._options)
         options["action"] = action
+
         ghURL = f"https://api.github.com/repos/{options['owner']}/{options['repo']}/{options['action']}"
         log.debug("Calling: %s", ghURL)
         return ghURL
@@ -504,7 +505,7 @@ class GithubInterface:
         log = LOGGER.getChild("getGithubLatestTagDate")
 
         # Get all tags
-        tags = req2Json(url=self._github("tags"))
+        tags = req2Json(url=self._github("tags"), queryParameters={"per_page": 100})
         if isinstance(tags, dict) and "Not Found" in tags.get("message"):
             raise RuntimeError(f"Package not found: {str(self)}")
 
