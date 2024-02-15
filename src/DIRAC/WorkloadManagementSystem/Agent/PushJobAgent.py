@@ -187,7 +187,7 @@ class PushJobAgent(JobAgent):
                 # Check matcher information returned
                 matcherParams = ["JDL", "DN", "Group"]
                 matcherInfo = jobRequest["Value"]
-                jobID = matcherInfo["JobID"]
+                jobID = str(matcherInfo["JobID"])
                 self.jobs[jobID] = {}
                 self.jobs[jobID]["JobReport"] = JobReport(jobID, f"{self.__class__.__name__}@{self.siteName}")
                 result = self._checkMatcherInfo(jobID, matcherInfo, matcherParams)
@@ -222,7 +222,6 @@ class PushJobAgent(JobAgent):
                     self.failedQueues[queueName] += 1
                     break
                 submissionParams = result["Value"]
-                jobID = submissionParams["jobID"]
                 jobType = submissionParams["jobType"]
 
                 self.log.verbose("Job request successful: \n", jobRequest["Value"])
