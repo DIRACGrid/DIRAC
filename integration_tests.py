@@ -593,6 +593,8 @@ def _check_containers_running(*, is_up=True):
             ["docker", "compose", "-f", docker_compose_fn, "ps", "-q", "-a"],
             stdout=subprocess.PIPE,
             env=_make_env({}),
+            # docker compose ps has a non-zero exit code when no containers are running
+            check=False,
             text=True,
         ).stdout.split("\n")
     if is_up:
