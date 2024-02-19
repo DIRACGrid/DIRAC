@@ -929,17 +929,20 @@ class ProxyDB(DB):
                         "Stored proxy has already a different VOMS attribute %s than requested %s"
                         % (attrs[0], vomsAttr)
                     )
-            else:
+            elif vomsAttr != "noVOMS":
                 retVal = vomsMgr.setVOMSAttributes(chain, vomsAttr, vo=vomsVO)
                 if not retVal["OK"]:
                     return retVal
                 chain = retVal["Value"]
 
-        # We have got the VOMS proxy, store it into the cache
-        result = self.__storeVOMSProxy(userDN, userGroup, vomsAttr, chain)
-        if not result["OK"]:
-            return result
-        return S_OK((chain, result["Value"]))
+        # If it is the VOMS proxy, store it into the cache
+        if vomsAttr != "noVOMS":
+            result = self.__storeVOMSProxy(userDN, userGroup, vomsAttr, chain)
+            if not result["OK"]:
+                return result
+            return S_OK((chain, result["Value"]))
+        else:
+            return S_OK((chain, _secsLeft))
 
     def __storeVOMSProxy(self, userDN, userGroup, vomsAttr, chain):
         """Store VOMS proxy
