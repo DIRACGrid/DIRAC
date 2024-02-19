@@ -260,18 +260,18 @@ class JobCleaningAgent(AgentModule):
 
         :param dict condDict: a dict like {'JobType': 'User', 'Status': 'Killed'}
         :param int delay: days of delay
-        :returns: S_OK with jobsList
+        :returns: S_OK with a list of job IDs
         """
-        jobIDsS = set()
+
         delayStr = f"and older than {delay}" if delay else ""
         self.log.info(f"Get jobs with {str(condDict)} {delayStr}")
-        for order in ["JobID:ASC", "JobID:DESC"]:
-            result = self.jobDB.selectJobs(condDict, older=delay, orderAttribute=order, limit=self.maxJobsAtOnce)
-            if not result["OK"]:
-                return result
-            jobIDsS = jobIDsS.union({int(jID) for jID in result["Value"]})
 
-        return S_OK(list(jobIDsS))
+        # Select a random set of jobs
+        result = self.jobDB.selectJobs(condDict, older=delay, orderAttribute="RAND()", limit=self.maxJobsAtOnce)
+        if not result["OK"]:
+            return result
+
+        return S_OK(result["Value"])
 
     def _getOwnerJobsDict(self, jobList):
         """
