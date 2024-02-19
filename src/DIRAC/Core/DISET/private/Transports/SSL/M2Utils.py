@@ -101,6 +101,7 @@ def getM2SSLContext(ctx=None, **kwargs):
             with tempfile.NamedTemporaryFile(mode="w") as tmpFile:
                 tmpFilePath = tmpFile.name
                 tmpFile.write(kwargs["proxyString"])
+                # Flush, otherwise the file is empty in the subsequent call
                 tmpFile.flush()
                 __loadM2SSLCTXProxy(ctx, proxyPath=tmpFilePath)
         else:
