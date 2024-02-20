@@ -155,8 +155,13 @@ class RequestTask:
             os.environ["X509_USER_PROXY"] = proxyFile
             return S_OK({"Shifter": isShifter, "ProxyFile": proxyFile})
 
-        # # if we're here owner is not a shifter at all
-        ownerProxyFile = gProxyManager.downloadVOMSProxyToFile(ownerDN, ownerGroup)
+        # # if we're here, the owner is not a shifter at all
+        vomsAttr = Registry.getVOMSAttributeForGroup(ownerGroup)
+        if vomsAttr:
+            ownerProxyFile = gProxyManager.downloadVOMSProxyToFile(ownerDN, ownerGroup)
+        else:
+            ownerProxyFile = gProxyManager.downloadProxyToFile(ownerDN, ownerGroup)
+
         if not ownerProxyFile["OK"] or not ownerProxyFile["Value"]:
             reason = ownerProxyFile.get("Message", "No valid proxy found in ProxyManager.")
             return S_ERROR(f"Change proxy error for '{ownerDN}'@'{ownerGroup}': {reason}")
