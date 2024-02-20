@@ -65,8 +65,8 @@ class BarGraph(PlotBase):
         start_plot = 0
         end_plot = 0
         if "starttime" in self.prefs and "endtime" in self.prefs:
-            start_plot = date2num(datetime.datetime.fromtimestamp(to_timestamp(self.prefs["starttime"])))
-            end_plot = date2num(datetime.datetime.fromtimestamp(to_timestamp(self.prefs["endtime"])))
+            start_plot = date2num(datetime.datetime.utcfromtimestamp(to_timestamp(self.prefs["starttime"])))
+            end_plot = date2num(datetime.datetime.utcfromtimestamp(to_timestamp(self.prefs["endtime"])))
 
         nKeys = self.gdata.getNumberOfKeys()
         tmp_b = []

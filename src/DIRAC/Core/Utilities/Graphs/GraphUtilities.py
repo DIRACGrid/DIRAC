@@ -70,7 +70,7 @@ def convert_to_datetime(dstring):
         else:
             results = eval(str(dstring), {"__builtins__": None, "time": time, "math": math}, {})
         if isinstance(results, (int, float)):
-            results = datetime.datetime.fromtimestamp(int(results))
+            results = datetime.datetime.utcfromtimestamp(int(results))
         elif isinstance(results, datetime.datetime):
             pass
         else:
@@ -81,7 +81,7 @@ def convert_to_datetime(dstring):
             try:
                 t = time.strptime(dstring, dateformat)
                 timestamp = calendar.timegm(t)  # -time.timezone
-                results = datetime.datetime.fromtimestamp(timestamp)
+                results = datetime.datetime.utcfromtimestamp(timestamp)
                 break
             except Exception:
                 pass
@@ -90,7 +90,7 @@ def convert_to_datetime(dstring):
                 dstring = dstring.split(".", 1)[0]
                 t = time.strptime(dstring, dateformat)
                 timestamp = time.mktime(t)  # -time.timezone
-                results = datetime.datetime.fromtimestamp(timestamp)
+                results = datetime.datetime.utcfromtimestamp(timestamp)
             except Exception:
                 raise ValueError(
                     "Unable to create time from string!\nExpecting "
@@ -108,8 +108,8 @@ def to_timestamp(val):
         pass
 
     val = convert_to_datetime(val)
-    # return calendar.timegm( val.timetuple() )
-    return time.mktime(val.timetuple())
+    return calendar.timegm(val.timetuple())
+    # return time.mktime(val.timetuple())
 
 
 # If the graph has more than `hour_switch` minutes, we print
@@ -179,8 +179,8 @@ def add_time_to_title(begin, end, metadata={}):
         format_name = "Seconds"
         time_slice = 1
 
-    begin_tuple = time.localtime(begin)
-    end_tuple = time.localtime(end)
+    begin_tuple = time.gmtime(begin)
+    end_tuple = time.gmtime(end)
     added_title = "%i %s from " % (int((end - begin) / time_slice), format_name)
     added_title += time.strftime(f"{format_str} to", begin_tuple)
     if time_slice < 86400:
