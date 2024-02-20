@@ -10,7 +10,6 @@ Example:
                                                           'GridSite': 'LCG.IN2P3.fr',
                                                           'GridType': 'gLite',
                                                           'LastUpdateTime': datetime.datetime(2011, 2, 21, 12, 49, 14),
-                                                          'OutputReady': 'False',
                                                           'VO': 'biomed',
                                                           'PilotJobReference': 'https://marlb.in2p3.fr:9000/2KHFrQjkw',
                                                           'PilotStamp': '',
