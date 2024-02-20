@@ -1,12 +1,11 @@
 """ Test SLURM
 """
-import pytest
 import os
-from six.moves import reload_module
 
-from DIRAC import S_OK, gLogger
+import pytest
+
+from DIRAC import gLogger
 from DIRAC.Resources.Computing.BatchSystems.SLURM import SLURM
-
 
 gLogger.setLevel("DEBUG")
 
