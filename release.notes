@@ -1,3 +1,26 @@
+[v9.0.0a24]
+
+*WorkloadManagement
+
+FIX: (#7480) JobCleaningAgent - select random jobs for deletion rather than head and tail jobs.
+FIX: (#7475) JobID type in PushJobAgent
+
+*Interfaces
+
+CHANGE: (#7472) dfind - more explicit failure report
+
+*DataManagementSystem
+
+NEW: (#7471) add tools for consistency checks
+
+*tests
+
+FIX: (#7470) check running containers in integration tests script
+
+*WorkloadManagementSystem
+
+CHANGE: (#7464) PilotAgentsDB: removed OutputReady and Broker fields
+
 [v9.0.0a23]
 
 *WorkloadManagement
