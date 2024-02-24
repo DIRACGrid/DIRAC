@@ -26,7 +26,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Operations
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.WorkloadManagementSystem.Utilities.Utils import createRelocatedJobWrapper
+from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 
 # Default container to use if it isn't specified in the CE options
 CONTAINER_DEFROOT = "/cvmfs/cernvm-prod.cern.ch/cvm4"
@@ -256,20 +256,21 @@ class SingularityComputingElement(ComputingElement):
             self.log.warn("No user proxy")
 
         # Job Wrapper (Standard-ish DIRAC wrapper)
-        result = createRelocatedJobWrapper(
+        result = createJobWrapper(
             wrapperPath=tmpDir,
             rootLocation=self.__innerdir,
             jobID=jobDesc.get("jobID", 0),
             jobParams=jobDesc.get("jobParams", {}),
             resourceParams=jobDesc.get("resourceParams", {}),
             optimizerParams=jobDesc.get("optimizerParams", {}),
+            pythonPath="python",
             log=log,
             logLevel=logLevel,
             extraOptions="" if self.__installDIRACInContainer else "/tmp/pilot.cfg",
         )
         if not result["OK"]:
             return result
-        wrapperPath = result["Value"]
+        wrapperPath = result["Value"]["JobExecutableRelocatedPath"]
 
         if self.__installDIRACInContainer:
             infoDict = None

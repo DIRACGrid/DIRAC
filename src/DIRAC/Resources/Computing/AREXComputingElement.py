@@ -502,6 +502,10 @@ class AREXComputingElement(ARCComputingElement):
                 f"{jobReference} to CE {self.ceHost}",
             )
 
+        # Remove the bundled preamble
+        if self.preamble:
+            os.remove(executableFile)
+
         if batchIDList:
             result = S_OK(batchIDList)
             result["PilotStampDict"] = stampDict
