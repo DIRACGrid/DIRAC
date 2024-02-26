@@ -68,22 +68,17 @@ import os
 import shutil
 import stat
 import uuid
-from urllib.parse import urlparse
-from urllib.parse import quote
-from urllib.parse import unquote
 from shlex import quote as shlex_quote
+from urllib.parse import quote, unquote, urlparse
 
 import pexpect
 
 import DIRAC
-from DIRAC import S_OK, S_ERROR
-from DIRAC import gLogger
-
+from DIRAC import S_ERROR, S_OK, gLogger
+from DIRAC.Core.Utilities.List import breakListIntoChunks, uniqueElements
+from DIRAC.Resources.Computing.BatchSystems.executeBatch import executeBatchContent
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Resources.Computing.PilotBundle import bundleProxy, writeScript
-from DIRAC.Resources.Computing.BatchSystems.executeBatch import executeBatchContent
-from DIRAC.Core.Utilities.List import uniqueElements
-from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 
 class SSH:
