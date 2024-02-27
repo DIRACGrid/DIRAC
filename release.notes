@@ -1,3 +1,17 @@
+[v9.0.0a25]
+
+*Accounting
+
+FIX: (#7486) Fix errors during insert into ac_in_* tables.
+
+*Core
+
+FIX: (#7483) Fix DISET calls with proxy to be used passed as an argument
+
+*RequestManagementSystem
+
+FIX: (#7482) RequestTask - download no-VOMS proxy if the owner group does not define VOMSRole
+
 [v9.0.0a24]
 
 *WorkloadManagement
