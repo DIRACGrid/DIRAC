@@ -209,6 +209,22 @@ def helloWorldSSHBatch():
     return endOfAllJobs(J)
 
 
+def helloWorldARM():
+    """simple hello world job to DIRAC.ARM.ch"""
+
+    J = baseToAllJobs("helloWorldARM")
+    try:
+        J.setInputSandbox([find_all("exe-script.py", rootPath, "DIRAC/tests/Workflow")[0]])
+    except IndexError:
+        try:
+            J.setInputSandbox([find_all("exe-script.py", ".", "DIRAC/tests/Workflow")[0]])
+        except IndexError:  # we are in Jenkins
+            J.setInputSandbox([find_all("exe-script.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]])
+    J.setExecutable("exe-script.py", "", "helloWorld.log")
+    J.setDestination("DIRAC.ARM.ch")
+    return endOfAllJobs(J)
+
+
 def helloWorldCloudCE():
     """simple hello world job to Cloud at Imperial College using SiteDirector"""
 

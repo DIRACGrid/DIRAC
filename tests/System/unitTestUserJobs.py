@@ -69,6 +69,10 @@ class submitSuccess(GridSubmissionTestCase):
         self.assertTrue(res["OK"])
         jobsSubmittedList.append(res["Value"])
 
+        res = helloWorldARM()
+        self.assertTrue(res["OK"])
+        jobsSubmittedList.append(res["Value"])
+
         res = mpJob()
         self.assertTrue(res["OK"])
         jobsSubmittedList.append(res["Value"])

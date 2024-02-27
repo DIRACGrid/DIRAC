@@ -11,7 +11,6 @@
     See the Configuration/Resources/Computing documention for details on
     where to set the option parameters.
 """
-import io
 import json
 import os
 import re
@@ -20,9 +19,9 @@ import sys
 import tempfile
 
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Operations
+from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Resources.Storage.StorageElement import StorageElement

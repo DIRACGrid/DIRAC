@@ -2,11 +2,10 @@
     directly through ssh
 """
 import os
-import socket
 import stat
 from urllib.parse import urlparse
 
-from DIRAC import S_ERROR, S_OK, rootPath
+from DIRAC import S_ERROR, S_OK
 from DIRAC.Resources.Computing.PilotBundle import bundleProxy, writeScript
 from DIRAC.Resources.Computing.SSHComputingElement import SSHComputingElement
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
