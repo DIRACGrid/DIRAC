@@ -154,11 +154,7 @@ class PushJobAgent(JobAgent):
             if not result["OK"]:
                 return result
             proxy = result["Value"]
-            result = proxy.getRemainingSecs()  # pylint: disable=no-member
-            if not result["OK"]:
-                return result
-            lifetime_secs = result["Value"]
-            ce.setProxy(proxy, lifetime_secs)
+            ce.setProxy(proxy)
 
             # Check that there is enough slots in the remote CE to match a job
             result = self._checkCEAvailability(ce)
@@ -232,8 +228,7 @@ class PushJobAgent(JobAgent):
                 )
 
                 # Setup proxy
-                ownerDN = getDNForUsername(owner)["Value"]
-                result_setupProxy = self._setupProxy(ownerDN, jobGroup)
+                result_setupProxy = self._setupProxy(owner, jobGroup)
                 if not result_setupProxy["OK"]:
                     result = self._rescheduleFailedJob(jobID, result_setupProxy["Message"])
                     self.failedQueues[queueName] += 1

@@ -265,8 +265,7 @@ class JobAgent(AgentModule):
                 )
 
         self.jobs[jobID]["JobReport"].setJobStatus(minorStatus="Job Received by Agent", sendFlag=False)
-        ownerDN = getDNForUsername(owner)["Value"][0]
-        result_setupProxy = self._setupProxy(ownerDN, jobGroup)
+        result_setupProxy = self._setupProxy(owner, jobGroup)
         if not result_setupProxy["OK"]:
             result = self._rescheduleFailedJob(jobID, result_setupProxy["Message"])
             return self._finish(result["Message"], self.stopOnApplicationFailure)
@@ -465,10 +464,11 @@ class JobAgent(AgentModule):
         localCfg.writeToFile(localConfigFile)
 
     #############################################################################
-    def _setupProxy(self, ownerDN, ownerGroup):
+    def _setupProxy(self, owner, ownerGroup):
         """
         Retrieve a proxy for the execution of the job
         """
+        ownerDN = getDNForUsername(owner)["Value"][0]
         if gConfig.getValue("/DIRAC/Security/UseServerCertificate", False):
             proxyResult = self._requestProxyFromProxyManager(ownerDN, ownerGroup)
             if not proxyResult["OK"]:
