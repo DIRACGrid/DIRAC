@@ -423,10 +423,12 @@ class SiteDirector(AgentModule):
             return 0
         taskQueueDict = result["Value"]
 
-        # Get the number of jobs that would match the capability of the CE
+        # Get the number of jobs that would match the capability of the CE and the VO
         waitingSupportedJobs = 0
         for tq in taskQueueDict.values():
-            waitingSupportedJobs += tq["Jobs"]
+            ownerGroup = tq.get("OwnerGroup", "")
+            if Registry.getVOForGroup(ownerGroup) == self.vo:
+                waitingSupportedJobs += tq["Jobs"]
 
         # Get the number of jobs that need pilots
         return max(0, waitingSupportedJobs - waitingPilots)

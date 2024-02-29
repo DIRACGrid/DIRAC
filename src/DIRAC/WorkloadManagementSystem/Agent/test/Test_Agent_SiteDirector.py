@@ -17,6 +17,20 @@ from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 
 CONFIG = """
+Registry
+{
+  Groups
+  {
+    dteam_user
+    {
+      VO = dteam
+    }
+    dummyVO_user
+    {
+      VO = dummyVO
+    }
+  }
+}
 Resources
 {
   Sites
@@ -180,35 +194,51 @@ def pilotWrapperDirectory(tmp_path_factory):
 def test_getNumberOfJobsNeedingPilots(sd, mocker):
     """Make sure it returns the number of needed pilots"""
 
-    # 1. No waiting job, no waiting pilot
+    # No waiting job, no waiting pilot
     # Because it requires an access to a DB, we mock the value returned by the Matcher
     mocker.patch.object(sd, "matcherClient", autospec=True)
     sd.matcherClient.getMatchingTaskQueues.return_value = S_OK({})
     numberToSubmit = sd._getNumberOfJobsNeedingPilots(waitingPilots=0, queue="ce1.site3.com_condor")
     assert numberToSubmit == 0
 
-    # 2. 10 waiting jobs, no waiting pilot
-    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK({"TQ1": {"Jobs": 10}})
+    # 10 waiting jobs, no waiting pilot, wrong VO: dummyVO != dteam
+    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK({"TQ1": {"Jobs": 10, "OwnerGroup": "dummyVO_user"}})
+    numberToSubmit = sd._getNumberOfJobsNeedingPilots(waitingPilots=0, queue="ce1.site3.com_condor")
+    assert numberToSubmit == 0
+
+    # 10 waiting jobs, no waiting pilot, right VO
+    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK({"TQ1": {"Jobs": 10, "OwnerGroup": "dteam_user"}})
     numberToSubmit = sd._getNumberOfJobsNeedingPilots(waitingPilots=0, queue="ce1.site3.com_condor")
     assert numberToSubmit == 10
 
-    # 3. 10 waiting jobs split into 2 task queues, no waiting pilot
-    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK({"TQ1": {"Jobs": 8}, "TQ2": {"Jobs": 2}})
+    # 10 waiting jobs split into 2 task queues, no waiting pilot, wrong VO: dummyVO != dteam
+    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK(
+        {"TQ1": {"Jobs": 8, "OwnerGroup": "dteam_user"}, "TQ2": {"Jobs": 2, "OwnerGroup": "dummyVO_user"}}
+    )
+    numberToSubmit = sd._getNumberOfJobsNeedingPilots(waitingPilots=0, queue="ce1.site3.com_condor")
+    assert numberToSubmit == 8
+
+    # 10 waiting jobs split into 2 task queues, no waiting pilot, right VO
+    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK(
+        {"TQ1": {"Jobs": 8, "OwnerGroup": "dteam_user"}, "TQ2": {"Jobs": 2, "OwnerGroup": "dteam_user"}}
+    )
     numberToSubmit = sd._getNumberOfJobsNeedingPilots(waitingPilots=0, queue="ce1.site3.com_condor")
     assert numberToSubmit == 10
 
-    # 4. 10 waiting jobs, 5 waiting pilots
-    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK({"TQ1": {"Jobs": 10}})
+    # 10 waiting jobs, 5 waiting pilots
+    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK({"TQ1": {"Jobs": 10, "OwnerGroup": "dteam_user"}})
     numberToSubmit = sd._getNumberOfJobsNeedingPilots(waitingPilots=5, queue="ce1.site3.com_condor")
     assert numberToSubmit == 5
 
-    # 5. 10 waiting jobs split into 2 task queues, 10 waiting pilots
-    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK({"TQ1": {"Jobs": 8}, "TQ2": {"Jobs": 2}})
+    # 10 waiting jobs split into 2 task queues, 10 waiting pilots
+    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK(
+        {"TQ1": {"Jobs": 8, "OwnerGroup": "dteam_user"}, "TQ2": {"Jobs": 2, "OwnerGroup": "dteam_user"}}
+    )
     numberToSubmit = sd._getNumberOfJobsNeedingPilots(waitingPilots=10, queue="ce1.site3.com_condor")
     assert numberToSubmit == 0
 
-    # 6.10 waiting jobs, 20 waiting pilots
-    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK({"TQ1": {"Jobs": 10}})
+    # 10 waiting jobs, 20 waiting pilots
+    sd.matcherClient.getMatchingTaskQueues.return_value = S_OK({"TQ1": {"Jobs": 10, "OwnerGroup": "dteam_user"}})
     numberToSubmit = sd._getNumberOfJobsNeedingPilots(waitingPilots=20, queue="ce1.site3.com_condor")
     assert numberToSubmit == 0
 
