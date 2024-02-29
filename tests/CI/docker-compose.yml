@@ -89,7 +89,7 @@ services:
       iam-login-service:
         condition: service_started
       diracx-init-key:
-        condition: service_completed_successfully # Let the init container create the singing key
+        condition: service_completed_successfully # Let the init container create the signing key
       diracx-init-cs:
         condition: service_completed_successfully # Let the init container create the cs
     ulimits:
@@ -167,6 +167,8 @@ services:
       - DIRACX_DB_URL_SANDBOXMETADATADB=mysql+aiomysql://Dirac:Dirac@mysql/SandboxMetadataDB
       - DIRACX_SERVICE_AUTH_TOKEN_KEY=file:///signing-key/rs256.key
       - DIRACX_SERVICE_AUTH_ALLOWED_REDIRECTS=["http://diracx:8000/docs/oauth2-redirect"]
+      # Obtained with head -c 32 /dev/urandom | base64
+      - DIRACX_SERVICE_AUTH_STATE_KEY=uSNPPtZ1EbC5np13zOwmWJ84Duix753Hejzk/u/MQE4=
       # Obtained with echo 'InsecureChangeMe' | base64 -d | openssl sha256
       - DIRACX_LEGACY_EXCHANGE_HASHED_API_KEY=07cddf6948d316ac9d186544dc3120c4c6697d8f994619665985c0a5bf76265a
       - DIRACX_SERVICE_JOBS_ENABLED=false
