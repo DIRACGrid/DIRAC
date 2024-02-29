@@ -282,6 +282,7 @@ def test__setupProxy(mocker, mockGCReply, mockPMReply, expected):
     """Testing JobAgent()._setupProxy()"""
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.getDNForUsername", return_value=S_OK(["mockedDN"]))
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.gConfig.getValue", return_value=mockGCReply)
     module_str = "DIRAC.WorkloadManagementSystem.Agent.JobAgent.gProxyManager.getPayloadProxyFromDIRACGroup"
     mocker.patch(module_str, return_value=mockPMReply)
