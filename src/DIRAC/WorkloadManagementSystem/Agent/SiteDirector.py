@@ -938,7 +938,7 @@ class SiteDirector(AgentModule):
             result = self.__getPilotToken(audience=ce.audienceName)
             if not result["OK"]:
                 self.log.error("Failed to get token", f"{ce.ceName}: {result['Message']}")
-                return
+                return result
             ce.setToken(result["Value"])
 
         return S_OK()
