@@ -1,3 +1,17 @@
+[v9.0.0a26]
+
+*FrameworkSystem
+
+FIX: (#7491) dirac-proxy-info without the dirac group
+
+*WorkloadManagement
+
+FIX: (#7490) missing result in return statement
+
+*tests
+
+NEW: (#7484) add the state key in the test environment to fix diracx execution
+
 [v9.0.0a25]
 
 *Accounting
