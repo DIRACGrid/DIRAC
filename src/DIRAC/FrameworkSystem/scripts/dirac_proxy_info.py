@@ -114,23 +114,21 @@ def main():
             if uploadedInfo:
                 gLogger.notice("== Proxies uploaded ==")
                 maxDNLen = 0
-                maxGroupLen = 0
+
                 for userDN in uploadedInfo:
                     maxDNLen = max(maxDNLen, len(userDN))
-                    for group in uploadedInfo[userDN]:
-                        maxGroupLen = max(maxGroupLen, len(group))
-                gLogger.notice(f" {'DN'.ljust(maxDNLen)} | {'Group'.ljust(maxGroupLen)} | Until (GMT)")
+                    # for group in uploadedInfo[userDN]:
+                    #     maxGroupLen = max(maxGroupLen, len(group))
+                gLogger.notice(f" {'DN'.ljust(maxDNLen)} | Until (GMT)")
                 for userDN in uploadedInfo:
-                    for group in uploadedInfo[userDN]:
-                        gLogger.notice(
-                            " %s | %s | %s"
-                            % (
-                                userDN.ljust(maxDNLen),
-                                group.ljust(maxGroupLen),
-                                uploadedInfo[userDN][group].strftime("%Y/%m/%d %H:%M"),
-                            )
-                        )
+                    # in v8.0, expirationTime is accessed from uploadedInfo[userDN][""]
+                    if isinstance(uploadedInfo[userDN], dict):
+                        expirationTime = uploadedInfo[userDN][""]
+                    # whereas in v9.0, expirationTime is accessed from uploadedInfo[userDN]
+                    else:
+                        expirationTime = uploadedInfo[userDN]
 
+                    gLogger.notice(f" {userDN.ljust(maxDNLen)} | {expirationTime.strftime('%Y/%m/%d %H:%M')}")
     if params.checkValid:
         if infoDict["secondsLeft"] == 0:
             invalidProxy("Proxy is expired")
