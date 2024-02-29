@@ -1,8 +1,9 @@
+import importlib
 import functools
 from datetime import datetime, timezone
 
 
-from DIRAC.Core.Security.DiracX import DiracXClient
+from DIRAC.Core.Security.DiracX import DiracXClient, FutureClient, addRPCStub
 from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue
 from DIRAC.Core.Utilities.TimeUtilities import fromString
 
@@ -26,7 +27,7 @@ def stripValueIfOK(func):
     return wrapper
 
 
-class JobStateUpdateClient:
+class JobStateUpdateClient(FutureClient):
     @stripValueIfOK
     @convertToReturnValue
     def sendHeartBeat(self, jobID: str | int, dynamicData: dict, staticData: dict):
@@ -107,6 +108,7 @@ class JobStateUpdateClient:
                 force=force,
             )
 
+    @addRPCStub
     @stripValueIfOK
     @convertToReturnValue
     def setJobStatusBulk(self, jobID: str | int, statusDict: dict, force=False):
