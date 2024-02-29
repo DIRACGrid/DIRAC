@@ -199,7 +199,7 @@ class SandboxStoreHandlerMixin:
         result = self.sandboxDB.registerAndGetSandbox(
             credDict["username"],
             credDict["group"],
-            credDict["VO"],
+            credDict.get("VO", "unknown"),
             self.__localSEName,
             sbPath,
             fSize,
