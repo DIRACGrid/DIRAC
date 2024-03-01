@@ -103,6 +103,10 @@ def checkAndPrepareJob(jobID, classAdJob, classAdReq, owner, ownerDN, ownerGroup
     if inputDataPolicy and not classAdJob.lookupAttribute("InputDataModule"):
         classAdJob.insertAttributeString("InputDataModule", inputDataPolicy)
 
+    softwareDistModule = Operations(vo=vo).getValue("SoftwareDistModule")
+    if softwareDistModule and not classAdJob.lookupAttribute("SoftwareDistModule"):
+        classAdJob.insertAttributeString("SoftwareDistModule", softwareDistModule)
+
     # priority
     priority = classAdJob.getAttributeInt("Priority")
     if priority is None:
