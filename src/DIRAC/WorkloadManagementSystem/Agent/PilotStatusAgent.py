@@ -45,7 +45,6 @@ class PilotStatusAgent(AgentModule):
     def initialize(self):
         """Sets defaults"""
 
-        self.am_setOption("GridEnv", "")
         self.pilotDB = PilotAgentsDB()
         self.diracadmin = DiracAdmin()
         self.jobDB = JobDB()
@@ -60,14 +59,6 @@ class PilotStatusAgent(AgentModule):
         """The PilotAgent execution method."""
 
         self.pilotStalledDays = self.am_getOption("PilotStalledDays", 3)
-        self.gridEnv = self.am_getOption("GridEnv")
-        if not self.gridEnv:
-            # No specific option found, try a general one
-            setup = gConfig.getValue("/DIRAC/Setup", "")
-            if setup:
-                instance = gConfig.getValue(f"/DIRAC/Setups/{setup}/WorkloadManagement", "")
-                if instance:
-                    self.gridEnv = gConfig.getValue(f"/Systems/WorkloadManagement/{instance}/GridEnv", "")
 
         result = self.pilotDB._getConnection()
         if not result["OK"]:

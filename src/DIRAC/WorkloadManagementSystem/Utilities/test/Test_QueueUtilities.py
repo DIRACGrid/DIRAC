@@ -26,7 +26,6 @@ expectedQueueDict1 = {
         "Site": "Site1",
         "ParametersDict": {
             "GridCE": "CE1",
-            "GridEnv": None,
             "Queue": "Queue1",
             "RequiredTag": [],
             "Setup": None,
@@ -42,7 +41,6 @@ expectedQueueDict1 = {
         "Site": "Site1",
         "ParametersDict": {
             "GridCE": "CE1",
-            "GridEnv": None,
             "Queue": "Queue2",
             "RequiredTag": [],
             "Setup": None,
@@ -58,7 +56,6 @@ expectedQueueDict1 = {
         "Site": "Site1",
         "ParametersDict": {
             "GridCE": "CE2",
-            "GridEnv": None,
             "Queue": "Queue1",
             "RequiredTag": [],
             "Setup": None,
@@ -74,7 +71,6 @@ expectedQueueDict1 = {
         "Site": "Site2",
         "ParametersDict": {
             "GridCE": "CE3",
-            "GridEnv": None,
             "Queue": "Queue1",
             "RequiredTag": [],
             "Setup": None,

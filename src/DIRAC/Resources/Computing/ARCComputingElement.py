@@ -135,7 +135,6 @@ class ARCComputingElement(ComputingElement):
 
         # set the timeout to the default 20 seconds in case the UserConfig constructor did not
         self.usercfg.Timeout(20)  # pylint: disable=pointless-statement
-        self.gridEnv = ""
 
         # Used in getJobStatus
         self.mapStates = STATES_MAP
