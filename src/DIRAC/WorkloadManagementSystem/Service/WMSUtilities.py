@@ -4,7 +4,7 @@
 import shutil
 from tempfile import mkdtemp
 
-from DIRAC import S_ERROR, S_OK, gConfig, gLogger
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     getDNForUsername,

@@ -3,11 +3,12 @@
 tests for HTCondorCEComputingElement module
 """
 import uuid
+
 import pytest
 
+from DIRAC import S_OK
 from DIRAC.Resources.Computing import HTCondorCEComputingElement as HTCE
 from DIRAC.Resources.Computing.BatchSystems import Condor
-from DIRAC import S_OK
 
 MODNAME = "DIRAC.Resources.Computing.HTCondorCEComputingElement"
 

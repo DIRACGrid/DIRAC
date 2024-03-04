@@ -1,13 +1,11 @@
 """ Test class for QueueUtilities
 """
-import pytest
 import copy
 from unittest.mock import MagicMock
 
-
+import pytest
 from DIRAC import S_OK
 from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import *
-
 
 siteDict1 = {
     "Site1": {

@@ -2,7 +2,7 @@
 The Grid module contains several utilities for grid operations
 """
 
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
 

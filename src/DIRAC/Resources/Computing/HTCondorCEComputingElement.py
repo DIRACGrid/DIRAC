@@ -49,20 +49,20 @@ import errno
 import os
 import subprocess
 import tempfile
-import threading
 import textwrap
+import threading
 import uuid
 
 from DIRAC import S_ERROR, S_OK, gConfig
-from DIRAC.Core.Utilities.File import makeGuid, mkDir
-from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.Core.Security.Locations import getCAsLocation
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import writeToTokenFile
+from DIRAC.Resources.Computing.BatchSystems.Condor import HOLD_REASON_SUBCODE, parseCondorStatus, subTemplate
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
-from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import writeToTokenFile
-from DIRAC.Core.Security.Locations import getCAsLocation
-from DIRAC.Resources.Computing.BatchSystems.Condor import HOLD_REASON_SUBCODE, subTemplate, parseCondorStatus
 
 MANDATORY_PARAMETERS = ["Queue"]
 DEFAULT_WORKINGDIRECTORY = "/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT"
