@@ -1,3 +1,38 @@
+[v8.0.39]
+
+*WorkloadManagementSystem
+
+FIX: (#7495) If the SoftwareDistModule is set in the Operations Section, add it to the Job JDL to restore previous behaviour
+
+*FrameworkSystem
+
+FIX: (#7489) dirac-proxy-info without the dirac group
+
+*RequestManagementSystem
+
+FIX: (#7479) RequestTask - download no-VOMS proxy if the owner group does not define VOMSRole
+
+*Core
+
+FIX: (#7478) Fix DISET calls with proxy to be used passed as an argument
+
+*WorkloadManagement
+
+FIX: (#7476) JobCleaningAgent - select random jobs for deletion rather than head and tail jobs.
+FIX: (#7474) JobID type in PushJobAgent
+
+*Accounting
+
+FIX: (#7466) Fix errors during insert into `ac_in_*` tables.
+
+*Interfaces
+
+CHANGE: (#7465) dfind - more explicit failure report
+
+*DataManagementSystem
+
+NEW: (#7370) add tools for consistency checks
+
 [v8.0.38]
 
 *WorkloadManagement
