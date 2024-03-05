@@ -2,7 +2,6 @@
 Test SubLogger
 """
 import pytest
-from flaky import flaky
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 
 

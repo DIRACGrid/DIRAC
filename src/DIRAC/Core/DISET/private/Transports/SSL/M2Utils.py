@@ -4,7 +4,10 @@ Utilities for using M2Crypto SSL with DIRAC.
 """
 import os
 import tempfile
+import M2Crypto
+from packaging.version import Version
 from M2Crypto import SSL, m2, X509
+
 
 from DIRAC.Core.DISET import DEFAULT_SSL_CIPHERS, DEFAULT_SSL_METHODS
 from DIRAC.Core.Security import Locations
@@ -13,6 +16,30 @@ from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
 # Verify depth of peer certs
 VERIFY_DEPTH = 50
 DEBUG_M2CRYPTO = os.getenv("DIRAC_DEBUG_M2CRYPTO", "No").lower() in ("yes", "true")
+
+
+VERIFY_ALLOW_PROXY_CERTS = 0
+
+# If the version of M2Crypto is recent enough, there is an API
+# to accept proxy certificate, and we do not need to rely on
+# OPENSSL_ALLOW_PROXY_CERT environment variable
+# which was removed as of openssl 1.1
+# We need this to be merged in M2Crypto: https://gitlab.com/m2crypto/m2crypto/merge_requests/236
+# We set the proper verify flag to the X509Store of the context
+# as described here https://www.openssl.org/docs/man1.1.1/man7/proxy-certificates.html
+if hasattr(SSL, "verify_allow_proxy_certs"):
+    VERIFY_ALLOW_PROXY_CERTS = SSL.verify_allow_proxy_certs  # pylint: disable=no-member
+# As of M2Crypto 0.37, the `verify_allow_proxy_certs` flag was moved
+# to X509 (https://gitlab.com/m2crypto/m2crypto/-/merge_requests/238)
+# It is more consistent with all the other flags,
+# but pySSL had it in SSL. Well...
+elif hasattr(X509, "verify_allow_proxy_certs"):
+    VERIFY_ALLOW_PROXY_CERTS = X509.verify_allow_proxy_certs  # pylint: disable=no-member
+# As of M2Crypto 0.38, M2Crypto did not export the symbol correctly
+# Anymore
+# https://gitlab.com/m2crypto/m2crypto/-/issues/298
+elif Version(M2Crypto.__version__) >= Version("0.38.0"):
+    VERIFY_ALLOW_PROXY_CERTS = 64
 
 
 def __loadM2SSLCTXHostcert(ctx):
@@ -125,21 +152,9 @@ def getM2SSLContext(ctx=None, **kwargs):
             raise RuntimeError(f"CA path ({caPath}) is not a valid directory")
         ctx.load_verify_locations(capath=caPath)
 
-    # If the version of M2Crypto is recent enough, there is an API
-    # to accept proxy certificate, and we do not need to rely on
-    # OPENSSL_ALLOW_PROXY_CERT environment variable
-    # which was removed as of openssl 1.1
-    # We need this to be merged in M2Crypto: https://gitlab.com/m2crypto/m2crypto/merge_requests/236
-    # We set the proper verify flag to the X509Store of the context
-    # as described here https://www.openssl.org/docs/man1.1.1/man7/proxy-certificates.html
-    if hasattr(SSL, "verify_allow_proxy_certs"):
-        ctx.get_cert_store().set_flags(SSL.verify_allow_proxy_certs)  # pylint: disable=no-member
-    # As of M2Crypto 0.37, the `verify_allow_proxy_certs` flag was moved
-    # to X509 (https://gitlab.com/m2crypto/m2crypto/-/merge_requests/238)
-    # It is more consistent with all the other flags,
-    # but pySSL had it in SSL. Well...
-    if hasattr(X509, "verify_allow_proxy_certs"):
-        ctx.get_cert_store().set_flags(X509.verify_allow_proxy_certs)  # pylint: disable=no-member
+    # Allow proxy certificates to be used
+    if VERIFY_ALLOW_PROXY_CERTS:
+        ctx.get_cert_store().set_flags(VERIFY_ALLOW_PROXY_CERTS)
 
     # Other parameters
     sslMethods = kwargs.get("sslMethods", DEFAULT_SSL_METHODS)
