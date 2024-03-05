@@ -2,7 +2,6 @@
 Test SubLogger
 """
 import pytest
-from flaky import flaky
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 
 
@@ -52,7 +51,7 @@ def test_getSubLoggerObject():
 # Run the tests for all the log levels and exceptions
 # We may need to rerun the test if we are unlucky and the timestamps
 # don't match
-@flaky(max_runs=3)
+@pytest.mark.flaky(reruns=3)
 @pytest.mark.parametrize("logLevel", ["exception"] + [lvl.lower() for lvl in LogLevels.getLevelNames()])
 def test_localSubLoggerObject(logLevel):
     """

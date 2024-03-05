@@ -5,7 +5,6 @@ from os.path import dirname, join
 from subprocess import Popen
 
 import pytest
-from flaky import flaky
 
 import DIRAC
 from DIRAC.Core.Utilities.Profiler import Profiler
@@ -78,7 +77,7 @@ def test_base():
     assert resWC["Value"] >= res["Value"]
 
 
-@flaky(max_runs=10, min_passes=2)
+@pytest.mark.flaky(reruns=10)
 def test_cpuUsage():
     mainProcess = Popen(
         [
