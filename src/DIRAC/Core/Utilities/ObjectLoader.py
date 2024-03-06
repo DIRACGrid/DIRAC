@@ -169,6 +169,11 @@ class ObjectLoader(metaclass=DIRACSingleton):
 
 def loadObjects(path: str, reFilter=None, parentClass: object = None) -> dict[str, Any]:
     """
+
+    Note: this does not work for editable install because it hardcodes
+    DIRAC.__file__
+    It is better to use ObjectLoader().getObjects()
+
     :param str path: the path to the system for example: DIRAC/AccountingSystem
     :param object reFilter: regular expression used to found the class
     :param object parentClass: class instance
@@ -184,6 +189,7 @@ def loadObjects(path: str, reFilter=None, parentClass: object = None) -> dict[st
         objDir = os.path.join(os.path.dirname(os.path.dirname(DIRAC.__file__)), parentModule, *pathList)
         if not os.path.isdir(objDir):
             continue
+
         for objFile in os.listdir(objDir):
             if reFilter.match(objFile):
                 pythonClassName = objFile[:-3]
