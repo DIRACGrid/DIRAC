@@ -51,15 +51,15 @@ import sys
 import uuid
 
 import arc  # Has to work if this module is called #pylint: disable=import-error
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.Subprocess import shellCall
-from DIRAC.Core.Utilities.List import breakListIntoChunks
+
+from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Core.Utilities.Decorators import deprecated
+from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Resources.Computing.PilotBundle import writeScript
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
-
 
 MANDATORY_PARAMETERS = ["Queue"]  # Mandatory for ARC CEs in GLUE2?
 # See https://www.nordugrid.org/arc/arc6/tech/rest/rest.html#rest-interface-job-states
@@ -127,7 +127,6 @@ class ARCComputingElement(ComputingElement):
         self.pilotProxy = ""
         self.queue = ""
         self.arcQueue = ""
-        self.gridEnv = ""
         self.ceHost = self.ceName
         self.endpointType = "Gridftp"
         self.usercfg = arc.common.UserConfig()
@@ -135,7 +134,6 @@ class ARCComputingElement(ComputingElement):
 
         # set the timeout to the default 20 seconds in case the UserConfig constructor did not
         self.usercfg.Timeout(20)  # pylint: disable=pointless-statement
-        self.gridEnv = ""
 
         # Used in getJobStatus
         self.mapStates = STATES_MAP
@@ -273,7 +271,6 @@ class ARCComputingElement(ComputingElement):
         self.arcQueue = self.queue.split("-", 2)[2]
 
         self.ceHost = self.ceParameters.get("Host", self.ceHost)
-        self.gridEnv = self.ceParameters.get("GridEnv", self.gridEnv)
 
         # extra XRSL data (should respect the XRSL format)
         self.xrslExtraString = self.ceParameters.get("XRSLExtraString", self.xrslExtraString)

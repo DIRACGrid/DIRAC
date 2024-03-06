@@ -49,20 +49,20 @@ import errno
 import os
 import subprocess
 import tempfile
-import threading
 import textwrap
+import threading
 import uuid
 
 from DIRAC import S_ERROR, S_OK, gConfig
-from DIRAC.Core.Utilities.File import makeGuid, mkDir
-from DIRAC.Core.Utilities.Grid import executeGridCommand
+from DIRAC.Core.Security.Locations import getCAsLocation
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import writeToTokenFile
+from DIRAC.Resources.Computing.BatchSystems.Condor import HOLD_REASON_SUBCODE, parseCondorStatus, subTemplate
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
-from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import writeToTokenFile
-from DIRAC.Core.Security.Locations import getCAsLocation
-from DIRAC.Resources.Computing.BatchSystems.Condor import HOLD_REASON_SUBCODE, subTemplate, parseCondorStatus
 
 MANDATORY_PARAMETERS = ["Queue"]
 DEFAULT_WORKINGDIRECTORY = "/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT"
@@ -91,7 +91,6 @@ class HTCondorCEComputingElement(ComputingElement):
         self.pilotProxy = ""
         self.queue = ""
         self.outputURL = "gsiftp://localhost"
-        self.gridEnv = ""
         self.proxyRenewal = 0
         self.daysToKeepLogs = DEFAULT_DAYSTOKEEPLOGS
         self.daysToKeepRemoteLogs = DEFAULT_DAYSTOKEEPREMOTELOGS
@@ -203,7 +202,6 @@ class HTCondorCEComputingElement(ComputingElement):
     def _reset(self):
         self.queue = self.ceParameters["Queue"]
         self.outputURL = self.ceParameters.get("OutputURL", "gsiftp://localhost")
-        self.gridEnv = self.ceParameters.get("GridEnv")
         self.daysToKeepLogs = self.ceParameters.get("DaysToKeepLogs", DEFAULT_DAYSTOKEEPLOGS)
         self.extraSubmitString = str(self.ceParameters.get("ExtraSubmitString", "").encode().decode("unicode_escape"))
         self.daysToKeepRemoteLogs = self.ceParameters.get("DaysToKeepRemoteLogs", DEFAULT_DAYSTOKEEPREMOTELOGS)
@@ -225,7 +223,7 @@ class HTCondorCEComputingElement(ComputingElement):
 
         :param list cmd: list of the condor command elements
         :param bool keepTokenFile: flag to reuse or not the previously created token file
-        :return: S_OK/S_ERROR - the stdout parameter of the executeGridCommand() call
+        :return: S_OK/S_ERROR - the stdout parameter of the systemCall() call
         """
         if not self.token and not self.proxy:
             return S_ERROR(f"Cannot execute the command, token and proxy not found: {cmd}")
@@ -255,11 +253,9 @@ class HTCondorCEComputingElement(ComputingElement):
                 htcEnv["_CONDOR_AUTH_SSL_CLIENT_CADIR"] = cas
 
         # Execute the command
-        result = executeGridCommand(
-            cmd,
-            gridEnvScript=self.gridEnv,
-            gridEnvDict=htcEnv,
-        )
+        currentEnv = dict(os.environ)
+        currentEnv.update(htcEnv)
+        result = systemCall(120, cmd, env=currentEnv)
         if not result["OK"]:
             self.tokenFile = None
             self.log.error("Command", f"{cmd} failed with: {result['Message']}")

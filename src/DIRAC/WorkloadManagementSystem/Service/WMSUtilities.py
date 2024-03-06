@@ -4,12 +4,11 @@
 import shutil
 from tempfile import mkdtemp
 
-from DIRAC import S_ERROR, S_OK, gConfig, gLogger
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     getDNForUsername,
     getGroupOption,
-    getVOForGroup,
 )
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
@@ -22,18 +21,6 @@ from DIRAC.WorkloadManagementSystem.Client.PilotScopes import PILOT_SCOPES
 outputSandboxFiles = ["StdOut", "StdErr"]
 
 COMMAND_TIMEOUT = 60
-###########################################################################
-
-
-def getGridEnv():
-    gridEnv = ""
-    setup = gConfig.getValue("/DIRAC/Setup", "")
-    if setup:
-        instance = gConfig.getValue(f"/DIRAC/Setups/{setup}/WorkloadManagement", "")
-        if instance:
-            gridEnv = gConfig.getValue(f"/Systems/WorkloadManagement/{instance}/GridEnv", "")
-
-    return gridEnv
 
 
 def getPilotCE(pilotDict):
@@ -43,8 +30,6 @@ def getPilotCE(pilotDict):
     if not result["OK"]:
         return result
     queueDict = result["Value"]
-    gridEnv = getGridEnv()
-    queueDict["GridEnv"] = gridEnv
     queueDict["WorkingDirectory"] = mkdtemp()
     result = ceFactory.getCE(pilotDict["GridType"], pilotDict["DestinationSite"], queueDict)
     if not result["OK"]:

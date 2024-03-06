@@ -1,47 +1,9 @@
 """
 The Grid module contains several utilities for grid operations
 """
-import os
 
-from DIRAC.Core.Utilities.Os import sourceEnv
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers import Local
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.Core.Utilities.Subprocess import systemCall, shellCall
-
-
-def executeGridCommand(cmd, gridEnvScript=None, gridEnvDict=None):
-    """
-    Execute cmd tuple after sourcing GridEnv
-    """
-    currentEnv = dict(os.environ)
-
-    if not gridEnvScript:
-        # if not passed as argument, use default from CS Helpers
-        gridEnvScript = Local.gridEnv()
-
-    if gridEnvScript:
-        command = gridEnvScript.split()
-        ret = sourceEnv(10, command)
-        if not ret["OK"]:
-            return S_ERROR(f"Failed sourcing GridEnv: {ret['Message']}")
-        gridEnv = ret["outputEnv"]
-        #
-        # Preserve some current settings if they are there
-        #
-        if "X509_VOMS_DIR" in currentEnv:
-            gridEnv["X509_VOMS_DIR"] = currentEnv["X509_VOMS_DIR"]
-        if "X509_CERT_DIR" in currentEnv:
-            gridEnv["X509_CERT_DIR"] = currentEnv["X509_CERT_DIR"]
-    else:
-        gridEnv = currentEnv
-
-    if gridEnvDict:
-        gridEnv.update(gridEnvDict)
-
-    result = systemCall(120, cmd, env=gridEnv)
-    return result
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
+from DIRAC.Core.Utilities.Subprocess import shellCall
 
 
 def ldapsearchBDII(filt=None, attr=None, host=None, base=None, selectionString="Glue"):
