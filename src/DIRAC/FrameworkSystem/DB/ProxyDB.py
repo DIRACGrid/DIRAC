@@ -10,15 +10,10 @@
       if ProxyDB_CleanProxies does not have the required proxy.
     * ProxyDB_VOMSProxies -- proxy storage table with VOMS extension already added.
     * ProxyDB_Log -- table with logs.
-    * ProxyDB_Tokens -- token storage table for proxy requests.
 """
-import hashlib
-import random
 import textwrap
-import time
-from urllib.request import urlopen
 
-from DIRAC import S_ERROR, S_OK, gConfig, gLogger
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security.VOMS import VOMS
@@ -41,8 +36,6 @@ class ProxyDB(DB):
         DB.__init__(self, "ProxyDB", "Framework/ProxyDB", parentLogger=parentLogger)
         self._mailFrom = mailFrom if mailFrom else DEFAULT_MAIL_FROM
         self.__defaultRequestLifetime = 300  # 5min
-        self.__defaultTokenLifetime = 86400 * 7  # 1 week
-        self.__defaultTokenMaxUses = 50
         self._minSecsToAllowStore = 3600
         self.__notifClient = NotificationClient()
         retVal = self.__initializeDB()
@@ -124,18 +117,6 @@ class ProxyDB(DB):
                 },
                 "PrimaryKey": "ID",
                 "Indexes": {"Timestamp": ["Timestamp"]},
-            }
-
-        if "ProxyDB_Tokens" not in tablesInDB:
-            tablesD["ProxyDB_Tokens"] = {
-                "Fields": {
-                    "Token": "VARCHAR(64) NOT NULL",
-                    "RequesterDN": "VARCHAR(255) NOT NULL",
-                    "RequesterGroup": "VARCHAR(255) NOT NULL",
-                    "ExpirationTime": "DATETIME NOT NULL",
-                    "UsesLeft": "SMALLINT UNSIGNED DEFAULT 1",
-                },
-                "PrimaryKey": "Token",
             }
 
         return self._createTables(tablesD)
@@ -1013,78 +994,6 @@ class ProxyDB(DB):
         if retVal["OK"]:
             totalRecords = retVal["Value"][0][0]
         return S_OK({"ParameterNames": fields, "Records": data, "TotalRecords": totalRecords})
-
-    def generateToken(self, requesterDN, requesterGroup, numUses=1, lifeTime=0, retries=10):
-        """Generate and return a token and the number of uses for the token
-
-        :param str requesterDN: DN of requester
-        :param str requesterGroup: DIRAC group of requester
-        :param int numUses: number of uses
-        :param int lifeTime: proxy live time in a seconds
-        :param int retries: number of retries
-
-        :return: S_OK(tuple)/S_ERROR() -- tuple with token and number of uses
-        """
-        if not lifeTime:
-            lifeTime = gConfig.getValue("/DIRAC/VOPolicy/TokenLifeTime", self.__defaultTokenLifetime)
-        maxUses = gConfig.getValue("/DIRAC/VOPolicy/TokenMaxUses", self.__defaultTokenMaxUses)
-        numUses = max(1, min(numUses, maxUses))
-        m = hashlib.md5()
-        rndData = f"{time.time()}.{random.random()}.{numUses}.{lifeTime}"
-        m.update(rndData.encode())
-        token = m.hexdigest()
-        fieldsSQL = ", ".join(("Token", "RequesterDN", "RequesterGroup", "ExpirationTime", "UsesLeft"))
-        valuesSQL = ", ".join(
-            (
-                self._escapeString(token)["Value"],
-                self._escapeString(requesterDN)["Value"],
-                self._escapeString(requesterGroup)["Value"],
-                "TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )" % int(lifeTime),
-                str(numUses),
-            )
-        )
-
-        insertSQL = f"INSERT INTO `ProxyDB_Tokens` ( {fieldsSQL} ) VALUES ( {valuesSQL} )"
-        result = self._update(insertSQL)
-        if result["OK"]:
-            return S_OK([token, numUses])
-        if result["Message"].find("uplicate entry") > -1:
-            if retries:
-                return self.generateToken(numUses, lifeTime, retries - 1)
-            return S_ERROR("Max retries reached for token generation. Aborting")
-        return result
-
-    def purgeExpiredTokens(self):
-        """Purge expired tokens from the db
-
-        :return: S_OK(boolean)/S_ERROR()
-        """
-        delSQL = "DELETE FROM `ProxyDB_Tokens` WHERE ExpirationTime < UTC_TIMESTAMP() OR UsesLeft < 1"
-        return self._update(delSQL)
-
-    def useToken(self, token, requesterDN, requesterGroup):
-        """Uses of token count
-
-        :param str token: token
-        :param str requesterDN: DN of requester
-        :param str requesterGroup: DIRAC group of requester
-
-        :return: S_OK(boolean)/S_ERROR()
-        """
-        sqlCond = " AND ".join(
-            (
-                "UsesLeft > 0",
-                f"Token={self._escapeString(token)['Value']}",
-                f"RequesterDN={self._escapeString(requesterDN)['Value']}",
-                f"RequesterGroup={self._escapeString(requesterGroup)['Value']}",
-                "ExpirationTime >= UTC_TIMESTAMP()",
-            )
-        )
-        updateSQL = f"UPDATE `ProxyDB_Tokens` SET UsesLeft = UsesLeft - 1 WHERE {sqlCond}"
-        result = self._update(updateSQL)
-        if not result["OK"]:
-            return result
-        return S_OK(result["Value"] > 0)
 
     def sendExpirationNotifications(self):
         """Send notification about expiration
