@@ -1,5 +1,6 @@
-import threading
 import functools
+import threading
+
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 
 
