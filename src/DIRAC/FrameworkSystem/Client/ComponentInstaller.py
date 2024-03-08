@@ -78,7 +78,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers import (
 )
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.Security.Properties import (
-    ALARMS_MANAGEMENT,
     CS_ADMINISTRATOR,
     FULL_DELEGATION,
     JOB_ADMINISTRATOR,
@@ -423,7 +422,6 @@ class ComponentInstaller:
         hostDN = self.localCfg.getOption(cfgInstallPath("HostDN"), "")
         defaultGroupName = self.localCfg.getOption(cfgInstallPath("DefaultGroupName"), "dirac_user")
         adminGroupProperties = [
-            ALARMS_MANAGEMENT,
             SERVICE_ADMINISTRATOR,
             CS_ADMINISTRATOR,
             JOB_ADMINISTRATOR,
