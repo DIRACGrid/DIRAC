@@ -52,8 +52,6 @@ class SecurityProperty(str, Enum):
     PPG_AUTHORITY = "PPGAuthority"
     #: Allow Bookkeeping Management
     BOOKKEEPING_MANAGEMENT = "BookkeepingManagement"
-    #: Allow to set notifications and manage alarms
-    ALARMS_MANAGEMENT = "AlarmsManagement"
     #: Allow FC Management - FC root user
     FC_MANAGEMENT = "FileCatalogManagement"
     #: Allow staging files
@@ -152,6 +150,5 @@ PROXY_MANAGEMENT = SecurityProperty.PROXY_MANAGEMENT.value
 PRODUCTION_MANAGEMENT = SecurityProperty.PRODUCTION_MANAGEMENT.value
 PPG_AUTHORITY = SecurityProperty.PPG_AUTHORITY.value
 BOOKKEEPING_MANAGEMENT = SecurityProperty.BOOKKEEPING_MANAGEMENT.value
-ALARMS_MANAGEMENT = SecurityProperty.ALARMS_MANAGEMENT.value
 FC_MANAGEMENT = SecurityProperty.FC_MANAGEMENT.value
 STAGE_ALLOWED = SecurityProperty.STAGE_ALLOWED.value

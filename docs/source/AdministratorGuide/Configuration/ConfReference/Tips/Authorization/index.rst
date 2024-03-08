@@ -11,8 +11,6 @@ are showed in the next table:
 +----------------------------+------------------------------------------------------------------+-------------+
 | *AccountingMonitor*        | Allow access to accounting data for all groups                   |             |
 +----------------------------+------------------------------------------------------------------+-------------+
-| *AlarmsManagement*         | Allow to set notifications and manage alarms                     |             |
-+----------------------------+------------------------------------------------------------------+-------------+
 | *CSAdministrator*          | CS Administrator - possibility to edit the Configuration Service |             |
 +----------------------------+------------------------------------------------------------------+-------------+
 | *FileCatalogManagement*    | Allow FC Management                                              |             |
