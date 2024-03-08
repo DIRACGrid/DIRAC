@@ -1,3 +1,33 @@
+[v9.0.0a27]
+
+*Core
+
+FIX: (#7505) plotting TypeLoader works with editable installation
+NEW: (#7453) Introduce an RPC stub equivalent for DiracX
+
+*Test
+
+CHANGE: (#7502) use pytest-rerun instead of flaky
+
+*WorkloadManagementSystem
+
+CHANGE: (#7498) removed GridEnv
+FIX: (#7497) If the SoftwareDistModule is set in the Operations Section, add it to the Job JDL to restore previous behaviour
+NEW: (#7453) FutureJobStateUpdate.setJobStatusBulk return a DiracX RPC stub
+
+*WorkloadManagement
+
+FIX: (#7493) check the VO from the task queues before submitting pilots
+FIX: (#7488) JobAgent.setupProxy takes owner instead of ownerDN
+
+*RequestManagementSystem
+
+CHANGE: (#7453) adapt ForwardDISET to DiracX stub
+
+*FrameworkSystem
+
+CHANGE: (#7442) removed NotificationDN
+
 [v9.0.0a26]
 
 *FrameworkSystem
