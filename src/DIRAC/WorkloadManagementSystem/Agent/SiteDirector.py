@@ -1251,14 +1251,6 @@ class SiteDirector(AgentModule):
             return
         pilotDict = result["Value"]
 
-        stampedPilotRefs = []
-        for pRef in pilotDict:
-            if pilotDict[pRef]["PilotStamp"]:
-                stampedPilotRefs.append(pRef + ":::" + pilotDict[pRef]["PilotStamp"])
-            else:
-                stampedPilotRefs = list(pilotRefs)
-                break
-
         # This proxy is used for checking the pilot status and renewals
         # We really need at least a few hours otherwise the renewed
         # proxy may expire before we check again...
@@ -1274,7 +1266,7 @@ class SiteDirector(AgentModule):
                 return
             ce.setToken(result["Value"])
 
-        result = ce.getJobStatus(stampedPilotRefs)
+        result = ce.getJobStatus(pilotRefs)
         if not result["OK"]:
             self.log.error("Failed to get pilots status from CE", f"{ceName}: {result['Message']}")
             return
