@@ -591,7 +591,7 @@ class ProxyDB(DB):
             return S_ERROR(f'"{userGroup}" group is disable to download.')
 
         # Standard proxy is requested
-        self.log.verbose("Try to get proxy from ProxyDB_Proxies")
+        self.log.verbose("Try to get proxy from ProxyDB_CleanProxies")
         retVal = self.__getPemAndTimeLeft(userDN, userGroup)
         errMsg = "Can't get proxy%s: " % (requiredLifeTime and " for %s seconds" % requiredLifeTime or "")
         if not retVal["OK"]:
@@ -606,7 +606,7 @@ class ProxyDB(DB):
         pemData = retVal["Value"][0]
         timeLeft = retVal["Value"][1]
         chain = X509Chain()
-        result = chain.loadProxyFromString(pemData)
+        retVal = chain.loadProxyFromString(pemData)
         if not retVal["OK"]:
             return S_ERROR(f"{errMsg}; {retVal['Message']}")
 
