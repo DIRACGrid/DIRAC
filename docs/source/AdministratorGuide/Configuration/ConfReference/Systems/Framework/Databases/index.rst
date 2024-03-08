@@ -17,6 +17,5 @@ Databases used by Framework System. Note that each database is a separate subsec
 +--------------------------------+----------------------------------------------+----------------------+
 
 The databases associated to Framework System are:
-- NotificationDB
 - ProxyDB
 - UserProfileDB

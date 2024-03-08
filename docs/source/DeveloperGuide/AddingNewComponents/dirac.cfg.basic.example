@@ -72,7 +72,6 @@ Registry
       Properties += Operator
       Properties += CSAdministrator
       Properties += ProductionManagement
-      Properties += AlarmsManagement
       Properties += TrustedHost
       Properties += SiteManager
     }
@@ -84,7 +83,6 @@ Registry
       Properties += Operator
       Properties += CSAdministrator
       Properties += ProductionManagement
-      Properties += AlarmsManagement
       Properties += TrustedHost
       Properties += SiteManager
     }

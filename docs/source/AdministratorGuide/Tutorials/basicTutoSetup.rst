@@ -320,8 +320,7 @@ The Configuration service will serve the content of the file ``/opt/dirac/etc/My
       dirac_admin
       {
         Users = ciuser
-        Properties = AlarmsManagement
-        Properties += ServiceAdministrator
+        Properties = ServiceAdministrator
         Properties += CSAdministrator
         Properties += JobAdministrator
         Properties += FullDelegation
