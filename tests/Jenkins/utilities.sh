@@ -125,7 +125,7 @@ findServices(){
     ServicestoExclude=' '
   fi
 
-  if ! cd "${SERVERINSTALLDIR}" -ne 0; then
+  if ! cd "${SERVERINSTALLDIR}"; then
     echo 'ERROR: cannot change to ' "${SERVERINSTALLDIR}" >&2
     exit 1
   fi
