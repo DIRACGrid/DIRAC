@@ -11,10 +11,11 @@
       - deleteJobParameters()
 """
 from DIRAC import S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
+from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC.Core.Utilities import TimeUtilities
-
 
 mapping = {
     "properties": {
@@ -38,11 +39,12 @@ class ElasticJobParametersDB(ElasticDB):
     def __init__(self, parentLogger=None):
         """Standard Constructor"""
 
+        db_name = "WorkloadManagement/ElasticJobParametersDB"
         try:
-            indexPrefix = CSGlobals.getSetup().lower()
-
-            # Connecting to the ES cluster
-            super().__init__("WorkloadManagement/ElasticJobParametersDB", indexPrefix, parentLogger=parentLogger)
+            section = getDatabaseSection(db_name)
+            indexPrefix = gConfig.getValue(f"{section}/IndexPrefix", CSGlobals.getSetup()).lower()
+            # Connecting to the ES cluster using ElasticJobParametersDB
+            super().__init__(db_name, indexPrefix, parentLogger=parentLogger)
         except Exception as ex:
             self.log.error("Can't connect to ElasticJobParametersDB", repr(ex))
             raise RuntimeError("Can't connect to ElasticJobParametersDB") from ex
