@@ -284,11 +284,12 @@ class Watchdog:
         result = self.profiler.memoryUsage(withChildren=True)
         if not result["OK"]:
             self.log.warn("Could not get rss info from profiler", result["Message"])
-        msg += f"MemUsed: {result['Value']:.1f} kb "
-        heartBeatDict["MemoryUsed"] = result["Value"]
-        if "MemoryUsed" not in self.parameters:
-            self.parameters["MemoryUsed"] = []
-        self.parameters["MemoryUsed"].append(result["Value"])
+        else:
+            msg += f"MemUsed: {result['Value']:.1f} MB "
+            heartBeatDict["MemoryUsed"] = result["Value"]
+            if "MemoryUsed" not in self.parameters:
+                self.parameters["MemoryUsed"] = []
+            self.parameters["MemoryUsed"].append(result["Value"])
 
         result = self.profiler.vSizeUsage(withChildren=True)
         if not result["OK"]:
@@ -298,7 +299,7 @@ class Watchdog:
             heartBeatDict["Vsize"] = vsize
             self.parameters.setdefault("Vsize", [])
             self.parameters["Vsize"].append(vsize)
-            msg += f"Job Vsize: {vsize:.1f} kb "
+            msg += f"Job Vsize: {vsize:.1f} MB "
 
         if "DiskSpace" not in self.parameters:
             self.parameters["DiskSpace"] = []
@@ -652,7 +653,7 @@ class Watchdog:
         if vsize and self.memoryLimit:
             if vsize > self.memoryLimit:
                 # Just a warning for the moment
-                self.log.warn(f"Job has consumed {vsize:f}.2 KB of memory with the limit of {self.memoryLimit:f}.2 KB")
+                self.log.warn(f"Job has consumed {vsize:f}.2 MB of memory with the limit of {self.memoryLimit:f}.2 MB")
 
         return S_OK()
 
@@ -736,7 +737,7 @@ class Watchdog:
         else:
             vsize = result["Value"] * 1024.0
             self.initialValues["Vsize"] = vsize
-            self.log.verbose("Vsize(kb)", f"{vsize:.1f}")
+            self.log.verbose("Vsize(MB)", f"{vsize:.1f}")
         self.parameters["Vsize"] = []
 
         result = self.profiler.memoryUsage(withChildren=True)
@@ -744,7 +745,7 @@ class Watchdog:
             self.log.warn("Could not get rss info from profiler", result["Message"])
         else:
             self.initialValues["RSS"] = result["Value"]
-            self.log.verbose("RSS(mb)", f"{result['Value']:.1f}")
+            self.log.verbose("RSS(MB)", f"{result['Value']:.1f}")
         self.parameters["RSS"] = []
 
         # We exclude fuse so that mountpoints can be cleaned up by automount after a period unused
@@ -827,9 +828,9 @@ class Watchdog:
         if "MemoryUsed" in self.parameters:
             memory = self.parameters["MemoryUsed"]
             if memory:
-                summary["MemoryUsed(kb)"] = abs(float(memory[-1]) - float(self.initialValues["MemoryUsed"]))
+                summary["MemoryUsed(MB)"] = abs(float(memory[-1]) - float(self.initialValues["MemoryUsed"]))
             else:
-                summary["MemoryUsed(kb)"] = math.nan
+                summary["MemoryUsed(MB)"] = math.nan
         # LoadAverage
         if "LoadAverage" in self.parameters:
             laList = self.parameters["LoadAverage"]
@@ -936,7 +937,7 @@ class Watchdog:
         """Retrieves all static system information"""
         result = {}
         result["HostName"] = socket.gethostname()
-        result["Memory(kB)"] = int(psutil.virtual_memory()[1] / 1024)
+        result["Memory(MB)"] = int(psutil.virtual_memory()[1] / 1024 / 1024)
         result["LocalAccount"] = getpass.getuser()
 
         path = Path("/proc/cpuinfo")
