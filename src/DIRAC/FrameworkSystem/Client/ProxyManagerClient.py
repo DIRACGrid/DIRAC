@@ -682,13 +682,11 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         """Get the remaining seconds for an uploaded proxy
 
         :param str DN: user DN
-        :param str group: group
+        :param str group: group (obsolete and ignored)
 
         :return: S_OK(int)/S_ERROR()
         """
         parameters = dict(UserDN=[DN])
-        if group:
-            parameters["UserGroup"] = [group]
         result = self.getDBContents(parameters)
         if not result["OK"]:
             return result
@@ -697,10 +695,9 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
             return S_OK(0)
         pNames = list(data["ParameterNames"])
         dnPos = pNames.index("UserDN")
-        groupPos = pNames.index("UserGroup")
         expiryPos = pNames.index("ExpirationTime")
         for row in data["Records"]:
-            if DN == row[dnPos] and group == row[groupPos]:
+            if DN == row[dnPos]:
                 td = row[expiryPos] - datetime.datetime.utcnow()
                 secondsLeft = td.days * 86400 + td.seconds
                 return S_OK(max(0, secondsLeft))
