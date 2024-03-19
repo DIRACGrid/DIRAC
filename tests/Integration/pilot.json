@@ -1,0 +1,37 @@
+{
+	"timestamp": "2023-02-13T14:34:26.725499",
+	"CEs": {
+		"ci.github.com": {
+			"Site": "DIRAC.CI.org",
+			"GridCEType": "TEST"
+		},
+		"ci-full.github.com": {
+			"Site": "DIRAC.CI.org",
+			"GridCEType": "TEST-FULL"
+		}
+	},
+	"Defaults": {
+		"Pilot": {
+			"RemoteLogging": "False",
+			"Commands": {
+				"TEST": "CheckWorkerNode, InstallDIRAC, ConfigureBasics, RegisterPilot, CheckCECapabilities, CheckWNCapabilities, ConfigureSite, ConfigureArchitecture, ConfigureCPURequirements",
+				"TEST-FULL": "CheckWorkerNode, InstallDIRAC, ConfigureBasics, RegisterPilot, CheckCECapabilities, CheckWNCapabilities, ConfigureSite, ConfigureArchitecture, ConfigureCPURequirements, LaunchAgent"
+			}
+		}
+	},
+	"dteam": {
+		"Pilot": {
+			"Version": "integration",
+			"CheckVersion": "False",
+			"pilotFileServer": "lbcertifdirac70.cern.ch:8443",
+			"pilotRepoBranch": "should_not_matter",
+			"pilotRepo": "https://github.com/should_not_matter/Pilot.git",
+			"GenericPilotGroup": "dteam_pilot",
+			"GenericPilotDN": "VAR_USERDN",
+			"PilotLogLevel": "DEBUG"
+		}
+	},
+	"ConfigurationServers": [
+		"VAR_CS"
+	]
+}
