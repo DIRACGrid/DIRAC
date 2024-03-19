@@ -1,3 +1,22 @@
+[v8.0.40]
+
+*WorkloadManagementSystem
+
+FIX: (#7518) Fix memory reporting
+FIX: (#7504) update pilot status in case the pilot failed before being able to install DIRAC, the pilot status was not updated and got stuck to 'Submitted'.
+
+*FrameworkSystem
+
+FIX: (#7514) ProxyManagerClient: do not check for Group
+
+*Test
+
+CHANGE: (#7499) use pytest-rerun instead of flaky
+
+*Core
+
+FIX: (#7496) plotting TypeLoader works with editable installation
+
 [v8.0.39]
 
 *WorkloadManagementSystem
