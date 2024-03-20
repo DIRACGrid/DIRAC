@@ -101,6 +101,8 @@ services:
       - DIRACX_CONFIG_BACKEND_URL=git+file:///cs_store/initialRepo
       - DIRACX_SERVICE_AUTH_TOKEN_KEY=file:///signing-key/rs256.key
     pull_policy: always
+    command: ["sleep", "infinity"]
+
 
   dirac-client:
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
@@ -112,6 +114,7 @@ services:
     ulimits:
       nofile: 8192
     pull_policy: always
+    command: ["sleep", "infinity"]
 
   diracx-init-key:
     image: ghcr.io/diracgrid/diracx/secret-generation:latest

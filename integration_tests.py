@@ -22,9 +22,9 @@ from packaging.version import Version
 from typer import colors as c
 
 # Editable configuration
-DEFAULT_HOST_OS = "cc7"
-DEFAULT_MYSQL_VER = "mysql:8.0"
-DEFAULT_ES_VER = "opensearchproject/opensearch:2.1.0"
+DEFAULT_HOST_OS = "el9"
+DEFAULT_MYSQL_VER = "mysql:8.0.36"
+DEFAULT_ES_VER = "opensearchproject/opensearch:2.11.1"
 DEFAULT_IAM_VER = "indigoiam/iam-login-service:v1.8.0"
 FEATURE_VARIABLES = {
     "DIRACOSVER": "master",
@@ -245,7 +245,7 @@ def prepare_environment(
         uid = str(os.getuid())
         ret = subprocess.run(cmd + ["groupadd", "--gid", gid, "dirac"], check=False)
         if ret.returncode != 0:
-            typer.secho(f"Failed to add add group dirac with id={gid}", fg=c.YELLOW)
+            typer.secho(f"Failed to add group dirac with id={gid}", fg=c.YELLOW)
         subprocess.run(
             cmd
             + [
