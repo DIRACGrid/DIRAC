@@ -54,8 +54,6 @@ from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateU
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
 
-EXECUTION_RESULT = {}
-
 
 class JobWrapper:
     """The only user of the JobWrapper is the JobWrapperTemplate"""
@@ -158,6 +156,7 @@ class JobWrapper:
         # Set defaults for some global parameters to be defined for the accounting report
         self.owner = "unknown"
         self.jobGroup = "unknown"
+        self.jobName = "unknown"
         self.jobType = "unknown"
         self.processingType = "unknown"
         self.userGroup = "unknown"
@@ -175,6 +174,9 @@ class JobWrapper:
         self.optArgs = {}
         self.ceArgs = {}
 
+        # Store the result of the payload execution
+        self.executionResults = {}
+
     #############################################################################
     def initialize(self, arguments):
         """Initializes parameters and environment for job."""
@@ -189,6 +191,7 @@ class JobWrapper:
         # Fill some parameters for the accounting report
         self.owner = self.jobArgs.get("Owner", self.owner)
         self.jobGroup = self.jobArgs.get("JobGroup", self.jobGroup)
+        self.jobName = self.jobArgs.get("JobName", self.jobName)
         self.jobType = self.jobArgs.get("JobType", self.jobType)
         dataParam = self.jobArgs.get("InputData", [])
         if dataParam and not isinstance(dataParam, list):
@@ -260,21 +263,121 @@ class JobWrapper:
         return infoString
 
     #############################################################################
-    def execute(self):
-        """The main execution method of the Job Wrapper"""
-        self.log.info(f"Job Wrapper is starting execution phase for job {self.jobID}")
+    def __prepareCommand(self):
+        """Prepare the command to be executed."""
+        if not "Executable" in self.jobArgs:
+            self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_NOT_FOUND, sendFlag=True)
+            return S_ERROR(f"Job {self.jobID} has no specified executable")
+
+        executable = self.jobArgs["Executable"].strip()
+        executable = os.path.expandvars(executable)
+
+        # Try to find the executable on PATH
+        if "/" not in executable:
+            # Returns None if the executable is not found so use "or" to leave it unchanged
+            executable = shutil.which(executable) or executable
+
+        # Make the full path since . is not always in the PATH
+        executable = os.path.abspath(executable)
+        if not os.path.exists(executable):
+            self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_NOT_FOUND, sendFlag=True)
+            return S_ERROR(f"Path to executable {executable} not found")
+
+        if not os.access(executable, os.X_OK):
+            try:
+                os.chmod(executable, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
+            except OSError:
+                self.log.warn("Failed to change mode to 775 for the executable", executable)
+
+        jobArguments = self.jobArgs.get("Arguments", "")
+
+        # In case the executable is dirac-jobexec,
+        # the configuration should include essential parameters related to the CE (which can be found in ceArgs)
+        # we consider information from ceArgs more accurate than from LocalSite (especially when jobs are pushed)
+        configOptions = ""
+        if "dirac-jobexec" in executable:
+            configOptions = f"-o /LocalSite/CPUNormalizationFactor={self.cpuNormalizationFactor} "
+            configOptions += f"-o /LocalSite/Site={self.siteName} "
+            configOptions += "-o /LocalSite/GridCE=%s " % self.ceArgs.get(
+                "GridCE", gConfig.getValue("/LocalSite/GridCE", "")
+            )
+            configOptions += "-o /LocalSite/CEQueue=%s " % self.ceArgs.get(
+                "Queue", gConfig.getValue("/LocalSite/CEQueue", "")
+            )
+            configOptions += "-o /LocalSite/RemoteExecution=%s " % self.ceArgs.get(
+                "RemoteExecution", gConfig.getValue("/LocalSite/RemoteExecution", False)
+            )
+
+        command = executable
+        if jobArguments:
+            command += " " + str(jobArguments)
+        if configOptions:
+            command += " " + configOptions
+
+        return S_OK(command)
+
+    def __prepareEnvironment(self):
+        """Prepare the environment to be used by the payload."""
         os.environ["DIRACJOBID"] = str(self.jobID)
-        os.environ["DIRACSITE"] = DIRAC.siteName()
-        self.log.verbose(f"DIRACSITE = {DIRAC.siteName()}")
 
-        os.environ["DIRAC_PROCESSORS"] = str(self.ceArgs.get("Processors", 1))
-        self.log.verbose(f"DIRAC_PROCESSORS = {self.ceArgs.get('Processors', 1)}")
+        diracSite = DIRAC.siteName()
+        os.environ["DIRACSITE"] = diracSite
+        self.log.verbose(f"DIRACSITE = {diracSite}")
 
-        os.environ["DIRAC_WHOLENODE"] = str(self.ceArgs.get("WholeNode", False))
-        self.log.verbose(f"DIRAC_WHOLENODE = {self.ceArgs.get('WholeNode', False)}")
+        diracProcessors = self.ceArgs.get("Processors", 1)
+        os.environ["DIRAC_PROCESSORS"] = str(diracProcessors)
+        self.log.verbose(f"DIRAC_PROCESSORS = {diracProcessors}")
 
+        diracWholeNode = self.ceArgs.get("WholeNode", False)
+        os.environ["DIRAC_WHOLENODE"] = str(diracWholeNode)
+        self.log.verbose(f"DIRAC_WHOLENODE = {diracWholeNode}")
+
+        exeEnv = dict(os.environ)
+        if "ExecutionEnvironment" in self.jobArgs:
+            self.log.verbose("Adding variables to execution environment")
+            variableList = self.jobArgs["ExecutionEnvironment"]
+            if isinstance(variableList, str):
+                variableList = [variableList]
+            for var in variableList:
+                nameEnv = var.split("=")[0]
+                valEnv = unquote(var.split("=")[1])
+                exeEnv[nameEnv] = valEnv
+                self.log.verbose(f"{nameEnv} = {valEnv}")
+
+        return S_OK(exeEnv)
+
+    def preProcess(self):
+        """This method is called before the payload starts."""
+        self.log.info(f"Job Wrapper is starting the pre processing phase for job {self.jobID}")
+
+        result = self.__prepareCommand()
+        if not result["OK"]:
+            return result
+        command = result["Value"]
+        self.log.verbose(f"Execution command: {command}")
+
+        # Prepare outputs
         errorFile = self.jobArgs.get("StdError", self.defaultErrorFile)
         outputFile = self.jobArgs.get("StdOutput", self.defaultOutputFile)
+
+        result = self.__prepareEnvironment()
+        if not result["OK"]:
+            return result
+        exeEnv = result["Value"]
+
+        return S_OK(
+            {
+                "command": command,
+                "error": errorFile,
+                "output": outputFile,
+                "env": exeEnv,
+            }
+        )
+
+    #############################################################################
+    def process(self, command: str, output: str, error: str, env: dict):
+        """This method calls the payload."""
+        self.log.info(f"Job Wrapper is starting the processing phase for job {self.jobID}")
 
         if "CPUTime" in self.jobArgs:
             jobCPUTime = int(self.jobArgs["CPUTime"])
@@ -291,90 +394,20 @@ class JobWrapper:
             # Job specifies memory in GB, internally use KB
             jobMemory = int(self.jobArgs["Memory"]) * 1024.0 * 1024.0
 
-        if "Executable" in self.jobArgs:
-            executable = self.jobArgs[
-                "Executable"
-            ].strip()  # This is normally dirac-jobexec script, but not necessarily
-        else:
-            msg = f"Job {self.jobID} has no specified executable"
-            self.log.warn(msg)
-            return S_ERROR(msg)
-
-        # In case the executable is dirac-jobexec,
-        # the argument should include the jobDescription.xml file
-        jobArguments = self.jobArgs.get("Arguments", "")
-
-        # In case the executable is dirac-jobexec,
-        # the configuration should include essential parameters related to the CE (which can be found in ceArgs)
-        # we consider information from ceArgs more accurate than from LocalSite (especially when jobs are pushed)
-        configOptions = ""
-        if executable == "dirac-jobexec":
-            configOptions = f"-o /LocalSite/CPUNormalizationFactor={self.cpuNormalizationFactor} "
-            configOptions += f"-o /LocalSite/Site={self.siteName} "
-            configOptions += "-o /LocalSite/GridCE=%s " % self.ceArgs.get(
-                "GridCE", gConfig.getValue("/LocalSite/GridCE", "")
-            )
-            configOptions += "-o /LocalSite/CEQueue=%s " % self.ceArgs.get(
-                "Queue", gConfig.getValue("/LocalSite/CEQueue", "")
-            )
-            configOptions += "-o /LocalSite/RemoteExecution=%s " % self.ceArgs.get(
-                "RemoteExecution", gConfig.getValue("/LocalSite/RemoteExecution", False)
-            )
-
-        executable = os.path.expandvars(executable)
-        exeThread = None
-        spObject = None
-
-        # Try to find the executable on PATH
-        if "/" not in executable:
-            # Returns None if the executable is not found so use "or" to leave it unchanged
-            executable = shutil.which(executable) or executable
-
-        # Make the full path since . is not always in the PATH
-        executable = os.path.abspath(executable)
-        if not os.access(executable, os.X_OK):
-            try:
-                os.chmod(executable, stat.S_IRWXU | stat.S_IRWXG | stat.S_IROTH | stat.S_IXOTH)
-            except OSError:
-                self.log.warn("Failed to change mode to 775 for the executable", executable)
-
-        exeEnv = dict(os.environ)
-        if "ExecutionEnvironment" in self.jobArgs:
-            self.log.verbose("Adding variables to execution environment")
-            variableList = self.jobArgs["ExecutionEnvironment"]
-            if isinstance(variableList, str):
-                variableList = [variableList]
-            for var in variableList:
-                nameEnv = var.split("=")[0]
-                valEnv = unquote(var.split("=")[1])
-                exeEnv[nameEnv] = valEnv
-                self.log.verbose(f"{nameEnv} = {valEnv}")
-
-        if os.path.exists(executable):
-            # the actual executable is not yet running: it will be in few lines
-            self.__report(minorStatus=JobMinorStatus.APPLICATION, sendFlag=True)
-            spObject = Subprocess(timeout=False, bufferLimit=int(self.bufferLimit))
-            command = executable
-            if jobArguments:
-                command += " " + str(jobArguments)
-            if configOptions:
-                command += " " + configOptions
-            self.log.verbose(f"Execution command: {command}")
-            maxPeekLines = self.maxPeekLines
-            exeThread = ExecutionThread(spObject, command, maxPeekLines, outputFile, errorFile, exeEnv)
-            exeThread.start()
-            payloadPID = None
-            for seconds in range(5, 40, 5):
-                time.sleep(seconds)
-                payloadPID = spObject.getChildPID()
-                if payloadPID:
-                    self.__setJobParam("PayloadPID", payloadPID)
-                    break
-            if not payloadPID:
-                return S_ERROR("Payload process could not start after 140 seconds")
-        else:
-            self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_NOT_FOUND, sendFlag=True)
-            return S_ERROR(f"Path to executable {executable} not found")
+        # The actual executable is not yet running: it will be in few lines
+        self.__report(minorStatus=JobMinorStatus.APPLICATION, sendFlag=True)
+        spObject = Subprocess(timeout=False, bufferLimit=int(self.bufferLimit))
+        exeThread = ExecutionThread(spObject, command, self.maxPeekLines, output, error, env, self.executionResults)
+        exeThread.start()
+        payloadPID = None
+        for seconds in range(5, 40, 5):
+            time.sleep(seconds)
+            payloadPID = spObject.getChildPID()
+            if payloadPID:
+                self.__setJobParam("PayloadPID", payloadPID)
+                break
+        if not payloadPID:
+            return S_ERROR("Payload process could not start after 140 seconds")
 
         watchdog = Watchdog(
             pid=self.currentPID,
@@ -390,14 +423,14 @@ class JobWrapper:
         watchdog.initialize()
         self.log.verbose("Calibrating Watchdog instance")
         watchdog.calibrate()
-        # do not kill Test jobs by CPU time
+        # Do not kill Test jobs by CPU time
         if self.jobArgs.get("JobType", "") == "Test":
             watchdog.testCPUConsumed = False
 
         if "DisableCPUCheck" in self.jobArgs:
             watchdog.testCPUConsumed = False
 
-        # disable checks if remote execution: do not need it as pre/post processing occurs locally
+        # Disable checks if remote execution: do not need it as pre/post processing occurs locally
         if self.ceArgs.get("RemoteExecution", False):
             watchdog.testWallClock = False
             watchdog.testDiskSpace = False
@@ -418,64 +451,93 @@ class JobWrapper:
             while exeThread.is_alive():
                 time.sleep(5)
 
-        outputs = None
-        if "Thread" in EXECUTION_RESULT:
-            threadResult = EXECUTION_RESULT["Thread"]
-            if not threadResult["OK"]:
-                self.log.error("Failed to execute the payload", threadResult["Message"])
+        payloadResult = {
+            "payloadStatus": None,
+            "payloadOutput": None,
+            "payloadExecutorError": None,
+            "cpuTimeConsumed": None,
+            "watchdogError": watchdog.checkError,
+            "watchdogStats": watchdog.currentStats,
+        }
 
-                self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_THREAD_FAILED, sendFlag=True)
-                if "Value" in threadResult:
-                    outs = threadResult["Value"]
-                if outs:
-                    self.__setJobParam("ApplicationError", outs[0], sendFlag=True)
-                else:
-                    self.__setJobParam("ApplicationError", "None reported", sendFlag=True)
-            else:
-                outputs = threadResult["Value"]
-        else:  # if the execution thread didn't complete
+        # Get CPU time consumed
+        if watchdog.checkError:
+            # In this case, the Watchdog has killed the Payload and the ExecutionThread can not get the CPU statistics
+            # os.times only reports for waited children
+            # Take the CPU from the last value recorded by the Watchdog
+            if "CPU" in self.executionResults and "LastUpdateCPU(s)" in watchdog.currentStats:
+                self.executionResults["CPU"][0] = watchdog.currentStats["LastUpdateCPU(s)"]
+        payloadResult["cpuTimeConsumed"] = self.executionResults.get("CPU")
+
+        # Get payload status or error if an issue occurred
+        result = self.executionResults.get("Thread", {})
+        if not result:
+            return S_OK(payloadResult)
+        if not result["OK"]:
+            payloadResult["payloadExecutorError"] = result["Message"]
+            if "Value" in result:
+                payloadResult["payloadStatus"] = result["Value"][0]
+            return S_OK(payloadResult)
+
+        payloadResult["payloadStatus"] = result["Value"][0]
+
+        # Get payload output
+        result = exeThread.getOutput(self.maxPeekLines)
+        if not result["OK"]:
+            return S_OK(payloadResult)
+
+        payloadResult["payloadOutput"] = "\n".join(result["Value"])
+        return S_OK(payloadResult)
+
+    #############################################################################
+    def postProcess(
+        self,
+        payloadStatus: int,
+        payloadOutput: str,
+        payloadExecutorError: str,
+        cpuTimeConsumed: list,
+        watchdogError: str,
+        watchdogStats: dict,
+    ):
+        """This method is called after the payload has finished running."""
+        self.log.info(f"Job Wrapper is starting the post processing phase for job {self.jobID}")
+
+        # if the execution thread didn't complete
+        if payloadStatus is None and not payloadExecutorError:
             self.log.error("Application thread did not complete")
             self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_THREAD_NOT_COMPLETE, sendFlag=True)
             self.__setJobParam("ApplicationError", JobMinorStatus.APP_THREAD_NOT_COMPLETE, sendFlag=True)
             return S_ERROR("No outputs generated from job execution")
 
-        if "CPU" in EXECUTION_RESULT:
-            cpuString = " ".join([f"{x:.2f}" for x in EXECUTION_RESULT["CPU"]])
-            self.log.info("EXECUTION_RESULT[CPU] in JobWrapper execute", cpuString)
+        # If the execution thread got an error (not a payload error)
+        if payloadExecutorError:
+            self.log.error("Failed to execute the payload", payloadExecutorError)
+            self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_THREAD_FAILED, sendFlag=True)
+            applicationErrorStatus = "None reported"
+            if payloadStatus:
+                applicationErrorStatus = payloadStatus
+            self.__setJobParam("ApplicationError", applicationErrorStatus, sendFlag=True)
 
-        if watchdog.checkError:
-            # In this case, the Watchdog has killed the Payload and the ExecutionThread can not get the CPU statistics
-            # os.times only reports for waited children
-            # Take the CPU from the last value recorded by the Watchdog
-            self.__report(status=JobStatus.FAILED, minorStatus=watchdog.checkError, sendFlag=True)
-            if "CPU" in EXECUTION_RESULT:
-                if "LastUpdateCPU(s)" in watchdog.currentStats:
-                    EXECUTION_RESULT["CPU"][0] = watchdog.currentStats["LastUpdateCPU(s)"]
+        if cpuTimeConsumed:
+            cpuString = " ".join([f"{x:.2f}" for x in cpuTimeConsumed])
+            self.log.info("CPU time consumed in JobWrapper process", cpuString)
 
-        if watchdog.currentStats:
+        if watchdogError:
+            self.__report(status=JobStatus.FAILED, minorStatus=watchdogError, sendFlag=True)
+
+        if watchdogStats:
             self.log.info(
                 "Statistics collected by the Watchdog:\n ",
-                "\n  ".join(["%s: %s" % items for items in watchdog.currentStats.items()]),
+                "\n  ".join(["%s: %s" % items for items in watchdogStats.items()]),
             )  # can be an iterator
-        if outputs:
-            status = threadResult["Value"][0]  # the status of the payload execution
-            # Send final heartbeat of a configurable number of lines here
-            self.log.verbose("Sending final application standard output heartbeat")
-            self.__sendFinalStdOut(exeThread)
-            self.log.verbose(f"Execution thread status = {status}")
 
-            if not watchdog.checkError and not status:
-                self.failedFlag = False
-                self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.APP_SUCCESS, sendFlag=True)
-            elif not watchdog.checkError:
-                self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.APP_ERRORS, sendFlag=True)
-                if status in (DErrno.EWMSRESC, DErrno.EWMSRESC & 255):  # the status will be truncated to 0xDE (222)
-                    self.log.verbose("job will be rescheduled")
-                    self.__report(minorStatus=JobMinorStatus.GOING_RESCHEDULE, sendFlag=True)
-                    return S_ERROR(DErrno.EWMSRESC, "Job will be rescheduled")
-
-        else:
+        if payloadStatus is None:
             return S_ERROR("No outputs generated from job execution")
+
+        # Send final heartbeat of a configurable number of lines here
+        self.log.verbose("Sending final application standard output heartbeat")
+        self.__sendFinalStdOut(payloadOutput)
+        self.log.verbose(f"Execution thread status = {payloadStatus}")
 
         self.log.info("Checking directory contents after execution:")
         res = systemCall(5, ["ls", "-al"])
@@ -487,10 +549,55 @@ class JobWrapper:
             # no timeout and exit code is 0
             self.log.info(res["Value"][1])
 
+        if not watchdogError and payloadStatus != 0:
+            self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.APP_ERRORS, sendFlag=True)
+
+        if not watchdogError and payloadStatus in (
+            DErrno.EWMSRESC,
+            DErrno.EWMSRESC & 255,
+        ):  # the status will be truncated to 0xDE (222)
+            self.log.verbose("job will be rescheduled")
+            self.__report(minorStatus=JobMinorStatus.GOING_RESCHEDULE, sendFlag=True)
+            return S_ERROR(DErrno.EWMSRESC, "Job will be rescheduled")
+
+        if not watchdogError and payloadStatus == 0:
+            self.failedFlag = False
+            self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.APP_SUCCESS, sendFlag=True)
+
         return S_OK()
 
     #############################################################################
-    def __sendFinalStdOut(self, exeThread):
+    def execute(self):
+        """Main execution method of the Job Wrapper"""
+        result = self.preProcess()
+        if not result["OK"]:
+            return result
+        payloadParams = result["Value"]
+
+        result = self.process(
+            command=payloadParams["command"],
+            output=payloadParams["output"],
+            error=payloadParams["error"],
+            env=payloadParams["env"],
+        )
+        if not result["OK"]:
+            return result
+        payloadResult = result["Value"]
+
+        result = self.postProcess(
+            payloadStatus=payloadResult["payloadStatus"],
+            payloadOutput=payloadResult["payloadOutput"],
+            payloadExecutorError=payloadResult["payloadExecutorError"],
+            cpuTimeConsumed=payloadResult["cpuTimeConsumed"],
+            watchdogError=payloadResult["watchdogError"],
+            watchdogStats=payloadResult["watchdogStats"],
+        )
+        if not result["OK"]:
+            return result
+        return S_OK()
+
+    #############################################################################
+    def __sendFinalStdOut(self, payloadOutput):
         """After the Watchdog process has finished, this function sends a final
         report to be presented in the StdOut in the web page via the heartbeat
         mechanism.
@@ -503,13 +610,11 @@ class JobWrapper:
         if self.cpuNormalizationFactor:
             self.log.info("Normalized CPU Consumed is:", normCPU)
 
-        result = exeThread.getOutput(self.maxPeekLines)
-        if not result["OK"]:
-            lines = 0
-            appStdOut = ""
-        else:
-            lines = len(result["Value"])
-            appStdOut = "\n".join(result["Value"])
+        lines = 0
+        appStdOut = ""
+        if payloadOutput:
+            lines = len(payloadOutput.split("\n"))
+            appStdOut = payloadOutput
 
         header = "Last {} lines of application output from JobWrapper on {} :".format(
             lines,
@@ -535,9 +640,9 @@ class JobWrapper:
     def __getCPU(self):
         """Uses os.times() to get CPU time and returns HH:MM:SS after conversion."""
         # TODO: normalize CPU consumed via scale factor
-        cpuString = " ".join([f"{x:.2f}" for x in EXECUTION_RESULT["CPU"]])
-        self.log.info("EXECUTION_RESULT[CPU] in __getCPU", cpuString)
-        utime, stime, cutime, cstime, _elapsed = EXECUTION_RESULT["CPU"]
+        cpuString = " ".join([f"{x:.2f}" for x in self.executionResults["CPU"]])
+        self.log.info("CPU time left in __getCPU", cpuString)
+        utime, stime, cutime, cstime, _elapsed = self.executionResults["CPU"]
         cpuTime = utime + stime + cutime + cstime
         self.log.verbose(f"Total CPU time consumed = {cpuTime}")
         result = self.__getCPUHMS(cpuTime)
@@ -1227,19 +1332,19 @@ class JobWrapper:
 
         self.accountingReport.setEndTime()
         # CPUTime and ExecTime
-        if "CPU" not in EXECUTION_RESULT:
+        if "CPU" not in self.executionResults:
             # If the payload has not started execution (error with input data, SW, SB,...)
             # Execution result is not filled use self.initialTiming
-            self.log.info("EXECUTION_RESULT[CPU] missing in sendJobAccounting")
+            self.log.info("CPU time left missing in sendJobAccounting")
             finalStat = os.times()
-            EXECUTION_RESULT["CPU"] = []
+            self.executionResults["CPU"] = []
             for i, _ in enumerate(finalStat):
-                EXECUTION_RESULT["CPU"].append(finalStat[i] - self.initialTiming[i])
+                self.executionResults["CPU"].append(finalStat[i] - self.initialTiming[i])
 
-        cpuString = " ".join([f"{x:.2f}" for x in EXECUTION_RESULT["CPU"]])
-        self.log.info("EXECUTION_RESULT[CPU] in sendJobAccounting", cpuString)
+        cpuString = " ".join([f"{x:.2f}" for x in self.executionResults["CPU"]])
+        self.log.info("CPU time left in sendJobAccounting", cpuString)
 
-        utime, stime, cutime, cstime, elapsed = EXECUTION_RESULT["CPU"]
+        utime, stime, cutime, cstime, elapsed = self.executionResults["CPU"]
         try:
             cpuTime = int(utime + stime + cutime + cstime)
         except ValueError:
@@ -1291,11 +1396,10 @@ class JobWrapper:
         request.delayNextExecution(self.failoverRequestDelay)
 
         requestName = f"job_{self.jobID}"
-        if "JobName" in self.jobArgs:
+        if self.jobName != "unknown":
             # To make the request names more appealing for users
-            jobName = self.jobArgs["JobName"]
-            if isinstance(jobName, str) and jobName:
-                jobName = jobName.replace(" ", "").replace("(", "").replace(")", "").replace('"', "")
+            if isinstance(self.jobName, str):
+                jobName = self.jobName.replace(" ", "").replace("(", "").replace(")", "").replace('"', "")
                 jobName = jobName.replace(".", "").replace("{", "").replace("}", "").replace(":", "")
                 requestName = f"{jobName}_{requestName}"
 
@@ -1429,7 +1533,7 @@ class JobWrapper:
 
 class ExecutionThread(threading.Thread):
     #############################################################################
-    def __init__(self, spObject, cmd, maxPeekLines, stdoutFile, stderrFile, exeEnv):
+    def __init__(self, spObject, cmd, maxPeekLines, stdoutFile, stderrFile, exeEnv, executionResults):
         threading.Thread.__init__(self)
         self.cmd = cmd
         self.spObject = spObject
@@ -1438,6 +1542,7 @@ class ExecutionThread(threading.Thread):
         self.stdout = stdoutFile
         self.stderr = stderrFile
         self.exeEnv = exeEnv
+        self.executionResults = executionResults
 
     #############################################################################
     def run(self):
@@ -1446,24 +1551,21 @@ class ExecutionThread(threading.Thread):
         """
         log = gLogger.getSubLogger(self.__class__.__name__)
 
-        # FIXME: why local instances of object variables are created?
-        cmd = self.cmd
-        spObject = self.spObject
         start = time.time()
         initialStat = os.times()
-        log.verbose("Cmd called", cmd)
-        output = spObject.systemCall(cmd, env=self.exeEnv, callbackFunction=self.sendOutput, shell=True)
+        log.verbose("Cmd called", self.cmd)
+        output = self.spObject.systemCall(self.cmd, env=self.exeEnv, callbackFunction=self.sendOutput, shell=True)
         log.verbose(f"Output of system call within execution thread: {output}")
-        EXECUTION_RESULT["Thread"] = output
+        self.executionResults["Thread"] = output
         timing = time.time() - start
-        EXECUTION_RESULT["Timing"] = timing
+        self.executionResults["Timing"] = timing
         finalStat = os.times()
-        EXECUTION_RESULT["CPU"] = []
+        self.executionResults["CPU"] = []
         for i, _ in enumerate(finalStat):
-            EXECUTION_RESULT["CPU"].append(finalStat[i] - initialStat[i])
-        cpuString = " ".join([f"{x:.2f}" for x in EXECUTION_RESULT["CPU"]])
-        log.info("EXECUTION_RESULT[CPU] after Execution of spObject.systemCall", cpuString)
-        log.info("EXECUTION_RESULT[Thread] after Execution of spObject.systemCall", str(EXECUTION_RESULT["Thread"]))
+            self.executionResults["CPU"].append(finalStat[i] - initialStat[i])
+        cpuString = " ".join([f"{x:.2f}" for x in self.executionResults["CPU"]])
+        log.info("CPU time consumed after Execution of spObject.systemCall", cpuString)
+        log.info("Thread result after Execution of spObject.systemCall", str(self.executionResults["Thread"]))
 
     #############################################################################
     def getCurrentPID(self):
