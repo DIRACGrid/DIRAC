@@ -59,22 +59,6 @@ class Params:
         Script.registerSwitch("v:", "vo=", "Delete uploaded proxy for vo name given", self.addVO)
 
 
-def getProxyGroups():
-    """
-    Returns a set of all remote proxy groups stored on the dirac server for the user invoking the command.
-    """
-    proxies = gProxyManager.getUserProxiesInfo()
-    if not proxies["OK"]:
-        raise RuntimeError("Could not retrieve uploaded proxy info.")
-
-    user_groups = set()
-    for dn in proxies["Value"]:
-        dn_groups = set(proxies["Value"][dn].keys())
-        user_groups.update(dn_groups)
-
-    return user_groups
-
-
 def mapVoToGroups(voname):
     """
     Returns all groups available for a given VO as a set.
@@ -87,18 +71,18 @@ def mapVoToGroups(voname):
     return set(vo_dict["Value"])
 
 
-def deleteRemoteProxy(userdn, vogroup):
+def deleteRemoteProxy(userdn):
     """
-    Deletes proxy for a vogroup for the user envoking this function.
+    Deletes proxy for the user invoking this function.
     Returns a list of all deleted proxies (if any).
     """
     rpcClient = Client(url="Framework/ProxyManager")
-    retVal = rpcClient.deleteProxyBundle([(userdn, vogroup)])
+    retVal = rpcClient.deleteProxyBundle([(userdn,)])
 
     if retVal["OK"]:
-        gLogger.notice(f"Deleted proxy for {vogroup}.")
+        gLogger.notice(f"Deleted proxy for {userdn}.")
     else:
-        gLogger.error(f"Failed to delete proxy for {vogroup}.")
+        gLogger.error(f"Failed to delete proxy for {userdn}.")
 
 
 def deleteLocalProxy(proxyLoc):
@@ -144,24 +128,16 @@ def run():
 
     if options.delete_all:
         # delete remote proxies
-        remote_groups = getProxyGroups()
-        if not remote_groups:
-            gLogger.notice("No remote proxies found.")
-        for vo_group in remote_groups:
-            deleteRemoteProxy(userDN, vo_group)
+        deleteRemoteProxy(userDN)
         # delete local proxy
         deleteLocalProxy(proxyLoc)
     elif options.vos:
         vo_groups = set()
         for voname in options.vos:
             vo_groups.update(mapVoToGroups(voname))
-        # filter set of all groups to only contain groups for which there is a user proxy
-        user_groups = getProxyGroups()
-        vo_groups.intersection_update(user_groups)
         if not vo_groups:
             gLogger.notice("You have no proxies registered for any of the specified VOs.")
-        for group in vo_groups:
-            deleteRemoteProxy(userDN, group)
+        deleteRemoteProxy(userDN)
     else:
         deleteLocalProxy(proxyLoc)
 

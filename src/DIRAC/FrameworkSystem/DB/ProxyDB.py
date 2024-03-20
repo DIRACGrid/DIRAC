@@ -369,46 +369,35 @@ class ProxyDB(DB):
                 return result
         return S_OK(purged)
 
-    def deleteProxy(self, userDN, userGroup=None, proxyProvider=None):
+    def deleteProxy(self, userDN, proxyProvider=None):
         """Remove proxy of the given user from the repository
 
         :param str userDN: user DN
-        :param str userGroup: DIRAC group
         :param str proxyProvider: proxy provider name
 
         :return: S_OK()/S_ERROR()
         """
         try:
             userDN = self._escapeString(userDN)["Value"]
-            if userGroup:
-                userGroup = self._escapeString(userGroup)["Value"]
             if proxyProvider:
                 proxyProvider = self._escapeString(proxyProvider)["Value"]
         except KeyError:
-            return S_ERROR("Invalid DN or group or proxy provider")
+            return S_ERROR("Invalid DN or proxy provider")
         errMsgs = []
-        req = "DELETE FROM `%%s` WHERE UserDN=%s" % userDN
-        if proxyProvider or not userGroup:
-            result = self._update(
-                "{} {}".format(
-                    req % "ProxyDB_CleanProxies", proxyProvider and "AND ProxyProvider=%s" % proxyProvider or ""
-                )
-            )
-            if not result["OK"]:
-                errMsgs.append(result["Message"])
-        result = self._update(f"{req} {userGroup and f'AND UserGroup={userGroup}' or ''}")
+        req = f"DELETE FROM ProxyDB_CleanProxies WHERE UserDN={userDN}"
+        if proxyProvider:
+            req = f"{req} AND ProxyProvider=%s" % proxyProvider
+        result = self._update(req)
         if not result["OK"]:
-            if result["Message"] not in errMsgs:
-                errMsgs.append(result["Message"])
+            errMsgs.append(result["Message"])
         if errMsgs:
             return S_ERROR(", ".join(errMsgs))
         return result
 
-    def getProxyStrength(self, userDN, userGroup=None, vomsAttr=None):
+    def getProxyStrength(self, userDN, vomsAttr=None):
         """Load the proxy in cache corresponding to the criteria, and check its strength
 
         :param userDN: DN of the user
-        :param userGroup: group of the user
         :param vomsAttr: VOMS attr we plan to add on the proxy
         """
         # Look in the cache
@@ -418,7 +407,7 @@ class ProxyDB(DB):
             providers = retVal["Value"]
             providers.append("Certificate")
             for proxyProvider in providers:
-                retVal = self.__getPemAndTimeLeft(userDN, userGroup, vomsAttr=vomsAttr, proxyProvider=proxyProvider)
+                retVal = self.__getPemAndTimeLeft(userDN, vomsAttr=vomsAttr, proxyProvider=proxyProvider)
                 if retVal["OK"]:
                     pemData = retVal["Value"][0]
                     chain = X509Chain()
@@ -428,11 +417,10 @@ class ProxyDB(DB):
 
         return retVal
 
-    def __getPemAndTimeLeft(self, userDN, userGroup=None, vomsAttr=None, proxyProvider=None):
+    def __getPemAndTimeLeft(self, userDN, vomsAttr=None, proxyProvider=None):
         """Get proxy from database
 
         :param str userDN: user DN
-        :param str userGroup: requested DIRAC group
         :param str vomsAttr: VOMS name
         :param str proxyProvider: proxy provider name
 
@@ -440,8 +428,6 @@ class ProxyDB(DB):
         """
         try:
             sUserDN = self._escapeString(userDN)["Value"]
-            if userGroup:
-                sUserGroup = self._escapeString(userGroup)["Value"]
             if vomsAttr:
                 sVomsAttr = self._escapeString(vomsAttr)["Value"]
         except KeyError:
@@ -455,8 +441,6 @@ class ProxyDB(DB):
         if proxyProvider:
             cmd += f' AND ProxyProvider="{proxyProvider}"'
         else:
-            if userGroup:
-                cmd += f" AND UserGroup={sUserGroup}"
             if vomsAttr:
                 cmd += f" AND VOMSAttr={sVomsAttr}"
         retVal = self._query(cmd)
@@ -476,13 +460,11 @@ class ProxyDB(DB):
                 if not result["OK"]:
                     return result
                 strength = result["Value"]
-                result = chain.generateProxyToString(secondsRemaining, diracGroup=userGroup, strength=strength)
+                result = chain.generateProxyToString(secondsRemaining, strength=strength)
                 if not result["OK"]:
                     return result
                 return S_OK((result["Value"], secondsRemaining))
             return S_OK((pemData, secondsRemaining))
-        if userGroup:
-            userMask = f"{userDN}@{userGroup}"
         else:
             userMask = userDN
         return S_ERROR(DErrno.EPROXYFIND, f"{userMask} has no proxy registered")
@@ -540,7 +522,7 @@ class ProxyDB(DB):
             providers.append("Certificate")
             for proxyProvider in providers:
                 self.log.verbose("Try to get proxy from ProxyDB_CleanProxies")
-                result = self.__getPemAndTimeLeft(userDN, userGroup, proxyProvider=proxyProvider)
+                result = self.__getPemAndTimeLeft(userDN, proxyProvider=proxyProvider)
                 if result["OK"] and (not requiredLifeTime or result["Value"][1] > requiredLifeTime):
                     return result
                 if len(providers) == 1:
@@ -573,7 +555,7 @@ class ProxyDB(DB):
 
         # Standard proxy is requested
         self.log.verbose("Try to get proxy from ProxyDB_CleanProxies")
-        retVal = self.__getPemAndTimeLeft(userDN, userGroup)
+        retVal = self.__getPemAndTimeLeft(userDN)
         errMsg = "Can't get proxy%s: " % (requiredLifeTime and " for %s seconds" % requiredLifeTime or "")
         if not retVal["OK"]:
             errMsg += f"{retVal['Message']}, try to generate new"
@@ -593,7 +575,7 @@ class ProxyDB(DB):
 
         # Proxy is invalid for some reason, let's delete it
         if not chain.isValidProxy()["OK"]:
-            self.deleteProxy(userDN, userGroup)
+            self.deleteProxy(userDN)
             return S_ERROR(DErrno.EPROXYFIND, f"{userDN}@{userGroup} has no proxy registered")
         return S_OK((chain, timeLeft))
 
@@ -632,7 +614,7 @@ class ProxyDB(DB):
         vomsVO = retVal["Value"]["VOMSVO"]
 
         # Look in the cache
-        retVal = self.__getPemAndTimeLeft(userDN, userGroup, vomsAttr)
+        retVal = self.__getPemAndTimeLeft(userDN, vomsAttr)
         if retVal["OK"]:
             pemData = retVal["Value"][0]
             vomsTime = retVal["Value"][1]

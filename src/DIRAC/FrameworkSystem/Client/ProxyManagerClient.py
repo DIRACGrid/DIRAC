@@ -76,30 +76,23 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         data = retVal["Value"]
         # Update the cache
         for record in data:
-            cacheKey = (record["DN"], record["group"])
+            cacheKey = record["DN"]
             self.__usersCache.add(cacheKey, self.__getSecondsLeftToExpiration(record["expirationtime"]), record)
         return S_OK()
 
     @gUsersSync
-    def userHasProxy(self, userDN, userGroup, validSeconds=0):
-        """Check if a user(DN-group) has a proxy in the proxy management
+    def userHasProxy(self, userDN, validSeconds=0):
+        """Check if a user(DN) has a proxy in the proxy management
         Updates internal cache if needed to minimize queries to the service
 
         :param str userDN: user DN
-        :param str userGroup: user group
         :param int validSeconds: proxy valid time in a seconds
 
         :return: S_OK()/S_ERROR()
         """
 
-        # For backward compatibility reasons with versions prior to v7r1
-        # we need to check for proxy with a group
-        # AND for groupless proxy even if not specified
-
-        cacheKeys = ((userDN, userGroup), (userDN, ""))
-        for cacheKey in cacheKeys:
-            if self.__usersCache.exists(cacheKey, validSeconds):
-                return S_OK(True)
+        if self.__usersCache.exists(userDN, validSeconds):
+            return S_OK(True)
 
         # Get list of users from the DB with proxys at least 300 seconds
         gLogger.verbose("Updating list of users in proxy management")
@@ -107,9 +100,8 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         if not retVal["OK"]:
             return retVal
 
-        for cacheKey in cacheKeys:
-            if self.__usersCache.exists(cacheKey, validSeconds):
-                return S_OK(True)
+        if self.__usersCache.exists(userDN, validSeconds):
+            return S_OK(True)
 
         return S_OK(False)
 
@@ -190,11 +182,11 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
             rpcClient = Client(url="Framework/ProxyManager", timeout=120)
 
         generateProxyArgs = {"limited": limited}
-        res = rpcClient.getStoredProxyStrength(userDN, userGroup, None)
+        res = rpcClient.getStoredProxyStrength(userDN, None)
         if not res["OK"]:
             gLogger.warn(
                 "Could not get stored proxy strength",
-                f"{userDN}, {userGroup}: {res}",
+                f"{userDN}: {res}",
             )
         else:
             generateProxyArgs["bitStrength"] = res["Value"]
@@ -277,11 +269,11 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
             rpcClient = Client(url="Framework/ProxyManager", timeout=120)
 
         generateProxyArgs = {"limited": limited}
-        res = rpcClient.getStoredProxyStrength(userDN, userGroup, requiredVOMSAttribute)
+        res = rpcClient.getStoredProxyStrength(userDN, requiredVOMSAttribute)
         if not res["OK"]:
             gLogger.warn(
                 "Could not get stored proxy strength",
-                f"{userDN}, {userGroup}, {requiredVOMSAttribute}: {res}",
+                f"{userDN}, {requiredVOMSAttribute}: {res}",
             )
         else:
             generateProxyArgs["bitStrength"] = res["Value"]

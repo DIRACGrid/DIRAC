@@ -116,8 +116,7 @@ class ProxyManagerHandlerMixin:
 
         :param int validSecondsRequired: required seconds the proxy is valid for
 
-        :return: S_OK(list)/S_ERROR() -- list contain dicts with user name, DN, group
-                                         expiration time
+        :return: S_OK(list)/S_ERROR() -- list contain dicts with user name, DN, expiration time
         """
         credDict = self.getRemoteCredentials()
         if Properties.PROXY_MANAGEMENT not in credDict["properties"]:
@@ -148,14 +147,13 @@ class ProxyManagerHandlerMixin:
 
     types_getStoredProxyStrength = [str, str, [str, type(None), bool]]
 
-    def export_getStoredProxyStrength(self, userDN, userGroup=None, vomsAttr=None):
+    def export_getStoredProxyStrength(self, userDN, vomsAttr=None):
         """Return the strength in bit of the stored proxy
 
         :param userDN: DN of the user
-        :param userGroup: group of the user
         :param vomsAttr: VOMS attr we plan to add on the proxy
         """
-        return self.__proxyDB.getProxyStrength(userDN, userGroup=userGroup, vomsAttr=vomsAttr)
+        return self.__proxyDB.getProxyStrength(userDN, vomsAttr=vomsAttr)
 
     types_getProxy = [str, str, str, int]
 
@@ -251,9 +249,7 @@ class ProxyManagerHandlerMixin:
         errorInDelete = []
         deleted = 0
         for _id in idList:
-            if len(_id) != 2:
-                errorInDelete.append(f"{str(_id)} doesn't have two fields")
-            retVal = self.export_deleteProxy(_id[0], _id[1])
+            retVal = self.export_deleteProxy(_id[0])
             if not retVal["OK"]:
                 errorInDelete.append(f"{str(_id)} : {retVal['Message']}")
             else:
@@ -264,11 +260,10 @@ class ProxyManagerHandlerMixin:
 
     types_deleteProxy = [(list, tuple)]
 
-    def export_deleteProxy(self, userDN, userGroup):
+    def export_deleteProxy(self, userDN):
         """Delete a proxy from the DB
 
         :param str userDN: user DN
-        :param str userGroup: DIRAC group
 
         :return: S_OK()/S_ERROR()
         """
@@ -276,10 +271,10 @@ class ProxyManagerHandlerMixin:
         if Properties.PROXY_MANAGEMENT not in credDict["properties"]:
             if userDN != credDict["DN"]:
                 return S_ERROR("You aren't allowed!")
-        retVal = self.__proxyDB.deleteProxy(userDN, userGroup)
+        retVal = self.__proxyDB.deleteProxy(userDN)
         if not retVal["OK"]:
             return retVal
-        self.__proxyDB.logAction("delete proxy", credDict["DN"], credDict["group"], userDN, userGroup)
+        self.__proxyDB.logAction("delete proxy", credDict["DN"], credDict["group"], userDN)
         return S_OK()
 
     types_getContents = [dict, (list, tuple), int, int]
