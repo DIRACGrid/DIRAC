@@ -716,10 +716,10 @@ class Watchdog:
             self.log.warn("Could not get rss info from profiler", result["Message"])
         else:
             self.initialValues["RSS"] = result["Value"]
+            self.initialValues["MemoryUsed"] = result["Value"]
+            self.parameters["MemoryUsed"] = []
             self.log.verbose("RSS(MB)", f"{result['Value']:.1f}")
         self.parameters["RSS"] = []
-        self.initialValues["MemoryUsed"] = result["Value"]
-        self.parameters["MemoryUsed"] = []
 
         # We exclude fuse so that mountpoints can be cleaned up by automount after a period unused
         # (specific request from CERN batch service).
