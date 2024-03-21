@@ -97,7 +97,6 @@ write_files:
        curl -o pilot.json -k https://%(pilot-server)s/pilot/pilot.json
      fi
      python dirac-pilot.py \
-            --pythonVersion=3 \
             --setup %(setup)s \
             -r %(release-version)s \
             --MaxCycles %(max-cycles)s \
