@@ -69,7 +69,7 @@ request_cpus = %(processors)s
 kill_sig=SIGTERM
 # By default, HTCondor marked jobs as completed regardless of its status
 # This option allows to mark jobs as Held if they don't finish successfully
-on_exit_hold = ExitCode != 0
+on_exit_hold = ExitCode =!= 0
 # A subcode of our choice to identify who put the job on hold
 on_exit_hold_subcode = %(holdReasonSubcode)s
 # Jobs are then deleted from the system after N days if they are not idle or running
