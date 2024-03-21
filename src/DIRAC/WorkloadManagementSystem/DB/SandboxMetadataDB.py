@@ -206,7 +206,7 @@ class SandboxMetadataDB(DB):
 
             if not insertValues:
                 return S_ERROR(
-                    f"Sandbox does not exist or you're not authorized to assign it being {requesterName}@{requesterGroup}"
+                    f"Sandbox does not exist or you are not authorized to assign it being {requesterName}@{requesterGroup}"
                 )
             sqlCmd = f"INSERT INTO `sb_EntityMapping` ( entityId, Type, SBId ) VALUES {', '.join(insertValues)}"
             result = self._update(sqlCmd)

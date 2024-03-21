@@ -4,20 +4,18 @@ import os
 import shutil
 import tempfile
 import time
-import pytest
 from unittest.mock import MagicMock
 
-from DIRAC import gLogger
-import DIRAC
-from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
+import pytest
 
+import DIRAC
+from DIRAC import gLogger
+from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR
 from DIRAC.DataManagementSystem.Client.test.mock_DM import dm_mock
 from DIRAC.Resources.Catalog.test.mock_FC import fc_mock
-
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper
-from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
-from DIRAC.WorkloadManagementSystem.Client import JobStatus, JobMinorStatus
 
 getSystemSectionMock = MagicMock()
 getSystemSectionMock.return_value = "aValue"
@@ -196,7 +194,7 @@ def test_processSuccessfulCommand(mocker):
     assert result["Value"]["cpuTimeConsumed"][0] > 0
     assert not result["Value"]["watchdogError"]
     assert "LastUpdateCPU(s)" in result["Value"]["watchdogStats"]
-    assert "MemoryUsed(kb)" in result["Value"]["watchdogStats"]
+    assert "MemoryUsed(MB)" in result["Value"]["watchdogStats"]
 
 
 @pytest.mark.slow
@@ -254,7 +252,7 @@ def test_processFailedCommand(mocker):
     assert result["Value"]["cpuTimeConsumed"][0] > 0
     assert not result["Value"]["watchdogError"]
     assert "LastUpdateCPU(s)" in result["Value"]["watchdogStats"]
-    assert "MemoryUsed(kb)" in result["Value"]["watchdogStats"]
+    assert "MemoryUsed(MB)" in result["Value"]["watchdogStats"]
 
 
 @pytest.mark.slow
@@ -357,7 +355,7 @@ def test_postProcess(mocker):
         "payloadExecutorError": None,
         "cpuTimeConsumed": [100, 200, 300, 400, 500],
         "watchdogError": None,
-        "watchdogStats": {"LastUpdateCPU(s)": "100", "MemoryUsed(kb)": "100"},
+        "watchdogStats": {"LastUpdateCPU(s)": "100", "MemoryUsed(MB)": "100"},
     }
     jw.executionResults["CPU"] = payloadResult["cpuTimeConsumed"]
 
@@ -378,7 +376,7 @@ def test_postProcess(mocker):
         "payloadExecutorError": None,
         "cpuTimeConsumed": [100, 200, 300, 400, 500],
         "watchdogError": None,
-        "watchdogStats": {"LastUpdateCPU(s)": "100", "MemoryUsed(kb)": "100"},
+        "watchdogStats": {"LastUpdateCPU(s)": "100", "MemoryUsed(MB)": "100"},
     }
     jw.executionResults["CPU"] = payloadResult["cpuTimeConsumed"]
 
@@ -399,7 +397,7 @@ def test_postProcess(mocker):
         "payloadExecutorError": None,
         "cpuTimeConsumed": [100, 200, 300, 400, 500],
         "watchdogError": None,
-        "watchdogStats": {"LastUpdateCPU(s)": "100", "MemoryUsed(kb)": "100"},
+        "watchdogStats": {"LastUpdateCPU(s)": "100", "MemoryUsed(MB)": "100"},
     }
     jw.executionResults["CPU"] = payloadResult["cpuTimeConsumed"]
 
@@ -422,7 +420,7 @@ def test_postProcess(mocker):
         "payloadExecutorError": None,
         "cpuTimeConsumed": [100, 200, 300, 400, 500],
         "watchdogError": None,
-        "watchdogStats": {"LastUpdateCPU(s)": "100", "MemoryUsed(kb)": "100"},
+        "watchdogStats": {"LastUpdateCPU(s)": "100", "MemoryUsed(MB)": "100"},
     }
     jw.executionResults["CPU"] = payloadResult["cpuTimeConsumed"]
 
@@ -443,7 +441,7 @@ def test_postProcess(mocker):
         "payloadExecutorError": None,
         "cpuTimeConsumed": [100, 200, 300, 400, 500],
         "watchdogError": "Watchdog error",
-        "watchdogStats": {"LastUpdateCPU(s)": "100", "MemoryUsed(kb)": "100"},
+        "watchdogStats": {"LastUpdateCPU(s)": "100", "MemoryUsed(MB)": "100"},
     }
     jw.executionResults["CPU"] = payloadResult["cpuTimeConsumed"]
 
