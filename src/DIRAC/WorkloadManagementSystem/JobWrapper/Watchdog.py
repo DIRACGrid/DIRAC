@@ -745,6 +745,8 @@ class Watchdog:
             self.log.warn("Could not get rss info from profiler", result["Message"])
         else:
             self.initialValues["RSS"] = result["Value"]
+            self.initialValues["MemoryUsed"] = result["Value"]
+            self.parameters["MemoryUsed"] = []
             self.log.verbose("RSS(MB)", f"{result['Value']:.1f}")
         self.parameters["RSS"] = []
 
