@@ -1,6 +1,7 @@
 """ Test class for Job Agent
 """
 import os
+from pathlib import Path
 import pytest
 import time
 from unittest.mock import MagicMock
@@ -540,6 +541,27 @@ def test__rescheduleFailedJob_multipleJobIDs(mocker):
 
 
 #############################################################################
+@pytest.fixture
+def manageJobFiles():
+    """Create fake job files and yield their paths."""
+    jobExecutablePath = "testJob.py"
+    with open(jobExecutablePath, "w") as execFile:
+        pass
+    os.chmod(jobExecutablePath, 0o755)
+
+    # Generate fake jobWrapperPath and jobWrapperConfigPath
+    jobWrapperPath = "Wrapper_123"
+    with open(jobWrapperPath, "w") as temp:
+        temp.write("test")
+    jobWrapperConfigPath = "Wrapper_123.json"
+    with open(jobWrapperConfigPath, "w") as temp:
+        temp.write("test")
+
+    yield (jobExecutablePath, jobWrapperPath, jobWrapperConfigPath)
+
+    Path(jobExecutablePath).unlink(missing_ok=True)
+    Path(jobWrapperPath).unlink(missing_ok=True)
+    Path(jobWrapperConfigPath).unlink(missing_ok=True)
 
 
 @pytest.mark.parametrize(
@@ -587,14 +609,12 @@ def test_submitJob(mocker, mockJWInput, expected):
         ("Pool/Singularity", jobScript % "1", (["Failed to find singularity"], []), ([], [])),
     ],
 )
-def test_submitAndCheckJob(mocker, localCE, job, expectedResult1, expectedResult2):
+def test_submitAndCheckJob(mocker, manageJobFiles, localCE, job, expectedResult1, expectedResult2):
     """Test the submission and the management of the job status."""
-    jobName = "testJob.py"
-    with open(jobName, "w") as execFile:
-        execFile.write(job)
-    os.chmod(jobName, 0o755)
-
     jobID = "123"
+    jobExecutablePath, jobWrapperPath, jobWrapperConfigPath = manageJobFiles
+    with open(jobExecutablePath, "w") as execFile:
+        execFile.write(job)
 
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobAgent.am_stopExecution")
@@ -602,7 +622,16 @@ def test_submitAndCheckJob(mocker, localCE, job, expectedResult1, expectedResult
         "DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobMonitoringClient.getJobsStatus",
         return_value=S_OK({int(jobID): {"Status": JobStatus.RUNNING}}),
     )
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.createJobWrapper", return_value=S_OK([jobName]))
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.JobAgent.createJobWrapper",
+        return_value=S_OK(
+            {
+                "JobExecutablePath": jobExecutablePath,
+                "JobWrapperPath": jobWrapperPath,
+                "JobWrapperConfigPath": jobWrapperConfigPath,
+            }
+        ),
+    )
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobAgent._sendFailoverRequest", return_value=S_OK())
     mocker.patch("DIRAC.Core.Security.X509Chain.X509Chain.dumpAllToString", return_value=S_OK())
     mocker.patch(
@@ -684,7 +713,12 @@ def test_submitAndCheck2Jobs(mocker):
     # Mock the JobAgent
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobAgent.am_stopExecution")
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.createJobWrapper", return_value=S_OK(["jobWrapper.py"]))
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.JobAgent.createJobWrapper",
+        return_value=S_OK(
+            {"JobExecutablePath": "jobName", "JobWrapperPath": "jobName", "JobWrapperConfigPath": "jobName"}
+        ),
+    )
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobAgent._sendFailoverRequest", return_value=S_OK())
     mocker.patch("DIRAC.Core.Security.X509Chain.X509Chain.dumpAllToString", return_value=S_OK())
     mocker.patch(
