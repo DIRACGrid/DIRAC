@@ -29,7 +29,6 @@ from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
@@ -627,8 +626,8 @@ class JobAgent(AgentModule):
         if not result["OK"]:
             return result
 
-        wrapperFile = result["Value"][0]
-        inputs = list(result["Value"][1:])
+        wrapperFile = result["Value"]["JobExecutablePath"]
+        inputs = [result["Value"]["JobWrapperPath"], result["Value"]["JobWrapperConfigPath"]]
         self.jobs[jobID]["JobReport"].setJobStatus(minorStatus="Submitting To CE")
 
         self.log.info("Submitting JobWrapper", f"{os.path.basename(wrapperFile)} to {self.ceName}CE")

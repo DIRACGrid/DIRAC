@@ -3,7 +3,6 @@
 Here we test the creation of a job wrapper and make sure it can be executed without crashing.
 We don't test the actual execution of the wrapper or its payload.
 """
-import ast
 import json
 import os
 import shutil
@@ -12,7 +11,7 @@ import sys
 from diraccfg import CFG
 import pytest
 
-from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper, createRelocatedJobWrapper
+from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 import subprocess
 
 
@@ -96,7 +95,7 @@ def test_createAndExecuteJobWrapperTemplate_success(extraOptions):
     assert res["OK"], res.get("Message")
 
     # Test job wrapper content
-    jobWrapperPath = res["Value"][2]
+    jobWrapperPath = res["Value"]["JobWrapperPath"]
     assert jobWrapperPath
     assert os.path.exists(jobWrapperPath)
 
@@ -104,15 +103,15 @@ def test_createAndExecuteJobWrapperTemplate_success(extraOptions):
         jobWrapperContent = f.read()
 
     assert "@SITEPYTHON@" not in jobWrapperContent
-    assert f"{os.getcwd()}" in jobWrapperContent
+    assert f'sys.path.insert(0, "{os.getcwd()}")' in jobWrapperContent
 
     # Test job wrapper configuration path
-    jobWrapperConfigPath = res["Value"][1]
+    jobWrapperConfigPath = res["Value"]["JobWrapperConfigPath"]
     assert jobWrapperConfigPath
     assert os.path.exists(jobWrapperConfigPath)
 
     with open(jobWrapperConfigPath) as f:
-        jobWrapperConfigContent = ast.literal_eval(json.loads(f.readlines()[0]))
+        jobWrapperConfigContent = json.load(f)
 
     assert jobWrapperConfigContent["Job"] == jobParams
     assert jobWrapperConfigContent["CE"] == resourceParams
@@ -120,7 +119,7 @@ def test_createAndExecuteJobWrapperTemplate_success(extraOptions):
     assert "Payload" not in jobWrapperConfigContent
 
     # Test job executable path
-    jobExecutablePath = res["Value"][0]
+    jobExecutablePath = res["Value"]["JobExecutablePath"]
     assert jobExecutablePath
     assert os.path.exists(jobExecutablePath)
 
@@ -132,6 +131,9 @@ def test_createAndExecuteJobWrapperTemplate_success(extraOptions):
     assert extraOptions in jobExecutableContent
     assert "-o LogLevel=INFO" in jobExecutableContent
     assert "-o /DIRAC/Security/UseServerCertificate=no" in jobExecutableContent
+
+    # Test job executable relocated path
+    assert not res["Value"].get("JobExecutableRelocatedPath")
 
     # Execute wrapperFile in a subprocess
     os.chmod(jobExecutablePath, 0o755)
@@ -161,7 +163,7 @@ def test_createAndExecuteJobWrapperTemplate_missingExtraOptions():
     assert res["OK"], res.get("Message")
 
     # Test job wrapper content
-    jobWrapperPath = res["Value"][2]
+    jobWrapperPath = res["Value"]["JobWrapperPath"]
     assert jobWrapperPath
     assert os.path.exists(jobWrapperPath)
 
@@ -169,15 +171,15 @@ def test_createAndExecuteJobWrapperTemplate_missingExtraOptions():
         jobWrapperContent = f.read()
 
     assert "@SITEPYTHON@" not in jobWrapperContent
-    assert f"{os.getcwd()}" in jobWrapperContent
+    assert f'sys.path.insert(0, "{os.getcwd()}")' in jobWrapperContent
 
     # Test job wrapper configuration path
-    jobWrapperConfigPath = res["Value"][1]
+    jobWrapperConfigPath = res["Value"]["JobWrapperConfigPath"]
     assert jobWrapperConfigPath
     assert os.path.exists(jobWrapperConfigPath)
 
     with open(jobWrapperConfigPath) as f:
-        jobWrapperConfigContent = ast.literal_eval(json.loads(f.readlines()[0]))
+        jobWrapperConfigContent = json.load(f)
 
     assert jobWrapperConfigContent["Job"] == jobParams
     assert jobWrapperConfigContent["CE"] == resourceParams
@@ -185,7 +187,7 @@ def test_createAndExecuteJobWrapperTemplate_missingExtraOptions():
     assert "Payload" not in jobWrapperConfigContent
 
     # Test job executable path
-    jobExecutablePath = res["Value"][0]
+    jobExecutablePath = res["Value"]["JobExecutablePath"]
     assert jobExecutablePath
     assert os.path.exists(jobExecutablePath)
 
@@ -196,6 +198,9 @@ def test_createAndExecuteJobWrapperTemplate_missingExtraOptions():
     assert jobWrapperPath in jobExecutableContent
     assert "-o LogLevel=INFO" in jobExecutableContent
     assert "-o /DIRAC/Security/UseServerCertificate=no" in jobExecutableContent
+
+    # Test job executable relocated path
+    assert not res["Value"].get("JobExecutableRelocatedPath")
 
     # Execute wrapperFile in a subprocess
     os.chmod(jobExecutablePath, 0o755)
@@ -221,11 +226,13 @@ def test_createAndExecuteRelocatedJobWrapperTemplate_success(extraOptions):
     os.makedirs(rootLocation, exist_ok=True)
 
     # Create relocated job wrapper
-    res = createRelocatedJobWrapper(
+    res = createJobWrapper(
         jobID=1,
         jobParams=jobParams,
         resourceParams=resourceParams,
         optimizerParams=optimizerParams,
+        # This is the interesting part
+        pythonPath="python",
         wrapperPath=wrapperPath,
         rootLocation=rootLocation,
         extraOptions=extraOptions,
@@ -233,7 +240,7 @@ def test_createAndExecuteRelocatedJobWrapperTemplate_success(extraOptions):
     assert res["OK"], res.get("Message")
 
     # Test job wrapper content
-    jobWrapperPath = os.path.join(wrapperPath, f"Wrapper_1")
+    jobWrapperPath = res["Value"]["JobWrapperPath"]
     assert jobWrapperPath
     assert os.path.exists(jobWrapperPath)
     assert os.path.exists(os.path.join(wrapperPath, os.path.basename(jobWrapperPath)))
@@ -243,17 +250,17 @@ def test_createAndExecuteRelocatedJobWrapperTemplate_success(extraOptions):
         jobWrapperContent = f.read()
 
     assert "@SITEPYTHON@" not in jobWrapperContent
-    assert rootLocation in jobWrapperContent
+    assert f'sys.path.insert(0, "{rootLocation}")' in jobWrapperContent
 
     # Test job wrapper configuration path
-    jobWrapperConfigPath = os.path.join(wrapperPath, f"Wrapper_1.json")
+    jobWrapperConfigPath = res["Value"]["JobWrapperConfigPath"]
     assert jobWrapperConfigPath
     assert os.path.exists(jobWrapperConfigPath)
     assert os.path.exists(os.path.join(wrapperPath, os.path.basename(jobWrapperConfigPath)))
     assert not os.path.exists(os.path.join(rootLocation, os.path.basename(jobWrapperConfigPath)))
 
     with open(jobWrapperConfigPath) as f:
-        jobWrapperConfigContent = ast.literal_eval(json.loads(f.readlines()[0]))
+        jobWrapperConfigContent = json.load(f)
 
     assert jobWrapperConfigContent["Job"] == jobParams
     assert jobWrapperConfigContent["CE"] == resourceParams
@@ -261,7 +268,7 @@ def test_createAndExecuteRelocatedJobWrapperTemplate_success(extraOptions):
     assert "Payload" not in jobWrapperConfigContent
 
     # Test job executable path
-    jobExecutablePath = os.path.join(wrapperPath, f"Job1")
+    jobExecutablePath = res["Value"]["JobExecutablePath"]
     assert jobExecutablePath
     assert os.path.exists(jobExecutablePath)
     assert os.path.exists(os.path.join(wrapperPath, os.path.basename(jobExecutablePath)))
@@ -280,7 +287,7 @@ def test_createAndExecuteRelocatedJobWrapperTemplate_success(extraOptions):
     assert "-o /DIRAC/Security/UseServerCertificate=no" in jobExecutableContent
 
     # Test job executable relocated path
-    jobExecutableRelocatedPath = res["Value"]
+    jobExecutableRelocatedPath = res["Value"]["JobExecutableRelocatedPath"]
     assert jobExecutableRelocatedPath
     assert jobExecutablePath != jobExecutableRelocatedPath
     assert os.path.basename(jobExecutablePath) == os.path.basename(jobExecutableRelocatedPath)

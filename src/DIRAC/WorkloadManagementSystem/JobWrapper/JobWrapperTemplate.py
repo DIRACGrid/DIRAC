@@ -247,8 +247,7 @@ ret = -3
 try:
     jsonFileName = os.path.realpath(__file__) + ".json"
     with open(jsonFileName) as f:
-        jobArgsFromJSON = json.loads(f.readlines()[0])
-    jobArgs = ast.literal_eval(jobArgsFromJSON)
+        jobArgs = json.load(f)
     if not isinstance(jobArgs, dict):
         raise TypeError(f"jobArgs is of type {type(jobArgs)}")
     if "Job" not in jobArgs:
