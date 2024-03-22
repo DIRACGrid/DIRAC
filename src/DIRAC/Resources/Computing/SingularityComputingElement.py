@@ -269,7 +269,7 @@ class SingularityComputingElement(ComputingElement):
         )
         if not result["OK"]:
             return result
-        wrapperPath = result["Value"]["JobExecutableRelocatedPath"]
+        wrapperPath = result["Value"].get("JobExecutableRelocatedPath")
 
         if self.__installDIRACInContainer:
             infoDict = None

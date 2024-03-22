@@ -149,7 +149,7 @@ def test_createAndExecuteJobWrapperTemplate_success(extraOptions):
 
     # This is the default wrapper path
     assert os.path.exists(os.path.join(os.getcwd(), "job/Wrapper"))
-    shutil.rmtree(os.path.join(os.getcwd(), "job/Wrapper"))
+    shutil.rmtree(os.path.join(os.getcwd(), "job"))
 
 
 def test_createAndExecuteJobWrapperTemplate_missingExtraOptions():
@@ -211,7 +211,7 @@ def test_createAndExecuteJobWrapperTemplate_missingExtraOptions():
 
     # This is the default wrapper path
     assert os.path.exists(os.path.join(os.getcwd(), "job/Wrapper"))
-    shutil.rmtree(os.path.join(os.getcwd(), "job/Wrapper"))
+    shutil.rmtree(os.path.join(os.getcwd(), "job"))
 
 
 def test_createAndExecuteRelocatedJobWrapperTemplate_success(extraOptions):
@@ -332,3 +332,212 @@ def test_createAndExecuteRelocatedJobWrapperTemplate_success(extraOptions):
 
     shutil.rmtree(rootLocation)
     shutil.rmtree(wrapperPath)
+
+
+def test_createAndExecuteJobWrapperOfflineTemplate_success(extraOptions):
+    """Test the creation of an offline job wrapper and its execution:
+    This is generally used when pre/post processing operations are executed locally,
+    while the workflow itself is executed on a remote computing resource (PushJobAgent).
+    """
+    # Working directory on the remote resource
+    rootLocation = "."
+    numberOfFiles = len(os.listdir(rootLocation))
+
+    # Create relocated job wrapper
+    res = createJobWrapper(
+        jobID=1,
+        jobParams=jobParams,
+        resourceParams=resourceParams,
+        optimizerParams=optimizerParams,
+        # This is the interesting part
+        defaultWrapperLocation="DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperOfflineTemplate.py",
+        pythonPath="python",
+        rootLocation=rootLocation,
+        extraOptions=extraOptions,
+    )
+    assert res["OK"], res.get("Message")
+
+    # Test job wrapper content
+    jobWrapperPath = res["Value"].get("JobWrapperPath")
+    assert jobWrapperPath
+    assert os.path.exists(jobWrapperPath)
+    assert not os.path.exists(os.path.join(rootLocation, os.path.basename(jobWrapperPath)))
+
+    with open(jobWrapperPath) as f:
+        jobWrapperContent = f.read()
+
+    assert "@SITEPYTHON@" not in jobWrapperContent
+    assert f"sys.path.insert(0, sitePython)" in jobWrapperContent
+
+    # Test job wrapper configuration path
+    jobWrapperConfigPath = res["Value"].get("JobWrapperConfigPath")
+    assert jobWrapperConfigPath
+    assert os.path.exists(jobWrapperConfigPath)
+    assert not os.path.exists(os.path.join(rootLocation, os.path.basename(jobWrapperConfigPath)))
+
+    with open(jobWrapperConfigPath) as f:
+        jobWrapperConfigContent = json.load(f)
+
+    assert jobWrapperConfigContent["Job"] == jobParams
+    assert jobWrapperConfigContent["CE"] == resourceParams
+    assert jobWrapperConfigContent["Optimizer"] == optimizerParams
+    assert "Payload" not in jobWrapperConfigContent
+
+    # Test job executable path
+    jobExecutablePath = res["Value"].get("JobExecutablePath")
+    assert jobExecutablePath
+    assert os.path.exists(jobExecutablePath)
+    assert not os.path.exists(os.path.join(rootLocation, os.path.basename(jobExecutablePath)))
+
+    with open(jobExecutablePath) as f:
+        jobExecutableContent = f.read()
+
+    assert os.path.realpath(sys.executable) not in jobExecutableContent
+    assert "python" in jobExecutableContent
+
+    assert jobWrapperPath not in jobExecutableContent
+    assert os.path.join(rootLocation, os.path.basename(jobWrapperPath)) in jobExecutableContent
+    assert extraOptions in jobExecutableContent
+    assert "-o LogLevel=INFO" in jobExecutableContent
+    assert "-o /DIRAC/Security/UseServerCertificate=no" in jobExecutableContent
+
+    # Test job executable relocated path
+    jobExecutableRelocatedPath = res["Value"].get("JobExecutableRelocatedPath")
+    assert jobExecutableRelocatedPath
+    assert jobExecutablePath != jobExecutableRelocatedPath
+    assert os.path.basename(jobExecutablePath) == os.path.basename(jobExecutableRelocatedPath)
+    assert not os.path.exists(jobExecutableRelocatedPath)
+
+    # 1. Execute the executable file in a subprocess without relocating the files as if they were on the remote resource
+    # We expect it to fail because the job wrapper is not in the expected location
+    os.chmod(jobExecutablePath, 0o755)
+    result = subprocess.run(jobExecutablePath, shell=True, capture_output=True)
+
+    assert result.returncode == 2, result.stderr
+    assert result.stdout == b"", result.stdout
+    assert b"can't open file" in result.stderr, result.stderr
+
+    # 2. Execute the relocated executable file in a subprocess without relocating the files as they would be on the remote resource
+    # We expect it to fail because the relocated executable should not exist
+    os.chmod(jobExecutablePath, 0o755)
+    result = subprocess.run(jobExecutableRelocatedPath, shell=True, capture_output=True)
+
+    assert result.returncode == 127, result.stderr
+    assert result.stdout == b"", result.stdout
+    assert f"{jobExecutableRelocatedPath}: not found".encode() in result.stderr, result.stderr
+
+    # 3. Now we relocate the files as if they were on a remote resource and execute the relocated executable file in a subprocess
+    # We expect it to fail because the payload parameters are not available
+    shutil.copy(jobWrapperPath, rootLocation)
+    shutil.copy(jobWrapperConfigPath, rootLocation)
+    shutil.copy(jobExecutablePath, rootLocation)
+    os.chmod(jobExecutablePath, 0o755)
+
+    result = subprocess.run(jobExecutableRelocatedPath, shell=True, capture_output=True)
+
+    assert result.returncode == 1, result.stderr
+    assert b"Starting Job Wrapper Initialization for Job 1" not in result.stdout, result.stdout
+    assert result.stderr == b"", result.stderr
+
+    # 4. We recreate the job wrapper offline template with the payload params now
+    # We did not specify where the results and checksum should be stored, so we expect it to fail
+    res = createJobWrapper(
+        jobID=1,
+        jobParams=jobParams,
+        resourceParams=resourceParams,
+        optimizerParams=optimizerParams,
+        # This is the interesting part
+        defaultWrapperLocation="DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperOfflineTemplate.py",
+        pythonPath="python",
+        rootLocation=rootLocation,
+        extraOptions=extraOptions,
+        payloadParams=payloadParams,
+    )
+    assert res["OK"], res.get("Message")
+    jobWrapperPath = res["Value"].get("JobWrapperPath")
+    jobWrapperConfigPath = res["Value"].get("JobWrapperConfigPath")
+    jobExecutablePath = res["Value"].get("JobExecutablePath")
+
+    shutil.copy(jobWrapperPath, rootLocation)
+    shutil.copy(jobWrapperConfigPath, rootLocation)
+    shutil.copy(jobExecutablePath, rootLocation)
+    os.chmod(jobExecutablePath, 0o755)
+
+    result = subprocess.run(jobExecutableRelocatedPath, shell=True, capture_output=True)
+
+    assert result.returncode == 1, result.stderr
+    assert b"Starting Job Wrapper Initialization for Job 1" not in result.stdout, result.stdout
+    assert result.stderr == b"", result.stderr
+
+    # The root location should contain:
+    # - the job wrapper
+    # - the job wrapper configuration
+    # - the job executable
+    # - the job/Wrapper directory
+    print(os.listdir(rootLocation))
+    assert len(os.listdir(rootLocation)) == numberOfFiles + 4
+
+    # 5. We recreate the job wrapper offline template with the payload params and the additional job params
+    # It should work fine now
+    jobParams["PayloadResults"] = "payloadResults.json"
+    jobParams["Checksum"] = "checksum.json"
+
+    res = createJobWrapper(
+        jobID=1,
+        jobParams=jobParams,
+        resourceParams=resourceParams,
+        optimizerParams=optimizerParams,
+        # This is the interesting part
+        defaultWrapperLocation="DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperOfflineTemplate.py",
+        pythonPath="python",
+        rootLocation=rootLocation,
+        extraOptions=extraOptions,
+        payloadParams=payloadParams,
+    )
+    assert res["OK"], res.get("Message")
+    jobWrapperPath = res["Value"].get("JobWrapperPath")
+    jobWrapperConfigPath = res["Value"].get("JobWrapperConfigPath")
+    jobExecutablePath = res["Value"].get("JobExecutablePath")
+
+    shutil.copy(jobWrapperPath, rootLocation)
+    shutil.copy(jobWrapperConfigPath, rootLocation)
+    shutil.copy(jobExecutablePath, rootLocation)
+    os.chmod(jobExecutablePath, 0o755)
+
+    result = subprocess.run(jobExecutableRelocatedPath, shell=True, capture_output=True)
+
+    assert result.returncode == 0, result.stderr
+    assert b"Starting Job Wrapper Initialization for Job 1" in result.stdout, result.stdout
+    assert b"Job Wrapper is starting the processing phase for job" in result.stdout, result.stdout
+    assert result.stderr == b"", result.stderr
+
+    # The root location should contain:
+    # - the job wrapper
+    # - the job wrapper configuration
+    # - the job executable
+    # - the job/Wrapper directory
+    # - the <jobID> directory
+    assert len(os.listdir(rootLocation)) == numberOfFiles + 5
+    assert os.path.exists(os.path.join(rootLocation, "1"))
+    assert os.path.exists(os.path.join(rootLocation, "1", "payloadResults.json"))
+    assert os.path.exists(os.path.join(rootLocation, "1", "checksum.json"))
+
+    with open(os.path.join(rootLocation, "1", "payloadResults.json")) as f:
+        payloadResults = json.load(f)
+
+    assert payloadResults["OK"]
+    assert "cpuTimeConsumed" in payloadResults["Value"]
+    assert "payloadExecutorError" in payloadResults["Value"]
+    assert "payloadOutput" in payloadResults["Value"]
+    assert "payloadStatus" in payloadResults["Value"]
+
+    with open(os.path.join(rootLocation, "1", "checksum.json")) as f:
+        checksums = json.load(f)
+
+    assert jobParams["PayloadResults"] in checksums
+
+    os.unlink(os.path.join(rootLocation, os.path.basename(jobWrapperPath)))
+    os.unlink(os.path.join(rootLocation, os.path.basename(jobWrapperConfigPath)))
+    os.unlink(os.path.join(rootLocation, os.path.basename(jobExecutablePath)))
+    shutil.rmtree(os.path.join(rootLocation, "1"))
+    shutil.rmtree(os.path.join(os.getcwd(), "job"))

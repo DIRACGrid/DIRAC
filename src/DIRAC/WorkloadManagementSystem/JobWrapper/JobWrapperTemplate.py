@@ -13,7 +13,6 @@
 """
 import sys
 import json
-import ast
 import os
 import errno
 import time

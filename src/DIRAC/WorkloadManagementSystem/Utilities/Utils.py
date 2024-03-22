@@ -14,6 +14,7 @@ def createJobWrapper(
     jobParams: dict,
     resourceParams: dict,
     optimizerParams: dict,
+    payloadParams: dict | None = None,
     extraOptions: str | None = None,
     wrapperPath: str | None = None,
     rootLocation: str | None = None,
@@ -29,11 +30,12 @@ def createJobWrapper(
     :param jobParams: Job parameters
     :param resourceParams: CE parameters
     :param optimizerParams: Optimizer parameters
+    :param payloadParams: Payload parameters
     :param extraOptions: Extra options to be passed to the job wrapper
     :param wrapperPath: Path where the job wrapper will be created
     :param rootLocation: Location where the job wrapper will be executed
-    :param defaultWrapperLocation: Location of the default job wrapper template
     :param pythonPath: Path to the python executable
+    :param defaultWrapperLocation: Location of the default job wrapper template
     :param log: Logger
     :param logLevel: Log level
     :return: S_OK with the path to the job wrapper and the path to the job wrapper json file
@@ -42,6 +44,8 @@ def createJobWrapper(
         extraOptions = f"--cfg {extraOptions}"
 
     arguments = {"Job": jobParams, "CE": resourceParams, "Optimizer": optimizerParams}
+    if payloadParams:
+        arguments["Payload"] = payloadParams
     log.verbose(f"Job arguments are: \n {arguments}")
 
     if not wrapperPath:
