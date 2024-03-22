@@ -394,8 +394,6 @@ class JobWrapper:
             # Job specifies memory in GB, internally use KB
             jobMemory = int(self.jobArgs["Memory"]) * 1024.0 * 1024.0
 
-        # The actual executable is not yet running: it will be in few lines
-        self.__report(minorStatus=JobMinorStatus.APPLICATION, sendFlag=True)
         spObject = Subprocess(timeout=False, bufferLimit=int(self.bufferLimit))
         exeThread = ExecutionThread(spObject, command, self.maxPeekLines, output, error, env, self.executionResults)
         exeThread.start()
@@ -573,6 +571,9 @@ class JobWrapper:
         if not result["OK"]:
             return result
         payloadParams = result["Value"]
+
+        # The actual executable is not yet running: it will be in few lines
+        self.__report(minorStatus=JobMinorStatus.APPLICATION, sendFlag=True)
 
         result = self.process(
             command=payloadParams["command"],
