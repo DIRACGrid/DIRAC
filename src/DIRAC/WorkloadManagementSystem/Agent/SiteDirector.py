@@ -641,8 +641,6 @@ class SiteDirector(AgentModule):
         elif CVMFS_locations:
             pilotOptions.append(f"--CVMFS_locations={CVMFS_locations}")
 
-        pilotOptions.append("--pythonVersion=3")
-
         # DIRAC Extensions to be used in pilots
         pilotExtensionsList = opsHelper.getValue("Pilot/Extensions", [])
         extensionsList = []
