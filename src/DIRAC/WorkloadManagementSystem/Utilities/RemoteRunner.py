@@ -53,13 +53,14 @@ class RemoteRunner:
         """
         return gConfig.getValue("/LocalSite/RemoteExecution", False)
 
-    def execute(self, command, workingDirectory=".", numberOfProcessors=1, cleanRemoteJob=True):
+    def execute(self, command, workingDirectory=".", numberOfProcessors=1, cleanRemoteJob=True, containerImage=None):
         """Execute the command remotely via a CE
 
         :param str command: command to execute remotely
         :param str workingDirectory: directory containing the inputs required by the command
         :param int numberOfProcessors: number of processors to allocate to the command
         :param str cleanRemoteJob: clean the files related to the command on the remote host if True
+        :param str containerImage: container image to use to execute the command
         :return: (status, output, error)
         """
         self.log.verbose("Command to submit:", command)
@@ -74,7 +75,7 @@ class RemoteRunner:
         )
 
         # Set up Application Queue
-        if not (result := self._setUpWorkloadCE(numberOfProcessors))["OK"]:
+        if not (result := self._setUpWorkloadCE(numberOfProcessors, containerImage))["OK"]:
             result["Errno"] = DErrno.ERESUNA
             return result
         workloadCE = result["Value"]
@@ -149,7 +150,7 @@ class RemoteRunner:
 
         return S_OK()
 
-    def _setUpWorkloadCE(self, numberOfProcessorsPayload=1):
+    def _setUpWorkloadCE(self, numberOfProcessorsPayload=1, containerImage=None):
         """Get application queue and configure it
 
         :return: a ComputingElement instance
@@ -160,6 +161,10 @@ class RemoteRunner:
             return result
         ceType = result["Value"]["CEType"]
         ceParams = result["Value"]
+
+        # Set the container image if needed
+        if containerImage:
+            ceParams["ContainerImage"] = containerImage
 
         # Build CE
         ceFactory = ComputingElementFactory()

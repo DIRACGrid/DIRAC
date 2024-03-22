@@ -5,6 +5,7 @@
 import pytest
 import os
 from diraccfg import CFG
+from unittest.mock import MagicMock, patch
 
 # DIRAC Components
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -70,10 +71,10 @@ def test__wrapCommand(command, workingDirectory, expectedContent):
         (0, 0, False, "Inappropriate NumberOfProcessors value"),
     ],
 )
-def test__setUpWorkloadCE(
+def test__setUpWorkloadCENumberOfProcessors(
     mocker, payloadNumberOfProcessors, ceNumberOfProcessors, expectedResult, expectedNumberOfProcessors
 ):
-    """Test RemoteRunner()._setUpWorkloadCE()"""
+    """Test RemoteRunner()._setUpWorkloadCE(): check how many processors are available in the CE"""
     mocker.patch(
         "DIRAC.WorkloadManagementSystem.Utilities.RemoteRunner.getProxyInfo", return_value=S_OK({"chain": X509Chain()})
     )
@@ -108,6 +109,45 @@ def test__setUpWorkloadCE(
         assert workloadCE.ceParameters["NumberOfProcessors"] == expectedNumberOfProcessors
     else:
         assert result["Message"] == expectedNumberOfProcessors
+
+
+@patch.dict("sys.modules", {"arc": MagicMock()})
+def test__setUpWorkloadCEContainerImage(mocker):
+    """Test RemoteRunner()._setUpWorkloadCE(): check that the container image is available in the CE"""
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Utilities.RemoteRunner.getProxyInfo", return_value=S_OK({"chain": X509Chain()})
+    )
+    mocker.patch("DIRAC.Core.Security.X509Chain.X509Chain.getRemainingSecs", return_value=S_OK(1000))
+
+    # Configure the CS with the number of available processors in the CE
+    siteName = "DIRAC.Site1.site"
+    ceName = "CE1"
+    queueName = "nordugrid-condor-queue1"
+
+    containerImage = "alma9.sif"
+
+    config = {"Resources": {"Sites": {"DIRAC": {siteName: {"CEs": {ceName: {}}}}}}}
+    ceConfig = config["Resources"]["Sites"]["DIRAC"][siteName]["CEs"][ceName]
+    ceConfig["CEType"] = "AREX"
+    ceConfig["Queues"] = {}
+    ceConfig["Queues"][queueName] = {}
+    ceConfig["Queues"][queueName]["ApptainerBinary"] = "/bin/apptainer"
+
+    # Load the configuration
+    gConfigurationData.localCFG = CFG()
+    cfg = CFG()
+    cfg.loadFromDict(config)
+    gConfig.loadCFG(cfg)
+
+    # Instantiate a RemoteRunner and set up the CE
+    remoteRunner = RemoteRunner(siteName, ceName, queueName)
+    result = remoteRunner._setUpWorkloadCE(containerImage=containerImage)
+
+    # Test the results
+    assert result["OK"]
+    workloadCE = result["Value"]
+    assert workloadCE.containerImage == containerImage
+    assert workloadCE.apptainerBinary == ceConfig["Queues"][queueName]["ApptainerBinary"]
 
 
 @pytest.mark.parametrize(

@@ -27,6 +27,12 @@ WorkingDirectory:
 
      /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorArc
 
+ContainerImage:
+    Container image to use for the job execution. Make sure the image is available on the worker node.
+
+ApptainerBinary:
+    Apptainer binary location. This is the binary that will be used to execute the container image.
+
 XRSLExtraString:
    Default additional string for ARC submit files. Should be written in the following format::
 
@@ -135,6 +141,11 @@ class ARCComputingElement(ComputingElement):
         self.usercfg.Timeout(20)  # pylint: disable=pointless-statement
         self.gridEnv = ""
 
+        # Container image to use
+        self.containerImage = ""
+        # Apptainer binary location
+        self.apptainerBinary = "apptainer"
+
         # Used in getJobStatus
         self.mapStates = STATES_MAP
         # Extra XRSL info
@@ -206,6 +217,12 @@ class ARCComputingElement(ComputingElement):
                 "xrslMPExtraString": self.xrslMPExtraString,
             }
 
+        # Container image to use
+        xrslRuntimeEnv = ""
+        if self.containerImage:
+            xrslRuntimeEnv = f'(runtimeEnvironment="ENV/SINGULARITY"'
+            f'"{self.containerImage}" "" "{self.apptainerBinary}")'
+
         # Dependencies that have to be embedded along with the executable
         xrslInputs = ""
         executables = []
@@ -235,6 +252,7 @@ class ARCComputingElement(ComputingElement):
 (outputFiles={xrslOutputFiles})
 (queue={queue})
 {xrslMPAdditions}
+{xrslRuntimeEnv}
 {xrslExecutables}
 {xrslExtraString}
     """.format(
@@ -245,6 +263,7 @@ class ARCComputingElement(ComputingElement):
             queue=self.arcQueue,
             xrslOutputFiles=xrslOutputs,
             xrslMPAdditions=xrslMPAdditions,
+            xrslRuntimeEnv=xrslRuntimeEnv,
             xrslExecutables=xrslExecutables,
             xrslExtraString=self.xrslExtraString,
         )
@@ -285,6 +304,10 @@ class ARCComputingElement(ComputingElement):
             self.log.warn("Unknown ARC endpoint, change to default", self.endpointType)
         else:
             self.endpointType = endpointType
+
+        # Check if a container image is defined
+        self.containerImage = self.ceParameters.get("ContainerImage", self.containerImage)
+        self.apptainerBinary = self.ceParameters.get("ApptainerBinary", self.apptainerBinary)
 
         # ARCLogLevel to enable/disable logs coming from the ARC client
         # Because the ARC logger works independently from the standard logging library,
