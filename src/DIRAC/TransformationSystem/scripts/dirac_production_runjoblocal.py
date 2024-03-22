@@ -84,7 +84,7 @@ def __configurePilot(basepath, vo):
     os.system(
         "python "
         + basepath
-        + "dirac-pilot.py -S %s -l %s -C %s -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch --pythonVersion=3 -dd"
+        + "dirac-pilot.py -S %s -l %s -C %s -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch -dd"
         % (currentSetup, vo, masterCS)
     )
 

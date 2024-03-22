@@ -1039,8 +1039,6 @@ class SiteDirector(AgentModule):
         if opsHelper.getValue("/Services/JobMonitoring/usePilotsLoggingFlag", False):
             pilotOptions.append("-z ")
 
-        pilotOptions.append("--pythonVersion=3")
-
         # Debug
         if self.pilotLogLevel.lower() == "debug":
             pilotOptions.append("-ddd")
