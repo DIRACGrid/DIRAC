@@ -116,8 +116,7 @@ class ProxyManagerHandlerMixin:
 
         :param int validSecondsRequired: required seconds the proxy is valid for
 
-        :return: S_OK(list)/S_ERROR() -- list contain dicts with user name, DN, group
-                                         expiration time
+        :return: S_OK(list)/S_ERROR() -- list contain dicts with user name, DN, expiration time
         """
         credDict = self.getRemoteCredentials()
         if Properties.PROXY_MANAGEMENT not in credDict["properties"]:
@@ -148,14 +147,13 @@ class ProxyManagerHandlerMixin:
 
     types_getStoredProxyStrength = [str, str, [str, type(None), bool]]
 
-    def export_getStoredProxyStrength(self, userDN, userGroup=None, vomsAttr=None):
+    def export_getStoredProxyStrength(self, userDN, vomsAttr=None):
         """Return the strength in bit of the stored proxy
 
         :param userDN: DN of the user
-        :param userGroup: group of the user
         :param vomsAttr: VOMS attr we plan to add on the proxy
         """
-        return self.__proxyDB.getProxyStrength(userDN, userGroup=userGroup, vomsAttr=vomsAttr)
+        return self.__proxyDB.getProxyStrength(userDN, vomsAttr=vomsAttr)
 
     types_getProxy = [str, str, str, int]
 
@@ -251,9 +249,7 @@ class ProxyManagerHandlerMixin:
         errorInDelete = []
         deleted = 0
         for _id in idList:
-            if len(_id) != 2:
-                errorInDelete.append(f"{str(_id)} doesn't have two fields")
-            retVal = self.export_deleteProxy(_id[0], _id[1])
+            retVal = self.export_deleteProxy(_id[0])
             if not retVal["OK"]:
                 errorInDelete.append(f"{str(_id)} : {retVal['Message']}")
             else:
@@ -264,11 +260,10 @@ class ProxyManagerHandlerMixin:
 
     types_deleteProxy = [(list, tuple)]
 
-    def export_deleteProxy(self, userDN, userGroup):
+    def export_deleteProxy(self, userDN):
         """Delete a proxy from the DB
 
         :param str userDN: user DN
-        :param str userGroup: DIRAC group
 
         :return: S_OK()/S_ERROR()
         """
@@ -276,10 +271,10 @@ class ProxyManagerHandlerMixin:
         if Properties.PROXY_MANAGEMENT not in credDict["properties"]:
             if userDN != credDict["DN"]:
                 return S_ERROR("You aren't allowed!")
-        retVal = self.__proxyDB.deleteProxy(userDN, userGroup)
+        retVal = self.__proxyDB.deleteProxy(userDN)
         if not retVal["OK"]:
             return retVal
-        self.__proxyDB.logAction("delete proxy", credDict["DN"], credDict["group"], userDN, userGroup)
+        self.__proxyDB.logAction("delete proxy", credDict["DN"], credDict["group"], userDN)
         return S_OK()
 
     types_getContents = [dict, (list, tuple), int, int]
@@ -312,78 +307,6 @@ class ProxyManagerHandlerMixin:
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
         """
         return self.__proxyDB.getLogsContent(selDict, sortDict, start, limit)
-
-    types_generateToken = [str, str, int]
-
-    def export_generateToken(self, requesterDN, requesterGroup, tokenUses):
-        """Generate tokens for proxy retrieval
-
-        :param str requesterDN: user DN
-        :param str requesterGroup: DIRAC group
-        :param int tokenUses: number of uses
-
-        :return: S_OK(tuple)/S_ERROR() -- tuple contain token, number uses
-        """
-        credDict = self.getRemoteCredentials()
-        self.__proxyDB.logAction("generate tokens", credDict["DN"], credDict["group"], requesterDN, requesterGroup)
-        return self.__proxyDB.generateToken(requesterDN, requesterGroup, numUses=tokenUses)
-
-    types_getProxyWithToken = [str, str, str, int, str]
-
-    def export_getProxyWithToken(self, userDN, userGroup, requestPem, requiredLifetime, token):
-        """Get a proxy for a userDN/userGroup
-
-        :param requestPem: PEM encoded request object for delegation
-        :param requiredLifetime: Argument for length of proxy
-        :param token: Valid token to get a proxy
-
-          * Properties:
-              * FullDelegation <- permits full delegation of proxies
-              * LimitedDelegation <- permits downloading only limited proxies
-              * PrivateLimitedDelegation <- permits downloading only limited proxies for one self
-        """
-        credDict = self.getRemoteCredentials()
-        result = self.__proxyDB.useToken(token, credDict["DN"], credDict["group"])
-        gLogger.info(f"Trying to use token {token} by {credDict['DN']}:{credDict['group']}")
-        if not result["OK"]:
-            return result
-        if not result["Value"]:
-            return S_ERROR("Proxy token is invalid")
-        self.__proxyDB.logAction("used token", credDict["DN"], credDict["group"], userDN, userGroup)
-
-        result = self.__checkProperties(userDN, userGroup)
-        if not result["OK"]:
-            return result
-        self.__proxyDB.logAction("download proxy with token", credDict["DN"], credDict["group"], userDN, userGroup)
-        return self.__getProxy(userDN, userGroup, requestPem, requiredLifetime, True)
-
-    types_getVOMSProxyWithToken = [str, str, str, int, [str, type(None)]]
-
-    def export_getVOMSProxyWithToken(self, userDN, userGroup, requestPem, requiredLifetime, token, vomsAttribute=None):
-        """Get a proxy for a userDN/userGroup
-
-        :param requestPem: PEM encoded request object for delegation
-        :param requiredLifetime: Argument for length of proxy
-        :param vomsAttribute: VOMS attr to add to the proxy
-
-          * Properties :
-              * FullDelegation <- permits full delegation of proxies
-              * LimitedDelegation <- permits downloading only limited proxies
-              * PrivateLimitedDelegation <- permits downloading only limited proxies for one self
-        """
-        credDict = self.getRemoteCredentials()
-        result = self.__proxyDB.useToken(token, credDict["DN"], credDict["group"])
-        if not result["OK"]:
-            return result
-        if not result["Value"]:
-            return S_ERROR("Proxy token is invalid")
-        self.__proxyDB.logAction("used token", credDict["DN"], credDict["group"], userDN, userGroup)
-
-        result = self.__checkProperties(userDN, userGroup)
-        if not result["OK"]:
-            return result
-        self.__proxyDB.logAction("download voms proxy with token", credDict["DN"], credDict["group"], userDN, userGroup)
-        return self.__getVOMSProxy(userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, True)
 
     types_exchangeProxyForToken = []
 

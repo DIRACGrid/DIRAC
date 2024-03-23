@@ -19,22 +19,17 @@ def findGenericPilotCredentials(vo=False, pilotDN=""):
     if not vo:
         return S_ERROR("Need a VO to determine the Generic pilot credentials")
     opsHelper = Operations.Operations(vo=vo)
-    pilotGroup = opsHelper.getValue("Pilot/GenericPilotGroup", "")
-    if not pilotDN:
-        pilotDN = opsHelper.getValue("Pilot/GenericPilotDN", "")
     if not pilotDN:
         pilotUser = opsHelper.getValue("Pilot/GenericPilotUser", "")
         if pilotUser:
             result = Registry.getDNForUsername(pilotUser)
             if result["OK"]:
                 pilotDN = result["Value"][0]
-    if pilotDN and pilotGroup:
-        gLogger.verbose(f"Pilot credentials: {pilotDN}@{pilotGroup}")
-        result = gProxyManager.userHasProxy(pilotDN, pilotGroup, 86400)
-        if not result["OK"]:
-            return S_ERROR(f"{pilotDN}@{pilotGroup} has no proxy in ProxyManager")
-        return S_OK((pilotDN, pilotGroup))
-
     if pilotDN:
-        return S_ERROR(f"DN {pilotDN} does not have group {pilotGroup}")
-    return S_ERROR(f"No generic proxy in the Proxy Manager with groups {pilotGroup}")
+        gLogger.verbose(f"Pilot credentials: {pilotDN}@")
+        result = gProxyManager.userHasProxy(pilotDN, 86400)
+        if not result["OK"]:
+            return S_ERROR(f"{pilotDN} has no proxy in ProxyManager")
+        return S_OK((pilotDN,))
+
+    return S_ERROR(f"No pilot DN")

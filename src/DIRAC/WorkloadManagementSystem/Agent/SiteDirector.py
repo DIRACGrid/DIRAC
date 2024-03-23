@@ -121,7 +121,7 @@ class SiteDirector(AgentModule):
         result = findGenericPilotCredentials(vo=self.vo, pilotDN=self.pilotDN)
         if not result["OK"]:
             return result
-        self.pilotDN, _ = result["Value"]
+        self.pilotDN = result["Value"]
 
         # Parameters
         self.workingDirectory = self.am_getOption("WorkDirectory", self.workingDirectory)

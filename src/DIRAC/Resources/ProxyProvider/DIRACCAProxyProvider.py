@@ -402,14 +402,13 @@ class DIRACCAProxyProvider(ProxyProvider):
         userPubKeyStr = userPubKey.as_pem(cipher=None, callback=util.no_passphrase_callback).decode("ascii")
         return S_OK((userCertStr, userPubKeyStr))
 
-    def _forceGenerateProxyForDN(self, dn, time, group=None):
+    def _forceGenerateProxyForDN(self, dn, time):
         """An additional helper method for creating a proxy without any substantial validation,
         it can be used for a specific case(such as testing) where just need to generate a proxy
         with specific DN on the fly.
 
         :param str dn: requested proxy DN
         :param int time: expired time in a seconds
-        :param str group: if need to add DIRAC group
 
         :return: S_OK(tuple)/S_ERROR() -- contain proxy as chain and as string
         """
@@ -429,7 +428,7 @@ class DIRACCAProxyProvider(ProxyProvider):
             certStr, keyStr = result["Value"]
             chain = X509Chain()
             if chain.loadChainFromString(certStr)["OK"] and chain.loadKeyFromString(keyStr)["OK"]:
-                result = chain.generateProxyToString(time, diracGroup=group)
+                result = chain.generateProxyToString(time)
         if not result["OK"]:
             return result
         chain = X509Chain()

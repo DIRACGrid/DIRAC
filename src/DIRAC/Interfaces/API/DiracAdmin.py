@@ -82,7 +82,7 @@ class DiracAdmin(API):
         :type requiredTime: boolean
         :return: S_OK,S_ERROR
         """
-        return gProxyManager.userHasProxy(userDN, userGroup, requiredTime)
+        return gProxyManager.userHasProxy(userDN, requiredTime)
 
     #############################################################################
     def getSiteMask(self, printOutput=False, status="Active"):

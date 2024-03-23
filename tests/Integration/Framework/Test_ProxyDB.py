@@ -531,7 +531,7 @@ class testDB(ProxyDBTestCase):
 
         gLogger.info("* Get proxy when it store only in ProxyDB_CleanProxies..")
         # Make record with proxy that contain group
-        result = ca._forceGenerateProxyForDN("/C=CC/O=DN/O=DIRAC/CN=user", 12 * 3600, group="group_1")
+        result = ca._forceGenerateProxyForDN("/C=CC/O=DN/O=DIRAC/CN=user", 12 * 3600)
         self.assertTrue(result["OK"], "\n" + result.get("Message", "Error message is absent."))
         proxyStr = result["Value"][1]
         cmd = "INSERT INTO ProxyDB_CleanProxies(UserName, UserDN, Pem, ExpirationTime) VALUES "

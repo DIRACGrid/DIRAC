@@ -287,7 +287,7 @@ class JobManagerHandlerMixin:
         :return: bool
         """
         ownerDN = getDNForUsername(self.owner)["Value"][0]
-        result = gProxyManager.userHasProxy(ownerDN, self.ownerGroup, validSeconds=18000)
+        result = gProxyManager.userHasProxy(ownerDN, validSeconds=18000)
         if not result["OK"]:
             self.log.error("Can't check if the user has proxy uploaded", result["Message"])
             return True
