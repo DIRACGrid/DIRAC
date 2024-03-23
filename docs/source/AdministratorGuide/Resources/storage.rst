@@ -59,6 +59,7 @@ Configuration options are:
 * ``SpaceReservation``: just a name of a zone of the physical storage which can have some space reserved. Extends the SRM ``SpaceToken`` concept.
 * ``ArchiveTimeout``: for tape SE only. If set to a value in seconds, enables the `FTS Archive Monitoring feature <https://fts3-docs.web.cern.ch/fts3-docs/docs/archive_monitoring.html>`_
 * ``BringOnlineTimeout``: for tape SE only. If set to a value in seconds, specify the BringOnline parameter for FTS transfers. Otherwise, the default is whatever is in the ``FTS3Job`` class.
+* ``WLCGTokenBasePath``: EXPERIMENTAL Path from which the token should be relative to
 
 VO specific paths
 -----------------

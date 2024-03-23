@@ -1,5 +1,6 @@
 """ This is the StorageElement module. It implements The StorageElementItem as well as the caching system
 """
+
 # # custom duty
 
 
@@ -20,7 +21,7 @@ from DIRAC import gLogger, gConfig, siteName
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.File import convertSizeUnits
 from DIRAC.Core.Utilities.List import getIndexInList
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult, convertToReturnValue
 from DIRAC.Core.Utilities.TimeUtilities import toEpochMilliSeconds
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
@@ -257,11 +258,13 @@ class StorageElementItem:
             self.localStageProtocolList = (
                 stageProto
                 if stageProto
-                else accessProto
-                if accessProto
-                else globalStageProto
-                if globalStageProto
-                else self.localAccessProtocolList
+                else (
+                    accessProto
+                    if accessProto
+                    else globalStageProto
+                    if globalStageProto
+                    else self.localAccessProtocolList
+                )
             )
             self.log.debug(f"localStageProtocolList {self.localStageProtocolList}")
 
@@ -291,6 +294,7 @@ class StorageElementItem:
             "isDirectory",
             "isFile",
             "getOccupancy",
+            "getWLCGTokenPath",
         ]
 
         self.okMethods = [
@@ -951,6 +955,25 @@ class StorageElementItem:
     #
     # This is the generic wrapper for file operations
     #
+
+    @convertToReturnValue
+    def getWLCGTokenPath(self, lfn: str):
+        """
+        EXPERIMENTAL
+        return the path to put in the token, relative to the vo path as configured
+        in the storage.
+
+        """
+        wlcgTokenBasePath = self.options.get("WLCGTokenBasePath")
+        if not wlcgTokenBasePath:
+            raise ValueError("WLCGTokenBasePath not configured")
+
+        for storage in self.storages.values():
+            try:
+                return storage.getWLCGTokenPath(lfn, wlcgTokenBasePath)
+            except Exception:
+                continue
+        raise RuntimeError("Could not get WLCGTokenPath")
 
     def getURL(self, lfn, protocol=False, replicaDict=None):
         """execute 'getTransportURL' operation.
