@@ -92,7 +92,7 @@ def test_execute(mocker, executable, args, src, expectedResult):
         "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock
     )
     mocker.patch(
-        "DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog.getSystemInstance", side_effect=getSystemSectionMock
+        "DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog.getSystemSection", side_effect=getSystemSectionMock
     )
 
     if src:
