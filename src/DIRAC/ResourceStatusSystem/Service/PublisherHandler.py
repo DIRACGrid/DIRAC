@@ -226,9 +226,6 @@ class PublisherHandlerMixin:
     def export_setToken(self, element, name, statusType, token, elementType, username, lastCheckTime):
         lastCheckTime = datetime.strptime(lastCheckTime, "%Y-%m-%d %H:%M:%S")
 
-        credentials = self.getRemoteCredentials()
-        self.log.info(credentials)
-
         elementInDB = self.rsClient.selectStatusElement(
             element, "Status", name=name, statusType=statusType, elementType=elementType, lastCheckTime=lastCheckTime
         )
@@ -345,9 +342,6 @@ class PublisherHandlerMixin:
             lastCheckTime = None
         else:
             lastCheckTime = datetime.strptime(lastCheckTime, "%Y-%m-%d %H:%M:%S")
-
-        credentials = self.getRemoteCredentials()
-        self.log.info(credentials)
 
         elementInDB = self.rsClient.selectStatusElement(
             element,

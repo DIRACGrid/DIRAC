@@ -29,6 +29,7 @@ def getProxyInfo(proxy=False, disableVOMS=False):
       * values that can be there
           * 'path' : path to the file,
           * 'group' : DIRAC group
+          * 'VO' : DIRAC VO
           * 'groupProperties' : Properties that apply to the DIRAC Group
           * 'username' : DIRAC username
           * 'identity' : DN that generated the proxy
@@ -68,6 +69,9 @@ def getProxyInfo(proxy=False, disableVOMS=False):
             infoDict["VOMS"] = retVal["Value"]
         else:
             infoDict["VOMSError"] = retVal["Message"].strip()
+
+    if "group" in infoDict:
+        infoDict["VO"] = Registry.getVOForGroup(infoDict["group"])
 
     infoDict["hasDiracxToken"] = False
     if proxyLocation:
