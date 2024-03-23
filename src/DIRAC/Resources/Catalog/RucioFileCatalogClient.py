@@ -697,3 +697,95 @@ class RucioFileCatalogClient(FileCatalogClientBase):
             except Exception as err:
                 return S_ERROR(str(err))
         return S_OK(resDict)
+
+    @checkCatalogArguments
+    def getFileUserMetadata(self, path):
+        """Get the meta data attached to a file, but also to
+        all its parents
+        """
+        resDict = {"Successful": {}, "Failed": {}}
+        try:
+            did = self.__getDidsFromLfn(path)
+            meta = [met for met in self.client.get_metadata_bulk(dids=[did], inherit=True)]
+            if meta["did_type"] == "FILE":  # Should we also return the metadata for the directories ?
+                resDict["Successful"][path] = meta
+            else:
+                resDict["Failed"][path] = "Not a file"
+        except DataIdentifierNotFound:
+            resDict["Failed"][path] = "No such file or directory"
+        except Exception as err:
+            return S_ERROR(str(err))
+        return S_OK(resDict)
+
+    @checkCatalogArguments
+    def getFileUserMetadataBulk(self, lfns):
+        """Get the meta data attached to a list of files, but also to
+        all their parents
+        """
+        resDict = {"Successful": {}, "Failed": {}}
+        dids = []
+        lfnChunks = breakListIntoChunks(lfns, 1000)
+        for lfnList in lfnChunks:
+            try:
+                dids = [self.__getDidsFromLfn(lfn) for lfn in lfnList]
+            except Exception as err:
+                return S_ERROR(str(err))
+            try:
+                for met in self.client.get_metadata_bulk(dids=dids, inherit=True):
+                    lfn = met["name"]
+                    resDict["Successful"][lfn] = met
+                for lfn in lfnList:
+                    if lfn not in resDict["Successful"]:
+                        resDict["Failed"][lfn] = "No such file or directory"
+            except Exception as err:
+                return S_ERROR(str(err))
+        return S_OK(resDict)
+
+    @checkCatalogArguments
+    def setMetadataBulk(self, pathMetadataDict):
+        """Add metadata for the given paths"""
+        resDict = {"Successful": {}, "Failed": {}}
+        dids = []
+        for path, metadataDict in pathMetadataDict.items():
+            try:
+                did = self.__getDidsFromLfn(path)
+                did["meta"] = metadataDict
+                dids.append(did)
+            except Exception as err:
+                return S_ERROR(str(err))
+        try:
+            self.client.set_dids_metadata_bulk(dids=dids, recursive=False)
+        except Exception as err:
+            return S_ERROR(str(err))
+        return S_OK(resDict)
+
+    @checkCatalogArguments
+    def setMetadata(self, path, metadataDict):
+        """Add metadata to the given path"""
+        pathMetadataDict = {}
+        pathMetadataDict[path] = metadataDict
+        return self.setMetadataBulk(pathMetadataDict)
+
+    @checkCatalogArguments
+    def removeMetadata(self, path, metadata):
+        """Remove the specified metadata for the given file"""
+        resDict = {"Successful": {}, "Failed": {}}
+        try:
+            did = self.__getDidsFromLfn(path)
+            failedMeta = {}
+            # TODO : Implement bulk delete_metadata method in Rucio
+            for meta in metadata:
+                try:
+                    self.client.delete_metadata(scope=did["scope"], name=did["name"], key=meta)
+                except DataIdentifierNotFound:
+                    return S_ERROR(f"File {path} not found")
+                except Exception as err:
+                    failedMeta[meta] = str(err)
+
+            if failedMeta:
+                metaExample = list(failedMeta)[0]
+                result = S_ERROR(f"Failed to remove {len(failedMeta)} metadata, e.g. {failedMeta[metaExample]}")
+                result["FailedMetadata"] = failedMeta
+        except Exception as err:
+            return S_ERROR(str(err))
+        return S_OK()
