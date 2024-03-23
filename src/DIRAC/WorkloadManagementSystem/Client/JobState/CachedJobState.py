@@ -334,8 +334,6 @@ class CachedJobState:
     def getAttributes(self, nameList=None):
         return self.__cacheDict("att", self.__jobState.getAttributes, nameList)
 
-    # JobParameters --- REMOVED
-
     # Optimizer params
 
     def setOptParameter(self, name, value):

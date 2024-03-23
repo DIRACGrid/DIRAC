@@ -55,17 +55,12 @@ class JobStatusUtility:
                 raise
 
         if not self.elasticJobParametersDB:
-            if Operations().getValue("/Services/JobMonitoring/useESForJobParametersFlag", False):
-                try:
-                    result = ObjectLoader().loadObject(
-                        "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
-                    )
-                    if not result["OK"]:
-                        raise AttributeError(result["Message"])
-                    self.elasticJobParametersDB = result["Value"](parentLogger=self.log)
-                except RuntimeError:
-                    self.log.error("Can't connect to the JobLoggingDB")
-                    raise
+            result = ObjectLoader().loadObject(
+                "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
+            )
+            if not result["OK"]:
+                raise AttributeError(result["Message"])
+            self.elasticJobParametersDB = result["Value"](parentLogger=self.log)
 
     def setJobStatus(
         self, jobID: int, status=None, minorStatus=None, appStatus=None, source=None, dateTime=None, force=False
