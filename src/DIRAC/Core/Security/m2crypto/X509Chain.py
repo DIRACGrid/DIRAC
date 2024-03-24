@@ -6,10 +6,7 @@ In particular, limited proxy: https://tools.ietf.org/html/rfc3820#section-3.8
 """
 import copy
 import hashlib
-import os
 import re
-import stat
-import tempfile
 
 import M2Crypto
 
@@ -19,6 +16,7 @@ from DIRAC.Core.Security.m2crypto import DEFAULT_PROXY_STRENGTH, DIRAC_GROUP_OID
 from DIRAC.Core.Security.m2crypto.X509Certificate import X509Certificate
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.Decorators import executeOnlyIf
+from DIRAC.Core.Utilities.File import secureOpenForWrite
 
 # Decorator to check that _certList is not empty
 needCertList = executeOnlyIf("_certList", S_ERROR(DErrno.ENOCHAIN))
@@ -452,14 +450,10 @@ class X509Chain:
         if not retVal["OK"]:
             return retVal
         try:
-            with open(filePath, "w") as fd:
+            with secureOpenForWrite(filePath) as fd:
                 fd.write(retVal["Value"])
         except Exception as e:
             return S_ERROR(DErrno.EWF, f"{filePath} :{repr(e).replace(',)', ')')}")
-        try:
-            os.chmod(filePath, stat.S_IRUSR | stat.S_IWUSR)
-        except Exception as e:
-            return S_ERROR(DErrno.ESPF, f"{filePath} :{repr(e).replace(',)', ')')}")
         return S_OK()
 
     @needCertList
@@ -835,17 +829,10 @@ class X509Chain:
             return retVal
         pemData = retVal["Value"]
         try:
-            if not filename:
-                fd, filename = tempfile.mkstemp()
-                os.close(fd)
-            with open(filename, "w") as fp:
-                fp.write(pemData)
+            with secureOpenForWrite(filename) as fh:
+                fh.write(pemData)
         except Exception as e:
             return S_ERROR(DErrno.EWF, f"{filename} :{repr(e).replace(',)', ')')}")
-        try:
-            os.chmod(filename, stat.S_IRUSR | stat.S_IWUSR)
-        except Exception as e:
-            return S_ERROR(DErrno.ESPF, f"{filename} :{repr(e).replace(',)', ')')}")
         return S_OK(filename)
 
     @needCertList

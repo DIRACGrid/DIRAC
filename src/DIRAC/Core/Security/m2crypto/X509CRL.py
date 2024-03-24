@@ -1,15 +1,13 @@
 """ X509CRL is a class for managing X509CRL
 This class is used to manage the revoked certificates....
 """
-import stat
-import os
-import tempfile
 import re
 import datetime
 
 import M2Crypto
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.File import secureOpenForWrite
 
 # pylint: disable=broad-except
 
@@ -72,17 +70,10 @@ class X509CRL:
         if not self.__loadedCert:
             return S_ERROR("No certificate loaded")
         try:
-            if not filename:
-                fd, filename = tempfile.mkstemp()
-                os.close(fd)
-            with open(filename, "w", encoding="ascii") as fd:
+            with secureOpenForWrite(filename) as fd:
                 fd.write(self.__pemData)
         except Exception as e:
             return S_ERROR(DErrno.EWF, f"{filename}: {repr(e).replace(',)', ')')}")
-        try:
-            os.chmod(filename, stat.S_IRUSR | stat.S_IWUSR)
-        except Exception as e:
-            return S_ERROR(DErrno.ESPF, f"{filename}: {repr(e).replace(',)', ')')}")
         return S_OK(filename)
 
     def hasExpired(self):

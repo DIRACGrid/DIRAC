@@ -11,6 +11,9 @@ import glob
 import sys
 import re
 import errno
+import stat
+import tempfile
+from contextlib import contextmanager
 
 # Translation table of a given unit to Bytes
 # I know, it should be kB...
@@ -251,6 +254,27 @@ def convertSizeUnits(size, srcUnit, dstUnit):
     # KeyError: srcUnit or dstUnit are not in the conversion list
     except (TypeError, ValueError, KeyError):
         return -sys.maxsize
+
+
+@contextmanager
+def secureOpenForWrite(filename=None, *, text=True):
+    """Securely open a file for writing.
+
+    If filename is not provided, a file is created in tempfile.gettempdir().
+    The file always created with mode 600.
+
+    :param string filename: name of file to be opened
+    """
+    if filename:
+        fd = os.open(
+            path=filename,
+            flags=os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
+            mode=stat.S_IRUSR | stat.S_IWUSR,
+        )
+    else:
+        fd, filename = tempfile.mkstemp(text=text)
+    with open(fd, "w" if text else "wb", encoding="ascii") as fd:
+        yield fd
 
 
 if __name__ == "__main__":
