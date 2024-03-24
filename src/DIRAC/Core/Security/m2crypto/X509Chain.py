@@ -8,9 +8,6 @@ here: https://wiki.egi.eu/wiki/Usage_of_the_per_user_sub_proxy_in_EGI
 
 """
 import copy
-import os
-import stat
-import tempfile
 import hashlib
 
 import re
@@ -21,6 +18,7 @@ import M2Crypto
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.Decorators import executeOnlyIf, deprecated
+from DIRAC.Core.Utilities.File import secureOpenForWrite
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security.m2crypto import PROXY_OID, LIMITED_PROXY_OID, DIRAC_GROUP_OID, DEFAULT_PROXY_STRENGTH
 from DIRAC.Core.Security.m2crypto.X509Certificate import X509Certificate
@@ -492,14 +490,10 @@ class X509Chain:
         if not retVal["OK"]:
             return retVal
         try:
-            with open(filePath, "w") as fd:
+            with secureOpenForWrite(filePath) as fd:
                 fd.write(retVal["Value"])
         except Exception as e:
             return S_ERROR(DErrno.EWF, f"{filePath} :{repr(e).replace(',)', ')')}")
-        try:
-            os.chmod(filePath, stat.S_IRUSR | stat.S_IWUSR)
-        except Exception as e:
-            return S_ERROR(DErrno.ESPF, f"{filePath} :{repr(e).replace(',)', ')')}")
         return S_OK()
 
     @needCertList
@@ -880,17 +874,10 @@ class X509Chain:
             return retVal
         pemData = retVal["Value"]
         try:
-            if not filename:
-                fd, filename = tempfile.mkstemp()
-                os.close(fd)
-            with open(filename, "w") as fp:
-                fp.write(pemData)
+            with secureOpenForWrite(filename) as fh:
+                fh.write(pemData)
         except Exception as e:
             return S_ERROR(DErrno.EWF, f"{filename} :{repr(e).replace(',)', ')')}")
-        try:
-            os.chmod(filename, stat.S_IRUSR | stat.S_IWUSR)
-        except Exception as e:
-            return S_ERROR(DErrno.ESPF, f"{filename} :{repr(e).replace(',)', ')')}")
         return S_OK(filename)
 
     @needCertList

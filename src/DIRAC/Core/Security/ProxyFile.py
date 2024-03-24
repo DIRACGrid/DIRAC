@@ -6,6 +6,7 @@ import tempfile
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.File import secureOpenForWrite
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security.Locations import getProxyLocation
 
@@ -17,22 +18,11 @@ def writeToProxyFile(proxyContents, fileName=False):
       - proxyContents : string object to dump to file
       - fileName : filename to dump to
     """
-    if not fileName:
-        try:
-            fd, proxyLocation = tempfile.mkstemp()
-            os.close(fd)
-        except OSError:
-            return S_ERROR(DErrno.ECTMPF)
-        fileName = proxyLocation
     try:
-        with open(fileName, "w") as fd:
+        with secureOpenForWrite(fileName) as fd:
             fd.write(proxyContents)
     except Exception as e:
         return S_ERROR(DErrno.EWF, f" {fileName}: {repr(e).replace(',)', ')')}")
-    try:
-        os.chmod(fileName, stat.S_IRUSR | stat.S_IWUSR)
-    except Exception as e:
-        return S_ERROR(DErrno.ESPF, f"{fileName}: {repr(e).replace(',)', ')')}")
     return S_OK(fileName)
 
 
