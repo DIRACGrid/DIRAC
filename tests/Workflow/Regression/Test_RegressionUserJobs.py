@@ -1,23 +1,20 @@
 """ This module will run some job descriptions defined with an older version of DIRAC
 """
 # pylint: disable=protected-access, wrong-import-position, missing-docstring
-import unittest
 import os
-import sys
 import shutil
+import sys
+import unittest
 
 import DIRAC
 
 DIRAC.initialize(extra_config_files=["pilot.cfg"])  # Initialize configuration
 
 from DIRAC import gLogger, rootPath
-
-from DIRAC.tests.Utilities.utils import find_all
-
-from DIRAC.tests.Utilities.IntegrationTest import IntegrationTest
-
-from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Interfaces.API.Dirac import Dirac
+from DIRAC.Interfaces.API.Job import Job
+from DIRAC.tests.Utilities.IntegrationTest import IntegrationTest
+from DIRAC.tests.Utilities.utils import find_all
 
 
 class RegressionTestCase(IntegrationTest):
@@ -33,6 +30,8 @@ class RegressionTestCase(IntegrationTest):
             exeScriptLoc = find_all("exe-script.py", rootPath, "/DIRAC/tests/Workflow")[0]
             helloWorldLoc = find_all("helloWorld.py", rootPath, "/DIRAC/tests/Workflow")[0]
         except IndexError:  # we are in Jenkins
+            if "GITHUB_WORKSPACE" in os.environ:
+                os.environ["WORKSPACE"] = os.environ["GITHUB_WORKSPACE"]
             exeScriptLoc = find_all("exe-script.py", os.environ["WORKSPACE"], "/DIRAC/tests/Workflow")[0]
             helloWorldLoc = find_all("helloWorld.py", os.environ["WORKSPACE"], "/DIRAC/tests/Workflow")[0]
 
@@ -42,6 +41,8 @@ class RegressionTestCase(IntegrationTest):
         try:
             helloWorldXMLLocation = find_all("helloWorld.xml", rootPath, "/DIRAC/tests/Workflow/Regression")[0]
         except IndexError:  # we are in Jenkins
+            if "GITHUB_WORKSPACE" in os.environ:
+                os.environ["WORKSPACE"] = os.environ["GITHUB_WORKSPACE"]
             helloWorldXMLLocation = find_all(
                 "helloWorld.xml", os.environ["WORKSPACE"], "/DIRAC/tests/Workflow/Regression"
             )[0]
@@ -52,6 +53,8 @@ class RegressionTestCase(IntegrationTest):
         try:
             helloWorldXMLFewMoreLocation = find_all("helloWorld.xml", rootPath, "/DIRAC/tests/Workflow/Regression")[0]
         except IndexError:  # we are in Jenkins
+            if "GITHUB_WORKSPACE" in os.environ:
+                os.environ["WORKSPACE"] = os.environ["GITHUB_WORKSPACE"]
             helloWorldXMLFewMoreLocation = find_all(
                 "helloWorld.xml", os.environ["WORKSPACE"], "/DIRAC/tests/Workflow/Regression"
             )[0]

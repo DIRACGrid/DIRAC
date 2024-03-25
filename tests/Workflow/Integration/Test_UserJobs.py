@@ -34,7 +34,9 @@ class UserJobTestCase(IntegrationTest):
             self.helloWorld = find_all("helloWorld.py", rootPath, integration_test_dir)[0]
             self.mpExe = find_all("mpTest.py", rootPath, "/DIRAC/tests/Utilities")[0]
             self.mpExeFlex = find_all("mpTest-flexible.py", rootPath, "/DIRAC/tests/Utilities")[0]
-        except IndexError:  # we are in Jenkins
+        except IndexError:
+            if "GITHUB_WORKSPACE" in os.environ:
+                os.environ["WORKSPACE"] = os.environ["GITHUB_WORKSPACE"]
             self.exeScriptLocation = find_all("exe-script.py", os.environ["WORKSPACE"], integration_test_dir)[0]
             self.helloWorld = find_all("helloWorld.py", os.environ["WORKSPACE"], integration_test_dir)[0]
             self.mpExe = find_all("mpTest.py", os.environ["WORKSPACE"], "/DIRAC/tests/Utilities")[0]
@@ -51,8 +53,9 @@ class HelloWorldSuccess(UserJobTestCase):
         j.setExecutable(self.exeScriptLocation)
         j.setLogLevel("DEBUG")
         try:
-            # This is the standard location in Jenkins
-            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            if "GITHUB_WORKSPACE" in os.environ:
+                os.environ["WORKSPACE"] = os.environ["GITHUB_WORKSPACE"]
+            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             j.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         j.setConfigArgs("pilot.cfg")
@@ -90,8 +93,9 @@ class HelloWorldPlusSuccess(UserJobTestCase):
         job.setCPUTime(12345)
         job.setLogLevel("DEBUG")
         try:
-            # This is the standard location in Jenkins
-            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            if "GITHUB_WORKSPACE" in os.environ:
+                os.environ["WORKSPACE"] = os.environ["GITHUB_WORKSPACE"]
+            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             job.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         job.setConfigArgs("pilot.cfg")
@@ -125,8 +129,9 @@ class HelloWorldPlusSuccess(UserJobTestCase):
         job.setCPUTime(12345)
         job.setLogLevel("DEBUG")
         try:
-            # This is the standard location in Jenkins
-            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            if "GITHUB_WORKSPACE" in os.environ:
+                os.environ["WORKSPACE"] = os.environ["GITHUB_WORKSPACE"]
+            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             job.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         job.setConfigArgs("pilot.cfg")
@@ -145,8 +150,9 @@ class LSSuccess(UserJobTestCase):
         job.setExecutable("/bin/ls", "-l")
         job.setLogLevel("DEBUG")
         try:
-            # This is the standard location in Jenkins
-            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            if "GITHUB_WORKSPACE" in os.environ:
+                os.environ["WORKSPACE"] = os.environ["GITHUB_WORKSPACE"]
+            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             job.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         job.setConfigArgs("pilot.cfg")
@@ -166,8 +172,9 @@ class MPSuccess(UserJobTestCase):
         j.setNumberOfProcessors(4)  # This requires a fixed number of processors
         j.setLogLevel("DEBUG")
         try:
-            # This is the standard location in Jenkins
-            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            if "GITHUB_WORKSPACE" in os.environ:
+                os.environ["WORKSPACE"] = os.environ["GITHUB_WORKSPACE"]
+            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             j.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         j.setConfigArgs("pilot.cfg")
@@ -193,8 +200,9 @@ class MPSuccessMinMax(UserJobTestCase):
         j.setNumberOfProcessors(minNumberOfProcessors=2)  # This requires at least 2 processors
         j.setLogLevel("DEBUG")
         try:
-            # This is the standard location in Jenkins
-            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            if "GITHUB_WORKSPACE" in os.environ:
+                os.environ["WORKSPACE"] = os.environ["GITHUB_WORKSPACE"]
+            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             j.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         j.setConfigArgs("pilot.cfg")
@@ -212,8 +220,9 @@ class MPSuccessMinMax(UserJobTestCase):
         j.setNumberOfProcessors(minNumberOfProcessors=2, maxNumberOfProcessors=4)  # This requires 2 to 4 processors
         j.setLogLevel("DEBUG")
         try:
-            # This is the standard location in Jenkins
-            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            if "GITHUB_WORKSPACE" in os.environ:
+                os.environ["WORKSPACE"] = os.environ["GITHUB_WORKSPACE"]
+            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             j.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         j.setConfigArgs("pilot.cfg")
@@ -231,8 +240,9 @@ class MPSuccessMinMax(UserJobTestCase):
         j.setNumberOfProcessors(minNumberOfProcessors=1)  # This requires 1 to infinite processors
         j.setLogLevel("DEBUG")
         try:
-            # This is the standard location in Jenkins
-            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            if "GITHUB_WORKSPACE" in os.environ:
+                os.environ["WORKSPACE"] = os.environ["GITHUB_WORKSPACE"]
+            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             j.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         j.setConfigArgs("pilot.cfg")
