@@ -196,6 +196,8 @@ def prepare_environment(
     release_var: Optional[str] = None,
 ):
     """Prepare the local environment for installing DIRAC."""
+    if extra_module is None:
+        extra_module = []
     _check_containers_running(is_up=False)
     if editable is None:
         editable = sys.stdout.isatty()
