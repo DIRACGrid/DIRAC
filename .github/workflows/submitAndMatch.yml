@@ -1,0 +1,60 @@
+name: submitAndMatch
+
+on:
+  push:
+    branches:
+      - 'integration'
+      - 'rel-v8r0'
+
+jobs:
+  submitAndMatch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cvmfs-contrib/github-action-cvmfs@v3
+
+      - name: Test CernVM-FS
+        run: ls /cvmfs/dirac.egi.eu
+
+      - name: Checkout Pilot repo
+        uses: actions/checkout@v4
+        with:
+          repository: DIRACGrid/Pilot
+          path: Pilot
+
+      - name: Retrieve the secret and decode
+        env:
+          HOSTCERT_BASE64: ${{ secrets.HOSTCERT_BASE64 }}
+          HOSTKEY_BASE64: ${{ secrets.HOSTKEY_BASE64 }}
+        run: |
+          mkdir -p Pilot/Pilot/etc/grid-security
+          echo "$HOSTCERT_BASE64" | base64 --decode > Pilot/Pilot/etc/grid-security/hostcert.pem
+          echo "$HOSTKEY_BASE64" | base64 --decode > Pilot/Pilot/etc/grid-security/hostkey.pem
+          chmod 440 Pilot/Pilot/etc/grid-security/hostcert.pem
+          chmod 400 Pilot/Pilot/etc/grid-security/hostkey.pem
+
+      - name: Install DIRAC client and submit a job
+        run: |
+          mkdir client
+          cd client
+          bash /cvmfs/dirac.egi.eu/installSource/DIRACOS-Linux-x86_64.sh 2>&1
+          source diracos/diracosrc
+          pip install ${GITHUB_WORKSPACE}
+          dirac-configure -S "DIRAC-Certification" -C "https://lbcertifdirac70.cern.ch:9135/Configuration/Server" --UseServerCertificate -o /DIRAC/Security/CertFile=${GITHUB_WORKSPACE}/Pilot/Pilot/etc/grid-security/hostcert.pem -o /DIRAC/Security/KeyFile=${GITHUB_WORKSPACE}/Pilot/Pilot/etc/grid-security/hostkey.pem
+          dirac-admin-get-proxy aboyer dteam_user -o /DIRAC/Security/UseServerCertificate=True --out="/tmp/x509up_u${UID}" -ddd
+          echo -e '[\n    Arguments = "Hello World";\n    Executable = "echo";\n    Site = "DIRAC.CI.org";' > test.jdl
+          echo "    JobName = \"${GITHUB_JOB}_$(date +"%Y-%m-%d_%T" | sed 's/://g')\"" >> test.jdl
+          echo "]" >> test.jdl
+          dirac-wms-job-submit test.jdl
+
+      - name: Run pilot
+        run: |
+          cd Pilot/Pilot
+          cp ../../tests/Integration/pilot.json pilot.json
+          sed -i "s#VAR_CS#https://lbcertifdirac70.cern.ch:9135/Configuration/Server#g" pilot.json
+          sed -i "s#VAR_USERDN#/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=alboyer/CN=819281/CN=Alexandre Franck Boyer#g" pilot.json
+          g_job="${{ github.ref }}${GITHUB_JOB//-/}"
+          pilotUUID="${g_job//_/}""$(shuf -i 2000-65000 -n 1)"
+          pilotUUID=$(echo $pilotUUID | rev | cut -c 1-32 | rev)
+          python dirac-pilot.py --modules ${GITHUB_WORKSPACE} -M 1 -S DIRAC-Certification -N ci-full.github.com -Q queue_not_important -n DIRAC.CI.org --cert --certLocation=${GITHUB_WORKSPACE}/Pilot/Pilot/etc/grid-security --wnVO=dteam --pilotUUID="${pilotUUID}" --debug
