@@ -334,12 +334,15 @@ def prepare_environment(
         # We use Popen because we don't want to wait for this command to finish.
         # It is going to start all the diracx containers, including one which waits
         # for the DIRAC installation to be over.
+        subStdout = open(docker_compose_fn_final / "stdout", "w")
+        subStderr = open(docker_compose_fn_final / "stderr", "w")
+
         subprocess.Popen(
             ["docker", "compose", "-f", docker_compose_fn_final / "docker-compose.yml", "up", "-d", "diracx"],
             env=docker_compose_env,
             stdin=None,
-            stdout=None,
-            stderr=None,
+            stdout=subStdout,
+            stderr=subStderr,
             close_fds=True,
         )
 
