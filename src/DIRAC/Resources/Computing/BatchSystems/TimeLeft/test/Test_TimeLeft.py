@@ -1,13 +1,40 @@
 """ Test TimeLeft utility
 """
-from DIRAC import S_OK
+from diraccfg import CFG
+import pytest
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client import ConfigurationData
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 
 
-def test_cpuPowerNotDefined(mocker):
-    """Test cpuPower not defined"""
-    mocker.patch("DIRAC.gConfig.getSections", return_value={"Type": "SLURM", "JobID": "12345", "Parameters": {}})
+CONFIG = """
+LocalSite {
+    BatchSystemInfo
+    {
+        Type = SLURM
+        JobID = 12345
+        Parameters {
+            BinaryPath = Unknown
+            Host = Unknown
+            InfoPath = Unknown
+            Queue = Unknown
+        }
+    }
+}
+"""
 
+
+@pytest.fixture
+def config():
+    """Load a fake configuration"""
+    ConfigurationData.localCFG = CFG()
+    cfg = CFG()
+    cfg.loadFromBuffer(CONFIG)
+    gConfig.loadCFG(cfg)
+
+
+def test_cpuPowerNotDefined(config):
+    """Test cpuPower not defined"""
     tl = TimeLeft()
     res = tl.getTimeLeft()
     assert not res["OK"]
@@ -16,7 +43,7 @@ def test_cpuPowerNotDefined(mocker):
 
 def test_batchSystemNotDefined(mocker):
     """Test batch system not defined"""
-    mocker.patch("DIRAC.gConfig.getSections", return_value={})
+    mocker.patch("DIRAC.gConfig.getOptionsDictRecursively", return_value=S_ERROR({}))
 
     tl = TimeLeft()
     tl.cpuPower = 10
@@ -31,7 +58,6 @@ def test_getScaledCPU(mocker):
         "DIRAC.Resources.Computing.BatchSystems.TimeLeft.SLURMResourceUsage.runCommand",
         return_value=S_OK("19283,9000,10,900,30:00"),
     )
-    mocker.patch("DIRAC.gConfig.getSections", return_value={"Type": "SLURM", "JobID": "12345", "Parameters": {}})
 
     tl = TimeLeft()
 
@@ -45,13 +71,12 @@ def test_getScaledCPU(mocker):
     assert res == 45000
 
 
-def test_getTimeLeft(mocker):
+def test_getTimeLeft(mocker, config):
     """Test getTimeLeft()"""
     mocker.patch(
         "DIRAC.Resources.Computing.BatchSystems.TimeLeft.SLURMResourceUsage.runCommand",
         return_value=S_OK("19283,9000,10,900,30:00"),
     )
-    mocker.patch("DIRAC.gConfig.getSections", return_value={"Type": "SLURM", "JobID": "12345", "Parameters": {}})
 
     tl = TimeLeft()
 

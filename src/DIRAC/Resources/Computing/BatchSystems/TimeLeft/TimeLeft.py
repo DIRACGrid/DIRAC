@@ -132,10 +132,16 @@ class TimeLeft:
 
     def _getBatchSystemPlugin(self):
         """Using the name of the batch system plugin, will return an instance of the plugin class."""
-        batchSystemInfo = gConfig.getSections("/LocalSite/BatchSystemInfo")
-        type = batchSystemInfo.get("Type")
-        jobID = batchSystemInfo.get("JobID")
-        parameters = batchSystemInfo.get("Parameters")
+        result = gConfig.getOptionsDictRecursively("/LocalSite/BatchSystemInfo")
+        missingConfig = False
+        if not result["OK"]:
+            missingConfig = True
+
+        if not missingConfig:
+            batchSystemInfo = result["Value"]
+            type = batchSystemInfo.get("Type")
+            jobID = batchSystemInfo.get("JobID")
+            parameters = batchSystemInfo.get("Parameters")
 
         if not type or type == "Unknown":
             self.log.warn(f"Batch system type for site {DIRAC.siteName()} is not currently supported")
