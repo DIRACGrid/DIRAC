@@ -9,7 +9,6 @@
     With this information the utility can calculate in normalized units the
     CPU time remaining for a given slot.
 """
-import os
 import shlex
 
 import DIRAC
@@ -132,7 +131,12 @@ class TimeLeft:
 
     def _getBatchSystemPlugin(self):
         """Using the name of the batch system plugin, will return an instance of the plugin class."""
-        batchSystemInfo = gConfig.getSections("/LocalSite/BatchSystemInfo")
+        result = gConfig.getOptionsDictRecursively("/LocalSite/BatchSystemInfo")
+        if not result["OK"]:
+            self.log.warn(f"Batch system information not available")
+            return result
+
+        batchSystemInfo = result["Value"]
         type = batchSystemInfo.get("Type")
         jobID = batchSystemInfo.get("JobID")
         parameters = batchSystemInfo.get("Parameters")
@@ -142,7 +146,6 @@ class TimeLeft:
             return S_ERROR(DErrno.ERESUNK, "Current batch system is not supported")
 
         self.log.debug(f"Creating plugin for {type} batch system")
-
         result = ObjectLoader().loadObject(f"DIRAC.Resources.Computing.BatchSystems.TimeLeft.{type}ResourceUsage")
         if not result["OK"]:
             return result

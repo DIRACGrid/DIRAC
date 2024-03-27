@@ -1,23 +1,86 @@
 """ Test TimeLeft utility
 """
-from DIRAC import S_OK
+from diraccfg import CFG
+import pytest
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client import ConfigurationData
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 
 
-def test_cpuPowerNotDefined(mocker):
-    """Test cpuPower not defined"""
-    mocker.patch("DIRAC.gConfig.getSections", return_value={"Type": "SLURM", "JobID": "12345", "Parameters": {}})
+CONFIG_UNKNOWN = """
+LocalSite {
+    BatchSystemInfo
+    {
+        Type = Unknown
+        JobID = 12345
+        Parameters {
+            BinaryPath = Unknown
+            Host = Unknown
+            InfoPath = Unknown
+            Queue = Unknown
+        }
+    }
+}
+"""
 
+CONFIG_SLURM = """
+LocalSite {
+    BatchSystemInfo
+    {
+        Type = SLURM
+        JobID = 12345
+        Parameters {
+            BinaryPath = Unknown
+            Host = Unknown
+            InfoPath = Unknown
+            Queue = Unknown
+        }
+    }
+}
+"""
+
+
+@pytest.fixture
+def configUnknown():
+    """Load a fake configuration"""
+    ConfigurationData.localCFG = CFG()
+    cfg = CFG()
+    cfg.loadFromBuffer(CONFIG_UNKNOWN)
+    gConfig.loadCFG(cfg)
+
+
+@pytest.fixture
+def configSlurm():
+    """Load a fake configuration"""
+    ConfigurationData.localCFG = CFG()
+    cfg = CFG()
+    cfg.loadFromBuffer(CONFIG_SLURM)
+    gConfig.loadCFG(cfg)
+
+
+def test_cpuPowerNotDefined(configSlurm):
+    """Test cpuPower not defined"""
     tl = TimeLeft()
     res = tl.getTimeLeft()
     assert not res["OK"]
     assert "/LocalSite/CPUNormalizationFactor not defined" in res["Message"]
 
 
-def test_batchSystemNotDefined(mocker):
-    """Test batch system not defined"""
-    mocker.patch("DIRAC.gConfig.getSections", return_value={})
+def test_batchSystemInfoNotDefined(mocker):
+    """Test batch system info not defined"""
+    mocker.patch(
+        "DIRAC.gConfig.getOptionsDictRecursively", return_value=S_ERROR("Path does not exist or it's not a section")
+    )
 
+    tl = TimeLeft()
+    tl.cpuPower = 10
+    res = tl.getTimeLeft()
+    assert not res["OK"]
+    assert "Path does not exist or it's not a section" in res["Message"]
+
+
+def test_batchSystemTypeNotDefined(mocker, configUnknown):
+    """Test batch system type not defined"""
     tl = TimeLeft()
     tl.cpuPower = 10
     res = tl.getTimeLeft()
@@ -25,13 +88,12 @@ def test_batchSystemNotDefined(mocker):
     assert "Current batch system is not supported" in res["Message"]
 
 
-def test_getScaledCPU(mocker):
+def test_getScaledCPU(mocker, configSlurm):
     """Test getScaledCPU()"""
     mocker.patch(
         "DIRAC.Resources.Computing.BatchSystems.TimeLeft.SLURMResourceUsage.runCommand",
         return_value=S_OK("19283,9000,10,900,30:00"),
     )
-    mocker.patch("DIRAC.gConfig.getSections", return_value={"Type": "SLURM", "JobID": "12345", "Parameters": {}})
 
     tl = TimeLeft()
 
@@ -45,13 +107,12 @@ def test_getScaledCPU(mocker):
     assert res == 45000
 
 
-def test_getTimeLeft(mocker):
+def test_getTimeLeft(mocker, configSlurm):
     """Test getTimeLeft()"""
     mocker.patch(
         "DIRAC.Resources.Computing.BatchSystems.TimeLeft.SLURMResourceUsage.runCommand",
         return_value=S_OK("19283,9000,10,900,30:00"),
     )
-    mocker.patch("DIRAC.gConfig.getSections", return_value={"Type": "SLURM", "JobID": "12345", "Parameters": {}})
 
     tl = TimeLeft()
 
