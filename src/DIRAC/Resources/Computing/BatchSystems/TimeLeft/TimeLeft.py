@@ -132,15 +132,21 @@ class TimeLeft:
 
     def _getBatchSystemPlugin(self):
         """Using the name of the batch system plugin, will return an instance of the plugin class."""
-        batchSystemInfo = gConfig.getSections("/LocalSite/BatchSystemInfo")
-        type = batchSystemInfo.get("Type")
-        jobID = batchSystemInfo.get("JobID")
-        parameters = batchSystemInfo.get("Parameters")
+        result = gConfig.getOptionsDictRecursively("/LocalSite/BatchSystemInfo")
+        missingConfig = False
+        if not result["OK"]:
+            missingConfig = True
+
+        if not missingConfig:
+            batchSystemInfo = result["Value"]
+            type = batchSystemInfo.get("Type")
+            jobID = batchSystemInfo.get("JobID")
+            parameters = batchSystemInfo.get("Parameters")
 
         ###########################################################################################
         # TODO: remove the following block in v9.0
         # This is a temporary fix for the case where the batch system is not set in the configuration
-        if not type:
+        else:
             self.log.warn(
                 "Batch system info not set in local configuration: trying to guess from environment variables."
             )
