@@ -127,7 +127,11 @@ class RemoteRunner:
             return result
         self.log.info("The output has been retrieved and declared complete")
 
-        # Clean job in the remote resource
+        # Clean up the job (local files not needed anymore)
+        os.remove(self.checkSumOutput)
+        os.remove(self.executable)
+
+        # Remove the job from the CE
         if cleanRemoteJob:
             if not (result := workloadCE.cleanJob(jobID))["OK"]:
                 self.log.warn("Failed to clean the output remotely", result["Message"])

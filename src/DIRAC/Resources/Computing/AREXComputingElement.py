@@ -898,8 +898,10 @@ class AREXComputingElement(ARCComputingElement):
             if remoteOutput == f"{stamp}.out":
                 with open(localOutput) as f:
                     stdout = f.read()
+                os.unlink(localOutput)
             if remoteOutput == f"{stamp}.err":
                 with open(localOutput) as f:
                     stderr = f.read()
+                os.unlink(localOutput)
 
         return S_OK((stdout, stderr))
