@@ -211,7 +211,7 @@ class JobCleaningAgent(AgentModule):
 
         failedJobs = result["Value"][JobStatus.FAILED]
         for job in failedJobs:
-            jobList.pop(jobList.index(job))
+            jobList.pop(jobList.index(str(job)))
         if not jobList:
             return S_OK()
 
