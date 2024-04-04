@@ -15,6 +15,7 @@ dependencies:
   - cachetools
   - certifi
   - cmreshandler >1.0.0b4
+  - cwltool
   - db12
   - elasticsearch <7.14
   - elasticsearch-dsl
