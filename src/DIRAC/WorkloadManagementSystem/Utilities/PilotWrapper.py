@@ -34,6 +34,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import io
 import stat
 import tempfile
 import sys
@@ -130,7 +131,8 @@ def pilotWrapperScript(
     for pfName, encodedPf in pilotFilesCompressedEncodedDict.items():
         compressedString += """
 try:
-  with open('%(pfName)s', 'wb') as fd:
+  fd = os.open('%(pfName)s', os.O_WRONLY | os.O_CREAT | os.O_TRUNC, stat.S_IRUSR | stat.S_IWUSR)
+  with io.open(fd, 'wb') as fd:
     if sys.version_info < (3,):
       fd.write(bz2.decompress(base64.b64decode(\"\"\"%(encodedPf)s\"\"\")))
     else:
