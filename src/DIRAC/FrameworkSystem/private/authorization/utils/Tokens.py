@@ -1,13 +1,13 @@
 import os
 import re
 import jwt
-import stat
 import time
 import json
 import datetime
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.File import secureOpenForWrite
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 
@@ -83,14 +83,10 @@ def writeToTokenFile(tokenContents, fileName):
     """
     location = getTokenFileLocation(fileName)
     try:
-        with open(location, "w") as fd:
+        with secureOpenForWrite(location) as fd:
             fd.write(tokenContents)
     except Exception as e:
         return S_ERROR(DErrno.EWF, f" {location}: {repr(e)}")
-    try:
-        os.chmod(location, stat.S_IRUSR | stat.S_IWUSR)
-    except Exception as e:
-        return S_ERROR(DErrno.ESPF, f"{location}: {repr(e)}")
     return S_OK(location)
 
 
