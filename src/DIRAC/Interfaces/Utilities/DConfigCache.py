@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 import os
 import re
-import stat
 import time
 import pickle
 import tempfile
 
 from DIRAC.Core.Base.Script import Script
+from DIRAC.Core.Utilities.File import secureOpenForWrite
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 
@@ -67,8 +67,7 @@ class ConfigCache:
         if self.newConfig:
             self.__cleanCacheDirectory()
 
-            with open(self.configCacheName, "wb") as fcache:
-                os.chmod(self.configCacheName, stat.S_IRUSR | stat.S_IWUSR)
+            with secureOpenForWrite(self.configCacheName, text=False) as fcache:
                 pickle.dump(gConfigurationData.mergedCFG, fcache)
         else:
             try:
