@@ -132,15 +132,15 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     needs: deploy-pypi
     steps:
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
-    - uses: conda-incubator/setup-miniconda@master
+      - uses: conda-incubator/setup-miniconda@master
         with:
           miniforge-variant: Mambaforge
           use-mamba: true
           mamba-version: "*"
           channels: conda-forge,defaults
           channel-priority: true
+      - name: setup tmate session
+        uses: mxschmitt/action-tmate@v3
       - name: Deploy on CVMFS
         env:
           CVMFS_PROXY_BASE64: ${{ secrets.CVMFS_PROXY_BASE64 }}
