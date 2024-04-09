@@ -274,7 +274,7 @@ def secureOpenForWrite(filename=None, *, text=True):
     else:
         fd, filename = tempfile.mkstemp(text=text)
     with open(fd, "w" if text else "wb", encoding="ascii") as fd:
-        yield fd
+        yield fd, filename
 
 
 if __name__ == "__main__":

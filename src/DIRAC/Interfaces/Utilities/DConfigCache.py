@@ -63,7 +63,7 @@ class ConfigCache:
         if self.newConfig:
             self.__cleanCacheDirectory()
 
-            with secureOpenForWrite(self.configCacheName, text=False) as fcache:
+            with secureOpenForWrite(self.configCacheName, text=False) as (fcache, self.configCacheName):
                 pickle.dump(gConfigurationData.mergedCFG, fcache)
         else:
             try:

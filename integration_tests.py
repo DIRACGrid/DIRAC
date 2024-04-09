@@ -210,7 +210,10 @@ def prepare_environment(
     modules = DEFAULT_MODULES | dict(f.split("=", 1) for f in extra_module)
     modules = {k: Path(v).absolute() for k, v in modules.items()}
 
-    flags = dict(f.split("=", 1) for f in flags)
+    if not flags:
+        flags = {}
+    else:
+        flags = dict(f.split("=", 1) for f in flags)
     docker_compose_env = _make_env(flags)
     server_flags = {}
     client_flags = {}
