@@ -179,8 +179,8 @@ def destroy():
     typer.secho("Shutting down and removing containers", err=True, fg=c.GREEN)
     with _gen_docker_compose(DEFAULT_MODULES) as docker_compose_fn:
         os.execvpe(
-            "docker-compose",
-            ["docker-compose", "-f", docker_compose_fn, "down", "--remove-orphans", "-t", "0"],
+            "docker",
+            ["docker", "compose", "-f", docker_compose_fn, "down", "--remove-orphans", "-t", "0"],
             _make_env({}),
         )
 
@@ -207,7 +207,10 @@ def prepare_environment(
     modules = DEFAULT_MODULES | dict(f.split("=", 1) for f in extra_module)
     modules = {k: Path(v).absolute() for k, v in modules.items()}
 
-    flags = dict(f.split("=", 1) for f in flags)
+    if not flags:
+        flags = {}
+    else:
+        flags = dict(f.split("=", 1) for f in flags)
     docker_compose_env = _make_env(flags)
     server_flags = {}
     client_flags = {}
@@ -225,7 +228,7 @@ def prepare_environment(
     typer.secho("Running docker-compose to create containers", fg=c.GREEN)
     with _gen_docker_compose(modules) as docker_compose_fn:
         subprocess.run(
-            ["docker-compose", "-f", docker_compose_fn, "up", "-d"],
+            ["docker", "compose", "-f", docker_compose_fn, "up", "-d"],
             check=True,
             env=docker_compose_env,
         )
@@ -535,7 +538,7 @@ def _gen_docker_compose(modules):
 def _check_containers_running(*, is_up=True):
     with _gen_docker_compose(DEFAULT_MODULES) as docker_compose_fn:
         running_containers = subprocess.run(
-            ["docker-compose", "-f", docker_compose_fn, "ps", "-q", "-a"],
+            ["docker", "compose", "-f", docker_compose_fn, "ps", "-q", "-a"],
             stdout=subprocess.PIPE,
             env=_make_env({}),
             check=True,

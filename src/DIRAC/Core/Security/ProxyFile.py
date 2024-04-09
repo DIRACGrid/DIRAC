@@ -1,7 +1,6 @@
 """ Collection of utilities for dealing with security files (i.e. proxy files)
 """
 import os
-import stat
 import tempfile
 
 from DIRAC import S_OK, S_ERROR
@@ -19,7 +18,7 @@ def writeToProxyFile(proxyContents, fileName=False):
       - fileName : filename to dump to
     """
     try:
-        with secureOpenForWrite(fileName) as fd:
+        with secureOpenForWrite(fileName) as (fd, fileName):
             fd.write(proxyContents)
     except Exception as e:
         return S_ERROR(DErrno.EWF, f" {fileName}: {repr(e).replace(',)', ')')}")

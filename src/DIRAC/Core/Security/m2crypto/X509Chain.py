@@ -490,7 +490,7 @@ class X509Chain:
         if not retVal["OK"]:
             return retVal
         try:
-            with secureOpenForWrite(filePath) as fd:
+            with secureOpenForWrite(filePath) as (fd, _filename):
                 fd.write(retVal["Value"])
         except Exception as e:
             return S_ERROR(DErrno.EWF, f"{filePath} :{repr(e).replace(',)', ')')}")
@@ -874,7 +874,7 @@ class X509Chain:
             return retVal
         pemData = retVal["Value"]
         try:
-            with secureOpenForWrite(filename) as fh:
+            with secureOpenForWrite(filename) as (fh, filename):
                 fh.write(pemData)
         except Exception as e:
             return S_ERROR(DErrno.EWF, f"{filename} :{repr(e).replace(',)', ')')}")
