@@ -1,3 +1,31 @@
+[v8.0.41]
+
+*WorkloadManagement
+
+FIX: (#7550) JobCleaningAgent: fix exception in deleteJobsByStatus caused by mismatching job ID types
+CHANGE: (#7549) Remove files from the RemoteRunner execution
+
+*environment.yml
+
+NEW: (#7542) add cwltool
+
+*Resources
+
+FIX: (#7541) TimeLeft utility was unable to get values from the cfg
+FIX: (#7530) support the case where HTCondor kills the jobs
+
+*Test
+
+FIX: (#7537) extra_module default to empty list
+
+*WorkloadManagementSystem
+
+FIX: (#7531) Pilots submitted by SiteDirector won't add the pythonVersion flag
+
+*Core
+
+FIX: (#7523) Depend on packaging
+
 [v8.0.40]
 
 *WorkloadManagementSystem
