@@ -139,10 +139,6 @@ jobs:
           mamba-version: "*"
           channels: conda-forge,defaults
           channel-priority: true
-      - name: setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        env:
-          CVMFS_PROXY_BASE64: ${{ secrets.CVMFS_PROXY_BASE64 }}
       - name: Deploy on CVMFS
         env:
           CVMFS_PROXY_BASE64: ${{ secrets.CVMFS_PROXY_BASE64 }}
@@ -161,3 +157,9 @@ jobs:
           ssh-keyscan cvmfs-upload01.gridpp.rl.ac.uk >> ~/.ssh/known_hosts
 
           gsissh -p 1975 -t cvmfs-upload01.gridpp.rl.ac.uk /home/diracsgm/cvmfs_repo/admin/sync_packages.sh -v
+
+      - name: setup tmate session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
