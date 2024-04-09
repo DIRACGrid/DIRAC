@@ -1,5 +1,3 @@
-version: '3.4'
-
 volumes:
   # Volume used to store the config of diracx
   diracx-cs-store:

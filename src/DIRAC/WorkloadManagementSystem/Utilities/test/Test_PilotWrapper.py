@@ -27,7 +27,7 @@ def test_scriptoptions():
         pilotOptions="-c 123 --foo bar",
     )
 
-    assert "with open('dirac_boh.py', 'wb') as fd:" in res
+    assert "os.open('dirac_boh.py', os.O_WRONLY" in res
     assert 'os.environ["someName"]="someValue"' not in res
 
 
@@ -58,7 +58,7 @@ def test_scriptReal():
         pilotOptions="-c 123 --foo bar",
     )
 
-    assert "with open('dirac-pilot.py', 'wb') as fd:" in res
+    assert "os.open('dirac-pilot.py', os.O_WRONLY" in res
     assert 'os.environ["someName"]="someValue"' not in res
 
 

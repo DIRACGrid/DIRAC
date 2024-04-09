@@ -70,7 +70,7 @@ class X509CRL:
         if not self.__loadedCert:
             return S_ERROR("No certificate loaded")
         try:
-            with secureOpenForWrite(filename) as fd:
+            with secureOpenForWrite(filename) as (fd, filename):
                 fd.write(self.__pemData)
         except Exception as e:
             return S_ERROR(DErrno.EWF, f"{filename}: {repr(e).replace(',)', ')')}")
