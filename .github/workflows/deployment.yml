@@ -132,7 +132,9 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     needs: deploy-pypi
     steps:
-      - uses: conda-incubator/setup-miniconda@master
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+    - uses: conda-incubator/setup-miniconda@master
         with:
           miniforge-variant: Mambaforge
           use-mamba: true
