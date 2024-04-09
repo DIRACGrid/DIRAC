@@ -149,15 +149,14 @@ jobs:
         run: |
           source /usr/share/miniconda3/etc/profile.d/conda.sh
 
-          conda create -n CVMFS_deploy openssl=3.0.0 gct
+          conda create -n CVMFS_deploy ca-policy-lcg openssl=3.0.0 gct
           conda activate CVMFS_deploy
 
           echo "$CVMFS_PROXY_BASE64" | base64 --decode > cvmfs.proxy
+          chmod 600 cvmfs.proxy
           export X509_USER_PROXY=cvmfs.proxy
           export PATH=/usr/share/miniconda3/bin:/opt/conda/bin/:/opt/conda/condabin:$PATH
-          type -a openssl
-          openssl version
-          type -a gsissh
+          
           mkdir -p ~/.ssh/ && touch ~/.ssh/known_hosts
           ssh-keyscan cvmfs-upload01.gridpp.rl.ac.uk >> ~/.ssh/known_hosts
 
