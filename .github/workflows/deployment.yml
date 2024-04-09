@@ -158,7 +158,6 @@ jobs:
           type -a openssl
           openssl version
           type -a gsissh
-
           mkdir -p ~/.ssh/ && touch ~/.ssh/known_hosts
           ssh-keyscan cvmfs-upload01.gridpp.rl.ac.uk >> ~/.ssh/known_hosts
 
