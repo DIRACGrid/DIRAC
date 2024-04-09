@@ -129,8 +129,8 @@ jobs:
 
   deploy_CVMFS:
     runs-on: "ubuntu-latest"
-    # if: github.event_name == 'workflow_dispatch'
-    # needs: deploy-pypi
+    if: github.event_name == 'workflow_dispatch'
+    needs: deploy-pypi
     steps:
       - uses: conda-incubator/setup-miniconda@master
         with:
