@@ -68,7 +68,7 @@ class InputDataResolution:
 
     #############################################################################
 
-    def _createCatalog(self, resolvedInputData, catalogName="pool_xml_catalog.xml", pfnType="ROOT_All"):
+    def _createCatalog(self, resolvedInputData, catalogName="pool_xml_catalog.xml", pfnType="ROOT"):
         """By default uses PoolXMLSlice, VO extensions can modify at will"""
 
         resolvedData = resolvedInputData["Successful"]

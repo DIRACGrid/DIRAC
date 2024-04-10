@@ -85,7 +85,7 @@ class PoolFile:
         if pfntype:
             self.pfns.append((pfn, pfntype, sename))
         else:
-            self.pfns.append((pfn, "ROOT_All", sename))
+            self.pfns.append((pfn, "ROOT", sename))
 
     def toXML(self, metadata):
         """Output the contents as an XML string"""
