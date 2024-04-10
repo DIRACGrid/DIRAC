@@ -3,6 +3,7 @@
     This inherits the DIRAC base Client for direct execution of server functionality.
     Client also contain caching of the requested proxy information.
 """
+
 import datetime
 import os
 
@@ -76,7 +77,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         data = retVal["Value"]
         # Update the cache
         for record in data:
-            cacheKey = (record["DN"], record["group"])
+            cacheKey = record["DN"]
             self.__usersCache.add(cacheKey, self.__getSecondsLeftToExpiration(record["expirationtime"]), record)
         return S_OK()
 
@@ -92,14 +93,9 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         :return: S_OK()/S_ERROR()
         """
 
-        # For backward compatibility reasons with versions prior to v7r1
-        # we need to check for proxy with a group
-        # AND for groupless proxy even if not specified
-
-        cacheKeys = ((userDN, userGroup), (userDN, ""))
-        for cacheKey in cacheKeys:
-            if self.__usersCache.exists(cacheKey, validSeconds):
-                return S_OK(True)
+        cacheKeys = (userDN, "")
+        if self.__usersCache.exists(cacheKeys, validSeconds):
+            return S_OK(True)
 
         # Get list of users from the DB with proxys at least 300 seconds
         gLogger.verbose("Updating list of users in proxy management")

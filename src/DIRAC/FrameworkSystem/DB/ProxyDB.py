@@ -5,9 +5,6 @@
     * ProxyDB_Requests -- a delegation requests storage table for a given proxy Chain
     * ProxyDB_CleanProxies -- table for storing proxies in "clean" form, ie without
       the presence of DIRAC and VOMS extensions.
-    * ProxyDB_Proxies -- obsolete table for storing proxies with already added DIRAC
-      group extension, it is present only for backward compatibility and is used only
-      if ProxyDB_CleanProxies does not have the required proxy.
     * ProxyDB_VOMSProxies -- proxy storage table with VOMS extension already added.
     * ProxyDB_Log -- table with logs.
 """
@@ -76,19 +73,6 @@ class ProxyDB(DB):
                     "ExpirationTime": "DATETIME",
                 },
                 "PrimaryKey": ["UserDN", "ProxyProvider"],
-            }
-        # WARN: Now proxies upload only in ProxyDB_CleanProxies, so this table will not be needed in some future
-        if "ProxyDB_Proxies" not in tablesInDB:
-            tablesD["ProxyDB_Proxies"] = {
-                "Fields": {
-                    "UserName": "VARCHAR(64) NOT NULL",
-                    "UserDN": "VARCHAR(255) NOT NULL",
-                    "UserGroup": "VARCHAR(255) NOT NULL",
-                    "Pem": "BLOB",
-                    "ExpirationTime": "DATETIME",
-                    "PersistentFlag": 'ENUM ("True","False") NOT NULL DEFAULT "True"',
-                },
-                "PrimaryKey": ["UserDN", "UserGroup"],
             }
 
         if "ProxyDB_VOMSProxies" not in tablesInDB:
@@ -373,7 +357,7 @@ class ProxyDB(DB):
         :return: S_OK(int)/S_ERROR() -- int is number of purged expired proxies
         """
         purged = 0
-        for tableName in ("ProxyDB_CleanProxies", "ProxyDB_Proxies", "ProxyDB_VOMSProxies"):
+        for tableName in ("ProxyDB_CleanProxies", "ProxyDB_VOMSProxies"):
             cmd = f"DELETE FROM `{tableName}` WHERE ExpirationTime < UTC_TIMESTAMP()"
             result = self._update(cmd)
             if not result["OK"]:
@@ -403,20 +387,10 @@ class ProxyDB(DB):
         except KeyError:
             return S_ERROR("Invalid DN or group or proxy provider")
         errMsgs = []
-        req = "DELETE FROM `%%s` WHERE UserDN=%s" % userDN
-        if proxyProvider or not userGroup:
-            result = self._update(
-                "{} {}".format(
-                    req % "ProxyDB_CleanProxies", proxyProvider and "AND ProxyProvider=%s" % proxyProvider or ""
-                )
-            )
-            if not result["OK"]:
-                errMsgs.append(result["Message"])
-        for table in ["ProxyDB_Proxies", "ProxyDB_VOMSProxies"]:
-            result = self._update(f"{req % table} {userGroup and f'AND UserGroup={userGroup}' or ''}")
-            if not result["OK"]:
-                if result["Message"] not in errMsgs:
-                    errMsgs.append(result["Message"])
+        req = f"DELETE FROM `ProxyDB_CleanProxies` WHERE UserDN={userDN}"
+        result = self._update(req)
+        if not result["OK"]:
+            errMsgs.append(result["Message"])
         if errMsgs:
             return S_ERROR(", ".join(errMsgs))
         return result
@@ -465,8 +439,6 @@ class ProxyDB(DB):
             return S_ERROR("Invalid DN or Group")
         if proxyProvider:
             sTable = "`ProxyDB_CleanProxies`"
-        elif not vomsAttr:
-            sTable = "`ProxyDB_Proxies`"
         else:
             sTable = "`ProxyDB_VOMSProxies`"
         cmd = f"SELECT Pem, TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) from {sTable} "
@@ -753,8 +725,7 @@ class ProxyDB(DB):
         :param int validSecondsLeft: validity period expressed in seconds
         :param str userMask: user name that need to add to search filter
 
-        :return: S_OK(list)/S_ERROR() -- list contain dicts with user name, DN, group
-                                         expiration time, persistent flag
+        :return: S_OK(list)/S_ERROR() -- list contain dicts with user name, DN, expiration time
         """
         data = []
         sqlCond = []
@@ -772,85 +743,22 @@ class ProxyDB(DB):
                 return S_ERROR("Can't escape user name")
             sqlCond.append(f"UserName = {sUserName}")
 
-        for table, fields in [
-            ("ProxyDB_CleanProxies", ("UserName", "UserDN", "ExpirationTime")),
-            ("ProxyDB_Proxies", ("UserName", "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag")),
-        ]:
-            cmd = f"SELECT {', '.join(fields)} FROM `{table}`"
-            if sqlCond:
-                cmd += f" WHERE {' AND '.join(sqlCond)}"
-            retVal = self._query(cmd)
-            if not retVal["OK"]:
-                return retVal
-            for record in retVal["Value"]:
-                record = list(record)
-                if table == "ProxyDB_CleanProxies":
-                    record.insert(2, "")
-                    record.insert(4, False)
-                data.append(
-                    {
-                        "Name": record[0],
-                        "DN": record[1],
-                        "group": record[2],
-                        "expirationtime": record[3],
-                        "persistent": record[4] == "True",
-                    }
-                )
-        return S_OK(data)
-
-    def setPersistencyFlag(self, userDN, userGroup, persistent=True):
-        """Set the proxy PersistentFlag to the flag value
-
-        :param str userDN: user DN
-        :param str userGroup: group name
-        :param boolean persistent: enable persistent flag
-
-        :return: S_OK()/S_ERROR()
-        """
-
-        try:
-            sUserDN = self._escapeString(userDN)["Value"]
-            sUserGroup = self._escapeString(userGroup)["Value"]
-        except KeyError:
-            return S_ERROR("Can't escape something")
-        if persistent:
-            sqlFlag = "True"
-        else:
-            sqlFlag = "False"
-        retVal = self._query(
-            f"SELECT PersistentFlag FROM `ProxyDB_Proxies` WHERE UserDN={sUserDN} AND UserGroup={sUserGroup}"
-        )
-        sqlInsert = True
-        if retVal["OK"]:
-            data = retVal["Value"]
-            if len(data) > 0:
-                sqlInsert = False
-                if data[0][0] == sqlFlag:
-                    return S_OK()
-        if sqlInsert:
-            # If it's not in the db and we're removing the persistency then do nothing
-            if not persistent:
-                return S_OK()
-            result = Registry.getUsernameForDN(userDN)
-            if not result["OK"]:
-                self.log.error("setPersistencyFlag: Can not retrieve username for DN", userDN)
-                return result
-            try:
-                sUserName = self._escapeString(result["Value"])["Value"]
-            except KeyError:
-                return S_ERROR("Can't escape user name")
-            cmd = "INSERT INTO `ProxyDB_Proxies` ( UserName, UserDN, UserGroup, Pem, ExpirationTime, PersistentFlag ) "
-            cmd += f" VALUES( {sUserName}, {sUserDN}, {sUserGroup}, '', UTC_TIMESTAMP(), 'True' )"
-        else:
-            cmd = "UPDATE `ProxyDB_Proxies` SET PersistentFlag='{}' WHERE UserDN={} AND UserGroup={}".format(
-                sqlFlag,
-                sUserDN,
-                sUserGroup,
-            )
-        retVal = self._update(cmd)
+        cmd = "SELECT UserName, UserDN, ExpirationTime FROM `ProxyDB_CleanProxies`"
+        if sqlCond:
+            cmd += f" WHERE {' AND '.join(sqlCond)}"
+        retVal = self._query(cmd)
         if not retVal["OK"]:
             return retVal
-        return S_OK()
+        for record in retVal["Value"]:
+            record = list(record)
+            data.append(
+                {
+                    "Name": record[0],
+                    "DN": record[1],
+                    "expirationtime": record[2],
+                }
+            )
+        return S_OK(data)
 
     def getProxiesContent(self, selDict, sortList, start=0, limit=0):
         """Get the contents of the db, parameters are a filter to the db
@@ -864,58 +772,47 @@ class ProxyDB(DB):
         """
         data = []
         sqlWhere = ["Pem is not NULL"]
-        for table, fields in [
-            ("ProxyDB_CleanProxies", ("UserName", "UserDN", "ExpirationTime")),
-            ("ProxyDB_Proxies", ("UserName", "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag")),
-        ]:
-            cmd = f"SELECT {', '.join(fields)} FROM `{table}`"
-            for field in selDict:
-                if field not in fields:
+        fields = ("UserName", "UserDN", "ExpirationTime")
+        cmd = f"SELECT {', '.join(fields)} FROM `ProxyDB_CleanProxies`"
+        for field in selDict:
+            if field not in fields:
+                continue
+            fVal = selDict[field]
+            if isinstance(fVal, (dict, tuple, list)):
+                sqlWhere.append(
+                    f"{field} in ({', '.join([self._escapeString(str(value))['Value'] for value in fVal])})"
+                )
+            else:
+                sqlWhere.append(f"{field} = {self._escapeString(str(fVal))['Value']}")
+        sqlOrder = []
+        if sortList:
+            for sort in sortList:
+                if len(sort) == 1:
+                    sort = (sort, "DESC")
+                elif len(sort) > 2:
+                    return S_ERROR(f"Invalid sort {sort}")
+                if sort[0] not in fields:
                     continue
-                fVal = selDict[field]
-                if isinstance(fVal, (dict, tuple, list)):
-                    sqlWhere.append(
-                        "{} in ({})".format(
-                            field, ", ".join([self._escapeString(str(value))["Value"] for value in fVal])
-                        )
-                    )
-                else:
-                    sqlWhere.append(f"{field} = {self._escapeString(str(fVal))['Value']}")
-            sqlOrder = []
-            if sortList:
-                for sort in sortList:
-                    if len(sort) == 1:
-                        sort = (sort, "DESC")
-                    elif len(sort) > 2:
-                        return S_ERROR(f"Invalid sort {sort}")
-                    if sort[0] not in fields:
-                        if table == "ProxyDB_CleanProxies" and sort[0] in ["UserGroup", "PersistentFlag"]:
-                            continue
-                        return S_ERROR(f"Invalid sorting field {sort[0]}")
-                    if sort[1].upper() not in ("ASC", "DESC"):
-                        return S_ERROR(f"Invalid sorting order {sort[1]}")
-                    sqlOrder.append(f"{sort[0]} {sort[1]}")
-            if sqlWhere:
-                cmd = f"{cmd} WHERE {' AND '.join(sqlWhere)}"
-            if sqlOrder:
-                cmd = f"{cmd} ORDER BY {', '.join(sqlOrder)}"
-            if limit:
-                try:
-                    start = int(start)
-                    limit = int(limit)
-                except ValueError:
-                    return S_ERROR("start and limit have to be integers")
-                cmd += " LIMIT %d,%d" % (start, limit)
-            retVal = self._query(cmd)
-            if not retVal["OK"]:
-                return retVal
-            for record in retVal["Value"]:
-                record = list(record)
-                if table == "ProxyDB_CleanProxies":
-                    record.insert(2, "")
-                    record.insert(4, False)
-                record[4] = record[4] == "True"
-                data.append(record)
+                if sort[1].upper() not in ("ASC", "DESC"):
+                    return S_ERROR(f"Invalid sorting order {sort[1]}")
+                sqlOrder.append(f"{sort[0]} {sort[1]}")
+        if sqlWhere:
+            cmd = f"{cmd} WHERE {' AND '.join(sqlWhere)}"
+        if sqlOrder:
+            cmd = f"{cmd} ORDER BY {', '.join(sqlOrder)}"
+        if limit:
+            try:
+                start = int(start)
+                limit = int(limit)
+            except ValueError:
+                return S_ERROR("start and limit have to be integers")
+            cmd += " LIMIT %d,%d" % (start, limit)
+        retVal = self._query(cmd)
+        if not retVal["OK"]:
+            return retVal
+        for record in retVal["Value"]:
+            record = list(record)
+            data.append(record)
         totalRecords = len(data)
         return S_OK({"ParameterNames": fields, "Records": data, "TotalRecords": totalRecords})
 
