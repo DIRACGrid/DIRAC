@@ -47,7 +47,7 @@ Now you can run the test with:
 
 .. code-block:: bash
 
-    pytest LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py
+pytest --no-check-dirac-environment LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py
 
 You can find the logs of the services in `/home/dirac/ServerInstallDIR/diracos/runit/`
 
