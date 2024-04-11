@@ -35,13 +35,6 @@ class ProxyRenewalAgent(AgentModule):
         else:
             self.log.info(f"Purged {res['Value']} requests")
 
-        self.log.verbose("Purging expired tokens")
-        res = self.proxyDB.purgeExpiredTokens()
-        if not res["OK"]:
-            self.log.error(res["Message"])
-        else:
-            self.log.info(f"Purged {res['Value']} tokens")
-
         self.log.verbose("Purging expired proxies")
         res = self.proxyDB.purgeExpiredProxies()
         if not res["OK"]:
