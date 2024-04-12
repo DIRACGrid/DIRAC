@@ -704,7 +704,8 @@ class SiteDirector(AgentModule):
             self.log.exception("Exception during pilot modules files compression", lException=be)
 
         location = Operations().getValue("Pilot/pilotFileServer", "")
-        CVMFS_locations = Operations().getValue("Pilot/CVMFS_locations")
+        CVMFS_locations = Operations().getValue("Pilot/CVMFS_locations", [])
+
         localPilot = pilotWrapperScript(
             pilotFilesCompressedEncodedDict=pilotFilesCompressedEncodedDict,
             pilotOptions=pilotOptions,
