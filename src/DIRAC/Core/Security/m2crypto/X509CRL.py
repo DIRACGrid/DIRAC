@@ -4,7 +4,7 @@ This class is used to manage the revoked certificates....
 import re
 import datetime
 
-import M2Crypto
+import M2Crypto.X509
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.File import secureOpenForWrite
