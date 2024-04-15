@@ -40,7 +40,7 @@
 # ~/TestCode
 # ~/ServerInstallDIR
 # ~/ClientInstallDIR
-
+# ~/PilotInstallDIR
 
 
 # Def of environment variables:
@@ -65,6 +65,8 @@ mkdir -p "$WORKSPACE/ServerInstallDIR" # Where servers are installed
 SERVERINSTALLDIR=${_}
 mkdir -p "$WORKSPACE/ClientInstallDIR" # Where clients are installed
 CLIENTINSTALLDIR=${_}
+mkdir -p "$WORKSPACE/PilotInstallDIR" # Where pilots run
+PILOTINSTALLDIR=${_}
 
 # Location of the CFG file to be used (this can be replaced by the extensions)
 INSTALL_CFG_FILE="${TESTCODE}/DIRAC/tests/Jenkins/install.cfg"

@@ -49,6 +49,18 @@ elif [[ "$INSTALLTYPE" == "client" ]]; then
     for repo_path in "${TESTREPO[@]}"; do
         source "${repo_path}/tests/Integration/all_integration_client_tests.sh"
     done
+
+elif [[ "$INSTALLTYPE" == "pilot" ]]; then
+    # shellcheck source=/dev/null
+    source "$WORKSPACE/PilotInstallDIR/bashrc"
+    # If not unset, assert will not trigger
+    unset PYTHONOPTIMIZE
+    set -o pipefail
+    ERR=0
+    for repo_path in "${TESTREPO[@]}"; do
+        source "${repo_path}/tests/Integration/all_integration_pilot_tests.sh"
+    done
+
 fi
 
 echo -e "*** $(date -u) **** TESTS OVER ****\n"

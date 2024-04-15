@@ -114,6 +114,18 @@ services:
     pull_policy: always
     command: ["sleep", "infinity"] # This is necessary because of the issue described in https://github.com/moby/moby/issues/42275. What is added here is a hack/workaround.
 
+  dirac-pilot:
+    image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
+    container_name: pilot
+    hostname: pilot
+    user: "${DIRAC_UID}:${DIRAC_GID}"
+    depends_on:
+      - dirac-server
+    ulimits:
+      nofile: 8192
+    pull_policy: always
+    command: ["sleep", "infinity"] # This is necessary because of the issue described in https://github.com/moby/moby/issues/42275. What is added here is a hack/workaround.
+
   diracx-init-key:
     image: ghcr.io/diracgrid/diracx/secret-generation:latest
     container_name: diracx-init-key
