@@ -534,7 +534,7 @@ def test_pilot():
     _check_containers_running()
     typer.secho("Running pilot tests", err=True, fg=c.GREEN)
     base_cmd = _build_docker_cmd("pilot")
-    ret = subprocess.run(base_cmd + ["bash", "TestCode/DIRAC/tests/CI/run_tests.sh"], check=False)
+    ret = subprocess.run(base_cmd + ["bash", "LocalRepo/TestCode/DIRAC/tests/CI/run_tests.sh"], check=False)
     color = c.GREEN if ret.returncode == 0 else c.RED
     typer.secho(f"pilot tests finished with {ret.returncode}", err=True, fg=color)
     raise TestExit(ret.returncode)

@@ -14,7 +14,7 @@ PILOTINSTALLDIR=$PWD/PilotInstallDIR/
 source CONFIG
 
 # Creating "the worker node"
-cd ${PILOTINSTALLDIR}
+cd "${PILOTINSTALLDIR}"
 mkdir -p etc/grid-security/vomsdir
 mkdir -p etc/grid-security/vomses
 touch etc/grid-security/vomsdir/vomsdir
@@ -72,7 +72,7 @@ elif command -v python2 &> /dev/null; then
 fi
 
 pilotUUID="${GITHUB_JOB//-/}""$(shuf -i 2000-65000 -n 1)"
-pilotUUID=$(echo $pilotUUID | rev | cut -c 1-32 | rev)
+pilotUUID=$(echo "$pilotUUID" | rev | cut -c 1-32 | rev)
 
 
-$py dirac-pilot.py --modules "${TESTCODE}/DIRAC" -M 1 -S dirac-JenkinsSetup -N jenkins.cern.ch -Q jenkins-queue_not_important -n DIRAC.Jenkins.ch --pilotUUID="${pilotUUID}" --cert --certLocation=${PILOTINSTALLDIR}/etc/grid-security --CVMFS_locations="${PILOTINSTALLDIR}" -o diracInstallOnly --wnVO=vo --debug
+$py dirac-pilot.py --modules "${TESTCODE}/DIRAC" -M 1 -S dirac-JenkinsSetup -N jenkins.cern.ch -Q jenkins-queue_not_important -n DIRAC.Jenkins.ch --pilotUUID="${pilotUUID}" --cert --certLocation="${PILOTINSTALLDIR}"/etc/grid-security --CVMFS_locations="${PILOTINSTALLDIR}" -o diracInstallOnly --wnVO=vo --debug

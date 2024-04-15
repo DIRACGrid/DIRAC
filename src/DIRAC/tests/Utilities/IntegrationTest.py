@@ -11,7 +11,7 @@ class IntegrationTest(unittest.TestCase):
     """Base class for the integration and regression tests"""
 
     def setUp(self):
-        cleanTestDir()
+        # cleanTestDir()
         self.dirac = Dirac()
         gLogger.setLevel("DEBUG")
 
