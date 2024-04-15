@@ -84,7 +84,7 @@ def getType(fileNames, directory=""):
     for fname in fileNames:
         typeFile = str(catalog.getTypeByPfn(fname))
         if not typeFile:
-            typeFile = "ROOT_All"
+            typeFile = "ROOT"
             generated.append(fname)
 
         pfnTypes[fname] = typeFile

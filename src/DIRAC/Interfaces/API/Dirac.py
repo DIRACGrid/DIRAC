@@ -219,7 +219,7 @@ class Dirac(API):
         Example usage:
 
         >>> print(getInputDataCatalog('/lhcb/a/b/c/00001680_00000490_5.dst',None,'myCat.xml'))
-        {'Successful': {'<LFN>': {'pfntype': 'ROOT_All', 'protocol': 'SRM2',
+        {'Successful': {'<LFN>': {'pfntype': 'ROOT', 'protocol': 'SRM2',
          'pfn': '<PFN>', 'turl': '<TURL>', 'guid': '3E3E097D-0AC0-DB11-9C0A-00188B770645',
          'se': 'CERN-disk'}}, 'Failed': [], 'OK': True, 'Value': ''}
 
