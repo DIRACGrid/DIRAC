@@ -10,7 +10,7 @@ import os
 import random
 import time
 
-import M2Crypto
+import M2Crypto.X509
 
 
 from DIRAC import S_OK, S_ERROR
