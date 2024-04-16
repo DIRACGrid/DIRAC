@@ -56,3 +56,14 @@ DIRACSETUP=$(< "${INSTALL_CFG_FILE}" grep "Setup = " | cut -f5 -d " ")
 echo -e "*** $(date -u) **** Client INSTALLATION START ****\n"
 
 installDIRAC
+
+#-------------------------------------------------------------------------------#
+echo -e "*** $(date -u) **** Submit a job ****\n"
+
+echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a clientTestOutputs.txt
+dirac-login -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
+
+echo -e '[\n    Arguments = "Hello World";\n    Executable = "echo";\n    Site = "DIRAC.Jenkins.ch";' > test.jdl
+echo "    JobName = \"${GITHUB_JOB}_$(date +"%Y-%m-%d_%T" | sed 's/://g')\"" >> test.jdl
+echo "]" >> test.jdl
+dirac-wms-job-submit test.jdl

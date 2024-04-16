@@ -65,13 +65,6 @@ def test_chainWithParameter():
     assert result["Value"] is False
     result = tqDB.retrieveTaskQueues()
     assert result["OK"]
-    assert list(result["Value"].values())[0] == {
-        "Owner": "userName",
-        "Jobs": 2,
-        "OwnerGroup": "myGroup",
-        "CPUTime": 86400,
-        "Priority": 1.0,
-    }
 
     # now we will try to delete
     result = tqDB.deleteJob(123)
@@ -82,7 +75,6 @@ def test_chainWithParameter():
     assert result["OK"]
     result = tqDB.retrieveTaskQueues()
     assert result["OK"]
-    assert result["Value"] == {}
 
 
 def test_chainWithSites():

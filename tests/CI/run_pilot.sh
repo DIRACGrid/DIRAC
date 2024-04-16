@@ -34,7 +34,7 @@ echo "
 	\"CEs\": {
 		\"jenkins.cern.ch\": {
 			\"Site\": \"DIRAC.Jenkins.ch\",
-			\"GridCEType\": \"TEST\"
+			\"GridCEType\": \"TEST-FULL\"
 		}
 	},
 	\"Defaults\": {
@@ -42,7 +42,7 @@ echo "
 			\"RemoteLogging\": \"False\",
 			\"Version\": \"integration\",
 			\"Commands\": {
-				\"TEST\": \"CheckWorkerNode, InstallDIRAC, ConfigureBasics, RegisterPilot, CheckCECapabilities, CheckWNCapabilities, ConfigureSite, ConfigureArchitecture, ConfigureCPURequirements\"
+				\"TEST-FULL\": \"CheckWorkerNode, InstallDIRAC, ConfigureBasics, RegisterPilot, CheckCECapabilities, CheckWNCapabilities, ConfigureSite, ConfigureArchitecture, ConfigureCPURequirements, LaunchAgent\"
 			}
 		}
 	},
@@ -73,6 +73,5 @@ fi
 
 pilotUUID="${GITHUB_JOB//-/}""$(shuf -i 2000-65000 -n 1)"
 pilotUUID=$(echo "$pilotUUID" | rev | cut -c 1-32 | rev)
-
 
 $py dirac-pilot.py --modules "${TESTCODE}/DIRAC" -M 1 -S dirac-JenkinsSetup -N jenkins.cern.ch -Q jenkins-queue_not_important -n DIRAC.Jenkins.ch --pilotUUID="${pilotUUID}" --cert --certLocation="${PILOTINSTALLDIR}"/etc/grid-security --CVMFS_locations="${PILOTINSTALLDIR}" -o diracInstallOnly --wnVO=vo --debug
