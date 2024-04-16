@@ -8,7 +8,7 @@ import os
 import asyncio
 import psutil
 
-import M2Crypto
+import M2Crypto.SSL
 
 import tornado.iostream
 
