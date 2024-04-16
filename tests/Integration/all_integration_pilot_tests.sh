@@ -14,6 +14,7 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 echo -e "THIS_DIR=${THIS_DIR}" |& tee -a pilotTestOutputs.txt
 
 cp PilotInstallDIR/pilot.cfg "${THIS_DIR}"
+cp PilotInstallDIR/pilot.cfg .
 
 echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a pilotTestOutputs.txt
 dirac-admin-get-proxy "/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser" dirac_user -o /DIRAC/Security/UseServerCertificate=True --cfg pilot.cfg --out=/tmp/x509up_u${UID} -ddd
