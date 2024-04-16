@@ -241,7 +241,7 @@ import random
 random.shuffle(location)
 
 # we try from the available locations
-locs = [os.path.join('https://', loc) for loc in location]
+locs = [os.path.join('https://', loc) if not loc.startswith(('file:', 'https:')) else loc for loc in location]
 locations = locs + [os.path.join(loc, 'pilot') for loc in locs]
 # adding also the cvmfs locations
 locations += %(CVMFS_locs)s
