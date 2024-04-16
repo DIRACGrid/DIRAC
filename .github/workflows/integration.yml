@@ -63,10 +63,14 @@ jobs:
       run: ./integration_tests.py install-server
     - name: Install client
       run: ./integration_tests.py install-client
+    - name: Install pilot
+      run: ./integration_tests.py install-pilot
     - name: Server tests
       run: ./integration_tests.py test-server || touch server-tests-failed
     - name: Client tests
       run: ./integration_tests.py test-client || touch client-tests-failed
+    - name: Pilot tests
+      run: ./integration_tests.py test-pilot || touch pilot-tests-failed
     - name: Elasticsearch logs
       run: docker logs elasticsearch
     - name: Check test status
@@ -74,4 +78,5 @@ jobs:
         has_error=0
         if [ -f server-tests-failed ]; then has_error=1; echo "Server tests failed"; fi
         if [ -f client-tests-failed ]; then has_error=1; echo "Client tests failed"; fi
+        if [ -f pilot-tests-failed ]; then has_error=1; echo "pilot tests failed"; fi
         if [ ${has_error} = 1 ]; then exit 1; fi
