@@ -1062,11 +1062,10 @@ class JobDB(DB):
             if not result["OK"]:
                 failedTablesList.append(table)
 
-        result = S_OK()
         if failedTablesList:
-            result = S_ERROR(f"Errors while job removal (tables {','.join(failedTablesList)})")
+            return S_ERROR(f"Errors while job removal (tables {','.join(failedTablesList)})")
 
-        return result
+        return S_OK()
 
     #############################################################################
     def rescheduleJob(self, jobID):

@@ -4,15 +4,13 @@
   optimizer instances and associated actions are performed there.
 """
 
-from DIRAC import S_OK, S_ERROR, exit as dExit
-
+from DIRAC import S_ERROR, S_OK
+from DIRAC import exit as dExit
 from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 
@@ -48,17 +46,12 @@ class OptimizerModule(AgentModule):
         if not self.jobDB.isValid():
             dExit(1)
 
-        useESForJobParametersFlag = Operations().getValue("/Services/JobMonitoring/useESForJobParametersFlag", False)
-        if useESForJobParametersFlag:
-            try:
-                result = ObjectLoader().loadObject(
-                    "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
-                )
-                if not result["OK"]:
-                    return result
-                self.elasticJobParametersDB = result["Value"]()
-            except RuntimeError as excp:
-                return S_ERROR(f"Can't connect to DB: {excp}")
+        result = ObjectLoader().loadObject(
+            "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
+        )
+        if not result["OK"]:
+            return result
+        self.elasticJobParametersDB = result["Value"]()
 
         self.logDB = JobLoggingDB() if logDB is None else logDB
 
@@ -244,9 +237,7 @@ class OptimizerModule(AgentModule):
             return S_OK()
 
         self.log.debug(f"setJobParameter({job},'{reportName}','{value}')")
-        if self.elasticJobParametersDB:
-            return self.elasticJobParametersDB.setJobParameter(int(job), reportName, value)
-        return self.jobDB.setJobParameter(job, reportName, value)
+        return self.elasticJobParametersDB.setJobParameter(int(job), reportName, value)
 
     #############################################################################
     def setFailedJob(self, job, msg, classAdJob=None):

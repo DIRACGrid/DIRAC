@@ -150,7 +150,7 @@ def test_setAndGetJobFromDB():
     assert len(res["Value"][1010000]) == 0
 
     # delete the indexes
-    res = elasticJobParametersDB.deleteIndex(elasticJobParametersDB.indexName_base)
+    res = elasticJobParametersDB.deleteIndex("job_parameters")
     assert res["OK"]
     assert res["Value"] == "Nothing to delete"
     res = elasticJobParametersDB.deleteIndex(elasticJobParametersDB._indexName(100))

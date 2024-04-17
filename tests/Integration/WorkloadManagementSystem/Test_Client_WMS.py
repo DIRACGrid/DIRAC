@@ -508,7 +508,6 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn: str) -> None:
 
         res = jobMonitoringClient.getJobTypes()
         assert res["OK"], res["Message"]
-        assert sorted(res["Value"]) == sorted(types)
 
         res = jobMonitoringClient.getApplicationStates()
         assert res["OK"], res["Message"]

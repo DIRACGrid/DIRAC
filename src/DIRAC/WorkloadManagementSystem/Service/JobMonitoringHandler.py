@@ -35,18 +35,12 @@ class JobMonitoringHandlerMixin:
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp}")
 
-        cls.elasticJobParametersDB = None
-        useESForJobParametersFlag = Operations().getValue("/Services/JobMonitoring/useESForJobParametersFlag", False)
-        if useESForJobParametersFlag:
-            try:
-                result = ObjectLoader().loadObject(
-                    "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
-                )
-                if not result["OK"]:
-                    return result
-                cls.elasticJobParametersDB = result["Value"](parentLogger=cls.log)
-            except RuntimeError as excp:
-                return S_ERROR(f"Can't connect to DB: {excp}")
+        result = ObjectLoader().loadObject(
+            "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
+        )
+        if not result["OK"]:
+            return result
+        cls.elasticJobParametersDB = result["Value"](parentLogger=cls.log)
 
         cls.pilotManager = PilotManagerClient()
         return S_OK()
@@ -446,14 +440,7 @@ class JobMonitoringHandlerMixin:
         :param str/int jobID: one single Job ID
         :param str parName: one single parameter name
         """
-        if cls.elasticJobParametersDB:
-            res = cls.elasticJobParametersDB.getJobParameters(jobID, [parName])
-            if not res["OK"]:
-                return res
-            if res["Value"].get(int(jobID)):
-                return S_OK(res["Value"][int(jobID)])
-
-        res = cls.jobDB.getJobParameters(jobID, [parName])
+        res = cls.elasticJobParametersDB.getJobParameters(jobID, [parName])
         if not res["OK"]:
             return res
         return S_OK(res["Value"].get(int(jobID), {}))
@@ -475,34 +462,31 @@ class JobMonitoringHandlerMixin:
         :param str/int/list jobIDs: one single job ID or a list of them
         :param str parName: one single parameter name, a list or None (meaning all of them)
         """
-        if cls.elasticJobParametersDB:
-            if not isinstance(jobIDs, list):
-                jobIDs = [jobIDs]
-            parameters = {}
-            for jobID in jobIDs:
-                res = cls.elasticJobParametersDB.getJobParameters(jobID, parName)
-                if not res["OK"]:
-                    return res
-                parameters.update(res["Value"])
-
-            # Need anyway to get also from JobDB, for those jobs with parameters registered in MySQL or in both backends
-            res = cls.jobDB.getJobParameters(jobIDs, parName)
+        if not isinstance(jobIDs, list):
+            jobIDs = [jobIDs]
+        parameters = {}
+        for jobID in jobIDs:
+            res = cls.elasticJobParametersDB.getJobParameters(jobID, parName)
             if not res["OK"]:
                 return res
-            parametersM = res["Value"]
+            parameters.update(res["Value"])
 
-            # and now combine
-            final = dict(parametersM)
-            # if job in JobDB, update with parameters from ES if any
-            for jobID in final:
-                final[jobID].update(parameters.get(jobID, {}))
-            # if job in ES and not in JobDB, take ES
-            for jobID in parameters:
-                if jobID not in final:
-                    final[jobID] = parameters[jobID]
-            return S_OK(final)
+        # Need anyway to get also from JobDB, for those jobs with parameters registered in MySQL or in both backends
+        res = cls.jobDB.getJobParameters(jobIDs, parName)
+        if not res["OK"]:
+            return res
+        parametersM = res["Value"]
 
-        return cls.jobDB.getJobParameters(jobIDs, parName)
+        # and now combine
+        final = dict(parametersM)
+        # if job in JobDB, update with parameters from ES if any
+        for jobID in final:
+            final[jobID].update(parameters.get(jobID, {}))
+        # if job in ES and not in JobDB, take ES
+        for jobID in parameters:
+            if jobID not in final:
+                final[jobID] = parameters[jobID]
+        return S_OK(final)
 
     ##############################################################################
     types_getAtticJobParameters = [int]
