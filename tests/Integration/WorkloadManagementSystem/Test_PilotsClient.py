@@ -16,7 +16,6 @@ DIRAC.initialize()  # Initialize configuration
 from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
-
 gLogger.setLevel("VERBOSE")
 
 

@@ -1,23 +1,16 @@
 import unittest
 
-from DIRAC.tests.Utilities.utils import cleanTestDir
-
 from DIRAC import gLogger
-from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.Interfaces.API.Dirac import Dirac
 
 
 class IntegrationTest(unittest.TestCase):
     """Base class for the integration and regression tests"""
 
     def setUp(self):
-        # cleanTestDir()
         self.dirac = Dirac()
         gLogger.setLevel("DEBUG")
-
-    def tearDown(self):
-        #    cleanTestDir()
-        pass
 
 
 class FailingUserJobTestCase(IntegrationTest):

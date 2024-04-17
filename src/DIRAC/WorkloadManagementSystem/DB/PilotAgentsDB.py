@@ -437,7 +437,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
 
         resDict = {}
         for row in result["Value"]:
-            if not row[0] in resDict:
+            if row[0] not in resDict:
                 resDict[row[0]] = []
             resDict[row[0]].append(row[1])
         return S_OK(resDict)

@@ -2,7 +2,7 @@
 #-------------------------------------------------------------------------------
 # A convenient way to run all the workflow tests
 #
-# It supposes that there's a DIRAC pilot is installed
+# It supposes that there's a DIRAC pilot installed
 #-------------------------------------------------------------------------------
 
 echo -e '****************************************'

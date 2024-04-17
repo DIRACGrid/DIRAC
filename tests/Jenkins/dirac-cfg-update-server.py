@@ -499,7 +499,6 @@ csAPI.setOption("Operations/Defaults/Transformations/DataProcessing", "MCSimulat
 #         {
 #           Properties = TrustedHost,CSAdministrator,JobAdministrator,FullDelegation,ProxyManagement,Operator,ProductionManagement,GenericPilot
 #       }
-#       }
 #     }
 
 res = csAPI.createSection("Registry")
