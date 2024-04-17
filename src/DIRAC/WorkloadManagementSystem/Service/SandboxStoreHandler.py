@@ -95,7 +95,7 @@ class SandboxStoreHandlerMixin:
         gLogger.info("Upload requested", f"for {aHash} [{extension}]")
 
         credDict = self.getRemoteCredentials()
-        vo = Registry.getVOForGroup(credDict["group"])
+        vo = credDict.get("VO", Registry.getVOForGroup(credDict["group"]))
 
         disabledVOs = gConfig.getValue("/DiracX/DisabledVOs", [])
         if self._useDiracXBackend and vo not in disabledVOs:
@@ -199,7 +199,7 @@ class SandboxStoreHandlerMixin:
         result = self.sandboxDB.registerAndGetSandbox(
             credDict["username"],
             credDict["group"],
-            credDict["VO"],
+            vo,
             self.__localSEName,
             sbPath,
             fSize,
@@ -236,6 +236,7 @@ class SandboxStoreHandlerMixin:
         gLogger.info("Sandbox path will be", sbPath)
         # Register in DB
         credDict = self.getRemoteCredentials()
+        vo = credDict.get("VO", Registry.getVOForGroup(credDict["group"]))
         result = self.sandboxDB.getSandboxId(self.__localSEName, sbPath, credDict["username"], credDict["group"])
         if result["OK"]:
             return S_OK(f"SB:{self.__localSEName}|{sbPath}")
@@ -243,7 +244,7 @@ class SandboxStoreHandlerMixin:
         result = self.sandboxDB.registerAndGetSandbox(
             credDict["username"],
             credDict["group"],
-            credDict["VO"],
+            vo,
             self.__localSEName,
             sbPath,
             fileHelper.getTransferedBytes(),
@@ -364,9 +365,8 @@ class SandboxStoreHandlerMixin:
         Get the sandboxes associated to a job and the association type
         """
         credDict = self.getRemoteCredentials()
-        result = self.sandboxDB.getSandboxesAssignedToEntity(
-            entityId, credDict["username"], credDict["group"], credDict["VO"]
-        )
+        vo = credDict.get("VO", Registry.getVOForGroup(credDict["group"]))
+        result = self.sandboxDB.getSandboxesAssignedToEntity(entityId, credDict["username"], credDict["group"], vo)
         if not result["OK"]:
             return result
         sbDict = {}
