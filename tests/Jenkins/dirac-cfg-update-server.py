@@ -483,6 +483,23 @@ csAPI.setOption("Operations/Defaults/Transformations/DataProcessing", "MCSimulat
 #           VOMSName = myVOMS
 #         }
 #       }
+#       Groups
+#       {
+#         jenkins_fcadmin
+#         {
+#           VO = Jenkins
+#         }
+#         jenkins_user
+#         {
+#           VO = Jenkins
+#         }
+#       Hosts
+#       {
+#         server
+#         {
+#           Properties = TrustedHost,CSAdministrator,JobAdministrator,FullDelegation,ProxyManagement,Operator,ProductionManagement,GenericPilot
+#       }
+#       }
 #     }
 
 res = csAPI.createSection("Registry")
@@ -506,6 +523,10 @@ csAPI.setOption("Registry/VO/Jenkins/VOMSName", "myVOMS")
 csAPI.setOption("Registry/Groups/jenkins_fcadmin/VO", "Jenkins")
 csAPI.setOption("Registry/Groups/jenkins_user/VO", "Jenkins")
 
+csAPI.setOption(
+    "Registry/Hosts/server/Properties",
+    "TrustedHost,CSAdministrator,JobAdministrator,FullDelegation,ProxyManagement,Operator,ProductionManagement,GenericPilot",
+)
 
 # Setting Systems/WorkloadManagement/Production/Executors/Optimizers/JobScheduling/RescheduleDelays
 # to avoid having to wait while testing rescheduling

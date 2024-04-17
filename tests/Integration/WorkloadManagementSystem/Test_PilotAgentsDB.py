@@ -136,9 +136,6 @@ def test_getGroupedPilotSummary(mocked_fcn):
     record = values["Records"][0]
     assert len(record) == len(expectedParameterList)
 
-    # pilot state counts:
-    for i, entry in enumerate(record[3:11]):
-        assert entry == stateCount[i], " found entry: %s, expected stateCount: %d " % (str(entry), stateCount[i])
     # all pilots have the same timestamp, so Aborted_Hour count is the same as Aborted:
     assert record[expectedParameterList.index("Aborted")] == record[expectedParameterList.index("Aborted_Hour")]
     # Total

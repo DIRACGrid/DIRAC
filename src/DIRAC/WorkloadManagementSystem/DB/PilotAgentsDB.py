@@ -383,7 +383,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
     def __getPilotID(self, pilotRef):
         """Get Pilot ID for the given pilot reference or a list of references"""
 
-        if isinstance(pilotRef, str):
+        if isinstance(pilotRef, (str, int)):
             req = f"SELECT PilotID from PilotAgents WHERE PilotJobReference='{pilotRef}'"
             result = self._query(req)
             if not result["OK"]:
