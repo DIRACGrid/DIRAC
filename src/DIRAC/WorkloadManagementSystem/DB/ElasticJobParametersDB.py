@@ -39,7 +39,6 @@ class ElasticJobParametersDB(ElasticDB):
             # Connecting to the ES cluster
             super().__init__(self.fullname, self.index_name, parentLogger=parentLogger)
         except Exception as ex:
-            self.log.error("Can't connect to ElasticJobParametersDB", repr(ex))
             raise RuntimeError("Can't connect to ElasticJobParametersDB") from ex
 
     def _indexName(self, jobID: int) -> str:

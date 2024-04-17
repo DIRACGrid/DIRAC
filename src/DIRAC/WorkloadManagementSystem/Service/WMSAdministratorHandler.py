@@ -5,7 +5,6 @@ from DIRAC import S_OK, S_ERROR
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
@@ -22,18 +21,12 @@ class WMSAdministratorHandlerMixin:
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp!r}")
 
-        cls.elasticJobParametersDB = None
-        useESForJobParametersFlag = Operations().getValue("/Services/JobMonitoring/useESForJobParametersFlag", False)
-        if useESForJobParametersFlag:
-            try:
-                result = ObjectLoader().loadObject(
-                    "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
-                )
-                if not result["OK"]:
-                    return result
-                cls.elasticJobParametersDB = result["Value"]()
-            except RuntimeError as excp:
-                return S_ERROR(f"Can't connect to DB: {excp!r}")
+        result = ObjectLoader().loadObject(
+            "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
+        )
+        if not result["OK"]:
+            return result
+        cls.elasticJobParametersDB = result["Value"]()
 
         cls.pilotManager = PilotManagerClient()
 

@@ -301,24 +301,6 @@ def test_heartBeatLogging(jobDB):
     assert not res["Value"], str(res)
 
 
-def test_getJobParameters(jobDB):
-    res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup", vo="vo")
-    assert res["OK"], res["Message"]
-    jobID = res["JobID"]
-
-    res = jobDB.getJobParameters(jobID)
-    assert res["OK"], res["Message"]
-    assert res["Value"] == {}, res["Value"]
-
-    res = jobDB.getJobParameters([jobID])
-    assert res["OK"], res["Message"]
-    assert res["Value"] == {}, res["Value"]
-
-    res = jobDB.getJobParameters(jobID, "not")
-    assert res["OK"], res["Message"]
-    assert res["Value"] == {}, res["Value"]
-
-
 def test_setJobsMajorStatus(jobDB):
     res = jobDB.insertNewJobIntoDB(jdl, "owner", "ownerGroup", vo="vo")
     assert res["OK"], res["Message"]
