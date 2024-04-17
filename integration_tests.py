@@ -93,8 +93,10 @@ This is equivalent to running:
   ./integration_tests.py prepare-environment
   ./integration_tests.py install-server
   ./integration_tests.py install-client
+  ./integration_tests.py install-pilot
   ./integration_tests.py test-server
   ./integration_tests.py test-client
+  ./integration_tests.py test-pilot
 
 The test setup can be shutdown using:
 
@@ -150,11 +152,13 @@ def create(
     release_var: Optional[str] = None,
     run_server_tests: bool = True,
     run_client_tests: bool = True,
+    run_pilot_tests: bool = True,
 ):
     """Start a local instance of the integration tests"""
     prepare_environment(flags, editable, extra_module, diracx_dist_dir, release_var)
     install_server()
     install_client()
+    install_pilot()
     exit_code = 0
     if run_server_tests:
         try:
@@ -166,6 +170,13 @@ def create(
     if run_client_tests:
         try:
             test_client()
+        except TestExit as e:
+            exit_code += e.exit_code
+        else:
+            raise NotImplementedError()
+    if run_pilot_tests:
+        try:
+            test_pilot()
         except TestExit as e:
             exit_code += e.exit_code
         else:
@@ -217,16 +228,21 @@ def prepare_environment(
     docker_compose_env = _make_env(flags)
     server_flags = {}
     client_flags = {}
+    pilot_flags = {}
     for key, value in flags.items():
         if key.startswith("SERVER_"):
             server_flags[key[len("SERVER_") :]] = value
         elif key.startswith("CLIENT_"):
             client_flags[key[len("CLIENT_") :]] = value
+        elif key.startswith("PILOT_"):
+            pilot_flags[key[len("PILOT_") :]] = value
         else:
             server_flags[key] = value
             client_flags[key] = value
+            pilot_flags[key] = value
     server_config = _make_config(modules, server_flags, release_var, editable)
     client_config = _make_config(modules, client_flags, release_var, editable)
+    pilot_config = _make_config(modules, pilot_flags, release_var, editable)
 
     # The dependencies of dirac-server and dirac-client will be automatically
     # started but we need to add manually all the extra services
@@ -236,13 +252,14 @@ def prepare_environment(
     typer.secho("Running docker compose to create containers", fg=c.GREEN)
     with _gen_docker_compose(modules, diracx_dist_dir=diracx_dist_dir) as docker_compose_fn:
         subprocess.run(
-            ["docker", "compose", "-f", docker_compose_fn, "up", "-d", "dirac-server", "dirac-client"] + extra_services,
+            ["docker", "compose", "-f", docker_compose_fn, "up", "-d", "dirac-server", "dirac-client", "dirac-pilot"]
+            + extra_services,
             check=True,
             env=docker_compose_env,
         )
 
-    typer.secho("Creating users in server and client containers", fg=c.GREEN)
-    for container_name in ["server", "client"]:
+    typer.secho("Creating users in server client and pilot containers", fg=c.GREEN)
+    for container_name in ["server", "client", "pilot"]:
         if os.getuid() == 0:
             continue
         cmd = _build_docker_cmd(container_name, use_root=True, cwd="/")
@@ -295,7 +312,7 @@ def prepare_environment(
     _prepare_iam_instance()
 
     typer.secho("Copying files to containers", fg=c.GREEN)
-    for name, config in [("server", server_config), ("client", client_config)]:
+    for name, config in [("server", server_config), ("client", client_config), ("pilot", pilot_config)]:
         if path := config.get("DIRACOS_TARBALL_PATH"):
             path = Path(path)
             config["DIRACOS_TARBALL_PATH"] = f"/{path.name}"
@@ -420,6 +437,48 @@ def install_server():
         check=True,
     )
 
+    base_cmd = _build_docker_cmd("pilot", tty=False)
+    subprocess.run(
+        base_cmd
+        + [
+            "mkdir",
+            "-p",
+            "/home/dirac/ServerInstallDIR/user",
+            "/home/dirac/PilotInstallDIR/etc",
+            "/home/dirac/.globus",
+        ],
+        check=True,
+    )
+    for path in [
+        "etc/grid-security",
+        "user/client.pem",
+        "user/client.key",
+        f"/tmp/x509up_u{os.getuid()}",
+    ]:
+        source = os.path.join("/home/dirac/ServerInstallDIR", path)
+        ret = subprocess.run(
+            ["docker", "cp", f"server:{source}", "-"],
+            check=True,
+            text=False,
+            stdout=subprocess.PIPE,
+        )
+        if path.startswith("user/"):
+            dest = f"pilot:/home/dirac/ServerInstallDIR/{os.path.dirname(path)}"
+        elif path.startswith("/"):
+            dest = f"pilot:{os.path.dirname(path)}"
+        else:
+            dest = f"pilot:/home/dirac/PilotInstallDIR/{os.path.dirname(path)}"
+        subprocess.run(["docker", "cp", "-", dest], check=True, text=False, input=ret.stdout)
+    subprocess.run(
+        base_cmd
+        + [
+            "bash",
+            "-c",
+            "cp /home/dirac/ServerInstallDIR/user/client.* /home/dirac/.globus/",
+        ],
+        check=True,
+    )
+
 
 @app.command()
 def install_client():
@@ -429,6 +488,18 @@ def install_client():
     base_cmd = _build_docker_cmd("client")
     subprocess.run(
         base_cmd + ["bash", "/home/dirac/LocalRepo/TestCode/DIRAC/tests/CI/install_client.sh"],
+        check=True,
+    )
+
+
+@app.command()
+def install_pilot():
+    """Run a pilot in a container."""
+    _check_containers_running()
+    typer.secho("Running pilot installation", fg=c.GREEN)
+    base_cmd = _build_docker_cmd("pilot")
+    subprocess.run(
+        base_cmd + ["bash", "/home/dirac/LocalRepo/TestCode/DIRAC/tests/CI/run_pilot.sh"],
         check=True,
     )
 
@@ -458,6 +529,18 @@ def test_client():
 
 
 @app.command()
+def test_pilot():
+    """Run the pilot integration tests."""
+    _check_containers_running()
+    typer.secho("Running pilot tests", err=True, fg=c.GREEN)
+    base_cmd = _build_docker_cmd("pilot")
+    ret = subprocess.run(base_cmd + ["bash", "LocalRepo/TestCode/DIRAC/tests/CI/run_tests.sh"], check=False)
+    color = c.GREEN if ret.returncode == 0 else c.RED
+    typer.secho(f"pilot tests finished with {ret.returncode}", err=True, fg=color)
+    raise TestExit(ret.returncode)
+
+
+@app.command()
 def exec_server():
     """Start an interactive session in the server container."""
     _check_containers_running()
@@ -482,6 +565,16 @@ def exec_client():
         ". $HOME/CONFIG && . $HOME/ClientInstallDIR/bashrc && exec bash",
     ]
     typer.secho("Opening prompt inside client container", err=True, fg=c.GREEN)
+    os.execvp(cmd[0], cmd)
+
+
+@app.command()
+def exec_pilot():
+    """Start an interactive session in the pilot container."""
+    _check_containers_running()
+    cmd = _build_docker_cmd("pilot")
+    cmd += ["bash", "-c", ". $HOME/CONFIG && exec bash"]
+    typer.secho("Opening prompt inside pilot container", err=True, fg=c.GREEN)
     os.execvp(cmd[0], cmd)
 
 
@@ -560,18 +653,26 @@ def _gen_docker_compose(modules, *, diracx_dist_dir=None):
     input_fn = Path(__file__).parent / "tests/CI/docker-compose.yml"
     docker_compose = yaml.safe_load(input_fn.read_text())
     # diracx-wait-for-db needs the volume to be able to run the witing script
-    for ctn in ("dirac-server", "dirac-client", "diracx-wait-for-db"):
+    for ctn in ("dirac-server", "dirac-client", "dirac-pilot", "diracx-wait-for-db"):
         if "volumes" not in docker_compose["services"][ctn]:
             docker_compose["services"][ctn]["volumes"] = []
     volumes = [f"{path}:/home/dirac/LocalRepo/ALTERNATIVE_MODULES/{name}" for name, path in modules.items()]
     volumes += [f"{path}:/home/dirac/LocalRepo/TestCode/{name}" for name, path in modules.items()]
     docker_compose["services"]["dirac-server"]["volumes"].extend(volumes[:])
     docker_compose["services"]["dirac-client"]["volumes"].extend(volumes[:])
+    docker_compose["services"]["dirac-pilot"]["volumes"].extend(volumes[:])
     docker_compose["services"]["diracx-wait-for-db"]["volumes"].extend(volumes[:])
 
     module_configs = _load_module_configs(modules)
     if diracx_dist_dir is not None:
-        for container_name in ["dirac-client", "dirac-server", "diracx-init-cs", "diracx-wait-for-db", "diracx"]:
+        for container_name in [
+            "dirac-client",
+            "dirac-pilot",
+            "dirac-server",
+            "diracx-init-cs",
+            "diracx-wait-for-db",
+            "diracx",
+        ]:
             docker_compose["services"][container_name]["volumes"].append(f"{diracx_dist_dir}:/diracx_sources")
             docker_compose["services"][container_name].setdefault("environment", []).append(
                 "DIRACX_CUSTOM_SOURCE_PREFIXES=/diracx_sources"
@@ -1044,6 +1145,7 @@ def _make_config(modules, flags, release_var, editable):
         # Hostnames
         "SERVER_HOST": "server",
         "CLIENT_HOST": "client",
+        "PILOT_HOST": "pilot",
         # Test specific variables
         "WORKSPACE": "/home/dirac",
         # DiracX variable

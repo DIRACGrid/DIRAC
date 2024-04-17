@@ -383,7 +383,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
     def __getPilotID(self, pilotRef):
         """Get Pilot ID for the given pilot reference or a list of references"""
 
-        if isinstance(pilotRef, str):
+        if isinstance(pilotRef, (str, int)):
             req = f"SELECT PilotID from PilotAgents WHERE PilotJobReference='{pilotRef}'"
             result = self._query(req)
             if not result["OK"]:
@@ -437,7 +437,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
 
         resDict = {}
         for row in result["Value"]:
-            if not row[0] in resDict:
+            if row[0] not in resDict:
                 resDict[row[0]] = []
             resDict[row[0]].append(row[1])
         return S_OK(resDict)
