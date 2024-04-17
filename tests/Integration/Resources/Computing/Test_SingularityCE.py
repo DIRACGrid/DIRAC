@@ -50,9 +50,15 @@ def test_submitJobWrapper():
     resourceParams = {"GridCE": "some_CE"}
     optimizerParams = {}
 
-    wrapperFile = createJobWrapper(2, jobParams, resourceParams, optimizerParams, logLevel="DEBUG")[
-        "Value"
-    ]  # This is not under test, assuming it works fine
+    result = createJobWrapper(
+        jobID=2, jobParams=jobParams, resourceParams=resourceParams, optimizerParams=optimizerParams, logLevel="DEBUG"
+    )["Value"]
+    # To ensure backward compatiblitity in the test
+    # The result was a tuple in the past and now is a dict
+    if isinstance(result, dict):
+        wrapperFile = result["JobExecutablePath"]
+    else:
+        wrapperFile = result[0]
 
     shutil.copy(fj, os.curdir)
 
