@@ -1,3 +1,49 @@
+[v9.0.0a28]
+
+*WorkloadManagementSystem
+
+FIX: (#7574) serverUtils: jit imports
+FIX: (#7534) Pilots submitted by SiteDirector won't add the pythonVersion flag
+FIX: (#7521) Fix memory reporting
+FIX: (#7510) SandboxStore: add VO if needed
+
+*WorkloadManagement
+
+FIX: (#7571) support file:/... as a location for the pilot files
+FIX: (#7564) make sure CVMFS_locations is a list
+CHANGE: (#7553) Remove files from the RemoteRunner execution
+FIX: (#7552) JobCleaningAgent: fix exception in deleteJobsByStatus caused by mismatching job ID types
+NEW: (#7529) introduce JobWrapperOfflineTemplate for uses in systems without external connectivity
+CHANGE: (#7460) introduce JobWrapper.preprocess, process and postprocess
+
+*test
+
+NEW: (#7570) added pilot workflow tests to integration_tests
+
+*Core
+
+FIX: (#7569) Support M2Crypto 0.40.0+
+CHANGE: (#7566) Replace the default PFN type ROOT_All with ROOT
+FIX: (#7524) Depend on packaging
+
+*environment.yml
+
+NEW: (#7555) add cwltool
+
+*Resources
+
+FIX: (#7545) TimeLeft utility was unable to get values from the cfg
+FIX: (#7532) support the case where HTCondor kills the jobs
+
+*Test
+
+FIX: (#7540) Redirect the output of popen in a file to fix #7473
+FIX: (#7539) extra_module default to empty list
+
+*FrameworkSystem
+
+CHANGE: (#7511) ProxyDB: removed tables ProxyDB_Proxies and ProxyDB_Tokens
+
 [v9.0.0a27]
 
 *Core
