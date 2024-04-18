@@ -396,10 +396,10 @@ class Workflow(AttributeCollection):
         return S_OK(step_result)
 
 
-from DIRAC.Core.Workflow.WorkflowReader import WorkflowXMLHandler
-
-
 def fromXMLString(xml_string, obj=None):
+    # prevent circular import in WorkflowReader
+    from DIRAC.Core.Workflow.WorkflowReader import WorkflowXMLHandler
+
     # KGG !!! We need to reset Workflow if it exists
     handler = WorkflowXMLHandler(obj)
     xml.sax.parseString(xml_string, handler)
@@ -407,6 +407,9 @@ def fromXMLString(xml_string, obj=None):
 
 
 def fromXMLFile(xml_file, obj=None):
+    # prevent circular import in WorkflowReader
+    from DIRAC.Core.Workflow.WorkflowReader import WorkflowXMLHandler
+
     # KGG !!! We need to reset Workflow if it exists
     handler = WorkflowXMLHandler(obj)
     xml.sax.parse(xml_file, handler)
