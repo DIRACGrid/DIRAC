@@ -13,7 +13,9 @@ def getPilotAgentsDB():
         if gPilotAgentsDB and gPilotAgentsDB._connected:
             return gPilotAgentsDB
     except Exception:
-        return Client(url="WorkloadManagement/PilotManager")
+        pass
+
+    return Client(url="WorkloadManagement/PilotManager")
 
 
 def getVirtualMachineDB():
@@ -23,4 +25,6 @@ def getVirtualMachineDB():
         if gVirtualMachineDB and gVirtualMachineDB._connected:
             return gVirtualMachineDB
     except Exception:
-        return Client(url="WorkloadManagement/VirtualMachineManager")
+        pass
+
+    return Client(url="WorkloadManagement/VirtualMachineManager")
