@@ -12,8 +12,6 @@ declare -a commands=(
 'dirac-wms-get-wn --Site=LCG.CERN.cern --Status=all'
 'dirac-wms-get-wn-parameters --Site=LCG.CERN.cern --Name=ce503.cern.ch --Queue=condor'
 'dirac-admin-site-info LCG.CERN.cern'
-'dirac-wms-get-normalized-queue-length ce503.cern.ch/condor'
-'dirac-wms-get-queue-normalization ce503.cern.ch/condor'
 'dirac-wms-select-jobs --Status=Running'
 )
 
