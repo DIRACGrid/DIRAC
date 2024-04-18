@@ -247,7 +247,10 @@ def prepare_environment(
     # The dependencies of dirac-server and dirac-client will be automatically
     # started but we need to add manually all the extra services
     module_configs = _load_module_configs(modules)
-    extra_services = list(chain(*[config["extra-services"] for config in module_configs.values()]))
+    try:
+        extra_services = list(chain(*[config["extra-services"] for config in module_configs.values()]))
+    except KeyError:
+        extra_services = []
 
     typer.secho("Running docker compose to create containers", fg=c.GREEN)
     with _gen_docker_compose(modules, diracx_dist_dir=diracx_dist_dir) as docker_compose_fn:
@@ -680,10 +683,11 @@ def _gen_docker_compose(modules, *, diracx_dist_dir=None):
 
     # Add any extension services
     for module_name, module_configs in module_configs.items():
-        for service_name, service_config in module_configs["extra-services"].items():
-            typer.secho(f"Adding service {service_name} for {module_name}", err=True, fg=c.GREEN)
-            docker_compose["services"][service_name] = service_config.copy()
-            docker_compose["services"][service_name]["volumes"] = volumes[:]
+        if "extra-services" in module_configs:
+            for service_name, service_config in module_configs["extra-services"].items():
+                typer.secho(f"Adding service {service_name} for {module_name}", err=True, fg=c.GREEN)
+                docker_compose["services"][service_name] = service_config.copy()
+                docker_compose["services"][service_name]["volumes"] = volumes[:]
 
     # Write to a tempory file with the appropriate profile name
     prefix = "ci"
