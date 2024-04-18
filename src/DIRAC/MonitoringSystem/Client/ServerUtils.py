@@ -11,6 +11,8 @@ def getMonitoringDB():
         if gMonitoringDB and gMonitoringDB._connected:
             return gMonitoringDB
     except Exception:
-        from DIRAC.Core.Base.Client import Client
+        pass
 
-        return Client(url="Monitoring/Monitoring")
+    from DIRAC.Core.Base.Client import Client
+
+    return Client(url="Monitoring/Monitoring")
