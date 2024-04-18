@@ -1,3 +1,20 @@
+[v8.0.42]
+
+*WorkloadManagementSystem
+
+FIX: (#7575) Fix potential circular import in WorkflowReader. Mostly seen in the creation of the documentation.
+FIX: (#7572) serverUtils: jit imports
+
+*Core
+
+FIX: (#7568) Support M2Crypto 0.40.0+
+CHANGE: (#7561) Replace the default PFN type ROOT_All with ROOT
+
+*WorkloadManagement
+
+FIX: (#7565) support file:/... as a location for the pilot files
+FIX: (#7563) make sure CVMFS_locations is a list
+
 [v8.0.41]
 
 *WorkloadManagement
