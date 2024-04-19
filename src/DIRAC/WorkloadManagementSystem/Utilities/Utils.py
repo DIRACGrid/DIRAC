@@ -22,6 +22,7 @@ def createJobWrapper(
     defaultWrapperLocation: str | None = "DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py",
     log: Logging | None = gLogger,
     logLevel: str | None = "INFO",
+    cfgPath: str | None = None,
 ):
     """This method creates a job wrapper filled with the CE and Job parameters to execute the job.
     Main user is the JobAgent.
@@ -38,6 +39,7 @@ def createJobWrapper(
     :param defaultWrapperLocation: Location of the default job wrapper template
     :param log: Logger
     :param logLevel: Log level
+    :param cfgPath: Path to a specific configuration file
     :return: S_OK with the path to the job wrapper and the path to the job wrapper json file
     """
     if isinstance(extraOptions, str) and extraOptions.endswith(".cfg"):
@@ -91,13 +93,15 @@ def createJobWrapper(
     jobWrapperDirect = os.path.join(rootLocation, f"Wrapper_{jobID}")
     jobExeFile = os.path.join(wrapperPath, f"Job{jobID}")
     jobFileContents = """#!/bin/sh
-{} {} {} -o LogLevel={} -o /DIRAC/Security/UseServerCertificate=no
+{} {} {} -o LogLevel={} -o /DIRAC/Security/UseServerCertificate=no {}
 """.format(
         pythonPath,
         jobWrapperDirect,
         extraOptions if extraOptions else "",
         logLevel,
+        cfgPath if cfgPath else "",
     )
+
     with open(jobExeFile, "w") as jobFile:
         jobFile.write(jobFileContents)
 

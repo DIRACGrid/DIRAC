@@ -24,17 +24,17 @@ from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper
 os.umask(0o22)
 
 
-def execute(jobID: str, arguments: dict):
+def execute(arguments: dict):
     """The only real function executed here"""
     payloadParams = arguments.pop("Payload", {})
     if not payloadParams:
         return 1
 
-    if not "PayloadResults" in arguments["Job"] or not "Checksum" in arguments["Job"]:
+    if "PayloadResults" not in arguments["Job"] or "Checksum" not in arguments["Job"]:
         return 1
 
     try:
-        job = JobWrapper(jobID)
+        job = JobWrapper()
         job.initialize(arguments)  # initialize doesn't return S_OK/S_ERROR
     except Exception as exc:  # pylint: disable=broad-except
         gLogger.exception("JobWrapper failed the initialization phase", lException=exc)
@@ -76,11 +76,9 @@ try:
     if "Job" not in jobArgs:
         raise ValueError(f"jobArgs does not contain 'Job' key: {str(jobArgs)}")
 
-    jobID = jobArgs["Job"].get("JobID", 0)
-    jobID = int(jobID)
-
-    ret = execute(jobID, jobArgs)
-except Exception as exc:  # pylint: disable=broad-except
+    ret = execute(jobArgs)
+except Exception:  # pylint: disable=broad-except
     gLogger.exception("JobWrapperTemplate exception")
+    ret = -1
 
 sys.exit(ret)

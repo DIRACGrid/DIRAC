@@ -126,6 +126,10 @@ To leverage the Push model, one has to add the :mod:`~DIRAC.WorkloadManagementSy
           # Control the number of jobs handled on the machine
           MaxJobsToSubmit = 100
           Module = PushJobAgent
+          # SubmissionPolicy can be "Application" or "JobWrapper"
+          # - Application (soon deprecated): the agent will submit a workflow to a PoolCE, the workflow is responsible for interacting with the remote site
+          # - JobWrapper: the agent will submit a JobWrapper directly to the remote site, it is responsible of the remote execution
+          SubmissionPolicy = <SubmissionPolicy>
    }
 
 One has also to authorize the machine hosting the :mod:`~DIRAC.WorkloadManagementSystem.Agent.PushJobAgent` to process jobs via the ``Registry/Hosts/<Host>`` CS section::

@@ -5,6 +5,7 @@ from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     getGroupsForUser,
     getPropertiesForGroup,
+    getPropertiesForHost,
     getUsersInGroup,
 )
 from DIRAC.Core.Security import Properties
@@ -75,7 +76,12 @@ class JobPolicy:
     def __init__(self, user, userGroup, allInfo=True):
         self.userName = user
         self.userGroup = userGroup
-        self.userProperties = getPropertiesForGroup(userGroup, [])
+
+        properties = getPropertiesForGroup(userGroup, [])
+        if not properties:
+            properties = getPropertiesForHost(user, [])
+        self.userProperties = properties
+
         self.jobDB = None
         self.allInfo = allInfo
         self._permissions = {}

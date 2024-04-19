@@ -132,7 +132,6 @@ def test_preProcess(mocker):
         f"-o /LocalSite/Site={DIRAC.siteName()}",
         "-o /LocalSite/GridCE=",
         "-o /LocalSite/CEQueue=",
-        "-o /LocalSite/RemoteExecution=False",
     ]
     assert (
         result["Value"]["command"].strip() == f"{diracJobExecLocation} jobDescription.xml {' '.join(expectedOptions)}"
@@ -145,7 +144,7 @@ def test_preProcess(mocker):
     # Test dirac-jobexec with arguments
     jw = JobWrapper()
     jw.jobArgs = {"Executable": "dirac-jobexec", "Arguments": "jobDescription.xml"}
-    jw.ceArgs = {"GridCE": "CE", "Queue": "Queue", "RemoteExecution": True}
+    jw.ceArgs = {"GridCE": "CE", "Queue": "Queue", "SubmissionPolicy": "Application"}
     result = jw.preProcess()
 
     assert result["OK"]
@@ -278,7 +277,7 @@ def test_processFailedSubprocess(mocker):
     assert not result["Value"]["payloadStatus"]
     assert not result["Value"]["payloadOutput"]
     assert result["Value"]["payloadExecutorError"] == "Any problem"
-    assert result["Value"]["cpuTimeConsumed"][0] == 0.0
+    assert round(result["Value"]["cpuTimeConsumed"][0], 1) == 0.0
     assert not result["Value"]["watchdogError"]
     assert not result["Value"]["watchdogStats"]
 
@@ -301,7 +300,7 @@ def test_processQuickExecutionNoWatchdog(mocker):
     assert result["Value"]["payloadStatus"] == 0
     assert result["Value"]["payloadOutput"] == "hello"
     assert not result["Value"]["payloadExecutorError"]
-    assert result["Value"]["cpuTimeConsumed"][0] >= 0.0
+    assert round(result["Value"]["cpuTimeConsumed"][0], 1) == 0.0
     assert not result["Value"]["watchdogError"]
     assert not result["Value"]["watchdogStats"]
 
