@@ -128,6 +128,8 @@ class RemoteRunner:
         self.log.info("The output has been retrieved and declared complete")
 
         # Clean up the job (local files not needed anymore)
+        os.remove(f"{stamp}.out")
+        os.remove(f"{stamp}.err")
         os.remove(self.checkSumOutput)
         os.remove(self.executable)
 
