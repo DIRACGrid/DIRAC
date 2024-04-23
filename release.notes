@@ -1,3 +1,13 @@
+[v8.0.44]
+
+*WorkloadManagement
+
+FIX: (#7588) AREX "out" and "err" need to exist before file integrity check
+
+*Core
+
+FIX: (#7583) File.secureOpenForWrite: fix exception when opening in binary mode, fixes #7581
+
 [v8.0.43]
 
 *MonitoringSystem
