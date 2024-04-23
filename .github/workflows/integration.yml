@@ -41,12 +41,12 @@ jobs:
             ARGS: DIRAC_USE_JSON_ENCODE=Yes DIRAC_USE_JSON_DECODE=Yes
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Fail-fast for outdated pipelines
       run: .github/workflows/fail-fast.sh
     - run: |
         git fetch --prune --unshallow
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     - name: Installing dependencies

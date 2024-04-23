@@ -7,8 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v2
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     - name: Install pre-commit
@@ -22,7 +22,7 @@ jobs:
     timeout-minutes: 30
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Run shellcheck
       # TODO This should cover more than just tests/CI
       # Excluded codes related to sourcing files
@@ -37,8 +37,8 @@ jobs:
     timeout-minutes: 30
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v2
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     - name: Installing dependencies
@@ -74,7 +74,7 @@ jobs:
           - mypy
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Fail-fast for outdated pipelines
       run: .github/workflows/fail-fast.sh
     - uses: conda-incubator/setup-miniconda@master
@@ -110,7 +110,7 @@ jobs:
           - pylint -j 0 -E src/
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Fail-fast for outdated pipelines
       run: .github/workflows/fail-fast.sh
     - name: fix python3.9
@@ -134,7 +134,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Fail-fast for outdated pipelines
       run: .github/workflows/fail-fast.sh
     - name: prepare environment
