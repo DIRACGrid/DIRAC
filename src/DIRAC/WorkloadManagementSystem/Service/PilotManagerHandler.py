@@ -36,6 +36,17 @@ class PilotManagerHandler(RequestHandler):
         defaultOption, defaultClass = "DownloadPlugin", "FileCacheDownloadPlugin"
         cls.configValue = getServiceOption(serviceInfoDict, defaultOption, defaultClass)
         cls.loggingPlugin = None
+        cls.elasticPilotParametersDB = None
+        try:
+            result = ObjectLoader().loadObject(
+                "WorkloadManagementSystem.DB.ElasticPilotParametersDB", "ElasticPilotParametersDB"
+            )
+            if not result["OK"]:
+                return result
+            cls.elasticPilotParametersDB = result["Value"]()
+        except RuntimeError as excp:
+            return S_ERROR(f"Can't connect to DB: {excp}")
+
         return S_OK()
 
     ##############################################################################
@@ -479,3 +490,15 @@ class PilotManagerHandler(RequestHandler):
     @classmethod
     def export_clearPilots(cls, interval=30, aborted_interval=7):
         return cls.pilotAgentsDB.clearPilots(interval, aborted_interval)
+
+    #### ElasticPilotParameters
+
+    types_setPilotParameters = [int, str, str]
+
+    @classmethod
+    def export_setPilotParameter(cls, pilotID, key, value):
+        """Set Pilot parameters"""
+        if cls.elasticPilotParametersDB:
+            return cls.elasticPilotParametersDB.setPilotParameter(pilotID, key, value)
+
+        return S_OK()

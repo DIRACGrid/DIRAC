@@ -5,12 +5,11 @@
       - setPilotParameter()
       - deletePilotParameters()
 """
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Utilities import TimeUtilities
-from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
+from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
+from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.Core.Base.ElasticDB import ElasticDB
-
+from DIRAC.Core.Utilities import TimeUtilities
 
 mapping = {
     "properties": {

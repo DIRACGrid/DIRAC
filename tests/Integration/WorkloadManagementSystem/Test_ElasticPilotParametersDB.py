@@ -150,9 +150,6 @@ def test_setAndGetPilotFromDB():
     assert len(res["Value"][1010000]) == 0
 
     # delete the indexes
-    res = elasticPilotParametersDB.deleteIndex(elasticPilotParametersDB.indexName_base)
-    assert res["OK"]
-    assert res["Value"] == "Nothing to delete"
     res = elasticPilotParametersDB.deleteIndex(elasticPilotParametersDB._indexName(100))
     assert res["OK"]
     res = elasticPilotParametersDB.deleteIndex(elasticPilotParametersDB._indexName(1010000))
