@@ -3,12 +3,14 @@
    by default on Error they return None
 """
 import os
+import platform
 import shutil
 
 import DIRAC
-from DIRAC.Core.Utilities.Decorators import deprecated
-from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities.Decorators import deprecated
+from DIRAC.Core.Utilities.File import safe_listdir
+from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 
 DEBUG = 0
 
@@ -147,6 +149,52 @@ def sourceEnv(timeout, cmdTuple, inputEnv=None):
     return result
 
 
-@deprecated("Will be removed in DIRAC 8.1", onlyOnce=True)
+@deprecated("Will be removed in DIRAC 9.0", onlyOnce=True)
 def which(executable):
     return shutil.which(executable)
+
+
+def findImage(continer_root="container/apptainer/alma9/"):
+    """Finds the image for the current platform
+    
+       This looks into location "${CVMFS_locations}/${container_root}/${platform}/"
+       and expects to find one of the following platforms:
+       - x86_64
+       - aarch64
+       - ppc64le
+
+    """
+    from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+
+    plat = DIRAC.gConfig.getValue("LocalSite/Platform", platform.machine())
+    DIRAC.gLogger.info(f"Platform: {plat}")
+    
+    # NB: platform compatibility is more complex than the following simple identification. 
+    # sources: 
+    # https://stackoverflow.com/questions/45125516/possible-values-for-uname-m
+    # https://en.wikipedia.org/wiki/Uname
+
+    if plat.lower() == "amd64":
+        plat = "x86_64"
+    if plat.lower().startswith("arm"):
+        plat = "aarch64"
+    if plat.lower().startswith("ppc64"):
+        plat = "ppc64le"
+
+    if plat not in ["x86_64", "aarch64", "ppc64le"]:
+        DIRAC.gLogger.error(f"Platform {plat} not supported")
+        return None
+
+    CVMFS_locations = DIRAC.gConfig.getValue(
+        "LocalSite/CVMFS_locations", Operations().getValue("Pilot/CVMFS_locations", [])
+    )
+
+    rootImage = None
+
+    for candidate in CVMFS_locations:
+        rootImage = os.path.join(candidate, continer_root, plat)
+        DIRAC.gLogger.verbose(f"Checking {rootImage} existence")
+        if safe_listdir(rootImage):
+            break
+
+    return rootImage
