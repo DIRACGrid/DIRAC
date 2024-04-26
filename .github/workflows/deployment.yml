@@ -21,14 +21,14 @@ jobs:
       run:
         shell: bash -l {0}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.PAT || github.token }}
       - run: |
           git fetch --prune --unshallow
           git config --global user.email "ci@diracgrid.org"
           git config --global user.name "DIRACGrid CI"
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Installing dependencies
