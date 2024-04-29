@@ -1,5 +1,39 @@
 config:
   DIRAC_CI_SETUP_SCRIPT: DIRAC/tests/Jenkins/dirac_ci.sh
+  PILOT_INSTALLATION_COMMAND: dirac-pilot.py --modules /home/dirac/LocalRepo/ALTERNATIVE_MODULES/DIRAC -M 1 -S dirac-JenkinsSetup -N jenkins.cern.ch -Q jenkins-queue_not_important -n DIRAC.Jenkins.ch --pilotUUID=whatever12345 --cert --certLocation=/home/dirac/PilotInstallDIR/etc/grid-security --CVMFS_locations=/home/dirac/PilotInstallDIR -o diracInstallOnly --wnVO=vo --debug
+  PILOT_JSON: "{
+        \"timestamp\": \"2023-02-13T14:34:26.725499\",
+        \"CEs\": {
+                \"jenkins.cern.ch\": {
+                        \"Site\": \"DIRAC.Jenkins.ch\",
+                        \"GridCEType\": \"TEST-FULL\"
+                }
+        },
+        \"Defaults\": {
+                \"Pilot\": {
+                        \"RemoteLogging\": \"False\",
+                        \"Version\": \"integration\",
+                        \"Commands\": {
+                                \"TEST-FULL\": \"CheckWorkerNode, InstallDIRAC, ConfigureBasics, RegisterPilot, CheckCECapabilities, CheckWNCapabilities, ConfigureSite, ConfigureArchitecture, ConfigureCPURequirements, LaunchAgent\"
+                        }
+                }
+        },
+        \"vo\": {
+                \"Pilot\": {
+                        \"CheckVersion\": \"False\",
+                        \"pilotFileServer\": \"should_not_matter\",
+                        \"pilotRepoBranch\": \"should_not_matter\",
+                        \"pilotRepo\": \"https://github.com/should_not_matter/Pilot.git\",
+                        \"GenericPilotGroup\": \"dirac_user\",
+                        \"GenericPilotDN\": \"/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser\",
+                        \"PilotLogLevel\": \"DEBUG\"
+                }
+        },
+        \"ConfigurationServers\": [
+                \"https://server:9135/Configuration/Server\"
+        ]
+}"
+  PILOT_DOWNLOAD_COMMAND: "git clone --single-branch --branch master https://github.com/DIRACGrid/Pilot.git && mv Pilot/Pilot/*.py . && rm -rf Pilot"
 
 # List of feature variables which must be passed when preparing
 required-feature-flags: []
