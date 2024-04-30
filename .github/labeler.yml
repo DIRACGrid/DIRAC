@@ -1,8 +1,4 @@
-alsoTargeting:integration:
-- '*'
-- '**/*'
-# Workaround as hidden files are ignored by the labeler action:
-# https://github.com/actions/labeler/issues/135
-- '.*'
-- '.*/*'
-- '.*/**/*'
+# Add 'alsoTargeting:integration' label to any changes within the entire repository
+"alsoTargeting:integration":
+  - changed-files:
+      - any-glob-to-any-file: '**'
