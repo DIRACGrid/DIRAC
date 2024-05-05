@@ -10,6 +10,9 @@
       - setJobParameter()
       - deleteJobParameters()
 """
+from collections import defaultdict
+from typing import Union
+
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.Core.Base.ElasticDB import ElasticDB
@@ -82,7 +85,7 @@ class ElasticJobParametersDB(ElasticDB):
                 raise RuntimeError(result["Message"])
             self.log.always("Index created:", indexName)
 
-    def getJobParameters(self, jobID: int, paramList=None) -> dict:
+    def getJobParameters(self, jobIDs: Union[int, list[int]], paramList=None) -> dict:
         """Get Job Parameters defined for jobID.
           Returns a dictionary with the Job Parameters.
           If paramList is empty - all the parameters are returned.
@@ -92,51 +95,30 @@ class ElasticJobParametersDB(ElasticDB):
         :param paramList: list of parameters to be returned (also a string is treated)
         :return: dict with all Job Parameter values
         """
+        if isinstance(jobIDs, int):
+            jobIDs = [jobIDs]
         if isinstance(paramList, str):
             paramList = paramList.replace(" ", "").split(",")
-        self.log.debug(f"JobDB.getParameters: Getting Parameters for job {jobID}")
-        resultDict = {}
-        inNewIndex = self.existsDoc(self._indexName(jobID), jobID)
-        inOldIndex = self._isInOldIndex(self.oldIndexName, jobID)
-        # Case 1: the parameters are stored in both indices
-        if inNewIndex and inOldIndex:
-            # First we get the parameters from the old index
-            self.log.debug(
-                f"A document with JobID {jobID} was found in the old index {self.oldIndexName} and in the new index {self._indexName(jobID)}"
-            )
-            resultDict = self._searchInOldIndex(jobID, paramList)
+        self.log.debug(f"JobDB.getParameters: Getting Parameters for jobs {jobIDs}")
 
-            # Now we get the parameters from the new index
-            res = self.getDoc(self._indexName(jobID), str(jobID))
-            if not res["OK"]:
-                self.log.error("Could not retrieve the data from the new index!", res["Message"])
-            else:
-                for key in res["Value"]:
-                    if paramList and key not in paramList:
-                        continue
-                    # Add new parameters or overwrite the old ones
-                    resultDict[key] = res["Value"][key]
+        # First search the old index
+        result = self._searchInOldIndex(jobIDs, paramList)
 
-        # Case 2: only in the old index
-        elif inOldIndex:
-            self.log.debug(f"A document with JobID {jobID} was found in the old index {self.oldIndexName}")
-            resultDict = self._searchInOldIndex(jobID, paramList)
+        # Next search the new index
+        res = self.getDocs(self._indexName, jobIDs)
+        if not res["OK"]:
+            return res
 
-        # Case 3: only in the new index
-        else:
-            self.log.debug(
-                f"The searched parameters with JobID {jobID} exists in the new index {self._indexName(jobID)}"
-            )
-            res = self.getDoc(self._indexName(jobID), str(jobID))
-            if not res["OK"]:
-                return res
-            resultDict = res["Value"]
+        # Update result, preferring parameters from the new index
+        for job_id, doc in res["Value"].items():
+            if job_id not in result:
+                result[job_id] = {}
             if paramList:
-                for k in list(resultDict):
-                    if k not in paramList:
-                        resultDict.pop(k)
+                result[job_id] |= {k: v for k, v in doc.items() if k in paramList}
+            else:
+                result[job_id] |= doc
 
-        return S_OK({jobID: resultDict})
+        return S_OK(result)
 
     def setJobParameter(self, jobID: int, key: str, value: str) -> dict:
         """
@@ -247,7 +229,7 @@ class ElasticJobParametersDB(ElasticDB):
         except (RequestError, NotFoundError):
             return False
 
-    def _searchInOldIndex(self, jobID: int, paramList: list) -> bool:
+    def _searchInOldIndex(self, jobIDs: list[int], paramList: list):
         """Searches for a document with this jobID in the old index"""
         if paramList:
             if isinstance(paramList, str):
@@ -255,28 +237,20 @@ class ElasticJobParametersDB(ElasticDB):
         else:
             paramList = []
 
-        resultDict = {}
-
-        # the following should be equivalent to
-        # {
-        #   "query": {
-        #     "bool": {
-        #       "filter": {  # no scoring
-        #         "term": {"JobID": jobID}  # term level query, does not pass through the analyzer
-        #       }
-        #     }
-        #   }
-        # }
-
-        s = self.dslSearch.query("bool", filter=self._Q("term", JobID=jobID))
+        s = self.dslSearch.query("bool", filter=self._Q("terms", JobID=jobIDs))
 
         res = s.scan()
 
-        for hit in res:
-            pname = hit.Name
-            if paramList and pname not in paramList:
-                continue
-            resultDict[pname] = hit.Value
+        resultDict = {}
+        try:
+            for hit in res:
+                jobID = int(hit.JobID)
+                pname = hit.Name
+                if paramList and pname not in paramList:
+                    continue
+                resultDict.setdefault(jobID, {})[pname] = hit.Value
+        except NotFoundError:
+            pass
         return resultDict
 
     def _deleteInOldIndex(self, jobID: int, paramList: list) -> dict:
