@@ -17,13 +17,15 @@ def load_se_definition(se_def_path):
 
 
 def load_dfc_dump(dfc_dump_path, version):
-    fc_dump = pd.read_csv(dfc_dump_path, names=["seName", "lfn", "cks", "size"], delimiter="|")
+    fc_dump = pd.read_csv(dfc_dump_path, names=["seName", "lfn", "fc_cks", "size"], delimiter="|")
+    fc_dump["fc_cks"] = fc_dump["fc_cks"].str.lower().str.pad(8, fillchar="0")
     fc_dump["version"] = version
     return fc_dump
 
 
 def load_se_dump(se_dump_path):
-    se_dump = pd.read_csv(se_dump_path, names=["pfn"], delimiter=";", index_col="pfn")
+    se_dump = pd.read_csv(se_dump_path, names=["pfn", "se_cks"], delimiter="|", index_col="pfn")
+    se_dump["se_cks"] = se_dump["se_cks"].str.lower().str.pad(8, fillchar="0")
     se_dump["version"] = "se_dump"
     return se_dump
 
@@ -96,6 +98,48 @@ def possibly_dark_data(
         pd.DataFrame(index=darkData).to_csv(dark_file_output)
     else:
         typer.secho("No dark data found", fg=GREEN)
+
+
+@app.command()
+def compare_checksum(
+    fc_dump_file: Annotated[Path, typer.Option(help="DFC dump")],
+    se_def_file: Annotated[Path, typer.Option(help="Definition of the SE path")],
+    se_dump_file: Annotated[Path, typer.Option(help="Dump of the SE")],
+    checksum_output: Annotated[
+        Path, typer.Option(help="Output file in which to dump checksum difference")
+    ] = "cks_diff.csv",
+):
+    """
+    Compare the checksums of a DFC and an SE dump.
+    Careful, sometimes the cks are not padded the same way
+    """
+    se_dump = load_se_dump(se_dump_file)
+    se_def = load_se_definition(se_def_file)
+
+    # Compute the PFN for each LFN in the DFC dump
+
+    fc_dump = load_dfc_dump(fc_dump_file, "fc")
+    fc_dump = pd.merge(fc_dump, se_def, on="seName")
+    fc_dump["pfn"] = fc_dump["basePath"] + fc_dump["lfn"]
+    fc_dump.set_index("pfn", inplace=True)
+
+    typer.echo(f"Computing checksum mismath")
+    # Find data in both SE and FC
+    in_both = se_dump.index.intersection(fc_dump.index)
+    # Make a single DF with both info, and only keep pfn in both
+    joined = pd.concat([fc_dump, se_dump], axis=1)
+    joined = joined[joined.index.isin(in_both)]
+
+    # Filter on non matching checksum
+    non_matching = joined.loc[joined["fc_cks"] != joined["se_cks"]][["seName", "lfn", "fc_cks", "se_cks"]]
+
+    if len(non_matching):
+        typer.secho(
+            f"Found {len(non_matching)} non matching checksum, dumping them in {checksum_output}", err=True, fg=RED
+        )
+        non_matching.to_csv(checksum_output, index=False)
+    else:
+        typer.secho("No checksum mismatch found", fg=GREEN)
 
 
 @app.command()
