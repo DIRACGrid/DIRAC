@@ -80,14 +80,14 @@ class GOCDBClient:
           .. code-block:: python
 
             {'OK': True,
-             'Value': {'92569G0 lhcbsrm-kit.gridka.de': {
+             'Value': {'92569G0 lhcbdcache-kit-tape.gridka.de': {
                            'DESCRIPTION': 'Annual site downtime for various major tasks i...',
                            'FORMATED_END_DATE': '2014-05-27 15:21',
                            'FORMATED_START_DATE': '2014-05-26 04:00',
                            'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=14051',
                            'HOSTED_BY': 'FZK-LCG2',
-                           'HOSTNAME': 'lhcbsrm-kit.gridka.de',
-                           'SERVICE_TYPE': 'SRM.nearline',
+                           'HOSTNAME': 'lhcbdcache-kit-tape.gridka.de',
+                           'SERVICE_TYPE': 'wlcg.webdav.tape',
                            'SEVERITY': 'OUTAGE'},
                        '99873G0 srm.pic.esSRM': {
                             'HOSTED_BY': 'pic',
@@ -97,7 +97,7 @@ class GOCDBClient:
                             'URL': 'srm.pic.es',
                             'GOCDB_PORTAL_URL': 'https://goc.egi.eu/portal/index.php?Page_Type=Downtime&id=21303',
                             'FORMATED_START_DATE': '2016-09-14 06:00',
-                            'SERVICE_TYPE': 'SRM',
+                            'SERVICE_TYPE': 'webdav',
                             'FORMATED_END_DATE': '2016-09-14 15:00',
                             'DESCRIPTION': 'Outage declared due to network and dCache upgrades'}
                        }
