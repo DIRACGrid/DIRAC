@@ -434,7 +434,7 @@ class DataManager:
         'overwrite' removes file from the file catalogue and SE before attempting upload
         """
 
-        if len(os.path.basename(lfn)) >= MAX_FILENAME_LENGTH:
+        if len(os.path.basename(lfn)) > MAX_FILENAME_LENGTH:
             return S_ERROR(errno.ENAMETOOLONG, f"maximum {MAX_FILENAME_LENGTH} characters allowed")
 
         res = self.__hasAccess("addFile", lfn)
