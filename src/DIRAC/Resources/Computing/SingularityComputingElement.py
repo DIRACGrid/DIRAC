@@ -11,6 +11,7 @@
     See the Configuration/Resources/Computing documention for details on
     where to set the option parameters.
 """
+
 import io
 import json
 import os
@@ -359,7 +360,7 @@ class SingularityComputingElement(ComputingElement):
         :return: S_OK(payload exit code) / S_ERROR() if submission issue
         """
         rootImage = self.__root
-
+        renewTask = None
         # Check that singularity is available
         if not self.__hasSingularity():
             self.log.error("Singularity is not installed on PATH.")
@@ -386,7 +387,6 @@ class SingularityComputingElement(ComputingElement):
                 renewTask = result["Value"]
             else:
                 self.log.warn("Failed to start proxy renewal task")
-                renewTask = None
 
         # Very simple accounting
         self.__submittedJobs += 1

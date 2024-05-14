@@ -35,6 +35,7 @@ class InProcessComputingElement(ComputingElement):
         """
         payloadEnv = dict(os.environ)
         payloadProxy = ""
+        renewTask = None
         if proxy:
             self.log.verbose("Setting up proxy for payload")
             result = self.writeProxyToFile(proxy)
@@ -52,7 +53,6 @@ class InProcessComputingElement(ComputingElement):
                 renewTask = result["Value"]
             else:
                 self.log.warn("Failed to start proxy renewal task")
-                renewTask = None
 
         self.submittedJobs += 1
         self.runningJobs += 1

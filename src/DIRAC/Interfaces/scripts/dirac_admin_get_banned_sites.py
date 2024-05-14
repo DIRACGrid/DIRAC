@@ -23,12 +23,11 @@ def main():
     diracAdmin = DiracAdmin()
 
     result = diracAdmin.getBannedSites()
-    if result["OK"]:
-        bannedSites = result["Value"]
-    else:
+    if not result["OK"]:
         gLogger.error(result["Message"])
         DIRACExit(2)
 
+    bannedSites = result["Value"]
     for site in bannedSites:
         result = diracAdmin.getSiteMaskLogging(site, printOutput=True)
         if not result["OK"]:

@@ -4,6 +4,7 @@
   interrogate the DIRAC Accounting.
 
 """
+
 # FIXME: NOT Usable ATM
 # missing doNew, doCache, doMaster
 
@@ -56,6 +57,7 @@ class DIRACAccountingCommand(Command):
         period = self.args[4]
         grouping = self.args[5]
 
+        fromT = toT = None
         if period["Format"] == "LastHours":
             fromT = datetime.utcnow() - timedelta(hours=period["hours"])
             toT = datetime.utcnow()

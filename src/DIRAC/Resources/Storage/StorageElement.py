@@ -964,7 +964,7 @@ class StorageElementItem:
         self.log.getSubLogger("getURL").debug(
             f"Getting accessUrl {f'({protocol})' if protocol else ''} for lfn in {self.name}."
         )
-
+        protocols = None
         if not protocol:
             # This turlProtocols seems totally useless.
             # Get ride of it when gfal2 is totally ready

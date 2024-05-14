@@ -461,8 +461,7 @@ class JobWrapper:
                 self.log.error("Failed to execute the payload", threadResult["Message"])
 
                 self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_THREAD_FAILED, sendFlag=True)
-                if "Value" in threadResult:
-                    outs = threadResult["Value"]
+                outs = threadResult.get("Value")
                 if outs:
                     self.__setJobParam("ApplicationError", outs[0], sendFlag=True)
                 else:

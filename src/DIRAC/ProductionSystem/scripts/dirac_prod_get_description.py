@@ -23,11 +23,11 @@ def main():
     prodID = args[0]
     res = prodClient.getProduction(prodID)
 
-    if res["OK"]:
-        prod = res["Value"]
-    else:
+    if not res["OK"]:
         DIRAC.gLogger.error(res["Message"])
         DIRAC.exit(-1)
+
+    prod = res["Value"]
 
     print(f"Description for production {prodID}:\n")
     print(prod["Description"])

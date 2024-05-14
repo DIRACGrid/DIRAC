@@ -200,6 +200,7 @@ class RequestTasks(TaskBase):
 
             # If there are input files
             if task.get("InputData"):
+                files = []
                 if isinstance(task["InputData"], list):
                     files = task["InputData"]
                 elif isinstance(task["InputData"], str):

@@ -1157,6 +1157,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         pilotDict = result["Value"]
         records = []
         for pilot in pilotList:
+            gridSite = None
             parList = []
             for parameter in paramNames:
                 if not isinstance(pilotDict[pilot][parameter], int):

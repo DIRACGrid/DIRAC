@@ -347,9 +347,10 @@ class AgentModule:
         elapsedTime = time.time()
         if self.activityMonitoring:
             initialWallTime, initialCPUTime, mem = self._startReportToMonitoring()
-        cycleResult = self.__executeModuleCycle()
-        if self.activityMonitoring and initialWallTime and initialCPUTime:
+            cycleResult = self.__executeModuleCycle()
             cpuPercentage = self._endReportToMonitoring(initialWallTime, initialCPUTime)
+        else:
+            cycleResult = self.__executeModuleCycle()
         # Increment counters
         self.__moduleProperties["cyclesDone"] += 1
         # Show status

@@ -145,6 +145,7 @@ def add_time_to_title(begin, end, metadata={}):
     representing 168 Hours, but needed the format to show the date as
     well as the time.
     """
+    format_str = None
     if "span" in metadata:
         interval = metadata["span"]
     else:

@@ -88,7 +88,7 @@ def queueNormalizedCPU(ceUniqueID):
 
     benchmarkSI00 = __getQueueNormalization(queueCSSection, siteCSSEction)
     maxCPUTime = __getMaxCPUTime(queueCSSection)
-
+    normCPUTime = -1
     if maxCPUTime and benchmarkSI00:
         normCPUTime = NORMALIZATIONCONSTANT * maxCPUTime * benchmarkSI00
     else:

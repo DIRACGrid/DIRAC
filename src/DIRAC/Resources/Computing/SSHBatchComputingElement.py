@@ -1,6 +1,7 @@
 """ SSH (Virtual) Computing Element: For a given list of ip/cores pair it will send jobs
     directly through ssh
 """
+
 import os
 import socket
 import stat
@@ -126,6 +127,7 @@ class SSHBatchComputingElement(SSHComputingElement):
         jobIDList = list(jobIDs)
         if isinstance(jobIDs, str):
             jobIDList = [jobIDs]
+        message = None
 
         hostDict = {}
         for job in jobIDList:

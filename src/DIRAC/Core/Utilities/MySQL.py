@@ -1231,7 +1231,7 @@ class MySQL:
         """
         condition = ""
         conjunction = "WHERE"
-
+        attrName = None
         if condDict is not None:
             for aName, attrValue in condDict.items():
                 if isinstance(aName, str):

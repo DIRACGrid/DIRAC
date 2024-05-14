@@ -63,6 +63,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
 
     @classmethod
     def __loadJobs(cls, eTypes=None):
+        jobCond = {}
         log = cls.log
         if cls.__loadTaskId:
             period = cls.srv_getCSOption("LoadJobPeriod", 300)

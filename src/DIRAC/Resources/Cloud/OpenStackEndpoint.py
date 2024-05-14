@@ -164,6 +164,7 @@ class OpenStackEndpoint(Endpoint):
 
         if not self.initialized:
             self.initialize()
+        numberOfProcessors = -1
 
         imageID = self.parameters.get("ImageID")
         if not imageID:
