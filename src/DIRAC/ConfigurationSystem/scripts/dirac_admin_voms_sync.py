@@ -11,10 +11,12 @@ from DIRAC.Core.Base.Script import Script
 from DIRAC.ConfigurationSystem.Client.VOMS2CSSynchronizer import VOMS2CSSynchronizer
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
-
+from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 
 dryRun = False
 voName = None
+compareWithIAM = False
+useIAM = False
 
 
 def setDryRun(value):
@@ -29,10 +31,25 @@ def setVO(value):
     return S_OK()
 
 
+def setCompareWithIAM(value):
+    global compareWithIAM
+    compareWithIAM = True
+    return S_OK()
+
+
+def setUseIAM(value):
+    global useIAM
+    useIAM = True
+    return S_OK()
+
+
 @Script()
 def main():
     Script.registerSwitch("V:", "vo=", "VO name", setVO)
     Script.registerSwitch("D", "dryRun", "Dry run", setDryRun)
+    Script.registerSwitch("C", "compareWithIAM", "Compare user list with IAM", setCompareWithIAM)
+    Script.registerSwitch("I", "useIAM", "Use IAM as authoritative source", setUseIAM)
+
     Script.parseCommandLine(ignoreErrors=True)
 
     @executeWithUserProxy
@@ -41,8 +58,19 @@ def main():
 
     voAdminUser = getVOOption(voName, "VOAdmin")
     voAdminGroup = getVOOption(voName, "VOAdminGroup", getVOOption(voName, "DefaultGroup"))
+    accessToken = None
+    if compareWithIAM or useIAM:
+        res = gTokenManager.getToken(
+            userGroup=voAdminGroup,
+            requiredTimeLeft=3600,
+            scope=["scim:read"],
+        )
+        if not res["OK"]:
+            return res
 
-    vomsSync = VOMS2CSSynchronizer(voName)
+        accessToken = res["Value"]["access_token"]
+
+    vomsSync = VOMS2CSSynchronizer(voName, compareWithIAM=compareWithIAM, useIAM=useIAM, accessToken=accessToken)
     result = syncCSWithVOMS(  # pylint: disable=unexpected-keyword-arg
         vomsSync, proxyUserName=voAdminUser, proxyUserGroup=voAdminGroup
     )
