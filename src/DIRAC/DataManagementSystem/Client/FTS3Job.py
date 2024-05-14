@@ -1,10 +1,22 @@
 """ FTS3Job module containing only the FTS3Job class """
+
 import datetime
 import errno
+from packaging.version import Version
+
 
 # Requires at least version 3.3.3
+from fts3 import __version__ as fts3_version
 import fts3.rest.client.easy as fts3
 from fts3.rest.client.exceptions import FTS3ClientException, NotFound
+
+# There is a breaking change in the API in 3.13
+# https://gitlab.cern.ch/fts/fts-rest-flask/-/commit/5faa283e0cd4b80a0139a547c4a6356522c8449d
+FTS3_SPACETOKEN_API_CHANGE = Version("3.13")
+if Version(fts3_version) >= FTS3_SPACETOKEN_API_CHANGE:
+    DESTINATION_SPACETOKEN_ATTR = "destination_spacetoken"
+else:
+    DESTINATION_SPACETOKEN_ATTR = "spacetoken"
 
 # We specifically use Request in the FTS client because of a leak in the
 # default pycurl. See https://its.cern.ch/jira/browse/FTS-261
@@ -501,11 +513,11 @@ class FTS3Job(JSerializable):
         if self.activity:
             job_metadata["activity"] = self.activity
 
+        dest_spacetoken = {DESTINATION_SPACETOKEN_ATTR: target_spacetoken}
         job = fts3.new_job(
             transfers=transfers,
             overwrite=True,
             source_spacetoken=source_spacetoken,
-            spacetoken=target_spacetoken,
             bring_online=bring_online,
             copy_pin_lifetime=copy_pin_lifetime,
             retry=3,
@@ -514,6 +526,7 @@ class FTS3Job(JSerializable):
             metadata=job_metadata,
             priority=self.priority,
             archive_timeout=archive_timeout,
+            **dest_spacetoken,
         )
 
         return S_OK((job, fileIDsInTheJob))
@@ -641,16 +654,18 @@ class FTS3Job(JSerializable):
         if self.activity:
             job_metadata["activity"] = self.activity
 
+        dest_spacetoken = {DESTINATION_SPACETOKEN_ATTR: target_spacetoken}
+
         job = fts3.new_job(
             transfers=transfers,
             overwrite=True,
             source_spacetoken=target_spacetoken,
-            spacetoken=target_spacetoken,
             bring_online=bring_online,
             copy_pin_lifetime=copy_pin_lifetime,
             retry=3,
             metadata=job_metadata,
             priority=self.priority,
+            **dest_spacetoken,
         )
 
         return S_OK((job, fileIDsInTheJob))
