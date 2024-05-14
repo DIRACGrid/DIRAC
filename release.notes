@@ -1,3 +1,10 @@
+[v8.0.45]
+
+*WorkloadManagement
+
+CHANGE: (#7606) Make RemoteRunner more resilient to CE issues
+CHANGE: (#7603) Perform bulk lookup of job parameters from elasticsearch
+
 [v8.0.44]
 
 *WorkloadManagement
