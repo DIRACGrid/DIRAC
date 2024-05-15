@@ -1,5 +1,6 @@
 """ Module for dealing with VOMS (Virtual Organization Membership Service)
 """
+
 from datetime import datetime
 import os
 import stat
@@ -88,6 +89,8 @@ class VOMS(BaseSecurity):
             returnValue = nickName
         elif switch == "all":
             returnValue = attributes
+        else:
+            raise NotImplementedError(switch)
 
         return S_OK(returnValue)
 

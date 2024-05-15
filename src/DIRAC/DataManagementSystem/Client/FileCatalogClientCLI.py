@@ -671,9 +671,8 @@ class FileCatalogClientCLI(CLI):
     def complete_ancestorset(self, text, line, begidx, endidx):
         args = line.split()
 
-        if len(args) == 1:
-            cur_path = ""
-        elif len(args) > 1:
+        cur_path = ""
+        if len(args) > 1:
             # If the line ends with ' '
             # this means a new parameter begin.
             if line.endswith(" "):

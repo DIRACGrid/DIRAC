@@ -174,6 +174,8 @@ class CheckConfig:
             diffType, entryName, _value, changes, _comment = entry
         elif len(entry) == 4:
             diffType, entryName, _value, changes = entry
+        else:
+            raise ValueError(f"Invalid entry {entry}")
 
         fullPath = os.path.join(level, entryName)
 

@@ -25,6 +25,7 @@ class Graph:
 
     def layoutFigure(self, legend):
         prefs = self.prefs
+        nsublines = left = bottom = None
 
         # Get the main Figure object
         # self.figure = Figure()
@@ -182,7 +183,7 @@ class Graph:
 
     def makeGraph(self, data, *args, **kw):
         start = time.time()
-
+        plot_type = None
         # Evaluate all the preferences
         self.prefs = evalPrefs(*args, **kw)
         prefs = self.prefs

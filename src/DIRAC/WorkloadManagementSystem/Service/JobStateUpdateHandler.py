@@ -6,6 +6,7 @@
     setJobStatus()
 
 """
+
 import time
 import datetime as dateTime
 
@@ -356,6 +357,7 @@ class JobStateUpdateHandlerMixin:
         for job specified by its JobId
         """
         failed = False
+        message = ""
 
         for jobID in jobsParameterDict:
             if cls.elasticJobParametersDB:

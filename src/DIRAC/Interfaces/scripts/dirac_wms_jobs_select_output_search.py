@@ -80,12 +80,11 @@ def main():
         jobGroup=jobGroup,
         date=date,
     )
-    if result["OK"]:
-        jobs = result["Value"]
-    else:
+    if not result["OK"]:
         print("Error in selectJob", result["Message"])
         DIRAC.exit(2)
 
+    jobs = result["Value"]
     for job in jobs:
         result = dirac.getOutputSandbox(job)
         if result["OK"]:

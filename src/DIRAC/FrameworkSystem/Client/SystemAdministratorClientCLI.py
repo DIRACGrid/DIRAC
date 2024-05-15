@@ -623,6 +623,7 @@ class SystemAdministratorClientCLI(CLI):
           install executor <system> <executor> [-m <ModuleName>] [-p <Option>=<Value>] [-p <Option>=<Value>] ...
         """
         argss = args.split()
+        hostSetup = extension = None
         if not argss:
             gLogger.notice(self.do_install.__doc__)
             return

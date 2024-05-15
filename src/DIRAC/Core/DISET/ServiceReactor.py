@@ -14,6 +14,7 @@
   must inherit from the base class RequestHandler
 
 """
+
 import time
 import datetime
 import selectors
@@ -201,6 +202,7 @@ class ServiceReactor:
         """
         sel = self.__getListeningSelector(svcName)
         while self.__alive:
+            clientTransport = None
             try:
                 events = sel.select(timeout=10)
                 if len(events) == 0:

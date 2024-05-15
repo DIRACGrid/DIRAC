@@ -197,7 +197,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
         :param default: defult value
         :type default: None, str
         """
-
+        cs_path = None
         # DIRAC doesn't store the status of ComputingElements nor FTS in the CS, so here we can just return 'Active'
         if elementType in ("ComputingElement", "FTS"):
             return S_OK({elementName: {"all": "Active"}})
@@ -270,7 +270,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
         """
         Sets on the CS the Elements status
         """
-
+        cs_path = None
         # DIRAC doesn't store the status of ComputingElements nor FTS in the CS, so here we can just do nothing
         if elementType in ("ComputingElement", "FTS"):
             return S_OK()

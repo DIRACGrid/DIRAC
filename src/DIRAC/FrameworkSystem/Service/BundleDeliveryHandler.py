@@ -1,5 +1,6 @@
 """ Handler for CAs + CRLs bundles
 """
+
 import tarfile
 import os
 import io
@@ -98,6 +99,7 @@ class BundleDeliveryHandlerMixin:
 
     def transfer_toClient(self, fileId, token, fileHelper):
         version = ""
+        bId = None
         if isinstance(fileId, str):
             if fileId in ["CAs", "CRLs"]:
                 return self.__transferFile(fileId, fileHelper)
@@ -107,7 +109,7 @@ class BundleDeliveryHandlerMixin:
             if len(fileId) == 0:
                 fileHelper.markAsTransferred()
                 return S_ERROR("No bundle specified!")
-            elif len(fileId) == 1:
+            if len(fileId) == 1:
                 bId = fileId[0]
             else:
                 bId = fileId[0]

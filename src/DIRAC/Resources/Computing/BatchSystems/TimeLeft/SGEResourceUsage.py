@@ -1,6 +1,7 @@
 """ The SGE TimeLeft utility interrogates the SGE batch system for the
     current CPU consumed, as well as its limit.
 """
+
 import os
 import re
 import time
@@ -43,10 +44,11 @@ class SGEResourceUsage(ResourceUsage):
         lines = str(result["Value"]).split("\n")
         for line in lines:
             if re.search("usage.*cpu.*", line):
-                match = re.search(r"cpu=([\d,:]*),", line)
-                if match:
-                    cpuList = match.groups()[0].split(":")
                 try:
+                    match = re.search(r"cpu=([\d,:]*),", line)
+
+                    cpuList = match.groups()[0].split(":")
+
                     newcpu = 0.0
                     if len(cpuList) == 3:
                         newcpu = float(cpuList[0]) * 3600 + float(cpuList[1]) * 60 + float(cpuList[2])
@@ -59,8 +61,8 @@ class SGEResourceUsage(ResourceUsage):
                         )
                     if not cpu or newcpu > cpu:
                         cpu = newcpu
-                except ValueError:
-                    self.log.warn(f'Problem parsing "{line}" for CPU consumed')
+                except (ValueError, AttributeError) as e:
+                    self.log.warn(f'Problem parsing "{line}" for CPU consumed {e!r}')
             if re.search("hard resource_list.*cpu.*", line):
                 match = re.search(r"_cpu=(\d*)", line)
                 if match:

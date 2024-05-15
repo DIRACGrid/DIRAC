@@ -132,6 +132,7 @@ def main():
         else:
             fdType = "-" + params.getIndex()
             for arg in args:
+                rtype = None
                 meta, mtype = arg.split("=")
                 if mtype.lower()[:3] == "int":
                     rtype = "INT"

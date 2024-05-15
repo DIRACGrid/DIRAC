@@ -1,5 +1,6 @@
 """ Handler for CAs + CRLs bundles
 """
+
 from base64 import b64encode
 
 from DIRAC import S_OK, S_ERROR
@@ -13,6 +14,7 @@ class TornadoBundleDeliveryHandler(BundleDeliveryHandlerMixin, TornadoService):
 
     def export_streamToClient(self, fileId):
         version = ""
+        bId = None
         if isinstance(fileId, str):
             if fileId in ["CAs", "CRLs"]:
                 retVal = Utilities.generateCAFile() if fileId == "CAs" else Utilities.generateRevokedCertsFile()

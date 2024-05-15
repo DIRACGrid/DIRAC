@@ -33,8 +33,10 @@ class ProdTransManager:
         :param int prodID: the ProductionID
         """
         res = self.prodClient.getProductionTransformations(prodID)
-        if res["OK"]:
-            transList = res["Value"]
+        if not res["OK"]:
+            return res
+
+        transList = res["Value"]
 
         gLogger.notice(f"Deleting production transformations {transList} from the TS")
 

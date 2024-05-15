@@ -280,6 +280,7 @@ class NotificationDB(DB):
     def updateAlarm(self, updateReq):
         # Discover alarm identification
         idOK = False
+        alarmModsSQL = None
         for field in self.__updateAlarmIdentificationFields:
             if field in updateReq:
                 idOK = True
