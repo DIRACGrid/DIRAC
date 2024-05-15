@@ -472,6 +472,8 @@ class GFAL2_StorageBase(StorageBase):
         # gfal2 needs a protocol to copy local which is 'file:'
         if not dest_file.startswith("file://"):
             dest = f"file://{os.path.abspath(dest_file)}"
+        else:
+            dest = dest_file
 
         # We can remove the context manager when https://its.cern.ch/jira/browse/DMC-1371
         # is solved

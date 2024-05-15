@@ -272,6 +272,7 @@ class RequestValidator(metaclass=DIRACSingleton):
         credUserName = remoteCredentials["username"]
         credGroup = remoteCredentials["group"]
         credProperties = remoteCredentials["properties"]
+        ownershipCheck = None
 
         # FIXME: code for backward compatibility with requests created by 8.0 clients
         # The below can be clearly simplified, leaving the extended checks for clarity

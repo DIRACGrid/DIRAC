@@ -3,6 +3,7 @@
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
     CMS/Phedex Project by ... <to be added>
 """
+
 from matplotlib.patches import Rectangle
 from matplotlib.text import Text
 from matplotlib.figure import Figure
@@ -63,6 +64,7 @@ class Legend:
         legend_padding = float(self.prefs["legend_padding"])
         legend_text_size = self.prefs.get("legend_text_size", self.prefs["text_size"])
         legend_text_padding = self.prefs.get("legend_text_padding", self.prefs["text_padding"])
+        legend_max_height = -1
         if legend_position in ["right", "left"]:
             # One column in case of vertical legend
             legend_width = self.column_width + legend_padding

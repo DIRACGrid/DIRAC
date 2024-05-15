@@ -1,5 +1,6 @@
 """ Handler for CAs + CRLs bundles
 """
+
 import io
 import os
 import tarfile
@@ -91,6 +92,7 @@ class BundleDeliveryHandlerMixin:
         self.bundleManager.updateBundles()
 
         version = ""
+        bId = None
         if isinstance(fileId, str):
             if fileId in ["CAs", "CRLs"]:
                 return self.__transferFile(fileId, fileHelper)

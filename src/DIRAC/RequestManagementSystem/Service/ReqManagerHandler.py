@@ -67,12 +67,8 @@ class ReqManagerHandlerMixin:
     @classmethod
     def export_getRequestIDForName(cls, requestName):
         """get requestID for given :requestName:"""
-        if isinstance(requestName, str):
-            result = cls.__requestDB.getRequestIDForName(requestName)
-            if not result["OK"]:
-                return result
-            requestID = result["Value"]
-        return S_OK(requestID)
+
+        return cls.__requestDB.getRequestIDForName(requestName)
 
     types_cancelRequest = [int]
 

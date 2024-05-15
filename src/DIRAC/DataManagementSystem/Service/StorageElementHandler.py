@@ -286,10 +286,12 @@ class StorageElementHandler(RequestHandler):
     def export_listDirectory(self, dir_path, mode):
         """Return the dir_path directory listing"""
         is_file = False
+        fname = None
+        dirList = None
         path = self.__resolveFileID(dir_path)
         if not os.path.exists(path):
             return S_ERROR(f"Directory {dir_path} does not exist")
-        elif os.path.isfile(path):
+        if os.path.isfile(path):
             fname = os.path.basename(path)
             is_file = True
         else:

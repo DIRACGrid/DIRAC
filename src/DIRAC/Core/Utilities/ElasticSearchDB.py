@@ -604,6 +604,7 @@ class ElasticSearchDB:
 
         # Do NOT use datetime.today() because it is not UTC
         todayUTC = datetime.utcnow().date()
+        suffix = None
 
         if period.lower() == "day":
             suffix = todayUTC.strftime("%Y-%m-%d")

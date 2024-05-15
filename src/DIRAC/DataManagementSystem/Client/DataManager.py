@@ -8,6 +8,7 @@
 This module consists of DataManager and related classes.
 
 """
+
 # # imports
 from datetime import datetime, timedelta
 import fnmatch
@@ -988,6 +989,8 @@ class DataManager:
             fileTuples = fileTuple
         elif isinstance(fileTuple, tuple):
             fileTuples = [fileTuple]
+        else:
+            return S_ERROR(f"fileTuple is none of list,set,tuple: {type(fileTuple)}")
         for fileTuple in fileTuples:
             if not isinstance(fileTuple, tuple):
                 errStr = "Supplied file info must be tuple or list of tuples."
@@ -1041,6 +1044,8 @@ class DataManager:
             replicaTuples = replicaTuple
         elif isinstance(replicaTuple, tuple):
             replicaTuples = [replicaTuple]
+        else:
+            return S_ERROR(f"replicaTuple is not of type list,set or tuple: {type(replicaTuple)}")
         for replicaTuple in replicaTuples:
             if not isinstance(replicaTuple, tuple):
                 errStr = "Supplied file info must be tuple or list of tuples."

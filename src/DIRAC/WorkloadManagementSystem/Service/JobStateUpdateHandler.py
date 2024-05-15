@@ -6,6 +6,7 @@
     setJobStatus()
 
 """
+
 import time
 
 from DIRAC import S_OK, S_ERROR
@@ -171,6 +172,7 @@ class JobStateUpdateHandlerMixin:
         for job specified by its JobId
         """
         failed = False
+        message = ""
 
         for jobID in jobsParameterDict:
             res = cls.elasticJobParametersDB.setJobParameter(
