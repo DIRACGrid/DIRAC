@@ -49,6 +49,7 @@ def parseSwitches():
 
     Script.parseCommandLine(ignoreErrors=True)
     args = Script.getPositionalArgs()
+    query = None
     if len(args) < 3:
         error("Missing all mandatory 'query', 'element', 'tableType' arguments")
     elif args[0].lower() not in ("select", "add", "modify", "delete"):

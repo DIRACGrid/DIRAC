@@ -3,6 +3,7 @@
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
     CMS/Phedex Project by ... <to be added>
 """
+
 import datetime
 from pylab import setp
 from matplotlib.colors import Normalize
@@ -39,7 +40,6 @@ cdict = {
 
 
 class QualityMapGraph(PlotBase):
-
     """
     The BarGraph class is a straightforward bar graph; given a dictionary
     of values, it takes the keys as the independent variable and the values
@@ -167,7 +167,7 @@ class QualityMapGraph(PlotBase):
         setp(self.ax.get_xticklines(), markersize=0.0)  # pylint: disable=not-callable
         setp(self.ax.get_yticklines(), markersize=0.0)  # pylint: disable=not-callable
 
-        cax, kw = make_axes(self.ax, orientation="vertical", fraction=0.07)
+        cax, _kw = make_axes(self.ax, orientation="vertical", fraction=0.07)  # pylint: disable=unpacking-non-sequence
         # ColorbarBase is used to generate the colors within the legend at the right of the plot
         ColorbarBase(
             cax, cmap=self.cmap, norm=self.norms, boundaries=self.cbBoundaries, values=self.cbValues, ticks=self.cbTicks

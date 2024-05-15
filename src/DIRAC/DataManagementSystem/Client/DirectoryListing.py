@@ -60,6 +60,7 @@ class DirectoryListing:
         date = dirDict["ModificationDate"]
         nlinks = 0
         size = 0
+        gname = None
         if "Owner" in dirDict:
             uname = dirDict["Owner"]
         elif "OwnerDN" in dirDict:
