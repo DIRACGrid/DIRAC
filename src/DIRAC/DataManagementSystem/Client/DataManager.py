@@ -26,6 +26,7 @@ from DIRAC.Core.Utilities.List import randomize, breakListIntoChunks
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.DataManagementSystem.Client import MAX_FILENAME_LENGTH
 from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -432,6 +433,9 @@ class DataManager:
         'path' is the path on the storage where the file will be put (if not provided the LFN will be used)
         'overwrite' removes file from the file catalogue and SE before attempting upload
         """
+
+        if len(os.path.basename(lfn)) > MAX_FILENAME_LENGTH:
+            return S_ERROR(errno.ENAMETOOLONG, f"maximum {MAX_FILENAME_LENGTH} characters allowed")
 
         res = self.__hasAccess("addFile", lfn)
         if not res["OK"]:

@@ -16,6 +16,8 @@
     temporary replica.
 
 """
+
+import errno
 import time
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -107,6 +109,9 @@ class FailoverTransfer:
                     break
                 elif cmpError(result, EFCERR):
                     self.log.debug("transferAndRegisterFile: FC unavailable, retry")
+                elif cmpError(result, errno.ENAMETOOLONG):
+                    self.log.debug(f"transferAndRegisterFile: this file won't be uploaded: {result}")
+                    return result
                 elif retryUpload and len(destinationSEList) == 1:
                     self.log.debug("transferAndRegisterFile: Failed uploading to the only SE, retry")
                 else:
