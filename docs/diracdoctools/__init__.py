@@ -10,7 +10,6 @@ DIRAC_DOC_MOCK_LIST = [
     "arc",
     "cmreslogging",
     "diracx",
-    "fts3",
     "gfal2",
     "git",
     "lcg_util",
