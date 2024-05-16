@@ -273,6 +273,23 @@ class ElasticSearchDB:
             return S_ERROR(re)
 
     @ifConnected
+    def getDocs(self, indexFunc, docIDs: list[str]) -> list[dict]:
+        """Efficiently retrieve many documents from an index.
+
+        :param index: name of the index
+        :param docIDs: document IDs
+        """
+        sLog.debug(f"Retrieving documents {docIDs}")
+        docs = [{"_index": indexFunc(docID), "_id": docID} for docID in docIDs]
+        try:
+            response = self.client.mget({"docs": docs})
+        except RequestError as re:
+            return S_ERROR(re)
+        else:
+            results = {int(x["_id"]): x["_source"] if x.get("found") else {} for x in response["docs"]}
+            return S_OK(results)
+
+    @ifConnected
     def updateDoc(self, index: str, docID: str, body) -> dict:
         """Update an existing document with a script or partial document
 

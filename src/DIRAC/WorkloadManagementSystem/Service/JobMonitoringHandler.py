@@ -465,12 +465,10 @@ class JobMonitoringHandlerMixin:
         if not isinstance(jobIDs, list):
             jobIDs = [jobIDs]
         jobIDs = [int(jobID) for jobID in jobIDs]
-        parameters = {}
-        for jobID in jobIDs:
-            res = cls.elasticJobParametersDB.getJobParameters(jobID, parName)
-            if not res["OK"]:
-                return res
-            parameters.update(res["Value"])
+        res = cls.elasticJobParametersDB.getJobParameters(jobIDs, parName)
+        if not res["OK"]:
+            return res
+        parameters = res["Value"]
 
         # Need anyway to get also from JobDB, for those jobs with parameters registered in MySQL or in both backends
         res = cls.jobDB.getJobParameters(jobIDs, parName)
