@@ -193,9 +193,6 @@ logger.info("Getting the pilot files from %(location)s")
 
 location = '%(location)s'.replace(' ', '').split(',')
 
-import random
-random.shuffle(location)
-
 # we try from the available locations
 locs = [os.path.join('https://', loc) if not loc.startswith(('file:', 'https:')) else loc for loc in location]
 locations = locs + [os.path.join(loc, 'pilot') for loc in locs]
