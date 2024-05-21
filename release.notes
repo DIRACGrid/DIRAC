@@ -1,3 +1,18 @@
+[v8.0.46]
+
+*WorkloadManagement
+
+FIX: (#7620) remove random shuffle in PilotWrapper
+
+*All
+
+FIX: (#7614) fix pylint 3.2.0 warnings
+
+*DataManagementSystem
+
+NEW: (#7613) prepare for FTS 3.13 release with breaking API
+NEW: (#7604) DataManager.putAndRegister rejects too long filename
+
 [v8.0.45]
 
 *WorkloadManagement
