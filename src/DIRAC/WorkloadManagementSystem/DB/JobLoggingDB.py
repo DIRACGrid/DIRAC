@@ -7,11 +7,10 @@
     getWMSTimeStamps()
 """
 import datetime
-import time
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import TimeUtilities
+from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.DB import DB
+from DIRAC.Core.Utilities import TimeUtilities
 
 MAGIC_EPOC_NUMBER = 1270000000
 

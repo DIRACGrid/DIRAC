@@ -5,15 +5,15 @@
 import pprint
 import time
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
+from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
+from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 
 
 class InputData(OptimizerExecutor):
