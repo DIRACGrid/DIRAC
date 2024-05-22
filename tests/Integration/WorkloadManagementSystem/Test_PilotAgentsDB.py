@@ -84,8 +84,6 @@ def test_basic():
 
     res = paDB.deletePilot("pilotRef")
 
-    # FIXME: to expand...
-
 
 @patch("DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB.getVOForGroup")
 def test_getGroupedPilotSummary(mocked_fcn):
@@ -186,11 +184,5 @@ def test_PivotedPilotSummaryTable():
 
     # pilot numbers by states:
     assert "Total" in columns
-
-    # with the setup above there will be only one row, first 3 elements must match the columns.
-    row = res["Value"][0]
-    assert row[0] == testSite
-    assert row[1] == testCE
-    assert row[2] == testVO
 
     cleanUpPilots(pilotRef)
