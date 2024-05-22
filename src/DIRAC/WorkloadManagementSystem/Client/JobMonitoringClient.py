@@ -1,6 +1,5 @@
 """ Class that contains client access to the job monitoring handler. """
 
-import os
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict

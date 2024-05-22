@@ -4,18 +4,11 @@ import base64
 import zlib
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-
-
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.Core.Utilities.DErrno import EWMSSUBM, EWMSJMAN
+from DIRAC.Core.Utilities.DErrno import EWMSSUBM
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-
-from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK, returnValueOrRaise
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
-
-
-from DIRAC.Core.Utilities.ReturnValues import returnValueOrRaise
-
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 
 getDIRACPlatform = returnValueOrRaise(
     ObjectLoader().loadObject("ConfigurationSystem.Client.Helpers.Resources", "getDIRACPlatform")
