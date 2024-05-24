@@ -52,6 +52,11 @@ class DownloadInputData:
         to leave room for any produced files.
         """
 
+        print("in execute")
+        gLogger.always("in execute, gLogger")
+        print(self.log)
+        self.log.always("in execute, self.log")
+
         # Define local configuration options present at every site
         localSESet = set(self.configuration["LocalSEList"])
 

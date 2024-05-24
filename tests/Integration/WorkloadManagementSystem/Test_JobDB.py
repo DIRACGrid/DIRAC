@@ -154,6 +154,7 @@ def test_getJobJDL_nonOriginal(jobDB: JobDB):
         CPUTime = 86400;
         Executable = "dirac-jobexec";
         InputData = "";
+        InputDataModule = "DIRAC.WorkloadManagementSystem.Client.DownloadInputData";
         InputSandbox =
             {{
                 "../../Integration/WorkloadManagementSystem/exe-script.py",

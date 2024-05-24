@@ -3,21 +3,20 @@
     Can be automatized.
 """
 # pylint: disable=protected-access, wrong-import-position, invalid-name, missing-docstring
+import multiprocessing
 import os
 import sys
 import unittest
-import multiprocessing
 
 import DIRAC
 
 DIRAC.initialize(extra_config_files=["pilot.cfg"])  # Initialize configuration
 
 from DIRAC import gLogger, rootPath
+from DIRAC.Interfaces.API.Dirac import Dirac
+from DIRAC.Interfaces.API.Job import Job
 from DIRAC.tests.Utilities.IntegrationTest import IntegrationTest
 from DIRAC.tests.Utilities.utils import find_all
-
-from DIRAC.Interfaces.API.Job import Job
-from DIRAC.Interfaces.API.Dirac import Dirac
 
 
 class UserJobTestCase(IntegrationTest):
@@ -154,6 +153,27 @@ class LSSuccess(UserJobTestCase):
         self.assertTrue(res["OK"])
 
 
+class DownloadSuccess(UserJobTestCase):
+    def test_execute(self):
+        """Testing a job that downloads inputs"""
+
+        job = Job()
+
+        job.setName("dl-test")
+        job.setExecutable("/bin/ls", "-l")
+        job.setLogLevel("DEBUG")
+        try:
+            # This is the standard location in Jenkins
+            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+        except (IndexError, KeyError):
+            job.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
+        job.setConfigArgs("pilot.cfg")
+        job.setInputData("/vo/test_lfn.txt")
+        job.setInputDataPolicy("Download")
+        res = job.runLocal(self.d)
+        self.assertTrue(res["OK"])
+
+
 class MPSuccess(UserJobTestCase):
     def test_fixed(self):
         """this tests executes a job that requires exactly 4 processors"""
@@ -245,6 +265,7 @@ if __name__ == "__main__":
     suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(HelloWorldSuccess))
     suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(HelloWorldPlusSuccess))
     suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(LSSuccess))
+    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DownloadSuccess))
     suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MPSuccess))
     suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MPSuccessMinMax))
     testResult = unittest.TextTestRunner(verbosity=2).run(suite)
