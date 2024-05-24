@@ -31,6 +31,10 @@ class DownloadInputData:
     #############################################################################
     def __init__(self, argumentsDict):
         """Standard constructor"""
+<<<<<<< HEAD
+=======
+        self.name = COMPONENT_NAME
+>>>>>>> 7b851fb83 (fix: adding log headers to InputDataResolution modules)
         self.inputData = argumentsDict["InputData"]
         self.configuration = argumentsDict["Configuration"]
         self.jobID = self.configuration.get("JobID")
@@ -38,7 +42,11 @@ class DownloadInputData:
         self.fileCatalogResult = argumentsDict["FileCatalog"]
         # By default put each input data file into a separate directory
         self.inputDataDirectory = argumentsDict.get("InputDataDirectory", "PerFile")
+<<<<<<< HEAD
 
+=======
+        
+>>>>>>> 7b851fb83 (fix: adding log headers to InputDataResolution modules)
         self.log = gLogger.getSubLogger(f"[{self.jobID}]{self.__class__.__name__}")
         self.log.showHeaders(True)
 
@@ -51,11 +59,6 @@ class DownloadInputData:
         enough local disk space is available.  A buffer is left in this calculation
         to leave room for any produced files.
         """
-
-        print("in execute")
-        gLogger.always("in execute, gLogger")
-        print(self.log)
-        self.log.always("in execute, self.log")
 
         # Define local configuration options present at every site
         localSESet = set(self.configuration["LocalSEList"])
