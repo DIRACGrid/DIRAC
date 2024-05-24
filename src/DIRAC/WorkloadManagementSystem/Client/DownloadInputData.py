@@ -1,22 +1,16 @@
-########################################################################
-# File :    DownloadInputData.py
-# Author :  Stuart Paterson
-########################################################################
-
 """ The Download Input Data module wraps around the Replica Management
-    components to provide access to datasets by available site protocols as
-    defined in the CS for the VO.
+    components to provide access to datasets by downloading locally
 """
 import os
-import tempfile
 import random
+import tempfile
 
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
-from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities.Os import getDiskSpace
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
 COMPONENT_NAME = "DownloadInputData"
 
@@ -37,7 +31,6 @@ class DownloadInputData:
     #############################################################################
     def __init__(self, argumentsDict):
         """Standard constructor"""
-        self.name = COMPONENT_NAME
         self.inputData = argumentsDict["InputData"]
         self.configuration = argumentsDict["Configuration"]
         self.jobID = self.configuration.get("JobID")
@@ -45,7 +38,7 @@ class DownloadInputData:
         self.fileCatalogResult = argumentsDict["FileCatalog"]
         # By default put each input data file into a separate directory
         self.inputDataDirectory = argumentsDict.get("InputDataDirectory", "PerFile")
-        
+
         self.log = gLogger.getSubLogger(f"[{self.jobID}]{self.__class__.__name__}")
         self.log.showHeaders(True)
 
