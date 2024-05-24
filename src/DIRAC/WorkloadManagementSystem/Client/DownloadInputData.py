@@ -38,14 +38,17 @@ class DownloadInputData:
     def __init__(self, argumentsDict):
         """Standard constructor"""
         self.name = COMPONENT_NAME
-        self.log = gLogger.getSubLogger(self.name)
         self.inputData = argumentsDict["InputData"]
         self.configuration = argumentsDict["Configuration"]
+        self.jobID = self.configuration.get("JobID")
         # Warning: this contains not only the SEs but also the file metadata
         self.fileCatalogResult = argumentsDict["FileCatalog"]
         # By default put each input data file into a separate directory
         self.inputDataDirectory = argumentsDict.get("InputDataDirectory", "PerFile")
-        self.jobID = None
+        
+        self.log = gLogger.getSubLogger(f"[{self.jobID}]{self.__class__.__name__}")
+        self.log.showHeaders(True)
+
         self.counter = 1
         self.availableSEs = DMSHelpers().getStorageElements()
 
@@ -58,8 +61,6 @@ class DownloadInputData:
 
         # Define local configuration options present at every site
         localSESet = set(self.configuration["LocalSEList"])
-
-        self.jobID = self.configuration.get("JobID")
 
         if dataToResolve:
             self.log.verbose("Data to resolve passed directly to DownloadInputData module")
@@ -173,10 +174,12 @@ class DownloadInputData:
                     self.log.error(error, lfn)
                     result = {"OK": False}
                 else:
-                    self.log.info("Preliminary checks OK", f"download {lfn} from {seName}:")
+                    self.log.info("Preliminary checks OK", f": now downloading {lfn} from {seName}")
                     result = self._downloadFromSE(lfn, seName, reps, guid)
                     if not result["OK"]:
                         self.log.error("Download failed", f"Tried downloading from SE {seName}: {result['Message']}")
+                    else:
+                        self.log.info(f"Download of {lfn} from {seName} finalized")
             else:
                 result = {"OK": False}
 
