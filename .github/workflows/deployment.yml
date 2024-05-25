@@ -152,7 +152,7 @@ jobs:
           export PATH=/usr/share/miniconda3/bin:/opt/conda/bin/:/opt/conda/condabin:$PATH
           mkdir -p ~/.ssh/ && touch ~/.ssh/known_hosts
           ssh-keyscan cvmfs-upload01.gridpp.rl.ac.uk >> ~/.ssh/known_hosts
-          gsissh -p 1975 -t cvmfs-upload01.gridpp.rl.ac.uk /home/diracsgm/cvmfs_repo/admin/sync_packages.sh -v
+          gsissh -p 1975 -t cvmfs-upload01.gridpp.rl.ac.uk /home/diracsgm/admin/sync_packages.sh
       - name: setup tmate session
         if: ${{ failure() }}
         uses: mxschmitt/action-tmate@v3
