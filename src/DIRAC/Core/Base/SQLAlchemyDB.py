@@ -44,7 +44,9 @@ class SQLAlchemyDB(DIRACDB):
             raise Exception(f"Cannot get database parameters: {result['Message']}")
 
         dbParameters = result["Value"]
-        self.log.debug(f"db parameters: {dbParameters}")
+        db_param_redacted = dbParameters.copy()
+        db_param_redacted["Password"] = "**REDACTED**"
+        self.log.debug(f"db parameters: {db_param_redacted}")
         self.host = dbParameters["Host"]
         self.port = dbParameters["Port"]
         self.user = dbParameters["User"]
