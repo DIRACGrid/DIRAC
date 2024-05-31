@@ -27,6 +27,10 @@ UseLocalSchedd:
    then one does not need to run condor daemons on the submit machine.
    If True requires the condor grid middleware (condor_submit, condor_history, condor_q, condor_rm)
 
+UseSSLSubmission:
+   If 'True', use SSL via a DN configured at the given computing element to submit jobs.
+   This is a bridge feature until everyone is capable to use Tokens to submit to computing elements.
+
 WorkingDirectory:
    Location to store the pilot and condor log files locally. It should exist on the server and be accessible (both
    readable and writeable).  Also temporary files like condor submit files are kept here. This option is only read
@@ -54,7 +58,7 @@ import threading
 import uuid
 
 from DIRAC import S_ERROR, S_OK, gConfig
-from DIRAC.Core.Security.Locations import getCAsLocation
+from DIRAC.Core.Security.Locations import getCAsLocation, getCertificateAndKeyLocation
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Subprocess import systemCall
@@ -102,6 +106,7 @@ class HTCondorCEComputingElement(ComputingElement):
             gConfig.getValue("Resources/Computing/HTCondorCE/WorkingDirectory", DEFAULT_WORKINGDIRECTORY),
         )
         self.useLocalSchedd = True
+        self.useSSLSubmission = False
         self.remoteScheddOptions = ""
         self.tokenFile = None
 
@@ -214,6 +219,10 @@ class HTCondorCEComputingElement(ComputingElement):
             "" if self.useLocalSchedd else f"-pool {self.ceName}:{self.port} -name {self.ceName} "
         )
 
+        self.useSSLSubmission = self.ceParameters.get("UseSSLSubmission", self.useSSLSubmission)
+        if self.useSSLSubmission == "True":
+            self.useSSLSubmission = True
+
         self.log.debug("Using local schedd:", self.useLocalSchedd)
         self.log.debug("Remote scheduler option:", self.remoteScheddOptions)
         return S_OK()
@@ -236,6 +245,23 @@ class HTCondorCEComputingElement(ComputingElement):
         htcEnv = {
             "_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "GSI",
         }
+
+        if self.useSSLSubmission:
+            if not (certAndKey := getCertificateAndKeyLocation()):
+                return S_ERROR("You want to use SSL Submission, but no certificate and key are present")
+            if not (caFiles := getCAsLocation()):
+                return S_ERROR("You want to use SSL Submission, but no CA files are present")
+            htcEnv = {
+                "_condor_SEC_CLIENT_AUTHENTICATION_METHODS": "SSL",
+                "_condor_AUTH_SSL_CLIENT_CERTFILE": certAndKey[0],
+                "_condor_AUTH_SSL_CLIENT_KEYFILE": certAndKey[1],
+                "_condor_AUTH_SSL_CLIENT_CADIR": caFiles,
+                "_condor_AUTH_SSL_SERVER_CADIR": caFiles,
+                "_condor_AUTH_SSL_USE_CLIENT_PROXY_ENV_VAR": "false",
+                "_condor_AUTH_SSL_SERVER_CAFILE": "",
+                "_condor_AUTH_SSL_CLIENT_CAFILE": "",
+            }
+
         # If a token is present, then we use it (overriding htcEnv)
         if self.token:
             # Create a new token file if we do not keep it across several calls
