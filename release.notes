@@ -1,3 +1,25 @@
+[v8.0.47]
+
+*DataManagementSystem
+
+NEW: (#7632) Add a protocol parameter to the getReplicas method family
+
+*Core
+
+FIX: (#7631) Avoid printing out clear text password in SQLAlchemy
+
+*Resources
+
+NEW: (#7630) HTCondorCE: Added UseSSLSubmission option. Allows one to use a configured DN at given Sites for job submission, instead of proxies or tokens. Only at participating CEs and conditions apply.
+
+*Deployment
+
+FIX: (#7626) fix the path of the CVMFS sync_packages.sh script
+
+*WorkloadManagementSystem
+
+CHANGE: (#7599) add jobGroup to job parameters
+
 [v8.0.46]
 
 *WorkloadManagement
