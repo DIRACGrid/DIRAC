@@ -1062,7 +1062,8 @@ class AccountingDB(DB):
                     sqlORList.append(f"`{_getTableName('key', typeName, keyName)}`.`value` = {keyValue}")
                 else:
                     sqlORList.append(f"`{tableName}`.`{keyName}` = {keyValue}")
-            sqlCondList.append(f"( {' OR '.join(sqlORList)} )")
+            if sqlORList:
+                sqlCondList.append(f"( {' OR '.join(sqlORList)} )")
         if sqlCondList:
             cmd += f" AND {' AND '.join(sqlCondList)}"
         # Calculate grouping and sorting
