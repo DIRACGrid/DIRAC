@@ -1,3 +1,52 @@
+[v9.0.0a29]
+
+*WorkloadManagementSystem
+
+FIX: (#7649) added log headers to InputDataResolution modules
+CHANGE: (#7629) add jobGroup to job parameters
+FIX: (#7584) ServerUtils: prevent getPilotAgentsDB from returning None
+FIX: (#7576) Fix potential circular import in WorkflowReader. Mostly seen in the creation of the documentation.
+
+*WorkloadManagement
+
+NEW: (#7643) Support Pydantic 2
+FIX: (#7621) remove random shuffle in PilotWrapper
+CHANGE: (#7609) Perform bulk lookup of job parameters from elasticsearch
+CHANGE: (#7608) Make RemoteRunner more resilient to CE issues
+FIX: (#7594) JobMonitoring.getJobParameters should pass jobID as an int to ElasticJobParametersDB
+FIX: (#7590) AREX "out" and "err" need to exist before file integrity check
+
+*Accounting
+
+FIX: (#7640) AccountingDB only generate condition if needed
+
+*Resources
+
+NEW: (#7638) HTCondorCE: Added UseSSLSubmission option. Allows one to use a configured DN at given Sites for job submission, instead of proxies or tokens. Only at participating CEs and conditions apply.
+
+*Core
+
+FIX: (#7634) Avoid printing out clear text password in SQLAlchemy
+FIX: (#7591) File.secureOpenForWrite: fix exception when opening in binary mode, fixes #7581
+
+*DataManagementSystem
+
+NEW: (#7633) Add a protocol parameter to the getReplicas method family
+NEW: (#7619) prepare for FTS 3.13 release with breaking API
+NEW: (#7617) DataManager.putAndRegister rejects too long filename
+
+*Deployment
+
+FIX: (#7628) fix the path of the CVMFS sync_packages.sh script
+
+*All
+
+FIX: (#7616) fix pylint 3.2.0 warnings
+
+*MonitoringSystem
+
+FIX: (#7584) ServerUtils: prevent getMonitoringDB from returning None
+
 [v9.0.0a28]
 
 *WorkloadManagementSystem
