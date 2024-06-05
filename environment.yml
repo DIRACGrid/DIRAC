@@ -89,7 +89,7 @@ dependencies:
   #- tornado >=5.0.0,<6.0.0
   - typing >=3.6.6
   - pyyaml
-  - rucio-clients >=1.29.10
+  - rucio-clients >=34.4.2
   # For mypy
   - mypy >=0.982
   - types-cachetools
