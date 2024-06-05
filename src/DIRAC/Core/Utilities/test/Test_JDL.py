@@ -14,11 +14,21 @@ from DIRAC.Interfaces.API.Job import Job
 from DIRAC.WorkloadManagementSystem.Utilities.JobModel import JobDescriptionModel
 
 
-def test_jdlToBaseJobDescriptionModel_valid():
+@pytest.fixture()
+def jdl_monkey_business(monkeypatch):
+    monkeypatch.setattr("DIRAC.Core.Base.API.getSites", lambda: S_OK(["LCG.IN2P3.fr"]))
+    monkeypatch.setattr("DIRAC.WorkloadManagementSystem.Utilities.JobModel.getSites", lambda: S_OK(["LCG.IN2P3.fr"]))
+    monkeypatch.setattr("DIRAC.Interfaces.API.Job.getDIRACPlatforms", lambda: S_OK("x86_64-slc6-gcc49-opt"))
+    monkeypatch.setattr(
+        "DIRAC.WorkloadManagementSystem.Utilities.JobModel.getDIRACPlatforms", lambda: S_OK("x86_64-slc6-gcc49-opt")
+    )
+    yield
+
+
+def test_jdlToBaseJobDescriptionModel_valid(jdl_monkey_business):
     """This test makes sure that a job object can be parsed by the jdlToBaseJobDescriptionModel method"""
     # Arrange
-    with patch("DIRAC.Core.Base.API.getSites", return_value=S_OK(["LCG.IN2P3.fr"])):
-        job = Job()
+    job = Job()
     job.setConfigArgs("configArgs")
     job.setCPUTime(3600)
     job.setExecutable("/bin/echo", arguments="arguments", logFile="logFile")
@@ -36,8 +46,7 @@ def test_jdlToBaseJobDescriptionModel_valid():
     job.setParameterSequence("FloatSequence", [1.0, 2.0, 3.0])
 
     job.setOutputData(["outputfile.root"], outputSE="IN2P3-disk", outputPath="/myjobs/1234")
-    with patch("DIRAC.Interfaces.API.Job.getDIRACPlatforms", return_value=S_OK("x86_64-slc6-gcc49-opt")):
-        job.setPlatform("x86_64-slc6-gcc49-opt")
+    job.setPlatform("x86_64-slc6-gcc49-opt")
     job.setPriority(10)
 
     job.setDestination("LCG.IN2P3.fr")
@@ -71,15 +80,7 @@ def test_jdlToBaseJobDescriptionModel_valid():
     assert res["OK"], res["Message"]
 
     data = res["Value"].dict()
-    with patch(
-        "DIRAC.WorkloadManagementSystem.Utilities.JobModel.getDIRACPlatforms",
-        return_value=S_OK(["x86_64-slc6-gcc49-opt"]),
-    ):
-        with patch(
-            "DIRAC.WorkloadManagementSystem.Utilities.JobModel.getSites",
-            return_value=S_OK(["LCG.IN2P3.fr"]),
-        ):
-            assert JobDescriptionModel(owner="owner", ownerGroup="ownerGroup", vo="lhcb", **data)
+    assert JobDescriptionModel(owner="owner", ownerGroup="ownerGroup", vo="lhcb", **data)
 
 
 @pytest.mark.parametrize(
@@ -90,7 +91,7 @@ def test_jdlToBaseJobDescriptionModel_valid():
         """Executable="executable";""",  # Missing brackets
     ],
 )
-def test_jdlToBaseJobDescriptionModel_invalid(jdl):
+def test_jdlToBaseJobDescriptionModel_invalid(jdl, jdl_monkey_business):
     """This test makes sure that a job object without an executable raises an error"""
     # Arrange
 
