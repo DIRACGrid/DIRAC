@@ -71,6 +71,7 @@ class TransferClient(BaseClient):
             retVal = transport.receiveData()
             return retVal
         finally:
+            fileHelper.oFile.close()
             self._disconnect(trid)
 
     def receiveFile(self, filename, fileId, token=""):
