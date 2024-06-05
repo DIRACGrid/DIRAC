@@ -1,13 +1,8 @@
-########################################################################
-# File :    InputDataByProtocol.py
-# Author :  Stuart Paterson
-########################################################################
-
 """ The Input Data By Protocol module wraps around the Replica Management
     components to provide access to datasets by available site protocols as
     defined in the CS for the VO.
 """
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
@@ -18,12 +13,12 @@ class InputDataByProtocol:
     #############################################################################
     def __init__(self, argumentsDict):
         """Standard constructor"""
-        self.name = COMPONENT_NAME
-        self.log = gLogger.getSubLogger(self.name)
         self.inputData = argumentsDict["InputData"]
         self.configuration = argumentsDict["Configuration"]
+        self.jobID = self.configuration.get("JobID")
         self.fileCatalogResult = argumentsDict["FileCatalog"]
-        self.jobID = None
+        self.log = gLogger.getSubLogger(f"[{self.jobID}]{self.__class__.__name__}")
+        self.log.showHeaders(True)
         # This is because  replicas contain SEs and metadata keys!
         # FIXME: the structure of the dictionary must be fixed to avoid this mess
         self.metaKeys = {
@@ -52,7 +47,6 @@ class InputDataByProtocol:
 
         # Define local configuration options present at every site
         localSEList = self.configuration["LocalSEList"]
-        self.jobID = self.configuration.get("JobID")
         allReplicas = self.configuration.get("AllReplicas", False)
         if allReplicas:
             self.log.info("All replicas will be used in the resolution")
