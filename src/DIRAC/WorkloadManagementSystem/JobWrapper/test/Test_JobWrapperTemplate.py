@@ -5,6 +5,7 @@ We don't test the actual execution of the wrapper or its payload.
 """
 import json
 import os
+import re
 import shutil
 import sys
 
@@ -311,7 +312,7 @@ def test_createAndExecuteRelocatedJobWrapperTemplate_success(extraOptions):
 
     assert result.returncode == 127, result.stderr
     assert result.stdout == b"", result.stdout
-    assert f"{jobExecutableRelocatedPath}: not found".encode() in result.stderr, result.stderr
+    assert re.search(rf"{jobExecutableRelocatedPath}: (No such file or directory|not found)", result.stderr.decode())
 
     # 3. Now we relocate the files as a container bind mount would do and execute the relocated executable file in a subprocess
     # We expect it to work
@@ -424,7 +425,7 @@ def test_createAndExecuteJobWrapperOfflineTemplate_success(extraOptions):
 
     assert result.returncode == 127, result.stderr
     assert result.stdout == b"", result.stdout
-    assert f"{jobExecutableRelocatedPath}: not found".encode() in result.stderr, result.stderr
+    assert re.search(rf"{jobExecutableRelocatedPath}: (No such file or directory|not found)", result.stderr.decode())
 
     # 3. Now we relocate the files as if they were on a remote resource and execute the relocated executable file in a subprocess
     # We expect it to fail because the payload parameters are not available

@@ -2,7 +2,11 @@
 
 # pylint: disable=no-self-argument, no-self-use, invalid-name, missing-function-docstring
 
-from typing import Any
+from collections.abc import Iterable
+from typing import Any, Annotated
+
+import pydantic
+from packaging.version import Version
 from pydantic import BaseModel, root_validator, validator
 
 from DIRAC import gLogger
@@ -10,17 +14,38 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACPlatforms, getSites
 
 
+# HACK: Convert appropriate iterables into sets
+def default_set_validator(value):
+    if not isinstance(value, Iterable):
+        return value
+    elif isinstance(value, (str, bytes, bytearray)):
+        return value
+    else:
+        return set(value)
+
+
+if Version(pydantic.__version__) > Version("2.0.0a0"):
+    CoercibleSetStr = Annotated[
+        set[str] | None, pydantic.BeforeValidator(default_set_validator)  # pylint: disable=no-member
+    ]
+else:
+    CoercibleSetStr = set[str]
+
+
 class BaseJobDescriptionModel(BaseModel):
     """Base model for the job description (not parametric)"""
 
+    class Config:
+        validate_assignment = True
+
     arguments: str = None
-    bannedSites: set[str] = None
+    bannedSites: CoercibleSetStr = None
     cpuTime: int = Operations().getValue("JobDescription/DefaultCPUTime", 86400)
     executable: str
     executionEnvironment: dict = None
     gridCE: str = None
-    inputSandbox: set[str] = None
-    inputData: set[str] = None
+    inputSandbox: CoercibleSetStr = None
+    inputData: CoercibleSetStr = None
     inputDataPolicy: str = None
     jobConfigArgs: str = None
     jobGroup: str = None
@@ -29,16 +54,16 @@ class BaseJobDescriptionModel(BaseModel):
     logLevel: str = "INFO"
     maxNumberOfProcessors: int = None
     minNumberOfProcessors: int = 1
-    outputData: set[str] = None
+    outputData: CoercibleSetStr = None
     outputPath: str = None
-    outputSandbox: set[str] = None
+    outputSandbox: CoercibleSetStr = None
     outputSE: str = None
     platform: str = None
     priority: int = Operations().getValue("JobDescription/DefaultPriority", 1)
-    sites: set[str] = None
+    sites: CoercibleSetStr = None
     stderr: str = "std.err"
     stdout: str = "std.out"
-    tags: set[str] = None
+    tags: CoercibleSetStr = None
     extraFields: dict[str, Any] = None
 
     @validator("cpuTime")
@@ -83,7 +108,7 @@ class BaseJobDescriptionModel(BaseModel):
                     raise ValueError("Input data files must start with LFN:/")
         return v
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def checkNumberOfInputDataFiles(cls, values):
         if "inputData" in values and values["inputData"]:
             maxInputDataFiles = Operations().getValue("JobDescription/MaxInputData", 500)
@@ -126,14 +151,14 @@ class BaseJobDescriptionModel(BaseModel):
             )
         return v
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def checkThatMaxNumberOfProcessorsIsGreaterThanMinNumberOfProcessors(cls, values):
         if "maxNumberOfProcessors" in values and values["maxNumberOfProcessors"]:
             if values["maxNumberOfProcessors"] < values["minNumberOfProcessors"]:
                 raise ValueError("maxNumberOfProcessors must be greater than minNumberOfProcessors")
         return values
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def addTagsDependingOnNumberOfProcessors(cls, values):
         if "maxNumberOfProcessors" in values and values["minNumberOfProcessors"] == values["maxNumberOfProcessors"]:
             if values["tags"] is None:
@@ -157,7 +182,7 @@ class BaseJobDescriptionModel(BaseModel):
                 raise ValueError(f"Invalid sites: {' '.join(invalidSites)}")
         return v
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def checkThatSitesAndBannedSitesAreNotMutuallyExclusive(cls, values):
         if "sites" in values and values["sites"] and "bannedSites" in values and values["bannedSites"]:
             values["sites"] -= values["bannedSites"]
@@ -192,7 +217,7 @@ class JobDescriptionModel(BaseJobDescriptionModel):
     ownerGroup: str
     vo: str
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def checkLFNMatchesREGEX(cls, values):
         if "inputData" in values and values["inputData"]:
             for lfn in values["inputData"]:
