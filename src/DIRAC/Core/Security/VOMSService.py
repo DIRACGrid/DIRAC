@@ -1,19 +1,23 @@
 """ VOMSService class encapsulates connection to the VOMS service for a given VO
 """
+
 import requests
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security.Locations import getProxyLocation, getCAsLocation
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
 
 class VOMSService:
-    def __init__(self, vo=None):
+    def __init__(self, vo=None, compareWithIAM=False, useIAM=False):
         """c'tor
 
         :param str vo: name of the virtual organization (community)
+        :param compareWithIAM: if true, also dump the list of users from IAM and compare
+        :param useIAM: if True, use Iam instead of VOMS
         """
 
         if vo is None:
@@ -22,6 +26,7 @@ class VOMSService:
             raise Exception("No VO name given")
 
         self.vo = vo
+
         self.vomsVO = getVOOption(vo, "VOMSName")
         if not self.vomsVO:
             raise Exception(f"Can not get VOMS name for VO {vo}")
@@ -35,8 +40,23 @@ class VOMSService:
         else:
             gLogger.error(f"Section '/Registry/VO/{self.vo}/VOMSServers' not found")
 
+        self.iam_url = None
+        self.compareWithIAM = compareWithIAM
+        self.useIAM = useIAM
+        if compareWithIAM or useIAM:
+            id_provider = gConfig.getValue(f"/Registry/VO/{self.vo}/IdProvider")
+            if not id_provider:
+                raise ValueError(f"/Registry/VO/{self.vo}/IdProvider not found")
+            result = gConfig.getOptionsDict(f"/Resources/IdProviders/{id_provider}")
+            if result["OK"]:
+                self.iam_url = result["Value"]["issuer"]
+                gLogger.verbose("Using IAM server", self.iam_url)
+            else:
+                raise ValueError(f"/Resources/IdProviders/{id_provider}")
+
         self.userDict = None
 
+    @deprecated("Not used, it will be removed")
     def attGetUserNickname(self, dn, _ca=None):
         """Get user nickname for a given DN if any
 
@@ -63,7 +83,6 @@ class VOMSService:
 
         :return: user dictionary keyed by the user DN
         """
-
         if not self.urls:
             return S_ERROR(DErrno.ENOAUTH, "No VOMS server defined")
 

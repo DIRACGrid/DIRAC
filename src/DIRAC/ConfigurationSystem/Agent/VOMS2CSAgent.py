@@ -25,12 +25,15 @@ The following options can be set for the VOMS2CSAgent.
   corresponding options defined in the ``/Registry/VO/<VO_name>`` configuration section.
 
 """
+
+
 from DIRAC import S_OK, gConfig, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption, getUserOption
 from DIRAC.ConfigurationSystem.Client.VOMS2CSSynchronizer import VOMS2CSSynchronizer
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 
@@ -50,6 +53,8 @@ class VOMS2CSAgent(AgentModule):
         self.autoLiftSuspendedStatus = True
         self.mailFrom = "noreply@dirac.system"
         self.syncPluginName = None
+        self.compareWithIAM = False
+        self.useIAM = False
 
     def initialize(self):
         """Initialize the default parameters"""
@@ -63,6 +68,8 @@ class VOMS2CSAgent(AgentModule):
         self.autoLiftSuspendedStatus = self.am_getOption("AutoLiftSuspendedStatus", self.autoLiftSuspendedStatus)
         self.makeFCEntry = self.am_getOption("MakeHomeDirectory", self.makeFCEntry)
         self.syncPluginName = self.am_getOption("SyncPluginName", self.syncPluginName)
+        self.compareWithIAM = self.am_getOption("CompareWithIAM", self.compareWithIAM)
+        self.useIAM = self.am_getOption("UseIAM", self.useIAM)
 
         self.detailedReport = self.am_getOption("DetailedReport", self.detailedReport)
         self.mailFrom = self.am_getOption("MailFrom", self.mailFrom)
@@ -95,6 +102,21 @@ class VOMS2CSAgent(AgentModule):
             autoLiftSuspendedStatus = getVOOption(vo, "AutoLiftSuspendedStatus", self.autoLiftSuspendedStatus)
             syncPluginName = getVOOption(vo, "SyncPluginName", self.syncPluginName)
 
+            compareWithIAM = getVOOption(vo, "CompareWithIAM", self.compareWithIAM)
+            useIAM = getVOOption(vo, "UseIAM", self.useIAM)
+
+            accessToken = None
+            if compareWithIAM or useIAM:
+                res = gTokenManager.getToken(
+                    userGroup=voAdminGroup,
+                    requiredTimeLeft=3600,
+                    scope=["scim:read"],
+                )
+                if not res["OK"]:
+                    return res
+
+                accessToken = res["Value"]["access_token"]
+
             vomsSync = VOMS2CSSynchronizer(
                 vo,
                 autoAddUsers=autoAddUsers,
@@ -102,6 +124,9 @@ class VOMS2CSAgent(AgentModule):
                 autoDeleteUsers=autoDeleteUsers,
                 autoLiftSuspendedStatus=autoLiftSuspendedStatus,
                 syncPluginName=syncPluginName,
+                compareWithIAM=compareWithIAM,
+                useIAM=useIAM,
+                accessToken=accessToken,
             )
 
             result = self.__syncCSWithVOMS(  # pylint: disable=unexpected-keyword-arg
