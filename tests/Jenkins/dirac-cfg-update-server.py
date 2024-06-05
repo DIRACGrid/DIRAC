@@ -127,6 +127,7 @@ csAPI.setOption("Resources/FileCatalogs/MultiVOFileCatalog/CatalogURL", "DataMan
 #           DIRAC.Jenkins.ch
 #           {
 #             SE = SE-1
+#             SE += S3-DIRECT
 #             CEs
 #             {
 #               jenkins.cern.ch
@@ -163,7 +164,7 @@ for st in [
         print(res["Message"])
         sys.exit(1)
 
-csAPI.setOption("Resources/Sites/DIRAC/DIRAC.Jenkins.ch/SE", "SE-1")
+csAPI.setOption("Resources/Sites/DIRAC/DIRAC.Jenkins.ch/SE", "SE-1,S3-DIRECT")
 csAPI.setOption("Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/CEType", "Test")
 csAPI.setOption(
     "Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/Queues/jenkins-queue_not_important/maxCPUTime", "200000"
@@ -433,6 +434,31 @@ if not res["OK"]:
     print(res["Message"])
     sys.exit(1)
 csAPI.setOption("Operations/Defaults/Services/Catalogs/CatalogList", "FileCatalog, TSCatalog, MultiVOFileCatalog")
+
+
+# Adding InputDataPolicy section of Operations
+# Operations
+# {
+#   Defaults
+#   {
+#     InputDataPolicy
+#     {
+#      Download = DIRAC.WorkloadManagementSystem.Client.DownloadInputData
+#      InputDataModule = DIRAC.WorkloadManagementSystem.Client.DownloadInputData
+#     }
+#   }
+# }
+
+res = csAPI.createSection("Operations/Defaults/InputDataPolicy")
+if not res["OK"]:
+    print(res["Message"])
+    sys.exit(1)
+csAPI.setOption(
+    "Operations/Defaults/InputDataPolicy/Download", "DIRAC.WorkloadManagementSystem.Client.DownloadInputData"
+)
+csAPI.setOption(
+    "Operations/Defaults/InputDataPolicy/InputDataModule", "DIRAC.WorkloadManagementSystem.Client.DownloadInputData"
+)
 
 
 # Adding DataManagement section of Operations
