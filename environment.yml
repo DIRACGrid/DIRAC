@@ -90,7 +90,7 @@ dependencies:
   - simplejson >=3.8.1
   #- tornado >=5.0.0,<6.0.0
   - typing >=3.6.6
-  - rucio-clients
+  - rucio-clients >=1.29.10
   # For mypy
   - mypy >=0.982
   - types-cachetools
