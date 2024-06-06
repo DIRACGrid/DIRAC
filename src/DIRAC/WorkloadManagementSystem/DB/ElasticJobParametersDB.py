@@ -12,23 +12,6 @@ from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC.Core.Utilities import TimeUtilities
 
-mapping = {
-    "properties": {
-        "JobID": {"type": "long"},
-        "timestamp": {"type": "date"},
-        "CPUNormalizationFactor": {"type": "long"},
-        "NormCPUTime(s)": {"type": "long"},
-        "Memory(kB)": {"type": "long"},
-        "TotalCPUTime(s)": {"type": "long"},
-        "MemoryUsed(kb)": {"type": "long"},
-        "HostName": {"type": "keyword"},
-        "GridCE": {"type": "keyword"},
-        "ModelName": {"type": "keyword"},
-        "Status": {"type": "keyword"},
-        "JobType": {"type": "keyword"},
-    }
-}
-
 
 class ElasticJobParametersDB(ElasticDB):
     def __init__(self, parentLogger=None):
@@ -59,7 +42,7 @@ class ElasticJobParametersDB(ElasticDB):
         # Verifying if the index is there, and if not create it
         res = self.existingIndex(indexName)
         if not res["OK"] or not res["Value"]:
-            result = self.createIndex(indexName, mapping, period=None)
+            result = self.createIndex(indexName, period=None)
             if not result["OK"]:
                 self.log.error(result["Message"])
                 raise RuntimeError(result["Message"])

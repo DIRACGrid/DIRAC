@@ -210,6 +210,22 @@ class ElasticSearchDB:
         except ElasticConnectionError as e:
             sLog.error(repr(e))
 
+        # look for an index template (json file) in the current directory
+        self.indexTemplate = None
+        self._loadIndexTemplate()
+        if self.indexTemplate:
+            self.client.indices.put_template(name=self.__class__.__name, body=self.indexTemplate)
+
+    def _loadIndexTemplate(self):
+        """
+        Load the index template from the current directory
+        """
+        try:
+            with open(f"{self.__class__.__name__}.json") as f:
+                self.indexTemplate = json.load(f)
+        except Exception as e:
+            sLog.error("Cannot load index template", repr(e))
+    
     def getIndexPrefix(self):
         """
         It returns the DIRAC setup.
@@ -436,8 +452,12 @@ class ElasticSearchDB:
             return S_OK(fullIndex)
 
         try:
-            sLog.info("Create index: ", fullIndex + str(mapping))
-            self.client.indices.create(index=fullIndex, body={"mappings": mapping})  # ES7
+            if mapping:
+                sLog.info("Create index: ", fullIndex + str(mapping))
+                self.client.indices.create(index=fullIndex, body={"mappings": mapping})  # ES7
+            else:
+                sLog.info("Create index: ", fullIndex)
+                self.client.indices.create(index=fullIndex)
 
             return S_OK(fullIndex)
         except Exception as e:  # pylint: disable=broad-except

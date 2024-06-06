@@ -1,0 +1,71 @@
+{
+  "index_patterns": ["job_parameters_*"],
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "properties": {
+      "JobID": {
+        "type": "long"
+      },
+      "Status": {
+        "type": "keyword"
+      },
+      "timestamp": {
+        "type": "date"
+      },
+      "PilotAgent": {
+        "type": "keyword"
+      },
+      "Pilot_Reference": {
+        "type": "keyword"
+      },
+      "JobGroup": {
+        "type": "keyword"
+      },
+      "JobType": {
+        "type": "keyword"
+      },
+      "JobWrapperPID": {
+        "type": "long"
+      },
+      "CPUNormalizationFactor": {
+        "type": "long"
+      },
+      "NormCPUTime(s)": {
+        "type": "long"
+      },
+      "Memory(MB)": {
+        "type": "long"
+      },
+      "ModelName": {
+        "type": "keyword"
+      },
+      "LocalAccount": {
+        "type": "keyword"
+      },
+      "HostName": {
+        "type": "text"
+      },
+      "TotalCPUTime(s)": {
+        "type": "long"
+      },
+      "PayloadPID": {
+        "type": "long"
+      },
+      "CEQueue": {
+        "type": "keyword"
+      },
+      "BatchSystem": {
+        "type": "keyword"
+      },
+      "GridCE": {
+        "type": "keyword"
+      }
+    }
+  },
+  "aliases": {
+    "my_index_alias": {}
+  }
+}
