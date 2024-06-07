@@ -1,10 +1,12 @@
 """ VOMS2CSSyncronizer is a helper class containing the logic for synchronization
     of the VOMS user data with the DIRAC Registry
 """
+
 from collections import defaultdict
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-
+from DIRAC.Core.Utilities.ReturnValues import returnValueOrRaise, convertToReturnValue
+from DIRAC.Core.Security.IAMService import IAMService
 from DIRAC.Core.Security.VOMSService import VOMSService
 from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -127,6 +129,9 @@ class VOMS2CSSynchronizer:
         autoDeleteUsers=False,
         autoLiftSuspendedStatus=False,
         syncPluginName=None,
+        compareWithIAM=False,
+        useIAM=False,
+        accessToken=None,
     ):
         """VOMS2CSSynchronizer class constructor
 
@@ -136,6 +141,9 @@ class VOMS2CSSynchronizer:
         :param autoDeleteUsers: flag to automatically delete users from CS if no more in VOMS
         :param autoLiftSuspendedStatus: flag to automatically remove Suspended status in CS
         :param syncPluginName: name of the plugin to validate or extend users' info
+        :param compareWithIAM: if true, also dump the list of users from IAM and compare
+        :param useIAM: if True, use Iam instead of VOMS
+        :param accessToken: if talking to IAM, needs a token with scim:read property
 
         :return: None
         """
@@ -154,6 +162,9 @@ class VOMS2CSSynchronizer:
         self.autoLiftSuspendedStatus = autoLiftSuspendedStatus
         self.voChanged = False
         self.syncPlugin = None
+        self.compareWithIAM = compareWithIAM
+        self.useIAM = useIAM
+        self.accessToken = accessToken
 
         if syncPluginName:
             objLoader = ObjectLoader()
@@ -165,6 +176,62 @@ class VOMS2CSSynchronizer:
                 raise Exception(_class["Message"])
 
             self.syncPlugin = _class["Value"]()
+
+    def compare_entry(self, iam_entry, voms_entry, is_robot):
+        """Compare a VOMS and IAM entry"""
+
+        if iam_entry.get("mail") != voms_entry.get("mail"):
+            self.log.info(
+                "Difference in mails",
+                f"{iam_entry['nickname']} - mail : {iam_entry.get('mail')} vs {voms_entry.get('mail')}",
+            )
+            if is_robot:
+                self.log.info("\t this is expected for robots !")
+
+        for field in ("CA", "certSuspended", "suspended", "mail", "nickname"):
+            if iam_entry.get(field) != voms_entry.get(field):
+                self.log.info(
+                    f"Difference in {field}",
+                    f"{iam_entry['nickname']} - {field} : {iam_entry.get(field)} vs {voms_entry.get(field)}",
+                )
+
+        if sorted(iam_entry["Roles"]) != sorted(voms_entry["Roles"]):
+            self.log.info(
+                "Difference in roles",
+                f"{iam_entry['nickname']} - Roles : {iam_entry['Roles']} vs {voms_entry['Roles']}",
+            )
+
+    def compareUsers(self, voms_users, iam_users):
+        missing_in_iam = set(voms_users) - set(iam_users)
+        if missing_in_iam:
+            self.log.info("Missing entries in IAM:", missing_in_iam)
+        else:
+            self.log.info("No entry missing in IAM, GOOD !")
+        # suspended_in_voms = {dn for dn in voms_users if voms_users[dn]["suspended"]}
+        missing_in_voms = set(iam_users) - set(voms_users)
+
+        if missing_in_voms:
+            self.log.info("Entries in IAM that are not in VOMS:", missing_in_voms)
+        else:
+            self.log.info("No extra entry entries in IAM, GOOD !")
+
+        for dn in set(iam_users) & set(voms_users):
+            is_robot = "CN=Robot:" in dn
+            self.compare_entry(iam_users[dn], voms_users[dn], is_robot=is_robot)
+
+    @convertToReturnValue
+    def _getUsers(self):
+        if self.compareWithIAM or self.useIAM:
+            iamSrv = IAMService(self.accessToken, vo=self.vo)
+            iam_users = returnValueOrRaise(iamSrv.getUsers())
+            if self.useIAM:
+                return iam_users
+
+        vomsSrv = VOMSService(self.vo)
+        voms_users = returnValueOrRaise(vomsSrv.getUsers())
+        if self.compareWithIAM:
+            self.compareUsers(voms_users, iam_users)
+        return voms_users
 
     def syncCSWithVOMS(self):
         """Performs the synchronization of the DIRAC registry with the VOMS data. The resulting
@@ -186,12 +253,9 @@ class VOMS2CSSynchronizer:
         noVOMSGroups = result["Value"]["NoVOMS"]
         noSyncVOMSGroups = result["Value"]["NoSyncVOMS"]
 
-        vomsSrv = VOMSService(self.vo)
-
-        # Get VOMS users
-        result = vomsSrv.getUsers()
+        result = self._getUsers()
         if not result["OK"]:
-            self.log.error("Could not retrieve user information from VOMS", result["Message"])
+            self.log.error("Could not retrieve user information", result["Message"])
             return result
 
         self.vomsUserDict = result["Value"]
