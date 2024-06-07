@@ -1,5 +1,4 @@
 """ A set of utilities used in the WMS services
-    Requires the Nordugrid ARC plugins. In particular : nordugrid-arc-python
 """
 import shutil
 from tempfile import mkdtemp

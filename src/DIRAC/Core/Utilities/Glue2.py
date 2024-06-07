@@ -220,25 +220,18 @@ def __getGlue2ShareInfo(host, shareInfoLists):
             try:
                 if not shareEndpoints and shareInfoDict["GLUE2ShareID"].startswith("urn:ogf"):
                     exeInfo = dict(exeInfo)  # silence pylint about tuples
-                    isCEType = dict(arex=False, arc=False)
                     computingInfo = shareInfoDict["GLUE2ComputingShareComputingEndpointForeignKey"]
                     computingInfo = computingInfo if isinstance(computingInfo, list) else [computingInfo]
                     for entry in computingInfo:
-                        if "gridftpjob" in entry:
-                            # has an entry like
-                            # urn:ogf:ComputingEndpoint:ce01.tier2.hep.manchester.ac.uk:gridftpjob:gsiftp://ce01.tier2.hep.manchester.ac.uk:2811/jobs
-                            isCEType["arc"] = True
                         if "emies" in entry:
                             # has an entry like
                             # urn:ogf:ComputingEndpoint:ce01.tier2.hep.manchester.ac.uk:emies:https://ce01.tier2.hep.manchester.ac.uk:443/arex
-                            isCEType["arex"] = True
-                    if isCEType["arex"]:  # preferred solution AREX
-                        queueInfo["GlueCEImplementationName"] = "AREX"
-                    elif isCEType["arc"]:  # use ARC6 now, instead of ARC (5)
-                        queueInfo["GlueCEImplementationName"] = "ARC6"
+                            queueInfo["GlueCEImplementationName"] = "AREX"
+                            break
                     else:
-                        sLog.error("Neither ARC nor AREX for", siteName)
+                        sLog.error("No AREX for", siteName)
                         raise AttributeError()
+
                     exeInfo = dict(exeInfo)  # silence pylint about tuples
                     managerName = exeInfo.pop("MANAGER", "").split(" ", 1)[0].rsplit(":", 1)[1]
                     managerName = managerName.capitalize() if managerName == "condor" else managerName

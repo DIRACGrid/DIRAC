@@ -24,7 +24,7 @@
      can be distinguished from it:
 
       - Remote ComputingElement: includes methods to interact with a remote ComputingElement
-        (e.g. HtCondorCEComputingElement, ARCComputingElement).
+        (e.g. HtCondorCEComputingElement, AREXComputingElement).
       - Inner ComputingElement: includes methods to locally interact with an underlying worker node.
         It is worth noting that an Inner ComputingElement provides synchronous submission
         (the submission of a job is blocking the execution until its completion). It deals with one job at a time.

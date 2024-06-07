@@ -5,8 +5,6 @@ from unittest.mock import MagicMock, patch
 from DIRAC import S_ERROR, S_OK
 
 
-# Assuming 'arc' is imported at the module level of ARCComputingElement
-@patch.dict("sys.modules", {"arc": MagicMock()})
 def test__checkSession(mocker):
     """Test checkSession"""
     from DIRAC.Resources.Computing.AREXComputingElement import AREXComputingElement
