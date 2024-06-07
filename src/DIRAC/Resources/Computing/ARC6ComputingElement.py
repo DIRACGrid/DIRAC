@@ -25,9 +25,11 @@ import stat
 
 import arc  # Has to work if this module is called #pylint: disable=import-error
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Resources.Computing.ARCComputingElement import ARCComputingElement, prepareProxyToken
 
 
+@deprecated("ARC6 is deprecated and will be removed from v9.0. Please, use AREXComputingElement instead", onlyOnce=True)
 class ARC6ComputingElement(ARCComputingElement):
     def __init__(self, ceUniqueID):
         """Standard constructor."""

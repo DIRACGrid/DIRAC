@@ -55,6 +55,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Resources.Computing.PilotBundle import writeScript
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
@@ -112,6 +113,7 @@ def prepareProxyToken(func):
     return wrapper
 
 
+@deprecated("ARC is deprecated and will be removed from v9.0. Please, use AREXComputingElement instead", onlyOnce=True)
 class ARCComputingElement(ComputingElement):
     _arcLevels = ["DEBUG", "VERBOSE", "INFO", "WARNING", "ERROR", "FATAL"]
 
