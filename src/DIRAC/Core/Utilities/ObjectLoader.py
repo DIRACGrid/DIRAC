@@ -3,18 +3,17 @@ An utility to load modules and objects in DIRAC and extensions,
 being sure that the extensions are considered
 """
 import collections
-from importlib import import_module
 import os
-import re
 import pkgutil
+import re
+from importlib import import_module
 from typing import Any
 
 import DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import List
-from DIRAC.Core.Utilities import DErrno
+from DIRAC import S_ERROR, S_OK, gLogger
+from DIRAC.Core.Utilities import DErrno, List
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
-from DIRAC.Core.Utilities.Extensions import extensionsByPriority, recurseImport
+from DIRAC.Core.Utilities.Extensions import extensionsByPriority, recurseFind, recurseImport
 
 
 class ObjectLoader(metaclass=DIRACSingleton):
@@ -43,14 +42,17 @@ class ObjectLoader(metaclass=DIRACSingleton):
         """
         self.__rootModules = self.__generateRootModules(self.__baseModules)
 
-    def __rootImport(self, modName: str, hideExceptions: bool = False):
+    def __rootImport(self, modName: str, hideExceptions: bool = False, python_object: bool = True):
         """Auto search which root module has to be used"""
         for rootModule in self.__rootModules:
             impName = modName
             if rootModule:
                 impName = f"{rootModule}.{impName}"
             gLogger.debug(f"Trying to load {impName}")
-            result = recurseImport(impName, hideExceptions=hideExceptions)
+            if python_object:    
+                result = recurseImport(impName, hideExceptions=hideExceptions)
+            else:
+                result = recurseFind(impName, hideExceptions=hideExceptions)
             if not result["OK"]:
                 return result
             if result["Value"]:
@@ -70,30 +72,34 @@ class ObjectLoader(metaclass=DIRACSingleton):
 
         return rootModules
 
-    def loadModule(self, importString: str, hideExceptions: bool = False):
+    def loadModule(self, importString: str, hideExceptions: bool = False, python_object: bool = True):
         """Load a module from an import string"""
-        result = self.__rootImport(importString, hideExceptions=hideExceptions)
+        result = self.__rootImport(importString, hideExceptions=hideExceptions, python_object=python_object)
         if not result["OK"]:
             return result
         if not result["Value"]:
             return S_ERROR(DErrno.EIMPERR, f"No module {importString} found")
         return S_OK(result["Value"][1])
 
-    def loadObject(self, importString: str, objName: str = "", hideExceptions: bool = False):
+    def loadObject(self, importString: str, objName: str = "", hideExceptions: bool = False, python_object: bool = True):
         """Load an object from inside a module"""
         if not objName:
             objName = importString.split(".")[-1]
 
-        result = self.loadModule(importString, hideExceptions=hideExceptions)
+        result = self.loadModule(importString, hideExceptions=hideExceptions, python_object=python_object)
+
         if not result["OK"]:
             return result
         modObj = result["Value"]
-        try:
-            result = S_OK(getattr(modObj, objName))
-            result["ModuleFile"] = modObj.__file__
-            return result
-        except AttributeError:
-            return S_ERROR(DErrno.EIMPERR, f"{importString} does not contain a {objName} object")
+        if python_object:
+            try:
+                result = S_OK(getattr(modObj, objName))
+                result["ModuleFile"] = modObj.__file__
+                return result
+            except AttributeError:
+                return S_ERROR(DErrno.EIMPERR, f"{importString} does not contain a {objName} object")
+        else:
+            return S_OK(modObj)
 
     def getObjects(
         self, modulePath: str, reFilter=None, parentClass=None, recurse: bool = False, continueOnError: bool = False

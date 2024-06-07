@@ -158,6 +158,31 @@ def recurseImport(modName, parentModule=None, hideExceptions=False):
         return S_ERROR(errMsg)
 
 
+def recurseFind(fileName, hideExceptions=False):
+    from DIRAC import S_ERROR, S_OK, gLogger
+    
+    name_of_file = ".".join(fileName.split(".")[-2:])
+    container_module = ".".join(fileName.split(".")[:-2])
+
+    print(container_module, name_of_file)
+    # find the path to the module that contains fileName
+    try:
+        imported_module = importlib.import_module(container_module)
+    except ImportError:
+        errMsg = f"Can't load {container_module}"
+        if not hideExceptions:
+            gLogger.exception(errMsg)
+        return S_ERROR(errMsg)
+    
+    file_absolute_location = os.path.join(os.path.dirname(imported_module.__file__), name_of_file)
+    print(file_absolute_location)
+    if os.path.exists(file_absolute_location):
+        return S_OK(file_absolute_location)
+    else:
+        errMsg = f"Can't load {fileName}"
+        return S_ERROR(errMsg)
+
+
 def _findSystems(module):
     """Implementation of _findSystems that returns a generator of system names"""
     for _, name, _ in pkgutil.iter_modules(module.__path__):
