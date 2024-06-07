@@ -513,12 +513,15 @@ class SSHComputingElement(ComputingElement):
         # Examine results of the job submission
         if sshStatus == 0:
             output = sshStdout.strip().replace("\r", "").strip()
+            if not output:
+                return S_ERROR("No output from remote command")
+
             try:
                 index = output.index("============= Start output ===============")
                 output = output[index + 42 :]
-            except Exception:
-                self.log.exception("Invalid output from remote command", output)
+            except ValueError:
                 return S_ERROR(f"Invalid output from remote command: {output}")
+
             try:
                 output = unquote(output)
                 result = json.loads(output)
