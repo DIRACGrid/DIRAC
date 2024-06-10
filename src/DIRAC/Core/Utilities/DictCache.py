@@ -3,6 +3,7 @@
 """
 import datetime
 import threading
+import weakref
 
 # DIRAC
 from DIRAC.Core.Utilities.LockRing import LockRing
@@ -63,6 +64,8 @@ class DictCache:
 
         # Function to clean the elements
         self.__deleteFunction = deleteFunction
+
+        self.__finalizer = weakref.finalize(self, self.purgeAll, useLock=False)
 
     @property
     def lock(self):
@@ -236,17 +239,3 @@ class DictCache:
         finally:
             if useLock:
                 self.lock.release()
-
-    def __del__(self):
-        """When the DictCache is deleted, all the entries should be purged.
-        This is particularly useful when the DictCache manages files
-        CAUTION: if you carefully read the python doc, you will see all the
-        caveat of __del__. In particular, no guaranty that it is called...
-        (https://docs.python.org/2/reference/datamodel.html#object.__del__)
-        """
-        self.purgeAll(useLock=False)
-        del self.__lock
-        if self.__threadLocal:
-            del self.__threadLocalCache
-        else:
-            del self.__sharedCache
