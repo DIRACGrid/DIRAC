@@ -1,3 +1,33 @@
+[v8.0.48]
+
+*Resources
+
+CHANGE: (#7656) mark ARC and ARC6 as deprecated
+
+*WorkloadManagement
+
+FIX: (#7655) remove exception log when output is not found
+
+*FrameworkSystem
+
+FIX: (#7651) close open file (DISET!)
+
+*Core
+
+CHANGE: (#7642) min version of rucio-client for speeding up pip resolution
+
+*WorkloadManagementSystem
+
+FIX: (#7639) added log headers to InputDataResolution modules
+
+*Accounting
+
+FIX: (#7637) AccountingDB only generate condition if needed
+
+*ConfigurationSystem
+
+NEW: (#7612) VOMS2CSAgent can query IAM
+
 [v8.0.47]
 
 *DataManagementSystem
