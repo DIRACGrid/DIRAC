@@ -248,7 +248,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
                     if newCEType:
                         break
                 if newCEType == "ARC-CE":
-                    newCEType = "ARC"
+                    newCEType = "AREX"
 
                 newRAM = ceInfo.get("GlueHostMainMemoryRAMSize", "").strip()
                 # Protect from unreasonable values
@@ -260,11 +260,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None, onecore=False):
                 addToChangeSet((ceSection, "OS", OS, newOS), changeSet)
                 addToChangeSet((ceSection, "SI00", si00, newsi00), changeSet)
 
-                if (newCEType == "ARC6" and ceType in ("AREX",)) or (newCEType == "AREX" and ceType in ("ARC6",)):
-                    # preserve manually chosen AREX or ARC6 setting
-                    pass
-                else:
-                    addToChangeSet((ceSection, "CEType", ceType, newCEType), changeSet)
+                addToChangeSet((ceSection, "CEType", ceType, newCEType), changeSet)
 
                 addToChangeSet((ceSection, "MaxRAM", ram, newRAM), changeSet)
 

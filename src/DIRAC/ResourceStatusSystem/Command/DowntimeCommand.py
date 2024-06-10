@@ -184,7 +184,7 @@ class DowntimeCommand(Command):
             )
             if ceType == "HTCondorCE":
                 gOCDBServiceType = "org.opensciencegrid.htcondorce"
-            elif ceType in ["ARC", "ARC6", "AREX"]:
+            elif ceType == "AREX":
                 gOCDBServiceType = "ARC-CE"
 
         return S_OK((element, elementName, hours, gOCDBServiceType))

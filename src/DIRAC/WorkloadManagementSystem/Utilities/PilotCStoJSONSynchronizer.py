@@ -113,7 +113,7 @@ class PilotCStoJSONSynchronizer:
                     continue
 
                 for ce in ceList["Value"]:
-                    # This CEType is like 'HTCondor' or 'ARC' etc.
+                    # This CEType is like 'HTCondor' or 'AREX' etc.
                     ceType = gConfig.getValue(cfgPath("/Resources", "Sites", grid, site, "CEs", ce, "CEType"))
                     if ceType is None:
                         # Skip but log it

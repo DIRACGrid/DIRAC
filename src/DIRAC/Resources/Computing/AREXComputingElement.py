@@ -5,8 +5,10 @@ Allows interacting with ARC AREX services via a REST interface.
 **Configuration Parameters**
 
 Configuration for the AREXComputingElement submission can be done via the configuration system.
-It inherits from the :mod:`~DIRAC.Resources.Computing.ARCComputingElement` configuration parameters.
 Below, you can find a list of parameters specific to the AREX CE.
+
+Preamble:
+   Line that should be executed just before the executable file.
 
 Timeout:
    Duration in seconds before declaring a timeout exception.
@@ -20,6 +22,20 @@ ProxyTimeLeftBeforeRenewal:
 RESTVersion:
    Version of the REST interface to use.
 
+XRSLExtraString:
+   Default additional string for ARC submit files. Should be written in the following format::
+
+     (key = "value")
+
+   Times (wall/CPU time) should be given in seconds (see https://www.nordugrid.org/arc/arc6/users/xrsl.html?#cputime).
+
+XRSLMPExtraString:
+   Default additional string for ARC submit files for multi-processor jobs. Should be written in the following format::
+
+     (key = "value")
+
+   The XRSLExtraString note about times also applies to this configuration option.
+
 **Code Documentation**
 """
 
@@ -27,18 +43,61 @@ import os
 import json
 import requests
 import shutil
+import stat
+import uuid
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-from DIRAC.Resources.Computing.ARCComputingElement import ARCComputingElement
+from DIRAC.Resources.Computing.ComputingElement import ComputingElement
+from DIRAC.WorkloadManagementSystem.Client import PilotStatus
+from DIRAC.Resources.Computing.PilotBundle import writeScript
 
 
-class AREXComputingElement(ARCComputingElement):
+MANDATORY_PARAMETERS = ["Queue"]
+
+# See https://www.nordugrid.org/arc/arc6/tech/rest/rest.html#rest-interface-job-states
+# We let "Deleted, Hold, Undefined" for the moment as we are not sure whether they are still used
+# "None" is a special case: it is returned when the job ID is not found in the system
+STATES_MAP = {
+    "Accepting": PilotStatus.WAITING,
+    "Accepted": PilotStatus.WAITING,
+    "Preparing": PilotStatus.WAITING,
+    "Prepared": PilotStatus.WAITING,
+    "Submitting": PilotStatus.WAITING,
+    "Queuing": PilotStatus.WAITING,
+    "Running": PilotStatus.RUNNING,
+    "Held": PilotStatus.RUNNING,
+    "Exitinglrms": PilotStatus.RUNNING,
+    "Other": PilotStatus.RUNNING,
+    "Executed": PilotStatus.RUNNING,
+    "Finishing": PilotStatus.RUNNING,
+    "Finished": PilotStatus.DONE,
+    "Failed": PilotStatus.FAILED,
+    "Killing": PilotStatus.ABORTED,
+    "Killed": PilotStatus.ABORTED,
+    "Wiped": PilotStatus.ABORTED,
+    "None": PilotStatus.ABORTED,
+}
+
+
+class AREXComputingElement(ComputingElement):
     def __init__(self, ceUniqueID):
         """Standard constructor."""
         super().__init__(ceUniqueID)
+        self.mandatoryParameters = MANDATORY_PARAMETERS
+
+        # Name of the queue
+        self.queue = ""
+        # Preamble to add to the executable
+        self.preamble = ""
+        # Used in getJobStatus
+        self.mapStates = STATES_MAP
+
+        # Extra XRSL info
+        self.xrslExtraString = ""
+        self.xrslMPExtraString = ""
 
         # Default REST port
         self.port = "443"
@@ -63,18 +122,28 @@ class AREXComputingElement(ARCComputingElement):
         """Configure the Request Session to interact with the AREX REST interface.
         Specification : https://www.nordugrid.org/arc/arc6/tech/rest/rest.html
         """
-        super()._reset()
-        self.log.debug("Testing if the REST interface is available", f"for {self.ceName}")
+        # Queue parameters
+        # Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
+        # And none of our supported batch systems have a "-" in their name
+        queue = self.ceParameters.get("CEQueueName", self.ceParameters["Queue"])
+        self.queue = queue.split("-", 2)[2]
 
-        # Get options from the ceParameters dictionary
+        self.preamble = self.ceParameters.get("Preamble", self.preamble)
+
+        self.xrslExtraString = self.ceParameters.get("XRSLExtraString", self.xrslExtraString)
+        self.xrslMPExtraString = self.ceParameters.get("XRSLMPExtraString", self.xrslMPExtraString)
+
+        # REST parameters
         self.port = self.ceParameters.get("Port", self.port)
+        self.restVersion = self.ceParameters.get("RESTVersion", self.restVersion)
+        self.timeout = float(self.ceParameters.get("Timeout", self.timeout))
+
+        # Credentials parameters
         self.audienceName = f"https://{self.ceName}:{self.port}"
 
-        self.restVersion = self.ceParameters.get("RESTVersion", self.restVersion)
         self.proxyTimeLeftBeforeRenewal = self.ceParameters.get(
             "ProxyTimeLeftBeforeRenewal", self.proxyTimeLeftBeforeRenewal
         )
-        self.timeout = float(self.ceParameters.get("Timeout", self.timeout))
 
         # Build the URL based on the CEName, the port and the REST version
         service_url = os.path.join("https://", f"{self.ceName}:{self.port}")
@@ -108,7 +177,7 @@ class AREXComputingElement(ARCComputingElement):
             self.log.warn("Identifier already in ARC format", arcJobID)
             return arcJobID
 
-        return f"https://{self.ceHost}:{self.port}/arex/{arcJobID}"
+        return f"https://{self.ceName}:{self.port}/arex/{arcJobID}"
 
     def _jobReferenceToArcID(self, jobReference):
         """Convert a job reference into an ARC jobID.
@@ -344,6 +413,86 @@ class AREXComputingElement(ARCComputingElement):
 
     #############################################################################
 
+    def _writeXRSL(self, executableFile, inputs, outputs):
+        """Create the JDL for submission
+
+        :param str executableFile: executable to wrap in a XRSL file
+        :param list inputs: path of the dependencies to include along with the executable
+        :param list outputs: path of the outputs that we want to get at the end of the execution
+        """
+        diracStamp = uuid.uuid4().hex
+        # Evaluate the number of processors to allocate
+        nProcessors = self.ceParameters.get("NumberOfProcessors", 1)
+
+        xrslMPAdditions = ""
+        if nProcessors and nProcessors > 1:
+            xrslMPAdditions = """
+(count = %(processors)u)
+(countpernode = %(processorsPerNode)u)
+%(xrslMPExtraString)s
+      """ % {
+                "processors": nProcessors,
+                "processorsPerNode": nProcessors,  # This basically says that we want all processors on the same node
+                "xrslMPExtraString": self.xrslMPExtraString,
+            }
+
+        # Dependencies that have to be embedded along with the executable
+        xrslInputs = ""
+        executables = []
+        for inputFile in inputs:
+            inputFileBaseName = os.path.basename(inputFile)
+            if os.access(inputFile, os.X_OK):
+                # Files that would need execution rights on the remote worker node
+                executables.append(inputFileBaseName)
+            xrslInputs += f'({inputFileBaseName} "{inputFile}")'
+
+        # Executables are added to the XRSL
+        xrslExecutables = ""
+        if executables:
+            xrslExecutables = f"(executables={' '.join(executables)})"
+
+        # Output files to retrieve once the execution is complete
+        xrslOutputs = f'("{diracStamp}.out" "") ("{diracStamp}.err" "")'
+        for outputFile in outputs:
+            xrslOutputs += f'({outputFile} "")'
+
+        xrsl = """
+&(executable="{executable}")
+(inputFiles=({executable} "{executableFile}") {xrslInputAdditions})
+(stdout="{diracStamp}.out")
+(stderr="{diracStamp}.err")
+(environment=("DIRAC_PILOT_STAMP" "{diracStamp}"))
+(outputFiles={xrslOutputFiles})
+(queue={queue})
+{xrslMPAdditions}
+{xrslExecutables}
+{xrslExtraString}
+    """.format(
+            executableFile=executableFile,
+            executable=os.path.basename(executableFile),
+            xrslInputAdditions=xrslInputs,
+            diracStamp=diracStamp,
+            queue=self.queue,
+            xrslOutputFiles=xrslOutputs,
+            xrslMPAdditions=xrslMPAdditions,
+            xrslExecutables=xrslExecutables,
+            xrslExtraString=self.xrslExtraString,
+        )
+
+        return xrsl, diracStamp
+
+    def _bundlePreamble(self, executableFile):
+        """Bundle the preamble with the executable file"""
+        wrapperContent = f"{self.preamble}\n./{executableFile}"
+
+        # We need to make sure the executable file can be executed by the wrapper
+        # By adding the execution mode to the file, the file will be processed as an "executable" in the XRSL
+        # This is done in _writeXRSL()
+        if not os.access(executableFile, os.X_OK):
+            os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH)
+
+        return writeScript(wrapperContent, os.getcwd())
+
     def _getArcJobID(self, executableFile, inputs, outputs, delegation):
         """Get an ARC JobID endpoint to upload executables and inputs.
 
@@ -375,7 +524,7 @@ class AREXComputingElement(ARCComputingElement):
         if responseJob["status-code"] > "400":
             self.log.warn(
                 "Failed to submit job",
-                f"to CE {self.ceHost} with error - {responseJob['status-code']} - and messages: {responseJob['reason']}",
+                f"to CE {self.ceName} with error - {responseJob['status-code']} - and messages: {responseJob['reason']}",
             )
             return S_ERROR("Failed to submit jobs")
 
@@ -460,7 +609,7 @@ class AREXComputingElement(ARCComputingElement):
             # No existing delegation, we need to prepare one
             result = self._prepareDelegation()
             if not result["OK"]:
-                self.log.warn("Could not get a new delegation", f"for CE {self.ceHost}")
+                self.log.warn("Could not get a new delegation", f"for CE {self.ceName}")
                 return S_ERROR("Could not get a new delegation")
             currentDelegationID = result["Value"]
 
@@ -499,7 +648,7 @@ class AREXComputingElement(ARCComputingElement):
             stampDict[jobReference] = diracStamp
             self.log.debug(
                 "Successfully submitted job",
-                f"{jobReference} to CE {self.ceHost}",
+                f"{jobReference} to CE {self.ceName}",
             )
 
         if batchIDList:
@@ -643,7 +792,7 @@ class AREXComputingElement(ARCComputingElement):
         result = S_OK()
         result["SubmittedJobs"] = 0
 
-        magic = self.arcQueue + "_" + vo.lower()
+        magic = self.queue + "_" + vo.lower()
         for qi in queueInfo:
             if qi["ID"].endswith(magic):
                 result["RunningJobs"] = int(qi["RunningJobs"])
