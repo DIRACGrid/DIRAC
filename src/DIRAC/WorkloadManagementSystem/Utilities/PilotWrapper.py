@@ -112,7 +112,7 @@ def pilotWrapperScript(
     if envVariables is None:
         envVariables = {}
 
-    if CVMFS_locations is None:
+    if not CVMFS_locations:
         # What is in this location is almost certainly incorrect, especially the pilot.json
         CVMFS_locs = '["file:/cvmfs/dirac.egi.eu/pilot"]'
     else:
