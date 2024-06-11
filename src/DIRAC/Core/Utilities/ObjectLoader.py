@@ -49,7 +49,7 @@ class ObjectLoader(metaclass=DIRACSingleton):
             if rootModule:
                 impName = f"{rootModule}.{impName}"
             gLogger.debug(f"Trying to load {impName}")
-            if python_object:    
+            if python_object:
                 result = recurseImport(impName, hideExceptions=hideExceptions)
             else:
                 result = recurseFind(impName, hideExceptions=hideExceptions)
@@ -81,7 +81,9 @@ class ObjectLoader(metaclass=DIRACSingleton):
             return S_ERROR(DErrno.EIMPERR, f"No module {importString} found")
         return S_OK(result["Value"][1])
 
-    def loadObject(self, importString: str, objName: str = "", hideExceptions: bool = False, python_object: bool = True):
+    def loadObject(
+        self, importString: str, objName: str = "", hideExceptions: bool = False, python_object: bool = True
+    ):
         """Load an object from inside a module"""
         if not objName:
             objName = importString.split(".")[-1]
@@ -91,15 +93,14 @@ class ObjectLoader(metaclass=DIRACSingleton):
         if not result["OK"]:
             return result
         modObj = result["Value"]
-        if python_object:
-            try:
-                result = S_OK(getattr(modObj, objName))
-                result["ModuleFile"] = modObj.__file__
-                return result
-            except AttributeError:
-                return S_ERROR(DErrno.EIMPERR, f"{importString} does not contain a {objName} object")
-        else:
+        if not python_object:
             return S_OK(modObj)
+        try:
+            result = S_OK(getattr(modObj, objName))
+            result["ModuleFile"] = modObj.__file__
+            return result
+        except AttributeError:
+            return S_ERROR(DErrno.EIMPERR, f"{importString} does not contain a {objName} object")
 
     def getObjects(
         self, modulePath: str, reFilter=None, parentClass=None, recurse: bool = False, continueOnError: bool = False

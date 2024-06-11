@@ -8,6 +8,7 @@ from DIRAC.Core.Utilities.Extensions import (
     findDatabases,
     extensionsByPriority,
     getExtensionMetadata,
+    recurseFind,
 )
 
 
@@ -45,3 +46,10 @@ def test_extensionsByPriority():
 def test_getExtensionMetadata():
     metadata = getExtensionMetadata("DIRAC")
     assert metadata["priority"] == 0
+
+
+def test_recurseFind():
+    found = recurseFind("DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB.json")
+    assert found["OK"] is True
+    found = recurseFind("DIRAC.WorkloadManagementSystem.DB.not_there.json")
+    assert found["OK"] is False

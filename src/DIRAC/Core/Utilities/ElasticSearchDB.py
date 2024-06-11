@@ -48,6 +48,7 @@ except ImportError:
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities import DErrno, TimeUtilities
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 sLog = gLogger.getSubLogger(__name__)
@@ -211,21 +212,19 @@ class ElasticSearchDB:
             sLog.error(repr(e))
 
         # look for an index template (json file) in the current directory
-        self.indexTemplate = None
-        self._loadIndexTemplate()
-        if self.indexTemplate:
-            self.client.indices.put_template(name=self.__class__.__name, body=self.indexTemplate)
-
-    def _loadIndexTemplate(self):
-        """
-        Load the index template from the current directory
-        """
         try:
-            with open(f"{self.__class__.__name__}.json") as f:
-                self.indexTemplate = json.load(f)
+            result = ObjectLoader().loadObject(
+                f"DIRAC.{str(self.__class__).split('.')[1]}.DB.{self.__class__.__name__}.json", python_object=False
+            )
+            if not result["OK"]:
+                sLog.warn("Cannot load index template", result["Message"])
+                return
+            sLog.debug("Loading index template", result["Value"])
+            with open(f"{result['Value']}") as f:
+                self.client.indices.put_template(name=self.__class__.__name__, body=json.load(f))
         except Exception as e:
             sLog.error("Cannot load index template", repr(e))
-    
+
     def getIndexPrefix(self):
         """
         It returns the DIRAC setup.
