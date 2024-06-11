@@ -6,7 +6,6 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from DIRAC import S_ERROR, S_OK, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.WorkloadManagementSystem.Client import JobStatus

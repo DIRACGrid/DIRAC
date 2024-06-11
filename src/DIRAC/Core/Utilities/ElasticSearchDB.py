@@ -220,8 +220,8 @@ class ElasticSearchDB:
                 sLog.warn("Cannot load index template", result["Message"])
                 return
             sLog.debug("Loading index template", result["Value"])
-            with open(f"{result['Value']}") as f:
-                self.client.indices.put_template(name=self.__class__.__name__, body=json.load(f))
+            with open(result['Value']) as f:
+                self.client.indices.put_index_template(name=self.__class__.__name__.lower(), body=json.load(f))
         except Exception as e:
             sLog.error("Cannot load index template", repr(e))
 

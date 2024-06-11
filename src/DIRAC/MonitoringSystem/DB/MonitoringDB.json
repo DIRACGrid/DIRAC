@@ -1,0 +1,58 @@
+{
+  "index_patterns": ["wmshistory_index_*"],
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "properties": {
+      "Status": {
+        "type": "keyword"
+      },
+      "Site": {
+          "type": "keyword"
+        },
+      "JobSplitType": {
+        "type": "keyword"
+      },
+      "ApplicationStatus": {
+        "type": "keyword"
+      },
+      "MinorSite": {
+          "type": "keyword"
+      },
+      "User": {
+        "type": "keyword"
+      },
+      "UserGroup": {
+          "type": "keyword"
+      },
+      "JobGroup": {
+          "type": "keyword"
+      }
+    }
+  }
+}
+{
+    "index_patterns": ["pilotshistory_index_*"],
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 1
+    },
+    "mappings": {
+      "properties": {
+        "GridSite": {
+            "type": "keyword"
+          },
+        "GridType": {
+          "type": "keyword"
+        },
+        "Status": {
+          "type": "keyword"
+        },
+        "NumOfPilots": {
+            "type": "long"
+        }
+      }
+    }
+  }
