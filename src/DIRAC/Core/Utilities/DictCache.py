@@ -65,7 +65,8 @@ class DictCache:
         # Function to clean the elements
         self.__deleteFunction = deleteFunction
 
-        self.__finalizer = weakref.finalize(self, self.purgeAll, useLock=False)
+        # Called when this object is deleted or the program ends
+        self.__finalizer = weakref.finalize(self, _purgeAll, None, self.__cache, self.__deleteFunction)
 
     @property
     def lock(self):
@@ -225,17 +226,26 @@ class DictCache:
 
     def purgeAll(self, useLock=True):
         """Purge all entries
-        CAUTION: useLock parameter should ALWAYS be True except when called from __del__
+        CAUTION: useLock parameter should ALWAYS be True
 
         :param bool useLock: use lock
         """
-        if useLock:
-            self.lock.acquire()
-        try:
-            for cKey in list(self.__cache):
-                if self.__deleteFunction:
-                    self.__deleteFunction(self.__cache[cKey]["value"])
-                del self.__cache[cKey]
-        finally:
-            if useLock:
-                self.lock.release()
+        _purgeAll(self.lock if useLock else None, self.__cache, self.__deleteFunction)
+
+
+def _purgeAll(lock, cache, deleteFunction):
+    """Purge all entries
+
+    This is split in to a helper function to be used by the finalizer without
+    needing to add a reference to the DictCache object itself.
+    """
+    if lock:
+        lock.acquire()
+    try:
+        for cKey in list(cache):
+            if deleteFunction:
+                deleteFunction(cache[cKey]["value"])
+            del cache[cKey]
+    finally:
+        if lock:
+            lock.release()
