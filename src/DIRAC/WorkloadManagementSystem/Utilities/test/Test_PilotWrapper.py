@@ -121,3 +121,18 @@ def test_scriptPilot3_3():
         """locations += ["file:/cvmfs/lhcb.cern.ch/lhcbdirac/pilot","file:/cvmfs/dirac.egi.eu/lhcbdirac/pilot"]"""
         in res
     )
+
+
+def test_scriptPilot3_4():
+    """test script creation"""
+    res = pilotWrapperScript(
+        pilotFilesCompressedEncodedDict={"proxy": "thisIsSomeProxy"},
+        pilotOptions="-c 123 --foo bar -l LHCb -h pippo",
+        envVariables={"someName": "someValue", "someMore": "oneMore"},
+        location="lhcb-portal.cern.ch",
+        CVMFS_locations=[],
+    )
+
+    assert 'os.environ["someName"]="someValue"' in res
+    assert "lhcb-portal.cern.ch" in res
+    assert """locations += ["file:/cvmfs/dirac.egi.eu/pilot"]""" in res
