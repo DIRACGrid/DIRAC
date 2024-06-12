@@ -29,7 +29,7 @@ from urllib.parse import unquote
 import DIRAC
 from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL, getSystemSection
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
 from DIRAC.Core.Base.API import API
 from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
@@ -1210,7 +1210,7 @@ class Dirac(API):
 
         Example Usage:
 
-        >>> print(dirac.getPhysicalFileMetadata('srm://srm.grid.sara.nl/pnfs/grid.sara.nl/data)
+        >>> print(dirac.getPhysicalFileMetadata('srm://srm.grid.sara.nl/pnfs/grid.sara.nl/data')
         /lhcb/data/CCRC08/RAW/LHCb/CCRC/23341/023341_0000039571.raw','NIKHEF-RAW')
         {'OK': True, 'Value': {'Successful': {'srm://...': {'SRM2': 'rfio://...'}}, 'Failed': {}}}
 
@@ -2207,7 +2207,7 @@ class Dirac(API):
         result = S_ERROR()
         try:
             if not url:
-                systemSection = getSystemSection(system + "/")
+                systemSection = f"/Systems/{system}"
                 self.log.verbose(f"System section is: {systemSection}")
                 section = f"{systemSection}/{service}"
                 self.log.verbose(f"Requested service should have CS path: {section}")

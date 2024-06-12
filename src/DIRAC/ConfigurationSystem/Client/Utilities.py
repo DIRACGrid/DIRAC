@@ -10,7 +10,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOptio
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.Core.Utilities.Glue2 import getGlue2CEInfo
-from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 
 
 def getGridVOs():
@@ -612,7 +611,7 @@ def getAuthAPI():
 
     :return: str
     """
-    return gConfig.getValue(f"/Systems/Framework/{getSystemInstance('Framework')}/URLs/AuthAPI")
+    return gConfig.getValue(f"/Systems/Framework/URLs/AuthAPI")
 
 
 def getAuthorizationServerMetadata(issuer=None, ignoreErrors=False):
@@ -651,5 +650,5 @@ def isDownloadProxyAllowed():
 
     :return: S_OK(bool)/S_ERROR()
     """
-    cs_path = f"/Systems/Framework/{getSystemInstance('Framework')}/APIs/Auth"
+    cs_path = f"/Systems/Framework/APIs/Auth"
     return gConfig.getValue(cs_path + "/allowProxyDownload", True)

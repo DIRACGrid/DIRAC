@@ -22,7 +22,6 @@ class TestDRA(unittest.TestCase):
     dra = None
 
     @patch("DIRAC.Core.Base.AgentModule.PathFinder", new=Mock())
-    @patch("DIRAC.ConfigurationSystem.Client.PathFinder.getSystemInstance", new=Mock())
     @patch(f"{MODULE_NAME}.ReqClient", new=Mock())
     def setUp(self):
         self.dra = DataRecoveryAgent(agentName="ILCTransformationSystem/DataRecoveryAgent", loadName="TestDRA")
@@ -66,7 +65,6 @@ class TestDRA(unittest.TestCase):
         return testJob
 
     @patch("DIRAC.Core.Base.AgentModule.PathFinder", new=Mock())
-    @patch("DIRAC.ConfigurationSystem.Client.PathFinder.getSystemInstance", new=Mock())
     @patch(f"{MODULE_NAME}.ReqClient", new=Mock())
     def test_init(self):
         """test for DataRecoveryAgent initialisation...................................................."""

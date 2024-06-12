@@ -681,9 +681,6 @@ class TestComponentSupervisionAgent(unittest.TestCase):
         with patch("DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig", new=gConfigMock), patch(
             "DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.socket.gethostname", return_value=host
         ), patch(
-            "DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getSystemInstance",
-            return_value="Decertification",
-        ), patch(
             "DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getComponentSection",
             side_effect=mockComponentSection,
         ), patch(
@@ -711,9 +708,6 @@ class TestComponentSupervisionAgent(unittest.TestCase):
 
         self.restartAgent.csAPI.commit = MagicMock(return_value=S_ERROR("Nope"))
         with patch("DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig", new=MagicMock()), patch(
-            "DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getSystemInstance",
-            return_value="Decertification",
-        ), patch(
             "DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getComponentSection",
             side_effect=mockComponentSection,
         ):
@@ -724,9 +718,6 @@ class TestComponentSupervisionAgent(unittest.TestCase):
 
         self.restartAgent.csAPI.commit = MagicMock(return_value=S_OK())
         with patch("DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig", new=MagicMock()), patch(
-            "DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getSystemInstance",
-            return_value="Decertification",
-        ), patch(
             "DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.PathFinder.getComponentSection",
             side_effect=mockComponentSection,
         ):

@@ -1100,44 +1100,6 @@ class SystemAdministratorClientCLI(CLI):
         else:
             gLogger.notice("Software reverted to", result["Value"])
 
-    def do_add(self, args):
-        """
-        Add new entity to the Configuration Service
-
-        usage:
-
-          add system <system> <instance>
-        """
-        if not args:
-            gLogger.notice(self.do_add.__doc__)
-            return
-
-        argss = args.split()
-        option = argss[0]
-        del argss[0]
-        if option == "instance" or option == "system":
-            system = argss[0]
-            instance = argss[1]
-            client = SystemAdministratorClient(self.host, self.port)
-            result = client.getInfo()
-            if not result["OK"]:
-                self._errMsg(result["Message"])
-            hostSetup = CSGlobals.getSetup()
-            instanceName = gConfig.getValue(f"/DIRAC/Setups/{hostSetup}/{system}", "")
-            if instanceName:
-                if instanceName == instance:
-                    gLogger.notice(f"System {system} already has instance {instance}")
-                else:
-                    self._errMsg(f"System {system} already has instance {instance}")
-                return
-            result = gComponentInstaller.addSystemInstance(system, instance, hostSetup)
-            if not result["OK"]:
-                self._errMsg(result["Message"])
-            else:
-                gLogger.notice(f"{system} system instance {instance} added successfully")
-        else:
-            gLogger.notice("Unknown option:", option)
-
     def do_exec(self, args):
         """
         Execute a shell command on the remote host and get back the output

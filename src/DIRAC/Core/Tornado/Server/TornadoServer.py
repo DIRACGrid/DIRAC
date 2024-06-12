@@ -25,7 +25,6 @@ from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.Core.Tornado.Server.HandlerManager import HandlerManager
-from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 sLog = gLogger.getSubLogger(__name__)
@@ -91,7 +90,7 @@ class TornadoServer:
         self.__appsSettings = {}
         # Default port, if enother is not discover
         if port is None:
-            port = gConfig.getValue(f"/Systems/Tornado/{PathFinder.getSystemInstance('Tornado')}/Port", 8443)
+            port = gConfig.getValue(f"/Systems/Tornado/Port", 8443)
         self.port = port
 
         # Handler manager initialization with default settings

@@ -142,7 +142,7 @@ def _makeComponentDict(component, setupDict, installedDict, compType, system, ru
 def _getSectionName(compType):
     """
     Returns the section name for a component in the CS
-    For self.instance, the section for service is Services,
+    The section for service is Services,
     whereas the section for agent is Agents
     """
     return f"{compType.title()}s"
@@ -208,8 +208,6 @@ class ComponentInstaller:
             gLogger.always("Can't load ", self.cfgFile)
             gLogger.always("Might be OK if setting up the site")
 
-        self.setup = self.localCfg.getOption(cfgPath("DIRAC", "Setup"), "")
-        self.instance = self.localCfg.getOption(cfgInstallPath("InstanceName"), self.setup)
         self.logLevel = self.localCfg.getOption(cfgInstallPath("LogLevel"), "INFO")
         self.linkedRootPath = rootPath
 
@@ -315,7 +313,6 @@ class ComponentInstaller:
         if not result["OK"]:
             return result
         rDict = result["Value"]
-        rDict["Setup"] = self.setup or "Unknown"
         return S_OK(rDict)
 
     def _addCfgToDiracCfg(self, cfg):
@@ -567,12 +564,10 @@ class ComponentInstaller:
 
         return S_ERROR(f"Could not merge {option}={value} with local configuration")
 
-    def removeComponentOptionsFromCS(self, system, component, mySetup=None):
+    def removeComponentOptionsFromCS(self, system, component):
         """
         Remove the section with Component options from the CS, if possible
         """
-        if mySetup is None:
-            mySetup = self.setup
 
         result = self.monitoringClient.getInstallations(
             {"UnInstallationTime": None, "Instance": component}, {"DIRACSystem": system}, {}, True
@@ -580,12 +575,6 @@ class ComponentInstaller:
         if not result["OK"]:
             return result
         installations = result["Value"]
-
-        instanceOption = cfgPath("DIRAC", "Setups", mySetup, system)
-        if gConfig:
-            compInstance = gConfig.getValue(instanceOption, "")
-        else:
-            compInstance = self.localCfg.getOption(instanceOption, "")
 
         if len(installations) == 1:
             remove = True
@@ -617,18 +606,16 @@ class ComponentInstaller:
 
             if remove:
                 result = self._removeSectionFromCS(
-                    cfgPath("Systems", system, compInstance, installation["Component"]["Type"].title() + "s", component)
+                    cfgPath("Systems", system, installation["Component"]["Type"].title() + "s", component)
                 )
                 if not result["OK"]:
                     return result
 
                 if not isRenamed and cType == "service":
-                    result = self._removeOptionFromCS(cfgPath("Systems", system, compInstance, "URLs", component))
+                    result = self._removeOptionFromCS(cfgPath("Systems", system, "URLs", component))
                     if not result["OK"]:
                         # It is maybe in the FailoverURLs ?
-                        result = self._removeOptionFromCS(
-                            cfgPath("Systems", system, compInstance, "FailoverURLs", component)
-                        )
+                        result = self._removeOptionFromCS(cfgPath("Systems", system, "FailoverURLs", component))
                     if not result["OK"]:
                         return result
 
@@ -637,7 +624,6 @@ class ComponentInstaller:
                     cfgPath(
                         "Systems",
                         system,
-                        compInstance,
                         installation["Component"]["Type"].title() + "s",
                         installation["Component"]["Module"],
                     )
@@ -647,14 +633,12 @@ class ComponentInstaller:
 
                 if cType == "service":
                     result = self._removeOptionFromCS(
-                        cfgPath("Systems", system, compInstance, "URLs", installation["Component"]["Module"])
+                        cfgPath("Systems", system, "URLs", installation["Component"]["Module"])
                     )
                     if not result["OK"]:
                         # it is maybe in the FailoverURLs ?
                         result = self._removeOptionFromCS(
-                            cfgPath(
-                                "Systems", system, compInstance, "FailoverURLs", installation["Component"]["Module"]
-                            )
+                            cfgPath("Systems", system, "FailoverURLs", installation["Component"]["Module"])
                         )
                     if not result["OK"]:
                         return result
@@ -669,7 +653,6 @@ class ComponentInstaller:
         systemName,
         component,
         extensions,
-        mySetup=None,
         specialOptions={},
         overwrite=False,
         addDefaultOptions=True,
@@ -677,26 +660,16 @@ class ComponentInstaller:
         """
         Add the section with the component options to the CS
         """
-        if not mySetup:
-            mySetup = self.setup
 
         if gConfig_o:
             gConfig_o.forceRefresh()
 
         system = systemName.replace("System", "")
-        instanceOption = cfgPath("DIRAC", "Setups", mySetup, system)
-        if gConfig_o:
-            compInstance = gConfig_o.getValue(instanceOption, "")
-        else:
-            compInstance = self.localCfg.getOption(instanceOption, "")
-        if not compInstance:
-            return S_ERROR(f"{instanceOption} not defined in {self.cfgFile}")
-
         sectionName = _getSectionName(componentType)
 
         # Check if the component CS options exist
         addOptions = True
-        componentSection = cfgPath("Systems", system, compInstance, sectionName, component)
+        componentSection = cfgPath("Systems", system, sectionName, component)
         if not overwrite:
             if gConfig_o:
                 result = gConfig_o.getOptions(componentSection)
@@ -707,9 +680,7 @@ class ComponentInstaller:
             return S_OK("Component options already exist")
 
         # Add the component options now
-        result = self.getComponentCfg(
-            componentType, system, component, compInstance, extensions, specialOptions, addDefaultOptions
-        )
+        result = self.getComponentCfg(componentType, system, component, extensions, specialOptions, addDefaultOptions)
         if not result["OK"]:
             return result
         compCfg = result["Value"]
@@ -727,7 +698,7 @@ class ComponentInstaller:
             execList = compCfg.getOption(f"{componentSection}/Load", [])
             for element in execList:
                 result = self.addDefaultOptionsToCS(
-                    gConfig_o, componentType, systemName, element, extensions, self.setup, {}, overwrite
+                    gConfig_o, componentType, systemName, element, extensions, {}, overwrite
                 )
                 if not result["OK"]:
                     gLogger.warn("Can't add to default CS", result["Message"])
@@ -741,13 +712,9 @@ class ComponentInstaller:
         Add default component options local component cfg
         """
         system = systemName.replace("System", "")
-        instanceOption = cfgPath("DIRAC", "Setups", self.setup, system)
-        compInstance = self.localCfg.getOption(instanceOption, "")
-        if not compInstance:
-            return S_ERROR(f"{instanceOption} not defined in {self.cfgFile}")
 
         # Add the component options now
-        result = self.getComponentCfg(componentType, system, component, compInstance, extensions)
+        result = self.getComponentCfg(componentType, system, component, extensions)
         if not result["OK"]:
             return result
         compCfg = result["Value"]
@@ -766,16 +733,12 @@ class ComponentInstaller:
         if not cfg:
             return S_OK()
         system = systemName.replace("System", "")
-        instanceOption = cfgPath("DIRAC", "Setups", self.setup, system)
-        compInstance = self.localCfg.getOption(instanceOption, "")
 
-        if not compInstance:
-            return S_ERROR(f"{instanceOption} not defined in {self.cfgFile}")
         compCfgFile = os.path.join(rootPath, "etc", f"{system}_{component}.cfg")
         compCfg = CFG()
         if os.path.exists(compCfgFile):
             compCfg.loadFromFile(compCfgFile)
-        sectionPath = cfgPath("Systems", system, compInstance, sectionName)
+        sectionPath = cfgPath("Systems", system, sectionName)
 
         newCfg = self.__getCfg(sectionPath)
         newCfg.createNewSection(cfgPath(sectionPath, component), "Added by ComponentInstaller", cfg)
@@ -785,9 +748,7 @@ class ComponentInstaller:
         gLogger.error(error)
         return S_ERROR(error)
 
-    def getComponentCfg(
-        self, componentType, system, component, compInstance, extensions, specialOptions={}, addDefaultOptions=True
-    ):
+    def getComponentCfg(self, componentType, system, component, extensions, specialOptions={}, addDefaultOptions=True):
         """
         Get the CFG object of the component configuration
         """
@@ -822,7 +783,7 @@ class ComponentInstaller:
             # Delete Dependencies section if any
             compCfg.deleteKey("Dependencies")
 
-        sectionPath = cfgPath("Systems", system, compInstance, sectionName)
+        sectionPath = cfgPath("Systems", system, sectionName)
         cfg = self.__getCfg(sectionPath)
         cfg.createNewSection(cfgPath(sectionPath, component), "", compCfg)
 
@@ -837,15 +798,13 @@ class ComponentInstaller:
             port = compCfg.getOption("Port", 0)
             protocol = compCfg.getOption("Protocol", "dips")
             if (port or protocol == "https") and self.host:
-                urlsPath = cfgPath("Systems", system, compInstance, "URLs")
+                urlsPath = cfgPath("Systems", system, "URLs")
                 cfg.createNewSection(urlsPath)
-                failoverUrlsPath = cfgPath("Systems", system, compInstance, "FailoverURLs")
+                failoverUrlsPath = cfgPath("Systems", system, "FailoverURLs")
                 cfg.createNewSection(failoverUrlsPath)
                 if protocol == "https":
                     if not port:
-                        port = gConfig.getValue(
-                            f"/Systems/Tornado/{PathFinder.getSystemInstance('Tornado')}/Port", 8443
-                        )
+                        port = gConfig.getValue(f"/Systems/Tornado/Port", 8443)
                     cfg.setOption(
                         # Strip "Tornado" from the beginning of component name if present
                         cfgPath(urlsPath, component[len("Tornado") if component.startswith("Tornado") else 0 :]),
@@ -858,29 +817,19 @@ class ComponentInstaller:
 
         return S_OK(cfg)
 
-    def addDatabaseOptionsToCS(self, gConfig_o, systemName, dbName, mySetup=None, overwrite=False):
+    def addDatabaseOptionsToCS(self, gConfig_o, systemName, dbName, overwrite=False):
         """
         Add the section with the database options to the CS
         """
-        if mySetup is None:
-            mySetup = self.setup
-
         if gConfig_o:
             gConfig_o.forceRefresh()
 
         system = systemName.replace("System", "")
-        instanceOption = cfgPath("DIRAC", "Setups", mySetup, system)
-        if gConfig_o:
-            compInstance = gConfig_o.getValue(instanceOption, "")
-        else:
-            compInstance = self.localCfg.getOption(instanceOption, "")
-        if not compInstance:
-            return S_ERROR(f"{instanceOption} not defined in {self.cfgFile}")
 
         # Check if the component CS options exist
         addOptions = True
         if not overwrite:
-            databasePath = cfgPath("Systems", system, compInstance, "Databases", dbName)
+            databasePath = cfgPath("Systems", system, "Databases", dbName)
             result = gConfig_o.getOptions(databasePath)
             if result["OK"]:
                 addOptions = False
@@ -888,20 +837,17 @@ class ComponentInstaller:
             return S_OK("Database options already exist")
 
         # Add the component options now
-        result = self.getDatabaseCfg(system, dbName, compInstance)
+        result = self.getDatabaseCfg(system, dbName)
         if not result["OK"]:
             return result
         databaseCfg = result["Value"]
         gLogger.notice("Adding to CS", f"{system}/{dbName}")
         return self._addCfgToCS(databaseCfg)
 
-    def removeDatabaseOptionsFromCS(self, gConfig_o, system, dbName, mySetup=None):
+    def removeDatabaseOptionsFromCS(self, system, dbName):
         """
         Remove the section with database options from the CS, if possible
         """
-        if mySetup is None:
-            mySetup = self.setup
-
         result = self.monitoringClient.installationExists(
             {"UnInstallationTime": None}, {"DIRACSystem": system, "Type": "DB", "DIRACModule": dbName}, {}
         )
@@ -909,48 +855,23 @@ class ComponentInstaller:
             return result
         exists = result["Value"]
 
-        instanceOption = cfgPath("DIRAC", "Setups", mySetup, system)
-        if gConfig_o:
-            compInstance = gConfig_o.getValue(instanceOption, "")
-        else:
-            compInstance = self.localCfg.getOption(instanceOption, "")
-
         if not exists:
-            result = self._removeSectionFromCS(cfgPath("Systems", system, compInstance, "Databases", dbName))
+            result = self._removeSectionFromCS(cfgPath("Systems", system, "Databases", dbName))
             if not result["OK"]:
                 return result
 
         return S_OK("Successfully removed entries from CS")
 
-    def getDatabaseCfg(self, system, dbName, compInstance):
+    def getDatabaseCfg(self, system, dbName):
         """
         Get the CFG object of the database configuration
         """
-        databasePath = cfgPath("Systems", system, compInstance, "Databases", dbName)
+        databasePath = cfgPath("Systems", system, "Databases", dbName)
         cfg = self.__getCfg(databasePath, "DBName", dbName)
         cfg.setOption(cfgPath(databasePath, "Host"), self.mysqlHost)
         cfg.setOption(cfgPath(databasePath, "Port"), self.mysqlPort)
 
         return S_OK(cfg)
-
-    def addSystemInstance(self, systemName, compInstance, mySetup=None, myCfg=False):
-        """
-        Add a new system self.instance to dirac.cfg and CS
-        """
-        if mySetup is None:
-            mySetup = self.setup
-
-        system = systemName.replace("System", "")
-        gLogger.notice(
-            f"Adding {system} system as {compInstance} self.instance for {mySetup} self.setup to dirac.cfg and CS"
-        )
-
-        cfg = self.__getCfg(cfgPath("DIRAC", "Setups", mySetup), system, compInstance)
-        if myCfg:
-            if not self._addCfgToDiracCfg(cfg):
-                return S_ERROR("Failed to add system self.instance to dirac.cfg")
-
-        return self._addCfgToCS(cfg)
 
     def printStartupStatus(self, rDict):
         """
@@ -1188,11 +1109,7 @@ class ComponentInstaller:
         """
         Get the component software module
         """
-        self.setup = CSGlobals.getSetup()
-        self.instance = gConfig.getValue(cfgPath("DIRAC", "Setups", self.setup, system), "")
-        if not self.instance:
-            return S_OK(component)
-        module = gConfig.getValue(cfgPath("Systems", system, self.instance, compType, component, "Module"), "")
+        module = gConfig.getValue(cfgPath("Systems", system, compType, component, "Module"), "")
         if not module:
             module = component
         return S_OK(module)
@@ -1382,7 +1299,7 @@ class ComponentInstaller:
         setupWeb = self.localCfg.getOption(cfgInstallPath("WebPortal"), False)
         setupConfigurationMaster = self.localCfg.getOption(cfgInstallPath("ConfigurationMaster"), False)
         setupPrivateConfiguration = self.localCfg.getOption(cfgInstallPath("PrivateConfiguration"), False)
-        setupConfigurationName = self.localCfg.getOption(cfgInstallPath("ConfigurationName"), self.setup)
+        setupConfigurationName = self.localCfg.getOption(cfgInstallPath("ConfigurationName"), "DIRAC-Prod")
         setupAddConfiguration = self.localCfg.getOption(cfgInstallPath("AddConfiguration"), True)
 
         for serviceTuple in setupServices:
@@ -1437,7 +1354,7 @@ class ComponentInstaller:
                     DIRAC.exit(-1)
                 return S_ERROR(error)
 
-        # if any server or agent needs to be install we need the startup directory and runsvdir running
+        # if any server or agent needs to be installed we need the startup directory and runsvdir running
         if setupServices or setupAgents or setupExecutors or setupWeb:
             if not os.path.exists(self.startDir):
                 mkDir(self.startDir)
@@ -1469,17 +1386,13 @@ class ComponentInstaller:
             gLogger.notice("Installing Master Configuration Server (Tornado-based)")
 
             # Add some needed bootstrapping configuration
-            cfg = self.__getCfg(cfgPath("DIRAC", "Setups", self.setup), "Tornado", self.instance)
-            self._addCfgToDiracCfg(cfg)
             cfg = self.__getCfg(
-                cfgPath("Systems", "Configuration", self.instance, "Services", "Server"),
+                cfgPath("Systems", "Configuration", "Services", "Server"),
                 "HandlerPath",
                 "DIRAC/ConfigurationSystem/Service/TornadoConfigurationHandler.py",
             )
             self._addCfgToDiracCfg(cfg)
-            cfg = self.__getCfg(
-                cfgPath("Systems", "Configuration", self.instance, "Services", "Server"), "Port", "9135"
-            )
+            cfg = self.__getCfg(cfgPath("Systems", "Configuration", "Services", "Server"), "Port", "9135")
             self._addCfgToDiracCfg(cfg)
             cfg = self.__getCfg(cfgPath("DIRAC", "Configuration"), "Master", "yes")
             cfg.setOption(cfgPath("DIRAC", "Configuration", "Name"), setupConfigurationName)
@@ -1489,14 +1402,9 @@ class ComponentInstaller:
                 serverUrl = f"https://{self.host}:9135/Configuration/Server"
                 cfg.setOption(serversCfgPath, serverUrl)
                 gConfigurationData.setOptionInCFG(serversCfgPath, serverUrl)
-            instanceOptionPath = cfgPath("DIRAC", "Setups", self.setup)
-            instanceCfg = self.__getCfg(instanceOptionPath, "Configuration", self.instance)
-            cfg = cfg.mergeWith(instanceCfg)
             self._addCfgToDiracCfg(cfg)
 
-            result = self.getComponentCfg(
-                "service", "Configuration", "Server", self.instance, extensions, addDefaultOptions=True
-            )
+            result = self.getComponentCfg("service", "Configuration", "Server", extensions, addDefaultOptions=True)
             if not result["OK"]:
                 if self.exitOnError:
                     DIRAC.exit(-1)
@@ -1542,10 +1450,6 @@ class ComponentInstaller:
         # If the Configuration Server used is not the Master, it can take some time for this
         # info to be propagated, this may cause the later self.setup to fail
         if setupAddConfiguration:
-            gLogger.notice("Registering System instances")
-            for system in setupSystems:  # pylint: disable=not-an-iterable
-                self.addSystemInstance(system, self.instance, self.setup, True)
-
             for system, service in setupServices:
                 if not self.addDefaultOptionsToCS(None, "service", system, service, extensions, overwrite=True)["OK"]:
                     # If we are not allowed to write to the central CS, add the configuration to the local file
@@ -1733,18 +1637,10 @@ class ComponentInstaller:
 
         gLogger.notice(f"Installing {componentType} {system}/{component}")
 
-        # Retrieve bash variables to be set
-        result = gConfig.getOption(f"DIRAC/Setups/{CSGlobals.getSetup()}/{system}")
-        if not result["OK"]:
-            return result
-        self.instance = result["Value"]
-
         specialOptions = {}
         if componentModule:
             specialOptions["Module"] = componentModule
-        result = self.getComponentCfg(
-            componentType, system, component, self.instance, extensions, specialOptions=specialOptions
-        )
+        result = self.getComponentCfg(componentType, system, component, extensions, specialOptions=specialOptions)
         if not result["OK"]:
             return result
         compCfg = result["Value"]
@@ -1752,9 +1648,9 @@ class ComponentInstaller:
         section = _getSectionName(componentType)
 
         bashVars = ""
-        if compCfg.isSection(f"Systems/{system}/{self.instance}/{section}/{component}/Environment"):
+        if compCfg.isSection(f"Systems/{system}/{section}/{component}/Environment"):
             dictionary = compCfg.getAsDict()
-            bashSection = dictionary["Systems"][system][self.instance][section][component]["BashVariables"]
+            bashSection = dictionary["Systems"][system][section][component]["BashVariables"]
             for var in bashSection:
                 bashVars = f"{bashVars}\nexport {var}={bashSection[var]}"
 
@@ -1827,7 +1723,7 @@ class ComponentInstaller:
                 os.chmod(stopFile, self.gDefaultPerms)
 
         except Exception:
-            error = f"Failed to prepare self.setup for {componentType} {system}/{component}"
+            error = f"Failed to prepare setup for {componentType} {system}/{component}"
             gLogger.exception(error)
             if self.exitOnError:
                 DIRAC.exit(-1)
@@ -1996,7 +1892,7 @@ class ComponentInstaller:
 
                 os.chmod(runFile, self.gDefaultPerms)
             except Exception:
-                error = "Failed to prepare self.setup for Web Portal"
+                error = "Failed to prepare setup for Web Portal"
                 gLogger.exception(error)
                 if self.exitOnError:
                     DIRAC.exit(-1)
@@ -2266,7 +2162,7 @@ class ComponentInstaller:
 
         dbSystem = result["Value"][dbName]["System"]
 
-        result = self.removeDatabaseOptionsFromCS(gConfig_o, dbSystem, dbName)
+        result = self.removeDatabaseOptionsFromCS(dbSystem, dbName)
         if not result["OK"]:
             return result
 
@@ -2385,12 +2281,6 @@ class ComponentInstaller:
             gLogger.notice("Tornado_Tornado already installed")
             return S_OK(runitCompDir)
 
-        # Check the setup for the given system
-        result = gConfig.getOption(f"DIRAC/Setups/{CSGlobals.getSetup()}/Tornado")
-        if not result["OK"]:
-            return result
-        self.instance = result["Value"]
-
         # Now do the actual installation
         try:
             self._createRunitLog(runitCompDir)
@@ -2416,7 +2306,7 @@ class ComponentInstaller:
             os.chmod(runFile, self.gDefaultPerms)
 
         except Exception:
-            error = "Failed to prepare self.setup for Tornado"
+            error = "Failed to prepare setup for Tornado"
             gLogger.exception(error)
             if self.exitOnError:
                 DIRAC.exit(-1)
@@ -2435,15 +2325,7 @@ class ComponentInstaller:
         if gConfig_o:
             gConfig_o.forceRefresh()
 
-        instanceOption = cfgPath("DIRAC", "Setups", self.setup, "Tornado")
-
-        if gConfig_o:
-            compInstance = gConfig_o.getValue(instanceOption, "")
-        else:
-            compInstance = self.localCfg.getOption(instanceOption, "")
-        if not compInstance:
-            return S_ERROR(f"{instanceOption} not defined in {self.cfgFile}")
-        tornadoSection = cfgPath("Systems", "Tornado", compInstance)
+        tornadoSection = cfgPath("Systems", "Tornado")
 
         if gConfig_o:
             tornadoPort = gConfig_o.getValue(cfgPath(tornadoSection, "Port"), "8443")

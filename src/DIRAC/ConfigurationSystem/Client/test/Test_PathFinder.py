@@ -63,11 +63,6 @@ def pathFinder(monkeypatch):
     return PathFinder
 
 
-def test_getDIRACSetup(pathFinder):
-    """Test getDIRACSetup"""
-    assert pathFinder.getDIRACSetup() == "TestSetup"
-
-
 @pytest.mark.parametrize(
     "system, componentName, setup, componentType, result",
     [

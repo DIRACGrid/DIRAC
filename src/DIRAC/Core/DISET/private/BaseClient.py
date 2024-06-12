@@ -84,7 +84,6 @@ class BaseClient:
         self.__retryCounter = 1
         self.__bannedUrls = []
         for initFunc in (
-            self.__discoverSetup,
             self.__discoverVO,
             self.__discoverTimeout,
             self.__discoverURL,
@@ -116,24 +115,6 @@ class BaseClient:
         :return: str
         """
         return self._serviceName
-
-    def __discoverSetup(self):
-        """Discover which setup to use and stores it in self.setup
-        The setup is looked for:
-           * kwargs of the constructor (see KW_SETUP)
-           * the ThreadConfig
-           * in the CS /DIRAC/Setup
-           * default to 'Test'
-
-        :return: S_OK()/S_ERROR()
-        """
-        if self.KW_SETUP in self.kwargs and self.kwargs[self.KW_SETUP]:
-            self.setup = str(self.kwargs[self.KW_SETUP])
-        else:
-            self.setup = self.__threadConfig.getSetup()
-            if not self.setup:
-                self.setup = gConfig.getValue("/DIRAC/Setup", "Test")
-        return S_OK()
 
     def __discoverVO(self):
         """Discover which VO to use and stores it in self.vo
@@ -326,16 +307,16 @@ class BaseClient:
 
         # We extract the list of URLs from the CS (System/URLs/Component)
         try:
-            urls = getServiceURL(self._destinationSrv, setup=self.setup)
+            urls = getServiceURL(self._destinationSrv)
         except Exception as e:
-            return S_ERROR(f"Cannot get URL for {self._destinationSrv} in setup {self.setup}: {repr(e)}")
+            return S_ERROR(f"Cannot get URL for {self._destinationSrv} : {repr(e)}")
         if not urls:
             return S_ERROR(f"URL for service {self._destinationSrv} not found")
 
         failoverUrls = []
         # Try if there are some failover URLs to use as last resort
         try:
-            failoverUrlsStr = getServiceFailoverURL(self._destinationSrv, setup=self.setup)
+            failoverUrlsStr = getServiceFailoverURL(self._destinationSrv)
             if failoverUrlsStr:
                 failoverUrls = failoverUrlsStr.split(",")
         except Exception:
@@ -564,7 +545,7 @@ and this is thread {cThID}
         """
         if not self.__initStatus["OK"]:
             return self.__initStatus
-        stConnectionInfo = ((self.__URLTuple[3], self.setup, self.vo), action, self.__extraCredentials, DIRAC.version)
+        stConnectionInfo = ((self.__URLTuple[3], "None", self.vo), action, self.__extraCredentials, DIRAC.version)
 
         # Send the connection info and get the answer back
         retVal = transport.sendData(S_OK(BaseClient._serializeStConnectionInfo(stConnectionInfo)))
