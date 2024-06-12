@@ -649,12 +649,6 @@ class SystemAdministratorClientCLI(CLI):
                 return
             system = result["Value"][database]["System"]
             dbType = result["Value"][database]["Type"]
-            setup = CSGlobals.getSetup()
-            instance = gConfig.getValue(f"/DIRAC/Setups/{setup}/{system}", "")
-            if not instance:
-                self._errMsg(f"No instance defined for system {system}")
-                self._errMsg(f"\tAdd new instance with 'add instance {system} <instance_name>'")
-                return
 
             if dbType == "MySQL":
                 if not gComponentInstaller.mysqlPassword:
@@ -1083,7 +1077,7 @@ class SystemAdministratorClientCLI(CLI):
         else:
             gLogger.notice("Software successfully updated.")
             gLogger.notice("You should restart the services to use the new software version.")
-            gLogger.notice("Think of updating /Operations/<vo>/<setup>/Pilot/Versions section in the CS")
+            gLogger.notice("Think of updating /Operations/<vo>/Pilot/Versions section in the CS")
 
     def do_revert(self, args):
         """
