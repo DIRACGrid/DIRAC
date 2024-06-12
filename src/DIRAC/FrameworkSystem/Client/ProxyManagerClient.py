@@ -30,7 +30,8 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         self.__pilotProxiesCache = DictCache()
         self.__filesCache = DictCache(self.__deleteTemporalFile)
 
-    def __deleteTemporalFile(self, filename):
+    @staticmethod
+    def __deleteTemporalFile(filename):
         """Delete temporal file
 
         :param str filename: path to file
