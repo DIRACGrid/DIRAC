@@ -324,7 +324,7 @@ class StorageBase:
 
     def constructURLFromLFN(self, lfn, withWSUrl=False):
         """Construct URL from the given LFN according to the VO convention for the
-        primary protocol of the storage plagin
+        primary protocol of the storage plugin
 
         :param str lfn: file LFN
         :param boolean withWSUrl: flag to include the web service part into the resulting URL
