@@ -13,20 +13,24 @@ from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC.Core.Utilities import TimeUtilities
 
 mapping = {
-    "properties": {
-        "JobID": {"type": "long"},
-        "timestamp": {"type": "date"},
-        "CPUNormalizationFactor": {"type": "long"},
-        "NormCPUTime(s)": {"type": "long"},
-        "Memory(kB)": {"type": "long"},
-        "TotalCPUTime(s)": {"type": "long"},
-        "MemoryUsed(kb)": {"type": "long"},
-        "HostName": {"type": "keyword"},
-        "GridCE": {"type": "keyword"},
-        "ModelName": {"type": "keyword"},
-        "Status": {"type": "keyword"},
-        "JobType": {"type": "keyword"},
-    }
+    "JobID": {"type": "long"},
+    "timestamp": {"type": "date"},
+    "PilotAgent": {"type": "keyword"},
+    "Pilot_Reference": {"type": "keyword"},
+    "JobGroup": {"type": "keyword"},
+    "CPUNormalizationFactor": {"type": "long"},
+    "NormCPUTime(s)": {"type": "long"},
+    "Memory(MB)": {"type": "long"},
+    "LocalAccount": {"type": "keyword"},
+    "TotalCPUTime(s)": {"type": "long"},
+    "PayloadPID": {"type": "long"},
+    "HostName": {"type": "text"},
+    "GridCE": {"type": "keyword"},
+    "CEQueue": {"type": "keyword"},
+    "BatchSystem": {"type": "keyword"},
+    "ModelName": {"type": "keyword"},
+    "Status": {"type": "keyword"},
+    "JobType": {"type": "keyword"},
 }
 
 
@@ -42,6 +46,7 @@ class ElasticJobParametersDB(ElasticDB):
             super().__init__(self.fullname, self.index_name, parentLogger=parentLogger)
         except Exception as ex:
             raise RuntimeError("Can't connect to ElasticJobParametersDB") from ex
+        self.addIndexTemplate("elasticjobparametersdb", index_patterns=[f"{self.index_name}_*"], mapping=mapping)
 
     def _indexName(self, jobID: int) -> str:
         """construct the index name
@@ -59,7 +64,7 @@ class ElasticJobParametersDB(ElasticDB):
         # Verifying if the index is there, and if not create it
         res = self.existingIndex(indexName)
         if not res["OK"] or not res["Value"]:
-            result = self.createIndex(indexName, mapping, period=None)
+            result = self.createIndex(indexName, period=None)
             if not result["OK"]:
                 self.log.error(result["Message"])
                 raise RuntimeError(result["Message"])
