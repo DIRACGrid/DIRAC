@@ -217,6 +217,31 @@ class ElasticSearchDB:
         return self.__indexPrefix
 
     @ifConnected
+    def addIndexTemplate(
+        self, name: str, index_patterns: list, mapping: dict, priority: int = 1, settings: dict = None
+    ) -> dict:
+        """Adds an index template.
+
+        :param self: self reference
+        :param str name: index name
+        :param list index_patterns: list of index patterns to match
+        :param dict mapping: it is the mapping of the index
+        """
+        if settings is None:
+            settings = {"index": {"number_of_shards": 1, "number_of_replicas": 1}}
+        body = {
+            "index_patterns": index_patterns,
+            "priority": priority,
+            "template": {"settings": settings, "mappings": {"properties": mapping}},
+        }
+        try:
+            res = self.client.indices.put_index_template(name=name, body=body)
+            return S_OK(res)
+        except Exception as e:  # pylint: disable=broad-except
+            sLog.exception()
+            return S_ERROR(e)
+
+    @ifConnected
     def query(self, index: str, query):
         """Executes a query and returns its result (uses ES DSL language).
 
@@ -435,13 +460,15 @@ class ElasticSearchDB:
         elif res["Value"]:
             return S_OK(fullIndex)
 
+        sLog.info(f"Create index {fullIndex}")
         try:
-            sLog.info("Create index: ", fullIndex + str(mapping))
-            self.client.indices.create(index=fullIndex, body={"mappings": mapping})  # ES7
-
+            if not mapping:
+                self.client.indices.create(index=fullIndex)
+            else:
+                self.client.indices.create(index=fullIndex, body={"mappings": mapping})
             return S_OK(fullIndex)
-        except Exception as e:  # pylint: disable=broad-except
-            sLog.error("Can not create the index:", repr(e))
+        except Exception:  # pylint: disable=broad-except
+            sLog.exception()
             return S_ERROR("Can not create the index")
 
     @ifConnected
