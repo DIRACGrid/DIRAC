@@ -58,7 +58,7 @@ import threading
 import uuid
 
 from DIRAC import S_ERROR, S_OK, gConfig
-from DIRAC.Core.Security.Locations import getCAsLocation, getCertificateAndKeyLocation
+from DIRAC.Core.Security.Locations import getCAsLocation
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Subprocess import systemCall
@@ -247,14 +247,18 @@ class HTCondorCEComputingElement(ComputingElement):
         }
 
         if self.useSSLSubmission:
-            if not (certAndKey := getCertificateAndKeyLocation()):
-                return S_ERROR("You want to use SSL Submission, but no certificate and key are present")
+            certFile = "/home/dirac/.globus/usercert.pem"
+            keyFile = "/home/dirac/.globus/userkey.pem"
+            if not (os.path.exists(certFile) and os.path.exists(keyFile)):
+                return S_ERROR(
+                    "You want to use SSL Submission, but certificate and key are not present in /home/dirac/.globus/"
+                )
             if not (caFiles := getCAsLocation()):
                 return S_ERROR("You want to use SSL Submission, but no CA files are present")
             htcEnv = {
                 "_condor_SEC_CLIENT_AUTHENTICATION_METHODS": "SSL",
-                "_condor_AUTH_SSL_CLIENT_CERTFILE": certAndKey[0],
-                "_condor_AUTH_SSL_CLIENT_KEYFILE": certAndKey[1],
+                "_condor_AUTH_SSL_CLIENT_CERTFILE": certFile,
+                "_condor_AUTH_SSL_CLIENT_KEYFILE": keyFile,
                 "_condor_AUTH_SSL_CLIENT_CADIR": caFiles,
                 "_condor_AUTH_SSL_SERVER_CADIR": caFiles,
                 "_condor_AUTH_SSL_USE_CLIENT_PROXY_ENV_VAR": "false",

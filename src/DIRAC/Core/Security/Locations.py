@@ -150,9 +150,9 @@ def getCertificateAndKeyLocation():
     if "X509_USER_CERT" in os.environ:
         if os.path.exists(os.environ["X509_USER_CERT"]):
             certfile = os.environ["X509_USER_CERT"]
-    if not certfile:
-        if os.path.exists(os.environ["HOME"] + "/.globus/usercert.pem"):
-            certfile = os.environ["HOME"] + "/.globus/usercert.pem"
+    if not certfile and (home := os.environ.get("HOME")):
+        if os.path.exists(home + "/.globus/usercert.pem"):
+            certfile = home + "/.globus/usercert.pem"
 
     if not certfile:
         return False
@@ -161,9 +161,9 @@ def getCertificateAndKeyLocation():
     if "X509_USER_KEY" in os.environ:
         if os.path.exists(os.environ["X509_USER_KEY"]):
             keyfile = os.environ["X509_USER_KEY"]
-    if not keyfile:
-        if os.path.exists(os.environ["HOME"] + "/.globus/userkey.pem"):
-            keyfile = os.environ["HOME"] + "/.globus/userkey.pem"
+    if not keyfile and (home := os.environ.get("HOME")):
+        if os.path.exists(home + "/.globus/userkey.pem"):
+            keyfile = home + "/.globus/userkey.pem"
 
     if not keyfile:
         return False
