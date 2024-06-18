@@ -1,4 +1,4 @@
-""" This tests only need the ElasticJobParametersDB, and connects directly to it
+""" This tests only need the JobParametersDB, and connects directly to it
 """
 
 import time
@@ -8,13 +8,13 @@ import DIRAC
 DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
-from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
+from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import JobParametersDB
 
 #  Add a time delay to allow updating the modified index before querying it.
 SLEEP_DELAY = 2
 
 gLogger.setLevel("DEBUG")
-elasticJobParametersDB = ElasticJobParametersDB()
+elasticJobParametersDB = JobParametersDB()
 
 
 def test_setAndGetJobFromDB():

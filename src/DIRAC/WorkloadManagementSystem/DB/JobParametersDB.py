@@ -1,4 +1,4 @@
-""" Module containing a front-end to the ElasticSearch-based ElasticJobParametersDB.
+""" Module containing a front-end to the ElasticSearch-based JobParametersDB.
     This is a drop-in replacement for MySQL-based table JobDB.JobParameters.
 
     The following class methods are provided for public usage
@@ -6,7 +6,6 @@
       - setJobParameter()
       - deleteJobParameters()
 """
-from typing import Union
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.ElasticDB import ElasticDB
@@ -34,7 +33,7 @@ mapping = {
 }
 
 
-class ElasticJobParametersDB(ElasticDB):
+class JobParametersDB(ElasticDB):
     def __init__(self, parentLogger=None):
         """Standard Constructor"""
 
@@ -45,7 +44,7 @@ class ElasticJobParametersDB(ElasticDB):
             # Connecting to the ES cluster
             super().__init__(self.fullname, self.index_name, parentLogger=parentLogger)
         except Exception as ex:
-            raise RuntimeError("Can't connect to ElasticJobParametersDB") from ex
+            RuntimeError("Can't connect to JobParameters index") from ex
         self.addIndexTemplate("elasticjobparametersdb", index_patterns=[f"{self.index_name}_*"], mapping=mapping)
 
     def _indexName(self, jobID: int) -> str:
@@ -70,7 +69,7 @@ class ElasticJobParametersDB(ElasticDB):
                 raise RuntimeError(result["Message"])
             self.log.always("Index created:", indexName)
 
-    def getJobParameters(self, jobIDs: Union[int, list[int]], paramList=None) -> dict:
+    def getJobParameters(self, jobIDs: int | list[int], vo: str, paramList=None) -> dict:
         """Get Job Parameters defined for jobID.
           Returns a dictionary with the Job Parameters.
           If paramList is empty - all the parameters are returned.
@@ -100,7 +99,7 @@ class ElasticJobParametersDB(ElasticDB):
 
     def setJobParameter(self, jobID: int, key: str, value: str) -> dict:
         """
-        Inserts data into ElasticJobParametersDB index
+        Inserts data into JobParametersDB index
 
         :param self: self reference
         :param jobID: Job ID
@@ -128,7 +127,7 @@ class ElasticJobParametersDB(ElasticDB):
 
     def setJobParameters(self, jobID: int, parameters: list) -> dict:
         """
-        Inserts data into ElasticJobParametersDB index using bulk indexing
+        Inserts data into JobParametersDB index using bulk indexing
 
         :param self: self reference
         :param jobID: Job ID

@@ -6,13 +6,12 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from DIRAC import S_ERROR, S_OK, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 if TYPE_CHECKING:
-    from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
+    from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import JobParametersDB
     from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
     from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 
@@ -22,7 +21,7 @@ class JobStatusUtility:
         self,
         jobDB: JobDB = None,
         jobLoggingDB: JobLoggingDB = None,
-        elasticJobParametersDB: ElasticJobParametersDB = None,
+        elasticJobParametersDB: JobParametersDB = None,
     ) -> None:
         """
         :raises: RuntimeError, AttributeError
@@ -56,7 +55,7 @@ class JobStatusUtility:
 
         if not self.elasticJobParametersDB:
             result = ObjectLoader().loadObject(
-                "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
+                "WorkloadManagementSystem.DB.JobParametersDB", "JobParametersDB"
             )
             if not result["OK"]:
                 raise AttributeError(result["Message"])

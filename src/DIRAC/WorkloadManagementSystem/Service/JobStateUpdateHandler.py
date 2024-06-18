@@ -38,7 +38,7 @@ class JobStateUpdateHandlerMixin:
             return S_ERROR(f"Can't connect to DB: {excp}")
 
         result = ObjectLoader().loadObject(
-            "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
+            "WorkloadManagementSystem.DB.JobParametersDB", "JobParametersDB"
         )
         if not result["OK"]:
             return result
@@ -198,7 +198,7 @@ class JobStateUpdateHandlerMixin:
         """
         result = cls.elasticJobParametersDB.setJobParameters(int(jobID), parameters)
         if not result["OK"]:
-            cls.log.error("Failed to add Job Parameters to ElasticJobParametersDB", result["Message"])
+            cls.log.error("Failed to add Job Parameters to JobParametersDB", result["Message"])
 
         return result
 

@@ -22,7 +22,7 @@ class WMSAdministratorHandlerMixin:
             return S_ERROR(f"Can't connect to DB: {excp!r}")
 
         result = ObjectLoader().loadObject(
-            "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
+            "WorkloadManagementSystem.DB.JobParametersDB", "JobParametersDB"
         )
         if not result["OK"]:
             return result
