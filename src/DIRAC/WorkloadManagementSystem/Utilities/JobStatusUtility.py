@@ -54,9 +54,7 @@ class JobStatusUtility:
                 raise
 
         if not self.elasticJobParametersDB:
-            result = ObjectLoader().loadObject(
-                "WorkloadManagementSystem.DB.JobParametersDB", "JobParametersDB"
-            )
+            result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobParametersDB", "JobParametersDB")
             if not result["OK"]:
                 raise AttributeError(result["Message"])
             self.elasticJobParametersDB = result["Value"](parentLogger=self.log)

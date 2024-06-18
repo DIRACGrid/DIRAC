@@ -4,15 +4,17 @@
     The following methods are available in the Service interface
 """
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
 import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
+from DIRAC import S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
-from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_GET_INFO, JobPolicy
 
 
 class JobMonitoringHandlerMixin:
@@ -33,9 +35,7 @@ class JobMonitoringHandlerMixin:
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp}")
 
-        result = ObjectLoader().loadObject(
-            "WorkloadManagementSystem.DB.JobParametersDB", "JobParametersDB"
-        )
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobParametersDB", "JobParametersDB")
         if not result["OK"]:
             return result
         cls.elasticJobParametersDB = result["Value"](parentLogger=cls.log)
@@ -43,6 +43,10 @@ class JobMonitoringHandlerMixin:
         cls.pilotManager = PilotManagerClient()
         return S_OK()
 
+    def initializeRequest(self):
+        credDict = self.getRemoteCredentials()
+        self.vo = credDict.get("VO", Registry.getVOForGroup(credDict["group"]))
+    
     @classmethod
     def parseSelectors(cls, selectDict=None):
         """Parse selectors before DB query
@@ -410,14 +414,13 @@ class JobMonitoringHandlerMixin:
     ##############################################################################
     types_getJobParameter = [[str, int], str]
 
-    @classmethod
     @ignoreEncodeWarning
-    def export_getJobParameter(cls, jobID, parName):
+    def export_getJobParameter(self, jobID, parName):
         """
         :param str/int jobID: one single Job ID
         :param str parName: one single parameter name
         """
-        res = cls.elasticJobParametersDB.getJobParameters(int(jobID), [parName])
+        res = self.elasticJobParametersDB.getJobParameters(int(jobID), self.vo, [parName])
         if not res["OK"]:
             return res
         return S_OK(res["Value"].get(int(jobID), {}))
@@ -432,9 +435,8 @@ class JobMonitoringHandlerMixin:
     ##############################################################################
     types_getJobParameters = [[str, int, list]]
 
-    @classmethod
     @ignoreEncodeWarning
-    def export_getJobParameters(cls, jobIDs, parName=None):
+    def export_getJobParameters(self, jobIDs, parName=None):
         """
         :param str/int/list jobIDs: one single job ID or a list of them
         :param str parName: one single parameter name, a list or None (meaning all of them)
@@ -442,13 +444,13 @@ class JobMonitoringHandlerMixin:
         if not isinstance(jobIDs, list):
             jobIDs = [jobIDs]
         jobIDs = [int(jobID) for jobID in jobIDs]
-        res = cls.elasticJobParametersDB.getJobParameters(jobIDs, parName)
+        res = self.elasticJobParametersDB.getJobParameters(jobIDs, self.vo, parName)
         if not res["OK"]:
             return res
         parameters = res["Value"]
 
         # Need anyway to get also from JobDB, for those jobs with parameters registered in MySQL or in both backends
-        res = cls.jobDB.getJobParameters(jobIDs, parName)
+        res = self.jobDB.getJobParameters(jobIDs, parName)
         if not res["OK"]:
             return res
         parametersM = res["Value"]
@@ -524,4 +526,5 @@ class JobMonitoringHandlerMixin:
 
 
 class JobMonitoringHandler(JobMonitoringHandlerMixin, RequestHandler):
-    pass
+    def initialize(self):
+        return self.initializeRequest()

@@ -47,13 +47,13 @@ class JobParametersDB(ElasticDB):
             RuntimeError("Can't connect to JobParameters index") from ex
         self.addIndexTemplate("elasticjobparametersdb", index_patterns=[f"{self.index_name}_*"], mapping=mapping)
 
-    def _indexName(self, jobID: int) -> str:
+    def _indexName(self, jobID: int, vo: str) -> str:
         """construct the index name
 
         :param jobID: Job ID
         """
         indexSplit = int(int(jobID) // 1e6)
-        return f"{self.index_name}_{indexSplit}m"
+        return f"{self.index_name}_{vo}_{indexSplit}m"
 
     def _createIndex(self, indexName: str) -> None:
         """Create a new index if needed
@@ -85,7 +85,7 @@ class JobParametersDB(ElasticDB):
             paramList = paramList.replace(" ", "").split(",")
         self.log.debug(f"JobDB.getParameters: Getting Parameters for jobs {jobIDs}")
 
-        res = self.getDocs(self._indexName, jobIDs)
+        res = self.getDocs(self._indexName, jobIDs, vo)
         if not res["OK"]:
             return res
         result = {}
@@ -97,7 +97,7 @@ class JobParametersDB(ElasticDB):
 
         return S_OK(result)
 
-    def setJobParameter(self, jobID: int, key: str, value: str) -> dict:
+    def setJobParameter(self, jobID: int, key: str, value: str, vo: str) -> dict:
         """
         Inserts data into JobParametersDB index
 
@@ -114,18 +114,18 @@ class JobParametersDB(ElasticDB):
         # The _id in ES can't exceed 512 bytes, this is a ES hard-coded limitation.
 
         # If a record with this jobID update and add parameter, otherwise create a new record
-        if self.existsDoc(self._indexName(jobID), docID=str(jobID)):
+        if self.existsDoc(self._indexName(jobID, vo), docID=str(jobID)):
             self.log.debug("A document for this job already exists, it will now be updated")
-            result = self.updateDoc(index=self._indexName(jobID), docID=str(jobID), body={"doc": data})
+            result = self.updateDoc(index=self._indexName(jobID, vo), docID=str(jobID), body={"doc": data})
         else:
             self.log.debug("No document has this job id, creating a new document for this job")
-            self._createIndex(self._indexName(jobID))
-            result = self.index(indexName=self._indexName(jobID), body=data, docID=str(jobID))
+            self._createIndex(self._indexName(jobID, vo))
+            result = self.index(indexName=self._indexName(jobID, vo), body=data, docID=str(jobID))
         if not result["OK"]:
             self.log.error("Couldn't insert or update data", result["Message"])
         return result
 
-    def setJobParameters(self, jobID: int, parameters: list) -> dict:
+    def setJobParameters(self, jobID: int, parameters: list, vo: str) -> dict:
         """
         Inserts data into JobParametersDB index using bulk indexing
 
@@ -134,24 +134,24 @@ class JobParametersDB(ElasticDB):
         :param parameters: list of tuples (name, value) pairs
         :returns: S_OK/S_ERROR as result of indexing
         """
-        self.log.debug("Inserting parameters", f"in {self._indexName(jobID)}: for job {jobID}: {parameters}")
+        self.log.debug("Inserting parameters", f"in {self._indexName(jobID, vo)}: for job {jobID}: {parameters}")
 
         parametersDict = dict(parameters)
         parametersDict["JobID"] = jobID
         parametersDict["timestamp"] = int(TimeUtilities.toEpochMilliSeconds())
 
-        if self.existsDoc(self._indexName(jobID), docID=str(jobID)):
+        if self.existsDoc(self._indexName(jobID, vo), docID=str(jobID)):
             self.log.debug("A document for this job already exists, it will now be updated")
-            result = self.updateDoc(index=self._indexName(jobID), docID=str(jobID), body={"doc": parametersDict})
+            result = self.updateDoc(index=self._indexName(jobID, vo), docID=str(jobID), body={"doc": parametersDict})
         else:
             self.log.debug("Creating a new document for this job")
-            self._createIndex(self._indexName(jobID))
-            result = self.index(self._indexName(jobID), body=parametersDict, docID=str(jobID))
+            self._createIndex(self._indexName(jobID, vo))
+            result = self.index(self._indexName(jobID, vo), body=parametersDict, docID=str(jobID))
         if not result["OK"]:
             self.log.error("Couldn't insert or update data", result["Message"])
         return result
 
-    def deleteJobParameters(self, jobID: int, paramList=None) -> dict:
+    def deleteJobParameters(self, jobID: int, paramList=None, vo: str = "") -> dict:
         """Deletes Job Parameters defined for jobID.
           Returns a dictionary with the Job Parameters.
           If paramList is empty - all the parameters for the job are removed
@@ -168,13 +168,13 @@ class JobParametersDB(ElasticDB):
         if not paramList:
             # Deleting the whole record
             self.log.debug("Deleting record of job {jobID}")
-            result = self.deleteDoc(self._indexName(jobID), docID=str(jobID))
+            result = self.deleteDoc(self._indexName(jobID, vo), docID=str(jobID))
         else:
             # Deleting the specific parameters
             self.log.debug(f"JobDB.getParameters: Deleting Parameters {paramList} for job {jobID}")
             for paramName in paramList:
                 result = self.updateDoc(
-                    index=self._indexName(jobID),
+                    index=self._indexName(jobID, vo),
                     docID=str(jobID),
                     body={"script": "ctx._source.remove('" + paramName + "')"},
                 )

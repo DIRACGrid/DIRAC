@@ -1,11 +1,11 @@
 """
 This is a DIRAC WMS administrator interface.
 """
-from DIRAC import S_OK, S_ERROR
-
+from DIRAC import S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
 
@@ -21,9 +21,7 @@ class WMSAdministratorHandlerMixin:
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp!r}")
 
-        result = ObjectLoader().loadObject(
-            "WorkloadManagementSystem.DB.JobParametersDB", "JobParametersDB"
-        )
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobParametersDB", "JobParametersDB")
         if not result["OK"]:
             return result
         cls.elasticJobParametersDB = result["Value"]()
@@ -176,12 +174,13 @@ class WMSAdministratorHandlerMixin:
         pilotReference = ""
         # Get the pilot grid reference first from the job parameters
 
-        if self.elasticJobParametersDB:
-            res = self.elasticJobParametersDB.getJobParameters(int(jobID), "Pilot_Reference")
-            if not res["OK"]:
-                return res
-            if res["Value"].get(int(jobID)):
-                pilotReference = res["Value"][int(jobID)]["Pilot_Reference"]
+        credDict = self.getRemoteCredentials()
+        vo = credDict.get("VO", Registry.getVOForGroup(credDict["group"]))
+        res = self.elasticJobParametersDB.getJobParameters(int(jobID), vo=vo, parNameList=["Pilot_Reference"])
+        if not res["OK"]:
+            return res
+        if res["Value"].get(int(jobID)):
+            pilotReference = res["Value"][int(jobID)]["Pilot_Reference"]
 
         if not pilotReference:
             res = self.jobDB.getJobParameter(int(jobID), "Pilot_Reference")
