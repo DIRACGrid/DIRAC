@@ -49,6 +49,8 @@ COMPONENT_NAME = "/Interfaces/API/Job"
 
 
 class BadJobParameterError(ValueError):
+    """Exception to indicate a bad job parameter name."""
+
     pass
 
 
