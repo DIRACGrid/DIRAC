@@ -30,6 +30,12 @@
         (the submission of a job is blocking the execution until its completion). It deals with one job at a time.
       - Inner Pool ComputingElement: includes methods to locally interact with Inner ComputingElements asynchronously.
         It can manage a pool of jobs running simultaneously.
+
+     To configure the use of Tokens for CEs:
+
+     * the CE is able to receive any token. Validation: 'Tag = Token' should be included in the CE parameters.
+     * the CE is able to receive VO-specifc tokens. Validation: 'Tag = Token:<VO>' should be included in the CE parameters.
+
 """
 
 import os
