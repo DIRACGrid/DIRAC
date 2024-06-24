@@ -896,11 +896,7 @@ class SiteDirector(AgentModule):
         return gTokenManager.getToken(userGroup=pilotGroup, requiredTimeLeft=600, scope=scope, audience=audience)
 
     def __supportToken(self, ce: ComputingElement) -> bool:
-        """Check whether the SiteDirector is able to submit pilots with tokens.
-
-        * the CE is able to receive any token. Validation: Tag = Token should be included in the CE parameters.
-        * the CE is able to receive VO-specifc tokens. Validation: Tag = Token:<VO> should be included in the CE parameters.
-        """
+        """Check whether the SiteDirector is able to submit pilots with tokens."""
         return "Token" in ce.ceParameters.get("Tag", []) or f"Token:{self.vo}" in ce.ceParameters.get("Tag", [])
 
     def _setCredentials(self, ce: ComputingElement, proxyMinimumRequiredValidity: int):
