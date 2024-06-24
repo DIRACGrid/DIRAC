@@ -256,12 +256,6 @@ class JobAgent(AgentModule):
         self.jobs[jobID]["JobReport"].setJobParameter(
             par_name="MatcherServiceTime", par_value=str(matchTime), sendFlag=False
         )
-        if "BOINC_JOB_ID" in os.environ:
-            # Report BOINC environment
-            for thisp in ("BoincUserID", "BoincHostID", "BoincHostPlatform", "BoincHostName"):
-                self.jobs[jobID]["JobReport"].setJobParameter(
-                    par_name=thisp, par_value=gConfig.getValue(f"/LocalSite/{thisp}", "Unknown"), sendFlag=False
-                )
 
         self.jobs[jobID]["JobReport"].setJobStatus(minorStatus="Job Received by Agent", sendFlag=False)
         result_setupProxy = self._setupProxy(owner, jobGroup)

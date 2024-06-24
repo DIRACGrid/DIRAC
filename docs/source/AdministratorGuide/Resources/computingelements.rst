@@ -114,7 +114,7 @@ configuration.
 
 Interacting with Grid Sites
 @@@@@@@@@@@@@@@@@@@@@@@@@@@
-The :mod:`~DIRAC.Resources.Computing.HTCondorCEComputingElement` and the :mod:`~DIRAC.Resources.Computing.ARCComputingElement` eases
+The :mod:`~DIRAC.Resources.Computing.HTCondorCEComputingElement` and the :mod:`~DIRAC.Resources.Computing.AREXComputingElement` eases
 the interactions with grid sites, by managing pilots using the underlying batch systems.
 Instances of such CEs are generally setup by the site administrators.
 
@@ -130,11 +130,6 @@ Dealing with the Cloud resources
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 The :mod:`~DIRAC.Resources.Computing.CloudComputingElement` allows submission to cloud sites using libcloud
 (via the standard SiteDirector agent). The instances are contextualised using cloud-init.
-
-
-Delegating to BOINC (Volunteering Computing)
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-There exists a :mod:`~DIRAC.Resources.Computing.BOINCComputingElement` to submit pilots to a BOINC server.
 
 
 Computing Elements within allocated computing resources

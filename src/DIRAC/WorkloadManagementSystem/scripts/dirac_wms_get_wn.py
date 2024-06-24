@@ -15,7 +15,7 @@ from DIRAC.Core.Base.Script import Script
 
 @Script()
 def main():
-    site = "BOINC.World.org"
+    site = "LCG.World.org"
     status = ["Running"]
     minorStatus = None
     workerNodes = None
