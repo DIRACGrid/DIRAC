@@ -531,8 +531,8 @@ class JobManagerHandlerMixin:
                 ):
                     if not right == RIGHT_KILL:
                         deleteJobList.append(jobID)
-                else:
-                    markKilledJobList.append(jobID)
+                    else:
+                        markKilledJobList.append(jobID)
                 if sDict["Status"] in [JobStatus.STAGING]:
                     stagingJobList.append(jobID)
 
