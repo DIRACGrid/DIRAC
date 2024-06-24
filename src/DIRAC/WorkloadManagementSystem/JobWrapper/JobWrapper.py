@@ -102,7 +102,6 @@ class JobWrapper:
         self.failoverRequestDelay = gConfig.getValue(self.section + "/FailoverRequestDelay", 45)
         self.sandboxSizeLimit = gConfig.getValue(self.section + "/OutputSandboxLimit", 1024 * 1024 * 10)
         self.cleanUpFlag = gConfig.getValue(self.section + "/CleanUpFlag", True)
-        self.boincUserID = gConfig.getValue("/LocalSite/BoincUserID", 0)
         self.pilotRef = gConfig.getValue("/LocalSite/PilotReference", "Unknown")
         self.cpuNormalizationFactor = gConfig.getValue("/LocalSite/CPUNormalizationFactor", 0.0)
         self.bufferLimit = gConfig.getValue(self.section + "/BufferLimit", 10485760)
@@ -240,8 +239,6 @@ class JobWrapper:
             parameters.append(("AgentLocalSE", ",".join(self.ceArgs["LocalSE"])))
         if "CPUNormalizationFactor" in self.ceArgs:
             parameters.append(("CPUNormalizationFactor", self.ceArgs["CPUNormalizationFactor"]))
-        if self.boincUserID:
-            parameters.append(("BoincUserID", self.boincUserID))
 
         parameters.append(("PilotAgent", self.diracVersion))
         parameters.append(("JobWrapperPID", self.currentPID))
