@@ -839,7 +839,9 @@ class StorageElementItem:
                 {"Successful": successful, "Failed": failed, "Protocols": (nativeSrcProtocol, nativeDestProtocol)}
             )
 
-        return S_ERROR(errno.ENOPROTOOPT, "Could not find a protocol ")
+        return S_ERROR(
+            errno.ENOPROTOOPT, f"Could not find a protocol between source {sourceSE.name} and target {self.name}"
+        )
 
     def negociateProtocolWithOtherSE(self, sourceSE, protocols=None):
         """Negotiate what protocol could be used for a third party transfer
