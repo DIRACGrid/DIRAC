@@ -22,15 +22,19 @@ def getLFNList(arg):
 def main():
     catalog = None
     Script.registerSwitch("C:", "Catalog=", "Catalog to use")
+    Script.registerSwitch("N:", "ChunkSize=", "Number of files per request")
     # Registering arguments will automatically add their description to the help menu
     Script.registerArgument(" requestName:  a request name")
     Script.registerArgument(" LFNs:         single LFN or file with LFNs")
     Script.registerArgument(["targetSE:     target SE"])
     Script.parseCommandLine()
+
+    chunksize = 100
     for switch in Script.getUnprocessedSwitches():
         if switch[0] == "C" or switch[0].lower() == "catalog":
             catalog = switch[1]
-
+        if switch[0] == "N" or switch[0].lower() == "chunksize":
+            chunksize = int(switch[1])
     args = Script.getPositionalArgs()
 
     requestName = None
@@ -54,7 +58,7 @@ def main():
     from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
     from DIRAC.Core.Utilities.List import breakListIntoChunks
 
-    lfnChunks = breakListIntoChunks(lfnList, 100)
+    lfnChunks = breakListIntoChunks(lfnList, chunksize)
     multiRequests = len(lfnChunks) > 1
 
     error = 0
