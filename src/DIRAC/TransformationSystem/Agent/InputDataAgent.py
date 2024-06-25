@@ -46,6 +46,7 @@ class InputDataAgent(AgentModule):
         self.transClient = TransformationClient()
         self.metadataClient = FileCatalogClient()
         self.transformationTypes = None
+        self.multiVO = False
 
     #############################################################################
     def initialize(self):
@@ -63,6 +64,8 @@ class InputDataAgent(AgentModule):
                 if extendable in self.transformationTypes:
                     self.transformationTypes.remove(extendable)
                     # This is because the Extendables do not use this Agent (have no Input data query)
+
+        self.multiVO = self.am_getOption("MultiVO", self.multiVO)
 
         return S_OK()
 
@@ -116,7 +119,13 @@ class InputDataAgent(AgentModule):
             # Perform the query to the metadata catalog
             self.log.verbose("Using input data query for transformation", "%d: %s" % (transID, str(inputDataQuery)))
             start = time.time()
-            result = self.metadataClient.findFilesByMetadata(inputDataQuery)
+            mdc = self.metadataClient
+            if self.multiVO:
+                ownerDN = transDict["AuthorDN"]
+                ownerGroup = transDict["AuthorGroup"]
+                self.log.debug(f"Querying file catalog as {ownerDN}, {ownerGroup}")
+                mdc = FileCatalogClient(useCertificates=True, delegatedDN=ownerDN, delegatedGroup=ownerGroup)
+            result = mdc.findFilesByMetadata(inputDataQuery)
             rtime = time.time() - start
             self.log.verbose("Metadata catalog query time", f": {rtime:.2f} seconds.")
             if not result["OK"]:
