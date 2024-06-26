@@ -19,13 +19,11 @@ An timeInterval class provides a method to check
 if a give datetime is in the defined interval.
 
 """
-import calendar
-import time
 import datetime
 import sys
+import time
 
 from DIRAC import gLogger
-
 
 # Some useful constants for time operations
 microsecond = datetime.timedelta(microseconds=1)
