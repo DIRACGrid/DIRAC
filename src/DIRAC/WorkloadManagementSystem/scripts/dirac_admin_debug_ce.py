@@ -1,20 +1,19 @@
 #!/usr/bin/env python
 """
-Test the interactions with a given set of Computing Elements (CE). For each CE:
+Test the interactions with a given set of Computing Elements (CE). For each CE
 
 - Get the CE status if available
 - Submit a job to the CE
 - Get the job status
 - Get the job output/error/log if available
 
-Conditions:
+Conditions
 
 - The CEs must be configured in the DIRAC configuration
-- The script should be executed with an admin proxy: used to fetch a pilot proxy and a token
-- The script should be executed:
-
-  - in a DIRAC client environment for normal CEs, such as AREX and HTCondor
-  - in a DIRAC host environment for SSH/Local CEs (credentials would not be available otherwise)
+- For non-SSH CEs (e.g. AREX, HTCondor): requires an admin proxy (FullDelegation)
+  to fetch pilot proxy and token. Run from a DIRAC client environment.
+- For SSH/SSHBatch CEs: no proxy required. These use SSH credentials from the CS
+  configuration. Run from a DIRAC server/host environment.
 
 Usage:
   dirac-admin-debug-ce <VO> [--site <site>] [--ce <ce>] [--ce-type <type>] [--script <path>]
@@ -23,6 +22,7 @@ Example:
   $ dirac-admin-debug-ce dteam --site LCG.CERN.cern --ce-type HTCondorCE
 """
 import concurrent.futures
+import tempfile
 import time
 from pathlib import Path
 
@@ -153,10 +153,11 @@ def buildQueues(vo, sites, ces, ceTypes):
     return result["Value"]
 
 
-def interactWithCE(ce):
+def interactWithCE(ce, executableFile):
     """Interact with a given Computing Element (CE).
 
     :param ce: The Computing Element instance.
+    :param str executableFile: The path to the executable script to submit.
     :return: A dictionary with the result of each check.
     """
     checks = {
@@ -178,7 +179,7 @@ def interactWithCE(ce):
 
     # Submit a job to the CE
     gLogger.info(f"[{ce.ceName}]Submitting a job")
-    res = ce.submitJob("workloadExec.sh", None)
+    res = ce.submitJob(executableFile, None)
     if not res["OK"]:
         gLogger.error(f"[{ce.ceName}]Cannot submit job to CE: {res['Message']}")
         checks["job_submit"]["Message"] = res["Message"]
@@ -236,30 +237,18 @@ def main():
     Script.registerSwitch("", "script=", "Path to custom executable script (default: workloadExec.sh)", setScript)
     Script.registerSwitch("", "timeout=", "Timeout in seconds for job status polling (default: 1800)", setTimeout)
     Script.registerArgument("VO: Virtual Organization")
+
+    # Determine the credential context before parseCommandLine contacts the CS:
+    # if no proxy file exists, assume we are on a server with a host certificate.
+    from DIRAC.Core.Security.Locations import getProxyLocation
+
+    hasProxy = getProxyLocation() is not None
+    if not hasProxy:
+        Script.localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "true")
+
     Script.parseCommandLine()
 
-    from DIRAC.Core.Security.Properties import SecurityProperty
-    from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-
-    # Check credentials
-    result = getProxyInfo()
-    if not result["OK"]:
-        gLogger.error("Do you have a valid proxy?")
-        gLogger.error(result["Message"])
-        DIRAC.exit(1)
-    proxyProps = result["Value"]
-
-    if SecurityProperty.FULL_DELEGATION not in proxyProps.get("groupProperties", []):
-        gLogger.error("You need an admin proxy (with FullDelegation property) to run this script")
-        DIRAC.exit(1)
-
     vo = Script.getPositionalArgs()[0]
-
-    # Get credentials for the given VO
-    pilotDN, pilotGroup = findGenericCreds(vo)
-    if not pilotDN or not pilotGroup:
-        gLogger.error("Cannot get pilot credentials")
-        DIRAC.exit(1)
 
     # Get the queues
     queueDict = buildQueues(
@@ -272,6 +261,36 @@ def main():
         gLogger.error("Cannot get queues")
         DIRAC.exit(1)
 
+    # SSH-based CEs run from the server and use SSH credentials from the CS,
+    # so they do not need a proxy or pilot credentials.
+    hasNonSSHCEs = any(not q["CE"].ceType.startswith("SSH") for q in queueDict.values())
+
+    pilotDN, pilotGroup = None, None
+    if hasNonSSHCEs:
+        from DIRAC.Core.Security.Properties import SecurityProperty
+        from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+
+        # Non-SSH CEs require an admin proxy to fetch pilot credentials
+        if not hasProxy:
+            gLogger.error("Non-SSH CEs found but no proxy available. Do you have a valid proxy?")
+            DIRAC.exit(1)
+
+        result = getProxyInfo()
+        if not result["OK"]:
+            gLogger.error("Failed to read proxy info", result["Message"])
+            DIRAC.exit(1)
+        proxyProps = result["Value"]
+
+        if SecurityProperty.FULL_DELEGATION not in proxyProps.get("groupProperties", []):
+            gLogger.error("You need an admin proxy (with FullDelegation property) to run this script")
+            DIRAC.exit(1)
+
+        # Get credentials for the given VO
+        pilotDN, pilotGroup = findGenericCreds(vo)
+        if not pilotDN or not pilotGroup:
+            gLogger.error("Cannot get pilot credentials")
+            DIRAC.exit(1)
+
     if scriptPath:
         gLogger.info(f"Using custom script: {scriptPath}")
         executable = Path(scriptPath)
@@ -280,7 +299,7 @@ def main():
             DIRAC.exit(1)
     else:
         gLogger.info("Creating default workloadExec.sh")
-        executable = Path("workloadExec.sh")
+        executable = Path(tempfile.gettempdir()) / "workloadExec.sh"
         with open(executable, "w") as f:
             f.write("#!/bin/bash\n")
             f.write("echo 'Hello from DIRAC!'\n")
@@ -293,7 +312,7 @@ def main():
 
     def process_queue(queueName):
         ce = queueDict[queueName]["CE"]
-        if ce.ceType != "SSH":
+        if not ce.ceType.startswith("SSH"):
             gLogger.info(f"Getting creds for CE: {ce.ceName} ({ce.ceType})")
             proxy, token = getCredentials(pilotDN, pilotGroup, ce)
             if not proxy or not token:
@@ -308,7 +327,7 @@ def main():
         if ce.ceType == "HTCondorCE":
             ce.workingDirectory = str(Path.cwd())
         gLogger.info(f"Interacting with CE: {ce.ceName} ({ce.ceType})")
-        return queueName, interactWithCE(ce)
+        return queueName, interactWithCE(ce, str(executable))
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         results = executor.map(process_queue, list(queueDict.keys()))
