@@ -120,7 +120,7 @@ class MultiVOFileMetadata(FileMetadata):
     def findFilesByMetadata(self, metaDict, path, credDict):
         """Find Files satisfying the given metadata
 
-        :param dict metaDict: dictionary with the metaquery parameters
+        :param dict metaDict: dictionary with the metaquery parameters                                                                                                                                                                                   :param dict metaDict: dictionary with the metaquery parameters
         :param str path: Path to search into
         :param dict credDict: Dictionary with the user credentials
 
