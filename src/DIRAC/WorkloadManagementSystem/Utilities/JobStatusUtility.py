@@ -50,7 +50,6 @@ class JobStatusUtility:
                 self.log.error("Can't connect to the JobLoggingDB")
                 raise
 
-
     def setJobStatus(
         self, jobID: int, status=None, minorStatus=None, appStatus=None, source=None, dateTime=None, force=False
     ):

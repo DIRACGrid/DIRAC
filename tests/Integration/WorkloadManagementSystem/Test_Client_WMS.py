@@ -202,7 +202,6 @@ def test_WMSClient_rescheduleJob() -> None:
     jobID = result["Value"]
 
     try:
-
         res = jobMonitoringClient.getJobJDL(jobID, False)
         assert res["OK"], res["Message"]
         print(f"Job description: {res['Value']}")
@@ -319,6 +318,8 @@ def test_JobStateUpdateAndJobMonitoring() -> None:
         res = jobMonitoringClient.getJobsStatus(jobID)
         assert res["OK"], res["Message"]
         assert res["Value"][jobID]["Status"] == JobStatus.RUNNING
+
+        time.sleep(3)
 
         res = jobMonitoringClient.getJobParameters(jobID, ["par1", "par2"])
         assert res["OK"], res["Message"]

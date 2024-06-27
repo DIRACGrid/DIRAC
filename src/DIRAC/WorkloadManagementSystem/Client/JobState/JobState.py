@@ -1,13 +1,18 @@
 """ This object is a wrapper for setting and getting jobs states
 """
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, singleValueDefFields, multiValueDefFields
-from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_GET_INFO, RIGHT_RESCHEDULE
-from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_RESET, RIGHT_CHANGE_STATUS
+from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import JobParametersDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, multiValueDefFields, singleValueDefFields
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
+    RIGHT_CHANGE_STATUS,
+    RIGHT_GET_INFO,
+    RIGHT_RESCHEDULE,
+    RIGHT_RESET,
+)
 from DIRAC.WorkloadManagementSystem.Utilities.JobStatusUtility import JobStatusUtility
 
 
@@ -21,6 +26,7 @@ class JobState:
             self.jobDB = None
             self.logDB = None
             self.tqDB = None
+            self.jobParametersDB = None
 
     __db = DBHold()
 
@@ -32,6 +38,7 @@ class JobState:
             JobState.__db.jobDB = JobDB()
             JobState.__db.logDB = JobLoggingDB()
             JobState.__db.tqDB = TaskQueueDB()
+            JobState.__db.jpDB = JobParametersDB()
 
     def __init__(self, jid):
         self.__jid = jid
@@ -112,7 +119,7 @@ class JobState:
                 return result
 
         if data["jobp"]:
-            result = self.__retryFunction(5, JobState.__db.jobDB.setJobParameters, (self.__jid, data["jobp"]))
+            result = self.__retryFunction(5, JobState.__db.jpDB.setJobParameters, (self.__jid, data["jobp"]))
             if not result["OK"]:
                 return result
 

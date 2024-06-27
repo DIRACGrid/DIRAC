@@ -43,10 +43,9 @@ class JobStateUpdateHandlerMixin:
             return result
         cls.elasticJobParametersDB = result["Value"]()
 
-        cls.jsu = JobStatusUtility(cls.jobDB, cls.jobLoggingDB, cls.elasticJobParametersDB)
+        cls.jsu = JobStatusUtility(cls.jobDB, cls.jobLoggingDB)
 
         return S_OK()
-
 
     def initializeRequest(self):
         credDict = self.getRemoteCredentials()
@@ -162,7 +161,7 @@ class JobStateUpdateHandlerMixin:
         """Set arbitrary parameter specified by name/value pair
         for job specified by its JobId
         """
-        return self.elasticJobParametersDB.setJobParameter(int(jobID), name, value, vo=self.vo)  # pylint: disable=no-member
+        return self.elasticJobParametersDB.setJobParameter(int(jobID), name, value, vo=self.vo)
 
     ###########################################################################
     types_setJobsParameter = [dict]
@@ -227,7 +226,9 @@ class JobStateUpdateHandlerMixin:
 
         status = result["Value"]["Status"]
         if status in (JobStatus.STALLED, JobStatus.MATCHED):
-            result = self.jobDB.setJobAttribute(jobID=jobID, attrName="Status", attrValue=JobStatus.RUNNING, update=True)
+            result = self.jobDB.setJobAttribute(
+                jobID=jobID, attrName="Status", attrValue=JobStatus.RUNNING, update=True
+            )
             if not result["OK"]:
                 self.log.warn("Failed to restore the job status to Running")
 

@@ -46,7 +46,7 @@ class JobMonitoringHandlerMixin:
     def initializeRequest(self):
         credDict = self.getRemoteCredentials()
         self.vo = credDict.get("VO", Registry.getVOForGroup(credDict["group"]))
-    
+
     @classmethod
     def parseSelectors(cls, selectDict=None):
         """Parse selectors before DB query
