@@ -20,11 +20,14 @@ dependencies:
   - elasticsearch <7.14
   - elasticsearch-dsl
   - opensearch-py
+  - fabric
   - fts3
   - gitpython >=2.1.0
+  - invoke
   - m2crypto >=0.38.0
   - matplotlib
   - numpy
+  - paramiko
   - pexpect >=4.0.1
   - pillow
   - prompt-toolkit >=3,<4
