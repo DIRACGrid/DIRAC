@@ -52,31 +52,32 @@ class IAMService:
 
         self.userDict = None
         self.access_token = access_token
+        self.iam_users_raw = []
 
     def _getIamUserDump(self):
         """List the users from IAM"""
 
-        headers = {"Authorization": f"Bearer {self.access_token}"}
-        iam_list_url = f"{self.iam_url}/scim/Users"
-        iam_users = []
-        startIndex = 1
-        # These are just initial values, they are updated
-        # while we loop to their actual values
-        totalResults = 1000  # total number of users
-        itemsPerPage = 10
-        while startIndex <= totalResults:
-            resp = requests.get(iam_list_url, headers=headers, params={"startIndex": startIndex})
-            resp.raise_for_status()
-            data = resp.json()
-            # These 2 should never change while looping
-            # but you may have a new user appearing
-            # while looping
-            totalResults = data["totalResults"]
-            itemsPerPage = data["itemsPerPage"]
+        if not self.iam_users_raw:
+            headers = {"Authorization": f"Bearer {self.access_token}"}
+            iam_list_url = f"{self.iam_url}/scim/Users"
+            startIndex = 1
+            # These are just initial values, they are updated
+            # while we loop to their actual values
+            totalResults = 1000  # total number of users
+            itemsPerPage = 10
+            while startIndex <= totalResults:
+                resp = requests.get(iam_list_url, headers=headers, params={"startIndex": startIndex})
+                resp.raise_for_status()
+                data = resp.json()
+                # These 2 should never change while looping
+                # but you may have a new user appearing
+                # while looping
+                totalResults = data["totalResults"]
+                itemsPerPage = data["itemsPerPage"]
 
-            startIndex += itemsPerPage
-            iam_users.extend(data["Resources"])
-        return iam_users
+                startIndex += itemsPerPage
+                self.iam_users_raw.extend(data["Resources"])
+        return self.iam_users_raw
 
     @staticmethod
     def convert_iam_to_voms(iam_output):
@@ -113,10 +114,10 @@ class IAMService:
         return converted_output
 
     def getUsers(self):
-        self.iam_users_raw = self._getIamUserDump()
+        iam_users_raw = self._getIamUserDump()
         users = {}
         errors = 0
-        for user in self.iam_users_raw:
+        for user in iam_users_raw:
             try:
                 users.update(self.convert_iam_to_voms(user))
             except Exception as e:
@@ -125,3 +126,33 @@ class IAMService:
         print(f"There were in total {errors} errors")
         self.userDict = dict(users)
         return S_OK(users)
+
+    def getUsersSub(self) -> dict[str, str]:
+        """
+        Return the mapping based on IAM sub:
+        {sub : nickname}
+
+        """
+        iam_users_raw = self._getIamUserDump()
+        diracx_user_section = {}
+        for user_info in iam_users_raw:
+            # The nickname is available in the list of attributes
+            # (if configured so)
+            # in the form {'name': 'nickname', 'value': 'chaen'}
+            # otherwise, we take the userName
+            try:
+                nickname = [
+                    attr["value"]
+                    for attr in user_info["urn:indigo-dc:scim:schemas:IndigoUser"]["attributes"]
+                    if attr["name"] == "nickname"
+                ][0]
+            except (KeyError, IndexError):
+                nickname = user_info["userName"]
+            sub = user_info["id"]
+
+            diracx_user_section[sub] = nickname
+
+        # reorder it
+        diracx_user_section = dict(sorted(diracx_user_section.items()))
+
+        return diracx_user_section
