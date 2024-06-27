@@ -248,7 +248,7 @@ class Matcher:
         """
         attNames = ["Status", "MinorStatus", "ApplicationStatus", "Site"]
         attValues = ["Matched", "Assigned", "Unknown", resourceDict["Site"]]
-        result = self.jobDB.setJobAttributes(jobID, attNames, attValues)
+        result = self.jobDB.setJobAttributes(jobID, attNames, attValues, update=True)
         if not result["OK"]:
             self.log.error("Problem reporting job status", f"setJobAttributes, jobID = {jobID}: {result['Message']}")
         else:
