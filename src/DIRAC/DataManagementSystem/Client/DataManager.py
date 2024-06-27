@@ -569,7 +569,7 @@ class DataManager:
             "Size": size,
             "TargetSE": destinationSE,
             "GUID": guid,
-            "Addler": checksum,
+            "Adler": checksum,
         }
         startTime = time.time()
         res = self.registerFile(fileTuple)
