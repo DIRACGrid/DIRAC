@@ -11,22 +11,22 @@ seconds will be assigned the "Stalled" state.
 import concurrent.futures
 import datetime
 
-from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.AccountingSystem.Client.Types.Job import Job
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities.TimeUtilities import fromString, toEpoch, second
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.TimeUtilities import fromString, second, toEpoch
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
-from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
+from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.Client import JobStatus, JobMinorStatus
 
 
 class StalledJobAgent(AgentModule):
