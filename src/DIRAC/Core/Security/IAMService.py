@@ -87,9 +87,21 @@ class IAMService:
             cert_dict = {}
             dn = convert_dn(cert["subjectDn"])
             ca = convert_dn(cert["issuerDn"])
-
             cert_dict["CA"] = ca
-            cert_dict["nickname"] = iam_output["userName"]
+
+            # The nickname is available in the list of attributes
+            # (if configured so)
+            # in the form {'name': 'nickname', 'value': 'chaen'}
+            # otherwise, we take the userName
+            try:
+                cert_dict["nickname"] = [
+                    attr["value"]
+                    for attr in iam_output["urn:indigo-dc:scim:schemas:IndigoUser"]["attributes"]
+                    if attr["name"] == "nickname"
+                ][0]
+            except (KeyError, IndexError):
+                cert_dict["nickname"] = iam_output["userName"]
+
             # This is not correct, we take the overall status instead of the certificate one
             # however there are no known case of cert suspended while the user isn't
             cert_dict["certSuspended"] = not iam_output["active"]
