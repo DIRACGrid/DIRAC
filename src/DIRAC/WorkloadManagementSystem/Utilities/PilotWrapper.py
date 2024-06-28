@@ -166,7 +166,7 @@ def pilotWrapperScript(
         # - file:/cvmfs/somewhere/lhcbdirac/pilot
         # - file:/cvmfs/elsewhere/lhcbdirac/pilot
         project = "dirac"
-        if "-l" in pilotOptions:
+        if " -l " in pilotOptions:
             project = pilotOptions.split(" ")[pilotOptions.split(" ").index("-l") + 1].lower() + "dirac"
         CVMFS_locs = "[" + ",".join('"file:' + os.path.join(loc, project, 'pilot"') for loc in CVMFS_locations) + "]"
 
