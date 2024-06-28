@@ -1,3 +1,41 @@
+[v8.0.49]
+
+*WorkloadManagement
+
+FIX: (#7714) PilotWrapper - check for the presence of the -l pilot option
+
+*Resources
+
+FIX: (#7712) AREX submission issue not properly handled
+CHANGE: (#7702) HTCondorCE: UseSSLSubmission: use the generated proxy file for everything, no longer need to have certificate of user present on the server.
+NEW: (#7682) better error message when no matching protocol between 2 SE
+FIX: (#7675) HTCondorCE: fix exception when UseSSLSubmission is true. The SiteDirector environment does not have HOME. Always use /home/dirac/.globus to get userkey and usercert files.
+
+*WorkloadManagementSystem
+
+FIX: (#7701) JobDB: update LastUpdateTime when the job is matched
+NEW: (#7698) added possibility to specify UserEnvVariable (pilot option) at CE level
+FIX: (#7668) CVMFS_locations might be an empty list
+
+*Core
+
+CHANGE: (#7692) drop DIRAC_MYSQL_CONNECTION_GRACE_TIME and stalled connections reuse
+NEW: (#7691) fetch nickname attribute from IAM
+FIX: (#7675) Locations.getCertificateAndKeyLocation: fix exception when HOME is not set.
+FIX: (#7666) Replace `__del__` with weakref.finalize in DictCache
+
+*Doc
+
+FIX: (#7685) Move the explanation how to enable tokens to a place that is shown in ReadTheDocs in the end.
+
+*TransformationSystem
+
+NEW: (#7683) InputDataAgent: new Option MultiVO, which makes the FileCatalog Query use the author of the DN, rather than the Host, to resolve MultiVO metadata correctly. Fixes #7681
+
+*DataManagementSystem
+
+CHANGE: (#7672) dirac-dms-replicate-and-register-request: Make request chunk size configurable; default behaviour unchanged.
+
 [v8.0.48]
 
 *Resources
