@@ -4,6 +4,7 @@
 
 from collections import defaultdict
 
+from diraccfg import CFG
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities.ReturnValues import returnValueOrRaise, convertToReturnValue
 from DIRAC.Core.Security.IAMService import IAMService
@@ -162,6 +163,7 @@ class VOMS2CSSynchronizer:
         self.autoLiftSuspendedStatus = autoLiftSuspendedStatus
         self.voChanged = False
         self.syncPlugin = None
+        self.iamSrv = None
         self.compareWithIAM = compareWithIAM
         self.useIAM = useIAM
         self.accessToken = accessToken
@@ -222,8 +224,8 @@ class VOMS2CSSynchronizer:
     @convertToReturnValue
     def _getUsers(self):
         if self.compareWithIAM or self.useIAM:
-            iamSrv = IAMService(self.accessToken, vo=self.vo)
-            iam_users = returnValueOrRaise(iamSrv.getUsers())
+            self.iamSrv = IAMService(self.accessToken, vo=self.vo)
+            iam_users = returnValueOrRaise(self.iamSrv.getUsers())
             if self.useIAM:
                 return iam_users
 
@@ -566,6 +568,16 @@ class VOMS2CSSynchronizer:
                     "The following users to be checked for deletion:\n\t%s" % "\n\t".join(sorted(oldUsers))
                 )
                 self.log.info("The following users to be checked for deletion:", "\n\t".join(sorted(oldUsers)))
+
+        # Try to fill in the DiracX section
+        if self.useIAM:
+            iam_subs = self.iamSrv.getUsersSub()
+            diracx_vo_config = {"DiracX": {"CsSync": {"VOs": {self.vo: {"UserSubjects": iam_subs}}}}}
+            iam_sub_cfg = CFG()
+            iam_sub_cfg.loadFromDict(diracx_vo_config)
+            result = self.csapi.mergeFromCFG(iam_sub_cfg)
+            if not result["OK"]:
+                return result
 
         resultDict["CSAPI"] = self.csapi
         resultDict["AdminMessages"] = self.adminMsgs

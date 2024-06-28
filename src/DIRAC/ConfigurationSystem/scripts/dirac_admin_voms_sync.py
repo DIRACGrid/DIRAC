@@ -95,6 +95,7 @@ def main():
     if csapi and csapi.csModified:
         if dryRun:
             gLogger.notice("There are changes to Registry ready to commit, skipped because of dry run")
+            csapi.showDiff()
         else:
             yn = input("There are changes to Registry ready to commit, do you want to proceed ? [Y|n]:")
             if yn == "" or yn[0].lower() == "y":
