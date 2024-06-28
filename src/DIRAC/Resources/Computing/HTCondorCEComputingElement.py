@@ -247,18 +247,14 @@ class HTCondorCEComputingElement(ComputingElement):
         }
 
         if self.useSSLSubmission:
-            certFile = "/home/dirac/.globus/usercert.pem"
-            keyFile = "/home/dirac/.globus/userkey.pem"
-            if not (os.path.exists(certFile) and os.path.exists(keyFile)):
-                return S_ERROR(
-                    "You want to use SSL Submission, but certificate and key are not present in /home/dirac/.globus/"
-                )
+            # this is guaranteed by _prepareProxy above
+            proxyFile = os.environ.get("X509_USER_PROXY")
             if not (caFiles := getCAsLocation()):
                 return S_ERROR("You want to use SSL Submission, but no CA files are present")
             htcEnv = {
                 "_condor_SEC_CLIENT_AUTHENTICATION_METHODS": "SSL",
-                "_condor_AUTH_SSL_CLIENT_CERTFILE": certFile,
-                "_condor_AUTH_SSL_CLIENT_KEYFILE": keyFile,
+                "_condor_AUTH_SSL_CLIENT_CERTFILE": proxyFile,
+                "_condor_AUTH_SSL_CLIENT_KEYFILE": proxyFile,
                 "_condor_AUTH_SSL_CLIENT_CADIR": caFiles,
                 "_condor_AUTH_SSL_SERVER_CADIR": caFiles,
                 "_condor_AUTH_SSL_USE_CLIENT_PROXY_ENV_VAR": "false",
