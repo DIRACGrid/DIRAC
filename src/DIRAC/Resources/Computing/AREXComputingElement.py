@@ -381,6 +381,9 @@ class AREXComputingElement(ARCComputingElement):
         response = result["Value"]
 
         responseJob = response.json()["job"]
+        if isinstance(responseJob, list):
+            responseJob = responseJob[0]
+
         if responseJob["status-code"] > "400":
             self.log.warn(
                 "Failed to submit job",
