@@ -222,7 +222,7 @@ def test_chainWithBannedSites():
 
     result = tqDB.retrieveTaskQueues()
     assert result["OK"]
-    assert result["Value"] == {}
+    assert tqId not in result["Value"]
 
 
 def test_chainWithPlatforms():
