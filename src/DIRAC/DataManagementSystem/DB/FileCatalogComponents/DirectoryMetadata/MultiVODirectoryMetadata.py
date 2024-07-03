@@ -158,17 +158,17 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
 
     def getDirectoryMetadata(self, path, credDict, inherited=True, ownData=True):
         """
-    Get metadata for the given directory aggregating metadata for the directory itself
-    and for all the parent directories if inherited flag is True. Get also the non-indexed
-    metadata parameters.
+        Get metadata for the given directory aggregating metadata for the directory itself
+        and for all the parent directories if inherited flag is True. Get also the non-indexed
+        metadata parameters.
 
-    :param str path: directory path
-    :param dict credDict: client credential dictionary
-    :param bool inherited: include parent directories if True
-    :param bool ownData:
-    :return: standard Dirac result object + additional MetadataOwner \
-    and MetadataType dict entries if the operation is successful.
-    """
+        :param str path: directory path
+        :param dict credDict: client credential dictionary
+        :param bool inherited: include parent directories if True
+        :param bool ownData:
+        :return: standard Dirac result object + additional MetadataOwner \
+        and MetadataType dict entries if the operation is successful.
+        """
 
         result = super().getDirectoryMetadata(path, credDict, inherited, ownData)
         if not result["OK"]:
@@ -181,9 +181,16 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
 
         return result
 
-    def findDirIDsByMetadata(self, metaDict, dPath, credDict):
-        """Find Directories satisfying the given metadata and being subdirectories of
-        the given path
+    def findDirectoriesByMetadata(self, queryDict, path, credDict):
         """
-        fMetaDict = _getMetaNameDict(metaDict, credDict)
-        return super().findDirIDsByMetadata(fMetaDict, dPath, credDict)
+        Find Directory names satisfying the given metadata and being subdirectories of
+        the given path.
+
+        :param dict queryDict: dictionary containing query data
+        :param str path: starting directory path
+        :param dict credDict: client credential dictionary
+        :return: S_OK/S_ERROR, Value list of selected directory paths
+        """
+
+        fMetaDict = _getMetaNameDict(queryDict, credDict)
+        return super().findDirectoriesByMetadata(fMetaDict, path, credDict)
