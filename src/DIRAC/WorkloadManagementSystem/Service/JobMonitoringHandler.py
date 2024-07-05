@@ -11,8 +11,6 @@ from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import JobPolicy, RIGHT_GET_INFO
 
@@ -376,27 +374,6 @@ class JobMonitoringHandlerMixin:
             for jobDict in summaryDict.values():
                 if not jobDict.get("HeartBeatTime") or jobDict["HeartBeatTime"] == "None":
                     jobDict["LastSignOfLife"] = jobDict["LastUpdateTime"]
-                elif False:
-                    # Code kept in case this is not working, but if we update the HeartBeatTime
-                    #     at each status change from the jobs it should not be needed
-                    # Items are always strings
-                    lastTime = TimeUtilities.fromString(jobDict["LastUpdateTime"])
-                    hbTime = TimeUtilities.fromString(jobDict["HeartBeatTime"])
-                    # Try and identify statuses not set by the job itself as too expensive to get logging info
-                    # Not only Stalled jobs but also Failed jobs because Stalled
-                    if (
-                        hbTime > lastTime
-                        or jobDict["Status"] == JobStatus.STALLED
-                        or jobDict["MinorStatus"]
-                        in (
-                            JobMinorStatus.REQUESTS_DONE,
-                            JobMinorStatus.STALLED_PILOT_NOT_RUNNING,
-                        )
-                        or jobDict["MinorStatus"].startswith("Stalling")
-                    ):
-                        jobDict["LastSignOfLife"] = jobDict["HeartBeatTime"]
-                    else:
-                        jobDict["LastSignOfLife"] = jobDict["LastUpdateTime"]
                 else:
                     jobDict["LastSignOfLife"] = jobDict["HeartBeatTime"]
 
