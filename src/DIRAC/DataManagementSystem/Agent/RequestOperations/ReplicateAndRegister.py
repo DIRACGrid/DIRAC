@@ -599,13 +599,6 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                     # All source SEs are banned, delay execution by 1 hour
                     delayExecution = 60
                 continue
-            # # get the first one in the list
-            if sourceSE not in validReplicas:
-                if sourceSE:
-                    err = "File not at specified source"
-                    errors[err] += 1
-                    self.log.warn(f"{lfn} is not at specified sourceSE {sourceSE}, changed to {validReplicas[0]}")
-                sourceSE = validReplicas[0]
 
             # # loop over targetSE
             catalogs = self.operation.Catalog
@@ -617,6 +610,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                 if targetSE in validReplicas:
                     self.log.warn(f"Request to replicate {lfn} to an existing location: {targetSE}")
                     continue
+                sourceSE = self.operation.SourceSE if self.operation.SourceSE else None
                 res = self.dm.replicateAndRegister(lfn, targetSE, sourceSE=sourceSE, catalog=catalogs)
                 if res["OK"]:
                     if lfn in res["Value"]["Successful"]:
