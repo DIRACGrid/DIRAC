@@ -97,8 +97,8 @@ class JobWrapper:
         if self.maxPeekLines < 0:
             self.maxPeekLines = 0
         self.defaultCPUTime = gConfig.getValue(self.section + "/DefaultCPUTime", 600)
-        self.defaultOutputFile = gConfig.getValue(self.section + "/DefaultOutputFile", "std.out")
-        self.defaultErrorFile = gConfig.getValue(self.section + "/DefaultErrorFile", "std.err")
+        self.outputFile = gConfig.getValue(self.section + "/DefaultOutputFile", "std.out")
+        self.errorFile = gConfig.getValue(self.section + "/DefaultErrorFile", "std.err")
         self.diskSE = gConfig.getValue(self.section + "/DiskSE", ["-disk", "-DST", "-USER"])
         self.tapeSE = gConfig.getValue(self.section + "/TapeSE", ["-tape", "-RDST", "-RAW"])
         self.failoverRequestDelay = gConfig.getValue(self.section + "/FailoverRequestDelay", 45)
@@ -175,6 +175,8 @@ class JobWrapper:
         self.optArgs = {}
         self.ceArgs = {}
 
+        self.jobExecutionCoordinator = None
+
         # Store the result of the payload execution
         self.executionResults = {}
 
@@ -194,6 +196,10 @@ class JobWrapper:
         self.jobGroup = self.jobArgs.get("JobGroup", self.jobGroup)
         self.jobName = self.jobArgs.get("JobName", self.jobName)
         self.jobType = self.jobArgs.get("JobType", self.jobType)
+        # Prepare outputs
+        self.errorFile = self.jobArgs.get("StdError", self.errorFile)
+        self.outputFile = self.jobArgs.get("StdOutput", self.outputFile)
+
         dataParam = self.jobArgs.get("InputData", [])
         if dataParam and not isinstance(dataParam, list):
             dataParam = [dataParam]
@@ -231,6 +237,14 @@ class JobWrapper:
         self.log.debug("Environment used")
         self.log.debug("================")
         self.log.debug(json.dumps(dict(os.environ), indent=4))
+
+        # Load the Job Execution Coordinator: can be overriden by a specific implementation
+        result = ObjectLoader().loadObject(
+            "WorkloadManagementSystem.JobWrapper.JobExecutionCoordinator", "JobExecutionCoordinator"
+        )
+        if not result["OK"]:
+            return result
+        self.jobExecutionCoordinator = result["Value"](jobArgs=self.jobArgs, ceArgs=self.ceArgs)
 
     #############################################################################
     def __setInitialJobParameters(self):
@@ -358,26 +372,19 @@ class JobWrapper:
         command = result["Value"]
         self.log.verbose(f"Execution command: {command}")
 
-        # Prepare outputs
-        errorFile = self.jobArgs.get("StdError", self.defaultErrorFile)
-        outputFile = self.jobArgs.get("StdOutput", self.defaultOutputFile)
-
         result = self.__prepareEnvironment()
         if not result["OK"]:
             return result
         exeEnv = result["Value"]
 
-        return S_OK(
-            {
-                "command": command,
-                "error": errorFile,
-                "output": outputFile,
-                "env": exeEnv,
-            }
-        )
+        if not (result := self.jobExecutionCoordinator.preProcess(command, exeEnv))["OK"]:
+            self.log.error("Failed to pre-process the job", result["Message"])
+            return result
+
+        return result
 
     #############################################################################
-    def process(self, command: str, output: str, error: str, env: dict):
+    def process(self, command: str, env: dict):
         """This method calls the payload."""
         self.log.info(f"Job Wrapper is starting the processing phase for job {self.jobID}")
 
@@ -398,7 +405,9 @@ class JobWrapper:
 
         spObject = Subprocess(timeout=False, bufferLimit=int(self.bufferLimit))
         with contextlib.chdir(self.jobIDPath):
-            exeThread = ExecutionThread(spObject, command, self.maxPeekLines, output, error, env, self.executionResults)
+            exeThread = ExecutionThread(
+                spObject, command, self.maxPeekLines, self.outputFile, self.errorFile, env, self.executionResults
+            )
             exeThread.start()
             payloadPID = None
             for seconds in range(5, 40, 5):
@@ -565,7 +574,11 @@ class JobWrapper:
             self.failedFlag = False
             self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.APP_SUCCESS, sendFlag=True)
 
-        return S_OK()
+        if not (result := self.jobExecutionCoordinator.postProcess())["OK"]:
+            self.log.error("Failed to post-process the job", result["Message"])
+            return result
+
+        return result
 
     #############################################################################
     def execute(self):
@@ -580,8 +593,6 @@ class JobWrapper:
 
         result = self.process(
             command=payloadParams["command"],
-            output=payloadParams["output"],
-            error=payloadParams["error"],
             env=payloadParams["env"],
         )
         if not result["OK"]:

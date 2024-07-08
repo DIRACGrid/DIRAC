@@ -51,8 +51,6 @@ optimizerParams = {
 }
 payloadParams = {
     "command": "dirac-jobexec helloworld.xml -o LogLevel=DEBUG",
-    "error": "std.err",
-    "output": "std.out",
     "env": {},
 }
 

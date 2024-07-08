@@ -128,7 +128,7 @@ To leverage the Push model, one has to add the :mod:`~DIRAC.WorkloadManagementSy
           Module = PushJobAgent
           # SubmissionPolicy can be "Application" or "JobWrapper"
           # - Application (soon deprecated): the agent will submit a workflow to a PoolCE, the workflow is responsible for interacting with the remote site
-          # - JobWrapper: the agent will submit a JobWrapper directly to the remote site, it is responsible of the remote execution
+          # - JobWrapper (default): the agent will submit a JobWrapper directly to the remote site, it is responsible of the remote execution
           SubmissionPolicy = <SubmissionPolicy>
    }
 
