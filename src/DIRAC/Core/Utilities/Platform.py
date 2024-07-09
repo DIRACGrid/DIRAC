@@ -5,6 +5,8 @@ import platform
 import sys
 import os
 import re
+import subprocess
+from pathlib import Path
 
 # We need to patch python platform module. It does a string comparison for the libc versions.
 # it fails when going from 2.9 to 2.10,
@@ -144,3 +146,19 @@ def getPlatform():
 def getPlatformTuple():
     getPlatform()
     return _gPlatformTuple
+
+
+def availableCgroupsV2Controllers() -> set[str]:
+    """Get the list of available cgroup2 controllers."""
+    controllers = set()
+
+    cmd = ["findmnt", "--source", "cgroup2", "--output", "target", "--noheadings"]
+    proc = subprocess.run(cmd, check=False, capture_output=True, text=True)
+    if proc.returncode == 0:
+        for target in proc.stdout.strip().split("\n"):
+            subtree_control_path = Path(target) / "cgroup.subtree_control"
+            if subtree_control_path.is_file():
+                subtree_control_info = subtree_control_path.read_text().strip()
+                controllers.update(subtree_control_info.split(" "))
+
+    return controllers

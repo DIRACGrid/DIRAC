@@ -17,11 +17,13 @@ import json
 import os
 import re
 import shutil
+import stat
 import sys
 import tempfile
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Utilities.Platform import availableCgroupsV2Controllers
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.ConfigurationSystem.Client.Helpers import Operations
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -97,6 +99,7 @@ ENV_VAR_WHITELIST = [
     r"BEARER_TOKEN.*",
 ]
 ENV_VAR_WHITELIST = re.compile(r"^(" + r"|".join(ENV_VAR_WHITELIST) + r")$")
+CGROUPV2_REQUIRED_VARS = ["XDG_RUNTIME_DIR", "DBUS_SESSION_BUS_ADDRESS"]
 
 
 class SingularityComputingElement(ComputingElement):
@@ -162,6 +165,36 @@ class SingularityComputingElement(ComputingElement):
                     return True
         # No suitable binaries found
         return False
+
+    def _resourceLimitsArgs(self):
+        """Get singularity arguments for enforcing resource limits with cgroup2.
+
+        If the associated cgroup2 controllers are not available, the corresponding
+        options are ignored.
+        """
+        controllers = availableCgroupsV2Controllers()
+        self.log.debug(f"Available cgroup2 controllers: {controllers}")
+
+        args = []
+
+        env = self.__getEnv()
+        for var_name in CGROUPV2_REQUIRED_VARS:
+            if var_name not in env:
+                self.log.warn(f"{var_name} is required for cgroup2 but is not set, disabling...")
+                return args
+
+        if "memory" in controllers:
+            memoryLimit = int(self.ceParameters.get("MemoryLimitMB", 0))
+            if memoryLimit:
+                args.extend(["--memory", f"{memoryLimit}M"])
+                memoryRes = int(self.ceParameters.get("MemoryReservationMB", memoryLimit * 4 // 5))
+                args.extend(["--memory-reservation", f"{memoryRes}M"])
+            swapLimit = int(self.ceParameters.get("SwapLimitMB", 0))
+            if swapLimit:
+                args.extend(["--memory-swap", f"{swapLimit}M"])
+        if "cpu" in controllers and self.ceParameters.get("EnforceCPULimit", "no") in ("yes", "true"):
+            args.extend(["--cpus", str(self.processors)])
+        return args
 
     @staticmethod
     def __findInstallBaseDir():
@@ -336,6 +369,16 @@ class SingularityComputingElement(ComputingElement):
         payloadEnv["X509_USER_PROXY"] = os.path.join(self.__innerdir, "proxy")
         payloadEnv["DIRACSYSCONFIG"] = os.path.join(self.__innerdir, "pilot.cfg")
 
+        xdg_runtime_dir = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
+        dbus_session_address = os.environ.get("DBUS_SESSION_BUS_ADDRESS", f"unix:path={xdg_runtime_dir}/bus")
+        if dbus_session_address.startswith("unix:path="):
+            path = dbus_session_address.split("=", 1)[1]
+            if not os.path.exists(path) or not stat.S_ISSOCK(os.stat(path).st_mode):
+                dbus_session_address = None
+        if dbus_session_address:
+            payloadEnv["XDG_RUNTIME_DIR"] = xdg_runtime_dir
+            payloadEnv["DBUS_SESSION_BUS_ADDRESS"] = dbus_session_address
+
         return payloadEnv
 
     @staticmethod
@@ -407,6 +450,7 @@ class SingularityComputingElement(ComputingElement):
             cmd.extend(["--bind", "/cvmfs"])
         if not self.__installDIRACInContainer:
             cmd.extend(["--bind", "{0}:{0}:ro".format(self.__findInstallBaseDir())])
+        cmd.extend(self._resourceLimitsArgs())
 
         bindPaths = self.ceParameters.get("ContainerBind", "").split(",")
         siteName = gConfig.getValue("/LocalSite/Site", "")
