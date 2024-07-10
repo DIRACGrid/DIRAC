@@ -37,32 +37,6 @@ write_files:
       J0PnsV/1ZEJb1lDZ5/Y8EllkQGxdCNonJte8Pl/SoknqUdV3pkOeth7iwgv6rpv+wCS5sJD/Aabe
       /gbmX14A1QmGvGC8mIXg3b6V6xuRF60YLLD04RUNa+lesX1Nv95aEp5Zr6vBM8iD2gcZ7tV/IH/c
       52lA/hodxZL/zyL9CUAskc+3BgAA
- - encoding: gz+b64
-   path: /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7
-   content: |
-      H4sIAEFTZl0CA31VR67z6AHb6xRvmcCYsaxqBfgXn3rvfaduVau3089LDhACXJHghgT411+/oDlB
-      0n9MwfwxPVqVmB+Fi35o1WCU/6p/QX4xL/V3+M+PMGym8LO//sb+fr1+/iXo3lOth+38NwT1lqTT
-      vLIlkkVzgHl54yc8tIkByWx64jNeDH7pkrRwfQMZ2RaPBoMiysdcxTR5gpmGDKewWpKm4Hpy5Df+
-      zEjEAANmhNHuEmhVMkU4yguukUUftuaiW0HgNBtFdcEDTI7eQ00UfHq7U22hgw2DrKSjIUkil8I9
-      03S+ux2zgWEdOcHUaGnTDT4yIEkKOLyaCH+cTGjnQ/8qZz95bkn3rVi/L4kPsmJ2Ptbl9J5ccRF5
-      Dz1H5n64xDMXAkWwMCS2SjdRB1aDGvcLlj6CwVXsrZSGRB376y3syRCNZhYEWAjbrJmNU8nrcUtg
-      6Clh3RI/IoSbqWjDIef5PuHueqx9L33bhIOPI829jcTgyI0bpljmbxTUdoXfm4WcpXLKXx/nHtzn
-      sUaHwMrQQIhl8LGrYctt+9g3GcPvNfJXZeuU421ZY444bjBnlsXKiR30g/b9hk8TuG7D0NxJQ1Te
-      3uibnbe9JaVW1NZFmroWGJaWL+ErR93vTtAcErKNJMA3f6r5Jgupf2RPYpYyCodcGMcblOBuWJyb
-      Mx9dwTDE0540Be+psuPT5DxXdnDIgySD6Q5IseFnFvYL90T2oWkgYco+ImeNJTvyxp2+VZf/VFGd
-      X7bulZ0VoXigGreq+4/RRwsLlavXy+OPonN0dSqtEtp4W8ged3a0eiN+8Mvce+qb2y9aKieZWBTB
-      FNLV1MMvydmafY3BZd/wXcPrAWxgARpamY8QB/ae9Vxl+zTvMuCrX21lCv4RByeIe79NUfmTifKe
-      9H6TM/ivN3vUloTRtEZDoAI1bcnO3Ncc+CwmXS0yAzIWVJHPAElmqoXjK4kFllT8MqwAUBibnlSC
-      qHXnbCE8KwX2iS3jNC5us7IaOY3XqqiiMm/xum9BPa24Xe4udRyU4Hm8FmNxLITY4IUVRk1QfbJq
-      cgX2O8+F54K3l1GjDLyFT6Ie7iS67OpBf0g4nSfFU14Y/6Ln2awRqkiUUngIG6Txa5jTApKQxmr2
-      B3ptSj9R3PjbPtybBIcrTr47tjPJwSpkgDhs53mwdyhzujjicwFR0tKjTHTl4wULqg3w44uVJo1v
-      au59VM5j9w+iKM9nqTVNgn5h9eHo91uHEza+BhycEONRNo1yYuYWGV99L3zr7Yai6HguUvulGw+s
-      oud6l8p8Z7FS1kudFsPj44gUYARG3yFxCP1GtHiqFgMwKq0tFZ83PyMDnq+lzPGkw4VvIQ1JPl2C
-      L0K1oTb7lT6J+sUO5e8O/K+5pZWVr3Ist34M2kScte0NrvVwCcTCCn3qZemVBGls6RLeBNGUEbay
-      MQrx5KnfFtYP71KVbLzIx2VvKuHtyHOvbt9+2UJ++KpydF4jmKCJym5krCPQAHDOeqc284pMMYO4
-      2ZlTW4CPRiqBje7b8jIc40TPWIzHkC97y11Yk/xNNNTbp942Kh88OGXseU6FoWPQzpi8RxiLi3aB
-      9T7IusO/n4jCj35rypno2jfVcrecG+6dDSRLp968oShjaYISo9y+QnazMCTPpir8IqfTecQ+eIpC
-      e5X1hmVj5b99b0inDi9A/HipHcEef/5Afz65mUD/+w5OZ//PsfwDIDTlCX4GAAA=
  - path: /etc/cvmfs/default.local
    content: |
      CVMFS_CACHE_BASE=/mnt/cvmfs
@@ -91,17 +65,13 @@ yum_repos:
     enabled: true
     gpgcheck: true
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CernVM
-  epel:
-    name: Extra Packages for Enterprise Linux 7 - $basearch
-    baseurl: http://download.fedoraproject.org/pub/epel/7/$basearch
-    mirrorlist: https://mirrors.fedoraproject.org/metalink?repo=epel-7&arch=$basearch
-    failovermethod: priority
-    enabled: true
-    gpgcheck: true
-    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7
 
 packages:
  - cvmfs
+ # EPEL isn't strictly required many more
+ - epel-release
+ # If you need any further packages that depend on EPEL, include
+ # "dnf install -y" statements in runcmd rather than listing them here
 
 runcmd:
  # Allow nested singularity
@@ -118,6 +88,9 @@ runcmd:
  - [ chmod, 600, /mnt/proxy.pem ]
  - [ chown, "dirac:dirac", /mnt/proxy.pem ]
  - [ chown, -R, "dirac:dirac", /mnt/dirac/etc ]
+# Start caching certificates directory from CVMFS
+# Workaround for when local Stratum-1 is slow
+ - [ stat, /cvmfs/grid.cern.ch/etc/grid-security/certificates ]
  - [ ln, -s, /cvmfs/grid.cern.ch/etc/grid-security/certificates, /mnt/dirac/etc/grid-security/certificates ]
  - [ cp, /root/run_pilot.sh, /mnt/run_pilot.sh ]
  - [ cp, /root/startup.sh, /mnt/startup.sh ]
