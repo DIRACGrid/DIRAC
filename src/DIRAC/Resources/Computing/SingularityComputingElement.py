@@ -20,16 +20,16 @@ import tempfile
 
 import DIRAC
 from DIRAC import S_ERROR, S_OK, gConfig, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers import Operations
 from DIRAC.Core.Utilities.Os import findImage
 from DIRAC.Core.Utilities.Subprocess import systemCall
-from DIRAC.ConfigurationSystem.Client.Helpers import Operations
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createRelocatedJobWrapper
 
 # Default container to use if it isn't specified in the CE options
-CONTAINER_DEFROOT = "/cvmfs/dirac.egi.eu/container/apptainer/alma9/x86_64"
+CONTAINER_DEFROOT = "/cvmfs/unpacked.cern.ch/something" # FIXME
 CONTAINER_WORKDIR = "DIRAC_containers"
 CONTAINER_INNERDIR = "/tmp"
 

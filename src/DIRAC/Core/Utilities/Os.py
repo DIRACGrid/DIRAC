@@ -154,47 +154,40 @@ def which(executable):
     return shutil.which(executable)
 
 
-def findImage(continer_root="container/apptainer/alma9/"):
+def findImage(container_root="/cvmfs/unpacked.cern.ch/"):  # FIXME: this might not be needed iff we use multi-platform locations
     """Finds the image for the current platform
-    
-       This looks into location "${CVMFS_locations}/${container_root}/${platform}/"
-       and expects to find one of the following platforms:
-       - x86_64
-       - aarch64
-       - ppc64le
 
+    This looks into location "${container_root}"
+    and expects to find one of the following platforms:
+    - amd64
+    - arm64
+    - ppc64le
     """
-    from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-
     plat = DIRAC.gConfig.getValue("LocalSite/Platform", platform.machine())
     DIRAC.gLogger.info(f"Platform: {plat}")
-    
-    # NB: platform compatibility is more complex than the following simple identification. 
-    # sources: 
+
+    # NB: platform compatibility is more complex than the following simple identification.
+    #
+    # Given that, on Linux, platform.machine() returns the same values as uname -m,
+    # and this is already "confusing", e.g. see
     # https://stackoverflow.com/questions/45125516/possible-values-for-uname-m
     # https://en.wikipedia.org/wiki/Uname
+    # Since here we are using the architecture specification defined by opencontainers initiative:
+    # https://github.com/opencontainers/image-spec/blob/main/image-index.md#platform-variants
+    # we need to make some simple "conversions" to get the right values:
 
-    if plat.lower() == "amd64":
-        plat = "x86_64"
-    if plat.lower().startswith("arm"):
-        plat = "aarch64"
+    if plat.lower() == "x86_64":
+        plat = "amd64"
+    if plat.lower().startswith("arm") or plat.lower() == "aarch64":
+        plat = "arm64"
     if plat.lower().startswith("ppc64"):
         plat = "ppc64le"
 
-    if plat not in ["x86_64", "aarch64", "ppc64le"]:
+    if plat not in ["amd64", "arm64", "ppc64le"]:
         DIRAC.gLogger.error(f"Platform {plat} not supported")
         return None
 
-    CVMFS_locations = DIRAC.gConfig.getValue(
-        "LocalSite/CVMFS_locations", Operations().getValue("Pilot/CVMFS_locations", [])
-    )
-
-    rootImage = None
-
-    for candidate in CVMFS_locations:
-        rootImage = os.path.join(candidate, continer_root, plat)
-        DIRAC.gLogger.verbose(f"Checking {rootImage} existence")
-        if safe_listdir(rootImage):
-            break
-
-    return rootImage
+    rootImage = f"{container_root}:{plat}"
+    DIRAC.gLogger.verbose(f"Checking {rootImage} existence")
+    if safe_listdir(rootImage):
+        return rootImage
