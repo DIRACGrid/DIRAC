@@ -154,7 +154,7 @@ class PhysicalRemoval(DMSRequestOperationsBase):
         proxyFile = None
         if "Write access not permitted for this credential" in opFile.Error:
             # # not a DataManger? set status to failed and return
-            if "DataManager" not in self.shifter:
+            if "DataManager" not in self.shifter:  # pylint: disable =unsupported-membership-test
                 opFile.Status = "Failed"
             elif not opFile.LFN:
                 opFile.Error = "LFN not set"
