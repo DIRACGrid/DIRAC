@@ -379,7 +379,7 @@ class MoveReplica(DMSRequestOperationsBase):
         proxyFile = None
         if "Write access not permitted for this credential" in opFile.Error:
             # # not a DataManger? set status to failed and return
-            if "DataManager" in self.shifter:
+            if "DataManager" in self.shifter:  # pylint: disable =unsupported-membership-test
                 # #  you're a data manager - save current proxy and get a new one for LFN and retry
                 saveProxy = os.environ["X509_USER_PROXY"]
                 try:

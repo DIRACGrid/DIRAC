@@ -199,7 +199,7 @@ class RemoveFile(DMSRequestOperationsBase):
         # # try to remove with owner proxy
         proxyFile = None
         if "Write access not permitted for this credential" in opFile.Error:
-            if "DataManager" in self.shifter:
+            if "DataManager" in self.shifter:  # pylint: disable =unsupported-membership-test
                 # #  you're a data manager - get proxy for LFN and retry
                 saveProxy = os.environ["X509_USER_PROXY"]
                 try:
