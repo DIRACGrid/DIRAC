@@ -71,10 +71,9 @@ dirac-wms-job-submit test.jdl "${DEBUG}" |& tee -a clientTestOutputs.txt
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** add a file ****\n"
 
-echo "I like pizza!" > test_lfn.txt
-ls -l
-echo $?
-dirac-dms-add-file LFN:/vo/test_lfn.txt test_lfn.txt S3-DIRECT
+echo "${CLIENT_UPLOAD_BASE64}" > b64_lfn
+base64 b64_lfn --decode > "${CLIENT_UPLOAD_FILE}"
+dirac-dms-add-file "${CLIENT_UPLOAD_LFN}" "${CLIENT_UPLOAD_FILE}" S3-DIRECT
 echo $?
 
 #-------------------------------------------------------------------------------#

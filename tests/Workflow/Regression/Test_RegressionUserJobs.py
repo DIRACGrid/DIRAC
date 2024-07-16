@@ -1,23 +1,20 @@
 """ This module will run some job descriptions defined with an older version of DIRAC
 """
 # pylint: disable=protected-access, wrong-import-position, missing-docstring
-import unittest
 import os
-import sys
 import shutil
+import sys
+import unittest
 
 import DIRAC
 
 DIRAC.initialize(extra_config_files=["pilot.cfg"])  # Initialize configuration
 
 from DIRAC import gLogger, rootPath
-
-from DIRAC.tests.Utilities.utils import find_all
-
-from DIRAC.tests.Utilities.IntegrationTest import IntegrationTest
-
-from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Interfaces.API.Dirac import Dirac
+from DIRAC.Interfaces.API.Job import Job
+from DIRAC.tests.Utilities.IntegrationTest import IntegrationTest
+from DIRAC.tests.Utilities.utils import find_all
 
 
 class RegressionTestCase(IntegrationTest):
