@@ -37,4 +37,29 @@ jobs:
       run: |
         cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py .
         eval "$(conda shell.bash hook)" && conda activate python_${{ matrix.python }}
-        python Test_GenerateAndExecutePilotWrapper.py file://${{ github.workspace }}/src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py ${{ matrix.pilot_branch }}
+        # use github APIs to get the artifacts URLS from https://github.com/DIRACGrid/Pilot/, for those named Pilot_${{ matrix.pilot_branch }}
+        url=$(curl -s https://api.github.com/repos/DIRACGrid/Pilot/actions/artifacts | jq -r '.artifacts[] | select(.name == "Pilot_${{ matrix.pilot_branch }}") | .archive_download_url')
+        echo $url
+
+        # download and unzip the url above
+        curl -L \
+              -H "Accept: application/vnd.github+json" \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              $url --output Pilot_${{ matrix.pilot_branch }}.zip
+
+        file_type=$(file --mime-type -b Pilot_${{ matrix.pilot_branch }}.zip)
+
+        if [ "$file_type" != "application/zip" ]; then
+          echo "The downloaded file is not a ZIP file. File type: $file_type"
+          exit 1
+        fi
+
+
+        mkdir -p ${{ matrix.pilot_branch }}/pilot
+        cp Pilot_${{ matrix.pilot_branch }}.zip ${{ matrix.pilot_branch }}/pilot
+        cd ${{ matrix.pilot_branch }}/pilot
+        unzip Pilot_${{ matrix.pilot_branch }}.zip
+        cd ../..
+
+        python Test_GenerateAndExecutePilotWrapper.py file://${{ github.workspace }}/src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py file://${{ github.workspace }}/${{ matrix.pilot_branch }}
