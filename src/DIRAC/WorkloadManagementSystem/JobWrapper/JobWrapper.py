@@ -60,7 +60,7 @@ class JobWrapper:
     """The only user of the JobWrapper is the JobWrapperTemplate"""
 
     #############################################################################
-    def __init__(self, jobID=None, jobReport=None):
+    def __init__(self, jobID: int | None = None, jobReport: JobReport | None = None):
         """Standard constructor"""
         self.initialTiming = os.times()
         self.section = "/Systems/WorkloadManagement/JobWrapper"
@@ -684,11 +684,11 @@ class JobWrapper:
             msg = "Job Wrapper cannot resolve local replicas of input data with null job input data parameter "
             self.log.error(msg)
             return S_ERROR(msg)
-        else:
-            if isinstance(inputData, str):
-                inputData = [inputData]
-            lfns = [fname.replace("LFN:", "") for fname in inputData]
-            self.log.verbose("Job input data requirement is \n%s" % ",\n".join(lfns))
+
+        if isinstance(inputData, str):
+            inputData = [inputData]
+        lfns = [fname.replace("LFN:", "") for fname in inputData]
+        self.log.verbose("Job input data requirement is \n%s" % ",\n".join(lfns))
 
         # Does this site have local SEs? - not failing if it doesn't
         if "LocalSE" in self.ceArgs:
@@ -874,6 +874,8 @@ class JobWrapper:
             outputSandbox = [outputSandbox]
         if outputSandbox:
             self.log.verbose(f"OutputSandbox files are: {', '.join(outputSandbox)}")
+        outputSandboxFiles = [str(self.jobIDPath / output) for output in outputSandbox]
+
         outputData = self.jobArgs.get("OutputData", [])
         if outputData and isinstance(outputData, str):
             outputData = outputData.split(";")
@@ -881,16 +883,14 @@ class JobWrapper:
             self.log.verbose(f"OutputData files are: {', '.join(outputData)}")
 
         # First resolve any wildcards for output files and work out if any files are missing
-        resolvedSandbox = self.__resolveOutputSandboxFiles(outputSandbox)
-        if not resolvedSandbox["OK"]:
-            self.log.warn("Output sandbox file resolution failed:")
-            self.log.warn(resolvedSandbox["Message"])
-            self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.RESOLVING_OUTPUT_SANDBOX)
+        resolvedSandbox = self.__resolveOutputSandboxFiles(outputSandboxFiles)
 
-        fileList = resolvedSandbox["Value"]["Files"]
-        missingFiles = resolvedSandbox["Value"]["Missing"]
+        fileList = resolvedSandbox["Files"]
+        missingFiles = resolvedSandbox["Missing"]
         if missingFiles:
-            self.jobReport.setJobParameter("OutputSandboxMissingFiles", ", ".join(missingFiles), sendFlag=False)
+            self.jobReport.setJobParameter(
+                "OutputSandboxMissingFiles", ", ".join([Path(output).name for output in missingFiles]), sendFlag=False
+            )
 
         if "Owner" not in self.jobArgs:
             msg = "Job has no owner specified"
@@ -902,6 +902,7 @@ class JobWrapper:
             self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.UPLOADING_OUTPUT_SANDBOX)
 
         uploadOutputDataInAnyCase = False
+        result_sbUpload = None
 
         if fileList and self.jobID:
             self.outputSandboxSize = getGlobbedTotalSize(fileList)
@@ -954,7 +955,7 @@ class JobWrapper:
             # now that we (tried to) transfer the output files,
             # including possibly oversized Output Sandboxes,
             # we delete the local output sandbox tarfile in case it's still there.
-            if not result_sbUpload["OK"]:
+            if result_sbUpload and not result_sbUpload["OK"]:
                 outputSandboxData = result_sbUpload.get("SandboxFileName")
                 if outputSandboxData:
                     try:
@@ -976,7 +977,7 @@ class JobWrapper:
         okFiles = []
         for i in outputSandbox:
             self.log.verbose(f"Looking at OutputSandbox file/directory/wildcard: {i}")
-            globList = glob.glob(self.jobIDPath / i)
+            globList = glob.glob(i)
             for check in globList:
                 if os.path.isfile(check):
                     self.log.verbose(f"Found locally existing OutputSandbox file: {check}")
@@ -1003,8 +1004,7 @@ class JobWrapper:
                         if i not in missing:
                             missing.append(i)
 
-        result = {"Missing": missing, "Files": okFiles}
-        return S_OK(result)
+        return {"Missing": missing, "Files": okFiles}
 
     #############################################################################
     def __transferOutputDataFiles(self, outputData, outputSE, outputPath):
@@ -1025,7 +1025,7 @@ class JobWrapper:
                 nonlfnList.append(out)
 
         # Check whether list of outputData has a globbable pattern
-        nonlfnList = [self.jobIDPath / x for x in nonlfnList]
+        nonlfnList = [str(self.jobIDPath / x) for x in nonlfnList]
         globbedOutputList = List.uniqueElements(getGlobbedFiles(nonlfnList))
         if globbedOutputList != nonlfnList and globbedOutputList:
             self.log.info(
@@ -1035,7 +1035,7 @@ class JobWrapper:
         outputData = lfnList + nonlfnList
 
         pfnGUID = {}
-        result = getGUID(outputData)
+        result = getGUID(outputData, str(self.jobIDPath.absolute()))
         if not result["OK"]:
             self.log.warn(
                 "Failed to determine POOL GUID(s) for output file list (OK if not POOL files)", result["Message"]
@@ -1172,7 +1172,6 @@ class JobWrapper:
         """Provides a generic convention for VO output data
         files if no path is specified.
         """
-
         if not re.search("^LFN:", outputFile):
             localfile = outputFile
             initial = self.owner[:1]
@@ -1182,7 +1181,7 @@ class JobWrapper:
 
             ops = Operations(vo=vo)
             user_prefix = ops.getValue("LFNUserPrefix", "user")
-            basePath = "/" + vo + "/" + user_prefix + "/" + initial + "/" + self.owner
+            basePath = Path(f"/{vo}") / user_prefix / initial / self.owner
             if outputPath:
                 # If output path is given, append it to the user path and put output files in this directory
                 if outputPath.startswith("/"):
@@ -1191,10 +1190,10 @@ class JobWrapper:
                 # By default the output path is constructed from the job id
                 subdir = str(int(self.jobID / 1000))
                 outputPath = subdir + "/" + str(self.jobID)
-            lfn = os.path.join(basePath, outputPath, os.path.basename(localfile))
+            lfn = str(basePath / outputPath / os.path.basename(localfile))
         else:
             # if LFN is given, take it as it is
-            localfile = self.jobIDPath / outputFile.replace("LFN:", "")
+            localfile = str(self.jobIDPath / outputFile.replace("LFN:", ""))
             lfn = outputFile.replace("LFN:", "")
 
         return (lfn, localfile)
@@ -1256,7 +1255,7 @@ class JobWrapper:
                     sandboxFiles.append(os.path.basename(download["Value"]["Successful"][lfn]))
 
         userFiles = [str(self.jobIDPath / file) for file in sandboxFiles] + [
-            self.jobIDPath / os.path.basename(lfn) for lfn in lfns
+            str(self.jobIDPath / os.path.basename(lfn)) for lfn in lfns
         ]
         for possibleTarFile in userFiles:
             if not os.path.exists(possibleTarFile):

@@ -40,7 +40,7 @@ from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 os.umask(0o22)
 
 
-def execute(jobID: str, arguments: dict, jobReport: JobReport):
+def execute(jobID: int, arguments: dict, jobReport: JobReport):
     """The only real function executed here"""
 
     if "WorkingDirectory" in arguments:
@@ -103,12 +103,12 @@ try:
 
     ret = execute(jobID, jobArgs, jobReport)
     jobReport.commit()
-except Exception as exc:  # pylint: disable=broad-except
+except Exception:  # pylint: disable=broad-except
     gLogger.exception("JobWrapperTemplate exception")
     try:
         jobReport.commit()
         ret = -1
-    except Exception as exc:  # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
         gLogger.exception("Could not commit the job report")
         ret = -2
 

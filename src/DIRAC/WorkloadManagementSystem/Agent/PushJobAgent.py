@@ -509,7 +509,7 @@ class PushJobAgent(JobAgent):
         self.log.verbose("Getting a JobWrapper")
         arguments = {"Job": jobParams, "CE": resourceParams, "Optimizer": optimizerParams}
 
-        job = getJobWrapper(jobID, arguments, jobReport)
+        job = getJobWrapper(int(jobID), arguments, jobReport)
         if not job:
             return S_ERROR(f"Cannot get a JobWrapper instance for job {jobID}")
 
@@ -729,7 +729,7 @@ class PushJobAgent(JobAgent):
             # Get the job wrapper
             jobReport = JobReport(jobID, f"{self.__class__.__name__}@{self.siteName}")
             try:
-                job = JobWrapper(jobID, jobReport)
+                job = JobWrapper(int(jobID), jobReport)
                 job.initialize(arguments)
             except Exception:
                 self.log.exception("JobWrapper failed the initialization phase", jobID)

@@ -103,7 +103,7 @@ def createAndEnterWorkingDirectory(jobID: str, workingDirectory: str, jobReport:
     return True
 
 
-def getJobWrapper(jobID: str, arguments: dict, jobReport: JobReport) -> JobWrapper:
+def getJobWrapper(jobID: int, arguments: dict, jobReport: JobReport) -> JobWrapper:
     """Create a JobWrapper instance"""
     try:
         job = JobWrapper(jobID, jobReport)
