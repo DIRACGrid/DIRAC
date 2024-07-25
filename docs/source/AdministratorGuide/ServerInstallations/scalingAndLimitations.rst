@@ -52,6 +52,16 @@ When you servers are heavily loaded, you may want to tune some kernel parameters
    net.core.somaxconn
    net.core.netdev_max_backlog
 
+You can also adjust the limit of opened files descriptors in the ``Service`` section of the ``/usr/lib/systemd/system/runsvdir-start.service`` file::
+
+   LimitNOFILE=500000
+
+
+Databases
+=========
+
+Every now and then, it is interesting to look at the fragmentation status of your database. This is done by using the ``analyze table`` statement (https://dev.mysql.com/doc/refman/8.4/en/analyze-table.html) possibly followed by the ``optimize table`` statement (https://dev.mysql.com/doc/refman/8.4/en/optimize-table.html).
+
 
 Duplications
 ============
