@@ -118,7 +118,7 @@ def getJobWrapper(jobID: int, arguments: dict, jobReport: JobReport) -> JobWrapp
     return job
 
 
-def transferInputSandbox(job: JobWrapper, inputSandbox: list, jobReport: JobReport) -> bool:
+def transferInputSandbox(job: JobWrapper, inputSandbox: list) -> bool:
     """Transfer the input sandbox"""
     try:
         result = job.transferInputSandbox(inputSandbox)
@@ -128,21 +128,21 @@ def transferInputSandbox(job: JobWrapper, inputSandbox: list, jobReport: JobRepo
     except JobWrapperError:
         gLogger.exception("JobWrapper failed to download input sandbox")
         rescheduleResult = rescheduleFailedJob(
-            jobID=job.jobID, minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX, jobReport=jobReport
+            jobID=job.jobID, minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX, jobReport=job.jobReport
         )
         job.sendJobAccounting(status=rescheduleResult, minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX)
         return False
     except Exception:  # pylint: disable=broad-except
         gLogger.exception("JobWrapper raised exception while downloading input sandbox")
         rescheduleResult = rescheduleFailedJob(
-            jobID=job.jobID, minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX, jobReport=jobReport
+            jobID=job.jobID, minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX, jobReport=job.jobReport
         )
         job.sendJobAccounting(status=rescheduleResult, minorStatus=JobMinorStatus.DOWNLOADING_INPUT_SANDBOX)
         return False
     return True
 
 
-def resolveInputData(job: JobWrapper, jobReport: JobReport) -> bool:
+def resolveInputData(job: JobWrapper) -> bool:
     """Resolve the input data"""
     try:
         result = job.resolveInputData()
@@ -152,21 +152,21 @@ def resolveInputData(job: JobWrapper, jobReport: JobReport) -> bool:
     except JobWrapperError:
         gLogger.exception("JobWrapper failed to resolve input data")
         rescheduleResult = rescheduleFailedJob(
-            jobID=job.jobID, minorStatus=JobMinorStatus.INPUT_DATA_RESOLUTION, jobReport=jobReport
+            jobID=job.jobID, minorStatus=JobMinorStatus.INPUT_DATA_RESOLUTION, jobReport=job.jobReport
         )
         job.sendJobAccounting(status=rescheduleResult, minorStatus=JobMinorStatus.INPUT_DATA_RESOLUTION)
         return False
     except Exception:  # pylint: disable=broad-except
         gLogger.exception("JobWrapper raised exception while resolving input data")
         rescheduleResult = rescheduleFailedJob(
-            jobID=job.jobID, minorStatus=JobMinorStatus.INPUT_DATA_RESOLUTION, jobReport=jobReport
+            jobID=job.jobID, minorStatus=JobMinorStatus.INPUT_DATA_RESOLUTION, jobReport=job.jobReport
         )
         job.sendJobAccounting(status=rescheduleResult, minorStatus=JobMinorStatus.INPUT_DATA_RESOLUTION)
         return False
     return True
 
 
-def processJobOutputs(job: JobWrapper, jobReport: JobReport) -> bool:
+def processJobOutputs(job: JobWrapper) -> bool:
     """Process the job outputs"""
     try:
         result = job.processJobOutputs()
@@ -176,14 +176,14 @@ def processJobOutputs(job: JobWrapper, jobReport: JobReport) -> bool:
     except JobWrapperError:
         gLogger.exception("JobWrapper failed to process output files")
         rescheduleResult = rescheduleFailedJob(
-            jobID=job.jobID, minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS, jobReport=jobReport
+            jobID=job.jobID, minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS, jobReport=job.jobReport
         )
         job.sendJobAccounting(status=rescheduleResult, minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS)
         return False
     except Exception:  # pylint: disable=broad-except
         gLogger.exception("JobWrapper raised exception while processing output files")
         rescheduleResult = rescheduleFailedJob(
-            jobID=job.jobID, minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS, jobReport=jobReport
+            jobID=job.jobID, minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS, jobReport=job.jobReport
         )
         job.sendJobAccounting(status=rescheduleResult, minorStatus=JobMinorStatus.UPLOADING_JOB_OUTPUTS)
         return False
@@ -200,7 +200,7 @@ def finalize(job: JobWrapper) -> int:
         return 2
 
 
-def executePayload(job: JobWrapper, jobReport: JobReport) -> bool:
+def executePayload(job: JobWrapper) -> bool:
     """Execute the payload"""
     try:
         result = job.execute()
@@ -213,13 +213,13 @@ def executePayload(job: JobWrapper, jobReport: JobReport) -> bool:
         if exc.value[1] == DErrno.EWMSRESC:
             gLogger.warn("Asked to reschedule job")
             rescheduleResult = rescheduleFailedJob(
-                jobID=job.jobID, minorStatus=JobMinorStatus.JOB_WRAPPER_EXECUTION, jobReport=jobReport
+                jobID=job.jobID, minorStatus=JobMinorStatus.JOB_WRAPPER_EXECUTION, jobReport=job.jobReport
             )
             job.sendJobAccounting(status=rescheduleResult, minorStatus=JobMinorStatus.JOB_WRAPPER_EXECUTION)
             return False
         gLogger.exception("Job failed in execution phase")
-        jobReport.setJobParameter("Error Message", repr(exc), sendFlag=False)
-        jobReport.setJobStatus(
+        job.jobReport.setJobParameter("Error Message", repr(exc), sendFlag=False)
+        job.jobReport.setJobStatus(
             status=JobStatus.FAILED, minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC, sendFlag=False
         )
         job.sendFailoverRequest()
@@ -227,8 +227,8 @@ def executePayload(job: JobWrapper, jobReport: JobReport) -> bool:
         return False
     except Exception as exc:  # pylint: disable=broad-except
         gLogger.exception("Job raised exception during execution phase")
-        jobReport.setJobParameter("Error Message", repr(exc), sendFlag=False)
-        jobReport.setJobStatus(
+        job.jobReport.setJobParameter("Error Message", repr(exc), sendFlag=False)
+        job.jobReport.setJobStatus(
             status=JobStatus.FAILED, minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC, sendFlag=False
         )
         job.sendFailoverRequest()

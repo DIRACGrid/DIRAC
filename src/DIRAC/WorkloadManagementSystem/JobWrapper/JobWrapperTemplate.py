@@ -53,7 +53,7 @@ def execute(jobID: int, arguments: dict, jobReport: JobReport):
 
     if "InputSandbox" in arguments["Job"]:
         jobReport.commit()
-        if not transferInputSandbox(job, arguments["Job"]["InputSandbox"], jobReport):
+        if not transferInputSandbox(job, arguments["Job"]["InputSandbox"]):
             return 1
     else:
         gLogger.verbose("Job has no InputSandbox requirement")
@@ -62,7 +62,7 @@ def execute(jobID: int, arguments: dict, jobReport: JobReport):
 
     if "InputData" in arguments["Job"]:
         if arguments["Job"]["InputData"]:
-            if not resolveInputData(job, jobReport):
+            if not resolveInputData(job):
                 return 1
         else:
             gLogger.verbose("Job has a null InputData requirement:")
@@ -72,11 +72,11 @@ def execute(jobID: int, arguments: dict, jobReport: JobReport):
 
     jobReport.commit()
 
-    if not executePayload(job, jobReport):
+    if not executePayload(job):
         return 1
 
     if "OutputSandbox" in arguments["Job"] or "OutputData" in arguments["Job"]:
-        if not processJobOutputs(job, jobReport):
+        if not processJobOutputs(job):
             return 2
     else:
         gLogger.verbose("Job has no OutputData or OutputSandbox requirement")

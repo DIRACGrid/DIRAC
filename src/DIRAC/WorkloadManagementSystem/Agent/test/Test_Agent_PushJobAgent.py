@@ -248,6 +248,11 @@ def test_submitJobWrapper(mocker, jobID):
     job.initialize = Mock()
     job.sendJobAccounting.reset_mock()
     job.transferInputSandbox = Mock(side_effect=Exception("Error transferring input sandbox"))
+
+    job.owner = None
+    job.userGroup = None
+    job.jobArgs = jobParams
+
     result = jobAgent._submitJobWrapper(
         jobID=jobID,
         ce=jobAgent.queueDict["ce1.site2.com_condor"]["CE"],
@@ -264,7 +269,7 @@ def test_submitJobWrapper(mocker, jobID):
     assert jobParams["Checksum"] == jobAgent.checkSumResultsFile
 
     assert not result["OK"], result
-    assert result["Message"] == f"Cannot get input sandbox of job {jobID}"
+    assert "Cannot get input sandbox of job" in result["Message"]
 
     assert os.getcwd() == cwd
 
@@ -278,6 +283,11 @@ def test_submitJobWrapper(mocker, jobID):
     job.sendJobAccounting.reset_mock()
     job.transferInputSandbox = Mock(return_value=S_OK())
     job.resolveInputData = Mock(side_effect=Exception("Error resolving input data"))
+
+    job.owner = None
+    job.userGroup = None
+    job.jobArgs = jobParams
+
     result = jobAgent._submitJobWrapper(
         jobID=jobID,
         ce=jobAgent.queueDict["ce1.site2.com_condor"]["CE"],
@@ -294,7 +304,7 @@ def test_submitJobWrapper(mocker, jobID):
     assert jobParams["Checksum"] == jobAgent.checkSumResultsFile
 
     assert not result["OK"], result
-    assert result["Message"] == f"Cannot get input data of job {jobID}"
+    assert "Cannot get input data of job" in result["Message"]
 
     assert os.getcwd() == cwd
 
@@ -308,6 +318,10 @@ def test_submitJobWrapper(mocker, jobID):
     job.resolveInputData = Mock(return_value=S_OK())
     job.preProcess = Mock(side_effect=S_ERROR("Error pre-processing payload"))
 
+    job.owner = None
+    job.userGroup = None
+    job.jobArgs = jobParams
+
     result = jobAgent._submitJobWrapper(
         jobID=jobID,
         ce=jobAgent.queueDict["ce1.site2.com_condor"]["CE"],
@@ -324,7 +338,7 @@ def test_submitJobWrapper(mocker, jobID):
     assert jobParams["Checksum"] == jobAgent.checkSumResultsFile
 
     assert not result["OK"], result
-    assert result["Message"] == f"JobWrapper failed the preprocessing phase for {jobID}"
+    assert "JobWrapper failed the preprocessing phase for" in result["Message"]
 
     assert os.getcwd() == cwd
 
@@ -332,6 +346,7 @@ def test_submitJobWrapper(mocker, jobID):
 
     # 5. getJobWrapper returns a JobWrapper instance but fails to submit the job
     mocker.patch("DIRAC.WorkloadManagementSystem.Utilities.Utils.createJobWrapper", return_value=S_OK({}))
+    mocker.patch("DIRAC.gConfig.getOption", return_value=S_OK("Setup"))
     jobParams = {"InputSandbox": True, "InputData": True, "Payload": True}
     job.initialize = Mock()
 
@@ -342,6 +357,10 @@ def test_submitJobWrapper(mocker, jobID):
     job.transferInputSandbox = Mock(return_value=S_OK())
     job.resolveInputData = Mock(return_value=S_OK())
     job.preProcess = Mock(return_value=S_OK())
+
+    job.owner = None
+    job.userGroup = None
+    job.jobArgs = jobParams
 
     ce = Mock()
     ce.submitJob = Mock(return_value=S_ERROR("Error submitting job"))
@@ -380,6 +399,10 @@ def test_submitJobWrapper(mocker, jobID):
     job.transferInputSandbox = Mock(return_value=S_OK())
     job.resolveInputData = Mock(return_value=S_OK())
     job.preProcess = Mock(return_value=S_OK())
+
+    job.owner = None
+    job.userGroup = None
+    job.jobArgs = jobParams
 
     ce = Mock()
     ce.submitJob = Mock(return_value={"OK": True, "Value": ["456"], "PilotStampDict": {"456": "abcdef"}})

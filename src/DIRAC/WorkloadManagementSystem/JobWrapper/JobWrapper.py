@@ -502,7 +502,7 @@ class JobWrapper:
     #############################################################################
     def postProcess(
         self,
-        payloadStatus: int,
+        payloadStatus: int | None,
         payloadOutput: str,
         payloadExecutorError: str,
         cpuTimeConsumed: list,
