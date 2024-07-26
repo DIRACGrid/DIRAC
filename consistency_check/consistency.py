@@ -27,6 +27,8 @@ def load_se_dump(se_dump_path):
     se_dump = pd.read_csv(se_dump_path, names=["pfn", "se_cks"], delimiter="|", index_col="pfn")
     se_dump["se_cks"] = se_dump["se_cks"].str.lower().str.pad(8, fillchar="0")
     se_dump["version"] = "se_dump"
+    assert not se_dump.index.duplicated().any(), f"Duplicated entries in SE dump {se_dump[se_dump.index.duplicated()]}"
+
     return se_dump
 
 
