@@ -39,7 +39,7 @@ if sys.version_info >= (2, 7, 9):
     rf = url_library_urlopen(sys.argv[1], context=context)
 else:
     rf = url_library_urlopen(sys.argv[1])
-pilotBranch = sys.argv[2]
+locc = sys.argv[2]
 
 with open("PilotWrapper.py", "wb") as pj:
     pj.write(rf.read())
@@ -52,7 +52,7 @@ from PilotWrapper import pilotWrapperScript  # pylint: disable=import-error
 
 res = pilotWrapperScript(
     pilotOptions="--setup=CI -N ce.dirac.org -Q DIRACQUEUE -n DIRAC.CI.ORG --debug",
-    location="diracproject.web.cern.ch/diracproject/tars/Pilot/DIRAC/" + pilotBranch + "/,wrong.cern.ch",
+    location=locc + "/,wrong.cern.ch",
 )
 
 with open("pilot-wrapper.sh", "wb") as pj:
