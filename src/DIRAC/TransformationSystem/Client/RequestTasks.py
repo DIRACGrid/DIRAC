@@ -395,10 +395,19 @@ class RequestTasks(TaskBase):
                     transID=transID,
                     method="getSubmittedFileStatus",
                 )
-            else:
-                for lfn, newStatus in statusDict["Value"].items():
-                    if newStatus == "Done":
-                        updateDict[lfn] = TransformationFilesStatus.PROCESSED
-                    elif newStatus == "Failed":
-                        updateDict[lfn] = TransformationFilesStatus.PROBLEMATIC
+                continue
+
+            # If we are here, it means the Request is in a final state.
+            # In principle, you could expect everyfile also be in a final state
+            # but this is only true for simple Request.
+            # Hence, the file is marked as PROCESSED only if the file status is Done
+            # In any other case, we mark it problematic
+            # This is dangerous though, as complex request may not be re-entrant
+            # We would need a way to make sure it is safe to do so.
+            # See https://github.com/DIRACGrid/DIRAC/issues/7116 for more details
+            for lfn, newStatus in statusDict["Value"].items():
+                if newStatus == "Done":
+                    updateDict[lfn] = TransformationFilesStatus.PROCESSED
+                else:
+                    updateDict[lfn] = TransformationFilesStatus.PROBLEMATIC
         return S_OK(updateDict)

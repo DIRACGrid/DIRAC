@@ -258,7 +258,7 @@ class ReqClient(Client):
         self.log.debug("getRequestStatus: attempting to get status for '%d' request." % requestID)
         requestStatus = self._getRPC().getRequestStatus(requestID)
         if not requestStatus["OK"]:
-            self.log.error(
+            self.log.verbose(
                 "getRequestStatus: unable to get status for request",
                 ": '%d' %s" % (requestID, requestStatus["Message"]),
             )
