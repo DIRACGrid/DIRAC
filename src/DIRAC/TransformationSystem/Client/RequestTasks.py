@@ -370,6 +370,22 @@ class RequestTasks(TaskBase):
 
         updateDict = {}
         for requestID, lfnList in requestFiles.items():
+            # We only take request in final state to avoid race conditions
+            # https://github.com/DIRACGrid/DIRAC/issues/7116#issuecomment-2188740414
+            reqStatus = self.requestClient.getRequestStatus(requestID)
+            if not reqStatus["OK"]:
+                log = self._logVerbose if "not exist" in reqStatus["Message"] else self._logWarn
+                log(
+                    "Failed to get request status",
+                    reqStatus["Message"],
+                    transID=transID,
+                    method="getSubmittedFileStatus",
+                )
+                continue
+            reqStatus = reqStatus["Value"]
+            if reqStatus not in Request.FINAL_STATES:
+                continue
+
             statusDict = self.requestClient.getRequestFileStatus(requestID, lfnList)
             if not statusDict["OK"]:
                 log = self._logVerbose if "not exist" in statusDict["Message"] else self._logWarn
