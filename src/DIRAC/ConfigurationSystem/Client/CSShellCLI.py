@@ -63,6 +63,13 @@ class CSShellCLI(CLI):
             self.update_prompt()
             print("done.")
 
+    def do_reload(self, _line):
+        """reload
+        Reload contents of the remote configuration"""
+        result = self.modificator.loadFromRemote()
+        if not result["OK"]:
+            print("Reload failed: ", result["Message"])
+
     def do_disconnect(self, _line):
         """Disconnect from CS"""
         if self.connected and self.dirty:
@@ -154,6 +161,13 @@ class CSShellCLI(CLI):
 
     complete_rmdir = complete_cd
 
+    def do_sort(self, line):
+        """sort
+        Sort sections alphabetically"""
+        if self.connected:
+            self.modificator.sortAlphabetically(self.root, ascending=True)
+            self.dirty = True
+
     def do_rm(self, line):
         """rm
         Delete an option in the CS"""
@@ -193,7 +207,12 @@ class CSShellCLI(CLI):
         """commit
         Commit the modifications to the CS"""
         if self.connected and self.dirty:
-            self.modificator.commit()
+            result = self.modificator.commit()
+            if not result["OK"]:
+                print("Commit failed: ", result["Message"])
+            # Reload to allow further commits
+            self.do_reload("")
+            self.dirty = False
 
     def default(self, line):
         """Override [Cmd.default(line)] function."""
