@@ -45,11 +45,13 @@
 
 # Def of environment variables:
 
-if [[ "${DEBUG}" ]]; then
+# if the DEBUG variable is set and its values is "Yes", we run in DEBUG mode
+if [ "$DEBUG" = "Yes" ]; then
   echo "==> Running in DEBUG mode"
   DEBUG='-ddd'
 else
   echo "==> Running in non-DEBUG mode"
+  DEBUG='-dd'
 fi
 
 if [[ "$WORKSPACE" ]]; then
