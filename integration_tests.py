@@ -34,6 +34,7 @@ FEATURE_VARIABLES = {
     "DIRAC_FEWER_CFG_LOCKS": None,
     "DIRAC_USE_JSON_ENCODE": None,
     "INSTALLATION_BRANCH": "",
+    "DEBUG": "Yes",
 }
 DIRACX_OPTIONS = ()
 DEFAULT_MODULES = {"DIRAC": Path(__file__).parent.absolute()}
@@ -1118,7 +1119,6 @@ def _create_iam_group_membership(
 
 def _make_config(modules, flags, release_var, editable):
     config = {
-        "DEBUG": "True",
         # MYSQL Settings
         "DB_USER": DB_USER,
         "DB_PASSWORD": DB_PASSWORD,
