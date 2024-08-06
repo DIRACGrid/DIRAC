@@ -495,7 +495,7 @@ class JobManagerHandlerMixin:
         """Kill (== set the status to "KILLED") or delete (== set the status to "DELETED") jobs as necessary
 
         :param list jobIDList: job IDs
-        :param str right: right
+        :param str right: RIGHT_KILL or RIGHT_DELETE
 
         :return: S_OK()/S_ERROR()
         """
@@ -508,38 +508,26 @@ class JobManagerHandlerMixin:
         badIDs = []
 
         if validJobList:
-            # Get job status to see what is to be killed or deleted
-            result = self.jobDB.getJobsAttributes(validJobList, ["Status"])
-            if not result["OK"]:
-                return result
             killJobList = []
             deleteJobList = []
-            markKilledJobList = []
-            stagingJobList = []
-            for jobID, sDict in result["Value"].items():  # can be an iterator
-                if sDict["Status"] in (JobStatus.RUNNING, JobStatus.MATCHED, JobStatus.STALLED):
-                    killJobList.append(jobID)
-                elif sDict["Status"] in (
-                    JobStatus.SUBMITTING,
-                    JobStatus.RECEIVED,
-                    JobStatus.CHECKING,
-                    JobStatus.WAITING,
-                    JobStatus.RESCHEDULED,
-                    JobStatus.DONE,
-                    JobStatus.FAILED,
-                    JobStatus.KILLED,
-                ):
-                    if not right == RIGHT_KILL:
-                        deleteJobList.append(jobID)
-                    else:
-                        markKilledJobList.append(jobID)
-                if sDict["Status"] in [JobStatus.STAGING]:
-                    stagingJobList.append(jobID)
+            # Get the jobs allowed to transition to the Killed state
+            filterRes = JobStatus.filterJobStateTransition(validJobList, JobStatus.KILLED)
+            if not filterRes['OK']:
+                return filterRes
+            killJobList.extend(filterRes['Value'])
 
-            for jobID in markKilledJobList:
-                result = self.__killJob(jobID, sendKillCommand=False)
-                if not result["OK"]:
-                    badIDs.append(jobID)
+            if not right == RIGHT_KILL:
+                # Get the jobs allowed to transition to the Deleted state
+                filterRes = JobStatus.filterJobStateTransition(validJobList, JobStatus.DELETED)
+                if not filterRes['OK']:
+                    return filterRes
+                deleteJobList.extend(filterRes['Value'])
+
+            # Look for jobs that are in the Staging state to send kill signal to the stager
+            result = self.jobDB.getJobsAttributes(killJobList, ["Status"])
+            if not result["OK"]:
+                return result
+            stagingJobList = [jobID for jobID, sDict in result["Value"].items() if sDict["Status"] == JobStatus.STAGING]
 
             for jobID in killJobList:
                 result = self.__killJob(jobID)
