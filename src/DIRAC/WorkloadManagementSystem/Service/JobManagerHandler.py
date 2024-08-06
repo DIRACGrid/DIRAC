@@ -512,16 +512,16 @@ class JobManagerHandlerMixin:
             deleteJobList = []
             # Get the jobs allowed to transition to the Killed state
             filterRes = JobStatus.filterJobStateTransition(validJobList, JobStatus.KILLED)
-            if not filterRes['OK']:
+            if not filterRes["OK"]:
                 return filterRes
-            killJobList.extend(filterRes['Value'])
+            killJobList.extend(filterRes["Value"])
 
             if not right == RIGHT_KILL:
                 # Get the jobs allowed to transition to the Deleted state
                 filterRes = JobStatus.filterJobStateTransition(validJobList, JobStatus.DELETED)
-                if not filterRes['OK']:
+                if not filterRes["OK"]:
                     return filterRes
-                deleteJobList.extend(filterRes['Value'])
+                deleteJobList.extend(filterRes["Value"])
 
             # Look for jobs that are in the Staging state to send kill signal to the stager
             result = self.jobDB.getJobsAttributes(killJobList, ["Status"])
