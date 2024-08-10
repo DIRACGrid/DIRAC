@@ -19,6 +19,7 @@ from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
+from DIRAC.WorkloadManagementSystem.Client.JobStatus import filterJobStateTransition
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     RIGHT_DELETE,
@@ -302,6 +303,9 @@ class JobManagerHandlerMixin:
         :return : a list of int job IDs
         """
 
+        if not jobInput:
+            return []
+
         if isinstance(jobInput, int):
             return [jobInput]
         if isinstance(jobInput, str):
@@ -491,7 +495,7 @@ class JobManagerHandlerMixin:
 
         return S_OK()
 
-    def __kill_delete_jobs(self, jobIDList, right):
+    def _kill_delete_jobs(self, jobIDList, right):
         """Kill (== set the status to "KILLED") or delete (== set the status to "DELETED") jobs as necessary
 
         :param list jobIDList: job IDs
@@ -501,24 +505,25 @@ class JobManagerHandlerMixin:
         """
         jobList = self.__getJobList(jobIDList)
         if not jobList:
-            return S_ERROR("Invalid job specification: " + str(jobIDList))
+            self.log.warn("No jobs specified")
+            return S_OK([])
 
         validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights(jobList, right)
 
         badIDs = []
 
+        killJobList = []
+        deleteJobList = []
         if validJobList:
-            killJobList = []
-            deleteJobList = []
             # Get the jobs allowed to transition to the Killed state
-            filterRes = JobStatus.filterJobStateTransition(validJobList, JobStatus.KILLED)
+            filterRes = filterJobStateTransition(validJobList, JobStatus.KILLED)
             if not filterRes["OK"]:
                 return filterRes
             killJobList.extend(filterRes["Value"])
 
             if not right == RIGHT_KILL:
                 # Get the jobs allowed to transition to the Deleted state
-                filterRes = JobStatus.filterJobStateTransition(validJobList, JobStatus.DELETED)
+                filterRes = filterJobStateTransition(validJobList, JobStatus.DELETED)
                 if not filterRes["OK"]:
                     return filterRes
                 deleteJobList.extend(filterRes["Value"])
@@ -556,7 +561,8 @@ class JobManagerHandlerMixin:
                 result["FailedJobIDs"] = badIDs
             return result
 
-        result = S_OK(validJobList)
+        jobsList = killJobList if right == RIGHT_KILL else deleteJobList
+        result = S_OK(jobsList)
         result["requireProxyUpload"] = len(ownerJobList) > 0 and self.__checkIfProxyUploadIsRequired()
 
         if invalidJobList:
@@ -575,7 +581,7 @@ class JobManagerHandlerMixin:
         :return: S_OK/S_ERROR
         """
 
-        return self.__kill_delete_jobs(jobIDs, RIGHT_DELETE)
+        return self._kill_delete_jobs(jobIDs, RIGHT_DELETE)
 
     ###########################################################################
     types_killJob = []
@@ -588,7 +594,7 @@ class JobManagerHandlerMixin:
         :return: S_OK/S_ERROR
         """
 
-        return self.__kill_delete_jobs(jobIDs, RIGHT_KILL)
+        return self._kill_delete_jobs(jobIDs, RIGHT_KILL)
 
     ###########################################################################
     types_resetJob = []
