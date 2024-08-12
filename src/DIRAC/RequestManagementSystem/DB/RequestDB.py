@@ -875,6 +875,9 @@ class RequestDB:
         try:
             statuses = session.query(Request.RequestID, Request._Status).filter(Request.RequestID.in_(requestIDs)).all()
             status_dict = {req_id: req_status for req_id, req_status in statuses}
+        except Exception as e:
+            # log as well?
+            return S_ERROR(f"Failed to getBulkRequestStatus {e!r}")
         finally:
             session.close()
         return S_OK(status_dict)

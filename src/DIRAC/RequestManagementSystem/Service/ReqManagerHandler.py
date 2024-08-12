@@ -347,7 +347,7 @@ class ReqManagerHandlerMixin:
         """get requests statuses given their ids"""
         res = cls.__requestDB.getBulkRequestStatus(requestIDs)
         if not res["OK"]:
-            gLogger.error(f"getRequestStatus: {res['Message']}")
+            gLogger.error("getBulkRequestStatus", res["Message"])
         return res
 
     types_getRequestFileStatus = [int, [str, list]]
