@@ -869,6 +869,16 @@ class RequestDB:
             session.close()
         return S_OK(status[0])
 
+    def getBulkRequestStatus(self, requestIDs):
+        """get requests statuses for given request IDs"""
+        session = self.DBSession()
+        try:
+            statuses = session.query(Request.RequestID, Request._Status).filter(Request.RequestID.in_(requestIDs)).all()
+            status_dict = {req_id: req_status for req_id, req_status in statuses}
+        finally:
+            session.close()
+        return S_OK(status_dict)
+
     def getRequestFileStatus(self, requestID, lfnList):
         """get status for files in request given its id
 
