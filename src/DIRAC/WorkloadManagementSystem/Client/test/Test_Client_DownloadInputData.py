@@ -113,7 +113,9 @@ def test_DLIDownloadFromBestSE_Fail(dli, mockSE, osPathExists):
     assert not res["OK"]
 
 
-def test_DLI_execute(dli, mockSE):
+def test_DLI_execute(mocker, dli, mockSE):
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.getSystemSection", return_value="pippo")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
     dli._downloadFromSE = MagicMock(return_value=S_OK({"path": "/local/path/1.txt"}))
     res = dli.execute(dataToResolve=["/a/lfn/1.txt"])
     assert res["OK"]
@@ -121,8 +123,10 @@ def test_DLI_execute(dli, mockSE):
     assert "/a/lfn/1.txt" in res["Value"]["Successful"], res
 
 
-def test_DLI_execute_getFileMetadata_Fails(dli, mockSE):
+def test_DLI_execute_getFileMetadata_Fails(mocker, dli, mockSE):
     """When getFileMetadata fails for the first SE, we should fall back to the second."""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.getSystemSection", return_value="pippo")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
     mockObjectSE = mockSE.return_value
     mockObjectSE.getFileMetadata.return_value = S_OK(
         {"Successful": {}, "Failed": {"/a/lfn/1.txt": "Error Getting MetaData"}}
@@ -137,8 +141,10 @@ def test_DLI_execute_getFileMetadata_Fails(dli, mockSE):
     assert res["Value"]["Successful"]["/a/lfn/1.txt"]["path"] == "/local/path/1.txt", res
 
 
-def test_DLI_execute_getFileMetadata_Lost(dli, mockSE):
+def test_DLI_execute_getFileMetadata_Lost(mocker, dli, mockSE):
     """When getFileMetadata fails for the first SE, we should fall back to the second."""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.getSystemSection", return_value="pippo")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
     mockObjectSE = mockSE.return_value
     mockObjectSE.getFileMetadata.return_value = S_OK(
         {
@@ -161,8 +167,10 @@ def test_DLI_execute_getFileMetadata_Lost(dli, mockSE):
     assert res["Value"]["Successful"]["/a/lfn/1.txt"]["path"] == "/local/path/1.txt", res
 
 
-def test_DLI_execute_getFileMetadata_Unavailable(dli, mockSE):
+def test_DLI_execute_getFileMetadata_Unavailable(mocker, dli, mockSE):
     """When getFileMetadata fails for the first SE, we should fall back to the second."""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.getSystemSection", return_value="pippo")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
     mockObjectSE = mockSE.return_value
     mockObjectSE.getFileMetadata.return_value = S_OK(
         {
@@ -185,8 +193,10 @@ def test_DLI_execute_getFileMetadata_Unavailable(dli, mockSE):
     assert res["Value"]["Successful"]["/a/lfn/1.txt"]["path"] == "/local/path/1.txt", res
 
 
-def test_DLI_execute_getFileMetadata_Cached(dli, mockSE):
+def test_DLI_execute_getFileMetadata_Cached(mocker, dli, mockSE):
     """When getFileMetadata fails for the first SE, we should fall back to the second."""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.getSystemSection", return_value="pippo")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
     mockObjectSE = mockSE.return_value
     mockObjectSE.getFileMetadata.return_value = S_OK(
         {
@@ -209,8 +219,10 @@ def test_DLI_execute_getFileMetadata_Cached(dli, mockSE):
     assert res["Value"]["Successful"]["/a/lfn/1.txt"]["path"] == "/local/path/1.txt", res
 
 
-def test_DLI_execute_FirstDownFailed(dli, mockSE):
+def test_DLI_execute_FirstDownFailed(mocker, dli, mockSE):
     """When getFileMetadata fails for the first SE, we should fall back to the second."""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.getSystemSection", return_value="pippo")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
     mockObjectSE = mockSE.return_value
     mockObjectSE.getFileMetadata.return_value = S_OK(
         {"Successful": {"/a/lfn/1.txt": {"Cached": 1, "Accessible": 0}}, "Failed": {}}
@@ -224,8 +236,10 @@ def test_DLI_execute_FirstDownFailed(dli, mockSE):
     assert res["Value"]["Successful"]["/a/lfn/1.txt"]["path"] == "/local/path/1.txt", res
 
 
-def test_DLI_execute_AllDownFailed(dli, mockSE):
+def test_DLI_execute_AllDownFailed(mocker, dli, mockSE):
     """When getFileMetadata fails for the first SE, we should fall back to the second."""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.getSystemSection", return_value="pippo")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
     mockObjectSE = mockSE.return_value
     mockObjectSE.getFileMetadata.return_value = S_OK(
         {"Successful": {"/a/lfn/1.txt": {"Cached": 1, "Accessible": 0}}, "Failed": {}}
@@ -239,8 +253,10 @@ def test_DLI_execute_AllDownFailed(dli, mockSE):
     assert res["Value"]["Failed"][0] == "/a/lfn/1.txt", res
 
 
-def test_DLI_execute_NoLocal(dli, mockSE):
+def test_DLI_execute_NoLocal(mocker, dli, mockSE):
     """Data only at the remote SE."""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.getSystemSection", return_value="pippo")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
     dli = DownloadInputData(
         {
             "InputData": [],

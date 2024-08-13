@@ -5,7 +5,8 @@ import os
 import random
 import tempfile
 
-from DIRAC import S_ERROR, S_OK, gLogger
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
+from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection
 from DIRAC.Core.Utilities.Os import getDiskSpace
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
@@ -227,9 +228,9 @@ class DownloadInputData:
         """
         diskSpace = getDiskSpace(self.__getDownloadDir(False))  # MB
         availableBytes = diskSpace * 1024 * 1024  # bytes
-        # below can be a configuration option sent via the job wrapper in the future
-        # Moved from 3 to 5 GB (PhC 130822) for standard output file
-        bufferGBs = 5.0
+        bufferGBs = gConfig.getValue(
+            os.path.join(getSystemSection("WorkloadManagement/JobWrapper"), "JobWrapper", "MinOutputDataBufferGBs"), 5.0
+        )
         data = bufferGBs * 1024 * 1024 * 1024  # bufferGBs in bytes
         if (data + totalSize) < availableBytes:
             msg = f"Enough disk space available ({availableBytes} bytes)"
