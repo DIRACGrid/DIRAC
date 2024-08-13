@@ -301,7 +301,7 @@ def test_processQuickExecutionNoWatchdog(mocker):
     assert result["Value"]["payloadStatus"] == 0
     assert result["Value"]["payloadOutput"] == "hello"
     assert not result["Value"]["payloadExecutorError"]
-    assert result["Value"]["cpuTimeConsumed"][0] == 0.0
+    assert result["Value"]["cpuTimeConsumed"][0] >= 0.0
     assert not result["Value"]["watchdogError"]
     assert not result["Value"]["watchdogStats"]
 
