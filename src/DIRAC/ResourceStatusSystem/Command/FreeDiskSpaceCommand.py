@@ -7,20 +7,19 @@
     For the moment, when you see "token" or "space token" here, just read "StorageElement".
 
 """
-import sys
 import errno
+import sys
+from datetime import datetime, timedelta, timezone
 
-from datetime import datetime
-
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.File import convertSizeUnits
+from DIRAC import S_ERROR, S_OK
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.StorageOccupancy import StorageOccupancy
+from DIRAC.Core.Utilities.File import convertSizeUnits
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
-from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
+from DIRAC.ResourceStatusSystem.Command.Command import Command
+from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
 
 class FreeDiskSpaceCommand(Command):
@@ -204,7 +203,9 @@ class FreeDiskSpaceCommand(Command):
         if not toDelete:
             toDelete = []
 
-            res = self.rmClient.selectSpaceTokenOccupancyCache()
+            res = self.rmClient.selectSpaceTokenOccupancyCache(
+                meta={"older": ["LastCheckTime", datetime.now(timezone.utc) - timedelta(hours=6)]}
+            )
             if not res["OK"]:
                 return res
             storedSEsSet = {(sse[0], sse[1]) for sse in res["Value"]}
