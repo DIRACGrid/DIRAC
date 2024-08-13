@@ -93,6 +93,7 @@ so you probably want to handle them differently depending on their results, whil
 executing same type of callables in subprocesses and  hence you are expecting the same type of results
 everywhere.
 """
+
 import errno
 import inspect
 import multiprocessing
@@ -911,8 +912,14 @@ class ProcessPool:
                 if processed == 0:
                     log.debug("Process results, but queue is empty...")
                 break
-            # get task
-            task = self.__resultsQueue.get()
+            # In principle, there should be a task right away. However,
+            # queue.empty can't be trusted (https://docs.python.org/3/library/queue.html#queue.Queue.empty)
+            try:
+                task = self.__resultsQueue.get(timeout=10)
+            except queue.Empty:
+                log.warn("Queue.empty lied to us again...")
+                return 0
+
             log.debug("__resultsQueue.get", f"t={time.time() - start:.2f}")
             # execute callbacks
             try:
