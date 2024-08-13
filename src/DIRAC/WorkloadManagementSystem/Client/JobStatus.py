@@ -6,6 +6,8 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.StateMachine import State, StateMachine
 from DIRAC.Core.Utilities.Decorators import deprecated
 
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+
 
 #:
 SUBMITTING = "Submitting"
@@ -129,7 +131,7 @@ def checkJobStateTransition(jobID, candidateState, currentStatus=None, jobMonito
     return S_OK()
 
 
-def filterJobStateTransition(jobIDs, candidateState, jobMonitoringClient=None):
+def filterJobStateTransition(jobIDs, candidateState):
     """Given a list of jobIDs, return a list that are allowed to transition
     to the given candidate state.
     """
@@ -138,12 +140,7 @@ def filterJobStateTransition(jobIDs, candidateState, jobMonitoringClient=None):
     if not isinstance(jobIDs, list):
         jobIDs = [jobIDs]
 
-    if not jobMonitoringClient:
-        from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-
-        jobMonitoringClient = JobMonitoringClient()
-
-    res = jobMonitoringClient.getJobsStatus(jobIDs)
+    res = JobMonitoringClient().getJobsStatus(jobIDs)
     if not res["OK"]:
         return res
 
