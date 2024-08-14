@@ -769,6 +769,23 @@ class FileCatalogDB(DB):
         successful = res["Value"]["Successful"]
         return S_OK({"Successful": successful, "Failed": failed})
 
+    def getFileDetailsPublic(self, lfns, credDict):
+        """Return all the metadata, including user defined, for those lfns that exist.
+
+        :return: S_OK with a dictionary of LFNs to detailed information
+        """
+
+        res = self._checkPathPermissions("getFileDetailsPublic", lfns, credDict)
+        if not res["OK"]:
+            return res
+        failed = res["Value"]["Failed"]
+
+        # if no successful, just return empty dict
+        if not res["Value"]["Successful"]:
+            return S_OK({})
+
+        return self.getFileDetails(res["Value"]["Successful"], credDict)
+
     def getFileDetails(self, lfnList, credDict):
         """Get all the metadata for the given files"""
         connection = False

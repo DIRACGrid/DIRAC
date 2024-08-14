@@ -18,6 +18,7 @@ class FileCatalogClient(FileCatalogClientBase):
     READ_METHODS = FileCatalogClientBase.READ_METHODS + [
         "isFile",
         "getFileMetadata",
+        "getFileDetails",
         "getReplicas",
         "getReplicaStatus",
         "getFileSize",
@@ -471,6 +472,11 @@ class FileCatalogClient(FileCatalogClientBase):
     def getFileMetadata(self, lfns, timeout=120):
         """Get the metadata associated to supplied lfns"""
         return self._getRPC(timeout=timeout).getFileMetadata(lfns)
+
+    @checkCatalogArguments
+    def getFileDetails(self, lfns, timeout=120):
+        """Get the (user) metadata associated to supplied lfns"""
+        return self._getRPC(timeout=timeout).getFileDetails(lfns)
 
     @checkCatalogArguments
     def getReplicaStatus(self, lfns, timeout=120):
