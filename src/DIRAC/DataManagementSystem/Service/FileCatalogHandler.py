@@ -261,6 +261,12 @@ class FileCatalogHandlerMixin:
         """Get the metadata associated to supplied lfns"""
         return self.fileCatalogDB.getFileMetadata(lfns, self.getRemoteCredentials())
 
+    types_getFileDetails = [[list, dict, str]]
+
+    def export_getFileDetails(self, lfns):
+        """Get all the metadata associated to supplied lfns, including user metadata"""
+        return self.fileCatalogDB.getFileDetailsPublic(lfns, self.getRemoteCredentials())
+
     types_getReplicas = [[list, dict, str], bool]
 
     def export_getReplicas(self, lfns, allStatus=False):
@@ -336,7 +342,7 @@ class FileCatalogHandlerMixin:
     types_getDirectoryMetadata = [[list, dict, str]]
 
     def export_getDirectoryMetadata(self, lfns):
-        """Get the size of the supplied directory"""
+        """Get the metadata of the supplied directory"""
         return self.fileCatalogDB.getDirectoryMetadata(lfns, self.getRemoteCredentials())
 
     types_getDirectorySize = [[list, dict, str]]
