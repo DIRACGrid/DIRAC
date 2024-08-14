@@ -342,7 +342,7 @@ class FileCatalogHandlerMixin:
     types_getDirectoryMetadata = [[list, dict, str]]
 
     def export_getDirectoryMetadata(self, lfns):
-        """Get the size of the supplied directory"""
+        """Get the metadata of the supplied directory"""
         return self.fileCatalogDB.getDirectoryMetadata(lfns, self.getRemoteCredentials())
 
     types_getDirectorySize = [[list, dict, str]]
