@@ -779,6 +779,12 @@ def _make_env(flags):
     env["MYSQL_VER"] = flags.pop("MYSQL_VER", DEFAULT_MYSQL_VER)
     env["ES_VER"] = flags.pop("ES_VER", DEFAULT_ES_VER)
     env["IAM_VER"] = flags.pop("IAM_VER", DEFAULT_IAM_VER)
+    if Path("/cvmfs").is_dir():
+        env["CVMFS_DIR"] = "/cvmfs"
+    else:
+        # create a directory in tmp
+        with tempfile.TemporaryDirectory() as tmpdir:
+            env["CVMFS_DIR"] = tmpdir
     return env
 
 

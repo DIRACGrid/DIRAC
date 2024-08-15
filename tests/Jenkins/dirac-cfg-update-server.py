@@ -558,7 +558,7 @@ csAPI.setOption(
 csAPI.setOption("Systems/WorkloadManagement/Production/Executors/Optimizers/JobScheduling/RescheduleDelays", "0")
 
 csAPI.createSection("Systems/WorkloadManagement/Production/JobWrapper/")
-csAPI.setOption("Systems/WorkloadManagement/Production/JobWrapper/MinOutputDataBufferGBs", 1)
+csAPI.setOption("Systems/WorkloadManagement/Production/JobWrapper/MinOutputDataBufferGB", 1)
 
 # Final action: commit in CS
 res = csAPI.commit()

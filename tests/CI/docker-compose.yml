@@ -122,7 +122,7 @@ services:
     depends_on:
       - dirac-server
     volumes:
-      - /cvmfs:/cvmfs:ro
+      - ${CVMFS_DIR}:/cvmfs:ro
     ulimits:
       nofile: 8192
     pull_policy: always
