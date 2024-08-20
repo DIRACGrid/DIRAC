@@ -121,6 +121,8 @@ services:
     user: "${DIRAC_UID}:${DIRAC_GID}"
     depends_on:
       - dirac-server
+    volumes:
+      - ${CVMFS_DIR}:/cvmfs:ro
     ulimits:
       nofile: 8192
     pull_policy: always
