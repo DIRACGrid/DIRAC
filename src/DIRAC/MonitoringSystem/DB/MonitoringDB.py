@@ -43,7 +43,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 class MonitoringDB(ElasticDB):
     """Extension of ElasticDB for Monitoring system DB"""
 
-    def __init__(self, name="Monitoring/MonitoringDB", readOnly=False):
+    def __init__(self, name="Monitoring/MonitoringDB"):
         """Standard constructor"""
 
         try:
@@ -55,7 +55,6 @@ class MonitoringDB(ElasticDB):
             self.log.error("Can't connect to MonitoringDB", repr(ex))
             raise ex
 
-        self.__readonly = readOnly
         self.documentTypes = {}
 
         # loads all monitoring indexes and types.
@@ -75,27 +74,6 @@ class MonitoringDB(ElasticDB):
                 "monitoringFields": monfields,
                 "period": period,
             }
-            if self.__readonly:
-                self.log.info("Read only mode: no new index will be created")
-            else:
-                # Verifying if the index is there, and if not create it
-                res = self.existingIndex(f"{indexName}-*")  # check with a wildcard
-                if res["OK"] and res["Value"]:
-                    actualIndexName = self.generateFullIndexName(indexName, period)
-                    res = self.existingIndex(actualIndexName)  # check actual index
-                    if not res["OK"] or not res["Value"]:
-                        result = self.createIndex(indexName, self.documentTypes[monitoringType]["mapping"], period)
-                        if not result["OK"]:
-                            self.log.error(result["Message"])
-                            raise RuntimeError(result["Message"])
-                        self.log.always("Index created", actualIndexName)
-                else:
-                    # in case the index pattern does not exist
-                    result = self.createIndex(indexName, self.documentTypes[monitoringType]["mapping"], period)
-                    if not result["OK"]:
-                        self.log.error(result["Message"])
-                        raise RuntimeError(result["Message"])
-                    self.log.always("Index created", indexName)
 
     def getIndexName(self, typeName):
         """
