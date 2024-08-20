@@ -5,7 +5,6 @@ from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import JobParametersDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, multiValueDefFields, singleValueDefFields
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     RIGHT_CHANGE_STATUS,
@@ -26,7 +25,6 @@ class JobState:
             self.jobDB = None
             self.logDB = None
             self.tqDB = None
-            self.jobParametersDB = None
 
     __db = DBHold()
 
@@ -38,7 +36,6 @@ class JobState:
             JobState.__db.jobDB = JobDB()
             JobState.__db.logDB = JobLoggingDB()
             JobState.__db.tqDB = TaskQueueDB()
-            JobState.__db.jpDB = JobParametersDB()
 
     def __init__(self, jid):
         self.__jid = jid
@@ -103,7 +100,7 @@ class JobState:
             return S_OK(False)
         gLogger.verbose(f"Job {self.__jid}: About to execute trace. Current state {initialState}")
 
-        data = {"att": [], "jobp": [], "optp": []}
+        data = {"att": [], "optp": []}
         for key in cache:
             for dk in data:
                 if key.find(f"{dk}.") == 0:
@@ -115,11 +112,6 @@ class JobState:
             result = self.__retryFunction(
                 5, JobState.__db.jobDB.setJobAttributes, (self.__jid, attN, attV), {"update": True}
             )
-            if not result["OK"]:
-                return result
-
-        if data["jobp"]:
-            result = self.__retryFunction(5, JobState.__db.jpDB.setJobParameters, (self.__jid, data["jobp"]))
             if not result["OK"]:
                 return result
 

@@ -43,8 +43,8 @@ class JobParametersDB(ElasticDB):
         try:
             # Connecting to the ES cluster
             super().__init__(self.fullname, self.index_name, parentLogger=parentLogger)
-        except Exception as ex:
-            RuntimeError("Can't connect to JobParameters index") from ex
+        except Exception:
+            RuntimeError("Can't connect to JobParameters index")
         self.addIndexTemplate("elasticjobparametersdb", index_patterns=[f"{self.index_name}_*"], mapping=mapping)
 
     def _indexName(self, jobID: int, vo: str) -> str:
