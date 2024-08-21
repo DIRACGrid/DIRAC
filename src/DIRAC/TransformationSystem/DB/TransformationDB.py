@@ -1138,6 +1138,9 @@ class TransformationDB(DB):
                 if isinstance(parameterValue, int):
                     parameterType = "Integer"
                     parameterValue = str(parameterValue)
+                if isinstance(parameterValue, float):
+                    parameterType = "Float"
+                    parameterValue = str(parameterValue)
                 if isinstance(parameterValue, dict):
                     parameterType = "Dict"
                     parameterValue = str(parameterValue)
@@ -1617,6 +1620,20 @@ class TransformationDB(DB):
             gLogger.info("Files to add to transformations:", filesToAdd)
             if filesToAdd:
                 for transID, lfns in transFiles.items():
+                    # Check if file is already in the Transformation and if is in Deleted Status
+                    res = self.getTransformationFiles(
+                        condDict={"TransformationID": transID, "LFN": lfns}, connection=connection
+                    )
+                    if not res["OK"]:
+                        return res
+                    fileIDs = []
+                    for fileDict in res["Value"]:
+                        fileIDs.append(fileDict["FileID"])
+                        if fileDict["Status"] == "Deleted":
+                            res = self.__setTransformationFileStatus(list(fileIDs), "Unused", connection=connection)
+                            if not res["OK"]:
+                                return res
+
                     res = self.addFilesToTransformation(transID, lfns)
                     if not res["OK"]:
                         gLogger.error("Failed to add files to transformation", f"{transID} {res['Message']}")
@@ -1747,6 +1764,20 @@ class TransformationDB(DB):
         gLogger.info("Files to add to transformations:", filesToAdd)
         if filesToAdd:
             for transID, lfns in transFiles.items():
+                # Check if file is already in the Transformation and if is in Deleted Status
+                res = self.getTransformationFiles(
+                    condDict={"TransformationID": transID, "LFN": lfns}, connection=connection
+                )
+                if not res["OK"]:
+                    return res
+                fileIDs = []
+                for fileDict in res["Value"]:
+                    fileIDs.append(fileDict["FileID"])
+                    if fileDict["Status"] == "Deleted":
+                        res = self.__setTransformationFileStatus(list(fileIDs), "Unused", connection=connection)
+                        if not res["OK"]:
+                            return res
+
                 res = self.addFilesToTransformation(transID, lfns)
                 if not res["OK"]:
                     gLogger.error("Failed to add files to transformation", f"{transID} {res['Message']}")
