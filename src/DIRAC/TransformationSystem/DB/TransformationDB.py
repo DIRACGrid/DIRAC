@@ -1706,7 +1706,7 @@ class TransformationDB(DB):
                 successful.append(lfn)
         return {"OK": True, "Value": len(res["Value"]["Successful"]), "Successful": successful, "Failed": failed}
 
-    def setMetadata(self, path, usermetadatadict):
+    def setMetadata(self, path, usermetadatadict, connection=False):
         """
         It can be applied to a file or to a directory (path).
         For a file, add the file to Transformations if the updated metadata dictionary passes the filter.
