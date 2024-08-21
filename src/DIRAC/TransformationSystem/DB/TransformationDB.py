@@ -1633,6 +1633,9 @@ class TransformationDB(DB):
                             res = self.__setTransformationFileStatus(list(fileIDs), "Unused", connection=connection)
                             if not res["OK"]:
                                 return res
+                            res = self.__setDataFileStatus(list(fileIDs), "New", connection=connection)
+                            if not res["OK"]:
+                                return res
 
                     res = self.addFilesToTransformation(transID, lfns)
                     if not res["OK"]:
@@ -1777,6 +1780,10 @@ class TransformationDB(DB):
                         res = self.__setTransformationFileStatus(list(fileIDs), "Unused", connection=connection)
                         if not res["OK"]:
                             return res
+                        res = self.__setDataFileStatus(list(fileIDs), "New", connection=connection)
+                        if not res["OK"]:
+                            return res
+
 
                 res = self.addFilesToTransformation(transID, lfns)
                 if not res["OK"]:
