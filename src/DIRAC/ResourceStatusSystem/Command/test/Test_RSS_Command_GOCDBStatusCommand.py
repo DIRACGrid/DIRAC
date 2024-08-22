@@ -16,6 +16,8 @@ gLogger.setLevel("DEBUG")
 # Mock external libraries / modules not interesting for the unit test
 seMock = mock.MagicMock()
 seMock.options = {"SEType": "T0D1"}
+seMock.localAccessProtocolList = ["https", "root"]
+seMock.localWriteProtocolList = ["https"]
 
 mock_GOCDBClient = mock.MagicMock()
 mock_RMClient = mock.MagicMock()

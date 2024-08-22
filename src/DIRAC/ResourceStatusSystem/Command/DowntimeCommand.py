@@ -28,10 +28,10 @@ from DIRAC.ResourceStatusSystem.Command.Command import Command
 diracToGOC_conversion = {
     # Computing elements
     "CREAM": "CREAM-CE",  # deprecated
-    "HTCondorCE" :"org.opensciencegrid.htcondorce",
-    "ARC" : "ARC-CE",
-    "ARC6" : "ARC-CE",
-    "AREX" : "ARC-CE",
+    "HTCondorCE": "org.opensciencegrid.htcondorce",
+    "ARC": "ARC-CE",
+    "ARC6": "ARC-CE",
+    "AREX": "ARC-CE",
     # FTS
     "FTS3": "FTS",
     "FTS": "FTS",
@@ -53,15 +53,8 @@ class DowntimeCommand(Command):
     def __init__(self, args=None, clients=None):
         super().__init__(args, clients)
 
-        if "GOCDBClient" in self.apis:
-            self.gClient = self.apis["GOCDBClient"]
-        else:
-            self.gClient = GOCDBClient()
-
-        if "ResourceManagementClient" in self.apis:
-            self.rmClient = self.apis["ResourceManagementClient"]
-        else:
-            self.rmClient = ResourceManagementClient()
+        self.gClient = self.apis.get("GOCDBClient", GOCDBClient())
+        self.rmClient = self.apis.get("ResourceManagementClient", ResourceManagementClient())
 
     def _storeCommand(self, result):
         """
@@ -158,23 +151,23 @@ class DowntimeCommand(Command):
 
         # The DIRAC se names mean nothing on the grid, but their hosts and service types do mean.
         elif elementType == "StorageElement":
+            # Get the SE object and its protocols
             try:
                 se = StorageElement(elementName)
                 se_protocols = list(se.localAccessProtocolList)
                 se_protocols.extend(x for x in se.localWriteProtocolList if x not in se_protocols)
-            except AttributeError:  # Sometimes the SE can't be instantiated properly
+            except AttributeError:
                 self.log.error("Failure instantiating StorageElement object", elementName)
                 return S_ERROR("Failure instantiating StorageElement")
-            if "SEType" in se.options:
-                # Type should follow the convention TXDY
-                seType = se.options["SEType"]
-                diskSE = re.search("D[1-9]", seType) is not None
-                tapeSE = re.search("T[1-9]", seType) is not None
-                if tapeSE:
-                    gOCDBServiceType = diracToGOC_conversion[f"tape_{se_protocols[0]}"]  # Just take the first, for simplicity
-                elif diskSE:
-                    gOCDBServiceType = diracToGOC_conversion[f"disk_{se_protocols[0]}"]  # Just take the first, for simplicity
 
+            # Determine the SE type and update gOCDBServiceType accordingly
+            se_type = se.options.get("SEType", "")
+            if re.search(r"D[1-9]", se_type):
+                gOCDBServiceType = diracToGOC_conversion[f"disk_{se_protocols[0]}"]
+            elif re.search(r"T[1-9]", se_type):
+                gOCDBServiceType = diracToGOC_conversion[f"tape_{se_protocols[0]}"]
+
+            # Get the SE hosts and return an error if none are found
             res = getSEHosts(elementName)
             if not res["OK"]:
                 return res
@@ -252,9 +245,8 @@ class DowntimeCommand(Command):
 
         # cleaning the Cache
         if elementNames:
-            cleanRes = self._cleanCommand(element, elementNames)
-            if not cleanRes["OK"]:
-                return cleanRes
+            if not (res := self._cleanCommand(element, elementNames))["OK"]:
+                return res
 
         uniformResult = []
 
@@ -286,9 +278,8 @@ class DowntimeCommand(Command):
 
             uniformResult.append(dt)
 
-        storeRes = self._storeCommand(uniformResult)
-        if not storeRes["OK"]:
-            return storeRes
+        if not (res := self._storeCommand(uniformResult))["OK"]:
+            return res
 
         return S_OK()
 
