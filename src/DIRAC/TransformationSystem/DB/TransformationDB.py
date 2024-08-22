@@ -1636,11 +1636,7 @@ class TransformationDB(DB):
                             )
                             if not res["OK"]:
                                 return res
-                            if not (
-                                res := self.__setDataFileStatus(
-                                    list(fileIDs), "New", connection=connection
-                                )["OK"]
-                            ):
+                            if not (res := self.__setDataFileStatus(list(fileIDs), "New", connection=connection)["OK"]):
                                 return res
 
                     res = self.addFilesToTransformation(transID, lfns)
