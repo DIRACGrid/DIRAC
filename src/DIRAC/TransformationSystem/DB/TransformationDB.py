@@ -1127,7 +1127,7 @@ class TransformationDB(DB):
 
         for parameterName in sorted(queryDict):
             parameterValue = queryDict[parameterName]
-            if not parameterValue:
+            if parameterValue is None:
                 continue
             parameterType = "String"
             if isinstance(parameterValue, (list, tuple)):
