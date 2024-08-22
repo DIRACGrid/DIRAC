@@ -1627,16 +1627,18 @@ class TransformationDB(DB):
                     )
                     if not res["OK"]:
                         return res
-                    fileIDs = []
                     for fileDict in res["Value"]:
-                        fileIDs.append(fileDict["FileID"])
                         if fileDict["Status"] == TransformationFilesStatus.DELETED:
                             res = self.__setTransformationFileStatus(
-                                list(fileIDs), TransformationFilesStatus.UNUSED, connection=connection
+                                list([fileDict["FileID"]]), TransformationFilesStatus.UNUSED, connection=connection
                             )
                             if not res["OK"]:
                                 return res
-                            if not (res := self.__setDataFileStatus(list(fileIDs), "New", connection=connection)["OK"]):
+                            if not (
+                                res := self.__setDataFileStatus(
+                                    list([fileDict["FileID"]]), "New", connection=connection
+                                )["OK"]
+                            ):
                                 return res
 
                     res = self.addFilesToTransformation(transID, lfns)
@@ -1775,16 +1777,14 @@ class TransformationDB(DB):
                 )
                 if not res["OK"]:
                     return res
-                fileIDs = []
                 for fileDict in res["Value"]:
-                    fileIDs.append(fileDict["FileID"])
                     if fileDict["Status"] == TransformationFilesStatus.DELETED:
                         res = self.__setTransformationFileStatus(
-                            list(fileIDs), TransformationFilesStatus.UNUSED, connection=connection
+                            list([fileDict["FileID"]]), TransformationFilesStatus.UNUSED, connection=connection
                         )
                         if not res["OK"]:
                             return res
-                        res = self.__setDataFileStatus(list(fileIDs), "New", connection=connection)
+                        res = self.__setDataFileStatus(list([fileDict["FileID"]]), "New", connection=connection)
                         if not res["OK"]:
                             return res
 
