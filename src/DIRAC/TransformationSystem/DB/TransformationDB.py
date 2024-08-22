@@ -15,7 +15,7 @@ from errno import ENOENT
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.DErrno import cmpError
-from DIRAC.TransformationSystem.Client import TransformationStatus
+from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import stringListToString, intListToString, breakListIntoChunks
@@ -1630,15 +1630,15 @@ class TransformationDB(DB):
                     fileIDs = []
                     for fileDict in res["Value"]:
                         fileIDs.append(fileDict["FileID"])
-                        if fileDict["Status"] == TransformationStatus.DELETED:
+                        if fileDict["Status"] == TransformationFilesStatus.DELETED:
                             res = self.__setTransformationFileStatus(
-                                list(fileIDs), TransformationStatus.UNUSED, connection=connection
+                                list(fileIDs), TransformationFilesStatus.UNUSED, connection=connection
                             )
                             if not res["OK"]:
                                 return res
                             if not (
                                 res := self.__setDataFileStatus(
-                                    list(fileIDs), TransformationStatus.NEW, connection=connection
+                                    list(fileIDs), "New", connection=connection
                                 )["OK"]
                             ):
                                 return res
@@ -1782,13 +1782,13 @@ class TransformationDB(DB):
                 fileIDs = []
                 for fileDict in res["Value"]:
                     fileIDs.append(fileDict["FileID"])
-                    if fileDict["Status"] == TransformationStatus.DELETED:
+                    if fileDict["Status"] == TransformationFilesStatus.DELETED:
                         res = self.__setTransformationFileStatus(
-                            list(fileIDs), TransformationStatus.UNUSED, connection=connection
+                            list(fileIDs), TransformationFilesStatus.UNUSED, connection=connection
                         )
                         if not res["OK"]:
                             return res
-                        res = self.__setDataFileStatus(list(fileIDs), TransformationStatus.NEW, connection=connection)
+                        res = self.__setDataFileStatus(list(fileIDs), "New", connection=connection)
                         if not res["OK"]:
                             return res
 

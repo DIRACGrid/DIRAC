@@ -17,6 +17,8 @@ MISSING_IN_FC = "MissingInFC"
 PROB_IN_FC = "ProbInFC"
 #:
 REMOVED = "Removed"
+#:
+DELETED = "Deleted"
 
 # below ones are for inherited transformations
 #:
