@@ -24,6 +24,27 @@ from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceM
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 
 
+# conversion from DIRAC resource type to GOCDB service type
+diracToGOC_conversion = {
+    # Computing elements
+    "CREAM": "CREAM-CE",  # deprecated
+    "HTCondorCE" :"org.opensciencegrid.htcondorce",
+    "ARC" : "ARC-CE",
+    "ARC6" : "ARC-CE",
+    "AREX" : "ARC-CE",
+    # FTS
+    "FTS3": "FTS",
+    "FTS": "FTS",
+    # Storage elements
+    "disk_srm": "srm",
+    "tape_srm": "srm.nearline",
+    "disk_root": "xrootd",
+    "tape_root": "wlcg.xrootd.tape",
+    "disk_https": "webdav",
+    "tape_https": "wlcg.webdav.tape",
+}
+
+
 class DowntimeCommand(Command):
     """
     Downtime "master" Command or removed DTs.
@@ -135,26 +156,24 @@ class DowntimeCommand(Command):
             else:
                 elementName = gocSite["Value"]
 
-        # The DIRAC se names mean nothing on the grid, but their hosts do mean.
+        # The DIRAC se names mean nothing on the grid, but their hosts and service types do mean.
         elif elementType == "StorageElement":
-            # for SRM and SRM only, we need to distinguish if it's tape or disk
-            # if it's not SRM, then gOCDBServiceType will be None (and we'll use them all)
             try:
                 se = StorageElement(elementName)
-                seOptions = se.options
-                seProtocols = set(se.localAccessProtocolList) | set(se.localWriteProtocolList)
+                se_protocols = list(se.localAccessProtocolList)
+                se_protocols.extend(x for x in se.localWriteProtocolList if x not in se_protocols)
             except AttributeError:  # Sometimes the SE can't be instantiated properly
                 self.log.error("Failure instantiating StorageElement object", elementName)
                 return S_ERROR("Failure instantiating StorageElement")
-            if "SEType" in seOptions and "srm" in seProtocols:
+            if "SEType" in se.options:
                 # Type should follow the convention TXDY
-                seType = seOptions["SEType"]
+                seType = se.options["SEType"]
                 diskSE = re.search("D[1-9]", seType) is not None
                 tapeSE = re.search("T[1-9]", seType) is not None
                 if tapeSE:
-                    gOCDBServiceType = "srm.nearline"
+                    gOCDBServiceType = diracToGOC_conversion[f"tape_{se_protocols[0]}"]  # Just take the first, for simplicity
                 elif diskSE:
-                    gOCDBServiceType = "srm"
+                    gOCDBServiceType = diracToGOC_conversion[f"disk_{se_protocols[0]}"]  # Just take the first, for simplicity
 
             res = getSEHosts(elementName)
             if not res["OK"]:
@@ -166,7 +185,7 @@ class DowntimeCommand(Command):
             elementName = seHosts  # in this case it will return a list, because there might be more than one host only
 
         elif elementType in ["FTS", "FTS3"]:
-            gOCDBServiceType = "FTS"
+            gOCDBServiceType = diracToGOC_conversion[elementType]
             # WARNING: this method presupposes that the server is an FTS3 type
             gocSite = getGOCFTSName(elementName)
             if not gocSite["OK"]:
@@ -182,10 +201,7 @@ class DowntimeCommand(Command):
             ceType = gConfig.getValue(
                 cfgPath("Resources", "Sites", siteName.split(".")[0], siteName, "CEs", elementName, "CEType")
             )
-            if ceType == "HTCondorCE":
-                gOCDBServiceType = "org.opensciencegrid.htcondorce"
-            elif ceType in ["ARC", "ARC6", "AREX"]:
-                gOCDBServiceType = "ARC-CE"
+            gOCDBServiceType = diracToGOC_conversion[ceType]
 
         return S_OK((element, elementName, hours, gOCDBServiceType))
 
