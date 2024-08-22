@@ -1631,10 +1631,16 @@ class TransformationDB(DB):
                     for fileDict in res["Value"]:
                         fileIDs.append(fileDict["FileID"])
                         if fileDict["Status"] == TransformationStatus.DELETED:
-                            res = self.__setTransformationFileStatus(list(fileIDs), TransformationStatus.UNUSED, connection=connection)
+                            res = self.__setTransformationFileStatus(
+                                list(fileIDs), TransformationStatus.UNUSED, connection=connection
+                            )
                             if not res["OK"]:
                                 return res
-                            if not (res := self.__setDataFileStatus(list(fileIDs), TransformationStatus.NEW, connection=connection)["OK"]:
+                            if not (
+                                res := self.__setDataFileStatus(
+                                    list(fileIDs), TransformationStatus.NEW, connection=connection
+                                )["OK"]
+                            ):
                                 return res
 
                     res = self.addFilesToTransformation(transID, lfns)
@@ -1777,13 +1783,14 @@ class TransformationDB(DB):
                 for fileDict in res["Value"]:
                     fileIDs.append(fileDict["FileID"])
                     if fileDict["Status"] == TransformationStatus.DELETED:
-                        res = self.__setTransformationFileStatus(list(fileIDs), TransformationStatus.UNUSED, connection=connection)
+                        res = self.__setTransformationFileStatus(
+                            list(fileIDs), TransformationStatus.UNUSED, connection=connection
+                        )
                         if not res["OK"]:
                             return res
                         res = self.__setDataFileStatus(list(fileIDs), TransformationStatus.NEW, connection=connection)
                         if not res["OK"]:
                             return res
-
 
                 res = self.addFilesToTransformation(transID, lfns)
                 if not res["OK"]:
