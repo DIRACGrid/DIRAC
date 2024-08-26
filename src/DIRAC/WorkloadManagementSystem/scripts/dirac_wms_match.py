@@ -79,10 +79,9 @@ def main():
         ce = queueInfo["CEName"]
         siteStatus = "Active" if site in siteMaskList else "InActive"
         ceStatus = siteStatus
-        if rssClient.rssFlag:
-            result = rssClient.getElementStatus(ce, "ComputingElement")
-            if result["OK"]:
-                ceStatus = result["Value"][ce]["all"]
+        result = rssClient.getElementStatus(ce, "ComputingElement")
+        if result["OK"]:
+            ceStatus = result["Value"][ce]["all"]
 
         result = matchQueue(jdl, queueInfo["ParametersDict"], fullMatch=fullMatch)
         if not result["OK"]:

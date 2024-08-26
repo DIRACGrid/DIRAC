@@ -24,7 +24,6 @@ testSite = "test1234.test.test"
 @pytest.fixture(name="stClient")
 def fixtureSiteStatus():
     siteStatus = SiteStatus()
-    siteStatus.rssFlag = True
     yield siteStatus
 
 

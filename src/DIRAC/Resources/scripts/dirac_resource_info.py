@@ -62,10 +62,8 @@ def main():
             siteNew = True
             for ce in resultQueues["Value"][site]:
                 ceStatus = siteStatus
-                if rssClient.rssFlag:
-                    result = rssClient.getElementStatus(ce, "ComputingElement")
-                    if result["OK"]:
-                        ceStatus = result["Value"][ce]["all"]
+                if (result := rssClient.getElementStatus(ce, "ComputingElement"))["OK"]:
+                    ceStatus = result["Value"][ce]["all"]
 
                 ceNew = True
                 for queue in resultQueues["Value"][site][ce]["Queues"]:

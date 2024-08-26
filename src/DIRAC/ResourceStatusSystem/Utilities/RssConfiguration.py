@@ -36,13 +36,6 @@ class RssConfiguration:
     def __init__(self):
         self.opsHelper = Operations()
 
-    def getConfigState(self, default="InActive"):
-        """
-        Gets from <pathToRSSConfiguration>/Config the value of State
-        """
-
-        return self.opsHelper.getValue(f"{_rssConfigPath}/Config/State", default)
-
     def getConfigCache(self, default=300):
         """
         Gets from <pathToRSSConfiguration>/Config the value of Cache

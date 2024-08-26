@@ -45,7 +45,6 @@ class DiracAdmin(API):
 
         self.scratchDir = gConfig.getValue(self.section + "/ScratchDir", "/tmp")
         self.currentDir = os.getcwd()
-        self.rssFlag = ResourceStatus().rssFlag
         self.sitestatus = SiteStatus()
 
     #############################################################################
@@ -157,22 +156,22 @@ class DiracAdmin(API):
 
     #############################################################################
     def allowSite(self, site, comment, printOutput=False):
-        """Adds the site to the site mask.
+        """Adds the site to the site mask. The site must be a valid DIRAC site name
 
         Example usage:
 
-          >>> gLogger.notice(diracAdmin.allowSite())
+          >>> gLogger.notice(diracAdmin.allowSite('LCG.CERN.ch'))
           {'OK': True, 'Value': }
 
+        :param str site: DIRAC site name
+        :param str comment: comment for the site status update
         :return: S_OK,S_ERROR
 
         """
-        result = self._checkSiteIsValid(site)
-        if not result["OK"]:
+        if not (result := self._checkSiteIsValid(site))["OK"]:
             return result
 
-        result = self.getSiteMask(status="Active")
-        if not result["OK"]:
+        if not (result := self.getSiteMask(status="Active"))["OK"]:
             return result
         siteMask = result["Value"]
         if site in siteMask:
@@ -180,11 +179,7 @@ class DiracAdmin(API):
                 gLogger.notice(f"Site {site} is already Active")
             return S_OK(f"Site {site} is already Active")
 
-        if self.rssFlag:
-            result = self.sitestatus.setSiteStatus(site, "Active", comment)
-        else:
-            result = WMSAdministratorClient().allowSite(site, comment)
-        if not result["OK"]:
+        if not (result := self.sitestatus.setSiteStatus(site, "Active", comment))["OK"]:
             return result
 
         if printOutput:
@@ -203,16 +198,10 @@ class DiracAdmin(API):
 
         :return: S_OK,S_ERROR
         """
-        result = self._checkSiteIsValid(site)
-        if not result["OK"]:
+        if not (result := self._checkSiteIsValid(site))["OK"]:
             return result
 
-        if self.rssFlag:
-            result = ResourceStatusClient().selectStatusElement("Site", "History", name=site)
-        else:
-            result = WMSAdministratorClient().getSiteMaskLogging(site)
-
-        if not result["OK"]:
+        if not (result := ResourceStatusClient().selectStatusElement("Site", "History", name=site))["OK"]:
             return result
 
         if printOutput:
@@ -250,8 +239,7 @@ class DiracAdmin(API):
         :return: S_OK,S_ERROR
 
         """
-        result = self._checkSiteIsValid(site)
-        if not result["OK"]:
+        if not (result := self._checkSiteIsValid(site))["OK"]:
             return result
 
         mask = self.getSiteMask(status="Banned")
@@ -263,11 +251,7 @@ class DiracAdmin(API):
                 gLogger.notice(f"Site {site} is already Banned")
             return S_OK(f"Site {site} is already Banned")
 
-        if self.rssFlag:
-            result = self.sitestatus.setSiteStatus(site, "Banned", comment)
-        else:
-            result = WMSAdministratorClient().banSite(site, comment)
-        if not result["OK"]:
+        if not (result := self.sitestatus.setSiteStatus(site, "Banned", comment))["OK"]:
             return result
 
         if printOutput:

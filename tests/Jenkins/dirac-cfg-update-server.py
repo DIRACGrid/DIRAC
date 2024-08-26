@@ -363,7 +363,6 @@ if not res["OK"]:
     print(res["Message"])
     sys.exit(1)
 csAPI.setOption("Operations/Defaults/ResourceStatus/Config/Cache", "600")
-csAPI.setOption("Operations/Defaults/ResourceStatus/Config/State", "Active")
 csAPI.setOption("Operations/Defaults/ResourceStatus/Config/FromAddress", "fstagni@cern.ch")
 csAPI.setOption("Operations/Defaults/ResourceStatus/Config/notificationGroups", "ShiftersGroup")
 res = csAPI.createSection("Operations/Defaults/ResourceStatus/Config/StatusTypes")

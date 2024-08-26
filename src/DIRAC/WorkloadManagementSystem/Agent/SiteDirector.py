@@ -72,9 +72,7 @@ class SiteDirector(AgentModule):
 
         self.siteClient = None
         self.rssClient = None
-        self.pilotAgentsDB = None
         self.matcherClient = None
-        self.rssFlag = None
 
         # self.failedQueueCycleFactor is the number of cycles a queue has to wait before getting pilots again
         self.failedQueueCycleFactor = 10
@@ -137,7 +135,6 @@ class SiteDirector(AgentModule):
 
         # Flags
         self.sendAccounting = self.am_getOption("SendPilotAccounting", self.sendAccounting)
-        self.rssFlag = self.rssClient.rssFlag
 
         # Check whether to send to Monitoring or Accounting or both
         monitoringOption = Operations().getMonitoringBackends(monitoringType="PilotSubmissionMonitoring")
@@ -216,16 +213,15 @@ class SiteDirector(AgentModule):
 
         # Get list of usable CEs
         ceMaskList = []
-        if self.rssFlag:
-            ceNamesList = [queue["CEName"] for queue in self.queueDict.values()]
-            result = self.rssClient.getElementStatus(ceNamesList, "ComputingElement", vO=self.vo)
-            if not result["OK"]:
-                self.log.error("Can not get the status of computing elements: ", result["Message"])
-                return result
-            # Try to get CEs which have been probed and those unprobed (vO='all').
-            ceMaskList = [
-                ceName for ceName in result["Value"] if result["Value"][ceName]["all"] in ("Active", "Degraded")
-            ]
+        ceNamesList = [queue["CEName"] for queue in self.queueDict.values()]
+        result = self.rssClient.getElementStatus(ceNamesList, "ComputingElement", vO=self.vo)
+        if not result["OK"]:
+            self.log.error("Can not get the status of computing elements: ", result["Message"])
+            return result
+        # Try to get CEs which have been probed and those unprobed (vO='all').
+        ceMaskList = [
+            ceName for ceName in result["Value"] if result["Value"][ceName]["all"] in ("Active", "Degraded")
+        ]
 
         # Filter the unusable queues
         for queueName in list(self.queueDict.keys()):
@@ -237,7 +233,7 @@ class SiteDirector(AgentModule):
                 continue
 
             # Check the status of the CE (only for RSS=Active)
-            if not self.rssFlag or (self.rssFlag and ce in ceMaskList):
+            if ce not in ceMaskList:
                 continue
 
             self.log.warn("Queue not considered because not usable:", queueName)
