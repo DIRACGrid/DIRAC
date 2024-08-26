@@ -299,6 +299,9 @@ fullInstallDIRAC() {
   echo "==> Restarting ResourceStatus ResourceStatus"
   dirac-restart-component ResourceStatus ResourceStatus ${DEBUG}
 
+  echo "==> Restarting ResourceStatus SiteStatus"
+  dirac-restart-component ResourceStatus SiteStatus ${DEBUG}
+
   echo "==> Restarting ResourceStatus ResourceManagement"
   dirac-restart-component ResourceStatus ResourceManagement ${DEBUG}
 
