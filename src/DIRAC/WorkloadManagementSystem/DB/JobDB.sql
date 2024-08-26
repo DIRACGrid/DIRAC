@@ -110,27 +110,6 @@ CREATE TABLE `AtticJobParameters` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS `SiteMask`;
-CREATE TABLE `SiteMask` (
-  `Site` VARCHAR(64) NOT NULL,
-  `Status` VARCHAR(64) NOT NULL,
-  `LastUpdateTime` DATETIME NOT NULL,
-  `Author` VARCHAR(255) NOT NULL,
-  `Comment` TEXT NOT NULL,
-  PRIMARY KEY (`Site`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
-DROP TABLE IF EXISTS `SiteMaskLogging`;
-CREATE TABLE `SiteMaskLogging` (
-  `Site` VARCHAR(64) NOT NULL,
-  `Status` VARCHAR(64) NOT NULL,
-  `UpdateTime` DATETIME NOT NULL,
-  `Author` VARCHAR(255) NOT NULL,
-  `Comment` TEXT NOT NULL,
-  PRIMARY KEY (`Site`,`UpdateTime`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `HeartBeatLoggingInfo`;
 CREATE TABLE `HeartBeatLoggingInfo` (
   `JobID` INT(11) UNSIGNED NOT NULL,

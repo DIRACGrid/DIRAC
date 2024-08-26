@@ -219,9 +219,7 @@ class SiteDirector(AgentModule):
             self.log.error("Can not get the status of computing elements: ", result["Message"])
             return result
         # Try to get CEs which have been probed and those unprobed (vO='all').
-        ceMaskList = [
-            ceName for ceName in result["Value"] if result["Value"][ceName]["all"] in ("Active", "Degraded")
-        ]
+        ceMaskList = [ceName for ceName in result["Value"] if result["Value"][ceName]["all"] in ("Active", "Degraded")]
 
         # Filter the unusable queues
         for queueName in list(self.queueDict.keys()):

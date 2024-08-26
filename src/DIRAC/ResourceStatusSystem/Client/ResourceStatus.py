@@ -287,7 +287,6 @@ class ResourceStatus(metaclass=DIRACSingleton):
 
         return res
 
-
     def isStorageElementAlwaysBanned(self, seName, statusType):
         """Checks if the AlwaysBanned policy is applied to the SE given as parameter
 
