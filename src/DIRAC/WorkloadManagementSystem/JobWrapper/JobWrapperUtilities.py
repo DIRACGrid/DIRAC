@@ -38,7 +38,7 @@ def killJobWrapper(job: JobWrapper) -> int:
     return 1
 
 
-def rescheduleFailedJob(jobID, minorStatus, jobReport: JobReport):
+def rescheduleFailedJob(jobID: str, minorStatus: str, jobReport: JobReport):
     """Function for rescheduling a jobID, setting a minorStatus"""
 
     rescheduleResult = JobStatus.RESCHEDULED

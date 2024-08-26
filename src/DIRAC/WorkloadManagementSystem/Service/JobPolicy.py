@@ -76,7 +76,6 @@ class JobPolicy:
         self.userName = user
         self.userGroup = userGroup
         self.userProperties = getPropertiesForGroup(userGroup, [])
-
         self.jobDB = None
         self.allInfo = allInfo
         self._permissions = {}

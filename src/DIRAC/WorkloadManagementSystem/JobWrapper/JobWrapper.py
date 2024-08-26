@@ -63,7 +63,7 @@ class JobWrapper:
     def __init__(self, jobID: int | None = None, jobReport: JobReport | None = None):
         """Standard constructor"""
         self.initialTiming = os.times()
-        self.section = "/Systems/WorkloadManagement/JobWrapper"
+        self.section = os.path.join(getSystemSection("WorkloadManagement/JobWrapper"), "JobWrapper")
         # Create the accounting report
         self.accountingReport = AccountingJob()
         # Initialize for accounting
@@ -87,6 +87,19 @@ class JobWrapper:
 
         # self.root is the path the Wrapper is running at
         self.root = Path.cwd()
+        # `self.jobIDPath` represents the directory path where the job is being executed.
+        # By default, it is set to `self.root`, which corresponds to the current directory,
+        # since the `jobID` is not yet assigned. In this scenario, the job runs directly in the current directory.
+        #
+        # This default behavior is particularly useful when the JobWrapper is initialized without a `jobID`,
+        # such as when it is transferred to a remote computing resource for execution. In these cases,
+        # the JobWrapper on the remote resource is initialized without a `jobID` because the current directory
+        # already corresponds to the job's directory, which was set up on the resource where the JobWrapper
+        # was originally created.
+        #
+        # However, if a `jobID` is provided (normal use case), `self.jobIDPath` is updated to `self.root/jobID`.
+        # This indicates that the job will be executed in a specific subdirectory named after the job ID,
+        # rather than directly in the root directory.
         self.jobIDPath = self.root
         result = getCurrentVersion()
         if result["OK"]:
@@ -379,7 +392,6 @@ class JobWrapper:
 
         if not (result := self.jobExecutionCoordinator.preProcess(command, exeEnv))["OK"]:
             self.log.error("Failed to pre-process the job", result["Message"])
-            return result
 
         return result
 
@@ -576,7 +588,6 @@ class JobWrapper:
 
         if not (result := self.jobExecutionCoordinator.postProcess())["OK"]:
             self.log.error("Failed to post-process the job", result["Message"])
-            return result
 
         return result
 
