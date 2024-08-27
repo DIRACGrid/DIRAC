@@ -1,4 +1,6 @@
-import os
+import errno
+from unittest import mock
+
 import pytest
 import tempfile
 import errno
@@ -180,6 +182,20 @@ def monkeypatchForAllTest(monkeypatch):
         "_FTS3Job__fetchSpaceToken",
         lambda _self, _seName, _vo: S_OK(),
     )
+
+    def mock_init(self, useProxy=False, vo=None):
+        self.proxy = False
+        self.proxy = useProxy
+        self.resourceStatus = mock.MagicMock()
+        self.vo = vo
+        self.remoteProtocolSections = []
+        self.localProtocolSections = []
+        self.name = ""
+        self.options = {}
+        self.protocols = {}
+        self.storages = {}
+
+    monkeypatch.setattr(DIRAC.Resources.Storage.StorageFactory.StorageFactory, "__init__", mock_init)
 
 
 def generateFTS3Job(sourceSE, targetSE, lfns, multiHopSE=None):

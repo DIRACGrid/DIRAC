@@ -2,18 +2,17 @@
 
 import os
 import tempfile
-import pytest
 
+import mock
+import pytest
 from diraccfg import CFG
 
 import DIRAC
-
-from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-
-from DIRAC.Resources.Storage.StorageBase import StorageBase
-from DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin import DefaultFTS3Plugin
 from DIRAC import S_OK
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
+from DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin import DefaultFTS3Plugin
+from DIRAC.Resources.Storage.StorageBase import StorageBase
 
 # pylint: disable=redefined-outer-name
 
@@ -318,6 +317,21 @@ def fts3Plugin(monkeypatch):
     monkeypatch.setattr(
         DIRAC.Resources.Storage.StorageElement.StorageElementItem, "addAccountingOperation", lambda: None
     )
+
+    def mock_init(self, useProxy=False, vo=None):
+        self.proxy = False
+        self.proxy = useProxy
+        self.resourceStatus = mock.MagicMock()
+        self.vo = vo
+        self.remoteProtocolSections = []
+        self.localProtocolSections = []
+        self.name = ""
+        self.options = {}
+        self.protocols = {}
+        self.storages = {}
+
+    monkeypatch.setattr(DIRAC.Resources.Storage.StorageFactory.StorageFactory, "__init__", mock_init)
+
     fts3Plugin = DefaultFTS3Plugin()
 
     return fts3Plugin
@@ -329,8 +343,10 @@ def test_multiHop_specificLink(fts3Plugin):
     assert hopName == "CERN-RAW-CNAF-DST"
 
 
-def test_multiHop_specificSrc_baseSEDst(fts3Plugin):
+def test_multiHop_specificSrc_baseSEDst(mocker, fts3Plugin):
     """When we have a specific source and a baseSE dest"""
+    # mocker.patch("DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin.StorageElement", return_value=mock.MagicMock())
+
     hopName = fts3Plugin.findMultiHopSEToCoverUpForWLCGFailure("CERN-RAW", "CNAF_MC-DST")
     assert hopName == "CERN-RAW-CNAF-Disk"
 
