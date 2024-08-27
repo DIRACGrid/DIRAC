@@ -1,5 +1,6 @@
 """ This is the StorageElement module. It implements The StorageElementItem as well as the caching system
 """
+
 # # custom duty
 
 
@@ -257,11 +258,13 @@ class StorageElementItem:
             self.localStageProtocolList = (
                 stageProto
                 if stageProto
-                else accessProto
-                if accessProto
-                else globalStageProto
-                if globalStageProto
-                else self.localAccessProtocolList
+                else (
+                    accessProto
+                    if accessProto
+                    else globalStageProto
+                    if globalStageProto
+                    else self.localAccessProtocolList
+                )
             )
             self.log.debug(f"localStageProtocolList {self.localStageProtocolList}")
 
@@ -420,6 +423,13 @@ class StorageElementItem:
         :returns: S_OK with dict (keys: Total, Free, SpaceReservation)
         """
         log = self.log.getSubLogger("getOccupancy")
+
+        res = self.isValid(operation="getOccupancy")
+        if not res["OK"]:
+            return res
+        else:
+            if not self.valid:
+                return S_ERROR(self.errorReason)
 
         if "occupancyLFN" not in kwargs:
             occupancyLFN = self.options.get("OccupancyLFN")

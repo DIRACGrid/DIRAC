@@ -205,6 +205,7 @@ class FTS3Job(JSerializable):
             # monitoring calls
             if file_state in FTS3File.FTS_FINAL_STATES:
                 filesStatus[file_id]["ftsGUID"] = None
+                # TODO: update status to defunct if not recoverable here ?
 
             # If the file is not in a final state, but the job is, we return an error
             # FTS can have inconsistencies where the FTS Job is in a final state
