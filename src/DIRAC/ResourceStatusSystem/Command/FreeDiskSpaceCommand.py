@@ -9,7 +9,7 @@
 """
 import errno
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
@@ -204,7 +204,7 @@ class FreeDiskSpaceCommand(Command):
             toDelete = []
 
             res = self.rmClient.selectSpaceTokenOccupancyCache(
-                meta={"older": ["LastCheckTime", datetime.now(timezone.utc) - timedelta(hours=6)]}
+                meta={"older": ["LastCheckTime", datetime.utcnow() - timedelta(hours=6)]}
             )
             if not res["OK"]:
                 return res
