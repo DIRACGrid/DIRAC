@@ -170,9 +170,9 @@ class SiteStatus(metaclass=DIRACSingleton):
         siteStatusDictRes = self.getSiteStatuses(siteNames)
         if not siteStatusDictRes["OK"]:
             return siteStatusDictRes
-        siteStatusList = [x[0] for x in siteStatusDictRes["Value"].items() if x[1] in ["Active", "Degraded"]]
-
-        return S_OK(siteStatusList)
+        if not siteStatusDictRes["Value"]:
+            return S_OK([])
+        return S_OK([x[0] for x in siteStatusDictRes["Value"].items() if x[1] in ["Active", "Degraded"]])
 
     def getSites(self, siteState="Active"):
         """
@@ -203,6 +203,8 @@ class SiteStatus(metaclass=DIRACSingleton):
         siteStatusDictRes = self.getSiteStatuses()
         if not siteStatusDictRes["OK"]:
             return siteStatusDictRes
+        if not siteStatusDictRes["Value"]:
+            return S_OK([])
 
         if siteState.capitalize() == "All":
             # if no siteState is set return everything
