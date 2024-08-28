@@ -7,24 +7,23 @@ The status is kept in the RSSCache object, which is a small wrapper on top of Di
 """
 
 import math
-from time import sleep
 from datetime import datetime, timedelta
+from time import sleep
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import getPoliciesThatApply
 from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import getPoliciesThatApply
 
 
 class ResourceStatus(metaclass=DIRACSingleton):
     """
-    ResourceStatus helper that connects to CS if RSS flag is not Active.
-    It keeps the connection to the db / server as an object member, to avoid creating a new
-    one massively.
+    ResourceStatus helper keeps the connection to the db / server as an object member,
+    to avoid creating a new connection every time we need to do one.
     """
 
     def __init__(self):

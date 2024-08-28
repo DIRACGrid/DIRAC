@@ -1,20 +1,18 @@
 """ test StoragElement
 """
+import itertools
 import os
 import tempfile
-from unittest import mock
 import unittest
-import itertools
+from unittest import mock
 
 from diraccfg import CFG
 
 from DIRAC import S_OK
-from DIRAC.Resources.Storage.StorageElement import StorageElementItem
-from DIRAC.Resources.Storage.StorageBase import StorageBase
-
-
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
+from DIRAC.Resources.Storage.StorageBase import StorageBase
+from DIRAC.Resources.Storage.StorageElement import StorageElementItem
 
 
 class fake_SRM2Plugin(StorageBase):

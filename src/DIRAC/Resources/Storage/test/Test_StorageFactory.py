@@ -1,15 +1,8 @@
-import os
-import tempfile
 import pytest
 
-
-from diraccfg import CFG
 import DIRAC
-from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC import S_OK
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
-
 from DIRAC.tests.Utilities.utils import generateDIRACConfig
 
 CFG_CONTENT = """

@@ -7,17 +7,14 @@ The status is kept in the RSSCache object, which is a small wrapper on top of Di
 
 import errno
 import math
-from time import sleep
 from datetime import datetime, timedelta
+from time import sleep
 
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
-from DIRAC.Core.Utilities import DErrno
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
+from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 

@@ -2,25 +2,14 @@ import errno
 from unittest import mock
 
 import pytest
-import tempfile
-import errno
+
 import DIRAC
-
-from DIRAC.tests.Utilities.utils import generateDIRACConfig
-
-from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from diraccfg import CFG
-from DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin import DefaultFTS3Plugin
 from DIRAC import S_OK
 from DIRAC.Core.Utilities.DErrno import cmpError
-
-from DIRAC.Resources.Storage.StorageBase import StorageBase
-
-from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
-from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation
-
+from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
+from DIRAC.Resources.Storage.StorageBase import StorageBase
+from DIRAC.tests.Utilities.utils import generateDIRACConfig
 
 DIRAC.gLogger.setLevel("DEBUG")
 # pylint: disable=redefined-outer-name

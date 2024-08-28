@@ -2,8 +2,8 @@
 
 import os
 import tempfile
+from unittest import mock
 
-import mock
 import pytest
 from diraccfg import CFG
 
@@ -343,10 +343,8 @@ def test_multiHop_specificLink(fts3Plugin):
     assert hopName == "CERN-RAW-CNAF-DST"
 
 
-def test_multiHop_specificSrc_baseSEDst(mocker, fts3Plugin):
+def test_multiHop_specificSrc_baseSEDst(fts3Plugin):
     """When we have a specific source and a baseSE dest"""
-    # mocker.patch("DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin.StorageElement", return_value=mock.MagicMock())
-
     hopName = fts3Plugin.findMultiHopSEToCoverUpForWLCGFailure("CERN-RAW", "CNAF_MC-DST")
     assert hopName == "CERN-RAW-CNAF-Disk"
 
