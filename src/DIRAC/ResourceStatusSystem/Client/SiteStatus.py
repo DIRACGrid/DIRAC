@@ -282,9 +282,9 @@ class SiteStatus(metaclass=DIRACSingleton):
 
         else:
             if status in ["Active", "Degraded"]:
-                result = WMSAdministratorClient().allowSite()
+                result = WMSAdministratorClient().allowSite(site, comment)
             else:
-                result = WMSAdministratorClient().banSite()
+                result = WMSAdministratorClient().banSite(site, comment)
 
         return result
 
