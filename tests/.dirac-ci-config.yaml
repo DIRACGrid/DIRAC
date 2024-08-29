@@ -1,5 +1,6 @@
 config:
   DIRAC_CI_SETUP_SCRIPT: DIRAC/tests/Jenkins/dirac_ci.sh
+  CVMFS_DIR: /cvmfs
   CLIENT_UPLOAD_BASE64: SSBsaWtlIHBpenphIQo=
   CLIENT_UPLOAD_LFN: LFN:/vo/test_lfn.txt
   CLIENT_UPLOAD_FILE: test_lfn.txt
