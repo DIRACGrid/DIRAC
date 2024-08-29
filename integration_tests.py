@@ -779,9 +779,7 @@ def _make_env(flags):
     env["MYSQL_VER"] = flags.pop("MYSQL_VER", DEFAULT_MYSQL_VER)
     env["ES_VER"] = flags.pop("ES_VER", DEFAULT_ES_VER)
     env["IAM_VER"] = flags.pop("IAM_VER", DEFAULT_IAM_VER)
-    if Path("/cvmfs").is_dir():
-        env["CVMFS_DIR"] = "/cvmfs"
-    else:
+    if "CVMFS_DIR" not in env or not Path(env["CVMFS_DIR"]).is_dir():
         # create a directory in tmp
         with tempfile.TemporaryDirectory() as tmpdir:
             env["CVMFS_DIR"] = tmpdir
@@ -1162,7 +1160,7 @@ def _make_config(modules, flags, release_var, editable):
         config["PIP_INSTALL_EXTRA_ARGS"] = "-e"
 
     required_feature_flags = []
-    for module_name, module_ci_config in _load_module_configs(modules).items():
+    for _, module_ci_config in _load_module_configs(modules).items():
         config |= module_ci_config["config"]
         required_feature_flags += module_ci_config.get("required-feature-flags", [])
     config["DIRAC_CI_SETUP_SCRIPT"] = "/home/dirac/LocalRepo/TestCode/" + config["DIRAC_CI_SETUP_SCRIPT"]
