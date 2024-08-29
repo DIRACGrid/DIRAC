@@ -727,7 +727,7 @@ class TransformationDB(DB):
         connection = res["Value"]["Connection"]
         transID = res["Value"]["TransformationID"]
         selection["TransformationID"] = transID
-        if field not in self.TRANSFILEPARAMS:
+        if field not in self.TRANSFILEPARAMS + ["date(LastUpdate)", "date(InsertedTime)"]:
             return S_ERROR("Supplied field not in TransformationFiles table")
         res = self.getCounters("TransformationFiles", ["TransformationID", field], selection)
         if not res["OK"]:
