@@ -180,7 +180,7 @@ def _checkFields(inFields, inValues):
     return S_OK()
 
 
-def _quotedList(fieldList=None):
+def _quotedList(fieldList=None, allowDate=False):
     """
     Quote a list of MySQL Field Names with "`"
     Return a comma separated list of quoted Field Names
@@ -192,7 +192,11 @@ def _quotedList(fieldList=None):
     quotedFields = []
     try:
         for field in fieldList:
-            quotedFields.append(f"`{field.replace('`', '')}`")
+            if allowDate and field.startswith("date(") and field.endswith(")"):
+                field = field[len("date(") : -len(")")]
+                quotedFields.append(f"date(`{field.replace('`', '')}`)")
+            else:
+                quotedFields.append(f"`{field.replace('`', '')}`")
     except Exception:
         return None
     if not quotedFields:
@@ -1115,7 +1119,7 @@ class MySQL:
             # self.log.debug('getCounters:', error)
             return S_ERROR(DErrno.EMYSQL, error)
 
-        attrNames = _quotedList(attrList)
+        attrNames = _quotedList(attrList, allowDate=True)
         if attrNames is None:
             error = "Invalid updateFields argument"
             # self.log.debug('getCounters:', error)
