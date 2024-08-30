@@ -6,13 +6,11 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 from DIRAC import S_ERROR, S_OK, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 if TYPE_CHECKING:
-    from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
     from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
     from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 
@@ -22,7 +20,6 @@ class JobStatusUtility:
         self,
         jobDB: JobDB = None,
         jobLoggingDB: JobLoggingDB = None,
-        elasticJobParametersDB: ElasticJobParametersDB = None,
     ) -> None:
         """
         :raises: RuntimeError, AttributeError
@@ -32,7 +29,6 @@ class JobStatusUtility:
 
         self.jobDB = jobDB
         self.jobLoggingDB = jobLoggingDB
-        self.elasticJobParametersDB = elasticJobParametersDB
 
         if not self.jobDB:
             try:
@@ -53,14 +49,6 @@ class JobStatusUtility:
             except RuntimeError:
                 self.log.error("Can't connect to the JobLoggingDB")
                 raise
-
-        if not self.elasticJobParametersDB:
-            result = ObjectLoader().loadObject(
-                "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
-            )
-            if not result["OK"]:
-                raise AttributeError(result["Message"])
-            self.elasticJobParametersDB = result["Value"](parentLogger=self.log)
 
     def setJobStatus(
         self, jobID: int, status=None, minorStatus=None, appStatus=None, source=None, dateTime=None, force=False
@@ -157,10 +145,7 @@ class JobStatusUtility:
             result = self.jobDB.setJobAttributes(jobID, attrNames, attrValues, update=True, force=True)
             if not result["OK"]:
                 return result
-            if self.elasticJobParametersDB:
-                result = self.elasticJobParametersDB.setJobParameter(int(jobID), "Status", status)
-                if not result["OK"]:
-                    return result
+
         # Update start and end time if needed
         if not endTime and newEndTime:
             log.debug("Set job end time", endTime)

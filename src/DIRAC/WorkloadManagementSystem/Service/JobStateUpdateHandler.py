@@ -9,7 +9,8 @@
 
 import time
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -37,16 +38,18 @@ class JobStateUpdateHandlerMixin:
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp}")
 
-        result = ObjectLoader().loadObject(
-            "WorkloadManagementSystem.DB.ElasticJobParametersDB", "ElasticJobParametersDB"
-        )
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobParametersDB", "JobParametersDB")
         if not result["OK"]:
             return result
         cls.elasticJobParametersDB = result["Value"]()
 
-        cls.jsu = JobStatusUtility(cls.jobDB, cls.jobLoggingDB, cls.elasticJobParametersDB)
+        cls.jsu = JobStatusUtility(cls.jobDB, cls.jobLoggingDB)
 
         return S_OK()
+
+    def initializeRequest(self):
+        credDict = self.getRemoteCredentials()
+        self.vo = credDict.get("VO", Registry.getVOForGroup(credDict["group"]))
 
     ###########################################################################
     types_updateJobFromStager = [[str, int], str]
@@ -154,20 +157,17 @@ class JobStateUpdateHandlerMixin:
     ###########################################################################
     types_setJobParameter = [[str, int], str, str]
 
-    @classmethod
-    def export_setJobParameter(cls, jobID, name, value):
+    def export_setJobParameter(self, jobID, name, value):
         """Set arbitrary parameter specified by name/value pair
         for job specified by its JobId
         """
-
-        return cls.elasticJobParametersDB.setJobParameter(int(jobID), name, value)  # pylint: disable=no-member
+        return self.elasticJobParametersDB.setJobParameter(int(jobID), name, value, vo=self.vo)
 
     ###########################################################################
     types_setJobsParameter = [dict]
 
-    @classmethod
     @ignoreEncodeWarning
-    def export_setJobsParameter(cls, jobsParameterDict):
+    def export_setJobsParameter(self, jobsParameterDict):
         """Set arbitrary parameter specified by name/value pair
         for job specified by its JobId
         """
@@ -175,11 +175,11 @@ class JobStateUpdateHandlerMixin:
         message = ""
 
         for jobID in jobsParameterDict:
-            res = cls.elasticJobParametersDB.setJobParameter(
-                int(jobID), str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1])
+            res = self.elasticJobParametersDB.setJobParameter(
+                int(jobID), key=str(jobsParameterDict[jobID][0]), value=str(jobsParameterDict[jobID][1]), vo=self.vo
             )
             if not res["OK"]:
-                cls.log.error("Failed to add Job Parameter to elasticJobParametersDB", res["Message"])
+                self.log.error("Failed to add Job Parameter to elasticJobParametersDB", res["Message"])
                 failed = True
                 message = res["Message"]
 
@@ -190,36 +190,34 @@ class JobStateUpdateHandlerMixin:
     ###########################################################################
     types_setJobParameters = [[str, int], list]
 
-    @classmethod
     @ignoreEncodeWarning
-    def export_setJobParameters(cls, jobID, parameters):
+    def export_setJobParameters(self, jobID, parameters):
         """Set arbitrary parameters specified by a list of name/value pairs
         for job specified by its JobId
         """
-        result = cls.elasticJobParametersDB.setJobParameters(int(jobID), parameters)
+        result = self.elasticJobParametersDB.setJobParameters(int(jobID), parameters=parameters, vo=self.vo)
         if not result["OK"]:
-            cls.log.error("Failed to add Job Parameters to ElasticJobParametersDB", result["Message"])
+            self.log.error("Failed to add Job Parameters to JobParametersDB", result["Message"])
 
         return result
 
     ###########################################################################
     types_sendHeartBeat = [[str, int], dict, dict]
 
-    @classmethod
-    def export_sendHeartBeat(cls, jobID, dynamicData, staticData):
+    def export_sendHeartBeat(self, jobID, dynamicData, staticData):
         """Send a heart beat sign of life for a job jobID"""
 
-        result = cls.jobDB.setHeartBeatData(int(jobID), dynamicData)
+        result = self.jobDB.setHeartBeatData(int(jobID), dynamicData)
         if not result["OK"]:
-            cls.log.warn("Failed to set the heart beat data", f"for job {jobID} ")
+            self.log.warn("Failed to set the heart beat data", f"for job {jobID} ")
 
         for key, value in staticData.items():
-            result = cls.elasticJobParametersDB.setJobParameter(int(jobID), key, value)
+            result = self.elasticJobParametersDB.setJobParameter(int(jobID), key, value, vo=self.vo)
             if not result["OK"]:
-                cls.log.error("Failed to add Job Parameters to ElasticSearch", result["Message"])
+                self.log.error("Failed to add Job Parameters to ElasticSearch", result["Message"])
 
         # Restore the Running status if necessary
-        result = cls.jobDB.getJobAttributes(jobID, ["Status"])
+        result = self.jobDB.getJobAttributes(jobID, ["Status"])
         if not result["OK"]:
             return result
 
@@ -228,21 +226,24 @@ class JobStateUpdateHandlerMixin:
 
         status = result["Value"]["Status"]
         if status in (JobStatus.STALLED, JobStatus.MATCHED):
-            result = cls.jobDB.setJobAttribute(jobID=jobID, attrName="Status", attrValue=JobStatus.RUNNING, update=True)
+            result = self.jobDB.setJobAttribute(
+                jobID=jobID, attrName="Status", attrValue=JobStatus.RUNNING, update=True
+            )
             if not result["OK"]:
-                cls.log.warn("Failed to restore the job status to Running")
+                self.log.warn("Failed to restore the job status to Running")
 
         jobMessageDict = {}
-        result = cls.jobDB.getJobCommand(int(jobID))
+        result = self.jobDB.getJobCommand(int(jobID))
         if result["OK"]:
             jobMessageDict = result["Value"]
 
         if jobMessageDict:
             for key in jobMessageDict:
-                result = cls.jobDB.setJobCommandStatus(int(jobID), key, "Sent")
+                result = self.jobDB.setJobCommandStatus(int(jobID), key, "Sent")
 
         return S_OK(jobMessageDict)
 
 
 class JobStateUpdateHandler(JobStateUpdateHandlerMixin, RequestHandler):
-    pass
+    def initialize(self):
+        return self.initializeRequest()

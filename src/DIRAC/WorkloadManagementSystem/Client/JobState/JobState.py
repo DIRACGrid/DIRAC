@@ -1,13 +1,17 @@
 """ This object is a wrapper for setting and getting jobs states
 """
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, singleValueDefFields, multiValueDefFields
-from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_GET_INFO, RIGHT_RESCHEDULE
-from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_RESET, RIGHT_CHANGE_STATUS
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, multiValueDefFields, singleValueDefFields
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
+    RIGHT_CHANGE_STATUS,
+    RIGHT_GET_INFO,
+    RIGHT_RESCHEDULE,
+    RIGHT_RESET,
+)
 from DIRAC.WorkloadManagementSystem.Utilities.JobStatusUtility import JobStatusUtility
 
 
@@ -96,7 +100,7 @@ class JobState:
             return S_OK(False)
         gLogger.verbose(f"Job {self.__jid}: About to execute trace. Current state {initialState}")
 
-        data = {"att": [], "jobp": [], "optp": []}
+        data = {"att": [], "optp": []}
         for key in cache:
             for dk in data:
                 if key.find(f"{dk}.") == 0:
@@ -108,11 +112,6 @@ class JobState:
             result = self.__retryFunction(
                 5, JobState.__db.jobDB.setJobAttributes, (self.__jid, attN, attV), {"update": True}
             )
-            if not result["OK"]:
-                return result
-
-        if data["jobp"]:
-            result = self.__retryFunction(5, JobState.__db.jobDB.setJobParameters, (self.__jid, data["jobp"]))
             if not result["OK"]:
                 return result
 

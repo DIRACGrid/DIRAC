@@ -7,7 +7,7 @@ import random
 import string
 import time
 
-from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
+from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import JobParametersDB
 
 
 def random_generator(size=6, chars=string.ascii_letters):
@@ -16,7 +16,7 @@ def random_generator(size=6, chars=string.ascii_letters):
 
 class Transaction:
     def __init__(self):
-        self.elasticJobParametersDB = ElasticJobParametersDB()
+        self.elasticJobParametersDB = JobParametersDB()
         self.custom_timers = {}
 
     def run(self):

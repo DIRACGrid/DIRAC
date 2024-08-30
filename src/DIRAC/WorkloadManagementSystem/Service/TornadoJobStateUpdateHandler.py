@@ -12,4 +12,5 @@ from DIRAC.WorkloadManagementSystem.Service.JobStateUpdateHandler import JobStat
 
 
 class TornadoJobStateUpdateHandler(JobStateUpdateHandlerMixin, TornadoService):
-    pass
+    def initializeRequest(self):
+        return JobStateUpdateHandlerMixin.initializeRequest(self)

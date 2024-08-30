@@ -298,14 +298,14 @@ class ElasticSearchDB:
             return S_ERROR(re)
 
     @ifConnected
-    def getDocs(self, indexFunc, docIDs: list[str]) -> list[dict]:
+    def getDocs(self, indexFunc, docIDs: list[str], vo: str) -> list[dict]:
         """Efficiently retrieve many documents from an index.
 
         :param index: name of the index
         :param docIDs: document IDs
         """
         sLog.debug(f"Retrieving documents {docIDs}")
-        docs = [{"_index": indexFunc(docID), "_id": docID} for docID in docIDs]
+        docs = [{"_index": indexFunc(docID, vo), "_id": docID} for docID in docIDs]
         try:
             response = self.client.mget({"docs": docs})
         except RequestError as re:

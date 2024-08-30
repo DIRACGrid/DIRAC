@@ -6,12 +6,12 @@ for query processing with ElasticSearch.
 import random
 import time
 
-from DIRAC.WorkloadManagementSystem.DB.ElasticJobParametersDB import ElasticJobParametersDB
+from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import JobParametersDB
 
 
 class Transaction:
     def __init__(self):
-        self.elasticJobParametersDB = ElasticJobParametersDB()
+        self.elasticJobParametersDB = JobParametersDB()
         self.custom_timers = {}
 
     def run(self):

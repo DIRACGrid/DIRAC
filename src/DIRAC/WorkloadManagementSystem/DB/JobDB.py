@@ -19,6 +19,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteTier
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.DErrno import EWMSJMAN, EWMSSUBM, cmpError
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
@@ -264,6 +265,7 @@ class JobDB(DB):
         return S_OK(result["Value"].get(attribute))
 
     #############################################################################
+    @deprecated("Use JobParametersDB instead")
     def getJobParameter(self, jobID, parameter):
         """Get the given parameter of a job specified by its jobID"""
 
@@ -669,50 +671,6 @@ class JobDB(DB):
         return self._update(req)
 
     #############################################################################
-    def setJobParameter(self, jobID, key, value):
-        """Set a parameter specified by name,value pair for the job JobID"""
-
-        ret = self._escapeString(key)
-        if not ret["OK"]:
-            return ret
-        e_key = ret["Value"]
-        ret = self._escapeString(value)
-        if not ret["OK"]:
-            return ret
-        e_value = ret["Value"]
-
-        cmd = "REPLACE JobParameters (JobID,Name,Value) VALUES (%d,%s,%s)" % (int(jobID), e_key, e_value)
-        return self._update(cmd)
-
-    #############################################################################
-    def setJobParameters(self, jobID, parameters):
-        """Set parameters specified by a list of name/value pairs for the job JobID
-
-        :param int jobID: Job ID
-        :param list parameters: list of tuples (name, value) pairs
-
-        :return: S_OK/S_ERROR
-        """
-
-        if not parameters:
-            return S_OK()
-
-        insertValueList = []
-        for name, value in parameters:
-            ret = self._escapeString(name)
-            if not ret["OK"]:
-                return ret
-            e_name = ret["Value"]
-            ret = self._escapeString(value)
-            if not ret["OK"]:
-                return ret
-            e_value = ret["Value"]
-            insertValueList.append(f"({jobID},{e_name},{e_value})")
-
-        cmd = f"REPLACE JobParameters (JobID,Name,Value) VALUES {', '.join(insertValueList)}"
-        return self._update(cmd)
-
-    #############################################################################
     def setJobOptParameter(self, jobID, name, value):
         """Set an optimzer parameter specified by name,value pair for the job JobID"""
         ret = self._escapeString(jobID)
@@ -779,16 +737,6 @@ class JobDB(DB):
             value,
         )
         return self._update(cmd)
-
-    #############################################################################
-    def __setInitialJobParameters(self, classadJob, jobID):
-        """Set initial job parameters as was defined in the Classad"""
-
-        # Extract initital job parameters
-        parameters = {}
-        if classadJob.lookupAttribute("Parameters"):
-            parameters = classadJob.getDictionaryFromSubJDL("Parameters")
-        return self.setJobParameters(jobID, list(parameters.items()))
 
     #############################################################################
     def setJobJDL(self, jobID, jdl=None, originalJDL=None):
@@ -966,11 +914,6 @@ class JobDB(DB):
 
         # Adding the job in the Jobs table
         result = self.insertFields("Jobs", inDict=jobAttrs)
-        if not result["OK"]:
-            return result
-
-        # Setting the Job parameters
-        result = self.__setInitialJobParameters(classAdJob, jobID)
         if not result["OK"]:
             return result
 
@@ -1202,10 +1145,6 @@ class JobDB(DB):
             jobJDL = jobJDL.replace("%j", str(jobID))
 
         result = self.setJobJDL(jobID, jobJDL)
-        if not result["OK"]:
-            return result
-
-        result = self.__setInitialJobParameters(classAdJob, jobID)
         if not result["OK"]:
             return result
 

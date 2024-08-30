@@ -2108,7 +2108,7 @@ class ComponentInstaller:
         Result should be something like::
 
            {'MonitoringDB': {'Type': 'ES', 'System': 'Monitoring', 'Extension': ''},
-            'ElasticJobParametersDB': {'Type': 'ES', 'System': 'WorkloadManagement', 'Extension': ''}}
+            'JobParametersDB': {'Type': 'ES', 'System': 'WorkloadManagement', 'Extension': ''}}
 
         :param list extensions: list of DIRAC extensions
         :return: dict of ES DBs
