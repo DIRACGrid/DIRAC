@@ -7,6 +7,7 @@
     For the moment, when you see "token" or "space token" here, just read "StorageElement".
 
 """
+
 import errno
 import sys
 from datetime import datetime, timedelta
@@ -78,14 +79,7 @@ class FreeDiskSpaceCommand(Command):
         free = occupancy["Free"]
         total = occupancy["Total"]
 
-        endpointResult = CSHelpers.getStorageElementEndpoint(elementName)
-        if not endpointResult["OK"]:
-            return endpointResult
-        # We only take the first endpoint, in case there are severals of them (which is normal).
-        # Most probably not ideal, because it would be nice to stay consistent, but well...
-        endpoint = endpointResult["Value"][0]
-
-        results = {"Endpoint": endpoint, "Free": free, "Total": total, "ElementName": elementName}
+        results = {"Endpoint": "Deprecated", "Free": free, "Total": total, "ElementName": elementName}
         result = self._storeCommand(results)
         if not result["OK"]:
             return result
