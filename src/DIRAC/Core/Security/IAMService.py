@@ -23,8 +23,8 @@ class IAMService:
     def __init__(self, access_token, vo=None, forceNickname=False):
         """c'tor
 
-        :param str vo: name of the virtual organization (community)
         :param str access_token: the token used to talk to IAM, with the scim:read property
+        :param str vo: name of the virtual organization (community)
         :param bool forceNickname: if enforce the presence of a nickname attribute and do not fall back to username in IAM
 
         """
