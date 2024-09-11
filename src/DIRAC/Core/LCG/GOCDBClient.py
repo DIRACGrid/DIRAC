@@ -10,6 +10,7 @@ from urllib import parse
 from xml.dom import minidom
 
 import requests
+
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Security.Locations import getCAsLocation
 
@@ -356,10 +357,11 @@ class GOCDBClient:
 
             try:
                 dtDict[str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + " " + elements["ENDPOINT"]] = elements
-                dtDict[str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + " " + elements["ENDPOINT"]][
-                    "URL"
-                ] = urls[0]
-            except Exception:
+                if urls:
+                    dtDict[str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + " " + elements["ENDPOINT"]][
+                        "URL"
+                    ] = urls[0]
+            except Exception as e:
                 try:
                     dtDict[
                         str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + " " + elements["HOSTNAME"]
