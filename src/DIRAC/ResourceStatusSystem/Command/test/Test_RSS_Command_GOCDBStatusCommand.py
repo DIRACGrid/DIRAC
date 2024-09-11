@@ -1,11 +1,11 @@
 """ Test_RSS_Command_GOCDBStatusCommand
 """
 from datetime import datetime, timedelta
-
 from unittest import mock
+
 import pytest
 
-from DIRAC import gLogger, S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC.ResourceStatusSystem.Command.DowntimeCommand import DowntimeCommand
 
 """

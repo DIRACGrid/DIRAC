@@ -10,6 +10,7 @@ from urllib import parse
 from xml.dom import minidom
 
 import requests
+
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Security.Locations import getCAsLocation
 

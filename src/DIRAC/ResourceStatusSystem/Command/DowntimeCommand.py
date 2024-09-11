@@ -4,25 +4,24 @@
     GOCDB downtimes that are modified or deleted are also synced.
 """
 import re
-from urllib.error import URLError
 from datetime import datetime, timedelta
 from operator import itemgetter
+from urllib.error import URLError
 
-from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
-from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts, getStorageElementsHosts
+from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import (
+    getCESiteMapping,
     getFTS3Servers,
+    getGOCFTSName,
     getGOCSiteName,
     getGOCSites,
-    getGOCFTSName,
-    getCESiteMapping,
 )
+from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
+from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts, getStorageElementsHosts
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
-
 
 # conversion from DIRAC resource type to GOCDB service type
 diracToGOC_conversion = {
@@ -146,7 +145,7 @@ class DowntimeCommand(Command):
             else:
                 elementName = gocSite["Value"]
 
-        # The DIRAC se names mean nothing on the grid, but their hosts and service types do mean.
+        # The DIRAC SE names mean nothing on the grid, but their hosts and service types do mean.
         elif elementType == "StorageElement":
             # Get the SE object and its protocols
             try:
