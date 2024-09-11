@@ -55,6 +55,7 @@ class VOMS2CSAgent(AgentModule):
         self.syncPluginName = None
         self.compareWithIAM = False
         self.useIAM = False
+        self.forceNickname = False
 
     def initialize(self):
         """Initialize the default parameters"""
@@ -70,6 +71,7 @@ class VOMS2CSAgent(AgentModule):
         self.syncPluginName = self.am_getOption("SyncPluginName", self.syncPluginName)
         self.compareWithIAM = self.am_getOption("CompareWithIAM", self.compareWithIAM)
         self.useIAM = self.am_getOption("UseIAM", self.useIAM)
+        self.forceNickname = self.am_getOption("ForceNickname", self.forceNickname)
 
         self.detailedReport = self.am_getOption("DetailedReport", self.detailedReport)
         self.mailFrom = self.am_getOption("MailFrom", self.mailFrom)
@@ -127,6 +129,7 @@ class VOMS2CSAgent(AgentModule):
                 compareWithIAM=compareWithIAM,
                 useIAM=useIAM,
                 accessToken=accessToken,
+                forceNickname=self.forceNickname,
             )
 
             result = self.__syncCSWithVOMS(  # pylint: disable=unexpected-keyword-arg
@@ -145,6 +148,7 @@ class VOMS2CSAgent(AgentModule):
             csapi = resultDict.get("CSAPI")
             adminMessages = resultDict.get("AdminMessages", {"Errors": [], "Info": []})
             voChanged = resultDict.get("VOChanged", False)
+            noNickname = resultDict.get("NoNickname", [])
             self.log.info(
                 "Run user results",
                 ": new %d, modified %d, deleted %d, new/suspended %d"
@@ -194,6 +198,11 @@ class VOMS2CSAgent(AgentModule):
                 mailMsg = ""
                 if adminMessages["Errors"]:
                     mailMsg += "\nErrors list:\n  %s" % "\n  ".join(adminMessages["Errors"])
+                if self.forceNickname and noNickname:
+                    mailMsg += "There are users without nicknames in the IAM\n"
+                    for entry in noNickname:
+                        mailMsg += str(entry)
+                        mailMsg += "\n\n"
                 if adminMessages["Info"]:
                     mailMsg += "\nRun result:\n  %s" % "\n  ".join(adminMessages["Info"])
                 if self.detailedReport:

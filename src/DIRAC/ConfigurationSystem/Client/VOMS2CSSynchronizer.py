@@ -132,6 +132,7 @@ class VOMS2CSSynchronizer:
         compareWithIAM=False,
         useIAM=False,
         accessToken=None,
+        forceNickname=False,
     ):
         """VOMS2CSSynchronizer class constructor
 
@@ -165,6 +166,7 @@ class VOMS2CSSynchronizer:
         self.compareWithIAM = compareWithIAM
         self.useIAM = useIAM
         self.accessToken = accessToken
+        self.forceNickname = forceNickname
 
         if syncPluginName:
             objLoader = ObjectLoader()
@@ -329,6 +331,10 @@ class VOMS2CSSynchronizer:
                 # Check the nickName in the same VO to see if the user is already registered
                 # with another DN
                 nickName = self.vomsUserDict[dn].get("nickname")
+                if not nickName and self.forceNickname:
+                    resultDict["NoNickname"].append(self.vomsUserDict[dn])
+                    self.log.error("No nickname defined for", self.vomsUserDict[dn])
+                    continue
                 if nickName in diracUserDict or nickName in newAddedUserDict:
                     diracName = nickName
                     # This is a flag for adding the new DN to an already existing user
