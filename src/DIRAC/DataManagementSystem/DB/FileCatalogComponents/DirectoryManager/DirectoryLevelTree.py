@@ -274,6 +274,9 @@ class DirectoryLevelTree(DirectoryTreeBase):
         pelements = []
         dPath = ""
         for el in elements[1:]:
+            # skip entry path elements, e.g. path has trailing slash
+            if not el:
+                continue
             dPath += "/" + el
             pelements.append(dPath)
         pelements.append("/")
@@ -283,6 +286,8 @@ class DirectoryLevelTree(DirectoryTreeBase):
         result = self.db._query(req)
         if not result["OK"]:
             return result
+        if len(result["Value"]) != len(pelements):
+            return S_ERROR(f"Directory {path} not found")
         if not result["Value"]:
             return S_ERROR(f"Directory {path} not found")
 
