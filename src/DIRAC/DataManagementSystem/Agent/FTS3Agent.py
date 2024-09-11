@@ -12,6 +12,7 @@ It is in charge of submitting and monitoring all the transfers. It can be duplic
   :caption: FTS3Agent options
 
 """
+
 import datetime
 import errno
 import os
@@ -38,6 +39,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as op
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.DataManagementSystem.private import FTS3Utilities
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
@@ -105,8 +107,8 @@ class FTS3Agent(AgentModule):
         self.maxDelete = self.am_getOption("DeleteLimitPerCycle", 100)
         # lifetime of the proxy we download to delegate to FTS
         self.proxyLifetime = self.am_getOption("ProxyLifetime", PROXY_LIFETIME)
-
         self.jobMonitoringBatchSize = self.am_getOption("JobMonitoringBatchSize", JOB_MONITORING_BATCH_SIZE)
+        self.useTokens = self.am_getOption("UseTokens", False)
 
         return S_OK()
 
@@ -497,7 +499,22 @@ class FTS3Agent(AgentModule):
                             log.error("Could not select TPC list", repr(e))
                             continue
 
-                        res = ftsJob.submit(context=context, protocols=tpcProtocols)
+                        # If we use token, get an access token with the
+                        # fts scope in it
+                        # The FTS3Job will decide to use it or not
+                        fts_access_token = None
+                        if self.useTokens:
+                            res = gTokenManager.getToken(
+                                userGroup=ftsJob.userGroup,
+                                requiredTimeLeft=3600,
+                                scope=["fts"],
+                            )
+                            if not res["OK"]:
+                                return res
+
+                            fts_access_token = res["Value"]["access_token"]
+
+                        res = ftsJob.submit(context=context, protocols=tpcProtocols, fts_access_token=fts_access_token)
 
                         if not res["OK"]:
                             log.error("Could not submit FTS3Job", f"FTS3Operation {operation.operationID} : {res}")
