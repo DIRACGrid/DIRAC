@@ -356,10 +356,11 @@ class GOCDBClient:
 
             try:
                 dtDict[str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + " " + elements["ENDPOINT"]] = elements
-                dtDict[str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + " " + elements["ENDPOINT"]][
-                    "URL"
-                ] = urls[0]
-            except Exception:
+                if urls:
+                    dtDict[str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + " " + elements["ENDPOINT"]][
+                        "URL"
+                    ] = urls[0]
+            except Exception as e:
                 try:
                     dtDict[
                         str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + " " + elements["HOSTNAME"]
