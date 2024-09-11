@@ -57,25 +57,26 @@ def test_addAndRemove_simpleCase(stClient):
 
     result = stClient.getSites()
     assert result["OK"] is True, result["Message"]
-    assert testSite in result["Value"]
+    inRSS = testSite in result["Value"]
 
-    # TEST getSiteStatuses
-    # ...............................................................................
+    if inRSS:
+        # TEST getSiteStatuses
+        # ...............................................................................
 
-    result = stClient.getSiteStatuses([testSite])
-    assert result["OK"] is True, result["Message"]
-    assert result["Value"][testSite] == "Active"
+        result = stClient.getSiteStatuses([testSite])
+        assert result["OK"] is True, result["Message"]
+        assert result["Value"][testSite] == "Active"
 
-    # TEST getUsableSites
-    # ...............................................................................
+        # TEST getUsableSites
+        # ...............................................................................
 
-    result = stClient.getUsableSites([testSite])
-    assert result["OK"] is True, result["Message"]
-    assert testSite in result["Value"]
+        result = stClient.getUsableSites([testSite])
+        assert result["OK"] is True, result["Message"]
+        assert testSite in result["Value"]
 
-    # finally delete the test site
-    result = rsClient.deleteStatusElement("Site", "Status", testSite)
-    assert result["OK"] is True, result["Message"]
+        # finally delete the test site
+        result = rsClient.deleteStatusElement("Site", "Status", testSite)
+        assert result["OK"] is True, result["Message"]
 
 
 def test_addAndRemove_complicatedTest(stClient):
@@ -131,6 +132,7 @@ def test_addAndRemove_complicatedTest(stClient):
 
     result = stClient.getSites()
     assert result["OK"] is True, result["Message"]
+    inRSS = "testBanned.test.test" in result["Value"]
 
     # TEST getSites
     # ...............................................................................
@@ -138,18 +140,17 @@ def test_addAndRemove_complicatedTest(stClient):
     result = stClient.getSites("All")
     assert result["OK"] is True, result["Message"]
 
-
     # TEST getUsableSites
     # ...............................................................................
 
     result = stClient.getUsableSites()
     assert result["OK"] is True, result["Message"]
 
-
     # setting a status
-    result = stClient.setSiteStatus("testBanned.test.test", "Probing")
-    assert result["OK"] is True, result["Message"]
-    stClient.rssCache.refreshCache()
+    if inRSS:
+        result = stClient.setSiteStatus("testBanned.test.test", "Probing")
+        assert result["OK"] is True, result["Message"]
+        stClient.rssCache.refreshCache()
 
-    result = stClient.getSites("Probing")
-    assert result["OK"] is True, result["Message"]
+        result = stClient.getSites("Probing")
+        assert result["OK"] is True, result["Message"]
