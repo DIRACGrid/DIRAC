@@ -1,3 +1,21 @@
+[v8.0.51]
+
+*DataManagementSystem
+
+FIX: (#7779) dirac_dms_find_lfns: Check if requested path exists and returns error if not. Prevents users hitting #7487
+FIX: (#7778) Return correct error for non-existing directory. Partial fix for #7487
+NEW: (#7740) FileCatalogHandler: add function export_getFileDetails to get the (user) metadata for a list of LFNs
+
+*Core
+
+NEW: (#7772) Support aggregating by date in MySQL.getCounters
+
+*ResourceStatusSystem
+
+CHANGE: (#7771) do not consider Endpoint for StorageOccupancy
+FIX: (#7761) Do not use tinezone aware datetime
+NEW: (#7759) add a DIRAC to GOCDB service type conversion
+
 [v8.0.50]
 
 *ResourceStatusSystem
