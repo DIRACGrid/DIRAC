@@ -342,23 +342,26 @@ class VOMS2CSSynchronizer:
 
                 # We have a real new user
                 if not diracName:
-                    if nickName:
-                        newDiracName = nickName.strip()
-                    else:
-                        newDiracName = self.getUserName(dn)
-
                     # Do not consider users with Suspended status in VOMS
                     if self.vomsUserDict[dn]["suspended"] or self.vomsUserDict[dn]["certSuspended"]:
                         resultDict["SuspendedUsers"].append(newDiracName)
                         continue
 
-                    # If the chosen user name exists already, append a distinguishing suffix
-                    ind = 1
-                    trialName = newDiracName
-                    while newDiracName in allDiracUsers:
-                        # We have a user with the same name but with a different DN
-                        newDiracName = "%s_%d" % (trialName, ind)
-                        ind += 1
+                    # if we have a nickname, we use the nickname no
+                    # matter what so we can have users from different
+                    # VOs with the same nickname / username
+                    if nickName:
+                        newDiracName = nickName.strip()
+                    else:
+                        newDiracName = self.getUserName(dn)
+
+                        # If the chosen user name exists already, append a distinguishing suffix
+                        ind = 1
+                        trialName = newDiracName
+                        while newDiracName in allDiracUsers:
+                            # We have a user with the same name but with a different DN
+                            newDiracName = "%s_%d" % (trialName, ind)
+                            ind += 1
 
                     # We now have everything to add the new user
                     userDict = {"DN": dn, "CA": self.vomsUserDict[dn]["CA"], "Email": self.vomsUserDict[dn]["mail"]}
