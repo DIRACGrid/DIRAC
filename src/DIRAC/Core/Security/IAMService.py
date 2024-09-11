@@ -20,11 +20,12 @@ def convert_dn(inStr):
 
 
 class IAMService:
-    def __init__(self, access_token, vo=None):
+    def __init__(self, access_token, vo=None, forceNickname=False):
         """c'tor
 
         :param str vo: name of the virtual organization (community)
         :param str access_token: the token used to talk to IAM, with the scim:read property
+        :param bool forceNickname: if enforce the presence of a nickname attribute and do not fall back to username in IAM
 
         """
         self.log = gLogger.getSubLogger(self.__class__.__name__)
@@ -36,6 +37,8 @@ class IAMService:
             vo = getVO()
         if not vo:
             raise Exception("No VO name given")
+
+        self.forceNickname = forceNickname
 
         self.vo = vo
 
@@ -79,8 +82,7 @@ class IAMService:
             iam_users.extend(data["Resources"])
         return iam_users
 
-    @staticmethod
-    def convert_iam_to_voms(iam_output):
+    def convert_iam_to_voms(self, iam_output):
         """Convert an IAM entry into the voms style, i.e. DN based"""
         converted_output = {}
 
@@ -93,7 +95,7 @@ class IAMService:
             # The nickname is available in the list of attributes
             # (if configured so)
             # in the form {'name': 'nickname', 'value': 'chaen'}
-            # otherwise, we take the userName
+            # otherwise, we take the userName unless we forceNickname
             try:
                 cert_dict["nickname"] = [
                     attr["value"]
@@ -101,7 +103,8 @@ class IAMService:
                     if attr["name"] == "nickname"
                 ][0]
             except (KeyError, IndexError):
-                cert_dict["nickname"] = iam_output["userName"]
+                if not self.forceNickname:
+                    cert_dict["nickname"] = iam_output["userName"]
 
             # This is not correct, we take the overall status instead of the certificate one
             # however there are no known case of cert suspended while the user isn't

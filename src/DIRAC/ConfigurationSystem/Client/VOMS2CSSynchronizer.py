@@ -224,7 +224,7 @@ class VOMS2CSSynchronizer:
     @convertToReturnValue
     def _getUsers(self):
         if self.compareWithIAM or self.useIAM:
-            iamSrv = IAMService(self.accessToken, vo=self.vo)
+            iamSrv = IAMService(self.accessToken, vo=self.vo, forceNickname=self.forceNickname)
             iam_users = returnValueOrRaise(iamSrv.getUsers())
             if self.useIAM:
                 return iam_users
