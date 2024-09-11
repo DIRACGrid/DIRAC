@@ -27,6 +27,7 @@ class IAMService:
         :param str access_token: the token used to talk to IAM, with the scim:read property
 
         """
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
         if not access_token:
             raise ValueError("access_token not set")
@@ -127,13 +128,15 @@ class IAMService:
     def getUsers(self):
         self.iam_users_raw = self._getIamUserDump()
         users = {}
-        errors = 0
+        errors = []
         for user in self.iam_users_raw:
             try:
                 users.update(self.convert_iam_to_voms(user))
             except Exception as e:
-                errors += 1
-                print(f"Could not convert {user['name']} {e!r} ")
-        print(f"There were in total {errors} errors")
+                errors.append(f"{user['name']} {e!r}")
+                self.log.error("Could not convert", f"{user['name']} {e!r}")
+        self.log.error("There were in total", f"{len(errors)} errors")
         self.userDict = dict(users)
-        return S_OK(users)
+        result = S_OK(users)
+        result["Errors"] = errors
+        return result

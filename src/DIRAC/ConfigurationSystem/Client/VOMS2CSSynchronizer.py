@@ -259,7 +259,8 @@ class VOMS2CSSynchronizer:
         if not result["OK"]:
             self.log.error("Could not retrieve user information", result["Message"])
             return result
-
+        if getUserErrors := result.get("Errors", []):
+            self.adminMsgs["Errors"].extend(getUserErrors)
         self.vomsUserDict = result["Value"]
         message = f"There are {len(self.vomsUserDict)} user entries in VOMS for VO {self.vomsVOName}"
         self.adminMsgs["Info"].append(message)
