@@ -11,7 +11,7 @@ from DIRAC.Core.Base.Script import Script
 
 @Script()
 def main():
-    Script.registerSwitch("", "Path=", "    Path to search for")
+    Script.registerSwitch("", "Path=", "    Directory path to search for")
     Script.registerSwitch("", "SE=", "    (comma-separated list of) SEs/SE-groups to be searched")
     # Registering arguments will automatically add their description to the help menu
     Script.registerArgument(
@@ -59,7 +59,17 @@ def main():
         DIRAC.exit(-1)
     metaDict = result["Value"]
     path = metaDict.pop("Path", path)
-
+    # check if path exists and is a directory
+    result = fc.isDirectory(path)
+    if not result["OK"]:
+        gLogger.error("Can not access File Catalog:", result["Message"])
+        DIRAC.exit(-1)
+    if path not in result["Value"]["Successful"]:
+        gLogger.error("Failed to query path status in file catalogue.", result["Message"])
+        DIRAC.exit(-1)
+    if not result["Value"]["Successful"][path]:
+        gLogger.error(f"{path} does not exist or is not a directory.")
+        DIRAC.exit(-1)
     result = fc.findFilesByMetadata(metaDict, path)
     if not result["OK"]:
         gLogger.error("Can not access File Catalog:", result["Message"])
