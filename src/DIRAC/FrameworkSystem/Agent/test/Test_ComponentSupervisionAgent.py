@@ -672,8 +672,8 @@ class TestComponentSupervisionAgent(unittest.TestCase):
         self.assertTrue(res["OK"])
         self.restartAgent.csAPI.modifyValue.assert_has_calls(
             [
-                call("/Systems/Sys/Production/URLs/Serv", ",".join(tempurls)),
-                call("/Systems/Sys/Production/URLs/Serv", ",".join(newurls)),
+                call("/Systems/Sys/URLs/Serv", ",".join(tempurls)),
+                call("/Systems/Sys/URLs/Serv", ",".join(newurls)),
             ],
             any_order=False,
         )
