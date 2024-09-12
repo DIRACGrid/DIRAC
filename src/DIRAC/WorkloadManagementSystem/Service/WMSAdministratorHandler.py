@@ -34,6 +34,7 @@ class WMSAdministratorHandlerMixin:
     @deprecated("no-op RPC")
     def export_setSiteMask(self, siteList):
         """Set the site mask for matching. The mask is given in a form of Classad string.
+
         :param list siteList: site, status
         :return: S_OK()/S_ERROR()
         """
@@ -46,6 +47,7 @@ class WMSAdministratorHandlerMixin:
     @deprecated("no-op RPC")
     def export_getSiteMask(cls, siteState="Active"):
         """Get the site mask
+
         :param str siteState: site status
         :return: S_OK(list)/S_ERROR()
         """
@@ -57,6 +59,7 @@ class WMSAdministratorHandlerMixin:
     @deprecated("no-op RPC")
     def export_getSiteMaskStatus(cls, sites=None):
         """Get the site mask of given site(s) with columns 'site' and 'status' only
+
         :param sites: list of sites or site
         :type sites: list or str
         :return: S_OK()/S_ERROR() -- S_OK contain dict or str
@@ -70,6 +73,7 @@ class WMSAdministratorHandlerMixin:
     @deprecated("no-op RPC")
     def export_getAllSiteMaskStatus(cls):
         """Get all the site parameters in the site mask
+
         :return: dict
         """
         return S_OK()
@@ -80,6 +84,7 @@ class WMSAdministratorHandlerMixin:
     @deprecated("no-op RPC")
     def export_banSite(self, site, comment="No comment"):
         """Ban the given site in the site mask
+
         :param str site: site
         :param str comment: comment
         :return: S_OK()/S_ERROR()
@@ -92,6 +97,7 @@ class WMSAdministratorHandlerMixin:
     @deprecated("no-op RPC")
     def export_allowSite(self, site, comment="No comment"):
         """Allow the given site in the site mask
+
         :param str site: site
         :param str comment: comment
         :return: S_OK()/S_ERROR()
@@ -105,6 +111,7 @@ class WMSAdministratorHandlerMixin:
     @deprecated("no-op RPC")
     def export_clearMask(cls):
         """Clear up the entire site mask
+
         :return: S_OK()/S_ERROR()
         """
         return S_OK()
@@ -116,6 +123,7 @@ class WMSAdministratorHandlerMixin:
     @deprecated("no-op RPC")
     def export_getSiteMaskLogging(cls, sites):
         """Get the site mask logging history
+
         :param list sites: sites
         :return: S_OK(dict)/S_ERROR()
         """
@@ -128,6 +136,7 @@ class WMSAdministratorHandlerMixin:
     @deprecated("no-op RPC")
     def export_getSiteMaskSummary(cls):
         """Get the mask status for all the configured sites
+
         :return: S_OK(dict)/S_ERROR()
         """
         return S_OK()
