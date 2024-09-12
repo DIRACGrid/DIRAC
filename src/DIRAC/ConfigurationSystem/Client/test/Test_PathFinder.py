@@ -12,33 +12,19 @@ localCFGData = ConfigurationData(False)
 mergedCFG = CFG()
 mergedCFG.loadFromBuffer(
     """
-DIRAC
-{
-  Setup=TestSetup
-  Setups
-  {
-    TestSetup
-    {
-      WorkloadManagement=MyWM
-    }
-  }
-}
 Systems
 {
   WorkloadManagement
   {
-    MyWM
+    URLs
     {
-      URLs
-      {
-        Service1 = dips://server1:1234/WorkloadManagement/Service1
-        Service2 = dips://$MAINSERVERS$:5678/WorkloadManagement/Service2
-      }
-      FailoverURLs
-      {
-        Service2 = dips://failover1:5678/WorkloadManagement/Service2
-        Service2 += dips://failover2:5678/WorkloadManagement/Service2
-      }
+      Service1 = dips://server1:1234/WorkloadManagement/Service1
+      Service2 = dips://$MAINSERVERS$:5678/WorkloadManagement/Service2
+    }
+    FailoverURLs
+    {
+      Service2 = dips://failover1:5678/WorkloadManagement/Service2
+      Service2 += dips://failover2:5678/WorkloadManagement/Service2
     }
   }
 }
