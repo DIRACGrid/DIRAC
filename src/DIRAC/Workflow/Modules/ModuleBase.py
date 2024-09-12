@@ -139,7 +139,12 @@ class ModuleBase:
                 # In this case the RuntimeError is supposed to return in rte[1] an error code (possibly from DErrno)
                 self.log.error(rte.args[0])
                 self.setApplicationStatus(rte.args[0])
-                return S_ERROR(rte.args[1], rte.args[0])  # rte[1] should be an error code
+                # rte.args[1] may be a shell exit code, not an error code: If we pass it to S_ERROR directly
+                # it will prefix the error message with the wrong description in that case.
+                # Instead we set the Errno manually afterwards which leaves the message unchanged.
+                res = S_ERROR(rte.args[0])
+                res["Errno"] = rte.args[1]
+                return res
 
             # If we are here it is just a string
             self.log.error(rte)
