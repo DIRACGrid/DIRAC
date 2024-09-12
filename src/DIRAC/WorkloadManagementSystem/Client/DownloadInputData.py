@@ -6,7 +6,6 @@ import random
 import tempfile
 
 from DIRAC import S_ERROR, S_OK, gConfig, gLogger
-from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection
 from DIRAC.Core.Utilities.Os import getDiskSpace
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
@@ -229,7 +228,7 @@ class DownloadInputData:
         diskSpace = getDiskSpace(self.__getDownloadDir(False))  # MB
         availableBytes = diskSpace * 1024 * 1024  # bytes
         bufferGBs = gConfig.getValue(
-            os.path.join(getSystemSection("WorkloadManagement/JobWrapper"), "JobWrapper", "MinOutputDataBufferGB"), 5.0
+            os.path.join("/Systems/WorkloadManagement/JobWrapper", "JobWrapper", "MinOutputDataBufferGB"), 5.0
         )
         data = bufferGBs * 1024 * 1024 * 1024  # bufferGBs in bytes
         if (data + totalSize) < availableBytes:

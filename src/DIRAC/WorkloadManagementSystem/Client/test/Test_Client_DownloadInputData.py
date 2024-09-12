@@ -114,7 +114,6 @@ def test_DLIDownloadFromBestSE_Fail(dli, mockSE, osPathExists):
 
 
 def test_DLI_execute(mocker, dli, mockSE):
-    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.getSystemSection", return_value="pippo")
     mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
     dli._downloadFromSE = MagicMock(return_value=S_OK({"path": "/local/path/1.txt"}))
     res = dli.execute(dataToResolve=["/a/lfn/1.txt"])
@@ -125,7 +124,6 @@ def test_DLI_execute(mocker, dli, mockSE):
 
 def test_DLI_execute_getFileMetadata_Fails(mocker, dli, mockSE):
     """When getFileMetadata fails for the first SE, we should fall back to the second."""
-    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.getSystemSection", return_value="pippo")
     mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
     mockObjectSE = mockSE.return_value
     mockObjectSE.getFileMetadata.return_value = S_OK(
@@ -143,7 +141,6 @@ def test_DLI_execute_getFileMetadata_Fails(mocker, dli, mockSE):
 
 def test_DLI_execute_getFileMetadata_Lost(mocker, dli, mockSE):
     """When getFileMetadata fails for the first SE, we should fall back to the second."""
-    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.getSystemSection", return_value="pippo")
     mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
     mockObjectSE = mockSE.return_value
     mockObjectSE.getFileMetadata.return_value = S_OK(
@@ -169,7 +166,6 @@ def test_DLI_execute_getFileMetadata_Lost(mocker, dli, mockSE):
 
 def test_DLI_execute_getFileMetadata_Unavailable(mocker, dli, mockSE):
     """When getFileMetadata fails for the first SE, we should fall back to the second."""
-    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.getSystemSection", return_value="pippo")
     mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
     mockObjectSE = mockSE.return_value
     mockObjectSE.getFileMetadata.return_value = S_OK(
@@ -195,7 +191,6 @@ def test_DLI_execute_getFileMetadata_Unavailable(mocker, dli, mockSE):
 
 def test_DLI_execute_getFileMetadata_Cached(mocker, dli, mockSE):
     """When getFileMetadata fails for the first SE, we should fall back to the second."""
-    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.getSystemSection", return_value="pippo")
     mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
     mockObjectSE = mockSE.return_value
     mockObjectSE.getFileMetadata.return_value = S_OK(
@@ -221,7 +216,6 @@ def test_DLI_execute_getFileMetadata_Cached(mocker, dli, mockSE):
 
 def test_DLI_execute_FirstDownFailed(mocker, dli, mockSE):
     """When getFileMetadata fails for the first SE, we should fall back to the second."""
-    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.getSystemSection", return_value="pippo")
     mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
     mockObjectSE = mockSE.return_value
     mockObjectSE.getFileMetadata.return_value = S_OK(
@@ -238,7 +232,6 @@ def test_DLI_execute_FirstDownFailed(mocker, dli, mockSE):
 
 def test_DLI_execute_AllDownFailed(mocker, dli, mockSE):
     """When getFileMetadata fails for the first SE, we should fall back to the second."""
-    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.getSystemSection", return_value="pippo")
     mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
     mockObjectSE = mockSE.return_value
     mockObjectSE.getFileMetadata.return_value = S_OK(
@@ -255,7 +248,6 @@ def test_DLI_execute_AllDownFailed(mocker, dli, mockSE):
 
 def test_DLI_execute_NoLocal(mocker, dli, mockSE):
     """Data only at the remote SE."""
-    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.getSystemSection", return_value="pippo")
     mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
     dli = DownloadInputData(
         {
