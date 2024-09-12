@@ -23,10 +23,10 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 csAPI = CSAPI()
 
-csAPI.setOption("Systems/WorkloadManagement/Production/Services/SandboxStore/BasePath", f"{setupName}/sandboxes")
-csAPI.setOption("Systems/WorkloadManagement/Production/Services/SandboxStore/LogLevel", "DEBUG")
-csAPI.setOption("Systems/WorkloadManagement/Production/Services/TornadoSandboxStore/BasePath", f"{setupName}/sandboxes")
-csAPI.setOption("Systems/WorkloadManagement/Production/Services/TornadoSandboxStore/LogLevel", "DEBUG")
+csAPI.setOption("Systems/WorkloadManagement/Services/SandboxStore/BasePath", f"{setupName}/sandboxes")
+csAPI.setOption("Systems/WorkloadManagement/Services/SandboxStore/LogLevel", "DEBUG")
+csAPI.setOption("Systems/WorkloadManagement/Services/TornadoSandboxStore/BasePath", f"{setupName}/sandboxes")
+csAPI.setOption("Systems/WorkloadManagement/Services/TornadoSandboxStore/LogLevel", "DEBUG")
 
 # Now setting a SandboxSE as the following:
 #     ProductionSandboxSE
@@ -553,9 +553,9 @@ csAPI.setOption(
     "TrustedHost,CSAdministrator,JobAdministrator,FullDelegation,ProxyManagement,Operator,ProductionManagement,GenericPilot",
 )
 
-# Setting Systems/WorkloadManagement/Production/Executors/Optimizers/JobScheduling/RescheduleDelays
+# Setting Systems/WorkloadManagement/Executors/Optimizers/JobScheduling/RescheduleDelays
 # to avoid having to wait while testing rescheduling
-csAPI.setOption("Systems/WorkloadManagement/Production/Executors/Optimizers/JobScheduling/RescheduleDelays", "0")
+csAPI.setOption("Systems/WorkloadManagement/Executors/Optimizers/JobScheduling/RescheduleDelays", "0")
 
 csAPI.createSection("Systems/WorkloadManagement/Production/JobWrapper/")
 csAPI.setOption("Systems/WorkloadManagement/Production/JobWrapper/MinOutputDataBufferGB", 1)
