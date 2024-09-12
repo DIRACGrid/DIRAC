@@ -56,13 +56,13 @@ def pathFinder(monkeypatch):
             "WorkloadManagement/SandboxStoreHandler",
             False,
             "Services",
-            "/Systems/WorkloadManagement/MyWM/Services/SandboxStoreHandler",
+            "/Systems/WorkloadManagement/Services/SandboxStoreHandler",
         ),
         (
             "WorkloadManagement",
             "SandboxStoreHandler",
             "Services",
-            "/Systems/WorkloadManagement/MyWM/Services/SandboxStoreHandler",
+            "/Systems/WorkloadManagement/Services/SandboxStoreHandler",
         ),
         # tricky case one could expect that if entity string is wrong
         # than some kind of error will be returned, but it is not the case
@@ -70,7 +70,7 @@ def pathFinder(monkeypatch):
             "WorkloadManagement/SimpleLogConsumer",
             False,
             "NonRonsumersNon",
-            "/Systems/WorkloadManagement/MyWM/NonRonsumersNon/SimpleLogConsumer",
+            "/Systems/WorkloadManagement/NonRonsumersNon/SimpleLogConsumer",
         ),
     ],
 )
