@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-########################################################################
-# File :    dirac-jobexec
-# Author :  Stuart Paterson
-########################################################################
 """ The dirac-jobexec script is equipped to execute workflows that
     are specified via their XML description.  The main client of
     this script is the Job Wrapper.

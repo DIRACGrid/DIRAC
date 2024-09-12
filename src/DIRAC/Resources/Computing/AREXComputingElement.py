@@ -654,6 +654,10 @@ class AREXComputingElement(ComputingElement):
                 f"{jobReference} to CE {self.ceName}",
             )
 
+        # Remove the bundled preamble
+        if self.preamble:
+            os.remove(executableFile)
+
         if batchIDList:
             result = S_OK(batchIDList)
             result["PilotStampDict"] = stampDict

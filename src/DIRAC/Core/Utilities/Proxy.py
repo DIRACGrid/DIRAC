@@ -34,6 +34,7 @@ Utilities to execute one or more functions with a given proxy.
 
 
 """
+import functools
 import os
 
 from DIRAC import gConfig, gLogger, S_ERROR, S_OK
@@ -61,6 +62,7 @@ def executeWithUserProxy(fcn):
     :param bool executionLock: flag to execute with a lock for the time of user proxy application ( default False )
     """
 
+    @functools.wraps(fcn)
     def wrapped_fcn(*args, **kwargs):
         userName = kwargs.pop("proxyUserName", "")
         userDN = kwargs.pop("proxyUserDN", "")

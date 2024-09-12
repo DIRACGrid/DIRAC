@@ -51,8 +51,6 @@ optimizerParams = {
 }
 payloadParams = {
     "command": "dirac-jobexec helloworld.xml -o LogLevel=DEBUG",
-    "error": "std.err",
-    "output": "std.out",
     "env": {},
 }
 
@@ -104,7 +102,7 @@ def test_createAndExecuteJobWrapperTemplate_success(extraOptions):
         jobWrapperContent = f.read()
 
     assert "@SITEPYTHON@" not in jobWrapperContent
-    assert f'sys.path.insert(0, "{os.getcwd()}")' in jobWrapperContent
+    assert f'os.path.realpath("{os.getcwd()}")' in jobWrapperContent
 
     # Test job wrapper configuration path
     jobWrapperConfigPath = res["Value"]["JobWrapperConfigPath"]
@@ -172,7 +170,7 @@ def test_createAndExecuteJobWrapperTemplate_missingExtraOptions():
         jobWrapperContent = f.read()
 
     assert "@SITEPYTHON@" not in jobWrapperContent
-    assert f'sys.path.insert(0, "{os.getcwd()}")' in jobWrapperContent
+    assert f'os.path.realpath("{os.getcwd()}")' in jobWrapperContent
 
     # Test job wrapper configuration path
     jobWrapperConfigPath = res["Value"]["JobWrapperConfigPath"]
@@ -251,7 +249,7 @@ def test_createAndExecuteRelocatedJobWrapperTemplate_success(extraOptions):
         jobWrapperContent = f.read()
 
     assert "@SITEPYTHON@" not in jobWrapperContent
-    assert f'sys.path.insert(0, "{rootLocation}")' in jobWrapperContent
+    assert f'os.path.realpath("{rootLocation}")' in jobWrapperContent
 
     # Test job wrapper configuration path
     jobWrapperConfigPath = res["Value"]["JobWrapperConfigPath"]
@@ -368,7 +366,7 @@ def test_createAndExecuteJobWrapperOfflineTemplate_success(extraOptions):
         jobWrapperContent = f.read()
 
     assert "@SITEPYTHON@" not in jobWrapperContent
-    assert f"sys.path.insert(0, sitePython)" in jobWrapperContent
+    assert 'os.path.realpath(".")' in jobWrapperContent
 
     # Test job wrapper configuration path
     jobWrapperConfigPath = res["Value"].get("JobWrapperConfigPath")
@@ -437,7 +435,7 @@ def test_createAndExecuteJobWrapperOfflineTemplate_success(extraOptions):
     result = subprocess.run(jobExecutableRelocatedPath, shell=True, capture_output=True)
 
     assert result.returncode == 1, result.stderr
-    assert b"Starting Job Wrapper Initialization for Job 1" not in result.stdout, result.stdout
+    assert b"JobID is not defined, running in current directory" not in result.stdout, result.stdout
     assert result.stderr == b"", result.stderr
 
     # 4. We recreate the job wrapper offline template with the payload params now
@@ -467,7 +465,7 @@ def test_createAndExecuteJobWrapperOfflineTemplate_success(extraOptions):
     result = subprocess.run(jobExecutableRelocatedPath, shell=True, capture_output=True)
 
     assert result.returncode == 1, result.stderr
-    assert b"Starting Job Wrapper Initialization for Job 1" not in result.stdout, result.stdout
+    assert b"JobID is not defined, running in current directory" not in result.stdout, result.stdout
     assert result.stderr == b"", result.stderr
 
     # The root location should contain:
@@ -508,7 +506,7 @@ def test_createAndExecuteJobWrapperOfflineTemplate_success(extraOptions):
     result = subprocess.run(jobExecutableRelocatedPath, shell=True, capture_output=True)
 
     assert result.returncode == 0, result.stderr
-    assert b"Starting Job Wrapper Initialization for Job 1" in result.stdout, result.stdout
+    assert b"JobID is not defined, running in current directory" in result.stdout, result.stdout
     assert b"Job Wrapper is starting the processing phase for job" in result.stdout, result.stdout
     assert result.stderr == b"", result.stderr
 
@@ -517,13 +515,11 @@ def test_createAndExecuteJobWrapperOfflineTemplate_success(extraOptions):
     # - the job wrapper configuration
     # - the job executable
     # - the job/Wrapper directory
-    # - the <jobID> directory
-    assert len(os.listdir(rootLocation)) == numberOfFiles + 5
-    assert os.path.exists(os.path.join(rootLocation, "1"))
-    assert os.path.exists(os.path.join(rootLocation, "1", "payloadResults.json"))
-    assert os.path.exists(os.path.join(rootLocation, "1", "checksum.json"))
+    assert len(os.listdir(rootLocation)) == numberOfFiles + 8
+    assert os.path.exists(os.path.join(rootLocation, "payloadResults.json"))
+    assert os.path.exists(os.path.join(rootLocation, "checksum.json"))
 
-    with open(os.path.join(rootLocation, "1", "payloadResults.json")) as f:
+    with open(os.path.join(rootLocation, "payloadResults.json")) as f:
         payloadResults = json.load(f)
 
     assert payloadResults["OK"]
@@ -532,7 +528,7 @@ def test_createAndExecuteJobWrapperOfflineTemplate_success(extraOptions):
     assert "payloadOutput" in payloadResults["Value"]
     assert "payloadStatus" in payloadResults["Value"]
 
-    with open(os.path.join(rootLocation, "1", "checksum.json")) as f:
+    with open(os.path.join(rootLocation, "checksum.json")) as f:
         checksums = json.load(f)
 
     assert jobParams["PayloadResults"] in checksums
@@ -540,5 +536,8 @@ def test_createAndExecuteJobWrapperOfflineTemplate_success(extraOptions):
     os.unlink(os.path.join(rootLocation, os.path.basename(jobWrapperPath)))
     os.unlink(os.path.join(rootLocation, os.path.basename(jobWrapperConfigPath)))
     os.unlink(os.path.join(rootLocation, os.path.basename(jobExecutablePath)))
-    shutil.rmtree(os.path.join(rootLocation, "1"))
+    os.unlink(os.path.join(rootLocation, "payloadResults.json"))
+    os.unlink(os.path.join(rootLocation, "checksum.json"))
+    os.unlink(os.path.join(rootLocation, "std.err"))
+    os.unlink(os.path.join(rootLocation, "job.info"))
     shutil.rmtree(os.path.join(os.getcwd(), "job"))
