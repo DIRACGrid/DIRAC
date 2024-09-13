@@ -731,15 +731,10 @@ class SiteDirector(AgentModule):
         """
         self.log.info("Going to submit pilots", f"(a maximum of {pilotsToSubmit} pilots to {queue} queue)")
 
-        bundleProxy = self.queueDict[queue].get("BundleProxy", False)
-        proxy = None
-        if bundleProxy:
-            proxy = ce.proxy
-
         jobExecDir = self.queueDict[queue]["ParametersDict"].get("JobExecDir", "")
         envVariables = self.queueDict[queue]["ParametersDict"].get("EnvironmentVariables", None)
 
-        executable = self.getExecutable(queue, proxy=proxy, jobExecDir=jobExecDir, envVariables=envVariables)
+        executable = self.getExecutable(queue, proxy=ce.proxy, jobExecDir=jobExecDir, envVariables=envVariables)
 
         submitResult = ce.submitJob(executable, "", pilotsToSubmit)
         # In case the CE does not need the executable after the submission, we delete it
@@ -956,7 +951,7 @@ class SiteDirector(AgentModule):
         """Prepare the full executable for queue
 
         :param str queue: queue name
-        :param bool proxy: flag that say if to bundle or not the proxy
+        :param str proxy: proxy to bundle
         :param str jobExecDir: pilot execution dir (normally an empty string)
 
         :returns: a string the options for the pilot
@@ -1087,7 +1082,7 @@ class SiteDirector(AgentModule):
 
     ####################################################################################
 
-    def _writePilotScript(self, workingDirectory, pilotOptions, proxy=None, pilotExecDir="", envVariables=None):
+    def _writePilotScript(self, workingDirectory, pilotOptions, proxy, pilotExecDir="", envVariables=None):
         """Bundle together and write out the pilot executable script, admix the proxy if given
 
         :param str workingDirectory: pilot wrapper working directory
