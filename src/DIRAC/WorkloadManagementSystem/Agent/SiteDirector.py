@@ -168,8 +168,7 @@ class SiteDirector(AgentModule):
         self.log.always("MaxPilotsToSubmit:", self.maxPilotsToSubmit)
 
         # Build the dictionary of queues that are going to be used: self.queueDict
-        result = self._buildQueueDict(siteNames, ceTypes, ces, tags)
-        if not result:
+        if not (result := self._buildQueueDict(siteNames, ceTypes, ces, tags))["OK"]:
             return result
 
         # Stop the execution if there is no usable queue
@@ -449,16 +448,11 @@ class SiteDirector(AgentModule):
         """
         self.log.info("Going to submit pilots", f"(a maximum of {pilotsToSubmit} pilots to {queue} queue)")
 
-        # Get parameters to generate the pilot executable
-        bundleProxy = self.queueDict[queue].get("BundleProxy", False)
-        proxy = None
-        if bundleProxy:
-            proxy = ce.proxy
         jobExecDir = self.queueDict[queue]["ParametersDict"].get("JobExecDir", "")
         envVariables = self.queueDict[queue]["ParametersDict"].get("EnvironmentVariables", None)
 
         # Generate the executable
-        executable = self._getExecutable(queue, proxy=proxy, jobExecDir=jobExecDir, envVariables=envVariables)
+        executable = self._getExecutable(queue, proxy=ce.proxy, jobExecDir=jobExecDir, envVariables=envVariables)
 
         # Submit the job
         submitResult = ce.submitJob(executable, "", pilotsToSubmit)
@@ -564,13 +558,11 @@ class SiteDirector(AgentModule):
                 return result
         return S_OK()
 
-    def _getExecutable(
-        self, queue: str, proxy: X509Chain = None, jobExecDir: str = "", envVariables: dict[str, str] = None
-    ):
+    def _getExecutable(self, queue: str, proxy: X509Chain, jobExecDir: str = "", envVariables: dict[str, str] = None):
         """Prepare the full executable for queue
 
         :param queue: queue name
-        :param proxy: flag that say if to bundle or not the proxy
+        :param proxy: proxy to bundle
         :param jobExecDir: pilot execution dir (normally an empty string)
 
         :returns: a string the options for the pilot
@@ -580,6 +572,7 @@ class SiteDirector(AgentModule):
         if not pilotOptions:
             self.log.warn("Pilots will be submitted without additional options")
             pilotOptions = []
+
         pilotOptions = " ".join(pilotOptions)
         self.log.verbose(f"pilotOptions: {pilotOptions}")
 
@@ -614,7 +607,7 @@ class SiteDirector(AgentModule):
         setup = gConfig.getValue("/DIRAC/Setup", "unknown")
         if setup == "unknown":
             self.log.error("Setup is not defined in the configuration")
-            return [None, None]
+            return []
         pilotOptions.append(f"-S {setup}")
         opsHelper = Operations(vo=self.vo, setup=setup)
 
@@ -687,7 +680,7 @@ class SiteDirector(AgentModule):
         self,
         workingDirectory: str,
         pilotOptions: str,
-        proxy: X509Chain = None,
+        proxy: X509Chain,
         pilotExecDir: str = "",
         envVariables: dict[str, str] = None,
     ):
@@ -717,7 +710,6 @@ class SiteDirector(AgentModule):
             location=location,
             CVMFS_locations=CVMFS_locations,
         )
-
         return _writePilotWrapperFile(workingDirectory=workingDirectory, localPilot=localPilot)
 
     #####################################################################################

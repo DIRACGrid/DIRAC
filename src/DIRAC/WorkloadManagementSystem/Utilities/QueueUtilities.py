@@ -81,10 +81,6 @@ def getQueuesResolved(siteDict, queueCECache, vo=None, checkPlatform=False, inst
                 if checkPlatform:
                     setPlatform(ceDict, queueDict[queueName]["ParametersDict"])
 
-                bundleProxy = queueDict[queueName]["ParametersDict"].get("BundleProxy", ceDict.get("BundleProxy"))
-                if bundleProxy and bundleProxy.lower() in ["true", "yes", "1"]:
-                    queueDict[queueName]["BundleProxy"] = True
-
     return S_OK(queueDict)
 
 

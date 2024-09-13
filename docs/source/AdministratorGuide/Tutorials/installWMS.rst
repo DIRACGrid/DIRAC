@@ -227,7 +227,6 @@ Then, as ``diracuser`` with the ``dirac_admin`` proxy, we need to define a CE in
                   CPUTime = 40000
                   MaxTotalJobs = 5
                   MaxWaitingJobs = 10
-                  BundleProxy = True
                   BatchError = /home/diracpilot/localsite/error
                   ExecutableArea = /home/diracpilot/localsite/submission
                   RemoveOutput = True
