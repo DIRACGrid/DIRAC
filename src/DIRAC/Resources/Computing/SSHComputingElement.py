@@ -591,6 +591,8 @@ class SSHComputingElement(ComputingElement):
             return resultCommand
 
         result = resultCommand["Value"]
+        if not isinstance(result, dict) or "Status" not in result:
+            return S_ERROR("Invalid result from job submission")
         if result["Status"] != 0:
             return S_ERROR(f"Failed job submission: {result['Message']}")
         else:
@@ -633,6 +635,8 @@ class SSHComputingElement(ComputingElement):
             return resultCommand
 
         result = resultCommand["Value"]
+        if not isinstance(result, dict) or "Status" not in result:
+            return S_ERROR("Invalid result from job submission")
         if result["Status"] != 0:
             return S_ERROR(f"Failed job kill: {result['Message']}")
 
@@ -668,6 +672,8 @@ class SSHComputingElement(ComputingElement):
             return resultCommand
 
         result = resultCommand["Value"]
+        if not isinstance(result, dict) or "Status" not in result:
+            return S_ERROR("Invalid result from job submission")
         if result["Status"] != 0:
             return S_ERROR(f"Failed to get CE status: {result['Message']}")
 
@@ -691,6 +697,8 @@ class SSHComputingElement(ComputingElement):
                 return resultCommand
 
             result = resultCommand["Value"]
+            if not isinstance(result, dict) or "Status" not in result:
+                return S_ERROR("Invalid result from job submission")
             if result["Status"] != 0:
                 return S_ERROR(f"Failed to get job status: {result['Message']}")
 
@@ -773,6 +781,8 @@ class SSHComputingElement(ComputingElement):
                 return resultCommand
 
             result = resultCommand["Value"]
+            if not isinstance(result, dict) or "Status" not in result:
+                return S_ERROR("Invalid result from job submission")
             if result["Status"] != 0:
                 return S_ERROR(f"Failed to get job output files: {result['Message']}")
 
