@@ -4,10 +4,11 @@
 
 # imports
 import datetime
-import pytest
 from unittest.mock import MagicMock
 
-from DIRAC import gLogger
+import pytest
+
+from DIRAC import S_OK, gLogger
 
 # sut
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import SiteDirector
@@ -179,10 +180,13 @@ def test__submitPilotsToQueue(sd):
     # This is to use the SiteDirector's working directory, not the CE one
     ceMock = MagicMock()
     del ceMock.workingDirectory
+    proxyObject_mock = MagicMock()
+    proxyObject_mock.dumpAllToString.return_value = S_OK("aProxy")
+    ceMock.proxy = proxyObject_mock
 
     sd.queueCECache = {"aQueue": {"CE": ceMock}}
     sd.queueSlots = {"aQueue": {"AvailableSlots": 10}}
-    assert sd._submitPilotsToQueue(1, MagicMock(), "aQueue")["OK"]
+    assert sd._submitPilotsToQueue(1, ceMock, "aQueue")["OK"]
 
 
 @pytest.mark.parametrize(
