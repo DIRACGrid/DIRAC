@@ -35,7 +35,6 @@ Let's take an example::
                 maxCPUTime = 200
                 MaxTotalJobs = 5
                 MaxWaitingJobs = 10
-                BundleProxy = True
                 RemoveOutput = True
               }
               # This queue has Tag = GPU. So it will accept:

@@ -4,17 +4,16 @@
 
 import datetime
 import os
+from unittest.mock import MagicMock
+
 import pytest
 from diraccfg import CFG
 
-from DIRAC import gLogger, gConfig
+from DIRAC import S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client import ConfigurationData
-from DIRAC.Core.Utilities.ProcessPool import S_OK
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
-
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import SiteDirector
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
-
 
 CONFIG = """
 Registry
@@ -261,11 +260,33 @@ def test_getPilotWrapper(mocker, sd, pilotWrapperDirectory):
         "-e 1,2,3",
     } == set(pilotOptions)
 
+    proxyObject_mock = MagicMock()
+    proxyObject_mock.dumpAllToString.return_value = S_OK("aProxy")
+
     # Write pilot script
-    res = sd._writePilotScript(pilotWrapperDirectory, pilotOptions)
+    res = sd._writePilotScript(pilotWrapperDirectory, pilotOptions, proxyObject_mock)
 
     # Make sure the file exists
     assert os.path.exists(res) and os.path.isfile(res)
+
+
+def test__submitPilotsToQueue(sd):
+    """Testing SiteDirector()._submitPilotsToQueue()"""
+    # Create a MagicMock that does not have the workingDirectory
+    # attribute (https://cpython-test-docs.readthedocs.io/en/latest/library/unittest.mock.html#deleting-attributes)
+    # This is to use the SiteDirector's working directory, not the CE one
+    ceMock = MagicMock()
+    del ceMock.workingDirectory
+    proxyObject_mock = MagicMock()
+    proxyObject_mock.dumpAllToString.return_value = S_OK("aProxy")
+    ceMock.proxy = proxyObject_mock
+
+    sd.queueCECache = {"ce1.site1.com_condor": {"CE": ceMock, "Hash": "3d0dd0c60fffa900c511d7442e9c7634"}}
+    sd.queueSlots = {"ce1.site1.com_condor": {"AvailableSlots": 10}}
+    sd._buildQueueDict()
+    sd.sendSubmissionAccounting = False
+    sd.sendSubmissionMonitoring = False
+    assert sd._submitPilotsToQueue(1, ceMock, "ce1.site1.com_condor")["OK"]
 
 
 def test_updatePilotStatus(sd):
