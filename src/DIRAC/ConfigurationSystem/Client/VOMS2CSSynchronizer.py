@@ -232,7 +232,7 @@ class VOMS2CSSynchronizer:
         vomsSrv = VOMSService(self.vo)
         voms_users = returnValueOrRaise(vomsSrv.getUsers())
         if self.compareWithIAM:
-            self.compareUsers(voms_users, iam_users)
+            self.compareUsers(voms_users.get("Users", {}), iam_users.get("Users", {}))
         return voms_users
 
     def syncCSWithVOMS(self):
@@ -259,9 +259,9 @@ class VOMS2CSSynchronizer:
         if not result["OK"]:
             self.log.error("Could not retrieve user information", result["Message"])
             return result
-        if getUserErrors := result.get("Errors", []):
+        if getUserErrors := result["Value"]["Errors"]:
             self.adminMsgs["Errors"].extend(getUserErrors)
-        self.vomsUserDict = result["Value"]
+        self.vomsUserDict = result["Value"]["Users"]
         message = f"There are {len(self.vomsUserDict)} user entries in VOMS for VO {self.vomsVOName}"
         self.adminMsgs["Info"].append(message)
         self.log.info("VOMS user entries", message)

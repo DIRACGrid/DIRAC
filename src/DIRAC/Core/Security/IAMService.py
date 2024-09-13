@@ -129,6 +129,10 @@ class IAMService:
         return converted_output
 
     def getUsers(self):
+        """Extract users from IAM user dump.
+
+        :return: dictionary of: "Users": user dictionary keyed by the user DN, "Errors": list of error messages
+        """
         self.iam_users_raw = self._getIamUserDump()
         users = {}
         errors = []
@@ -140,6 +144,5 @@ class IAMService:
                 self.log.error("Could not convert", f"{user['name']} {e!r}")
         self.log.error("There were in total", f"{len(errors)} errors")
         self.userDict = dict(users)
-        result = S_OK(users)
-        result["Errors"] = errors
+        result = S_OK({"Users": users, "Errors": errors})
         return result
