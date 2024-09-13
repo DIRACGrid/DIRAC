@@ -43,10 +43,16 @@ def getSystemInstance(system, setup=False):
        an empty string is returned
     """
 
-    # If Setup is "None", it means that we have the case of configuration without Setup
-    setupToUse = setup or gConfigurationData.remoteCFG.getOption("/DIRAC/Setup")
-    if setupToUse == "None":
+    # If noSetupFlag is set to True, we do not have system instances
+    try:
+        noSetupFlag = gConfigurationData.extractOptionFromCFG("/DIRAC/NoSetup")
+        if noSetupFlag == "True":
+            return ""
+    except:
         return ""
+
+    # If Setup is "None", it means that we have the case of configuration without Setup
+    setupToUse = setup or getDIRACSetup()
 
     optionPath = Path.cfgPath("/DIRAC/Setups", setupToUse, system)
     instance = gConfigurationData.extractOptionFromCFG(optionPath)
