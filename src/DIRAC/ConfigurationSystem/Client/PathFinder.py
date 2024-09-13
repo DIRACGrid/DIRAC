@@ -43,8 +43,8 @@ def getSystemInstance(system, setup=False):
        an empty string is returned
     """
 
-    # If Setup is None, it means that we have the case of configuration without Setup
-    setupToUse = setup or getDIRACSetup()
+    # If Setup is "None", it means that we have the case of configuration without Setup
+    setupToUse = setup or gConfigurationData.remoteCFG.getOption("/DIRAC/Setup")
     if setupToUse == "None":
         return ""
 
