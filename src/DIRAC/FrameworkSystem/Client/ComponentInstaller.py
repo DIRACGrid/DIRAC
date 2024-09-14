@@ -402,6 +402,9 @@ class ComponentInstaller:
         if extensions:
             centralCfg["DIRAC"].addKey("Extensions", ",".join(extensions), "")  # pylint: disable=no-member
 
+        # No Setups will be used
+        centralCfg["DIRAC"].addKey("NoSetup", "True", "")
+
         vo = self.localCfg.getOption(cfgInstallPath("VirtualOrganization"), "")
         if vo:
             centralCfg["DIRAC"].addKey("VirtualOrganization", vo, "")  # pylint: disable=no-member
