@@ -64,7 +64,7 @@ JOB_STATES = [
 ]
 
 # Job States when the payload work has finished
-JOB_FINAL_STATES = [DONE, COMPLETED, FAILED]
+JOB_FINAL_STATES = [DONE, COMPLETED, FAILED, KILLED]
 
 # WMS internal job States indicating the job object won't be updated
 JOB_REALLY_FINAL_STATES = [DELETED]
