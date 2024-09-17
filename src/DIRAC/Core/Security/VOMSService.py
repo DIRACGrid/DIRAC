@@ -59,7 +59,7 @@ class VOMSService:
     def getUsers(self):
         """Get all the users of the VOMS VO with their detailed information
 
-        :return: user dictionary keyed by the user DN
+        :return: dictionary of: "Users": user dictionary keyed by the user DN, "Errors": empty list
         """
         if not self.urls:
             return S_ERROR(DErrno.ENOAUTH, "No VOMS server defined")
@@ -126,4 +126,5 @@ class VOMSService:
                             resultDict[dn]["nickname"] = attribute.get("value")
 
         self.userDict = dict(resultDict)
-        return S_OK(resultDict)
+        # for consistency with IAM interface, we add Errors
+        return S_OK({"Users": resultDict, "Errors": []})
