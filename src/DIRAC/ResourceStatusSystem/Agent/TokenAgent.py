@@ -13,9 +13,11 @@ The following options can be set for the TokenAgent.
 from datetime import datetime, timedelta
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+
 
 AGENT_NAME = "ResourceStatus/TokenAgent"
 
@@ -209,7 +211,8 @@ class TokenAgent(AgentModule):
         mail += " Or you can use the dirac-rss-set-token script\n\n"
         mail += "Through the same interfaces you can release the token any time\n"
 
-        resEmail = self.diracAdmin.sendMail(tokenOwner, subject, mail)
+        fromAddress = Operations().getValue("ResourceStatus/Config/FromAddress", "")
+        resEmail = self.diracAdmin.sendMail(tokenOwner, subject, mail, fromAddress=fromAddress)
         if not resEmail["OK"]:
             return S_ERROR(f'Cannot send email to user "{tokenOwner}"')
 
