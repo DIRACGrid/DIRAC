@@ -204,6 +204,7 @@ def main():
     subject = f"{len(writeBanned + readBanned + checkBanned + removeBanned)} storage elements banned for use"
     addressPath = "EMail/Production"
     address = Operations().getValue(addressPath, "")
+    fromAddress = Operations().getValue("ResourceStatus/Config/FromAddress", "")
 
     body = ""
     if read:
@@ -227,7 +228,7 @@ def main():
         gLogger.notice(f"'{addressPath}' not defined in Operations, can not send Mail\n", body)
         DIRAC.exit(0)
 
-    res = diracAdmin.sendMail(address, subject, body)
+    res = diracAdmin.sendMail(address, subject, body, fromAddress=fromAddress)
     gLogger.notice(f"Notifying {address}")
     if res["OK"]:
         gLogger.notice(res["Value"])

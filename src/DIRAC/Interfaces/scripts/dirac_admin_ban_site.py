@@ -85,7 +85,8 @@ def main():
             if not address:
                 gLogger.notice(f"'{addressPath}' not defined in Operations, can not send Mail\n", body)
             else:
-                result = diracAdmin.sendMail(address, subject, body)
+                fromAddress = Operations().getValue("ResourceStatus/Config/FromAddress", "")
+                result = diracAdmin.sendMail(address, subject, body, fromAddress=fromAddress)
         else:
             print("Automatic email disabled by flag.")
 
