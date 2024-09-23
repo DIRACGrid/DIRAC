@@ -43,7 +43,7 @@ class WLCGAccountingHTTPJson(WLCGAccountingJson):
             with open(filePath, "w") as fd:
                 caPath = getCAsLocation()
                 userProxy = getProxyLocation()
-                res = requests.get(occupancyLFN, cert=userProxy, verify=caPath)
+                res = requests.get(occupancyLFN, cert=userProxy, verify=caPath, timeout=30)
                 res.raise_for_status()
                 fd.write(res.text)
         except Exception as e:
