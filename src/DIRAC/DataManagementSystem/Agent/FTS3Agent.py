@@ -106,6 +106,8 @@ class FTS3Agent(AgentModule):
         # lifetime of the proxy we download to delegate to FTS
         self.proxyLifetime = self.am_getOption("ProxyLifetime", PROXY_LIFETIME)
 
+        self.jobMonitoringBatchSize = self.am_getOption("JobMonitoringBatchSize", JOB_MONITORING_BATCH_SIZE)
+
         return S_OK()
 
     def initialize(self):
@@ -318,7 +320,7 @@ class FTS3Agent(AgentModule):
             log.info("Getting next batch of jobs to monitor", f"{loopId}/{nbOfLoops}")
             # get jobs from DB
             res = self.fts3db.getActiveJobs(
-                limit=JOB_MONITORING_BATCH_SIZE, lastMonitor=lastMonitor, jobAssignmentTag=self.assignmentTag
+                limit=self.jobMonitoringBatchSize, lastMonitor=lastMonitor, jobAssignmentTag=self.assignmentTag
             )
 
             if not res["OK"]:
@@ -353,7 +355,7 @@ class FTS3Agent(AgentModule):
 
             # If we got less to monitor than what we asked,
             # stop looping
-            if len(activeJobs) < JOB_MONITORING_BATCH_SIZE:
+            if len(activeJobs) < self.jobMonitoringBatchSize:
                 break
         # Commit records after each loop
         self.dataOpSender.concludeSending()

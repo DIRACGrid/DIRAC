@@ -5,6 +5,7 @@
   :synopsis: implementation of client for RequestDB using DISET framework
 
 """
+
 import os
 import time
 import random
@@ -258,7 +259,7 @@ class ReqClient(Client):
         self.log.debug("getRequestStatus: attempting to get status for '%d' request." % requestID)
         requestStatus = self._getRPC().getRequestStatus(requestID)
         if not requestStatus["OK"]:
-            self.log.error(
+            self.log.verbose(
                 "getRequestStatus: unable to get status for request",
                 ": '%d' %s" % (requestID, requestStatus["Message"]),
             )
@@ -469,6 +470,23 @@ class ReqClient(Client):
             req.NotBefore = datetime.datetime.utcnow().replace(microsecond=0)
             return self.putRequest(req)
         return S_OK("Not reset")
+
+    @ignoreEncodeWarning
+    def getBulkRequestStatus(self, requestIDs: list[int]):
+        """get the Status for the supplied request IDs.
+
+        :param self: self reference
+        :param list requestIDs: list of job IDs (integers)
+        :return: S_ERROR or S_OK( { reqID1:status, requID2:status2, ... })
+        """
+        res = self._getRPC().getBulkRequestStatus(requestIDs)
+        if not res["OK"]:
+            return res
+
+        # Cast the requestIDs back to int
+        statuses = strToIntDict(res["Value"])
+
+        return S_OK(statuses)
 
 
 # ============= Some useful functions to be shared ===========
