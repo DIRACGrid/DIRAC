@@ -62,6 +62,15 @@ Databases
 
 Every now and then, it is interesting to look at the fragmentation status of your database. This is done by using the ``analyze table`` statement (https://dev.mysql.com/doc/refman/8.4/en/analyze-table.html) possibly followed by the ``optimize table`` statement (https://dev.mysql.com/doc/refman/8.4/en/optimize-table.html).
 
+To know whether your tables are fragmented::
+
+   select table_schema,table_name, sys.format_bytes(data_length) table_size, sys.format_bytes(data_free) empty_space from information_schema.tables where data_length >= (1024*1024*1024) order by data_length desc;
+
+
+The fragmented space should be very small with respect to the overall table size.
+
+
+
 
 Duplications
 ============

@@ -9,6 +9,7 @@ The following options can be set for the TransformationAgent.
   :caption: TransformationAgent options
 """
 from importlib import import_module
+
 import time
 import os
 import datetime
@@ -242,7 +243,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
         if transID not in self.replicaCache:
             self.__readCache(transID)
         transFiles = transFiles["Value"]
-        unusedLfns = [f["LFN"] for f in transFiles]
+        unusedLfns = {f["LFN"] for f in transFiles}
         unusedFiles = len(unusedLfns)
 
         plugin = transDict.get("Plugin", "Standard")
@@ -251,7 +252,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
             maxFiles = Operations().getValue(f"TransformationPlugins/{plugin}/MaxFilesToProcess", 0)
             # Get plugin-specific limit in number of files (0 means no limit)
             totLfns = len(unusedLfns)
-            lfnsToProcess = self.__applyReduction(unusedLfns, maxFiles=maxFiles)
+            lfnsToProcess = set(self.__applyReduction(unusedLfns, maxFiles=maxFiles))
             if len(lfnsToProcess) != totLfns:
                 self._logInfo(
                     "Reduced number of files from %d to %d" % (totLfns, len(lfnsToProcess)),
@@ -534,8 +535,10 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
             method=method,
             transID=transID,
         )
+        successful_set = set(replicas["Successful"])
+        failed_set = set(replicas["Failed"])
         # If files are neither Successful nor Failed, they are set problematic in the FC
-        problematicLfns = [lfn for lfn in lfns if lfn not in replicas["Successful"] and lfn not in replicas["Failed"]]
+        problematicLfns = [lfn for lfn in lfns if lfn not in successful_set and lfn not in failed_set]
         if problematicLfns:
             self._logInfo(f"{len(problematicLfns)} files found problematic in the catalog, set ProbInFC")
             res = clients["TransformationClient"].setFileStatusForTransformation(

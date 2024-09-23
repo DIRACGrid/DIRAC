@@ -337,6 +337,16 @@ class ReqManagerHandlerMixin:
             gLogger.error("getRequestStatus", status["Message"])
         return status
 
+    types_getBulkRequestStatus = [list]
+
+    @classmethod
+    def export_getBulkRequestStatus(cls, requestIDs):
+        """get requests statuses given their ids"""
+        res = cls.__requestDB.getBulkRequestStatus(requestIDs)
+        if not res["OK"]:
+            gLogger.error("getBulkRequestStatus", res["Message"])
+        return res
+
     types_getRequestFileStatus = [int, [str, list]]
 
     @classmethod
