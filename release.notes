@@ -1,3 +1,16 @@
+[v8.0.53]
+
+*Resources
+
+FIX: (#7787) added a 30s gfal2 timeout for downloading the SRR
+
+*TransformationSystem
+
+FIX: (#7741) RequestTaskAgent only considers requests in final states, and consider files in intermediate state as problematic (https://github.com/DIRACGrid/DIRAC/issues/7116)
+NEW: (#7741) RequestTaskAgent uses getBulkRequestStatus instead of getRequestStatus
+RMS: (#7741) 
+NEW: (#7741) implement getRequestStatus
+
 [v8.0.52]
 
 *ResourceStatusSystem
