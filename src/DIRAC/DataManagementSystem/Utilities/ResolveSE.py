@@ -1,6 +1,7 @@
 """ This module allows to resolve output SEs for Job based
 on SE and site/country association
 """
+
 from random import shuffle
 
 from DIRAC import gLogger, gConfig
@@ -70,7 +71,6 @@ def getDestinationSEList(outputSE, site, outputmode="Any"):
         raise RuntimeError(localSEs["Message"])
     localSEs = localSEs["Value"]
     sLog.verbose("Local SE list is:", ", ".join(localSEs))
-
     # There is an alias defined for this Site
     associatedSEs = gConfig.getValue(f"/Resources/Sites/{prefix}/{site}/AssociatedSEs/{outputSE}", [])
     if associatedSEs:
