@@ -6,14 +6,16 @@
 
   When this is used, the OccupancyLFN has to be the full path on the storage, and not just the LFN
 """
+import errno
 import json
 import os
-import tempfile
 import shutil
-import errno
+import tempfile
+
 import gfal2  # pylint: disable=import-error
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK
+from DIRAC.Resources.Storage.GFAL2_StorageBase import setGfalSetting
 
 
 class WLCGAccountingJson:
@@ -39,11 +41,13 @@ class WLCGAccountingJson:
                 ctx = gfal2.creat_context()
                 params = ctx.transfer_parameters()
                 params.overwrite = True
+                params.timeout = 30
                 res = storage.updateURL(occupancyLFN)
                 if not res["OK"]:
                     continue
                 occupancyURL = res["Value"]
-                ctx.filecopy(params, occupancyURL, "file://" + filePath)
+                with setGfalSetting(ctx, "HTTP PLUGIN", "OPERATION_TIMEOUT", 30):
+                    ctx.filecopy(params, occupancyURL, "file://" + filePath)
                 # Just make sure the file is json, and not SSO HTML
                 with open(filePath) as f:
                     json.load(f)
