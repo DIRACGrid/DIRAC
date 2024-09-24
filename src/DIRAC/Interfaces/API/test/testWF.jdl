@@ -1,5 +1,5 @@
  
-    Arguments = "jobDescription.xml -o LogLevel=DEBUG  -p JOB_ID=%(JOB_ID)s  -p InputData=%(InputData)s";
+    Arguments = "jobDescription.xml -o LogLevel=DEBUG  -p JOB_ID=%(JOB_ID)s  -p InputData=%(InputData)s  -p RunNumber=%(RunNumber)s";
     Executable = "dirac-jobexec";
     InputData = %(InputData)s;
     InputSandbox = jobDescription.xml;
@@ -29,6 +29,13 @@
             2,
             3
         };
+    Parameters.RunNumber = 
+        {
+            123,
+            456,
+            789
+        };
     Priority = 1;
+    RunNumber = %(RunNumber)s;
     StdError = std.err;
     StdOutput = std.out;

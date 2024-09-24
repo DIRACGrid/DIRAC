@@ -47,6 +47,10 @@ def test_SimpleParametricJob():
     ]
     job.setParameterSequence("InputData", inputDataList, addToWorkflow=True)
 
+    runNumberList = [123, 456, 789]
+    res = job.setParameterSequence("RunNumber", runNumberList, addToWorkflow=True)
+    assert res["OK"]
+
     jdl = job._toJDL()
 
     with open(join(dirname(__file__), "testWF.jdl")) as fd:
@@ -59,13 +63,16 @@ def test_SimpleParametricJob():
     arguments = clad.getAttributeString("Arguments")
     job_id = clad.getAttributeString("JOB_ID")
     inputData = clad.getAttributeString("InputData")
+    runNumber = clad.getAttributeString("RunNumber")
 
     assert job_id == "%(JOB_ID)s"
     assert inputData == "%(InputData)s"
+    assert runNumber == "%(RunNumber)s"
     assert "jobDescription.xml" in arguments
     assert "-o LogLevel=DEBUG" in arguments
     assert "-p JOB_ID=%(JOB_ID)s" in arguments
     assert "-p InputData=%(InputData)s" in arguments
+    assert "-p RunNumber=%(RunNumber)s" in arguments
 
 
 @pytest.mark.parametrize(
