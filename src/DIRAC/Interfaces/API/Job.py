@@ -904,6 +904,7 @@ class Job(API):
         self._addParameter(self.workflow, "StdOutput", "JDL", self.stdout, "Standard output file")
         self._addParameter(self.workflow, "StdError", "JDL", self.stderr, "Standard error file")
         self._addParameter(self.workflow, "InputData", "JDL", "", "Default null input data value")
+        self._addParameter(self.workflow, "RunNumber", "JDL", "", "Default null input run value")
         self._addParameter(self.workflow, "LogLevel", "JDL", self.logLevel, "Job Logging Level")
         self._addParameter(self.workflow, "arguments", "string", "", "Arguments to executable Step")
         # Those 2 below are need for on-site resolution
@@ -912,6 +913,9 @@ class Job(API):
         )
         self._addParameter(
             self.workflow, "ParametricInputSandbox", "string", "", "Default null parametric input sandbox value"
+        )
+        self._addParameter(
+            self.workflow, "ParametricRunNumber", "string", "", "Default null parametric run number value"
         )
 
     #############################################################################
@@ -1021,6 +1025,7 @@ class Job(API):
                     # If a parameter with the same name as the sequence name already exists
                     # and is a list, then extend it by the sequence value. If it is not a
                     # list, then replace it by the sequence value
+
                     if isinstance(paramsDict[pName]["value"], list):
                         currentParams = paramsDict[pName]["value"]
                         tmpList = []

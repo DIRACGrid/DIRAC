@@ -211,8 +211,19 @@ class WorkflowTasks(TaskBase):
                 self._logError("Invalid mixture of jobs with and without input data")
                 return S_ERROR(ETSDATA, "Invalid mixture of jobs with and without input data")
 
+            # Handle Run Number
+            runNumber = paramsDict.get("RunNumber")
+            if runNumber:
+                if isinstance(runNumber, str):
+                    runNumber = runNumber.replace(" ", "").split(";")
+                self._logVerbose(f"Setting run number to {runNumber}", transID=transID, method=method)
+                seqDict["RunNumber"] = runNumber
+            elif paramSeqDict.get("RunNumber") is not None:
+                self._logError("Invalid mixture of jobs with and without run number")
+                return S_ERROR(ETSDATA, "Invalid mixture of jobs with and without run number")
+
             for paramName, paramValue in paramsDict.items():
-                if paramName not in ("InputData", "Site", "TargetSE"):
+                if paramName not in ("InputData", "RunNumber", "Site", "TargetSE"):
                     if paramValue:
                         self._logVerbose(f"Setting {paramName} to {paramValue}", transID=transID, method=method)
                         seqDict[paramName] = paramValue
@@ -244,7 +255,7 @@ class WorkflowTasks(TaskBase):
                 paramSeqDict.setdefault(pName, []).append(seq)
 
         for paramName, paramSeq in paramSeqDict.items():
-            if paramName in ["JOB_ID", "PRODUCTION_ID", "InputData"] + outputParameterList:
+            if paramName in ["JOB_ID", "PRODUCTION_ID", "InputData", "RunNumber"] + outputParameterList:
                 res = oJob.setParameterSequence(paramName, paramSeq, addToWorkflow=paramName)
             else:
                 res = oJob.setParameterSequence(paramName, paramSeq)
