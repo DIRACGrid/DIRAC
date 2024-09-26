@@ -33,14 +33,23 @@ def divideFullName(entityName, componentName=None):
 
 
 def getSystemInstance(system, setup=False):
-    """Find system instance name
+    """Find system instance name.
 
     :param str system: system name
     :param str setup: setup name
 
-    :return: str
+    :return: str: instance name. If the system option is present
+       in the /DIRAC/Setups/<setup> section but is not given a value,
+       an empty string is returned
     """
-    optionPath = Path.cfgPath("/DIRAC/Setups", setup or getDIRACSetup(), system)
+
+    # If noSetupFlag is set to True, we do not have system instances in the configuration
+    noSetupFlag = gConfigurationData.extractOptionFromCFG("/DIRAC/NoSetup")
+    if noSetupFlag == "True":
+        return ""
+
+    setupToUse = setup or getDIRACSetup()
+    optionPath = Path.cfgPath("/DIRAC/Setups", setupToUse, system)
     instance = gConfigurationData.extractOptionFromCFG(optionPath)
     if not instance:
         raise RuntimeError(f"Option {optionPath} is not defined")
