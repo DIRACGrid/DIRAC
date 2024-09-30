@@ -262,6 +262,47 @@ def parametricJob():
     return endOfAllJobs(J)
 
 
+def parametricJobInputData():
+    """Creates a parametric job with 3 subjobs which are simple hello world jobs"""
+
+    J = baseToAllJobs("parametricJobInput")
+    try:
+        J.setInputSandbox([find_all("exe-script.py", rootPath, "DIRAC/tests/Workflow")[0]])
+    except IndexError:
+        try:
+            J.setInputSandbox([find_all("exe-script.py", ".", "DIRAC/tests/Workflow")[0]])
+        except IndexError:  # we are in Jenkins
+            J.setInputSandbox([find_all("exe-script.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]])
+    J.setParameterSequence("args", ["one", "two", "three"])
+    J.setParameterSequence("iargs", [1, 2, 3])
+    J.setParameterSequence(
+        "InputData",
+        ["/lhcb/user/f/fstagni/test/1.txt", "/lhcb/user/f/fstagni/test/2.txt", "/lhcb/user/f/fstagni/test/3.txt"],
+    )
+    J.setInputDataPolicy("download")
+    J.setExecutable("exe-script.py", arguments=": testing %(args)s %(iargs)s", logFile="helloWorld_%n.log")
+    return endOfAllJobs(J)
+
+
+def parametricJobRuns():
+    """Creates a parametric job with 3 subjobs which are simple hello world jobs (added RunNumber)"""
+
+    J = baseToAllJobs("parametricJobRunNumber")
+    try:
+        J.setInputSandbox([find_all("exe-script.py", rootPath, "DIRAC/tests/Workflow")[0]])
+    except IndexError:
+        try:
+            J.setInputSandbox([find_all("exe-script.py", ".", "DIRAC/tests/Workflow")[0]])
+        except IndexError:  # we are in Jenkins
+            J.setInputSandbox([find_all("exe-script.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]])
+    J.setParameterSequence("args", ["one", "two", "three"])
+    J.setParameterSequence("iargs", [1, 2, 3])
+    J.setParameterSequence("RunNumber", [123, 456, 789])
+
+    J.setExecutable("exe-script.py", arguments=": testing %(args)s %(iargs)s", logFile="helloWorld_%n.log")
+    return endOfAllJobs(J)
+
+
 def jobWithOutput():
     """Creates a job that uploads an output.
     The output SE is not set here, so it would use the default /Resources/StorageElementGroups/SE-USER

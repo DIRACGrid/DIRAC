@@ -77,6 +77,14 @@ class submitSuccess(GridSubmissionTestCase):
         self.assertTrue(res["OK"])
         jobsSubmittedList.append(res["Value"])
 
+        res = parametricJobInputData()
+        self.assertTrue(res["OK"])
+        jobsSubmittedList.append(res["Value"])
+
+        res = parametricJobRuns()
+        self.assertTrue(res["OK"])
+        jobsSubmittedList.append(res["Value"])
+
         res = jobWithOutput()
         self.assertTrue(res["OK"])
         jobsSubmittedList.append(res["Value"])
