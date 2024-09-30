@@ -904,7 +904,7 @@ class Job(API):
         self._addParameter(self.workflow, "StdOutput", "JDL", self.stdout, "Standard output file")
         self._addParameter(self.workflow, "StdError", "JDL", self.stderr, "Standard error file")
         self._addParameter(self.workflow, "InputData", "JDL", "", "Default null input data value")
-        self._addParameter(self.workflow, "RunNumber", "JDL", "", "Default null input run value")
+        self._addParameter(self.workflow, "runNumber", "JDL", "", "Default null input run value")
         self._addParameter(self.workflow, "LogLevel", "JDL", self.logLevel, "Job Logging Level")
         self._addParameter(self.workflow, "arguments", "string", "", "Arguments to executable Step")
         # Those 2 below are need for on-site resolution
