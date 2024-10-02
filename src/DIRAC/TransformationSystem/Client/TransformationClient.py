@@ -163,6 +163,7 @@ class TransformationClient(Client):
         timeout=1800,
         offset=0,
         maxfiles=None,
+        columns=None,
     ):
         """gets all the transformation files for a transformation, incrementally.
         "limit" here is just used to determine the offset.
@@ -173,34 +174,37 @@ class TransformationClient(Client):
             condDict = {}
         if timeStamp is None:
             timeStamp = "LastUpdate"
-        # getting transformationFiles - incrementally
-        if "LFN" in condDict:
-            if isinstance(condDict["LFN"], str):
-                lfnList = [condDict["LFN"]]
-            else:
-                lfnList = sorted(condDict["LFN"])
-            # If a list of LFNs is given, use chunks of 1000 only
-            limit = limit if limit else 1000
+
+        if "LFN" not in condDict:
+            res = rpcClient.getTransformationFiles(
+                condDict, older, newer, timeStamp, orderAttribute, offset, maxfiles, columns
+            )
+            if not res["OK"]:
+                return res
+            return S_OK(res["Value"])
+
+        # If LFNs requested continue to do the old behavior of requesting in small batches
+        # Probably not needed?
+        if isinstance(condDict["LFN"], str):
+            lfnList = [condDict["LFN"]]
         else:
-            # By default get by chunks of 10000 files
-            lfnList = []
-            limit = limit if limit else 10000
+            lfnList = sorted(condDict["LFN"])
+        # If a list of LFNs is given, default to chunks of 1000 only
+        limit = limit if limit else 1000
+
         transID = condDict.get("TransformationID", "Unknown")
         offsetToApply = offset
         retries = 5
         while True:
-            if lfnList:
-                # If list is exhausted, exit
-                if offsetToApply >= len(lfnList):
-                    break
-                # Apply the offset to the list of LFNs
-                condDict["LFN"] = lfnList[offsetToApply : offsetToApply + limit]
-                # No limit and no offset as the list is limited already
-                res = rpcClient.getTransformationFiles(condDict, older, newer, timeStamp, orderAttribute, None, None)
-            else:
-                res = rpcClient.getTransformationFiles(
-                    condDict, older, newer, timeStamp, orderAttribute, limit, offsetToApply
-                )
+            # If list is exhausted, exit
+            if offsetToApply >= len(lfnList):
+                break
+            # Apply the offset to the list of LFNs
+            condDict["LFN"] = lfnList[offsetToApply : offsetToApply + limit]
+            # No limit and no offset as the list is limited already
+            res = rpcClient.getTransformationFiles(
+                condDict, older, newer, timeStamp, orderAttribute, None, None, columns
+            )
             if not res["OK"]:
                 gLogger.error(
                     "Error getting files for transformation %s (offset %d), %s"
@@ -211,36 +215,19 @@ class TransformationClient(Client):
                 if retries:
                     continue
                 return res
-            else:
-                condDictStr = str(condDict)
-                log = gLogger.debug if len(condDictStr) > 100 else gLogger.verbose
-                if not log(
-                    "For conditions %s: result for limit %d, offset %d: %d files"
-                    % (condDictStr, limit, offsetToApply, len(res["Value"]))
-                ):
-                    gLogger.verbose(
-                        "For condition keys %s (trans %s): result for limit %d, offset %d: %d files"
-                        % (
-                            str(sorted(condDict)),
-                            condDict.get("TransformationID", "None"),
-                            limit,
-                            offsetToApply,
-                            len(res["Value"]),
-                        )
-                    )
-                if res["Value"]:
-                    transformationFiles += res["Value"]
-                    # Limit the number of files returned
-                    if maxfiles and len(transformationFiles) >= maxfiles:
-                        transformationFiles = transformationFiles[:maxfiles]
-                        break
-                # Less data than requested, exit only if LFNs were not given
-                if not lfnList and len(res["Value"]) < limit:
+            gLogger.verbose(f"Result for limit {limit}, offset {offsetToApply}: {len(res['Value'])} files")
+            if res["Value"]:
+                transformationFiles += res["Value"]
+                # Limit the number of files returned
+                if maxfiles and len(transformationFiles) >= maxfiles:
+                    transformationFiles = transformationFiles[:maxfiles]
                     break
-                offsetToApply += limit
-                # Reset number of retries for next chunk
-                retries = 5
-
+            # Less data than requested, exit only if LFNs were not given
+            if not lfnList and len(res["Value"]) < limit:
+                break
+            offsetToApply += limit
+            # Reset number of retries for next chunk
+            retries = 5
         return S_OK(transformationFiles)
 
     def getTransformationTasks(
