@@ -489,7 +489,7 @@ class SSHComputingElement(ComputingElement):
         options = quote(options)
 
         cmd = (
-            "bash --login -c 'python %s/execute_batch %s || python3 %s/execute_batch %s || python2 %s/execute_batch %s'"
+            "bash --login -c 'python3 %s/execute_batch %s || python %s/execute_batch %s || python2 %s/execute_batch %s'"
             % (self.sharedArea, options, self.sharedArea, options, self.sharedArea, options)
         )
 
