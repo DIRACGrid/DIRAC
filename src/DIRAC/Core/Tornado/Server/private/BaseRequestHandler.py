@@ -952,7 +952,7 @@ class BaseRequestHandler(RequestHandler):
         # you need to define the finish_<methodName> method.
         # This method will be started after _executeMethod is completed.
         elif callable(finishFunc := getattr(self, f"finish_{self.__methodName}", None)):
-            finishFunc()
+            finishFunc()  # pylint: disable=not-callable
 
         # In case nothing is returned
         elif self.__result is None:

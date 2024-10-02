@@ -6,6 +6,20 @@ FIX: (#7649) added log headers to InputDataResolution modules
 CHANGE: (#7629) add jobGroup to job parameters
 FIX: (#7584) ServerUtils: prevent getPilotAgentsDB from returning None
 FIX: (#7576) Fix potential circular import in WorkflowReader. Mostly seen in the creation of the documentation.
+FIX: (#7787) added a 30s gfal2 timeout for downloading the SRR
+
+*TransformationSystem
+
+FIX: (#7741) RequestTaskAgent only considers requests in final states, and consider files in intermediate state as problematic (https://github.com/DIRACGrid/DIRAC/issues/7116)
+NEW: (#7741) RequestTaskAgent uses getBulkRequestStatus instead of getRequestStatus
+RMS: (#7741)
+NEW: (#7741) implement getRequestStatus
+
+[v8.0.52]
+
+*ResourceStatusSystem
+
+FIX: (#7800) use always a from address (from Operations ResourceStatus/Config/FromAddress ) when sending email notifications, to avoid "spoofing" domains restrictions
 
 *WorkloadManagement
 
