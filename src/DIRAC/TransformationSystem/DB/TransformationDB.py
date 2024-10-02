@@ -628,7 +628,7 @@ class TransformationDB(DB):
                 else:
                     return S_ERROR(f"Invalid key {key} in condDict")
         if timeStamp:
-            timeStamp = f"t.{timeStamp}"
+            timeStamp = f"tf.{timeStamp}"
         if fixedCondDict or older or newer:
             cond = self.buildCondition(fixedCondDict, older, newer, timeStamp, orderAttribute, limit, offset=offset)
             # When buildCondition tries to quote the column names, it will fail due to the table alias

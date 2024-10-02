@@ -179,12 +179,14 @@ class TransformationClient(Client):
             res = rpcClient.getTransformationFiles(
                 condDict, older, newer, timeStamp, orderAttribute, offset, maxfiles, columns
             )
+            # TransformationDB.getTransformationFiles includes a "Records"/"ParameterNames"
+            # that we don't want to return to the client so explicitly return S_OK with the value
             if not res["OK"]:
                 return res
             return S_OK(res["Value"])
 
-        # If LFNs requested continue to do the old behavior of requesting in small batches
-        # Probably not needed?
+        # If LFNs requested, request in small batches, because...
+        # Probably not needed? Because this should always be a list
         if isinstance(condDict["LFN"], str):
             lfnList = [condDict["LFN"]]
         else:
