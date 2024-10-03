@@ -2,7 +2,7 @@
   This module contains the necessary tools to discover and load
   the handlers for serving HTTPS
 """
-from DIRAC import gConfig, gLogger, S_ERROR, S_OK
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 
@@ -121,7 +121,7 @@ class HandlerManager:
                 # see DIRAC.Core.Tornado.Server.private.BaseRequestHandler for more details
                 # this method should return a list of routes associated with the handler, it is a regular expressions
                 # see https://www.tornadoweb.org/en/stable/routing.html#tornado.routing.URLSpec, ``pattern`` argument.
-                urls = handler._BaseRequestHandler__pre_initialize()
+                urls = handler._BaseRequestHandler__pre_initialize()  # pylint: disable=no-member
 
                 # First of all check if we can find route
                 if not urls:
