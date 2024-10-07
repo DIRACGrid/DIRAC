@@ -39,6 +39,8 @@ import os
 import shutil
 import tempfile
 
+from pathlib import Path
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
@@ -460,3 +462,16 @@ class StorageBase:
         finally:
             # Clean the temporary dir
             shutil.rmtree(tmpDirName)
+
+    def getWLCGTokenPath(self, lfn: str, wlcgTokenBasePath: str) -> str:
+        """
+        Returns the path expected to be in a WLCG token
+        It basically consists of ``basepath - tokenBasePath  + LFN``
+        The tokenBasePath is a configuration on the storage side.
+
+        """
+
+        allDict = dict.fromkeys(["Protocol", "Host", "Port", "Path", "FileName", "Options"], "")
+        allDict.update({"Path": self.protocolParameters["Path"], "FileName": lfn.lstrip("/")})
+        fullPath = pfnunparse(allDict)["Value"]
+        return Path(fullPath).relative_to(Path(wlcgTokenBasePath))
