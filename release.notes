@@ -1,3 +1,97 @@
+[v9.0.0a30]
+
+*DataManagementSystem
+
+NEW: (#7817) experimental token support for FTS transfers
+FIX: (#7781) dirac_dms_find_lfns: Check if requested path exists and returns error if not. Prevents users hitting #7487
+FIX: (#7780) Return correct error for non-existing directory. Partial fix for #7487
+NEW: (#7764) added checksum comparison in the fc/se consistency tool
+NEW: (#7756) FileCatalogHandler: add function export_getFileDetails to get the (user) metadata for a list of LFNs
+FIX: (#7719) Remove `def findDirIDsByMetadata(self, metaDict, dPath, credDict):` method from `MultiVODirectoryMetadata` (derived) class which caused an extra VO suffix added when searching. The method is meant to be used _internally_ only on keys which are already expanded in a MultiVO case. Add a user-level def `findDirectoriesByMetadata(self, queryDict, path, credDict)` to the derived class thus adding a VO suffix for a directory search. Fixes  #7687.
+CHANGE: (#7694) dirac-dms-replicate-and-register-request: Make request chunk size configurable; default behaviour unchanged.
+
+*FrameworkSystem
+
+NEW: (#7817) allow to bypass cache when retrieving tokens
+
+FIX: (#7813) SSHCE, Try python3 before unversioned python
+Fix a typo in the key Addler -> Adler of the return dict of putAndRegister
+
+*TransformationSystem
+
+FIX: (#7806) RequestTaskAgent only considers requests in final states, and consider files in intermediate state as problematic (https://github.com/DIRACGrid/DIRAC/issues/7116)
+NEW: (#7806) RequestTaskAgent uses getBulkRequestStatus instead of getRequestStatus
+RMS: (#7806) 
+NEW: (#7806) implement getRequestStatus
+NEW: (#7697) InputDataAgent: new Option MultiVO, which makes the FileCatalog Query use the author of the DN, rather than the Host, to resolve MultiVO metadata correctly. Fixes #7681
+
+*Resources
+
+FIX: (#7803) added a 30s gfal2 timeout for downloading the SRR
+FIX: (#7790) SSHComputingElement fix: added check of result
+FIX: (#7726) Update CloudCE cloudinit.template for EL8+
+CHANGE: (#7715) HTCondorCE: UseSSLSubmission: use the generated proxy file for everything, no longer need to have certificate of user present on the server.
+FIX: (#7713) AREX submission issue not properly handled
+NEW: (#7695) better error message when no matching protocol between 2 SE
+CHANGE: (#7689) remove BOINCCE
+
+*ResourceStatusSystem
+
+FIX: (#7801) use always a from address (from Operations ResourceStatus/Config/FromAddress ) when sending email notifications, to avoid "spoofing" domains restrictions
+NEW: (#7783) add a DIRAC to GOCDB service type conversion
+CHANGE: (#7774) do not consider Endpoint for StorageOccupancy
+FIX: (#7765) Do not use tinezone aware datetime
+FIX: (#7755) delete the Occupancy cache only for older entries
+
+*WorkloadManagement
+
+FIX: (#7797) Allow jobs to be KILLED from more states
+FIX: (#7797) KILLED is a final job state
+FIX: (#7716) PilotWrapper - check for the presence of the -l pilot option
+
+*ConfigurationSystem
+
+CHANGE: (#7796) VOMS2CSAgent: if a nickname is set, this nickname will always be used and no new accounts are going to be created if a DN changes or a user is in multiple VOs
+NEW: (#7796) VOMS2CSAgent: New option "ForceNickname", if this option is enabled no dirac user is created if no nickname attribute is set for a user
+CHANGE: (#7796) IAMService: use logger and return errors for users so that the VOMS2CSAgent can notify admins about issues
+NEW: (#7742) Configuration-system-shell: added reload and sort commands
+
+*WorkloadManagementSystem
+
+CHANGE: (#7792) SiteDirector will always bundle the proxy
+CHANGE: (#7762) removed JobDB's SiteMask and Logging
+FIX: (#7751) Proper killing of jobs when not matched, running or stalled
+FIX: (#7707) JobDB: update LastUpdateTime when the job is matched
+NEW: (#7699) added possibility to specify UserEnvVariable (pilot option) at CE level
+
+*Workflow
+
+FIX: (#7786) Avoid incorrect error strings in Workflow execute
+
+*Core
+
+NEW: (#7775) Support aggregating by date in MySQL.getCounters
+FIX: (#7750) add more safeguard when processing result queue in ProcessPool
+CHANGE: (#7720) register the DictCache destructor as an atexit handler
+NEW: (#7700) fetch nickname attribute from IAM
+CHANGE: (#7696) drop DIRAC_MYSQL_CONNECTION_GRACE_TIME and stalled connections reuse
+
+*Subsystem
+
+CHANGE: (#7733) For PilotWrapper tests, use the artifacts (created in Pilot repo)
+
+*Diracx
+
+NEW: (#7711) populate diracx section from Iam
+
+*Doc
+
+FIX: (#7688) Move the explanation how to enable tokens to a place that is shown in ReadTheDocs in the end.
+
+*Interfaces
+
+FIX: (#7684) Document BadJobParameterError
+
 [v9.0.0a29]
 
 *WorkloadManagementSystem
