@@ -5,6 +5,7 @@ from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
@@ -30,136 +31,115 @@ class WMSAdministratorHandlerMixin:
 
         return S_OK()
 
-    types_setSiteMask = [list]
-
+    @deprecated("no-op RPC")
     def export_setSiteMask(self, siteList):
         """Set the site mask for matching. The mask is given in a form of Classad string.
 
         :param list siteList: site, status
-
         :return: S_OK()/S_ERROR()
         """
-        credDict = self.getRemoteCredentials()
-        maskList = [(site, "Active") for site in siteList]
-        return self.jobDB.setSiteMask(maskList, credDict["username"], "No comment")
+        return S_OK()
 
     ##############################################################################
     types_getSiteMask = []
 
     @classmethod
+    @deprecated("no-op RPC")
     def export_getSiteMask(cls, siteState="Active"):
         """Get the site mask
 
         :param str siteState: site status
-
         :return: S_OK(list)/S_ERROR()
         """
-        return cls.jobDB.getSiteMask(siteState)
+        return S_OK()
 
     types_getSiteMaskStatus = []
 
     @classmethod
+    @deprecated("no-op RPC")
     def export_getSiteMaskStatus(cls, sites=None):
         """Get the site mask of given site(s) with columns 'site' and 'status' only
 
         :param sites: list of sites or site
         :type sites: list or str
-
         :return: S_OK()/S_ERROR() -- S_OK contain dict or str
         """
-        return cls.jobDB.getSiteMaskStatus(sites)
+        return S_OK()
 
     ##############################################################################
     types_getAllSiteMaskStatus = []
 
     @classmethod
+    @deprecated("no-op RPC")
     def export_getAllSiteMaskStatus(cls):
         """Get all the site parameters in the site mask
 
         :return: dict
         """
-        return cls.jobDB.getAllSiteMaskStatus()
+        return S_OK()
 
     ##############################################################################
     types_banSite = [str]
 
+    @deprecated("no-op RPC")
     def export_banSite(self, site, comment="No comment"):
         """Ban the given site in the site mask
 
         :param str site: site
         :param str comment: comment
-
         :return: S_OK()/S_ERROR()
         """
-        credDict = self.getRemoteCredentials()
-        author = credDict["username"] if credDict["username"] != "anonymous" else credDict["username"]
-        return self.jobDB.banSiteInMask(site, author, comment)
+        return S_OK()
 
     ##############################################################################
     types_allowSite = [str]
 
+    @deprecated("no-op RPC")
     def export_allowSite(self, site, comment="No comment"):
         """Allow the given site in the site mask
 
         :param str site: site
         :param str comment: comment
-
         :return: S_OK()/S_ERROR()
         """
-        credDict = self.getRemoteCredentials()
-        author = credDict["username"] if credDict["username"] != "anonymous" else credDict["username"]
-        return self.jobDB.allowSiteInMask(site, author, comment)
+        return S_OK()
 
     ##############################################################################
     types_clearMask = []
 
     @classmethod
+    @deprecated("no-op RPC")
     def export_clearMask(cls):
         """Clear up the entire site mask
 
         :return: S_OK()/S_ERROR()
         """
-        return cls.jobDB.removeSiteFromMask(None)
+        return S_OK()
 
     ##############################################################################
     types_getSiteMaskLogging = [[str, list]]
 
     @classmethod
+    @deprecated("no-op RPC")
     def export_getSiteMaskLogging(cls, sites):
         """Get the site mask logging history
 
         :param list sites: sites
-
         :return: S_OK(dict)/S_ERROR()
         """
-        if isinstance(sites, str):
-            sites = [sites]
-
-        return cls.jobDB.getSiteMaskLogging(sites)
+        return S_OK()
 
     ##############################################################################
     types_getSiteMaskSummary = []
 
     @classmethod
+    @deprecated("no-op RPC")
     def export_getSiteMaskSummary(cls):
         """Get the mask status for all the configured sites
 
         :return: S_OK(dict)/S_ERROR()
         """
-        # Get all the configured site names
-        res = getSites()
-        if not res["OK"]:
-            return res
-        sites = res["Value"]
-
-        # Get the current mask status
-        result = cls.jobDB.getSiteMaskStatus()
-        siteDict = result["Value"]
-        for site in sites:
-            if site not in siteDict:
-                siteDict[site] = "Unknown"
-
-        return S_OK(siteDict)
+        return S_OK()
 
     ##############################################################################
     types_getJobPilotOutput = [[str, int]]

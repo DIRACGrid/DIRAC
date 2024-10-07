@@ -12,6 +12,8 @@ from diraccfg import CFG
 from DIRAC import S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client import ConfigurationData
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import SiteDirector
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
@@ -165,6 +167,9 @@ def sd(mocker, config):
     mocker.patch(
         "DIRAC.WorkloadManagementSystem.Agent.SiteDirector.SiteStatus.getUsableSites", return_values=usableSites
     )
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.SiteDirector.ResourceStatus.getElementStatus", return_values=usableSites
+    )
     sd = SiteDirector()
 
     # Set logger
@@ -179,6 +184,7 @@ def sd(mocker, config):
 
     # Set queueDict
     sd.siteClient = SiteStatus()
+    sd.rssClient = ResourceStatus()
     sd._buildQueueDict()
     return sd
 

@@ -7,17 +7,14 @@ The status is kept in the RSSCache object, which is a small wrapper on top of Di
 
 import errno
 import math
-from time import sleep
 from datetime import datetime, timedelta
+from time import sleep
 
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
-from DIRAC.Core.Utilities import DErrno
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
+from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 
@@ -41,8 +38,6 @@ class SiteStatus(metaclass=DIRACSingleton):
 
         self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.rssConfig = RssConfiguration()
-        self.__opHelper = Operations()
-        self.rssFlag = ResourceStatus().rssFlag
         self.rsClient = ResourceStatusClient()
 
         cacheLifeTime = int(self.rssConfig.getConfigCache())
@@ -101,28 +96,7 @@ class SiteStatus(metaclass=DIRACSingleton):
         :return: S_OK() || S_ERROR()
         """
 
-        if self.rssFlag:
-            return self.__getRSSSiteStatus(siteNames)
-        else:
-            siteStatusDict = {}
-            wmsAdmin = WMSAdministratorClient()
-            if siteNames:
-                if isinstance(siteNames, str):
-                    siteNames = [siteNames]
-                for siteName in siteNames:
-                    result = wmsAdmin.getSiteMaskStatus(siteName)
-                    if not result["OK"]:
-                        return result
-                    else:
-                        siteStatusDict[siteName] = result["Value"]
-            else:
-                result = wmsAdmin.getSiteMaskStatus()
-                if not result["OK"]:
-                    return result
-                else:
-                    siteStatusDict = result["Value"]
-
-            return S_OK(siteStatusDict)
+        return self.__getRSSSiteStatus(siteNames)
 
     def __getRSSSiteStatus(self, siteName=None):
         """Gets from the cache or the RSS the Sites status. The cache is a
@@ -250,41 +224,34 @@ class SiteStatus(metaclass=DIRACSingleton):
         if status not in allowedStateList:
             return S_ERROR(errno.EINVAL, "Not a valid status, parameter rejected")
 
-        if self.rssFlag:
-            result = getProxyInfo()
-            if result["OK"]:
-                tokenOwner = result["Value"]["username"]
-            else:
-                return S_ERROR(f"Unable to get user proxy info {result['Message']} ")
-
-            tokenExpiration = datetime.utcnow() + timedelta(days=1)
-
-            self.rssCache.acquireLock()
-            try:
-                result = self.rsClient.modifyStatusElement(
-                    "Site",
-                    "Status",
-                    status=status,
-                    name=site,
-                    tokenExpiration=tokenExpiration,
-                    reason=comment,
-                    tokenOwner=tokenOwner,
-                )
-                if result["OK"]:
-                    self.rssCache.refreshCache()
-                else:
-                    _msg = f"Error updating status of site {site} to {status}"
-                    gLogger.warn(f"RSS: {_msg}")
-
-            # Release lock, no matter what.
-            finally:
-                self.rssCache.releaseLock()
-
+        result = getProxyInfo()
+        if result["OK"]:
+            tokenOwner = result["Value"]["username"]
         else:
-            if status in ["Active", "Degraded"]:
-                result = WMSAdministratorClient().allowSite(site, comment)
+            return S_ERROR(f"Unable to get user proxy info {result['Message']} ")
+
+        tokenExpiration = datetime.utcnow() + timedelta(days=1)
+
+        self.rssCache.acquireLock()
+        try:
+            result = self.rsClient.modifyStatusElement(
+                "Site",
+                "Status",
+                status=status,
+                name=site,
+                tokenExpiration=tokenExpiration,
+                reason=comment,
+                tokenOwner=tokenOwner,
+            )
+            if result["OK"]:
+                self.rssCache.refreshCache()
             else:
-                result = WMSAdministratorClient().banSite(site, comment)
+                _msg = f"Error updating status of site {site} to {status}"
+                gLogger.warn(f"RSS: {_msg}")
+
+        # Release lock, no matter what.
+        finally:
+            self.rssCache.releaseLock()
 
         return result
 

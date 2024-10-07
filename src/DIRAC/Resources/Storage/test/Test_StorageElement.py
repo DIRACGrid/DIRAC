@@ -1,20 +1,18 @@
 """ test StoragElement
 """
+import itertools
 import os
 import tempfile
-from unittest import mock
 import unittest
-import itertools
+from unittest import mock
 
 from diraccfg import CFG
 
 from DIRAC import S_OK
-from DIRAC.Resources.Storage.StorageElement import StorageElementItem
-from DIRAC.Resources.Storage.StorageBase import StorageBase
-
-
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
+from DIRAC.Resources.Storage.StorageBase import StorageBase
+from DIRAC.Resources.Storage.StorageElement import StorageElementItem
 
 
 class fake_SRM2Plugin(StorageBase):
@@ -98,7 +96,16 @@ class TestBase(unittest.TestCase):
     @mock.patch(
         "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
     )  # Don't send accounting
-    def setUp(self, _mk_generateStorage, _mk_isLocalSE, _mk_addAccountingOperation):
+    @mock.patch("DIRAC.Resources.Storage.StorageElement.getVOfromProxyGroup", return_value=S_OK("vo"))
+    @mock.patch("DIRAC.Resources.Storage.StorageFactory.ResourceStatus", return_value=mock.MagicMock())
+    def setUp(
+        self,
+        _mk_generateStorage,
+        _mk_isLocalSE,
+        _mk_addAccountingOperation,
+        _mk_getVOfromProxyGroup,
+        _mk_resourceStatus,
+    ):
         # Creating test configuration file
         self.testCfgFileName = os.path.join(tempfile.gettempdir(), "test_StorageElement.cfg")
         cfgContent = """
@@ -690,7 +697,16 @@ class TestSameSE(unittest.TestCase):
     @mock.patch(
         "DIRAC.Resources.Storage.StorageElement.StorageElementItem.addAccountingOperation", return_value=None
     )  # Don't send accounting
-    def setUp(self, _mk_generateStorage, _mk_isLocalSE, _mk_addAccountingOperation):
+    @mock.patch("DIRAC.Resources.Storage.StorageElement.getVOfromProxyGroup", return_value=S_OK("vo"))
+    @mock.patch("DIRAC.Resources.Storage.StorageFactory.ResourceStatus", return_value=mock.MagicMock())
+    def setUp(
+        self,
+        _mk_generateStorage,
+        _mk_isLocalSE,
+        _mk_addAccountingOperation,
+        _mk_getVOfromProxyGroup,
+        _mk_ResourceStatus,
+    ):
         # Creating test configuration file
         self.testCfgFileName = os.path.join(tempfile.gettempdir(), "test_StorageElement.cfg")
         cfgContent = """

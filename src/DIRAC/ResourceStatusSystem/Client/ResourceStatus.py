@@ -7,38 +7,32 @@ The status is kept in the RSSCache object, which is a small wrapper on top of Di
 """
 
 import math
-from time import sleep
 from datetime import datetime, timedelta
+from time import sleep
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import getPoliciesThatApply
 from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
-from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import getPoliciesThatApply
 
 
 class ResourceStatus(metaclass=DIRACSingleton):
     """
-    ResourceStatus helper that connects to CS if RSS flag is not Active.
-    It keeps the connection to the db / server as an object member, to avoid creating a new
-    one massively.
+    ResourceStatus helper keeps the connection to the db / server as an object member,
+    to avoid creating a new connection every time we need to do one.
     """
 
-    def __init__(self, rssFlag=None):
+    def __init__(self):
         """
         Constructor, initializes the rssClient.
         """
         self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.rssConfig = RssConfiguration()
-        self.__opHelper = Operations()
         self.rssClient = ResourceStatusClient()
-        self.rssFlag = rssFlag
-        if rssFlag is None:
-            self.rssFlag = self.__getMode()
 
         cacheLifeTime = int(self.rssConfig.getConfigCache())
 
@@ -101,10 +95,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
             elif elementType == "Catalog":
                 statusType = ["all"]
 
-        if self.rssFlag:
-            return self.__getRSSElementStatus(elementName, elementType, statusType, vO)
-        else:
-            return self.__getCSElementStatus(elementName, elementType, statusType, default)
+        return self.__getRSSElementStatus(elementName, elementType, statusType, vO)
 
     def setElementStatus(self, elementName, elementType, statusType, status, reason=None, tokenOwner=None):
         """Tries set information in RSS and in CS.
@@ -130,10 +121,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
             S_OK(  xyz.. )
         """
 
-        if self.rssFlag:
-            return self.__setRSSElementStatus(elementName, elementType, statusType, status, reason, tokenOwner)
-        else:
-            return self.__setCSElementStatus(elementName, elementType, statusType, status)
+        return self.__setRSSElementStatus(elementName, elementType, statusType, status, reason, tokenOwner)
 
     ################################################################################
 
@@ -297,22 +285,6 @@ class ResourceStatus(metaclass=DIRACSingleton):
             gLogger.warn(f"CS: {res['Message']}")
 
         return res
-
-    def __getMode(self):
-        """
-        Gets flag defined (or not) on the RSSConfiguration.
-        If defined as 'Active', we use RSS, if not, we use the CS when possible (and WMS for Sites).
-        """
-
-        res = self.rssConfig.getConfigState()
-
-        if res == "Active":
-            if self.rssClient is None:
-                self.rssClient = ResourceStatusClient()
-            return True
-
-        self.rssClient = None
-        return False
 
     def isStorageElementAlwaysBanned(self, seName, statusType):
         """Checks if the AlwaysBanned policy is applied to the SE given as parameter

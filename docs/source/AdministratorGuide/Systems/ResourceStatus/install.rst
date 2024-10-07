@@ -112,13 +112,6 @@ If is there any SE to be modified, you can do it as follows::
 
 .. _activateRSS:
 
-------------
-Activate RSS
-------------
-
-If you did not see any problem, activate RSS by setting the CS option::
-
-    /Operations/[Defaults|SetupName]/ResourceStatus/Config/State = Active
 
 ------
 Agents
