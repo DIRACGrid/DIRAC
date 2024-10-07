@@ -198,3 +198,27 @@ More details on how the intermediate SE selection is done and how the matrix is 
    Work in FTS has a `task <https://its.cern.ch/jira/projects/FTS/issues/FTS-1755>`_ to try and bring that feature in.
    A future solution may come from DIRAC.
    In the meantime, the best solution is to ask the site to either cleanup themselves (some storages like EOS have that built in) or to give you a dump of the namespace, and then do the cleaning yourself.
+
+
+Token support
+----------------
+
+.. versionadded:: v8.0.51
+
+.. warning::
+   Very experimental feature
+
+
+The current state is the one in which LHCb ran the DC24 challenge. It only worked for dCache site, as there is still not a uniform way for storages to understand permissions...
+A transfer will happen with token if:
+
+   * ``UseTokens`` is true in the FTSAgent configuration
+   * ``WLCGTokenBasePath`` is set for both the source and the destination
+
+The tokens use specific file path, and not generic wildcard permissions.
+
+.. warning::
+   Token support is as experimental as can be in any layer of the stack (DIRAC, storage, FTS... even the model is experimental)
+
+.. warning::
+   The FTS3Agent got occasionaly stuck when tokens were used

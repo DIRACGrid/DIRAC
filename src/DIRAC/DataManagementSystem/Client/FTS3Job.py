@@ -25,6 +25,7 @@ from fts3.rest.client.request import Request as ftsSSLRequest
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import cmpError
@@ -301,7 +302,18 @@ class FTS3Job(JSerializable):
 
         return isTape
 
-    def _constructTransferJob(self, pinTime, allLFNs, target_spacetoken, protocols=None):
+    @staticmethod
+    def __seTokenSupport(seObj):
+        """Check whether a given SE supports token
+
+        :param seObj: StorageElement object
+
+        :returns: True/False
+                  In case of error, returns False
+        """
+        return seObj.options.get("TokenSupport", "").lower() in ("true", "yes")
+
+    def _constructTransferJob(self, pinTime, allLFNs, target_spacetoken, protocols=None, tokensEnabled=False):
         """Build a job for transfer
 
         Some attributes of the job are expected to be set
@@ -329,6 +341,7 @@ class FTS3Job(JSerializable):
         log = gLogger.getSubLogger(f"constructTransferJob/{self.operationID}/{self.sourceSE}_{self.targetSE}")
 
         isMultiHop = False
+        useTokens = False
 
         # Check if it is a multiHop transfer
         if self.multiHopSE:
@@ -429,6 +442,9 @@ class FTS3Job(JSerializable):
                     log.debug(f"Not preparing transfer for file {ftsFile.lfn}")
                     continue
 
+                srcToken = None
+                dstToken = None
+
                 sourceSURL, targetSURL = allSrcDstSURLs[ftsFile.lfn]
                 stageURL = allStageURLs.get(ftsFile.lfn)
 
@@ -485,6 +501,44 @@ class FTS3Job(JSerializable):
                 if self.activity:
                     trans_metadata["activity"] = self.activity
 
+                # Add tokens if both storages support it and if the requested
+                if tokensEnabled and self.__seTokenSupport(srcSE) and self.__seTokenSupport(dstSE):
+                    # We get a read token for the source
+                    # offline_access is to allow FTS to refresh it
+                    res = srcSE.getWLCGTokenPath(ftsFile.lfn)
+                    if not res["OK"]:
+                        return res
+                    srcTokenPath = res["Value"]
+                    res = gTokenManager.getToken(
+                        userGroup=self.userGroup,
+                        requiredTimeLeft=3600,
+                        scope=[f"storage.read:/{srcTokenPath}", "offline_access"],
+                        useCache=False,
+                    )
+                    if not res["OK"]:
+                        return res
+                    srcToken = res["Value"]["access_token"]
+
+                    # We get a token with modify and read for the destination
+                    # We need the read to be able to stat
+                    # CAUTION: only works with dcache for now, other storages
+                    # interpret permissions differently
+                    # offline_access is to allow FTS to refresh it
+                    res = dstSE.getWLCGTokenPath(ftsFile.lfn)
+                    if not res["OK"]:
+                        return res
+                    dstTokenPath = res["Value"]
+                    res = gTokenManager.getToken(
+                        userGroup=self.userGroup,
+                        requiredTimeLeft=3600,
+                        scope=[f"storage.modify:/{dstTokenPath}", f"storage.read:/{dstTokenPath}", "offline_access"],
+                        useCache=False,
+                    )
+                    if not res["OK"]:
+                        return res
+                    dstToken = res["Value"]["access_token"]
+                    useTokens = True
+
                 # because of an xroot bug (https://github.com/xrootd/xrootd/issues/1433)
                 # the checksum needs to be lowercase. It does not impact the other
                 # protocol, so it's fine to put it here.
@@ -497,6 +551,8 @@ class FTS3Job(JSerializable):
                     filesize=ftsFile.size,
                     metadata=trans_metadata,
                     activity=self.activity,
+                    source_token=srcToken,
+                    destination_token=dstToken,
                 )
 
                 transfers.append(trans)
@@ -514,6 +570,7 @@ class FTS3Job(JSerializable):
             "rmsReqID": self.rmsReqID,
             "sourceSE": self.sourceSE,
             "targetSE": self.targetSE,
+            "useTokens": useTokens,  # Store the information here to propagate it to submission
         }
 
         if self.activity:
@@ -676,7 +733,7 @@ class FTS3Job(JSerializable):
 
         return S_OK((job, fileIDsInTheJob))
 
-    def submit(self, context=None, ftsServer=None, ucert=None, pinTime=36000, protocols=None):
+    def submit(self, context=None, ftsServer=None, ucert=None, pinTime=36000, protocols=None, fts_access_token=None):
         """submit the job to the FTS server
 
         Some attributes are expected to be defined for the submission to work:
@@ -700,16 +757,12 @@ class FTS3Job(JSerializable):
 
         :param ucert: path to the user certificate/proxy. Might be inferred by the fts cli (see its doc)
         :param protocols: list of protocols from which we should choose the protocol to use
+        :param fts_access_token: token to be used to talk to FTS and to be passed when creating a context
 
         :returns: S_OK([FTSFiles ids of files submitted])
         """
 
         log = gLogger.getLocalSubLogger(f"submit/{self.operationID}/{self.sourceSE}_{self.targetSE}")
-
-        if not context:
-            if not ftsServer:
-                ftsServer = self.ftsServer
-            context = fts3.Context(endpoint=ftsServer, ucert=ucert, request_class=ftsSSLRequest, verify=False)
 
         # Construct the target SURL
         res = self.__fetchSpaceToken(self.targetSE, self.vo)
@@ -720,7 +773,10 @@ class FTS3Job(JSerializable):
         allLFNs = [ftsFile.lfn for ftsFile in self.filesToSubmit]
 
         if self.type == "Transfer":
-            res = self._constructTransferJob(pinTime, allLFNs, target_spacetoken, protocols=protocols)
+            res = self._constructTransferJob(
+                pinTime, allLFNs, target_spacetoken, protocols=protocols, tokensEnabled=bool(fts_access_token)
+            )
+
         elif self.type == "Staging":
             res = self._constructStagingJob(pinTime, allLFNs, target_spacetoken)
         # elif self.type == 'Removal':
@@ -730,6 +786,21 @@ class FTS3Job(JSerializable):
             return res
 
         job, fileIDsInTheJob = res["Value"]
+
+        # If we need a token, don't use the context given in parameter
+        # because the one given in parameter is only with X509 creds
+        if job["params"].get("job_metadata", {}).get("useTokens"):
+            if not fts_access_token:
+                return S_ERROR("Job needs token support but no FTS token was supplied")
+            context = None
+
+        if not context:
+            if not ftsServer:
+                ftsServer = self.ftsServer
+            res = self.generateContext(ftsServer, ucert, fts_access_token)
+            if not res["OK"]:
+                return res
+            context = res["Value"]
 
         try:
             self.ftsGUID = fts3.submit(context, job)
@@ -766,31 +837,45 @@ class FTS3Job(JSerializable):
         return S_OK(fileIDsInTheJob)
 
     @staticmethod
-    def generateContext(ftsServer, ucert, lifetime=25200):
+    def generateContext(ftsServer, ucert, fts_access_token=None, lifetime=25200):
         """This method generates an fts3 context
+
+        Only a certificate or an fts token can be given
 
         :param ftsServer: address of the fts3 server
         :param ucert: the path to the certificate to be used
+        :param fts_access_token: token to access FTS
         :param lifetime: duration (in sec) of the delegation to the FTS3 server
                         (default is 7h, like FTS3 default)
 
         :returns: an fts3 context
         """
-        try:
-            context = fts3.Context(endpoint=ftsServer, ucert=ucert, request_class=ftsSSLRequest, verify=False)
+        if fts_access_token and ucert:
+            return S_ERROR("fts_access_token and ucert cannot be both set")
 
-            # Explicitely delegate to be sure we have the lifetime we want
-            # Note: the delegation will re-happen only when the FTS server
-            # decides that there is not enough timeleft.
-            # At the moment, this is 1 hour, which effectively means that if you do
-            # not submit a job for more than 1h, you have no valid proxy in FTS servers
-            # anymore, and all the jobs failed. So we force it when
-            # one third of the lifetime will be left.
-            # Also, the proxy given as parameter might have less than "lifetime" left
-            # since it is cached, but it does not matter, because in the FTS3Agent
-            # we make sure that we renew it often enough
-            td_lifetime = datetime.timedelta(seconds=lifetime)
-            fts3.delegate(context, lifetime=td_lifetime, delegate_when_lifetime_lt=td_lifetime // 3)
+        try:
+            context = fts3.Context(
+                endpoint=ftsServer,
+                ucert=ucert,
+                request_class=ftsSSLRequest,
+                verify=False,
+                fts_access_token=fts_access_token,
+            )
+
+            # The delegation only makes sense for X509 auth
+            if ucert:
+                # Explicitely delegate to be sure we have the lifetime we want
+                # Note: the delegation will re-happen only when the FTS server
+                # decides that there is not enough timeleft.
+                # At the moment, this is 1 hour, which effectively means that if you do
+                # not submit a job for more than 1h, you have no valid proxy in FTS servers
+                # anymore, and all the jobs failed. So we force it when
+                # one third of the lifetime will be left.
+                # Also, the proxy given as parameter might have less than "lifetime" left
+                # since it is cached, but it does not matter, because in the FTS3Agent
+                # we make sure that we renew it often enough
+                td_lifetime = datetime.timedelta(seconds=lifetime)
+                fts3.delegate(context, lifetime=td_lifetime, delegate_when_lifetime_lt=td_lifetime // 3)
 
             return S_OK(context)
         except FTS3ClientException as e:
