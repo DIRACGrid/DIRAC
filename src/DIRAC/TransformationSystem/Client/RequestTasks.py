@@ -309,26 +309,48 @@ class RequestTasks(TaskBase):
         Check if tasks changed status, and return a list of tasks per new status
         """
         updateDict = {}
-        badRequestID = 0
+        externalIDs = [
+            int(taskDict["ExternalID"])
+            for taskDict in taskDicts
+            if taskDict["ExternalID"] and int(taskDict["ExternalID"])
+        ]
+        # Count how many tasks don't have an valid external ID
+        badRequestID = len(taskDicts) - len(externalIDs)
+
+        res = self.requestClient.getBulkRequestStatus(externalIDs)
+        if not res["OK"]:
+            # We need a transformationID for the log, and although we expect a single one,
+            # do things ~ properly
+            tids = list({taskDict["TransformationID"] for taskDict in taskDicts})
+            try:
+                tid = tids[0]
+            except IndexError:
+                tid = 0
+
+            self._logWarn(
+                "getSubmittedTaskStatus: Failed to get bulk requestIDs",
+                res["Message"],
+                transID=tid,
+            )
+            return S_OK({})
+        new_statuses = res["Value"]
+
         for taskDict in taskDicts:
             oldStatus = taskDict["ExternalStatus"]
             # ExternalID is normally a string
-            if taskDict["ExternalID"] and int(taskDict["ExternalID"]):
-                newStatus = self.requestClient.getRequestStatus(taskDict["ExternalID"])
-                if not newStatus["OK"]:
-                    log = self._logVerbose if "not exist" in newStatus["Message"] else self._logWarn
-                    log(
-                        "getSubmittedTaskStatus: Failed to get requestID for request",
-                        newStatus["Message"],
-                        transID=taskDict["TransformationID"],
-                    )
-                else:
-                    newStatus = newStatus["Value"]
-                    # We don't care updating the tasks to Assigned while the request is being processed
-                    if newStatus != oldStatus and newStatus != "Assigned":
-                        updateDict.setdefault(newStatus, []).append(taskDict["TaskID"])
+
+            newStatus = new_statuses.get(int(taskDict["ExternalID"]))
+            if not newStatus:
+                self._logVerbose(
+                    "getSubmittedTaskStatus: Failed to get requestID for request",
+                    f"No such RequestID {taskDict['ExternalID']}",
+                    transID=taskDict["TransformationID"],
+                )
             else:
-                badRequestID += 1
+                # We do not update the tasks status if the Request is Assigned, as it is a very temporary status
+                if newStatus != oldStatus and newStatus != "Assigned":
+                    updateDict.setdefault(newStatus, []).append(taskDict["TaskID"])
+
         if badRequestID:
             self._logWarn("%d requests have identifier 0" % badRequestID)
         return S_OK(updateDict)
@@ -355,13 +377,38 @@ class RequestTasks(TaskBase):
         requestFiles = {}
         for taskDict in res["Value"]:
             taskID = taskDict["TaskID"]
-            externalID = taskDict["ExternalID"]
+            externalID = int(taskDict["ExternalID"])
             # Only consider tasks that are submitted, ExternalID is a string
             if taskDict["ExternalStatus"] != "Created" and externalID and int(externalID):
                 requestFiles[externalID] = taskFiles[taskID]
 
+        res = self.requestClient.getBulkRequestStatus(list(requestFiles))
+        if not res["OK"]:
+            self._logWarn(
+                "Failed to get request status",
+                res["Message"],
+                transID=transID,
+                method="getSubmittedFileStatus",
+            )
+            return S_OK({})
+        reqStatuses = res["Value"]
+
         updateDict = {}
         for requestID, lfnList in requestFiles.items():
+            # We only take request in final state to avoid race conditions
+            # https://github.com/DIRACGrid/DIRAC/issues/7116#issuecomment-2188740414
+            reqStatus = reqStatuses.get(requestID)
+            if not reqStatus:
+                self._logVerbose(
+                    "Failed to get request status",
+                    f"Request {requestID} does not exist",
+                    transID=transID,
+                    method="getSubmittedFileStatus",
+                )
+                continue
+            if reqStatus not in Request.FINAL_STATES:
+                continue
+
             statusDict = self.requestClient.getRequestFileStatus(requestID, lfnList)
             if not statusDict["OK"]:
                 log = self._logVerbose if "not exist" in statusDict["Message"] else self._logWarn
@@ -371,10 +418,19 @@ class RequestTasks(TaskBase):
                     transID=transID,
                     method="getSubmittedFileStatus",
                 )
-            else:
-                for lfn, newStatus in statusDict["Value"].items():
-                    if newStatus == "Done":
-                        updateDict[lfn] = TransformationFilesStatus.PROCESSED
-                    elif newStatus == "Failed":
-                        updateDict[lfn] = TransformationFilesStatus.PROBLEMATIC
+                continue
+
+            # If we are here, it means the Request is in a final state.
+            # In principle, you could expect every file also be in a final state
+            # but this is only true for simple Request.
+            # Hence, the file is marked as PROCESSED only if the file status is Done
+            # In any other case, we mark it problematic
+            # This is dangerous though, as complex request may not be re-entrant
+            # We would need a way to make sure it is safe to do so.
+            # See https://github.com/DIRACGrid/DIRAC/issues/7116 for more details
+            for lfn, newStatus in statusDict["Value"].items():
+                if newStatus == "Done":
+                    updateDict[lfn] = TransformationFilesStatus.PROCESSED
+                else:
+                    updateDict[lfn] = TransformationFilesStatus.PROBLEMATIC
         return S_OK(updateDict)

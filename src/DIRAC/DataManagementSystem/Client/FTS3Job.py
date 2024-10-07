@@ -207,6 +207,11 @@ class FTS3Job(JSerializable):
                 filesStatus[file_id]["ftsGUID"] = None
                 # TODO: update status to defunct if not recoverable here ?
 
+                # If the file is failed, check if it is recoverable
+                if file_state in FTS3File.FTS_FAILED_STATES:
+                    if not fileDict.get("Recoverable", True):
+                        filesStatus[file_id]["status"] = "Defunct"
+
             # If the file is not in a final state, but the job is, we return an error
             # FTS can have inconsistencies where the FTS Job is in a final state
             # but not all the files.
