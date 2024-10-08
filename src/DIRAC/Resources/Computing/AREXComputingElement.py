@@ -805,6 +805,8 @@ class AREXComputingElement(ComputingElement):
                 result["RunningJobs"] = int(qi["RunningJobs"])
                 result["WaitingJobs"] = int(qi["WaitingJobs"])
                 break  # Pick the first (should be only ...) matching queue + VO
+        else:
+            return S_ERROR(f"Could not find the queue {self.queue} associated to VO {vo}")
 
         return result
 
