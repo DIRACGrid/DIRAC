@@ -21,7 +21,7 @@ Fix a typo in the key Addler -> Adler of the return dict of putAndRegister
 
 FIX: (#7806) RequestTaskAgent only considers requests in final states, and consider files in intermediate state as problematic (https://github.com/DIRACGrid/DIRAC/issues/7116)
 NEW: (#7806) RequestTaskAgent uses getBulkRequestStatus instead of getRequestStatus
-RMS: (#7806) 
+RMS: (#7806)
 NEW: (#7806) implement getRequestStatus
 NEW: (#7697) InputDataAgent: new Option MultiVO, which makes the FileCatalog Query use the author of the DN, rather than the Host, to resolve MultiVO metadata correctly. Fixes #7681
 
