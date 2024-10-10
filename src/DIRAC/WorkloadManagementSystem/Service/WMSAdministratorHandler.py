@@ -156,7 +156,7 @@ class WMSAdministratorHandlerMixin:
 
         credDict = self.getRemoteCredentials()
         vo = credDict.get("VO", Registry.getVOForGroup(credDict["group"]))
-        res = self.elasticJobParametersDB.getJobParameters(int(jobID), vo=vo, parNameList=["Pilot_Reference"])
+        res = self.elasticJobParametersDB.getJobParameters(int(jobID), vo=vo, paramList=["Pilot_Reference"])
         if not res["OK"]:
             return res
         if res["Value"].get(int(jobID)):
