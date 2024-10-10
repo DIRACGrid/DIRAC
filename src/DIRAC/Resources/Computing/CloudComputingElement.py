@@ -9,23 +9,20 @@ jobs. There are however some things that work differently:
 - File I/O: A small amount of input may be transferred through the
   instance metadata, but after that the VM is inaccessible.
 - Authentication: Most cloud endpoints use a password or API style credentials
-  rather than a grid style proxy based authentication. The pilot still requires
-  a suitable proxy, but this cannot be renewed via the cloud interface due to
-  the I/O limitations.
+  rather than a grid style proxy based authentication.
 - Pilot (VM) Tidy-up: Cloud providers will not remove stopped instances by
   default.
 
-To avoid the proxy renewal limitations, an alternate pilot proxy is used within
-the instances. This can either be a longer version of the usual pilot proxy or
-a pilot proxy generated from another dedicated cert/user. The proxy contains
-the DIRAC group, but no VOMS (as this would likely expire too quickly).
+The cloud instances now use the standard pilot proxy bundled in the job wrapper
+script. The extended lifetime proxy that was generated and included in the
+cloud user_data is no longer required and has been removed.
 
 By default it is assumed that a generic CentOS7 base image is being used. This
 will be fully contextualised using cloud-init:
 
 - CVMFS & Singularity will be installed.
 - A dirac user will be created to run the jobs.
-- Pilot proxy and start-up scripts will be installed in /mnt.
+- Pilot start-up scripts will be installed in /mnt.
 - The usual pilot script will be placed in the dirac home directory and
   the start-up scripts are run (as the dirac user).
 - After the pilot terminates, the machine is stopped by calling halt.
@@ -118,13 +115,6 @@ Context_ExtPackages:
   Note: It is highly recommended to use SingularityCE with a container
   image with the required packages instead.
 
-Context_ProxyLifetime:
-  (Optional) When submitting an instance, it will be provisioned with a new
-  proxy with the same properties as the one provided by the SiteDirector but
-  with an extended lifetime. This option sets the lifetime of the new proxy
-  in seconds: It must be greater than the maximum time jobs can run for in
-  the instance. Defaults to two weeks.
-
 Context_MaxLifetime:
   (Optional) The maximum lifetime of an instance in seconds. Any instances
   older than this will be removed regardless of state. Defaults to two weeks.
@@ -160,10 +150,6 @@ from email.mime.multipart import MIMEMultipart
 
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 # Standard CE name
@@ -176,9 +162,6 @@ VM_ID_PREFIX = "cloud://"
 OPT_PROVIDER = "CloudType"
 OPT_AUTHFILE = "CloudAuth"
 DEF_AUTHFILE = os.path.join(rootPath, "etc/cloud.auth")
-# default proxy lifetime (2 weeks)
-DEF_PROXYLIFETIME = 1209600
-DEF_PROXYGRACE = 86400
 # default max instance lifetime in seconds
 # all instances older than this will be removed
 DEF_MAXLIFETIME = 1209600
@@ -219,11 +202,15 @@ class CloudComputingElement(ComputingElement):
         # If the secret is set to the magic string "PROXY"
         # we instead return a path to a grid proxy file
         if secret == "PROXY":
-            if self._origProxy:
-                secret = self._origProxy
+            secret = ""
+            if self.proxy:
+                result = gProxyManager.dumpProxyToFile(self.proxy)
+                if result["OK"]:
+                    secret = result["Value"]
+                else:
+                    self.log.warn(f"Unable to write proxy for {self.ceName}:", result["Message"])
             else:
                 self.log.warn(f"Proxy for {self.ceName} not set!")
-                secret = ""
         return (key, secret)
 
     def _getDriver(self, refresh=False):
@@ -354,9 +341,7 @@ class CloudComputingElement(ComputingElement):
         with open(template_file) as template_fd:
             template = yaml.safe_load(template_fd)
         for filedef in template["write_files"]:
-            if filedef["content"] == "PROXY_STR":
-                filedef["content"] = self.proxy
-            elif filedef["content"] == "EXECUTABLE_STR":
+            if filedef["content"] == "EXECUTABLE_STR":
                 filedef["content"] = exe_str
             elif "STAMP_STR" in filedef["content"]:
                 filedef["content"] = filedef["content"].replace("STAMP_STR", pilotStamp)
@@ -375,37 +360,6 @@ class CloudComputingElement(ComputingElement):
         userData.attach(mimeText)
         return str(userData)
 
-    def _renewCloudProxy(self):
-        """Takes short lived proxy from the site director and
-        promotes it to a long lived proxy keeping the DIRAC group.
-
-        :returns: True on success, false otherwise.
-        :rtype: bool
-        """
-        if not self._cloudDN or not self._cloudGroup:
-            self.log.error("Could not renew cloud proxy, DN and/or Group not set.")
-            return False
-
-        proxyLifetime = int(self.ceParameters.get("Context_ProxyLifetime", DEF_PROXYLIFETIME))
-        # only renew proxy if lifetime is less than configured lifetime
-        # self.valid is a datetime
-        if self.valid - datetime.datetime.utcnow() > proxyLifetime * datetime.timedelta(seconds=1):
-            return True
-        proxyLifetime += DEF_PROXYGRACE
-        proxyManager = ProxyManagerClient()
-        self.log.info(f"Downloading proxy with cloudDN and cloudGroup: {self._cloudDN}, {self._cloudGroup}")
-        res = proxyManager.downloadProxy(self._cloudDN, self._cloudGroup, limited=True, requiredTimeLeft=proxyLifetime)
-        if not res["OK"]:
-            self.log.error("Could not download proxy", res["Message"])
-            return False
-        resdump = res["Value"].dumpAllToString()
-        if not resdump["OK"]:
-            self.log.error("Failed to dump proxy to string", resdump["Message"])
-            return False
-        self.proxy = resdump["Value"]
-        self.valid = datetime.datetime.utcnow() + proxyLifetime * datetime.timedelta(seconds=1)
-        return True
-
     def __init__(self, *args, **kwargs):
         """Constructor
         Takes the standard CE parameters.
@@ -413,64 +367,16 @@ class CloudComputingElement(ComputingElement):
         """
         super().__init__(*args, **kwargs)
         self.ceType = CE_NAME
-        self.proxy = ""
-        # proxy expiry time (in date time)
-        self.valid = datetime.datetime.utcnow()
         self._cloudDriver = None
-        self._cloudDN = None
-        self._cloudGroup = None
-        self._origProxy = None
-
-    def setProxy(self, proxy, valid=0):
-        """Take existing proxy, and extract group name.
-        Then create new proxy for the cloud pilot user
-        bound to the same group with the lifetime set to
-        the value specified in the CE config.
-
-        :return: S_OK() or S_ERROR(error string)
-        """
-        # Store original proxy for FedCloud submission/auth
-        # We write this to a file as that's the format we need
-        ret = gProxyManager.dumpProxyToFile(proxy)
-        if not ret["OK"]:
-            self.log.error("Failed to write proxy file", f"for {self.ceName}: {ret['Message']}")
-        self._origProxy = ret["Value"]
-        # For a driver refresh to reload the proxy
-        self._getDriver(refresh=True)
-        # we deliberately log extra errors here,
-        # as the return value is not always checked
-        res = getProxyInfo(proxy, disableVOMS=True)
-        if not res["OK"]:
-            self.log.error("getProxyInfo failed", res["Message"])
-            return S_ERROR(f"getProxyInfo did not return OK: {str(res)}")
-        info = res["Value"]
-        if not "group" in info:
-            self.log.error("No group found in proxy")
-            return S_ERROR("No group found in proxy")
-        if not "identity" in info:
-            self.log.error("No user DN (identity) found in proxy")
-            return S_ERROR("No user DN (identity) found in proxy")
-        pilotGroup = info["group"]
-        pilotDN = info["identity"]
-        opsHelper = Operations(group=pilotGroup)
-        self._cloudDN = opsHelper.getValue("Pilot/GenericCloudDN", pilotDN)
-        self._cloudGroup = pilotGroup
-        if not self._renewCloudProxy():
-            self.log.error("Failed to renew proxy.")
-            return S_ERROR("Failed to renew proxy.")
-        return S_OK()
 
     def submitJob(self, executableFile, proxy, numberOfJobs=1):
         """Creates VM instances
 
         :param str executableFile: Path to pilot job wrapper file to use
-        :param str proxy: Unused, see setProxy()
+        :param str proxy: Unused, requires bundled proxy in executableFile instead
         :param int numberOfJobs: Number of instances to start
         :return: S_OK/S_ERROR
         """
-        if not self._renewCloudProxy():
-            return S_ERROR("Failed to renew proxy during job submission.")
-
         instIDs = []
 
         # these parameters are identical for each job
