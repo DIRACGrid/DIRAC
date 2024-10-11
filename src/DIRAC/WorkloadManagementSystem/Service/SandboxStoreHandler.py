@@ -151,7 +151,7 @@ class SandboxStoreHandlerMixin:
             gLogger.info("Sandbox already exists. Skipping upload")
             if fileHelper:
                 fileHelper.markAsTransferred()
-            sbURL = f"SB:{self.__localSEName}|sbPath"
+            sbURL = f"SB:{self.__localSEName}|{sbPath}"
             assignTo = {key: [(sbURL, assignTo[key])] for key in assignTo}
             result = self.export_assignSandboxesToEntities(assignTo)
             if not result["OK"]:
