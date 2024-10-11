@@ -42,9 +42,6 @@ write_files:
      CVMFS_CACHE_BASE=/mnt/cvmfs
      CVMFS_HTTP_PROXY="auto;DIRECT"
      CVMFS_PAC_URLS="http://grid-wpad/wpad.dat;http://wpad/wpad.dat;http://cernvm-wpad.cern.ch/wpad.dat;http://cernvm-wpad.fnal.gov/wpad.dat"
- - path: /root/proxy.pem
-   permissions: '0600'
-   content: PROXY_STR
  - path: /root/run_pilot.sh
    permissions: '0755'
    content: EXECUTABLE_STR
@@ -53,7 +50,6 @@ write_files:
    content: |
      #!/bin/bash
      cd /mnt/dirac
-     export X509_USER_PROXY=/mnt/proxy.pem
      export PILOT_UUID="cloud://$(cat /var/lib/cloud/data/instance-id)"
      export DIRAC_PILOT_STAMP="STAMP_STR"
      bash /mnt/run_pilot.sh &> /mnt/dirac/startup.log
@@ -84,9 +80,6 @@ runcmd:
  - [ useradd, -m, -d, /mnt/dirac, dirac ]
  - [ passwd, -l, dirac ]
  - [ mkdir, -p, /mnt/dirac/etc/grid-security ]
- - [ cp, /root/proxy.pem, /mnt/proxy.pem ]
- - [ chmod, 600, /mnt/proxy.pem ]
- - [ chown, "dirac:dirac", /mnt/proxy.pem ]
  - [ chown, -R, "dirac:dirac", /mnt/dirac/etc ]
 # Start caching certificates directory from CVMFS
 # Workaround for when local Stratum-1 is slow
