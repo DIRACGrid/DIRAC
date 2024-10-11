@@ -70,14 +70,7 @@ def test__checkSession(mocker):
     assert not arex.session.cert
     assert "Authorization" in arex.headers, arex.headers
 
-    # 6. We make the proxy mandatory: the session should include both the proxy and the token
-    result = arex._checkSession(mandatoryProxy=True)
-    assert result["OK"], result
-    assert arex.session
-    assert arex.session.cert
-    assert "Authorization" in arex.headers, arex.headers
-
-    # 7. Now we just include the token, the proxy is not mandatory:
+    # 7. Now we just include the token:
     # the session should only include the token
     arex.proxy = None
     result = arex._checkSession()
@@ -85,10 +78,3 @@ def test__checkSession(mocker):
     assert arex.session
     assert not arex.session.cert
     assert "Authorization" in arex.headers, arex.headers
-
-    # 8. Now we just include the token, but the proxy is mandatory: it should return an error
-    result = arex._checkSession(mandatoryProxy=True)
-    assert not result["OK"], result
-    assert arex.session
-    assert not arex.session.cert
-    assert "Authorization" not in arex.headers, arex.headers
