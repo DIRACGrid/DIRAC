@@ -1,3 +1,15 @@
+[v9.0.0a31]
+
+*WorkloadManagement
+
+FIX: (#7827) SandboxStore not able to assign a sandbox to a job
+FIX: (#7825) JobWrapper checks existence of executable in jobIDPath
+FIX: (#7821) Getting pilot reference from job parameters
+
+*Resources
+
+FIX: (#7819) AREXCE returns an error if a queue is not found in the ARC instance configuration
+
 [v9.0.0a30]
 
 *DataManagementSystem
