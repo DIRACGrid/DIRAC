@@ -401,7 +401,12 @@ class CloudComputingElement(ComputingElement):
             try:
                 node = driver.create_node(**instParams)
             except Exception as err:
-                self.log.error("Failed to create_node", str(err))
+                errMsg = str(err)
+                # sometimes cloud returns complete user_data which is too long for
+                # a sensible log message
+                if len(errMsg) > 256:
+                    errMsg = f"{errMsg[:128]}...{errMsg[-128:]}"
+                self.log.error("Failed to create_node", errMsg)
                 continue
             instIDs.append(VM_ID_PREFIX + node.id)
             stampDict[instName] = instRandom
