@@ -134,9 +134,16 @@ def test_preProcess_nonexistent_executable(setup_job_wrapper):
     """Test the pre process method of the JobWrapper class: nonexistent executable."""
     jw = setup_job_wrapper({"Executable": "pippo"})
 
+    # Without a jobID
     result = jw.preProcess()
     assert not result["OK"]
     assert result["Message"] == f"Path to executable {os.getcwd()}/pippo not found"
+
+    # With a jobID
+    jw.jobIDPath = jw.jobIDPath / "123"
+    result = jw.preProcess()
+    assert not result["OK"]
+    assert result["Message"] == f"Path to executable {os.getcwd()}/123/pippo not found"
 
 
 def test_preProcess_dirac_jobexec(setup_job_wrapper):
