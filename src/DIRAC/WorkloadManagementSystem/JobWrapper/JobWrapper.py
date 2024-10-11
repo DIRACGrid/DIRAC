@@ -307,7 +307,10 @@ class JobWrapper:
             executable = shutil.which(executable) or executable
 
         # Make the full path since . is not always in the PATH
-        executable = os.path.abspath(executable)
+        # self.jobIDPath is an absolute path, so we can use it directly
+        # if executable is an absolute path, self.jobIDPath is ignored
+        # Example: "/bin/ls" will be used as is
+        executable = str(self.jobIDPath / executable)
         if not os.path.exists(executable):
             self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_NOT_FOUND, sendFlag=True)
             return S_ERROR(f"Path to executable {executable} not found")
