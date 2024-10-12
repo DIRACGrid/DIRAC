@@ -125,7 +125,7 @@ class SLURM(object):
             content = f.read()
 
         # Need to escape environment variables of the executable file
-        content = re.sub("\$", "\\$", content)
+        content = re.sub(r"\$", r"\\$", content)
 
         # Build the script to run the executable in parallel multiple times
         # - Embed the content of executableFile inside the parallel library wrapper script
