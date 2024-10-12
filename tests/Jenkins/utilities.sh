@@ -253,6 +253,8 @@ installDIRAC() {
     fi
   fi
 
+  pip install git+https://github.com/DIRACGrid/diracx.git
+
   if [[ -n "${INSTALLATION_BRANCH}" ]]; then
     # Use this for (e.g.) running backward-compatibility tests
     echo "pip-installing DIRAC from git+https://github.com/DIRACGrid/DIRAC.git@${INSTALLATION_BRANCH}#egg=DIRAC[client]"
