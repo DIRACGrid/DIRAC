@@ -594,60 +594,49 @@ class TransformationDB(DB):
         limit=None,
         offset=None,
         connection=False,
+        columns=None,
     ):
         """Get files for the supplied transformations with support for the web standard structure"""
         connection = self.__getConnection(connection)
-        req = f"SELECT {intListToString(self.TRANSFILEPARAMS)} FROM TransformationFiles"
-        originalFileIDs = {}
-        if condDict is None:
-            condDict = {}
-        if condDict or older or newer:
-            lfns = condDict.pop("LFN", None)
-            if lfns:
-                if isinstance(lfns, str):
-                    lfns = [lfns]
-                res = self.__getFileIDsForLfns(lfns, connection=connection)
-                if not res["OK"]:
-                    return res
-                originalFileIDs = res["Value"][0]
-                condDict["FileID"] = list(originalFileIDs)
 
-            for val in condDict.values():
-                if not val:
-                    return S_OK([])
+        all_columns = ["LFN"] + self.TRANSFILEPARAMS
+        if columns is None:
+            columns = all_columns
+        elif not set(columns).issubset(all_columns):
+            return S_ERROR(f"Invalid columns requested, valid columns are: {all_columns}")
 
-            req = "{} {}".format(
-                req,
-                self.buildCondition(condDict, older, newer, timeStamp, orderAttribute, limit, offset=offset),
-            )
+        req = ", ".join(f"df.{x}" if x == "LFN" else f"tf.{x}" for x in columns)
+        req = f"SELECT {req} FROM TransformationFiles tf"
+        if "LFN" in columns or (condDict and "LFN" in condDict):
+            req = f"{req} JOIN DataFiles df ON tf.FileID = df.FileID"
+
+        fixedCondDict = {}
+        if condDict:
+            for key, value in condDict.items():
+                if key in self.TRANSFILEPARAMS:
+                    fixedCondDict[f"tf.{key}"] = value
+                elif key in ["LFN"]:
+                    fixedCondDict[f"df.{key}"] = value
+                else:
+                    return S_ERROR(f"Invalid key {key} in condDict")
+        if timeStamp:
+            timeStamp = f"tf.{timeStamp}"
+        if fixedCondDict or older or newer:
+            cond = self.buildCondition(fixedCondDict, older, newer, timeStamp, orderAttribute, limit, offset=offset)
+            # When buildCondition tries to quote the column names, it will fail due to the table alias
+            # So we need to move the single quotes to the right place
+            req += f" {cond.replace('`tf.', 'tf.`').replace('`df.', 'df.`')}"
+
         res = self._query(req, conn=connection)
         if not res["OK"]:
             return res
 
-        transFiles = res["Value"]
-        fileIDs = [int(row[1]) for row in transFiles]
-        webList = []
-        resultList = []
-        if not fileIDs:
-            originalFileIDs = {}
-        else:
-            if not originalFileIDs:
-                res = self.__getLfnsForFileIDs(fileIDs, connection=connection)
-                if not res["OK"]:
-                    return res
-                originalFileIDs = res["Value"][1]
-            for row in transFiles:
-                lfn = originalFileIDs[row[1]]
-                # Prepare the structure for the web
-                fDict = {"LFN": lfn}
-                fDict.update(dict(zip(self.TRANSFILEPARAMS, row)))
-                # Note: the line below is returning "None" if the item is None... This seems to work but is ugly...
-                rList = [lfn] + [str(item) if not isinstance(item, int) else item for item in row]
-                webList.append(rList)
-                resultList.append(fDict)
+        resultList = [dict(zip(columns, row)) for row in res["Value"]]
+        webList = [[str(item) if not isinstance(item, int) else item for item in row] for row in res["Value"]]
+
         result = S_OK(resultList)
         result["Records"] = webList
-        result["ParameterNames"] = ["LFN"] + self.TRANSFILEPARAMS
+        result["ParameterNames"] = columns
         return result
 
     def getFileSummary(self, lfns, connection=False):

@@ -114,6 +114,17 @@ class TransformationClientChain(TestClientTransformationTestCase):
         for f in res["Value"]:
             self.assertEqual(f["Status"], TransformationFilesStatus.ASSIGNED)
 
+        # make sure we can selectively select LFNs
+        res = self.transClient.getTransformationFiles({"TransformationID": transID, "LFN": ["/aa/lfn.1.txt"]})
+        assert res["OK"], res
+        assert len(res["Value"]) == 1, res
+        assert "TargetSE" in res["Value"][0].keys(), res
+
+        # make sure we can selectively select columns
+        res = self.transClient.getTransformationFiles({"TransformationID": transID}, columns=["LFN", "Status"])
+        assert res["OK"], res
+        assert sorted(res["Value"][0]) == ["LFN", "Status"], res
+
         # now adding a new Transformation with new tasks, and introducing a mix of insertion,
         # to test that the trigger works as it should
         res = self.transClient.addTransformation(
