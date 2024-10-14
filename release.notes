@@ -1,3 +1,19 @@
+[v8.0.54]
+
+*Resources
+
+FIX: (#7824) AREX interactions with tokens
+FIX: (#7823) Drop CloudCE proxy handling
+FIX: (#7822) CloudCE: truncate long messages returned from create_node
+FIX: (#7818) AREXCE returns an error if a queue is not found in the ARC instance configuration
+
+*TransformationSystem
+
+NEW: (#7812) 
+CHANGE: (#7812) Improve getTransformationFiles performance
+
+FIX: (#7811) SSHCE, Try python3 before unversioned python
+
 [v8.0.53]
 
 *Resources
