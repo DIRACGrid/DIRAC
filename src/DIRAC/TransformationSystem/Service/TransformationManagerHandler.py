@@ -288,6 +288,7 @@ class TransformationManagerHandlerMixin:
         orderAttribute=None,
         limit=None,
         offset=None,
+        columns=None,
     ):
         if not condDict:
             condDict = {}
@@ -300,6 +301,7 @@ class TransformationManagerHandlerMixin:
             limit=limit,
             offset=offset,
             connection=False,
+            columns=columns,
         )
 
     ####################################################################
