@@ -132,10 +132,9 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     needs: deploy-pypi
     steps:
-      - uses: conda-incubator/setup-miniconda@master
+      - uses: mamba-org/setup-micromamba@v2
         with:
-          miniforge-variant: Mambaforge
-          use-mamba: true
+
           mamba-version: "*"
           channels: conda-forge,defaults
           channel-priority: true
