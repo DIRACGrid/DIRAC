@@ -93,6 +93,14 @@ def test_pf(pf, record, result):
             ("blablabla ***REDACTED*** blablabla", "Variable message"),
             # should not display the certificate
         ),
+        (
+            (
+                "blablabla -----BEGIN PRIVATE KEY-----\n12345\n45678\n-----END PRIVATE KEY----- blablabla",
+                "Variable message",
+            ),
+            ("blablabla ***REDACTED*** blablabla", "Variable message"),
+            # should not display the certificate
+        ),
         ((5, ""), ("5", "")),  # special case
         (("", 5), ("", "5")),  # special case
         (({"ce": "test"}, ""), ("{'ce': 'test'}", "")),  # special case

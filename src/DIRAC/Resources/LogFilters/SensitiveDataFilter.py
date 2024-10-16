@@ -43,6 +43,7 @@ class SensitiveDataFilter:
         # a list of sensitive words to replace
         sensitiveData = [
             r"-----BEGIN CERTIFICATE-----.*?-----END CERTIFICATE-----",
+            r"-----BEGIN PRIVATE KEY-----.*?-----END PRIVATE KEY-----",
         ]
 
         # record.args can be a tuple

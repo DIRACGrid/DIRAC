@@ -9,7 +9,7 @@ FIX: (#7818) AREXCE returns an error if a queue is not found in the ARC instance
 
 *TransformationSystem
 
-NEW: (#7812) 
+NEW: (#7812)
 CHANGE: (#7812) Improve getTransformationFiles performance
 
 FIX: (#7811) SSHCE, Try python3 before unversioned python
