@@ -32,7 +32,6 @@ def setup():
 
 def test_Validator(mocker, setup):
     """validator test"""
-    mocker.patch("DIRAC.ConfigurationSystem.Client.PathFinder.getSystemInstance", new=MagicMock())
 
     request = Request()
     operation = Operation()
@@ -117,7 +116,6 @@ def test_Validator(mocker, setup):
 
 def test_Validator_backward_compatibility(mocker, setup):
     """validator test"""
-    mocker.patch("DIRAC.ConfigurationSystem.Client.PathFinder.getSystemInstance", new=MagicMock())
 
     request = Request()
     operation = Operation()

@@ -54,22 +54,17 @@ class HandlerManager:
         if diracSystems["OK"]:
             for system in diracSystems["Value"]:
                 try:
-                    sysInstance = PathFinder.getSystemInstance(system)
-                    result = gConfig.getSections(f"/Systems/{system}/{sysInstance}/{handlerInstance}")
+                    result = gConfig.getSections(f"/Systems/{system}/{handlerInstance}")
                     if result["OK"]:
                         for instName in result["Value"]:
                             newInst = f"{system}/{instName}"
-                            port = gConfig.getValue(
-                                f"/Systems/{system}/{sysInstance}/{handlerInstance}/{instName}/Port"
-                            )
+                            port = gConfig.getValue(f"/Systems/{system}/{handlerInstance}/{instName}/Port")
                             if port:
                                 newInst += f":{port}"
 
                             if handlerInstance == "Services":
                                 # We search in the CS all handlers which used HTTPS as protocol
-                                isHTTPS = gConfig.getValue(
-                                    f"/Systems/{system}/{sysInstance}/{handlerInstance}/{instName}/Protocol"
-                                )
+                                isHTTPS = gConfig.getValue(f"/Systems/{system}/{handlerInstance}/{instName}/Protocol")
                                 if isHTTPS and isHTTPS.lower() == "https":
                                     urls.append(newInst)
                             else:

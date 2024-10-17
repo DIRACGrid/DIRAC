@@ -3,7 +3,6 @@
 import os
 from DIRAC.Core.Utilities import List
 from DIRAC import gConfig, S_ERROR, S_OK, gLogger
-from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority, recurseImport
 
 
@@ -44,8 +43,7 @@ class ModuleLoader:
             # Check if it's a system name
             # Look in the CS
             system = modName
-            # Can this be generated with sectionFinder?
-            csPath = f"{PathFinder.getSystemSection(system)}/Executors"
+            csPath = f"/Systems/{system}/Executors"
             gLogger.verbose(f"Exploring {csPath} to discover modules")
             result = gConfig.getSections(csPath)
             if result["OK"]:

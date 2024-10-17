@@ -12,33 +12,19 @@ localCFGData = ConfigurationData(False)
 mergedCFG = CFG()
 mergedCFG.loadFromBuffer(
     """
-DIRAC
-{
-  Setup=TestSetup
-  Setups
-  {
-    TestSetup
-    {
-      WorkloadManagement=MyWM
-    }
-  }
-}
 Systems
 {
   WorkloadManagement
   {
-    MyWM
+    URLs
     {
-      URLs
-      {
-        Service1 = dips://server1:1234/WorkloadManagement/Service1
-        Service2 = dips://$MAINSERVERS$:5678/WorkloadManagement/Service2
-      }
-      FailoverURLs
-      {
-        Service2 = dips://failover1:5678/WorkloadManagement/Service2
-        Service2 += dips://failover2:5678/WorkloadManagement/Service2
-      }
+      Service1 = dips://server1:1234/WorkloadManagement/Service1
+      Service2 = dips://$MAINSERVERS$:5678/WorkloadManagement/Service2
+    }
+    FailoverURLs
+    {
+      Service2 = dips://failover1:5678/WorkloadManagement/Service2
+      Service2 += dips://failover2:5678/WorkloadManagement/Service2
     }
   }
 }
@@ -63,53 +49,44 @@ def pathFinder(monkeypatch):
     return PathFinder
 
 
-def test_getDIRACSetup(pathFinder):
-    """Test getDIRACSetup"""
-    assert pathFinder.getDIRACSetup() == "TestSetup"
-
-
 @pytest.mark.parametrize(
-    "system, componentName, setup, componentType, result",
+    "system, componentName, componentType, result",
     [
         (
             "WorkloadManagement/SandboxStoreHandler",
             False,
-            False,
             "Services",
-            "/Systems/WorkloadManagement/MyWM/Services/SandboxStoreHandler",
+            "/Systems/WorkloadManagement/Services/SandboxStoreHandler",
         ),
         (
             "WorkloadManagement",
             "SandboxStoreHandler",
-            False,
             "Services",
-            "/Systems/WorkloadManagement/MyWM/Services/SandboxStoreHandler",
+            "/Systems/WorkloadManagement/Services/SandboxStoreHandler",
         ),
         # tricky case one could expect that if entity string is wrong
         # than some kind of error will be returned, but it is not the case
         (
             "WorkloadManagement/SimpleLogConsumer",
             False,
-            False,
             "NonRonsumersNon",
-            "/Systems/WorkloadManagement/MyWM/NonRonsumersNon/SimpleLogConsumer",
+            "/Systems/WorkloadManagement/NonRonsumersNon/SimpleLogConsumer",
         ),
     ],
 )
-def test_getComponentSection(pathFinder, system, componentName, setup, componentType, result):
+def test_getComponentSection(pathFinder, system, componentName, componentType, result):
     """Test getComponentSection"""
-    assert pathFinder.getComponentSection(system, componentName, setup, componentType) == result
+    assert pathFinder.getComponentSection(system, componentName, componentType) == result
 
 
 @pytest.mark.parametrize(
-    "system, setup, result",
+    "system, result",
     [
-        ("WorkloadManagement", False, "/Systems/WorkloadManagement/MyWM/URLs"),
-        ("WorkloadManagement", "TestSetup", "/Systems/WorkloadManagement/MyWM/URLs"),
+        ("WorkloadManagement", "/Systems/WorkloadManagement/MyWM/URLs"),
     ],
 )
-def test_getSystemURLSection(pathFinder, system, setup, result):
-    assert pathFinder.getSystemURLs(system, setup)
+def test_getSystemURLSection(pathFinder, system, result):
+    assert pathFinder.getSystemURLs(system)
 
 
 @pytest.mark.parametrize(
@@ -205,11 +182,10 @@ def test_getServiceURLs(pathFinder, serviceName, service, failover, result):
 
 
 @pytest.mark.parametrize(
-    "system, setup, failover, result",
+    "system, failover, result",
     [
         (
             "WorkloadManagement",
-            None,
             False,
             {
                 "Service1": {"dips://server1:1234/WorkloadManagement/Service1"},
@@ -221,7 +197,6 @@ def test_getServiceURLs(pathFinder, serviceName, service, failover, result):
         ),
         (
             "WorkloadManagement",
-            None,
             True,
             {
                 "Service1": {"dips://server1:1234/WorkloadManagement/Service1"},
@@ -235,8 +210,8 @@ def test_getServiceURLs(pathFinder, serviceName, service, failover, result):
         ),
     ],
 )
-def test_getSystemURLs(pathFinder, system, setup, failover, result):
-    sysDict = pathFinder.getSystemURLs(system, setup=setup, failover=failover)
+def test_getSystemURLs(pathFinder, system, failover, result):
+    sysDict = pathFinder.getSystemURLs(system, failover=failover)
     for service in sysDict:
         assert set(sysDict[service]) == result[service]
 

@@ -31,7 +31,6 @@ from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection
 from DIRAC.Core.Utilities import DEncode, DErrno, List
 from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Core.Utilities.File import getGlobbedFiles, getGlobbedTotalSize
@@ -63,7 +62,7 @@ class JobWrapper:
     def __init__(self, jobID: int | None = None, jobReport: JobReport | None = None):
         """Standard constructor"""
         self.initialTiming = os.times()
-        self.section = os.path.join(getSystemSection("WorkloadManagement/JobWrapper"), "JobWrapper")
+        self.section = "/Systems/WorkloadManagement/JobWrapper"
         # Create the accounting report
         self.accountingReport = AccountingJob()
         # Initialize for accounting

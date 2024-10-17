@@ -15,7 +15,6 @@ from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.AccountingSystem.Client.Types.Job import Job
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
-from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
@@ -60,9 +59,6 @@ class StalledJobAgent(AgentModule):
         if not self.am_getOption("Enable", True):
             self.log.info("Stalled Job Agent running in disabled mode")
 
-        wmsInstance = getSystemInstance("WorkloadManagement")
-        if not wmsInstance:
-            return S_ERROR("Can not get the WorkloadManagement system instance")
         self.stalledJobsTolerantSites = self.am_getOption("StalledJobsTolerantSites", self.stalledJobsTolerantSites)
         self.stalledJobsToleranceTime = self.am_getOption("StalledJobsToleranceTime", self.stalledJobsToleranceTime)
 
@@ -74,7 +70,7 @@ class StalledJobAgent(AgentModule):
         self.matchedTime = self.am_getOption("MatchedTime", self.matchedTime)
         self.rescheduledTime = self.am_getOption("RescheduledTime", self.rescheduledTime)
 
-        wrapperSection = cfgPath("Systems", "WorkloadManagement", wmsInstance, "JobWrapper")
+        wrapperSection = cfgPath("Systems", "WorkloadManagement", "JobWrapper")
 
         failedTime = self.am_getOption("FailedTimeHours", 6)
         watchdogCycle = gConfig.getValue(cfgPath(wrapperSection, "CheckingTime"), 30 * 60)

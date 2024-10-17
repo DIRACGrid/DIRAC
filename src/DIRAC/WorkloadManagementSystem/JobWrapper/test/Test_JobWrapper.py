@@ -19,8 +19,6 @@ from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobExecutionCoordinator import JobExecutionCoordinator
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper
 
-getSystemSectionMock = MagicMock()
-getSystemSectionMock.return_value = "aValue"
 
 gLogger.setLevel("DEBUG")
 
@@ -30,9 +28,6 @@ gLogger.setLevel("DEBUG")
 @pytest.fixture
 def setup_job_wrapper(mocker):
     """Fixture to create a JobWrapper instance with a JobExecutionCoordinator."""
-    mocker.patch(
-        "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock
-    )
 
     def _setup(jobArgs=None, ceArgs=None):
         jw = JobWrapper()
@@ -196,10 +191,6 @@ def test_preProcess_dirac_jobexec_with_args(setup_job_wrapper):
 @pytest.mark.slow
 def test_processSuccessfulCommand(mocker):
     """Test the process method of the JobWrapper class: most common scenario."""
-    mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog.getSystemInstance", return_value="Value")
-    mocker.patch(
-        "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock
-    )
     jw = JobWrapper()
     jw.jobArgs = {"CPUTime": 100, "Memory": 1}
 
@@ -227,10 +218,6 @@ def test_processSuccessfulCommand(mocker):
 @pytest.mark.slow
 def test_processSuccessfulDiracJobExec(mocker):
     """Test the process method of the JobWrapper class: most common scenario with dirac-jobexec."""
-    mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog.getSystemInstance", return_value="Value")
-    mocker.patch(
-        "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock
-    )
     jw = JobWrapper()
     jw.jobArgs = {"CPUTime": 100, "Memory": 1}
 
@@ -255,10 +242,6 @@ def test_processSuccessfulDiracJobExec(mocker):
 @pytest.mark.slow
 def test_processFailedCommand(mocker):
     """Test the process method of the JobWrapper class: the command fails."""
-    mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog.getSystemInstance", return_value="Value")
-    mocker.patch(
-        "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock
-    )
     jw = JobWrapper()
     jw.jobArgs = {"CPUTime": 100, "Memory": 1}
 
@@ -289,10 +272,6 @@ def test_processFailedCommand(mocker):
 @pytest.mark.slow
 def test_processFailedSubprocess(mocker):
     """Test the process method of the JobWrapper class: the subprocess fails."""
-    mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog.getSystemInstance", return_value="Value")
-    mocker.patch(
-        "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock
-    )
     mock_system_call = mocker.patch("DIRAC.Core.Utilities.Subprocess.Subprocess.systemCall")
     mock_system_call.return_value = S_ERROR("Any problem")
     mock_system_call = mocker.patch("DIRAC.Core.Utilities.Subprocess.Subprocess.getChildPID")
@@ -321,10 +300,6 @@ def test_processFailedSubprocess(mocker):
 @pytest.mark.slow
 def test_processQuickExecutionNoWatchdog(mocker):
     """Test the process method of the JobWrapper class: the payload is too fast to start the watchdog."""
-    mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog.getSystemInstance", return_value="Value")
-    mocker.patch(
-        "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock
-    )
     jw = JobWrapper()
     jw.jobArgs = {"CPUTime": 100, "Memory": 1}
 
@@ -348,10 +323,6 @@ def test_processQuickExecutionNoWatchdog(mocker):
 @pytest.mark.slow
 def test_processSubprocessFailureNoPid(mocker):
     """Test the process method of the JobWrapper class: the subprocess fails and no PID is returned."""
-    mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog.getSystemInstance", return_value="Value")
-    mocker.patch(
-        "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock
-    )
     # Test failure in starting the payload process
     jw = JobWrapper()
     jw.jobArgs = {}
@@ -612,10 +583,6 @@ def test_execute(mocker, executable, args, src, expectedResult):
     """Test the status of the job after JobWrapper.execute().
     The returned value of JobWrapper.execute() is not checked as it can apparently be wrong depending on the shell used.
     """
-    mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog.getSystemInstance", return_value="Value")
-    mocker.patch(
-        "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock
-    )
 
     if src:
         shutil.copy(os.path.join(src, executable), executable)
@@ -684,9 +651,6 @@ def jobIDPath():
 @pytest.fixture
 def setup_another_job_wrapper(mocker, jobIDPath):
     """Fixture to create a JobWrapper instance with the jobIDPath."""
-    mocker.patch(
-        "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock
-    )
     jw = JobWrapper(jobIDPath)
     jw.jobIDPath = Path(str(jobIDPath))
     jw.failedFlag = False
@@ -887,9 +851,6 @@ def test_processJobOutputs_output_data_upload(mocker, setup_another_job_wrapper)
 
 def test_resolveInputData(mocker):
     mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.ObjectLoader", side_effect=MagicMock())
-    mocker.patch(
-        "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock
-    )
 
     jw = JobWrapper()
     jw.jobArgs["InputData"] = ""
@@ -975,9 +936,6 @@ def test_transferInputSandbox(mocker, setup_another_job_wrapper):
 )
 def test_finalize(mocker, failedFlag, expectedRes, finalStates):
     mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.ObjectLoader", side_effect=MagicMock())
-    mocker.patch(
-        "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock
-    )
 
     jw = JobWrapper()
     jw.jobArgs = {"Executable": "/bin/ls"}

@@ -59,33 +59,31 @@ if os.environ.get("TEST_HTTPS", "Yes") == "Yes":
     multiFC = f"Tornado{multiFC}"
 
 for sct in [
-    "Systems/DataManagement/Production/Services",
-    f"Systems/DataManagement/Production/Services/{fc}",
-    f"Systems/DataManagement/Production/Services/{multiFC}",
+    "Systems/DataManagement/Services",
+    f"Systems/DataManagement/Services/{fc}",
+    f"Systems/DataManagement/Services/{multiFC}",
 ]:
     res = csAPI.createSection(sct)
     if not res["OK"]:
         print(res["Message"])
         sys.exit(1)
 
-csAPI.setOption(f"Systems/DataManagement/Production/Services/{fc}/DirectoryManager", "DirectoryClosure")
-csAPI.setOption(f"Systems/DataManagement/Production/Services/{fc}/FileManager", "FileManagerPs")
-csAPI.setOption(f"Systems/DataManagement/Production/Services/{fc}/SecurityManager", "VOMSSecurityManager")
-csAPI.setOption(f"Systems/DataManagement/Production/Services/{fc}/UniqueGUID", True)
+csAPI.setOption(f"Systems/DataManagement/Services/{fc}/DirectoryManager", "DirectoryClosure")
+csAPI.setOption(f"Systems/DataManagement/Services/{fc}/FileManager", "FileManagerPs")
+csAPI.setOption(f"Systems/DataManagement/Services/{fc}/SecurityManager", "VOMSSecurityManager")
+csAPI.setOption(f"Systems/DataManagement/Services/{fc}/UniqueGUID", True)
 
-csAPI.setOption(f"Systems/DataManagement/Production/Services/{multiFC}/DirectoryManager", "DirectoryClosure")
-csAPI.setOption(f"Systems/DataManagement/Production/Services/{multiFC}/FileManager", "FileManagerPs")
-csAPI.setOption(f"Systems/DataManagement/Production/Services/{multiFC}/SecurityManager", "NoSecurityManager")
-csAPI.setOption(f"Systems/DataManagement/Production/Services/{multiFC}/UniqueGUID", True)
+csAPI.setOption(f"Systems/DataManagement/Services/{multiFC}/DirectoryManager", "DirectoryClosure")
+csAPI.setOption(f"Systems/DataManagement/Services/{multiFC}/FileManager", "FileManagerPs")
+csAPI.setOption(f"Systems/DataManagement/Services/{multiFC}/SecurityManager", "NoSecurityManager")
+csAPI.setOption(f"Systems/DataManagement/Services/{multiFC}/UniqueGUID", True)
 # configure MultiVO metadata related options:
-res = csAPI.setOption(f"Systems/DataManagement/Production/Services/{multiFC}/FileMetadata", "MultiVOFileMetadata")
+res = csAPI.setOption(f"Systems/DataManagement/Services/{multiFC}/FileMetadata", "MultiVOFileMetadata")
 if not res["OK"]:
     print(res["Message"])
     sys.exit(1)
 
-res = csAPI.setOption(
-    f"Systems/DataManagement/Production/Services/{multiFC}/DirectoryMetadata", "MultiVODirectoryMetadata"
-)
+res = csAPI.setOption(f"Systems/DataManagement/Services/{multiFC}/DirectoryMetadata", "MultiVODirectoryMetadata")
 if not res["OK"]:
     print(res["Message"])
     sys.exit(1)

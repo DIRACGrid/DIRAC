@@ -525,9 +525,8 @@ class ComponentSupervisionAgent(AgentModule):
 
         # get port used for https based services
         try:
-            tornadoSystemInstance = PathFinder.getSystemInstance(system="Tornado")
             self._tornadoPort = gConfig.getValue(
-                Path.cfgPath("/System/Tornado/", tornadoSystemInstance, "Port"),
+                Path.cfgPath("/System/Tornado/", "Port"),
                 self._tornadoPort,
             )
         except RuntimeError:

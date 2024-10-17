@@ -186,7 +186,6 @@ def test_submitJobWrapper(mocker, jobID):
         side_effect=lambda x, y=None: y,
         create=True,
     )
-    mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", return_value="Value")
 
     # Initialize PJA
     jobAgent = PushJobAgent("Test", "Test1")

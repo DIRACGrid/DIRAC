@@ -116,13 +116,11 @@ class TornadoBaseClient:
         self.__bannedUrls = []
 
         # For pylint...
-        self.setup = None
         self.vo = None
         self.serviceURL = None
 
         for initFunc in (
             self.__discoverTimeout,
-            self.__discoverSetup,
             self.__discoverVO,
             self.__discoverCredentialsToUse,
             self.__discoverExtraCredentials,
@@ -131,21 +129,6 @@ class TornadoBaseClient:
             result = initFunc()
             if not result["OK"] and self.__initStatus["OK"]:
                 self.__initStatus = result
-
-    def __discoverSetup(self):
-        """Discover which setup to use and stores it in self.setup
-        The setup is looked for:
-           * kwargs of the constructor (see KW_SETUP)
-           * in the CS /DIRAC/Setup
-           * default to 'Test'
-        """
-        if self.KW_SETUP in self.kwargs and self.kwargs[self.KW_SETUP]:
-            self.setup = str(self.kwargs[self.KW_SETUP])
-        else:
-            self.setup = self.__threadConfig.getSetup()
-            if not self.setup:
-                self.setup = gConfig.getValue("/DIRAC/Setup", "Test")
-        return S_OK()
 
     def __discoverURL(self):
         """Calculate the final URL. It is called at initialization and in connect in case of issue
@@ -375,9 +358,9 @@ class TornadoBaseClient:
         # If nor url is given as constructor, we extract the list of URLs from the CS (System/URLs/Component)
         try:
             # We randomize the list, and add at the end the failover URLs (System/FailoverURLs/Component)
-            urlsList = getServiceURLs(self._destinationSrv, setup=self.setup, failover=True)
+            urlsList = getServiceURLs(self._destinationSrv, failover=True)
         except Exception as e:
-            return S_ERROR(f"Cannot get URL for {self._destinationSrv} in setup {self.setup}: {repr(e)}")
+            return S_ERROR(f"Cannot get URL for {self._destinationSrv} : {repr(e)}")
         if not urlsList:
             return S_ERROR(f"URL for service {self._destinationSrv} not found")
 
@@ -500,7 +483,8 @@ class TornadoBaseClient:
         if self.__extraCredentials:
             kwargs[self.KW_EXTRA_CREDENTIALS] = encode(self.__extraCredentials)
         kwargs["clientVO"] = self.vo
-        kwargs["clientSetup"] = self.setup
+        # No more Setups
+        kwargs["clientSetup"] = "None"
 
         # Getting URL
         url = self.__findServiceURL()
