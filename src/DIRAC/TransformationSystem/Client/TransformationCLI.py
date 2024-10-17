@@ -371,13 +371,12 @@ class TransformationCLI(CLI, API):
             selectDict = {"TransformationID": res["Value"]["TransformationID"]}
             if status:
                 selectDict["Status"] = status
-            res = self.transClient.getTransformationFiles(condDict=selectDict)
+            columns = ["LFN", "Status", "ErrorCount", "TargetSE", "LastUpdate"]
+            res = self.transClient.getTransformationFiles(condDict=selectDict, columns=columns)
             if not res["OK"]:
                 print(f"Failed to get transformation files: {res['Message']}")
             elif res["Value"]:
-                self._printFormattedDictList(
-                    res["Value"], ["LFN", "Status", "ErrorCount", "TargetSE", "LastUpdate"], "LFN", "LFN"
-                )
+                self._printFormattedDictList(res["Value"], columns, "LFN", "LFN")
             else:
                 print("No files found")
 
@@ -398,7 +397,8 @@ class TransformationCLI(CLI, API):
             print(f"Failed to get transformation information: {res['Message']}")
         else:
             selectDict = {"TransformationID": res["Value"]["TransformationID"]}
-            res = self.transClient.getTransformationFiles(condDict=selectDict)
+            columns = ["LFN", "Status", "ErrorCount", "TargetSE", "LastUpdate"]
+            res = self.transClient.getTransformationFiles(condDict=selectDict, columns=columns)
             if not res["OK"]:
                 print(f"Failed to get transformation files: {res['Message']}")
             elif res["Value"]:
@@ -407,9 +407,7 @@ class TransformationCLI(CLI, API):
                     if fileDict["LFN"] in lfns:
                         filesList.append(fileDict)
                 if filesList:
-                    self._printFormattedDictList(
-                        filesList, ["LFN", "Status", "ErrorCount", "TargetSE", "LastUpdate"], "LFN", "LFN"
-                    )
+                    self._printFormattedDictList(filesList, columns, "LFN", "LFN")
                 else:
                     print("Could not find any LFN in", lfns, "for transformation", transName)
             else:
