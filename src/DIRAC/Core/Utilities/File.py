@@ -4,15 +4,16 @@
    By default on Error they return None.
 """
 
-import os
-import hashlib
-import random
-import glob
-import sys
-import re
 import errno
+import glob
+import hashlib
+import os
+import random
+import re
 import stat
+import sys
 import tempfile
+import threading
 from contextlib import contextmanager
 
 # Translation table of a given unit to Bytes
@@ -275,6 +276,32 @@ def secureOpenForWrite(filename=None, *, text=True):
         fd, filename = tempfile.mkstemp(text=text)
     with open(fd, "w" if text else "wb", encoding="ascii" if text else None) as fd:
         yield fd, filename
+
+
+def safe_listdir(directory, timeout=60):
+    """This is a "safe" list directory,
+    for lazily-loaded File Systems like CVMFS.
+    There's by default a 60 seconds timeout.
+
+    :param str directory: directory to list
+    :param int timeout: optional timeout, in seconds. Defaults to 60.
+    """
+
+    def listdir(directory):
+        try:
+            return os.listdir(directory)
+        except FileNotFoundError:
+            print(f"{directory} not found")
+            return []
+
+    contents = []
+    t = threading.Thread(target=lambda: contents.extend(listdir(directory)))
+    t.daemon = True  # don't delay program's exit
+    t.start()
+    t.join(timeout)
+    if t.is_alive():
+        return None  # timeout
+    return contents
 
 
 if __name__ == "__main__":
