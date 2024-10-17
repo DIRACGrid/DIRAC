@@ -4,11 +4,9 @@
 
 import time
 
-from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import ThreadSafe
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Base.Client import Client, createClient
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
 from DIRAC.FrameworkSystem.Utilities.TokenManagementUtilities import (
