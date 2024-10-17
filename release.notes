@@ -1,3 +1,17 @@
+[v8.0.55]
+
+*Core
+
+FIX: (#7840) Returning DISET responses with >100000000 bytes
+
+*TransformationSystem
+
+NEW: (#7840) Use getTransformationFilesAsJsonString for faster getTransformationFiles
+
+*Resources
+
+FIX: (#7835) hide private keys from the logs
+
 [v8.0.54]
 
 *Resources
