@@ -41,7 +41,7 @@ Testing itself could also speed up the development process rapidly tracing probl
 DIRAC is not different from that scenario, with the exception that service-oriented architecture paradigm,
 which is one of the basic concepts of the project, making the quality assurance and testing process the real challenge.
 However as DIRAC becomes more and more popular and now is being used by several different communities,
-the main question is not: *to test or not to test?*, but rather: *how to test in an efficient way?*
+the main question is not: *to test or not to test?*, but rather: *how to test in an efficient way?* [#]_.
 
 The topic of software testing is very complicated by its own nature, but depending on the testing method employed,
 the testing process itself can be implemented at any time in the development phase and ideally should cover many different levels of the system:
@@ -89,13 +89,13 @@ This could be obtained by objects mocking technique, where all fragile component
 equivalents - test doubles. For that it is recommended to use mock_ module.
 Hence it is clear that knowledge of mock_ module API is essential.
 
-Unit tests are typically created by the developer who will also write the code that is being tested. The tests may therefore share the same blind spots with the code: for example, a developer does not realize that certain input parameters must be checked, most likely neither the test nor the code will verify these input parameters. If the developer misinterprets the requirements specification for the module being developed, both the tests and the code will be wrong. Hence if the developer is going to prepare her own unit tests, she should pay attention and take extra care to implement proper testing suite, checking for every spot of possible failure (i.e. interactions with other components) and not trusting that someone else's code is always returning proper type and/or values.
+Unit tests are typically created by the developer who will also write the code that is being tested. The tests may therefore share the same blind spots with the code: for example, a developer does not realize that certain input parameters must be checked, most likely neither the test nor the code will verify these input parameters [#]_. If the developer misinterprets the requirements specification for the module being developed, both the tests and the code will be wrong. Hence if the developer is going to prepare her own unit tests, she should pay attention and take extra care to implement proper testing suite, checking for every spot of possible failure (i.e. interactions with other components) and not trusting that someone else's code is always returning proper type and/or values.
 
 
 Test doubles
 ============
 
-Unit tests should run in *isolation*. Which means that they should run without having DIRAC fully installed, because, remember, they should just test the code logic. If, to run a unit test in DIRAC, you need a dirac.cfg file to be present, you are failing your goal.
+Unit tests should run in *isolation*. Which means that they should run without having DIRAC fully installed, because, remember, they should just test the code logic. If, to run a unit test in DIRAC, you need a dirac.cfg file to be present, you are failing your goal [#]_.
 
 To isolate the code being tested from depended-on components it is convenient and sometimes necessary to use *test doubles*:
 simplified objects or procedures, that behaves and looks like the their real-intended counterparts, but are actually simplified versions
@@ -361,9 +361,9 @@ Footnotes
 ============
 
 .. [#] Or even better software requirements document, if any of such exists. Otherwise this is a great opportunity to prepare one.
+.. [#] You may ask: *isn't it silly?* No, in fact it isn't. Validation of input parameters is one of the most important tasks during testing.
 .. [#] To better understand this term, think about a movie industry: if a scene movie makers are going to film is potentially dangerous and unsafe for the leading actor, his place is taken over by a stunt double.
 .. [#] And eventually is killing him with a gun. At least in a TV show.
-.. [#] You may ask: *isn't it silly?* No, in fact it isn't. Validation of input parameters is one of the most important tasks during testing.
 
 
 .. _Python: http://www.python.org/

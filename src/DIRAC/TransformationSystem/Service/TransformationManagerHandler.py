@@ -1,9 +1,11 @@
 """ Service for interacting with TransformationDB
 """
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security.Properties import SecurityProperty
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
+from DIRAC.Core.Utilities.JEncode import encode as jencode
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.TransformationSystem.Client import TransformationFilesStatus
@@ -289,6 +291,7 @@ class TransformationManagerHandlerMixin:
         limit=None,
         offset=None,
         columns=None,
+        include_web_records=True,
     ):
         if not condDict:
             condDict = {}
@@ -302,7 +305,21 @@ class TransformationManagerHandlerMixin:
             offset=offset,
             connection=False,
             columns=columns,
+            include_web_records=include_web_records,
         )
+
+    types_getTransformationFilesAsJsonString = types_getTransformationFiles
+
+    def export_getTransformationFilesAsJsonString(self, *args, **kwargs):
+        """
+        DEncode cannot cope with nested structures of multiple millions items.
+        Encode everything as a json string, that DEncode can then transmit faster.
+
+        This will be the default as of v9.0
+        """
+        kwargs["include_web_records"] = False
+        res = self.export_getTransformationFiles(*args, **kwargs)
+        return S_OK(jencode(res))
 
     ####################################################################
     #
