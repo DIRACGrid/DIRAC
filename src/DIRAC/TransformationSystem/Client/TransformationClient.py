@@ -3,6 +3,7 @@
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.Core.Utilities.JEncode import decode as jdecode
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.TransformationSystem.Client import TransformationStatus
 from DIRAC.TransformationSystem.Client import TransformationFilesStatus
@@ -176,9 +177,12 @@ class TransformationClient(Client):
             timeStamp = "LastUpdate"
 
         if "LFN" not in condDict:
-            res = rpcClient.getTransformationFiles(
+            res = rpcClient.getTransformationFilesAsJsonString(
                 condDict, older, newer, timeStamp, orderAttribute, offset, maxfiles, columns
             )
+            if not res["OK"]:
+                return res
+            res, _ = jdecode(res["Value"])
             # TransformationDB.getTransformationFiles includes a "Records"/"ParameterNames"
             # that we don't want to return to the client so explicitly return S_OK with the value
             if not res["OK"]:
@@ -204,9 +208,12 @@ class TransformationClient(Client):
             # Apply the offset to the list of LFNs
             condDict["LFN"] = lfnList[offsetToApply : offsetToApply + limit]
             # No limit and no offset as the list is limited already
-            res = rpcClient.getTransformationFiles(
+            res = rpcClient.getTransformationFilesAsJsonString(
                 condDict, older, newer, timeStamp, orderAttribute, None, None, columns
             )
+            if not res["OK"]:
+                return res
+            res, _ = jdecode(res["Value"])
             if not res["OK"]:
                 gLogger.error(
                     "Error getting files for transformation %s (offset %d), %s"

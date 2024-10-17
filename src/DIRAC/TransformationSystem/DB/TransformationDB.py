@@ -595,6 +595,7 @@ class TransformationDB(DB):
         offset=None,
         connection=False,
         columns=None,
+        include_web_records=True,
     ):
         """Get files for the supplied transformations with support for the web standard structure"""
         connection = self.__getConnection(connection)
@@ -632,11 +633,12 @@ class TransformationDB(DB):
             return res
 
         resultList = [dict(zip(columns, row)) for row in res["Value"]]
-        webList = [[str(item) if not isinstance(item, int) else item for item in row] for row in res["Value"]]
 
         result = S_OK(resultList)
-        result["Records"] = webList
-        result["ParameterNames"] = columns
+        if include_web_records:
+            webList = [[str(item) if not isinstance(item, int) else item for item in row] for row in res["Value"]]
+            result["Records"] = webList
+            result["ParameterNames"] = columns
         return result
 
     def getFileSummary(self, lfns, connection=False):
