@@ -510,7 +510,7 @@ class FTS3Agent(AgentModule):
                                 scope=["fts"],
                             )
                             if not res["OK"]:
-                                return res
+                                return operation, res
 
                             fts_access_token = res["Value"]["access_token"]
 
