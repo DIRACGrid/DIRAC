@@ -176,6 +176,8 @@ class BaseTransport:
                     sentBytes = result["Value"]
                 except Exception as e:
                     return S_ERROR(f"Exception while sending data: {e}")
+                if sentBytes < 0:
+                    return S_ERROR("Unknown unrecoverable error from socket while sending data")
                 if sentBytes == 0:
                     return S_ERROR("Connection closed by peer")
                 packSentBytes += sentBytes
