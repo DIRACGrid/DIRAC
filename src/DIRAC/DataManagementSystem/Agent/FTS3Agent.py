@@ -291,13 +291,15 @@ class FTS3Agent(AgentModule):
         :param returnedValue: value returned by the _monitorJob method
                               (ftsJob, standard dirac return struct)
         """
-
-        ftsJob, res = returnedValue
-        log = gLogger.getLocalSubLogger(f"_monitorJobCallback/{ftsJob.jobID}")
-        if not res["OK"]:
-            log.error("Error updating job status", res)
+        if not isinstance(returnedValue, tuple) or len(returnedValue) != 2:
+            ftsJob, res = returnedValue
+            log = gLogger.getLocalSubLogger(f"_monitorJobCallback/{ftsJob.jobID}")
+            if not res["OK"]:
+                log.error("Error updating job status", res)
+            else:
+                log.debug("Successfully updated job status")
         else:
-            log.debug("Successfully updated job status")
+            log.error("Invalid return value when monitoring job", f"{returnedValue!r}")
 
     def monitorJobsLoop(self):
         """* fetch the active FTSJobs from the DB
@@ -375,13 +377,15 @@ class FTS3Agent(AgentModule):
         :param returnedValue: value returned by the _treatOperation method
                               (ftsOperation, standard dirac return struct)
         """
-
-        operation, res = returnedValue
-        log = gLogger.getLocalSubLogger(f"_treatOperationCallback/{operation.operationID}")
-        if not res["OK"]:
-            log.error("Error treating operation", res)
+        if isinstance(returnedValue, tuple) and len(returnedValue) == 2:
+            operation, res = returnedValue
+            log = gLogger.getLocalSubLogger(f"_treatOperationCallback/{operation.operationID}")
+            if not res["OK"]:
+                log.error("Error treating operation", res)
+            else:
+                log.debug("Successfully treated operation")
         else:
-            log.debug("Successfully treated operation")
+            log.error("Invalid return value when treating operation", f"{returnedValue!r}")
 
     def _treatOperation(self, operation):
         """Treat one operation:
@@ -513,7 +517,7 @@ class FTS3Agent(AgentModule):
                                 scope=["fts"],
                             )
                             if not res["OK"]:
-                                return res
+                                return operation, res
 
                             fts_access_token = res["Value"]["access_token"]
 
