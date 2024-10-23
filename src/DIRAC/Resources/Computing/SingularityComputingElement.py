@@ -11,8 +11,6 @@
     See the Configuration/Resources/Computing documention for details on
     where to set the option parameters.
 """
-
-import io
 import json
 import os
 import re
@@ -21,16 +19,17 @@ import sys
 import tempfile
 
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Operations
+from DIRAC.Core.Utilities.Os import findImage
+from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createRelocatedJobWrapper
 
 # Default container to use if it isn't specified in the CE options
-CONTAINER_DEFROOT = "/cvmfs/cernvm-prod.cern.ch/cvm4"
+CONTAINER_DEFROOT = "/cvmfs/unpacked.cern.ch/something" # FIXME
 CONTAINER_WORKDIR = "DIRAC_containers"
 CONTAINER_INNERDIR = "/tmp"
 
@@ -107,9 +106,6 @@ class SingularityComputingElement(ComputingElement):
         super().__init__(ceUniqueID)
         self.__submittedJobs = 0
         self.__runningJobs = 0
-        self.__root = CONTAINER_DEFROOT
-        if "ContainerRoot" in self.ceParameters:
-            self.__root = self.ceParameters["ContainerRoot"]
         self.__workdir = CONTAINER_WORKDIR
         self.__innerdir = CONTAINER_INNERDIR
         self.__singularityBin = "singularity"
@@ -147,7 +143,7 @@ class SingularityComputingElement(ComputingElement):
                 self.log.debug(f'Use singularity from "{self.__singularityBin}"')
                 return True
         if "PATH" not in os.environ:
-            return False  # Hmm, PATH not set? How unusual...
+            return False  # PATH might not be set (e.g. HTCondorCE)
         searchPaths = os.environ["PATH"].split(os.pathsep)
         # We can use CVMFS as a last resort if userNS is enabled
         if self.__hasUserNS():
@@ -359,8 +355,6 @@ class SingularityComputingElement(ComputingElement):
 
         :return: S_OK(payload exit code) / S_ERROR() if submission issue
         """
-        rootImage = self.__root
-        renewTask = None
         # Check that singularity is available
         if not self.__hasSingularity():
             self.log.error("Singularity is not installed on PATH.")
@@ -375,6 +369,7 @@ class SingularityComputingElement(ComputingElement):
         baseDir = ret["baseDir"]
         tmpDir = ret["tmpDir"]
 
+        renewTask = False
         if proxy:
             payloadProxyLoc = ret["proxyLocation"]
 
@@ -449,10 +444,13 @@ class SingularityComputingElement(ComputingElement):
             containerOpts = self.ceParameters["ContainerOptions"].split(",")
             for opt in containerOpts:
                 cmd.extend([opt.strip()])
-        if os.path.isdir(rootImage) or os.path.isfile(rootImage):
+
+        rootImage = findImage() or self.ceParameters.get("ContainerRoot") or CONTAINER_DEFROOT
+
+        if rootImage and os.path.isdir(rootImage) or os.path.isfile(rootImage):
             cmd.extend([rootImage, innerCmd])
         else:
-            # if we are here is because there's no image, or it is not accessible (e.g. not on CVMFS)
+            # if we are here it is because there's no image, or it is not accessible (e.g. not on CVMFS)
             self.log.error("Singularity image to exec not found: ", rootImage)
             return S_ERROR("Failed to find singularity image to exec")
 

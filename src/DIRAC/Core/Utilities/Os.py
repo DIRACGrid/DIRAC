@@ -3,12 +3,14 @@
    by default on Error they return None
 """
 import os
+import platform
 import shutil
 
 import DIRAC
-from DIRAC.Core.Utilities.Decorators import deprecated
-from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities.Decorators import deprecated
+from DIRAC.Core.Utilities.File import safe_listdir
+from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 
 DEBUG = 0
 
@@ -147,6 +149,45 @@ def sourceEnv(timeout, cmdTuple, inputEnv=None):
     return result
 
 
-@deprecated("Will be removed in DIRAC 8.1", onlyOnce=True)
+@deprecated("Will be removed in DIRAC 9.0", onlyOnce=True)
 def which(executable):
     return shutil.which(executable)
+
+
+def findImage(container_root="/cvmfs/unpacked.cern.ch/"):  # FIXME: this might not be needed iff we use multi-platform locations
+    """Finds the image for the current platform
+
+    This looks into location "${container_root}"
+    and expects to find one of the following platforms:
+    - amd64
+    - arm64
+    - ppc64le
+    """
+    plat = DIRAC.gConfig.getValue("LocalSite/Platform", platform.machine())
+    DIRAC.gLogger.info(f"Platform: {plat}")
+
+    # NB: platform compatibility is more complex than the following simple identification.
+    #
+    # Given that, on Linux, platform.machine() returns the same values as uname -m,
+    # and this is already "confusing", e.g. see
+    # https://stackoverflow.com/questions/45125516/possible-values-for-uname-m
+    # https://en.wikipedia.org/wiki/Uname
+    # Since here we are using the architecture specification defined by opencontainers initiative:
+    # https://github.com/opencontainers/image-spec/blob/main/image-index.md#platform-variants
+    # we need to make some simple "conversions" to get the right values:
+
+    if plat.lower() == "x86_64":
+        plat = "amd64"
+    if plat.lower().startswith("arm") or plat.lower() == "aarch64":
+        plat = "arm64"
+    if plat.lower().startswith("ppc64"):
+        plat = "ppc64le"
+
+    if plat not in ["amd64", "arm64", "ppc64le"]:
+        DIRAC.gLogger.error(f"Platform {plat} not supported")
+        return None
+
+    rootImage = f"{container_root}:{plat}"
+    DIRAC.gLogger.verbose(f"Checking {rootImage} existence")
+    if safe_listdir(rootImage):
+        return rootImage
