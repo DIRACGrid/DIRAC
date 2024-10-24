@@ -36,6 +36,10 @@ class StompMQConnector(MQConnector):
     RECONNECT_SLEEP_JITTER = 0.1  # Random factor to add. 0.1 means a random number from 0 to 10% of the current time.
     RECONNECT_ATTEMPTS_MAX = 1e4  # Maximum attempts to reconnect.
 
+    OUTGOING_HEARTBEAT_MS = 15_000
+    INCOMING_HEARTBEAT_MS = 15_000
+    STOMP_TIMEOUT = 60
+
     PORT = 61613
 
     def __init__(self, parameters=None):
@@ -72,6 +76,11 @@ class StompMQConnector(MQConnector):
         reconnectSleepJitter = self.parameters.get("ReconnectSleepJitter", StompMQConnector.RECONNECT_SLEEP_JITTER)
         reconnectAttemptsMax = self.parameters.get("ReconnectAttemptsMax", StompMQConnector.RECONNECT_ATTEMPTS_MAX)
 
+        outgoingHeartbeatMs = self.parameters.get("OutgoingHeartbeatMs", StompMQConnector.OUTGOING_HEARTBEAT_MS)
+        incomingHeartbeatMs = self.parameters.get("IncomingHeartbeatMs", StompMQConnector.INCOMING_HEARTBEAT_MS)
+
+        stompTimeout = self.parameters.get("Timeout", StompMQConnector.STOMP_TIMEOUT)
+
         host = self.parameters.get("Host")
         port = self.parameters.get("Port", StompMQConnector.PORT)
         vhost = self.parameters.get("VHost")
@@ -83,6 +92,8 @@ class StompMQConnector(MQConnector):
         connectionArgs = {
             "vhost": vhost,
             "keepalive": True,
+            "timeout": stompTimeout,
+            "heartbeats": (outgoingHeartbeatMs, incomingHeartbeatMs),
             "reconnect_sleep_initial": reconnectSleepInitial,
             "reconnect_sleep_increase": reconnectSleepIncrease,
             "reconnect_sleep_max": reconnectSleepMax,
