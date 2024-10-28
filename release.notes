@@ -1,3 +1,19 @@
+[v8.0.56]
+
+*StompMQConnector
+
+FIX: (#7854) add a timeout for the StompConnector to handle nonresponsive sockets which can cause logging to be blocked
+
+*Core
+
+FIX: (#7852) ensure processProposal always returns "closeTransport" on error
+FIX: (#7848) Prevent `-1` returned from `oSocket.write` being interpreted as number of bytes to avoid an infinite loop in `DISET BaseTransport.sendData`.
+
+*DataManagementSystem
+
+FIX: (#7847) Fix deadlock when FTS3Agent._treatOperation fails
+FIX: (#7844) fix wrong return type in the FTS3Agent, when using tokens
+
 [v8.0.55]
 
 *Core
