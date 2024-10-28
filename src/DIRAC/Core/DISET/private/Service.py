@@ -511,6 +511,7 @@ class Service:
         # Notify the client we're ready to execute the action
         retVal = self._transportPool.send(trid, S_OK())
         if not retVal["OK"]:
+            retVal["closeTransport"] = True
             return retVal
 
         messageConnection = False
