@@ -1,19 +1,18 @@
 """ Module for dealing with VOMS (Virtual Organization Membership Service)
 """
 
-from datetime import datetime
 import os
-import tempfile
 import shlex
 import shutil
+import tempfile
+from datetime import datetime
 
-from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
-from DIRAC.Core.Utilities import DErrno
+from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
+from DIRAC.Core.Security.ProxyFile import deleteMultiProxy, multiProxyArgument
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
+from DIRAC.Core.Utilities import DErrno, List
 from DIRAC.Core.Utilities.Subprocess import shellCall
-from DIRAC.Core.Utilities import List
 
 # This is a variable so it can be monkeypatched in tests
 VOMS_PROXY_INIT_CMD = "voms-proxy-init"

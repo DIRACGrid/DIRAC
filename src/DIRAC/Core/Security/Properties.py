@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import operator
 from enum import Enum
-from typing import Callable, Union
+from typing import Callable
 
 
 class SecurityProperty(str, Enum):
