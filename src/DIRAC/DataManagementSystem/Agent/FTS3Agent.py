@@ -288,7 +288,7 @@ class FTS3Agent(AgentModule):
         :param returnedValue: value returned by the _monitorJob method
                               (ftsJob, standard dirac return struct)
         """
-        if not isinstance(returnedValue, tuple) or len(returnedValue) != 2:
+        if isinstance(returnedValue, tuple) and len(returnedValue) == 2:
             ftsJob, res = returnedValue
             log = gLogger.getLocalSubLogger(f"_monitorJobCallback/{ftsJob.jobID}")
             if not res["OK"]:
@@ -296,6 +296,7 @@ class FTS3Agent(AgentModule):
             else:
                 log.debug("Successfully updated job status")
         else:
+            log = gLogger.getLocalSubLogger("_monitorJobCallback")
             log.error("Invalid return value when monitoring job", f"{returnedValue!r}")
 
     def monitorJobsLoop(self):
@@ -382,6 +383,7 @@ class FTS3Agent(AgentModule):
             else:
                 log.debug("Successfully treated operation")
         else:
+            log = gLogger.getLocalSubLogger("_treatOperationCallback")
             log.error("Invalid return value when treating operation", f"{returnedValue!r}")
 
     def _treatOperation(self, operation):
