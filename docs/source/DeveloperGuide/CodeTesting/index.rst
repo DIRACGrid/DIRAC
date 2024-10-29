@@ -360,10 +360,7 @@ The certification process
 
 Each DIRAC release go through a long and detailed certification process.
 A certification process is a series of steps that include unit, integration, validation and system tests.
-We use detailed trello boards and slack channel. Please DO ASK to be included in such process.
-
-The template for DIRAC certification process can be found at the trello `board <https://trello.com/b/cp8ULOhQ/dirac-certification-template>`_
-and the slack channel is `here <https://lhcbdirac.slack.com/messages/C3AGWCA8J/>`__
+We use detailed boards and mattermost channel. Please DO ASK to be included in such process.
 
 
 
@@ -371,9 +368,6 @@ Footnotes
 ============
 
 .. [#] Or even better software requirements document, if any of such exists. Otherwise this is a great opportunity to prepare one.
-.. [#] To better understand this term, think about a movie industry: if a scene movie makers are going to film is potentially dangerous and unsafe for the leading actor, his place is taken over by a stunt double.
-.. [#] And eventually is killing him with a gun. At least in a TV show.
-.. [#] You may ask: *isn't it silly?* No, in fact it isn't. Validation of input parameters is one of the most important tasks during testing.
 
 
 .. _Python: http://www.python.org/
