@@ -1,6 +1,8 @@
 """ Service for interacting with TransformationDB
 """
 
+import datetime
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security.Properties import SecurityProperty
@@ -400,8 +402,10 @@ class TransformationManagerHandlerMixin:
             return res
         transDict = res["Value"]
         submitDict = {}
+        # applying few seconds delay to avoid race conditions
+        older = datetime.datetime.now() - datetime.timedelta(seconds=30)
         res = self.transformationDB.getTasksForSubmission(
-            transName, numTasks=numTasks, site=site, statusList=["Created"]
+            transName, numTasks=numTasks, site=site, statusList=["Created"], older=older
         )
         if not res["OK"]:
             return res
