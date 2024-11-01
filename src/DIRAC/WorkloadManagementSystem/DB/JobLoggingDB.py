@@ -7,11 +7,10 @@
     getWMSTimeStamps()
 """
 import datetime
-import time
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities import TimeUtilities
+from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.DB import DB
+from DIRAC.Core.Utilities import TimeUtilities
 
 MAGIC_EPOC_NUMBER = 1270000000
 
@@ -56,31 +55,65 @@ class JobLoggingDB(DB):
         event = f"status/minor/app={status}/{minorStatus}/{applicationStatus}"
         self.log.info("Adding record for job ", str(jobID) + ": '" + event + "' from " + source)
 
-        try:
+        def _get_date(date):
+            # We need to specify that timezone is UTC because otherwise timestamp
+            # assumes local time while we mean UTC.
             if not date:
-                # Make the UTC datetime string and float
-                _date = datetime.datetime.utcnow()
+                # Make the UTC datetime
+                return datetime.datetime.utcnow()
             elif isinstance(date, str):
                 # The date is provided as a string in UTC
-                _date = TimeUtilities.fromString(date)
+                return TimeUtilities.fromString(date)
             elif isinstance(date, datetime.datetime):
-                _date = date
+                return date
             else:
-                self.log.error("Incorrect date for the logging record")
-                _date = datetime.datetime.utcnow()
+                raise Exception("Incorrect date for the logging record")
+
+        try:
+            if isinstance(date, list):
+                _date = []
+                for d in date:
+                    try:
+                        _date.append(_get_date(d))
+                    except Exception:
+                        self.log.exception("Exception while date evaluation")
+                        _date.append(datetime.datetime.utcnow())
+            else:
+                _date = _get_date(date)
         except Exception:
             self.log.exception("Exception while date evaluation")
-            _date = datetime.datetime.utcnow()
-
-        # We need to specify that timezone is UTC because otherwise timestamp
-        # assumes local time while we mean UTC.
-        epoc = _date.replace(tzinfo=datetime.timezone.utc).timestamp() - MAGIC_EPOC_NUMBER
+            _date = [datetime.datetime.utcnow()]
 
         cmd = (
             "INSERT INTO LoggingInfo (JobId, Status, MinorStatus, ApplicationStatus, "
-            + "StatusTime, StatusTimeOrder, StatusSource) VALUES (%d,'%s','%s','%s','%s',%f,'%s')"
-            % (int(jobID), status, minorStatus, applicationStatus[:255], str(_date), epoc, source[:32])
+            + "StatusTime, StatusTimeOrder, StatusSource) VALUES "
         )
+
+        # if JobID is a list, make a bulk insert
+        if isinstance(jobID, list):
+            for i, _ in enumerate(jobID):
+                epoc = _date[i].replace(tzinfo=datetime.timezone.utc).timestamp() - MAGIC_EPOC_NUMBER
+                cmd = cmd + "(%d,'%s','%s','%s','%s',%f,'%s')," % (
+                    int(jobID[i]),
+                    status[i],
+                    minorStatus[i],
+                    applicationStatus[:255],
+                    str(_date[i]),
+                    epoc,
+                    source[:32],
+                )
+            cmd = cmd[:-1]
+        else:  # else make a single insert
+            epoc = _date.replace(tzinfo=datetime.timezone.utc).timestamp() - MAGIC_EPOC_NUMBER
+            cmd = cmd + "(%d,'%s','%s','%s','%s',%f,'%s')" % (
+                int(jobID),
+                status,
+                minorStatus,
+                applicationStatus[:255],
+                str(_date),
+                epoc,
+                source[:32],
+            )
 
         return self._update(cmd)
 

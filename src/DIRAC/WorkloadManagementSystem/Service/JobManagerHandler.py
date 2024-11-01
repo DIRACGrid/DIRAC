@@ -177,6 +177,9 @@ class JobManagerHandlerMixin:
             jobDescList = [jobDesc]
 
         jobIDList = []
+        statusList = []
+        minorStatusList = []
+        timeStampList = []
 
         if parametricJob:
             initialStatus = JobStatus.SUBMITTING
@@ -199,13 +202,25 @@ class JobManagerHandlerMixin:
                 return result
 
             jobID = result["JobID"]
-            self.log.info(f'Job added to the JobDB", "{jobID} for {self.ownerDN}/{self.ownerGroup}')
-
-            self.jobLoggingDB.addLoggingRecord(
-                jobID, result["Status"], result["MinorStatus"], date=result["TimeStamp"], source="JobManager"
-            )
+            self.log.info(f"Job added to the JobDB", f"{jobID} for {self.ownerDN}/{self.ownerGroup}")
 
             jobIDList.append(jobID)
+            statusList.append(result["Status"])
+            minorStatusList.append(result["MinorStatus"])
+            timeStampList.append(result["TimeStamp"])
+
+        # insert records in logging DB
+
+        # For parametric jobs I can insert logging records in a bulk
+        if parametricJob and len(set(jobIDList)) == len(jobIDList):
+            result = self.jobLoggingDB.addLoggingRecord(
+                jobIDList, statusList, minorStatusList, date=timeStampList, source="JobManager"
+            )
+        else:
+            for i, _ in enumerate(jobIDList):
+                result = self.jobLoggingDB.addLoggingRecord(
+                    jobIDList[i], statusList[i], minorStatusList[i], date=timeStampList[i], source="JobManager"
+                )
 
         # Set persistency flag
         retVal = gProxyManager.getUserPersistence(self.ownerDN, self.ownerGroup)
