@@ -29,7 +29,10 @@ class GridSubmissionTestCase(unittest.TestCase):
             sys.exit(1)
 
         res = DataManager().getReplicas(
-            ["/dteam/user/f/fstagni/test/testInputFileSingleLocation.txt", "/dteam/user/f/fstagni/test/testInputFile.txt"]
+            [
+                "/dteam/user/f/fstagni/test/testInputFileSingleLocation.txt",
+                "/dteam/user/f/fstagni/test/testInputFile.txt",
+            ]
         )
         if not res["OK"]:
             print(f"DATAMANAGER.getRepicas failure: {res['Message']}")

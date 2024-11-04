@@ -74,7 +74,9 @@ def helloWorld_input():
         try:
             J.setInputSandbox([find_all("exe-script-with-input.py", ".", "DIRAC/tests/Workflow")[0]])
         except IndexError:  # we are in Jenkins
-            J.setInputSandbox([find_all("exe-script-with-input.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]])
+            J.setInputSandbox(
+                [find_all("exe-script-with-input.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]]
+            )
     J.setExecutable("exe-script-with-input.py", "", "helloWorld.log")
     return endOfAllJobs(J)
 
@@ -89,7 +91,13 @@ def helloWorld_input_single():
         try:
             J.setInputSandbox([find_all("exe-script-with-input-single-location.py", ".", "DIRAC/tests/Workflow")[0]])
         except IndexError:  # we are in Jenkins
-            J.setInputSandbox([find_all("exe-script-with-input-single-location.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]])
+            J.setInputSandbox(
+                [
+                    find_all(
+                        "exe-script-with-input-single-location.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow"
+                    )[0]
+                ]
+            )
     J.setExecutable("exe-script-with-input-single-location.py", "", "helloWorld.log")
     return endOfAllJobs(J)
 
@@ -311,7 +319,6 @@ def parametricJobInputData():
     J.setInputDataPolicy("download")
     J.setExecutable("exe-script.py", arguments=": testing %(args)s %(iargs)s", logFile="helloWorld_%n.log")
     return endOfAllJobs(J)
-
 
 
 def jobWithOutput():

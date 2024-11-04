@@ -45,7 +45,7 @@ echo "Creating TransformationSystemTest"
 mkdir -p TransformationSystemTest
 directory=/dteam/diracCertification/Test/INIT/$version/$tdate/$stime/replication
 #get all SEs ending with -SE that are Active, randomize, turn into array
-SEs=( $(dirac-dms-show-se-status | grep -e "-SE \|-disk " | grep -v 'RAL\|CESNET\|Banned\|Probing\|Error\|-new' | awk '{print $1}' | sort -R | xargs) )
+SEs=( $(dirac-dms-show-se-status | grep -e "-SE \|-disk " | grep -v 'RAL\|Banned\|Probing\|Error\|-new' | awk '{print $1}' | sort -R | xargs) )
 
 SOURCE_SE=${SEs[0]}
 TARGET_SE=${SEs[1]}
