@@ -1,0 +1,3 @@
+this is just a test
+
+This file should be at /dteam/user/f/fstagni/test/testInputFileSingleLocation.txt in RAL-SE

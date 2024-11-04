@@ -1,8 +1,9 @@
 """ Collection of user jobs for testing purposes
 """
 # pylint: disable=wrong-import-position, invalid-name
-import unittest
+import sys
 import time
+import unittest
 
 import DIRAC
 
@@ -22,7 +23,26 @@ class GridSubmissionTestCase(unittest.TestCase):
     """Base class for the Regression test cases"""
 
     def setUp(self):
-        pass
+        result = getProxyInfo()
+        if result["Value"]["group"] not in ["dteam_user", "gridpp_user"]:
+            print("GET A USER GROUP")
+            sys.exit(1)
+
+        res = DataManager().getReplicas(
+            ["/dteam/user/f/fstagni/test/testInputFileSingleLocation.txt", "/dteam/user/f/fstagni/test/testInputFile.txt"]
+        )
+        if not res["OK"]:
+            print(f"DATAMANAGER.getRepicas failure: {res['Message']}")
+            sys.exit(1)
+        if res["Value"]["Failed"]:
+            print(f"DATAMANAGER.getRepicas failed for something: {res['Value']['Failed']}")
+            sys.exit(1)
+
+        replicas = res["Value"]["Successful"]
+        if list(replicas["/dteam/user/f/fstagni/test/testInputFile.txt"]) != ["RAL-SE", "UKI-LT2-IC-HEP-disk"]:
+            print("/dteam/user/f/fstagni/test/testInputFile.txt locations are not correct")
+        if list(replicas["/dteam/user/f/fstagni/test/testInputFileSingleLocation.txt"]) != ["RAL-SE"]:
+            print("/dteam/user/f/fstagni/test/testInputFileSingleLocation.txt locations are not correct")
 
     def tearDown(self):
         pass
@@ -34,6 +54,14 @@ class submitSuccess(GridSubmissionTestCase):
     def test_submit(self):
         """submit jobs defined in DIRAC.tests.Utilities.testJobDefinitions"""
         res = helloWorld()
+        self.assertTrue(res["OK"])
+        jobsSubmittedList.append(res["Value"])
+
+        res = helloWorld_input()
+        self.assertTrue(res["OK"])
+        jobsSubmittedList.append(res["Value"])
+
+        res = helloWorld_input_single()
         self.assertTrue(res["OK"])
         jobsSubmittedList.append(res["Value"])
 
@@ -74,6 +102,10 @@ class submitSuccess(GridSubmissionTestCase):
         jobsSubmittedList.append(res["Value"])
 
         res = parametricJob()
+        self.assertTrue(res["OK"])
+        jobsSubmittedList.append(res["Value"])
+
+        res = parametricJobInputData()
         self.assertTrue(res["OK"])
         jobsSubmittedList.append(res["Value"])
 
