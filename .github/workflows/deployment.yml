@@ -17,6 +17,10 @@ jobs:
     name: PyPI deployment
     runs-on: "ubuntu-latest"
     if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
     defaults:
       run:
         shell: bash -l {0}
