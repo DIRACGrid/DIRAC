@@ -600,7 +600,7 @@ class JobDB(DB):
 
         return self._update(cmd)
 
-    def setJobStatus(self, jobID, status="", minorStatus="", applicationStatus=""):
+    def setJobStatus(self, jobID, status="", minorStatus="", applicationStatus="", force=False):
         """Set status of the job specified by its jobID"""
         # Do not update the LastUpdate time stamp if setting the Stalled status
         update_flag = True
@@ -619,7 +619,7 @@ class JobDB(DB):
             attrNames.append("ApplicationStatus")
             attrValues.append(applicationStatus[:255])
 
-        result = self.setJobAttributes(jobID, attrNames, attrValues, update=update_flag)
+        result = self.setJobAttributes(jobID, attrNames, attrValues, update=update_flag, force=force)
         if not result["OK"]:
             return result
 

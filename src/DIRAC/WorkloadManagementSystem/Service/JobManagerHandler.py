@@ -432,14 +432,14 @@ class JobManagerHandlerMixin:
 
         return S_OK(validJobList)
 
-    def __deleteJob(self, jobID):
+    def __deleteJob(self, jobID, force=False):
         """Set the job status to "Deleted"
         and remove the pilot that ran and its logging info if the pilot is finished.
 
         :param int jobID: job ID
         :return: S_OK()/S_ERROR()
         """
-        result = self.jobDB.setJobStatus(jobID, JobStatus.DELETED, "Checking accounting")
+        result = self.jobDB.setJobStatus(jobID, JobStatus.DELETED, "Checking accounting", force=force)
         if not result["OK"]:
             return result
 
@@ -475,7 +475,7 @@ class JobManagerHandlerMixin:
 
         return S_OK()
 
-    def __killJob(self, jobID, sendKillCommand=True):
+    def __killJob(self, jobID, sendKillCommand=True, force=False):
         """Kill one job
 
         :param int jobID: job ID
@@ -488,14 +488,16 @@ class JobManagerHandlerMixin:
                 return result
 
         self.log.info("Job marked for termination", jobID)
-        if not (result := self.jobDB.setJobStatus(jobID, JobStatus.KILLED, "Marked for termination"))["OK"]:
+        if not (result := self.jobDB.setJobStatus(jobID, JobStatus.KILLED, "Marked for termination", force=force))[
+            "OK"
+        ]:
             self.log.warn("Failed to set job Killed status", result["Message"])
         if not (result := self.taskQueueDB.deleteJob(jobID))["OK"]:
             self.log.warn("Failed to delete job from the TaskQueue", result["Message"])
 
         return S_OK()
 
-    def _kill_delete_jobs(self, jobIDList, right):
+    def _kill_delete_jobs(self, jobIDList, right, force=False):
         """Kill (== set the status to "KILLED") or delete (== set the status to "DELETED") jobs as necessary
 
         :param list jobIDList: job IDs
@@ -535,12 +537,12 @@ class JobManagerHandlerMixin:
             stagingJobList = [jobID for jobID, sDict in result["Value"].items() if sDict["Status"] == JobStatus.STAGING]
 
             for jobID in killJobList:
-                result = self.__killJob(jobID)
+                result = self.__killJob(jobID, force=force)
                 if not result["OK"]:
                     badIDs.append(jobID)
 
             for jobID in deleteJobList:
-                result = self.__deleteJob(jobID)
+                result = self.__deleteJob(jobID, force=force)
                 if not result["OK"]:
                     badIDs.append(jobID)
 
@@ -573,7 +575,7 @@ class JobManagerHandlerMixin:
     ###########################################################################
     types_deleteJob = []
 
-    def export_deleteJob(self, jobIDs):
+    def export_deleteJob(self, jobIDs, force=False):
         """Delete jobs specified in the jobIDs list
 
         :param list jobIDs: list of job IDs
@@ -581,12 +583,12 @@ class JobManagerHandlerMixin:
         :return: S_OK/S_ERROR
         """
 
-        return self._kill_delete_jobs(jobIDs, RIGHT_DELETE)
+        return self._kill_delete_jobs(jobIDs, RIGHT_DELETE, force=force)
 
     ###########################################################################
     types_killJob = []
 
-    def export_killJob(self, jobIDs):
+    def export_killJob(self, jobIDs, force=False):
         """Kill jobs specified in the jobIDs list
 
         :param list jobIDs: list of job IDs
@@ -594,7 +596,7 @@ class JobManagerHandlerMixin:
         :return: S_OK/S_ERROR
         """
 
-        return self._kill_delete_jobs(jobIDs, RIGHT_KILL)
+        return self._kill_delete_jobs(jobIDs, RIGHT_KILL, force=force)
 
     ###########################################################################
     types_resetJob = []
