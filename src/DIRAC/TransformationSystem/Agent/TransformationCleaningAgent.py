@@ -653,7 +653,7 @@ class TransformationCleaningAgent(AgentModule):
         jobIDs = [int(j) for j in transJobIDs if int(j)]
         allRemove = True
         for jobList in breakListIntoChunks(jobIDs, 500):
-            res = self.wmsClient.killJob(jobList)
+            res = self.wmsClient.killJob(jobList, force=True)
             if res["OK"]:
                 self.log.info(f"Successfully killed {len(jobList)} jobs from WMS")
             elif ("InvalidJobIDs" in res) and ("NonauthorizedJobIDs" not in res) and ("FailedJobIDs" not in res):
