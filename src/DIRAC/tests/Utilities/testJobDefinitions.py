@@ -3,14 +3,13 @@
 
 # pylint: disable=invalid-name
 
+import errno
 import os
 import time
-import errno
 
 from DIRAC import rootPath
-from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Interfaces.API.Dirac import Dirac
-
+from DIRAC.Interfaces.API.Job import Job
 from DIRAC.tests.Utilities.utils import find_all
 
 
@@ -62,6 +61,44 @@ def helloWorld():
         except IndexError:  # we are in Jenkins
             J.setInputSandbox([find_all("exe-script.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]])
     J.setExecutable("exe-script.py", "", "helloWorld.log")
+    return endOfAllJobs(J)
+
+
+def helloWorld_input():
+    """simple hello world job with input"""
+
+    J = baseToAllJobs("helloWorld_input")
+    try:
+        J.setInputSandbox([find_all("exe-script-with-input.py", rootPath, "DIRAC/tests/Workflow")[0]])
+    except IndexError:
+        try:
+            J.setInputSandbox([find_all("exe-script-with-input.py", ".", "DIRAC/tests/Workflow")[0]])
+        except IndexError:  # we are in Jenkins
+            J.setInputSandbox(
+                [find_all("exe-script-with-input.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]]
+            )
+    J.setExecutable("exe-script-with-input.py", "", "helloWorld.log")
+    return endOfAllJobs(J)
+
+
+def helloWorld_input_single():
+    """simple hello world job with input"""
+
+    J = baseToAllJobs("helloWorld_input_single")
+    try:
+        J.setInputSandbox([find_all("exe-script-with-input-single-location.py", rootPath, "DIRAC/tests/Workflow")[0]])
+    except IndexError:
+        try:
+            J.setInputSandbox([find_all("exe-script-with-input-single-location.py", ".", "DIRAC/tests/Workflow")[0]])
+        except IndexError:  # we are in Jenkins
+            J.setInputSandbox(
+                [
+                    find_all(
+                        "exe-script-with-input-single-location.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow"
+                    )[0]
+                ]
+            )
+    J.setExecutable("exe-script-with-input-single-location.py", "", "helloWorld.log")
     return endOfAllJobs(J)
 
 
@@ -258,6 +295,28 @@ def parametricJob():
             J.setInputSandbox([find_all("exe-script.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]])
     J.setParameterSequence("args", ["one", "two", "three"])
     J.setParameterSequence("iargs", [1, 2, 3])
+    J.setExecutable("exe-script.py", arguments=": testing %(args)s %(iargs)s", logFile="helloWorld_%n.log")
+    return endOfAllJobs(J)
+
+
+def parametricJobInputData():
+    """Creates a parametric job with 3 subjobs which are simple hello world jobs, but with input data"""
+
+    J = baseToAllJobs("parametricJobInput")
+    try:
+        J.setInputSandbox([find_all("exe-script.py", rootPath, "DIRAC/tests/Workflow")[0]])
+    except IndexError:
+        try:
+            J.setInputSandbox([find_all("exe-script.py", ".", "DIRAC/tests/Workflow")[0]])
+        except IndexError:  # we are in Jenkins
+            J.setInputSandbox([find_all("exe-script.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]])
+    J.setParameterSequence("args", ["one", "two", "three"])
+    J.setParameterSequence("iargs", [1, 2, 3])
+    J.setParameterSequence(
+        "InputData",
+        ["/dteam/user/f/fstagni/test/1.txt", "/dteam/user/f/fstagni/test/2.txt", "/dteam/user/f/fstagni/test/3.txt"],
+    )
+    J.setInputDataPolicy("download")
     J.setExecutable("exe-script.py", arguments=": testing %(args)s %(iargs)s", logFile="helloWorld_%n.log")
     return endOfAllJobs(J)
 
