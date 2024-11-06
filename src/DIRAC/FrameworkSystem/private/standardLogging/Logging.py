@@ -393,37 +393,31 @@ class Logging:
 
         :return: boolean representing the result of the log record creation
         """
+        # exc_info is only for exception to add the stack trace
 
-        # lock to prevent a level change after that the log is sent.
-        self._lockLevel.acquire()
-        try:
-            # exc_info is only for exception to add the stack trace
+        # extra is a way to add extra attributes to the log record:
+        # - 'componentname': the system/component name
+        # - 'varmessage': the variable message
+        # - 'customname' : the name of the logger for the DIRAC usage: without 'root' and separated with '/'
+        # as log records, extras attributes are not camel case
+        extra = {
+            "componentname": self._componentName,
+            "varmessage": str(sVarMsg),
+            "spacer": "" if not sVarMsg else " ",
+            "customname": self._customName,
+        }
 
-            # extra is a way to add extra attributes to the log record:
-            # - 'componentname': the system/component name
-            # - 'varmessage': the variable message
-            # - 'customname' : the name of the logger for the DIRAC usage: without 'root' and separated with '/'
-            # as log records, extras attributes are not camel case
-            extra = {
-                "componentname": self._componentName,
-                "varmessage": str(sVarMsg),
-                "spacer": "" if not sVarMsg else " ",
-                "customname": self._customName,
-            }
+        # options such as headers and threadIDs also depend on the logger, we have to add them to extra
+        extra.update(self._options)
 
-            # options such as headers and threadIDs also depend on the logger, we have to add them to extra
-            extra.update(self._options)
+        # This typically contains local custom names
+        if local_context:
+            extra.update(local_context)
 
-            # This typically contains local custom names
-            if local_context:
-                extra.update(local_context)
-
-            self._logger.log(level, "%s", sMsg, exc_info=exc_info, extra=extra)
-            # check whether the message is displayed
-            isSent = LogLevels.getLevelValue(self.getLevel()) <= level
-            return isSent
-        finally:
-            self._lockLevel.release()
+        self._logger.log(level, "%s", sMsg, exc_info=exc_info, extra=extra)
+        # check whether the message is displayed
+        isSent = LogLevels.getLevelValue(self.getLevel()) <= level
+        return isSent
 
     def showStack(self):
         """
