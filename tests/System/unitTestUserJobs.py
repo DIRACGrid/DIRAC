@@ -11,6 +11,8 @@ DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
 from DIRAC.tests.Utilities.testJobDefinitions import *
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
 gLogger.setLevel("DEBUG")
 
