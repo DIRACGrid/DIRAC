@@ -217,9 +217,9 @@ class JobManagerHandlerMixin:
                 jobIDList, statusList, minorStatusList, date=timeStampList, source="JobManager"
             )
         else:
-            for i, _ in enumerate(jobIDList):
+            for jobID, status, minorStatus, timeStamp in zip(jobIDList, statusList, minorStatusList, timeStampList):
                 result = self.jobLoggingDB.addLoggingRecord(
-                    jobIDList[i], statusList[i], minorStatusList[i], date=timeStampList[i], source="JobManager"
+                    jobID, status, minorStatus, date=timeStamp, source="JobManager"
                 )
 
         # Set persistency flag

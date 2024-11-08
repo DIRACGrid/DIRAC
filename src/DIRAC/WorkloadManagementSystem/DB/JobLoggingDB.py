@@ -91,14 +91,23 @@ class JobLoggingDB(DB):
 
         # if JobID is a list, make a bulk insert
         if isinstance(jobID, list):
-            for i, _ in enumerate(jobID):
-                epoc = _date[i].replace(tzinfo=datetime.timezone.utc).timestamp() - MAGIC_EPOC_NUMBER
-                cmd = cmd + "(%d,'%s','%s','%s','%s',%f,'%s')," % (
-                    int(jobID[i]),
-                    status[i],
-                    minorStatus[i],
-                    applicationStatus[:255],
-                    str(_date[i]),
+            if isinstance(status, str):
+                status = [status] * len(jobID)
+            if isinstance(minorStatus, str):
+                minorStatus = [minorStatus] * len(jobID)
+            if isinstance(applicationStatus, str):
+                applicationStatus = [applicationStatus] * len(jobID)
+            if isinstance(_date, datetime.datetime):
+                _date = [_date] * len(jobID)
+
+            for jid, stat, mstat, appstat, dt in zip(jobID, status, minorStatus, applicationStatus, _date):
+                epoc = dt.replace(tzinfo=datetime.timezone.utc).timestamp() - MAGIC_EPOC_NUMBER
+                cmd += "(%d,'%s','%s','%s','%s',%f,'%s')," % (
+                    int(jid),
+                    stat,
+                    mstat,
+                    appstat[:255],
+                    str(dt),
                     epoc,
                     source[:32],
                 )
