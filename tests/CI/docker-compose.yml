@@ -11,6 +11,7 @@ services:
       timeout: 20s
       retries: 10
       start_period: 60s
+    pull_policy: always
 
   elasticsearch:
     image: ${ES_VER}
@@ -25,6 +26,7 @@ services:
       timeout: 2s
       retries: 15
       start_period: 60s
+    pull_policy: always
 
   iam-login-service:
     image: ${IAM_VER}
@@ -39,7 +41,7 @@ services:
       timeout: 2s
       retries: 15
       start_period: 60s
-
+    pull_policy: always
 
   # Mock of an S3 storage
   s3-direct:
@@ -52,6 +54,7 @@ services:
     environment:
       - initialBuckets=my-first-bucket
       - debug=true
+    pull_policy: always
 
   dirac-server:
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
@@ -65,6 +68,9 @@ services:
         condition: service_healthy
     ulimits:
       nofile: 8192
+    pull_policy: always
+    command: ["sleep", "infinity"] # This is necessary because of the issue described in https://github.com/moby/moby/issues/42275. What is added here is a hack/workaround.
+
 
   dirac-client:
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
@@ -75,3 +81,5 @@ services:
       - dirac-server
     ulimits:
       nofile: 8192
+    pull_policy: always
+    command: ["sleep", "infinity"] # This is necessary because of the issue described in https://github.com/moby/moby/issues/42275. What is added here is a hack/workaround.

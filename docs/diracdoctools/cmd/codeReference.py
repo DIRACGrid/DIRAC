@@ -183,6 +183,9 @@ class CodeReference:
             if dire.lower() == "docs" or "/docs" in dire.lower():
                 LOG.debug("Skipping docs directory: %s/%s", abspath, dire)
                 continue
+            if any(f.lower() in abspath.lower() for f in self.config.code_ignoreFolders):
+                LOG.debug("Skipping subpackages: %s/%s", abspath, dire)
+                continue
             if os.path.exists(os.path.join(self.config.sourcePath, abspath, dire, "__init__.py")):
                 packages.append(os.path.join(dire))
         return packages
