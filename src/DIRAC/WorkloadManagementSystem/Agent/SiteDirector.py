@@ -109,6 +109,9 @@ class SiteDirector(AgentModule):
         self.maxQueueLength = 86400 * 3
         # Maximum number of times the Site Director is going to try to get a pilot output before stopping
         self.maxRetryGetPilotOutput = 3
+        # Bundle proxy lifetime factor: Job bundled proxy lifetime will be this multiplied by the queue runtime length,
+        # should be high enough to accommodate the queuing time of the job.
+        self.bundleProxyLifetimeFactor = 1.5
 
         self.pilotWaitingFlag = True
         self.pilotLogLevel = "INFO"
@@ -734,7 +737,16 @@ class SiteDirector(AgentModule):
         jobExecDir = self.queueDict[queue]["ParametersDict"].get("JobExecDir", "")
         envVariables = self.queueDict[queue]["ParametersDict"].get("EnvironmentVariables", None)
 
-        executable = self.getExecutable(queue, proxy=ce.proxy, jobExecDir=jobExecDir, envVariables=envVariables)
+        # We don't want to use the submission/"pilot" proxy for the job in the bundle:
+        # Instead we use a non-VOMS proxy which is then not limited in lifetime by the VOMS extension
+        proxyTimeSec = int(self.maxQueueLength * self.bundleProxyLifetimeFactor)
+        result = gProxyManager.downloadProxy(self.pilotDN, self.pilotGroup, limited=True, requiredTimeLeft=proxyTimeSec)
+        if not result["OK"]:
+            self.log.error("Failed to get job proxy", f"Queue {queue}:\n{result['Message']}")
+            return result
+        jobProxy = result["Value"]
+
+        executable = self.getExecutable(queue, proxy=jobProxy, jobExecDir=jobExecDir, envVariables=envVariables)
 
         submitResult = ce.submitJob(executable, "", pilotsToSubmit)
         # In case the CE does not need the executable after the submission, we delete it
