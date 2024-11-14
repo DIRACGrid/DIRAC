@@ -28,6 +28,10 @@ mockPM = MagicMock()
 mockPM.requestToken.return_value = {"OK": True, "Value": ("token", 1)}
 mockPMReply = MagicMock()
 mockPMReply.return_value = {"OK": True, "Value": ("token", 1)}
+mockPMProxy = MagicMock()
+mockPMProxy.dumpAllToString.return_value = {"OK": True, "Value": "fakeProxy"}
+mockPMProxyReply = MagicMock()
+mockPMProxyReply.return_value = {"OK": True, "Value": mockPMProxy}
 
 mockCSGlobalReply = MagicMock()
 mockCSGlobalReply.return_value = "TestSetup"
@@ -48,6 +52,9 @@ def sd(mocker):
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.Operations", side_effect=mockOPS)
     mocker.patch(
         "DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gProxyManager.requestToken", side_effect=mockPMReply
+    )
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gProxyManager.downloadProxy", side_effect=mockPMProxyReply
     )
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
     sd = SiteDirector()
