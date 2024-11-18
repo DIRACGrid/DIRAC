@@ -160,34 +160,42 @@ class TransformationDB(DB):
         if not res["OK"]:
             return S_ERROR("Failed to parse the transformation body")
         body = res["Value"]
-        req = (
-            "INSERT INTO Transformations (TransformationName,Description,LongDescription, \
-                                        CreationDate,LastUpdate,AuthorDN,AuthorGroup,Type,Plugin,AgentType,\
-                                        FileMask,Status,TransformationGroup,GroupSize,\
-                                        InheritedFrom,Body,MaxNumberOfTasks,EventsPerTask)\
-                                VALUES ('%s','%s','%s',\
-                                        UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','%s','%s','%s',\
-                                        '%s','New','%s',%f,\
-                                        %d,%s,%d,%d);"
-            % (
-                transName,
-                description,
-                longDescription,
-                authorDN,
-                authorGroup,
-                transType,
-                plugin,
-                agentType,
-                fileMask,
-                transformationGroup,
-                groupSize,
-                inheritedFrom,
-                body,
-                maxTasks,
-                eventsPerTask,
-            )
-        )
-        res = self._update(req, conn=connection)
+
+        params = {
+            "TransformationName": transName,
+            "Description": description,
+            "LongDescription": longDescription,
+            "CreationDate": "UTC_TIMESTAMP()",
+            "LastUpdate": "UTC_TIMESTAMP()",
+            "AuthorDN": authorDN,
+            "AuthorGroup": authorGroup,
+            "Type": transType,
+            "Plugin": plugin,
+            "AgentType": agentType,
+            "FileMask": fileMask,
+            "Status": "New",
+            "TransformationGroup": transformationGroup,
+            "GroupSize": groupSize,
+            "InheritedFrom": inheritedFrom,
+            "Body": body,
+            "MaxNumberOfTasks": maxTasks,
+            "EventsPerTask": eventsPerTask,
+        }
+
+        # A list of parameters that we do not want to substitute as parameters, but directly
+        # into the statement
+        # I'm erring on the side of caution by using the _escapeString(body) version of the Body parameter,
+        # but for everything else it seems reasonably safe to use the parameterised query feature
+        unparameterised_columns = [
+            "Body",
+            "CreationDate",
+            "LastUpdate",
+        ]
+        subst = ", ".join(f"%({name})s" if name not in unparameterised_columns else params[name] for name in params)
+
+        req = f"INSERT INTO Transformations ({', '.join(params)}) VALUES ({subst});"
+
+        res = self._update(req, args=params, conn=connection)
         if not res["OK"]:
             self.lock.release()
             return res
