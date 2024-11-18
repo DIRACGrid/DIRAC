@@ -96,35 +96,29 @@ class JobLoggingDB(DB):
             if isinstance(minorStatus, str):
                 minorStatus = [minorStatus] * len(jobID)
             if isinstance(applicationStatus, str):
-                applicationStatus = [applicationStatus] * len(jobID)
+                applicationStatus = [applicationStatus[:255]] * len(jobID)
             if isinstance(_date, datetime.datetime):
                 _date = [_date] * len(jobID)
 
-            for jid, stat, mstat, appstat, dt in zip(jobID, status, minorStatus, applicationStatus, _date):
+            epocs = []
+            for dt in _date:
                 epoc = dt.replace(tzinfo=datetime.timezone.utc).timestamp() - MAGIC_EPOC_NUMBER
-                cmd += "(%d,'%s','%s','%s','%s',%f,'%s')," % (
-                    int(jid),
-                    stat,
-                    mstat,
-                    appstat[:255],
-                    str(dt),
-                    epoc,
-                    source[:32],
-                )
-            cmd = cmd[:-1]
+                epocs.append(epoc)
+            cmd = cmd + "(%s, %s, %s, %s, %s, %s, %s)"
+            data = list(zip(jobID, status, minorStatus, applicationStatus, _date, epocs, [source[:32]] * len(jobID)))
+            return self._updatemany(cmd, data)
         else:  # else make a single insert
             epoc = _date.replace(tzinfo=datetime.timezone.utc).timestamp() - MAGIC_EPOC_NUMBER
             cmd = cmd + "(%d,'%s','%s','%s','%s',%f,'%s')" % (
                 int(jobID),
                 status,
                 minorStatus,
-                applicationStatus[:255],
+                applicationStatus,
                 str(_date),
                 epoc,
                 source[:32],
             )
-
-        return self._update(cmd)
+            return self._update(cmd)
 
     #############################################################################
     def getJobLoggingInfo(self, jobID):

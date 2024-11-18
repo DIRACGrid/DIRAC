@@ -820,7 +820,6 @@ class MySQL:
 
         return retDict
 
-
     def _transaction(self, cmdList, conn=None):
         """dummy transaction support
 
