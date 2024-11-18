@@ -219,6 +219,9 @@ class TokenManagerHandlerMixin:
 
             # Get the client token with requested scope and audience
             result = idpObj.fetchToken(grant_type="client_credentials", scope=scope, audience=audience)
+            # DEncode can not encode OAuth2Token object
+            if result["OK"]:
+                result["Value"] = dict(result["Value"])
 
             return result
 
