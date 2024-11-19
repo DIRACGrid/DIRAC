@@ -1,7 +1,5 @@
-"""TokenManager service is a HTTPs-exposed service responsible for token management, namely storing, updating,
+"""TokenManager service is responsible for token management, namely storing, updating,
 requesting new tokens for DIRAC components that have the appropriate permissions.
-
-.. note:: As a newly created service, it will not support the old DIPS protocol, which is living to its age.
 
 .. literalinclude:: ../ConfigTemplate.cfg
     :start-after: ##BEGIN TokenManager:
@@ -32,7 +30,6 @@ import pprint
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security import Properties
-from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.FrameworkSystem.DB.TokenDB import TokenDB
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
@@ -40,6 +37,7 @@ from DIRAC.FrameworkSystem.Utilities.TokenManagementUtilities import (
     getIdProviderClient,
     getCachedKey,
 )
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
 
 
 class TokenManagerHandlerMixin:
@@ -284,5 +282,5 @@ class TokenManagerHandlerMixin:
         return self.__tokenDB.getTokensByUserID(userID)
 
 
-class TokenManagerHandler(TokenManagerHandlerMixin, TornadoService):
+class TokenManagerHandler(TokenManagerHandlerMixin, RequestHandler):
     pass
