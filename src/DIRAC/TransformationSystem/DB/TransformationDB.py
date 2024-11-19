@@ -156,10 +156,6 @@ class TransformationDB(DB):
         elif res["Message"] != "Transformation does not exist":
             return res
         self.lock.acquire()
-        res = self._escapeString(body)
-        if not res["OK"]:
-            return S_ERROR("Failed to parse the transformation body")
-        body = res["Value"]
 
         params = {
             "TransformationName": transName,
@@ -183,11 +179,8 @@ class TransformationDB(DB):
         }
 
         # A list of parameters that we do not want to substitute as parameters, but directly
-        # into the statement
-        # I'm erring on the side of caution by using the _escapeString(body) version of the Body parameter,
-        # but for everything else it seems reasonably safe to use the parameterised query feature
+        # into the statement e.g. functions like "UTC_TIMESTAMP()"
         unparameterised_columns = [
-            "Body",
             "CreationDate",
             "LastUpdate",
         ]
