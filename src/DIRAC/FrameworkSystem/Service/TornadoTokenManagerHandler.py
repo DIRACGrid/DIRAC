@@ -1,7 +1,5 @@
-"""TokenManager service is a HTTPs-exposed service responsible for token management, namely storing, updating,
+"""TornadoTokenManager service is a HTTPs-exposed service responsible for token management, namely storing, updating,
 requesting new tokens for DIRAC components that have the appropriate permissions.
-
-.. note:: As a newly created service, it will not support the old DIPS protocol, which is living to its age.
 
 .. literalinclude:: ../ConfigTemplate.cfg
     :start-after: ##BEGIN TokenManager:
@@ -17,7 +15,7 @@ This is mainly about the :py:meth:`export_getToken` method.
     :alt: https://dirac.readthedocs.io/en/integration/_images/TokenManager_getToken.png (source https://github.com/TaykYoku/DIRACIMGS/raw/main/TokenManagerService_getToken.ai)
 
 The client has a mechanism for caching the received tokens.
-This helps reduce the number of requests to both the service and the Identity Provider (IdP).
+This helps reducing the number of requests to both the service and the Identity Provider (IdP).
 
 If the client has a valid **access token** in the cache, it is used until it expires.
 After that you need to update. The client can update it independently if on the server where it is in ``dirac.cfg``
