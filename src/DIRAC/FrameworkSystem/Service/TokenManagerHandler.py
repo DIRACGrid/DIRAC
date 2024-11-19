@@ -32,8 +32,6 @@ import pprint
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security import Properties
-from DIRAC.Core.Utilities import ThreadSafe
-from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.FrameworkSystem.DB.TokenDB import TokenDB
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -41,12 +39,10 @@ from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from DIRAC.FrameworkSystem.Utilities.TokenManagementUtilities import (
     getIdProviderClient,
     getCachedKey,
-    DEFAULT_RT_EXPIRATION_TIME,
-    DEFAULT_AT_EXPIRATION_TIME,
 )
 
 
-class TokenManagerHandler(TornadoService):
+class TokenManagerHandlerMixin:
     DEFAULT_AUTHORIZATION = ["authenticated"]
 
     @classmethod
@@ -69,6 +65,9 @@ class TokenManagerHandler(TornadoService):
 
         return S_OK()
 
+    auth_getUserTokensInfo = ["authenticated"]
+    types_getUserTokensInfo = []
+
     def export_getUserTokensInfo(self):
         """Generate information dict about user tokens
 
@@ -89,6 +88,7 @@ class TokenManagerHandler(TornadoService):
         return S_OK(tokensInfo)
 
     auth_getUsersTokensInfo = [Properties.PROXY_MANAGEMENT]
+    types_getUserTokensInfo = [list]
 
     def export_getUsersTokensInfo(self, users: list):
         """Get the info about the user tokens in the database
@@ -118,6 +118,8 @@ class TokenManagerHandler(TornadoService):
                                 tokenDict["username"] = user
                                 tokensInfo.append(tokenDict)
         return S_OK(tokensInfo)
+
+    types_updateToken = [dict, str, str, int]
 
     def export_updateToken(self, token: dict, userID: str, provider: str, rt_expired_in: int = 24 * 3600):
         """Using this method, you can transfer user tokens for storage in the TokenManager.
@@ -173,6 +175,8 @@ class TokenManagerHandler(TornadoService):
         # Not authorized!
         return S_ERROR("You can't get tokens!")
 
+    types_getToken = [None, None, None, None, None]
+
     def export_getToken(
         self,
         username: str = None,
@@ -215,6 +219,9 @@ class TokenManagerHandler(TornadoService):
 
             # Get the client token with requested scope and audience
             result = idpObj.fetchToken(grant_type="client_credentials", scope=scope, audience=audience)
+            # DEncode can not encode OAuth2Token object
+            if result["OK"]:
+                result["Value"] = dict(result["Value"])
 
             return result
 
@@ -244,6 +251,8 @@ class TokenManagerHandler(TornadoService):
         # Collect all errors when trying to get a token, or if no user ID is registered
         return S_ERROR("; ".join(err or [f"No user ID found for {username}"]))
 
+    types_deleteToken = [str]
+
     def export_deleteToken(self, userDN: str):
         """Delete a token from the DB
 
@@ -263,6 +272,8 @@ class TokenManagerHandler(TornadoService):
         result = Registry.getIDFromDN(userDN)
         return self.__tokenDB.removeToken(user_id=result["Value"]) if result["OK"] else result
 
+    types_getTokensByUserID = [str]
+
     def export_getTokensByUserID(self, userID: str):
         """Retrieve a token from the DB
 
@@ -271,3 +282,7 @@ class TokenManagerHandler(TornadoService):
         :return: S_OK(list)/S_ERROR() token row in dict format
         """
         return self.__tokenDB.getTokensByUserID(userID)
+
+
+class TokenManagerHandler(TokenManagerHandlerMixin, TornadoService):
+    pass
