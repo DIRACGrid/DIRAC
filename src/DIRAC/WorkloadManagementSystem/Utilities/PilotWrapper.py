@@ -19,6 +19,13 @@ import os
 import tempfile
 
 pilotWrapperContent = """#!/bin/bash
+# Reduce the maximum allowed number of open file descriptors as micromamba
+# gets stuck due to https://github.com/DaanDeMeyer/reproc/pull/103
+current_limit=$(ulimit -n)
+new_limit=1048575
+if [ "${current_limit}" = "unlimited" ] || [ "${current_limit}" -gt "${new_limit}" ]; then
+    ulimit -n "${new_limit}"
+fi
 if command -v python &> /dev/null; then
   py='python'
 elif command -v python3 &> /dev/null; then
