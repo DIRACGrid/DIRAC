@@ -756,8 +756,8 @@ class MySQL:
 
         :param debug: print or not the errors
 
-        return S_OK with number of updated registers upon success
-        return S_ERROR upon error
+        :return: S_OK with number of updated registers upon success.
+                 S_ERROR upon error.
         """
 
         self.log.debug(f"_update: {self._safeCmd(cmd)}")
@@ -791,8 +791,8 @@ class MySQL:
 
         :param debug: print or not the errors
 
-        return S_OK with number of updated registers upon success
-        return S_ERROR upon error
+        :return: S_OK with number of updated registers upon success.
+                 S_ERROR upon error.
         """
 
         self.log.debug(f"_updatemany: {self._safeCmd(cmd)}")
