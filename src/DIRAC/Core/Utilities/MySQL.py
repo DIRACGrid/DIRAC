@@ -752,9 +752,11 @@ class MySQL:
         return retDict
 
     @captureOptimizerTraces
-    def _update(self, cmd, *, conn=None, debug=True):
+    def _update(self, cmd, *, args=None, conn=None, debug=True):
         """execute MySQL update command
 
+        :param args: parameters passed to cursor.execute(..., args=args) method.
+        :param conn: connection object.
         :param debug: print or not the errors
 
         return S_OK with number of updated registers upon success
@@ -772,7 +774,7 @@ class MySQL:
 
         try:
             cursor = connection.cursor()
-            res = cursor.execute(cmd)
+            res = cursor.execute(cmd, args=args)
             retDict = S_OK(res)
             if cursor.lastrowid:
                 retDict["lastRowId"] = cursor.lastrowid
