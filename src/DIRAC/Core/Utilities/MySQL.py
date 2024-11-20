@@ -529,20 +529,19 @@ class MySQL:
         except Exception:
             pass
 
-    def _except(self, methodName, x, err, cmd="", print=True):
+    def _except(self, methodName, x, err, cmd="", debug=True):
         """
         print MySQL error or exception
         return S_ERROR with Exception
         """
-
         try:
             raise x
         except MySQLdb.Error as e:
-            if print:
+            if debug:
                 self.log.error(f"{methodName} ({self._safeCmd(cmd)}): {err}", "%d: %s" % (e.args[0], e.args[1]))
             return S_ERROR(DErrno.EMYSQL, "%s: ( %d: %s )" % (err, e.args[0], e.args[1]))
         except Exception as e:
-            if print:
+            if debug:
                 self.log.error(f"{methodName} ({self._safeCmd(cmd)}): {err}", repr(e))
             return S_ERROR(DErrno.EMYSQL, f"{err}: ({repr(e)})")
 
@@ -759,8 +758,8 @@ class MySQL:
         :param conn: connection object.
         :param debug: print or not the errors
 
-        return S_OK with number of updated registers upon success
-        return S_ERROR upon error
+        :return: S_OK with number of updated registers upon success.
+                 S_ERROR upon error.
         """
 
         self.log.debug(f"_update: {self._safeCmd(cmd)}")
@@ -780,6 +779,41 @@ class MySQL:
                 retDict["lastRowId"] = cursor.lastrowid
         except Exception as x:
             retDict = self._except("_update", x, "Execution failed.", cmd, debug)
+
+        try:
+            cursor.close()
+        except Exception:
+            pass
+
+        return retDict
+
+    @captureOptimizerTraces
+    def _updatemany(self, cmd, data, *, conn=None, debug=True):
+        """execute MySQL updatemany command
+
+        :param debug: print or not the errors
+
+        :return: S_OK with number of updated registers upon success.
+                 S_ERROR upon error.
+        """
+
+        self.log.debug(f"_updatemany: {self._safeCmd(cmd)}")
+        if conn:
+            connection = conn
+        else:
+            retDict = self._getConnection()
+            if not retDict["OK"]:
+                return retDict
+            connection = retDict["Value"]
+
+        try:
+            cursor = connection.cursor()
+            res = cursor.executemany(cmd, data)
+            retDict = S_OK(res)
+            if cursor.lastrowid:
+                retDict["lastRowId"] = cursor.lastrowid
+        except Exception as x:
+            retDict = self._except("_updatemany", x, "Execution failed.", cmd, debug)
 
         try:
             cursor.close()

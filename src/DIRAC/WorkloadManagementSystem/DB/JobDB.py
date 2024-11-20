@@ -448,6 +448,9 @@ class JobDB(DB):
         :return: S_OK/S_ERROR
         """
 
+        if not jobID:
+            return S_OK()
+
         if attrName not in self.jobAttributeNames:
             return S_ERROR(EWMSJMAN, "Request to set non-existing job attribute")
 
@@ -504,6 +507,9 @@ class JobDB(DB):
 
         :return: S_OK/S_ERROR
         """
+
+        if not jobID:
+            return S_OK()
 
         jobIDList = jobID
         if not isinstance(jobID, (list, tuple)):

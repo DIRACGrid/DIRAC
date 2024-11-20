@@ -46,4 +46,22 @@ def test_JobStatus(jobLoggingDB: JobLoggingDB):
     result = jobLoggingDB.getWMSTimeStamps(1)
     assert result["OK"] is True, result["Message"]
 
+    now = datetime.datetime.utcnow()
+    result = jobLoggingDB.addLoggingRecord(
+        [2, 3, 4, 5],
+        status=["testing", "testing", "testing", "testing"],
+        minorStatus=["mn", "mn", "mn", "mn"],
+        date=[now, now, now, now],
+        source="Unittest",
+    )
+    assert result["OK"] is True, result["Message"]
+
+    result = jobLoggingDB.getJobLoggingInfo(2)
+    assert result["OK"] is True, result["Message"]
+    assert result["Value"][-1][0:3] == ("testing", "mn", "Unknown")
+
+    result = jobLoggingDB.getJobLoggingInfo(5)
+    assert result["OK"] is True, result["Message"]
+    assert result["Value"][-1][0:3] == ("testing", "mn", "Unknown")
+
     jobLoggingDB.deleteJob(1)
