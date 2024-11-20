@@ -212,17 +212,17 @@ class WMSClient:
 
         return result
 
-    def killJob(self, jobID):
+    def killJob(self, jobID, force=False):
         """Kill running job.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
         """
-        return self.jobManager.killJob(jobID)
+        return self.jobManager.killJob(jobID, force=force)
 
-    def deleteJob(self, jobID):
+    def deleteJob(self, jobID, force=False):
         """Delete job(s) (set their status to DELETED) from the WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
         """
-        return self.jobManager.deleteJob(jobID)
+        return self.jobManager.deleteJob(jobID, force=force)
 
     def removeJob(self, jobID):
         """Fully remove job(s) from the WMS Job database.

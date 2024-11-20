@@ -12,9 +12,7 @@ import ast
 import errno
 import os
 import re
-import time
 from datetime import datetime, timedelta
-from hashlib import md5
 
 # # from DIRAC
 from DIRAC import S_ERROR, S_OK
@@ -655,7 +653,7 @@ class TransformationCleaningAgent(AgentModule):
         jobIDs = [int(j) for j in transJobIDs if int(j)]
         allRemove = True
         for jobList in breakListIntoChunks(jobIDs, 500):
-            res = self.wmsClient.killJob(jobList)
+            res = self.wmsClient.killJob(jobList, force=True)
             if res["OK"]:
                 self.log.info(f"Successfully killed {len(jobList)} jobs from WMS")
             elif ("InvalidJobIDs" in res) and ("NonauthorizedJobIDs" not in res) and ("FailedJobIDs" not in res):
@@ -721,6 +719,11 @@ class TransformationCleaningAgent(AgentModule):
         :param int transID: transformationID, only used in RequestName
         :returns: S_ERROR/S_OK
         """
+
+        # These imports are used only in this function
+        import time
+        from hashlib import md5
+
         for index, lfnList in enumerate(breakListIntoChunks(lfns, 300)):
             oRequest = Request()
             requestName = "TCA_{transID}_{index}_{md5(repr(time.time()).encode()).hexdigest()[:5]}"
