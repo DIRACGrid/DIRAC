@@ -1,3 +1,28 @@
+[v8.0.59]
+
+*FrameworkSystem
+
+CHANGE: (#7895) Rename TokenManager service classes to follow standard convention for tornado and diset handlers
+NEW: (#7888) The DISET version of the TokenManager service
+
+*TransformationSystem
+
+FIX: (#7894) Use parameterised query in addTransformation
+CHANGE: (#7874) the TransformationCleaningAgent forces jobs to KILLED
+
+*WorkloadManagementSystem
+
+CHANGE: (#7891) added ulimit -n 1048575 to pilotwrapper content
+NEW: (#7866) for parametric jobs, added the possibility to bulk insert records in JobLoggingDB
+
+*WorkloadManagement
+
+CHANGE: (#7886) Use plain proxy for the pilot bundle
+
+*Core
+
+CHANGE: (#7875) Remove lock in Logging._createLogRecord
+
 [v8.0.58]
 [v8.0.58]
 [v8.0.57]
