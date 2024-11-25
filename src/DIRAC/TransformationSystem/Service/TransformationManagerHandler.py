@@ -412,7 +412,7 @@ class TransformationManagerHandlerMixin:
         submitDict = {}
 
         # Apply a delay to avoid race conditions
-        older = datetime.datetime.now() - datetime.timedelta(seconds=30)
+        older = datetime.datetime.utcnow() - datetime.timedelta(seconds=30)
 
         # Retrieve tasks that are ready for submission
         res = self.transformationDB.getTasksForSubmission(
