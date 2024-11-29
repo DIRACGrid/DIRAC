@@ -4,20 +4,20 @@
   these are incorporated to the file.
   The module uploads to a web server the latest version of the pilot scripts.
 """
-import os
+import datetime
 import glob
+import os
 import shutil
 import tarfile
-import datetime
 from typing import Any
 
 from git import Repo
 
-from DIRAC import gLogger, gConfig, S_OK
+from DIRAC import S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
-from DIRAC.Core.Utilities.ReturnValues import DReturnType, DOKReturnType
+from DIRAC.Core.Utilities.ReturnValues import DOKReturnType, DReturnType
 
 
 class PilotCStoJSONSynchronizer:
@@ -40,7 +40,6 @@ class PilotCStoJSONSynchronizer:
         # pilot sync default parameters
         self.pilotRepo = "https://github.com/DIRACGrid/Pilot.git"  # repository of the pilot
         self.pilotVORepo = ""  # repository of the VO that can contain a pilot extension
-        self.pilotSetup = gConfig.getValue("/DIRAC/Setup", "")
         self.projectDir = ""
         # where the find the pilot scripts in the VO pilot repository
         self.pilotScriptPath = "Pilot"  # where the find the pilot scripts in the pilot repository
@@ -87,7 +86,7 @@ class PilotCStoJSONSynchronizer:
         pilotDict.update(opRes["Value"])
 
         # we still need a pilotVOVersion
-        self.opsHelper = Operations(setup=self.pilotSetup)
+        self.opsHelper = Operations()
         self.pilotVOVersion = self.opsHelper.getValue("/Pilot/Version")
         # if self.pilotVORepo is defined and self.pilotVOVersion is not, syncScripts is likely to fail.
         if self.pilotVOVersion is None and self.pilotVORepo:

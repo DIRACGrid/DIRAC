@@ -3,10 +3,11 @@
     Just provides a number of functions used by all executors
 """
 import os
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
+
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger, rootPath
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
+from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 
 
 class ExecutorModule:
@@ -21,7 +22,6 @@ class ExecutorModule:
             "loadSection": PathFinder.getExecutorSection(loadName),
             "messagesProcessed": 0,
             "reconnects": 0,
-            "setup": gConfig.getValue("/DIRAC/Setup", "Unknown"),
         }
         cls.__defaults = {}
         cls.__defaults["MonitoringEnabled"] = True

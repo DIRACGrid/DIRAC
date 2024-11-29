@@ -50,7 +50,7 @@ def main():
             site = switch[1]
 
     # imports
-    from DIRAC import gConfig, gLogger
+    from DIRAC import gLogger
     from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
     from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
     from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -68,11 +68,6 @@ def main():
 
     ses = resolveSEGroup(ses)
     diracAdmin = DiracAdmin()
-    errorList = []
-    setup = gConfig.getValue("/DIRAC/Setup", "")
-    if not setup:
-        print("ERROR: Could not contact Configuration Service")
-        DIRAC.exit(2)
 
     res = getProxyInfo()
     if not res["OK"]:

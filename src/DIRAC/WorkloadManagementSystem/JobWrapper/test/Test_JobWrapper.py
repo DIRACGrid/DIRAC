@@ -1,16 +1,16 @@
 """ Test class for JobWrapper
 """
 import os
-from pathlib import Path
 import shutil
 import tempfile
 import time
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 
 import DIRAC
-from DIRAC import gLogger, S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR
 from DIRAC.DataManagementSystem.Client.test.mock_DM import dm_mock
@@ -18,7 +18,6 @@ from DIRAC.Resources.Catalog.test.mock_FC import fc_mock
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobExecutionCoordinator import JobExecutionCoordinator
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper
-
 
 gLogger.setLevel("DEBUG")
 
@@ -229,7 +228,7 @@ def test_processSuccessfulDiracJobExec(mocker):
         jw.outputFile = std_out.name
         jw.errorFile = std_err.name
         result = jw.process(
-            command=f"{executable} {os.path.dirname(os.path.abspath(__file__))}/jobDescription.xml --o /DIRAC/Setup=Test",
+            command=f"{executable} {os.path.dirname(os.path.abspath(__file__))}/jobDescription.xml",
             env={},
         )
 
@@ -573,7 +572,7 @@ def test_postProcess_subprocess_not_complete(setup_job_wrapper, mocker, mock_rep
         ("script-RESC.sh", None, "src/DIRAC/WorkloadManagementSystem/JobWrapper/test/", "Going to reschedule job"),
         (
             "src/DIRAC/WorkloadManagementSystem/scripts/dirac_jobexec.py",
-            "src/DIRAC/WorkloadManagementSystem/JobWrapper/test/jobDescription.xml -o /DIRAC/Setup=Test",
+            "src/DIRAC/WorkloadManagementSystem/JobWrapper/test/jobDescription.xml",
             None,
             "Application Finished Successfully",
         ),

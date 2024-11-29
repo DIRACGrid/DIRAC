@@ -175,8 +175,6 @@ class SingularityComputingElement(ComputingElement):
         setup = infoDict.get("DefaultSetup")
         if not setup:
             setup = list(infoDict.get("Setups"))[0]
-        if not setup:
-            setup = gConfig.getValue("/DIRAC/Setup", "unknown")
         setup = str(setup)
 
         diracProject = "DIRAC"
@@ -205,8 +203,6 @@ class SingularityComputingElement(ComputingElement):
         cfgOpts = []
 
         setup = infoDict.get("DefaultSetup")
-        if not setup:
-            setup = gConfig.getValue("/DIRAC/Setup", "unknown")
         cfgOpts.append(f"-S '{setup}'")
 
         csServers = infoDict.get("ConfigurationServers")

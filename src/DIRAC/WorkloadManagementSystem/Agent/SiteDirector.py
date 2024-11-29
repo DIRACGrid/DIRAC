@@ -610,12 +610,7 @@ class SiteDirector(AgentModule):
         queueDict = self.queueDict[queue]["ParametersDict"]
         pilotOptions = []
 
-        setup = gConfig.getValue("/DIRAC/Setup", "unknown")
-        if setup == "unknown":
-            self.log.error("Setup is not defined in the configuration")
-            return []
-        pilotOptions.append(f"-S {setup}")
-        opsHelper = Operations(vo=self.vo, setup=setup)
+        opsHelper = Operations(vo=self.vo)
 
         # Installation defined?
         installationName = opsHelper.getValue("Pilot/Installation", "")

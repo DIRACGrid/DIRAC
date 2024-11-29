@@ -571,13 +571,6 @@ class PushJobAgent(JobAgent):
         # Dump the remote CFG config into the job directory: it is needed for the JobWrapperTemplate
         cfgFilename = Path(job.jobIDPath) / "dirac.cfg"
         gConfig.dumpRemoteCFGToFile(cfgFilename)
-        # -----------------------------------------------------------------------------------------------
-        # Temporary hack: in v9.0, the DIRAC/Setup is meant to be removed from the configuration
-        # Until then, we need to set it manually
-        cfg = CFG().loadFromFile(cfgFilename)
-        cfg.setOption("DIRAC/Setup", gConfig.getOption("DIRAC/Setup", "")["Value"])
-        cfg.writeToFile(cfgFilename)
-        # -----------------------------------------------------------------------------------------------
 
         # Generate a light JobWrapper executor script
         jobDesc = {

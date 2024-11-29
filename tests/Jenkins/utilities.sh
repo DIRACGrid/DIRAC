@@ -218,7 +218,7 @@ getCFGFile() {
 # - can get a $DIRAC_RELEASE env var defined
 # - or list of $ALTERNATIVE_MODULES
 #
-# it also wants the env variables $DIRACSETUP and $CSURL
+# it also wants the env variable $CSURL
 #
 # dirac-configure also accepts a env variable $CONFIGUREOPTIONS
 #  (e.g. useful for extensions or for using the certificates:
@@ -263,8 +263,6 @@ installDIRAC() {
     done
   fi
 
-
-
   echo "==> Installing main branch of diracx"
   installDIRACX core client
 
@@ -272,7 +270,13 @@ installDIRAC() {
   echo "$PATH"
 
   # now configuring
-  cmd="dirac-configure -S ${DIRACSETUP} -C ${CSURL} --SkipCAChecks ${CONFIGUREOPTIONS} ${DEBUG}"
+
+  if [[ -n "${INSTALLATION_BRANCH}" ]]; then
+    # Use this for (e.g.) running backward-compatibility tests
+    cmd="dirac-configure -S ${DIRACSETUP} -C ${CSURL} --SkipCAChecks ${CONFIGUREOPTIONS} ${DEBUG}"
+  else
+    cmd="dirac-configure -C ${CSURL} --SkipCAChecks ${CONFIGUREOPTIONS} ${DEBUG}"
+  fi
   if ! bash -c "${cmd}"; then
     echo 'ERROR: dirac-configure failed' >&2
     exit 1
@@ -305,7 +309,6 @@ function installDIRACX() {
 # it needs the following environment variables:
 # $DIRACUSERDN for the DN of the user used to submit the job
 # $DIRACUSERROLE for the role of the proxy of the user used to submit the job
-# $DIRACSETUP for the setup
 
 submitJob() {
   #This has to be executed from the ${CLIENTINSTALLDIR}
@@ -330,13 +333,13 @@ submitJob() {
     set -e
   fi
 
-  dirac-admin-get-proxy "${DIRACUSERDN}" "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem -o /DIRAC/Setup="${DIRACSETUP}" --out="/tmp/x509up_u${UID}" -ddd
+  dirac-admin-get-proxy "${DIRACUSERDN}" "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem  --out="/tmp/x509up_u${UID}" -ddd
   if [[ -f "${TESTCODE}/${VO}DIRAC/tests/Jenkins/dirac-test-job.py" ]]; then
     cp "${TESTCODE}/${VO}DIRAC/tests/Jenkins/dirac-test-job.py" "."
   else
     cp "${TESTCODE}/DIRAC/tests/Jenkins/dirac-test-job.py" "."
   fi
-  python dirac-test-job.py -o "/DIRAC/Setup=${DIRACSETUP}" "${DEBUG}"
+  python dirac-test-job.py "${DEBUG}"
 
   echo '==> Done submitJob'
 }
@@ -353,7 +356,7 @@ getUserProxy() {
     cfgFile="${CLIENTINSTALLDIR}/diracos/etc/dirac.cfg"
   fi
 
-  if ! python dirac-cfg-update.py -S "${DIRACSETUP}" --cfg "${cfgFile}" -F "${cfgFile}" -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem "${DEBUG}"; then
+  if ! python dirac-cfg-update.py --cfg "${cfgFile}" -F "${cfgFile}" -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem "${DEBUG}"; then
     echo 'ERROR: dirac-cfg-update failed' >&2
     exit 1
   fi

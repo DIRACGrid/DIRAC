@@ -22,9 +22,10 @@ def main():
     Script.registerArgument("Comment:  Reason of the action")
     Script.parseCommandLine(ignoreErrors=True)
 
-    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+    from DIRAC import exit as DIRACExit
+    from DIRAC import gLogger
     from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-    from DIRAC import exit as DIRACExit, gConfig, gLogger
+    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
     def getBoolean(value):
         if value.lower() == "true":
@@ -42,11 +43,6 @@ def main():
     diracAdmin = DiracAdmin()
     exitCode = 0
     errorList = []
-    setup = gConfig.getValue("/DIRAC/Setup", "")
-    if not setup:
-        print("ERROR: Could not contact Configuration Service")
-        exitCode = 2
-        DIRACExit(exitCode)
 
     # result = promptUser(
     #     'All the elements that are associated with this site will be active, '
@@ -70,10 +66,9 @@ def main():
                 exitCode = 2
                 DIRACExit(exitCode)
             userName = userName["Value"]
-            subject = f"{site} is added in site mask for {setup} setup"
-            body = "Site {} is added to the site mask for {} setup by {} on {}.\n\n".format(
+            subject = f"{site} is added in site mask"
+            body = "Site {} is added to the site mask by {} on {}.\n\n".format(
                 site,
-                setup,
                 userName,
                 time.asctime(),
             )
