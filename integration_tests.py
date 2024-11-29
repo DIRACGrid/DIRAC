@@ -24,7 +24,8 @@ from typer import colors as c
 DEFAULT_HOST_OS = "cc7"
 DEFAULT_MYSQL_VER = "mysql:8.0"
 DEFAULT_ES_VER = "elasticsearch:7.9.1"
-DEFAULT_IAM_VER = "indigoiam/iam-login-service:v1.8.0"
+DEFAULT_IAM_VER = "indigoiam/iam-login-service:v1.10.2"
+
 FEATURE_VARIABLES = {
     "DIRACOSVER": "master",
     "DIRACOS_TARBALL_PATH": None,
@@ -45,7 +46,7 @@ DB_ROOTPWD = "password"
 DB_HOST = "mysql"
 DB_PORT = "3306"
 
-IAM_INIT_CLIENT_ID = "password-grant"
+IAM_INIT_CLIENT_ID = "admin-client-rw"
 IAM_INIT_CLIENT_SECRET = "secret"
 IAM_SIMPLE_CLIENT_NAME = "simple-client"
 IAM_SIMPLE_USER = "jane_doe"
@@ -202,7 +203,7 @@ def prepare_environment(
             f"No value passed for --[no-]editable, automatically detected: {editable}",
             fg=c.YELLOW,
         )
-    typer.echo(f"Preparing environment")
+    typer.echo("Preparing environment")
 
     modules = DEFAULT_MODULES | dict(f.split("=", 1) for f in extra_module)
     modules = {k: Path(v).absolute() for k, v in modules.items()}
@@ -547,7 +548,7 @@ def _check_containers_running(*, is_up=True):
     if is_up:
         if not any(running_containers):
             typer.secho(
-                f"No running containers found, environment must be prepared first!",
+                "No running containers found, environment must be prepared first!",
                 err=True,
                 fg=c.RED,
             )
@@ -555,7 +556,7 @@ def _check_containers_running(*, is_up=True):
     else:
         if any(running_containers):
             typer.secho(
-                f"Running instance already found, it must be destroyed first!",
+                "Running instance already found, it must be destroyed first!",
                 err=True,
                 fg=c.RED,
             )
@@ -656,9 +657,7 @@ def _prepare_iam_instance():
     # It sometimes takes a while for IAM to be ready so wait for a while if needed
     for _ in range(10):
         try:
-            tokens = _get_iam_token(
-                issuer, IAM_ADMIN_USER, IAM_ADMIN_PASSWORD, IAM_INIT_CLIENT_ID, IAM_INIT_CLIENT_SECRET
-            )
+            tokens = _get_iam_token(issuer, IAM_INIT_CLIENT_ID, IAM_INIT_CLIENT_SECRET)
             break
         except typer.Exit:
             typer.secho("Failed to connect to IAM, will retry in 10 seconds", fg=c.YELLOW)
@@ -666,19 +665,33 @@ def _prepare_iam_instance():
     else:
         raise RuntimeError("All attempts to _get_iam_token failed")
 
+    initial_admin_access_token = tokens.get("access_token")
+
+    # Update the configuration of the initial IAM client adding the necessary scopes
+    _update_init_iam_client(
+        issuer,
+        initial_admin_access_token,
+        IAM_INIT_CLIENT_ID,
+        "Admin client (read-write)",
+        " ".join(["scim:read", "scim:write", "iam:admin.read", "iam:admin.write"]),
+        ["client_credentials"],
+    )
+    # Fetch a new token with the updated client
+    tokens = _get_iam_token(issuer, IAM_INIT_CLIENT_ID, IAM_INIT_CLIENT_SECRET)
     admin_access_token = tokens.get("access_token")
 
     typer.secho("Creating IAM clients", fg=c.GREEN)
-    user_client_config = _create_iam_client(
+    _create_iam_client(
         issuer,
         admin_access_token,
         IAM_SIMPLE_CLIENT_NAME,
+        grant_types=["password", "client_credentials"],
     )
-    admin_client_config = _create_iam_client(
+    _create_iam_client(
         issuer,
         admin_access_token,
         IAM_ADMIN_CLIENT_NAME,
-        grant_types=["urn:ietf:params:oauth:grant-type:token-exchange"],
+        grant_types=["password", "urn:ietf:params:oauth:grant-type:token-exchange"],
     )
 
     typer.secho("Creating IAM users", fg=c.GREEN)
@@ -687,7 +700,7 @@ def _prepare_iam_instance():
     typer.secho("Creating IAM groups", fg=c.GREEN)
     dirac_group_config = _create_iam_group(issuer, admin_access_token, "dirac")
     dirac_group_id = dirac_group_config["id"]
-    dirac_admin_group_config = _create_iam_subgroup(issuer, admin_access_token, "dirac", dirac_group_id, "admin")
+    _create_iam_subgroup(issuer, admin_access_token, "dirac", dirac_group_id, "admin")
     dirac_prod_group_config = _create_iam_subgroup(issuer, admin_access_token, "dirac", dirac_group_id, "prod")
     dirac_user_group_config = _create_iam_subgroup(issuer, admin_access_token, "dirac", dirac_group_id, "user")
 
@@ -718,7 +731,7 @@ def _iam_curl(
     return subprocess.run(cmd, capture_output=True, check=False)
 
 
-def _get_iam_token(issuer: str, user: str, password: str, client_id: str, client_secret: str) -> dict:
+def _get_iam_token(issuer: str, client_id: str, client_secret: str) -> dict:
     """Get a token using the password flow
 
     :param str issuer: url of the issuer
@@ -733,11 +746,63 @@ def _get_iam_token(issuer: str, user: str, password: str, client_id: str, client
     ret = _iam_curl(
         url,
         user=f"{client_id}:{client_secret}",
-        data=[f"grant_type=password", f"username={user}", f"password={password}"],
+        data=["grant_type=client_credentials"],
     )
 
     if not ret.returncode == 0:
-        typer.secho(f"Failed to get an admin token: {ret.returncode} {ret.stderr}", err=True, fg=c.RED)
+        typer.secho(f"Failed to get an admin token: {ret.returncode} {ret.stdout} {ret.stderr}", err=True, fg=c.RED)
+        raise typer.Exit(code=1)
+
+    return json.loads(ret.stdout)
+
+
+def _update_init_iam_client(
+    issuer: str, admin_access_token: str, client_id: str, client_name: str, scope: str, grant_types: list[str]
+) -> dict:
+    """Update the configuration of the initial IAM client adding the necessary scopes
+
+    :param str issuer: url of the issuer
+    :param str admin_access_token: access token to register a client
+    :param str client_id: id of the client
+    """
+    # Get the configuration of the client
+    url = os.path.join(issuer, "iam/api/clients", client_id)
+    ret = _iam_curl(
+        url,
+        headers=[f"Authorization: Bearer {admin_access_token}", "Content-Type: application/json"],
+    )
+
+    if not ret.returncode == 0:
+        typer.secho(
+            f"Failed to get config for client {client_id}: {ret.returncode} {ret.stdout} {ret.stderr}",
+            err=True,
+            fg=c.RED,
+        )
+        raise typer.Exit(code=1)
+
+    # Update the configuration with the provided values
+    client_config = json.loads(ret.stdout)
+    client_config["client_name"] = client_name
+    client_config["scope"] = scope
+    client_config["grant_types"] = grant_types
+    client_config["redirect_uris"] = []
+    client_config["code_challenge_method"] = "S256"
+
+    # Update the client
+    url = os.path.join(issuer, "iam/api/clients", client_id)
+    ret = _iam_curl(
+        url,
+        verb="PUT",
+        data=[json.dumps(client_config)],
+        headers=[f"Authorization: Bearer {admin_access_token}", "Content-Type: application/json"],
+    )
+
+    if not ret.returncode == 0:
+        typer.secho(
+            f"Failed to update config for client {client_id}: {ret.returncode} {ret.stdout} {ret.stderr}",
+            err=True,
+            fg=c.RED,
+        )
         raise typer.Exit(code=1)
 
     return json.loads(ret.stdout)
@@ -756,7 +821,16 @@ def _create_iam_client(
     """
     scope = "openid profile offline_access " + scope
 
-    default_grant_types = ["refresh_token", "password"]
+    default_grant_types = ["refresh_token"]
+
+    # Some grant types are privileged and cannot be added at the creation of the client, but can be added later
+    privileged_grant_types = ["password", "urn:ietf:params:oauth:grant-type:token-exchange", "client_credentials"]
+    requested_privileged_grant_types = []
+    for grant_type in privileged_grant_types:
+        if grant_type in grant_types:
+            grant_types.remove(grant_type)
+            requested_privileged_grant_types.append(grant_type)
+
     grant_types = list(set(default_grant_types + grant_types))
 
     client_config = {
@@ -771,7 +845,7 @@ def _create_iam_client(
     ret = _iam_curl(
         url,
         verb="POST",
-        headers=[f"Authorization: Bearer {admin_access_token}", f"Content-Type: application/json"],
+        headers=[f"Authorization: Bearer {admin_access_token}", "Content-Type: application/json"],
         data=[json.dumps(client_config)],
     )
 
@@ -779,30 +853,18 @@ def _create_iam_client(
         typer.secho(f"Failed to create client {client_name}: {ret.returncode} {ret.stderr}", err=True, fg=c.RED)
         raise typer.Exit(code=1)
 
-    # FIX TO REMOVE WITH IAM:v1.8.2
-    # -----------------------------
-    # Because of an issue in IAM, a client dynamically registered using the password flow
-    # will provide invalid refresh token: https://github.com/indigo-iam/iam/issues/575
-    # To cope with this problem, we have to update the client with the following params
     client_config = json.loads(ret.stdout)
-    client_config["grant_types"].append("client_credentials")
-    client_config["refresh_token_validity_seconds"] = 3600
-    client_config["access_token_validity_seconds"] = 3600
-
-    url = os.path.join(issuer, "iam/api/clients", client_config["client_id"])
-    ret = _iam_curl(
-        url,
-        verb="PUT",
-        headers=[f"Authorization: Bearer {admin_access_token}", f"Content-Type: application/json"],
-        data=[json.dumps(client_config)],
+    client_id = client_config["client_id"]
+    ret = _update_init_iam_client(
+        issuer,
+        admin_access_token,
+        client_id,
+        client_name,
+        scope,
+        list(set(requested_privileged_grant_types + grant_types)),
     )
-
-    if not ret.returncode == 0:
-        typer.secho(f"Failed to update client {client_name}: {ret.returncode} {ret.stderr}", err=True, fg=c.RED)
-        raise typer.Exit(code=1)
-    # -----------------------------
-
-    return json.loads(ret.stdout)
+    print(ret)
+    return ret
 
 
 def _create_iam_user(issuer: str, admin_access_token: str, username: str, password: str) -> dict:
@@ -838,7 +900,7 @@ def _create_iam_user(issuer: str, admin_access_token: str, username: str, passwo
     ret = _iam_curl(
         url,
         verb="POST",
-        headers=[f"Authorization: Bearer {admin_access_token}", f"Content-Type: application/scim+json"],
+        headers=[f"Authorization: Bearer {admin_access_token}", "Content-Type: application/scim+json"],
         data=[json.dumps(user_config)],
     )
 
@@ -865,7 +927,7 @@ def _create_iam_group(issuer: str, admin_access_token: str, group_name: str) -> 
     ret = _iam_curl(
         url,
         verb="POST",
-        headers=[f"Authorization: Bearer {admin_access_token}", f"Content-Type: application/scim+json"],
+        headers=[f"Authorization: Bearer {admin_access_token}", "Content-Type: application/scim+json"],
         data=[json.dumps(group_config)],
     )
 
@@ -902,7 +964,7 @@ def _create_iam_subgroup(
     ret = _iam_curl(
         url,
         verb="POST",
-        headers=[f"Authorization: Bearer {admin_access_token}", f"Content-Type: application/scim+json"],
+        headers=[f"Authorization: Bearer {admin_access_token}", "Content-Type: application/scim+json"],
         data=[json.dumps(subgroup_config)],
     )
 
@@ -945,7 +1007,7 @@ def _create_iam_group_membership(
         ret = _iam_curl(
             url,
             verb="PATCH",
-            headers=[f"Authorization: Bearer {admin_access_token}", f"Content-Type: application/scim+json"],
+            headers=[f"Authorization: Bearer {admin_access_token}", "Content-Type: application/scim+json"],
             data=[json.dumps(membership_config)],
         )
 
