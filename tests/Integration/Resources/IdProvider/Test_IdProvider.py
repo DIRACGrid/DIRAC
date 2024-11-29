@@ -71,7 +71,7 @@ adminParams = {
 # Default parameters of the IAM container with old client credentials
 expiredParams = {
     "issuer": issuer,
-    "client_id": "5f70a267-636a-430a-81d5-f885cab1c208",
+    "client_id": "0544b93d-790e-43ae-81ae-cefb093b5411",
     "client_secret": "OuHPKoix1cZI-YylbTcc2tUJENlgn5nLINJ86RWOzqQykYf9zCCOqLBLogYdljCoITQ2AwNfGwfN3VjItk-UKg",
     "scope": "openid+profile+offline_access",
 }
@@ -93,12 +93,12 @@ validUserToken = {
 
 # Valid user tokens but the access token is expired
 expiredValidUserToken = {
-    "access_token": "eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiI0ZjQ3M2RmNy05OGI2LTRlZTAtYTY2Yy02MDYwYTcwOWJlYjUiLCJpc3MiOiJodHRwOlwvXC9pYW0tbG9naW4tc2VydmljZTo4MDgwIiwiZXhwIjoxNjc3ODQ1NDU1LCJpYXQiOjE2Nzc4NDE4NTUsImp0aSI6IjlhN2E1NTY0LTk3OTktNDcxYi05M2FmLTNkYzAyZmFjZWY5OCIsImNsaWVudF9pZCI6ImNiMzM2OWVjLTIxMTUtNDEwZi05OGYxLWExODQ4MTAwMzE5MCJ9.kw_g76eYh7Ay5a5EhR_OVOQR3yjgXxkqF0oaIv-udZaIzA2MHdhXodB9BDUZaZOW3-FgnG9ZOfSNp5Dl6VWNGpO77M6DkImNBWkCpvDeHfl1giq8xUQ_bDO9isZQkpoEVZgxyBK1J2lmr-Z1Ef0ZR_kTb_UsRE0Eze_y_W20jS_TlHVULFd7j4UPspgOzFGAlVFfAfKhWhJVI76XxqCugeMhEYs43qQa4-cIBgLOB6KBddk1tq7-Rqw6EfgtYDb5_zChizX_4dfE10WKyDI50CU-OtMT88S7IHRPWGjoZ7Z3RaNdp6gHXDY67VHzKzouYqKAiIGyIqkPionmZaguow",
+    "access_token": "eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiJlYTEyYWI2MS0yYWE2LTQ2NmYtOWQ2OC01YTAxODRlODI1NmIiLCJpc3MiOiJodHRwOlwvXC9pYW0tbG9naW4tc2VydmljZTo4MDgwIiwiZXhwIjoxNzMyODExNzg1LCJpYXQiOjE3MzI4MDgxODUsImp0aSI6IjQwZmVkM2ZlLTRlYTQtNGNkOC1iYjA5LWE2NjgxYjFhMzFmMyIsImNsaWVudF9pZCI6IjIwMTI4MTQ3LWU3ODEtNDY0Zi1hYjFmLTg4Y2JhODlhYTMwYSJ9.RjrUNrLqN0Ch-HHE1v2qBctV4qef_byURPttY7_QXxO-r0s_oAeXu2TQzq_IrkpUMo3_O10WgdrEb-LpqDXzEdpUWSdd6lWHl4bAFXw-otWaFgYjEiGinUx4bzmOYKI73xPDYPE_3KKMp8nM7OkTs9EC2yVQsp7rGEixlh1g6kU",
     "token_type": "Bearer",
     "refresh_token": None,
     "expires_in": 3599,
     "scope": "address phone openid email profile offline_access",
-    "id_token": "eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiI2OTI3ODJiYS01Y2ZlLTQxMzktYTU5Zi1iYWNiMDY3YTBmZWYiLCJraWQiOiJyc2ExIiwiaXNzIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwODBcLyIsImdyb3VwcyI6WyJkaXJhY1wvdXNlciIsImRpcmFjXC9wcm9kIiwiZGlyYWMiXSwicHJlZmVycmVkX3VzZXJuYW1lIjoiamFuZV9kb2UiLCJvcmdhbmlzYXRpb25fbmFtZSI6ImluZGlnby1kYyIsImF1ZCI6ImM0MWE0Yjg3LTAxNzAtNGQ5MC1iZWU2LTNlM2E2OGQyZTY0NiIsIm5hbWUiOiJKYW5lIERvZSIsImV4cCI6MTY3NzA4MTk4NywiaWF0IjoxNjc3MDgxMzg3LCJqdGkiOiIzZjQ2ZmVhMS0yMTI5LTRkZGUtODgwNS1kMTZhNTA1MGIwNDYiLCJlbWFpbCI6ImphbmUuZG9lQGRvbm90ZXhpc3QuZW1haWwifQ.rSWiaUDp7oUP1lSOleJ7ANbKfQBVVr3KHXFR3-HKLmwakDUdKDz_6My0tyzs88RU4de2v9RMGHzCl5rgi2MFY_0DDiB_SOngafwAkXIik_vG48cg7wfGSX1IttgN4IriYKyCbLFwIo89_zPNdMfjYP-xHFYefKyzVyGDsRlGwy50bUBgIBdXF1oN49xw2B_LWlg0YZAszvaCaul2dTfQmBoYoBCI88t7uKbZAYV-A4TGOnG_PutfMbFDiYljyq37ouHM5c6NIvp7n-_mqevM7vX_K2aoOXgFAs3yZ5RK-nVVOntMTU9sZfCSxg3ywCRa0_vloXhgbRjFp3TizRwNJQ",
+    "id_token": "eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiI3M2YxNmQ5My0yNDQxLTRhNTAtODhmZi04NTM2MGQ3OGM2YjUiLCJraWQiOiJyc2ExIiwiaXNzIjoiaHR0cDpcL1wvbG9jYWxob3N0OjgwODBcLyIsImdyb3VwcyI6W10sInByZWZlcnJlZF91c2VybmFtZSI6ImFkbWluIiwib3JnYW5pc2F0aW9uX25hbWUiOiJpbmRpZ28tZGMiLCJhdWQiOiI4YWI1ZmFkMS0zMTQwLTQyZjAtOGNiNi1kYTgzMzE1OTYyYmMiLCJuYW1lIjoiQWRtaW4gVXNlciIsImV4cCI6MTY3NjQ2NTM5OSwiaWF0IjoxNjc2NDY0Nzk5LCJqdGkiOiI3YzhlM2RhNC05OWEyLTQ4NjQtOWUyMy02NGVhOGNlOWRiOWYiLCJlbWFpbCI6IjFfYWRtaW5AaWFtLnRlc3QifQ.13i_HH8wwhxerwVP0l593Rzy0MmnPA3TivhAsqreBa5L0O7pxSDavsC10vaJyVQFiiib-a2qPnciY0VeWOreLtmAbud0i4KxWmn1MKG000nk0cIgftB0dbrgS6WRj61FtrSRMCPZuCkECNZ0BGH-Xx7qxfJoDtZ5ns_jwnAsBZn6As2xDBVhKfbMgjZtick3DwFRJK6hvGAgwrVFvPw9xVkSEJOv2fbB28TSLU_Cz9jYQFpptMLIj15JEV84gxpc5HFNaIVpBdAMLNIsOMOFsV5tnNy3VsW2IiMgDKc-DRNAmY4IWxC3BJgfxAGkAeLXdj31XaAne2PGafvlJA1HLQ",
 }
 
 
@@ -123,7 +123,7 @@ validClientToken = {
 
 # Valid client tokens but the access token is expired
 expiredValidClientToken = {
-    "access_token": "eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJpc3MiOiJodHRwOlwvXC9pYW0tbG9naW4tc2VydmljZTo4MDgwIiwic3ViIjoiNWY3MGEyNjctNjM2YS00MzBhLTgxZDUtZjg4NWNhYjFjMjA4IiwiaWF0IjoxNjc3ODQ5OTIxLCJqdGkiOiIxNzhkZmZiMy1jYzYzLTRhM2EtOWVhZC0wMWJhNjg0MTEwNDgiLCJjbGllbnRfaWQiOiI1ZjcwYTI2Ny02MzZhLTQzMGEtODFkNS1mODg1Y2FiMWMyMDgifQ.udyuzv4HB3rg7_0X2lQT8rR0EcAcg0GYMm1azQ6WwfFbvdRLQfQWIKVFFJ9bVbLtpc7w282pFeqc7bKdN2vxXSpUbx0mkg404-oN5MgXik_oKTMtOXpaRUZGeL0xTF8XliD42wrx_tcmGu1dSyTI26ZnweDzteOhQ7faPJjycB-Q-FjTJ-R_3zqGaFEUYiPcbzMsXqo33gPaUtMeenVAWzwp9ATXEmH5gwBXcmTMaZnpLkMr-hRh3ZOYXOid_flKCRZFN633kZV3uHqLVj_4By-vclX06ajHRfYHXY3TJ9LBN4JLxssbF3O1adjzeYQ_aQ2E732WTOztNHokaMnHNg",
+    "access_token": "eyJraWQiOiJyc2ExIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiIwNTQ0YjkzZC03OTBlLTQzYWUtODFhZS1jZWZiMDkzYjU0MTEiLCJpc3MiOiJodHRwOlwvXC9pYW0tbG9naW4tc2VydmljZTo4MDgwIiwiZXhwIjoxNzMyODEyNDA1LCJpYXQiOjE3MzI4MDg4MDUsImp0aSI6Ijk0ODU4MzBjLWU5OTUtNGQyMS04ZTUyLWQxZDkwNGExMWEwZCIsImNsaWVudF9pZCI6IjA1NDRiOTNkLTc5MGUtNDNhZS04MWFlLWNlZmIwOTNiNTQxMSJ9.OyNW5yG_Gs1Y1XM_4RC1JdRwsytlUoTPVxLDPNXdEMQmdbk4dNkx7Nx_2DqnSIdJmyPGgp8wgFqwvAW14b1XVcMC8nxLsYbF-qugO6FHFzMVHyPaLX3rJUpjY7EybBPSMnO594xTQkBJmvZr41h8tVy2zSLgAqfcA2kf7cnIfMw",
     "token_type": "Bearer",
     "expires_in": 3599,
     "scope": "address phone openid email profile offline_access",
@@ -148,9 +148,7 @@ def iam_connection():
     # Get an admin token
     query = os.path.join(issuer, "token")
     params = {
-        "grant_type": "password",
-        "username": os.environ["IAM_ADMIN_USER"],
-        "password": os.environ["IAM_ADMIN_PASSWORD"],
+        "grant_type": "client_credentials",
     }
     response = requests.post(
         query, params=params, auth=(os.environ["IAM_INIT_CLIENT_ID"], os.environ["IAM_INIT_CLIENT_SECRET"]), timeout=5
