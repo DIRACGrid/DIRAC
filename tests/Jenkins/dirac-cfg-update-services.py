@@ -54,7 +54,7 @@ csAPI = CSAPI()
 fc = "FileCatalog"
 multiFC = "MultiVOFileCatalog"
 
-if os.environ.get("TEST_HTTPS", "Yes") == "Yes":
+if os.environ.get("TEST_HTTPS", "No") == "Yes":
     fc = f"Tornado{fc}"
     multiFC = f"Tornado{multiFC}"
 
