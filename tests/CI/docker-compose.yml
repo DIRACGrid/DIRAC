@@ -3,6 +3,8 @@ volumes:
   diracx-cs-store:
   # Volume used to store the pair of keys to sign the tokens
   diracx-key-store:
+  # Volume used to store the jwks of the IAM service
+  diracx-iam-key-store:
 
 services:
   mysql:
@@ -41,12 +43,40 @@ services:
     ports:
       - 8080:8080
     env_file: "${IAM_VER}.env"
+    volumes:
+      - diracx-iam-key-store:/etc/indigo-iam/keystore
+    depends_on:
+      - iam-init-jwks
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/.well-known/openid-configuration"]
       interval: 5s
       timeout: 2s
       retries: 15
       start_period: 60s
+    pull_policy: always
+
+  iam-init-jwks:
+    image: alpine:latest
+    container_name: init-jwks
+    volumes:
+      - diracx-iam-key-store:/jwks
+    command: >
+      sh -c 'mkdir -p /jwks && echo "{
+        \"keys\": [
+          {
+            \"p\": \"1vffpIvQ67Bp1XmnxuuNhgHGoS4iCEbEJN9kV2oh39xRMw2L1Fx6RrgHb0t04KAE4IT_48Y9grta7OHUty4dMQ\",
+            \"kty\": \"RSA\",
+            \"q\": \"v673PmzSoiClcZ6U8Rcb4GyB1H76jfY3dTdZNBT5cSVEPhPCnGNWXFKPUj5qeT4CGneR9tdGU7U-_vRNPJg9yw\",
+            \"d\": \"XC1QH6W--Hh9fIsswXB2H0S44GvbrVD75XiJwrOgmrOhBK8MFR0X_eQ-9nBNPmZbAu9NKK5ixwIcE8J-OhQaOcDkepAf1DUo6iIlXgtbHvOtT3GHNgPHJ4C7XbnO9ieNDMrMr2tpmGnH2sebvXwLrzjKJCB09bS6yj71XGkyVKE\",
+            \"e\": \"AQAB\",
+            \"kid\": \"rsa1\",
+            \"qi\": \"P8KH-16jsDjJygzggeLxlJwHYFYPoie3hgB__aajO03GiRzYJojD5dBKEiQuo9SxJ43U5csHWYQeukz9X01-zw\",
+            \"dp\": \"VYF6_6RtkZI2RqeBSOpg_LCwJWSIPOqJEnGZI_wfRUAJPFljCTFPodmJe4d0EfUUe4nrjtpHlTyYyih5x_MbwQ\",
+            \"dq\": \"sxzUTZG0dOjaj8PmWy4Dz361BpIsoDC9e5tfkGo0-AQhs3wVcrrkPNqsr-ZA6dAGeSLX0vcv8RJArk4sSf3cZw\",
+            \"n\": \"oPXb81pZRmxmRJVHva49e5-NOToDdZ6XITpqt3RF-Ovehkd52Fm-t0FfKjJZxP7Q4d-nw1gk-r894uRJPAU9mx3yya9p7L5Xnr6rs8jmf_KF2buaYMUQ001wpsjJwznyGHWNqrBNB4_2-3U_uMGWyJB-C8Gy2-3aXjHRSQ-d0ts\"
+          }
+        ]
+      }" > /jwks/iam-keystore.jwks'
     pull_policy: always
 
   # Mock of an S3 storage
