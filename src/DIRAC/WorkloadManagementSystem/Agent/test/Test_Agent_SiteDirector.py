@@ -11,9 +11,8 @@ from diraccfg import CFG
 
 from DIRAC import S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client import ConfigurationData
-from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import SiteDirector
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
@@ -258,7 +257,6 @@ def test_getNumberOfJobsNeedingPilots(sd, mocker):
 
 def test_getPilotWrapper(mocker, sd, pilotWrapperDirectory):
     """Get pilot options for a specific queue and check the result, then generate the pilot wrapper"""
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", return_value="TestSetup")
 
     # Get pilot options
     pilotOptions = sd._getPilotOptions("ce1.site1.com_condor")
@@ -268,7 +266,6 @@ def test_getPilotWrapper(mocker, sd, pilotWrapperDirectory):
         "-n LCG.Site1.com",
         "-N ce1.site1.com",
         "-Q condor",
-        "-S TestSetup",
         "-V 123",
         "-l 123",
         "-e 1,2,3",

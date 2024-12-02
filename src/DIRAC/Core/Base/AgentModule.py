@@ -1,24 +1,25 @@
 """
   Base class for all agent modules
 """
-import os
-import threading
-import time
-import signal
+import datetime
 import importlib.metadata
 import inspect
-import datetime
+import os
+import signal
+import threading
+import time
+
 import psutil
 
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
-from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.Utilities import Network, TimeUtilities
-from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
-from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger, rootPath
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities import Network, TimeUtilities
+from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
+from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 
 
 class AgentModule:
@@ -68,7 +69,6 @@ class AgentModule:
         They are used to populate __codeProperties
 
         The following Options are used from the Configuration:
-        - /DIRAC/Setup
         - Status
         - Enabled
         - PollingTime            default = 120
@@ -113,7 +113,6 @@ class AgentModule:
             "loadSection": PathFinder.getAgentSection(loadName),
             "cyclesDone": 0,
             "totalElapsedTime": 0,
-            "setup": gConfig.getValue("/DIRAC/Setup", "Unknown"),
             "alive": True,
         }
         self.__moduleProperties["system"], self.__moduleProperties["agentName"] = agentName.split("/")
@@ -201,7 +200,6 @@ class AgentModule:
         self.log.notice("=" * 40)
         self.log.notice(f"Loaded agent module {self.__moduleProperties['fullName']}")
         self.log.notice(f" Site: {DIRAC.siteName()}")
-        self.log.notice(f" Setup: {gConfig.getValue('/DIRAC/Setup')}")
         self.log.notice(f" Agent version: {self.__codeProperties['version']}")
         self.log.notice(f" DIRAC version: {DIRAC.version}")
         self.log.notice(f" DIRAC platform: {DIRAC.getPlatform()}")
