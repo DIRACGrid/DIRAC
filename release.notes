@@ -1,3 +1,21 @@
+[v8.0.60]
+
+*Resources
+
+CHANGE: (#7913) Add option to include proxy on AREX token submission
+
+*Integration tests
+
+CHANGE: (#7911) Upgrade Indigo IAM (1.10.2)
+
+*TransformationSystem
+
+FIX: (#7909) Use UTC to calculate older in export_getTasksToSubmit
+
+*WorkloadManagment
+
+CHANGE: (#7907) Better caching performance in the Matching Limiter
+
 [v8.0.59]
 
 *FrameworkSystem
