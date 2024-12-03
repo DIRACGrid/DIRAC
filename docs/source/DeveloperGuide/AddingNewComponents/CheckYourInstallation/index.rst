@@ -102,15 +102,15 @@ We will now play with a **dirac.cfg** file. For these exercises you can use the 
 Try this::
 
    >>> from DIRAC import gConfig
-   >>> gConfig.getValue('/DIRAC/Setup')
-   'DeveloperSetup'
+   >>> gConfig.getValue('/DIRAC/DefaultGroup')
+   'dirac_user'
 
-Where does 'DeveloperSetup' come from? Open that dirac.cfg and search for it. Got it? it's in::
+Where does 'dirac_user' come from? Open that dirac.cfg and search for it. Got it? it's in::
 
    DIRAC
    {
      ...
-     Setup = DeveloperSetup
+     DefaultGroup = dirac_user
      ...
    }
 

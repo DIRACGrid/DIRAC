@@ -166,10 +166,10 @@ Complete path of packages are not on the diagram for readability:
  - requestHandler: :py:class:`DIRAC.Core.DISET.RequestHandler`
 
 
-You can see that the client sends a proposalTuple, proposalTuple contain (service, setup, ClientVO) then (typeOfCall, method) and finaly extra-credentials.
+You can see that the client sends a proposalTuple, proposalTuple contain (service, ClientVO) then (typeOfCall, method) and finaly extra-credentials.
 e.g.::
 
-  (('Framework/serviceName', 'DeveloperSetup', 'unknown'), ('RPC', 'methodName'), '')
+  (('Framework/serviceName', 'unknown'), ('RPC', 'methodName'), '')
 
 
 

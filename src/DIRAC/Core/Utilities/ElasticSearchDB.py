@@ -142,7 +142,6 @@ class ElasticSearchDB:
         :param str client_cert: Client certificate.
         """
 
-        self.__indexPrefix = indexPrefix
         self._connected = False
         if user and password:
             sLog.debug("Specified username and password")
@@ -209,12 +208,6 @@ class ElasticSearchDB:
                 sLog.error("Cannot ping ElasticsearchDB!")
         except ElasticConnectionError as e:
             sLog.error(repr(e))
-
-    def getIndexPrefix(self):
-        """
-        It returns the DIRAC setup.
-        """
-        return self.__indexPrefix
 
     @ifConnected
     def addIndexTemplate(
@@ -387,7 +380,7 @@ class ElasticSearchDB:
         It returns the available indexes...
         """
         if not indexName:
-            indexName = self.__indexPrefix
+            indexName = ""
         sLog.debug(f"Getting indices alias of {indexName}")
         # we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.
         return list(self.client.indices.get_alias(f"{indexName}*"))
@@ -522,7 +515,7 @@ class ElasticSearchDB:
 
         :returns: S_OK/S_ERROR
         """
-        sLog.verbose("Bulk indexing", f"{len(data)} records will be inserted")
+        sLog.verbose("Bulk indexing", f"{len(data)} records will be inserted in {indexPrefix}")
         if mapping is None:
             mapping = {}
 

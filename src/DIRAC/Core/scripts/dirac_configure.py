@@ -493,8 +493,6 @@ def runDiracConfigure(params):
         else:
             DIRAC.gLogger.notice(f"Will update {DIRAC.gConfig.diracConfigFilePath}")
 
-    if params.setup:
-        DIRAC.gLogger.verbose("/DIRAC/Setup =", params.setup)
     if params.vo:
         DIRAC.gLogger.verbose("/DIRAC/VirtualOrganization =", params.vo)
     if params.configurationServer:

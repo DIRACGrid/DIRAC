@@ -215,10 +215,6 @@ A simple example using the LHCbPilot extension follows::
       DIRAC_SITE="${i#*=}"
       shift
       ;;
-      --lhcb-setup=*)
-      LHCBDIRAC_SETUP="${i#*=}"
-      shift
-      ;;
       --ce-name=*)
       CE_NAME="${i#*=}"
       shift
@@ -237,8 +233,6 @@ A simple example using the LHCbPilot extension follows::
   esac
   done
 
-  # Default if not given explicitly
-  LHCBDIRAC_SETUP=${LHCBDIRAC_SETUP:-LHCb-Production}
 
   # JOB_ID is used by when reporting LocalJobID by DIRAC watchdog
   #export JOB_ID="$VMTYPE:$VM_UUID"
@@ -270,7 +264,6 @@ A simple example using the LHCbPilot extension follows::
 
   #run the dirac-pilot script
   python dirac-pilot.py \
-   --setup $LHCBDIRAC_SETUP \
    --project LHCb \
    --Name "$CE_NAME" \
    --name "$1" \

@@ -56,7 +56,6 @@
         ```
           DIRAC
           {
-            Setup = DeveloperSetup
             Configuration
             {
               Servers = dips://localhost:9135/Configuration/Server # Case 1
@@ -95,7 +94,6 @@
           ```
             DIRAC
             {
-              Setup = DeveloperSetup
               Configuration
               {
                 Servers = dips://localhost:9135/Configuration/Server

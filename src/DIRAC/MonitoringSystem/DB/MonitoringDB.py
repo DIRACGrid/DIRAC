@@ -28,15 +28,15 @@ can be defined with::
 
 """
 
-import time
 import calendar
+import time
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
+from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
 
 ########################################################################
@@ -63,7 +63,7 @@ class MonitoringDB(ElasticDB):
         # Load the files
         for pythonClassName in sorted(objectsLoaded):
             typeClass = objectsLoaded[pythonClassName]
-            indexName = f"{self.getIndexPrefix()}_{typeClass()._getIndex()}"
+            indexName = f"{typeClass()._getIndex()}"
             monitoringType = typeClass().__class__.__name__
             mapping = typeClass().mapping
             monfields = typeClass().monitoringFields
@@ -85,6 +85,7 @@ class MonitoringDB(ElasticDB):
             indexName = self.documentTypes.get(typeName).get("indexName", None)
 
         if indexName:
+            self.log.debug("Index name", indexName)
             return S_OK(indexName)
 
         return S_ERROR(f"Monitoring type {typeName} is not defined")
