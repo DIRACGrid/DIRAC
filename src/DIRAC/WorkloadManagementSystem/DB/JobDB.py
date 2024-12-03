@@ -32,6 +32,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobDBUtils import (
     extractJDL,
     fixJDL,
 )
+from DIRAC.WorkloadManagementSystem.Utilities.ContextVars import pilotRefLogger
 
 
 class JobDB(DB):
@@ -41,6 +42,8 @@ class JobDB(DB):
         """Standard Constructor"""
 
         DB.__init__(self, "JobDB", "WorkloadManagement/JobDB", parentLogger=parentLogger)
+
+        self._defaultLogger = self.log
 
         # data member to check if __init__ went through without error
         self.__initialized = False
@@ -63,6 +66,14 @@ class JobDB(DB):
         self.log.info("MaxReschedule", self.maxRescheduling)
         self.log.info("==================================================")
         self.__initialized = True
+
+    @property
+    def log(self):
+        return pilotRefLogger.get() or self._defaultLogger
+
+    @log.setter
+    def log(self, value):
+        self._defaultLogger = value
 
     def isValid(self):
         """Check if correctly initialised"""

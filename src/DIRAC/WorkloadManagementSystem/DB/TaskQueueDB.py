@@ -12,6 +12,7 @@ from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
+from DIRAC.WorkloadManagementSystem.Utilities.ContextVars import pilotRefLogger
 
 DEFAULT_GROUP_SHARE = 1000
 TQ_MIN_SHARE = 0.001
@@ -37,6 +38,7 @@ class TaskQueueDB(DB):
 
     def __init__(self, parentLogger=None):
         DB.__init__(self, "TaskQueueDB", "WorkloadManagement/TaskQueueDB", parentLogger=parentLogger)
+        self._defaultLogger = self.log
         self.__maxJobsInTQ = 5000
         self.__defaultCPUSegments = [
             6 * 60,
@@ -63,6 +65,14 @@ class TaskQueueDB(DB):
         result = self.__initializeDB()
         if not result["OK"]:
             raise Exception(f"Can't create tables: {result['Message']}")
+
+    @property
+    def log(self):
+        return pilotRefLogger.get() or self._defaultLogger
+
+    @log.setter
+    def log(self, value):
+        self._defaultLogger = value
 
     def enableAllTaskQueues(self):
         """Enable all Task queues"""

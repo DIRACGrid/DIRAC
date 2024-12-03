@@ -11,6 +11,7 @@ import datetime
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import TimeUtilities
+from DIRAC.WorkloadManagementSystem.Utilities.ContextVars import pilotRefLogger
 
 MAGIC_EPOC_NUMBER = 1270000000
 
@@ -24,6 +25,15 @@ class JobLoggingDB(DB):
         """Standard Constructor"""
 
         DB.__init__(self, "JobLoggingDB", "WorkloadManagement/JobLoggingDB", parentLogger=parentLogger)
+        self._defaultLogger = self.log
+
+    @property
+    def log(self):
+        return pilotRefLogger.get() or self._defaultLogger
+
+    @log.setter
+    def log(self, value):
+        self._defaultLogger = value
 
     #############################################################################
     def addLoggingRecord(

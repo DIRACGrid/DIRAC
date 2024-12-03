@@ -32,12 +32,22 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.MySQL import _quotedList
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
+from DIRAC.WorkloadManagementSystem.Utilities.ContextVars import pilotRefLogger
 
 
 class PilotAgentsDB(DB):
     def __init__(self, parentLogger=None):
         super().__init__("PilotAgentsDB", "WorkloadManagement/PilotAgentsDB", parentLogger=parentLogger)
+        self._defaultLogger = self.log
         self.lock = threading.Lock()
+
+    @property
+    def log(self):
+        return pilotRefLogger.get() or self._defaultLogger
+
+    @log.setter
+    def log(self, value):
+        self._defaultLogger = value
 
     ##########################################################################################
     def addPilotReferences(self, pilotRef, ownerGroup, gridType="DIRAC", pilotStampDict={}):
