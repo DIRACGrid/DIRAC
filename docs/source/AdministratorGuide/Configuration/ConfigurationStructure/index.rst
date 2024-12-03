@@ -52,7 +52,7 @@ in the order of preference of the option resolution:
   For all the DIRAC commands there is option '-o' defined which takes one configuration option
   setting. For example::
 
-     dirac-wms-job-submit job.jdl -o /DIRAC/Setup=Dirac-Production
+     dirac-wms-job-submit job.jdl
 
 *Command line argument specifying a CFG file*
   A config file can be passed to any dirac command with the ``--cfg`` flag::

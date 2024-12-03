@@ -50,8 +50,11 @@ cd ..
 echo -e "*** $(date -u) **** Got the DIRAC tests ****\n"
 
 source "${DIRAC_CI_SETUP_SCRIPT}"
-# shellcheck disable=SC2034
-DIRACSETUP=$(< "${INSTALL_CFG_FILE}" grep "Setup = " | cut -f5 -d " ")
+
+  if [[ -n "${INSTALLATION_BRANCH}" ]]; then
+    # shellcheck disable=SC2034
+    DIRACSETUP=$(< "${INSTALL_CFG_FILE}" grep "Setup = " | cut -f5 -d " ")
+  fi
 
 echo -e "*** $(date -u) **** Client INSTALLATION START ****\n"
 

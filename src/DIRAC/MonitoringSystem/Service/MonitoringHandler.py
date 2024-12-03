@@ -71,8 +71,6 @@ class MonitoringHandlerMixin:
             return S_ERROR(f"Data location is not writable: {repr(err)}")
         gDataCache.setGraphsLocation(dataPath)
 
-        cls.diracSetup = CSGlobals.getSetup().lower()
-
         return S_OK()
 
     types_listUniqueKeyValues = [str]
@@ -277,7 +275,6 @@ class MonitoringHandlerMixin:
         :param list data: data to insert
         :returns: S_OK or S_ERROR
         """
-        indexname = f"{self.diracSetup.lower()}_{indexname}"
         gLogger.debug("Bulk index:", indexname)
         mapping = self.__db.getMapping(monitoringType)
         gLogger.debug("Mapping:", mapping)
@@ -292,7 +289,6 @@ class MonitoringHandlerMixin:
 
         :param str indexName: name of the index
         """
-        indexName = f"{self.diracSetup.lower()}_{indexName}"
         gLogger.debug("delete index:", indexName)
         return self.__db.deleteIndex(indexName)
 

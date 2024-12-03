@@ -5,22 +5,20 @@ It is used to test client->db-> service.
 """
 # pylint: disable=invalid-name,wrong-import-position
 
-import time
 import json
+import time
 from datetime import datetime
 
 import pytest
 
-from DIRAC.tests.Utilities.utils import find_all
-
 import DIRAC
+from DIRAC.tests.Utilities.utils import find_all
 
 DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
-from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.Utilities.JEncode import strToIntDict
-
+from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 
 #############################################
 

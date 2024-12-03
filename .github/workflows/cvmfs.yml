@@ -23,7 +23,7 @@ jobs:
           echo "$CVMFS_PROXY_BASE64" | base64 --decode > cvmfs.proxy
           export X509_USER_PROXY=cvmfs.proxy
           chmod 600 cvmfs.proxy
-          ls -l 
+          ls -l
           cat cvmfs.proxy
           export PATH=/usr/share/miniconda3/bin:/opt/conda/bin/:/opt/conda/condabin:$PATH
           type -a openssl
