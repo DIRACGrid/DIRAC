@@ -156,38 +156,39 @@ class TransformationDB(DB):
         elif res["Message"] != "Transformation does not exist":
             return res
         self.lock.acquire()
-        res = self._escapeString(body)
-        if not res["OK"]:
-            return S_ERROR("Failed to parse the transformation body")
-        body = res["Value"]
-        req = (
-            "INSERT INTO Transformations (TransformationName,Description,LongDescription, \
-                                        CreationDate,LastUpdate,Author,AuthorGroup,Type,Plugin,AgentType,\
-                                        FileMask,Status,TransformationGroup,GroupSize,\
-                                        InheritedFrom,Body,MaxNumberOfTasks,EventsPerTask)\
-                                VALUES ('%s','%s','%s',\
-                                        UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','%s','%s','%s',\
-                                        '%s','New','%s',%f,\
-                                        %d,%s,%d,%d);"
-            % (
-                transName,
-                description,
-                longDescription,
-                author,
-                authorGroup,
-                transType,
-                plugin,
-                agentType,
-                fileMask,
-                transformationGroup,
-                groupSize,
-                inheritedFrom,
-                body,
-                maxTasks,
-                eventsPerTask,
-            )
-        )
-        res = self._update(req, conn=connection)
+
+        params = {
+            "TransformationName": transName,
+            "Description": description,
+            "LongDescription": longDescription,
+            "CreationDate": "UTC_TIMESTAMP()",
+            "LastUpdate": "UTC_TIMESTAMP()",
+            "Author": author,
+            "AuthorGroup": authorGroup,
+            "Type": transType,
+            "Plugin": plugin,
+            "AgentType": agentType,
+            "FileMask": fileMask,
+            "Status": "New",
+            "TransformationGroup": transformationGroup,
+            "GroupSize": groupSize,
+            "InheritedFrom": inheritedFrom,
+            "Body": body,
+            "MaxNumberOfTasks": maxTasks,
+            "EventsPerTask": eventsPerTask,
+        }
+
+        # A list of parameters that we do not want to substitute as parameters, but directly
+        # into the statement e.g. functions like "UTC_TIMESTAMP()"
+        unparameterised_columns = [
+            "CreationDate",
+            "LastUpdate",
+        ]
+        subst = ", ".join(f"%({name})s" if name not in unparameterised_columns else params[name] for name in params)
+
+        req = f"INSERT INTO Transformations ({', '.join(params)}) VALUES ({subst});"
+
+        res = self._update(req, args=params, conn=connection)
         if not res["OK"]:
             self.lock.release()
             return res
