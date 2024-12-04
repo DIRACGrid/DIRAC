@@ -20,7 +20,7 @@ def fixtureJobLoggingDB():
 
 def test_JobStatus(jobLoggingDB: JobLoggingDB):
     result = jobLoggingDB.addLoggingRecord(
-        1,
+        1000,
         status="testing",
         minorStatus="date=datetime.datetime.utcnow()",
         date=datetime.datetime.utcnow(),
@@ -30,25 +30,25 @@ def test_JobStatus(jobLoggingDB: JobLoggingDB):
 
     date = "2006-04-25 14:20:17"
     result = jobLoggingDB.addLoggingRecord(
-        1, status="testing", minorStatus="2006-04-25 14:20:17", date=date, source="Unittest"
+        1000, status="testing", minorStatus="2006-04-25 14:20:17", date=date, source="Unittest"
     )
     assert result["OK"] is True, result["Message"]
 
-    result = jobLoggingDB.addLoggingRecord(1, status="testing", minorStatus="No date 1", source="Unittest")
+    result = jobLoggingDB.addLoggingRecord(1000, status="testing", minorStatus="No date 1", source="Unittest")
     assert result["OK"] is True, result["Message"]
 
-    result = jobLoggingDB.addLoggingRecord(1, status="testing", minorStatus="No date 2", source="Unittest")
+    result = jobLoggingDB.addLoggingRecord(1000, status="testing", minorStatus="No date 2", source="Unittest")
     assert result["OK"] is True, result["Message"]
 
-    result = jobLoggingDB.getJobLoggingInfo(1)
+    result = jobLoggingDB.getJobLoggingInfo(1000)
     assert result["OK"] is True, result["Message"]
 
-    result = jobLoggingDB.getWMSTimeStamps(1)
+    result = jobLoggingDB.getWMSTimeStamps(1000)
     assert result["OK"] is True, result["Message"]
 
     now = datetime.datetime.utcnow()
     result = jobLoggingDB.addLoggingRecord(
-        [2, 3, 4, 5],
+        [1001, 1002, 1003, 1004],
         status=["testing", "testing", "testing", "testing"],
         minorStatus=["mn", "mn", "mn", "mn"],
         date=[now, now, now, now],
@@ -56,11 +56,11 @@ def test_JobStatus(jobLoggingDB: JobLoggingDB):
     )
     assert result["OK"] is True, result["Message"]
 
-    result = jobLoggingDB.getJobLoggingInfo(2)
+    result = jobLoggingDB.getJobLoggingInfo(1001)
     assert result["OK"] is True, result["Message"]
     assert result["Value"][-1][0:3] == ("testing", "mn", "Unknown")
 
-    result = jobLoggingDB.getJobLoggingInfo(5)
+    result = jobLoggingDB.getJobLoggingInfo(1004)
     assert result["OK"] is True, result["Message"]
     assert result["Value"][-1][0:3] == ("testing", "mn", "Unknown")
 
