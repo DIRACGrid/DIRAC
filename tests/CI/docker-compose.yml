@@ -15,7 +15,7 @@ services:
     ports:
       - 3306:3306
     healthcheck:
-      test: ["CMD", "${MYSQL_ADMIN_COMMAND}", "ping", "-h", "localhost"]
+      test: ["CMD", "sh", "-c", "${MYSQL_ADMIN_COMMAND} ping -h localhost > /tmp/health.log 2>&1;"]
       timeout: 20s
       retries: 10
       start_period: 60s
@@ -115,7 +115,7 @@ services:
       s3-direct:
         condition: service_started
       iam-login-service:
-        condition: service_started
+        condition: service_healthy
       diracx-init-key:
         condition: service_completed_successfully # Let the init container create the signing key
       diracx-init-cs:
@@ -161,7 +161,7 @@ services:
       nofile: 8192
     pull_policy: always
     healthcheck:
-      test: ["CMD", "ls", "${CVMFS_DIR}"]
+      test: ["CMD", "ls ${CVMFS_DIR} > /tmp/health.log 2>&1;"]
       timeout: 20s
       retries: 10
       start_period: 60s
