@@ -11,8 +11,8 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.FrameworkSystem.Client.Logger import contextLogger
 from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
-from DIRAC.WorkloadManagementSystem.Utilities.ContextVars import pilotRefLogger
 
 DEFAULT_GROUP_SHARE = 1000
 TQ_MIN_SHARE = 0.001
@@ -68,7 +68,7 @@ class TaskQueueDB(DB):
 
     @property
     def log(self):
-        return pilotRefLogger.get() or self._defaultLogger
+        return contextLogger.get() or self._defaultLogger
 
     @log.setter
     def log(self, value):

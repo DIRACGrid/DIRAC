@@ -9,6 +9,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities.PrettyPrint import printDict
+from DIRAC.FrameworkSystem.Client.Logger import setContextLogger
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import JobStatus, PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
@@ -16,7 +17,6 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, multiValueMatchFields, singleValueDefFields
-from DIRAC.WorkloadManagementSystem.Utilities.ContextVars import setPilotRefLogger
 
 
 class PilotVersionError(Exception):
@@ -61,7 +61,7 @@ class Matcher:
 
     def selectJob(self, resourceDescription, credDict):
         """Main job selection function to find the highest priority job matching the resource capacity"""
-        with setPilotRefLogger(self.log):
+        with setContextLogger(self.log):
             startTime = time.time()
 
             resourceDict = self._getResourceDict(resourceDescription, credDict)

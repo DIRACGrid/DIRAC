@@ -21,6 +21,7 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.DErrno import EWMSJMAN, EWMSSUBM, cmpError
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
+from DIRAC.FrameworkSystem.Client.Logger import contextLogger
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
@@ -32,7 +33,6 @@ from DIRAC.WorkloadManagementSystem.DB.JobDBUtils import (
     extractJDL,
     fixJDL,
 )
-from DIRAC.WorkloadManagementSystem.Utilities.ContextVars import pilotRefLogger
 
 
 class JobDB(DB):
@@ -69,7 +69,7 @@ class JobDB(DB):
 
     @property
     def log(self):
-        return pilotRefLogger.get() or self._defaultLogger
+        return contextLogger.get() or self._defaultLogger
 
     @log.setter
     def log(self, value):

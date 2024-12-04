@@ -56,7 +56,7 @@ class MatcherHandlerMixin:
 
         resourceDescription["Setup"] = self.serviceInfoDict["clientSetup"]
         credDict = self.getRemoteCredentials()
-        pilotRef = resourceDescription.get("PilotReference")
+        pilotRef = resourceDescription.get("PilotReference", "Unknown")
 
         try:
             opsHelper = Operations(group=credDict["group"])
