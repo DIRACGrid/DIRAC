@@ -1,3 +1,22 @@
+[v9.0.0a37]
+
+*TransformationSystem
+
+FIX: (#7927) Use parameterised query in addTransformation
+FIX: (#7910) Use UTC to calculate older in export_getTasksToSubmit
+
+*WorkloadManagment
+
+CHANGE: (#7922) Better caching performance in the Matching Limiter
+
+*Resources
+
+CHANGE: (#7918) Add option to include proxy on AREX token submission
+
+*Integration tests
+
+CHANGE: (#7915) Upgrade Indigo IAM (1.10.2)
+
 [v9.0.0a36]
 
 *TransformationSystem
