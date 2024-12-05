@@ -17,9 +17,9 @@ import importlib
 from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
-from DIRAC.Core.Base.Client import executeRPCStub
+from DIRAC.Core.Base.Client import executeRPCStub as disetExecuteRPCStub
 from DIRAC.Core.Utilities import DEncode
-from DIRAC.Core.Security.DiracX import executeRPCStub
+from DIRAC.Core.Security.DiracX import executeRPCStub as diracxExecuteRPCStub
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 
 ########################################################################
@@ -76,12 +76,12 @@ class ForwardDISET(OperationHandlerBase):
             # ForwardDiset is supposed to be used with a host certificate
             useServerCertificate = gConfig.useServerCertificate()
             gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "true")
-            forward = executeRPCStub(stub)
+            forward = disetExecuteRPCStub(stub)
             if not useServerCertificate:
                 gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "false")
         # DiracX stub
         elif isinstance(stub, dict):
-            forward = executeRPCStub(stub)
+            forward = diracxExecuteRPCStub(stub)
         else:
             raise TypeError("Unknwon type of stub")
 
