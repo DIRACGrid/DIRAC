@@ -750,6 +750,11 @@ class SiteDirector(AgentModule):
         ceType = self.queueDict[queue]["CEType"]
         siteName = self.queueDict[queue]["Site"]
 
+        # Call cleanup before checking pilot statuses (so cleanup always runs)
+        # This is needed to delete things like old cloud instances after the pilots are done
+        if callable(getattr(ce, "cleanupPilots", None)):
+            ce.cleanupPilots()
+
         # Select pilots in a transient states
         result = self.pilotAgentsDB.selectPilots(
             {
@@ -798,10 +803,6 @@ class SiteDirector(AgentModule):
             self.failedQueues[queue] += 1
         # Update the status of the pilots in the DB
         self._updatePilotsInDB(updatedPilots)
-
-        # FIXME: seems like it is only used by the CloudCE? Couldn't it be called from CloudCE.getJobStatus()?
-        if callable(getattr(ce, "cleanupPilots", None)):
-            ce.cleanupPilots()
 
         # Check if the accounting is to be sent
         if self.sendAccounting:
