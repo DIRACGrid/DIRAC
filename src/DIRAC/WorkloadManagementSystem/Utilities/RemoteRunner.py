@@ -87,6 +87,12 @@ class RemoteRunner:
         # Get inputs from the current working directory
         inputs = os.listdir(workingDirectory)
         inputs.remove(os.path.basename(self.executable))
+        # We need to remove the standard output/error files if present
+        # as they might change during the execution of the application and fail the integrity check
+        if "std.out" in inputs:
+            inputs.remove("std.out")
+        if "std.err" in inputs:
+            inputs.remove("std.err")
         self.log.verbose("The executable will be sent along with the following inputs:", ",".join(inputs))
         # Request the whole directory as output
         outputs = ["/"]
