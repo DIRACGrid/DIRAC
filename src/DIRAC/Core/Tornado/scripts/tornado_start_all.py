@@ -43,8 +43,8 @@ def main():
 
     gLogger.initialize("Tornado", "/")
 
-    # We check if there is no configuration server started as master
-    # If you want to start a master CS you should use Configuration_Server.cfg and
+    # We check if there is no configuration server started as controller
+    # If you want to start a controller CS you should use Configuration_Server.cfg and
     # use tornado-start-CS.py
     key = f"/Systems/Configuration/Services/Server/Protocol"
     if gConfigurationData.isMaster() and gConfig.getValue(key, "dips").lower() == "https":

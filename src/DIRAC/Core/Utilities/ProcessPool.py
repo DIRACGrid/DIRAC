@@ -547,14 +547,14 @@ class ProcessPool:
 
     Pool depth
 
-    The :ProcessPool: is keeping required number of active workers all the time: slave workers are only created
+    The :ProcessPool: is keeping required number of active workers all the time: worker workers are only created
     when pendingQueue is being filled with tasks, not exceeding defined min and max limits. When pendingQueue is
     empty, active workers will be cleaned up by themselves, as each worker has got built in
     self-destroy mechanism after 10 idle loops.
 
     Processing and communication
 
-    The communication between :ProcessPool: instance and slaves is performed using two :multiprocessing.Queues:
+    The communication between :ProcessPool: instance and workers is performed using two :multiprocessing.Queues:
 
       * pendingQueue, used to push tasks to the workers,
       * resultsQueue for revert direction;

@@ -34,7 +34,7 @@ The setupSite method (used by the dirac-setup-site command) will use the followi
   /LocalInstallation/PrivateConfiguration: Boolean, requires Configuration/Server to be given
                                            in the list of Services (default: no)
 
-If a Master Configuration Server is being installed the following Options can be used::
+If a Controller Configuration Server is being installed the following Options can be used::
 
   /LocalInstallation/ConfigurationName: Name of the Configuration (default: Setup )
   /LocalInstallation/AdminUserName:  Name of the Admin user (default: None )
@@ -390,7 +390,7 @@ class ComponentInstaller:
 
     def _getCentralCfg(self, installCfg):
         """
-        Create the skeleton of central Cfg for an initial Master CS
+        Create the skeleton of central Cfg for an initial Controller CS
         """
         # First copy over from installation cfg
         centralCfg = CFG()
@@ -498,7 +498,7 @@ class ComponentInstaller:
                         properties.append(prop)
                         centralCfg["Registry"]["Groups"][defaultGroupName].appendToOption("Properties", f", {prop}")
 
-        # Add the master Host description
+        # Add the controller Host description
         if hostDN:
             hostSection = cfgPath("Registry", "Hosts", self.host)
             if not centralCfg.isSection(hostSection):
@@ -1299,7 +1299,7 @@ class ComponentInstaller:
             for k in self.localCfg.getOption(cfgInstallPath("Executors"), [])  # pylint: disable=not-an-iterable
         ]
         setupWeb = self.localCfg.getOption(cfgInstallPath("WebPortal"), False)
-        setupConfigurationMaster = self.localCfg.getOption(cfgInstallPath("ConfigurationMaster"), False)
+        setupConfigurationController = self.localCfg.getOption(cfgInstallPath("ConfigurationMaster"), False)
         setupPrivateConfiguration = self.localCfg.getOption(cfgInstallPath("PrivateConfiguration"), False)
         setupConfigurationName = self.localCfg.getOption(cfgInstallPath("ConfigurationName"), "DIRAC-Prod")
         setupAddConfiguration = self.localCfg.getOption(cfgInstallPath("AddConfiguration"), True)
@@ -1381,11 +1381,11 @@ class ComponentInstaller:
                         universal_newlines=True,
                     )
 
-        if ["Configuration", "Server"] in setupServices and setupConfigurationMaster:
-            # This server hosts the Master of the CS
+        if ["Configuration", "Server"] in setupServices and setupConfigurationController:
+            # This server hosts the Controller of the CS
             from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
-            gLogger.notice("Installing Master Configuration Server (Tornado-based)")
+            gLogger.notice("Installing Controller Configuration Server (Tornado-based)")
 
             # Add some needed bootstrapping configuration
             cfg = self.__getCfg(
@@ -1441,15 +1441,15 @@ class ComponentInstaller:
                 DIRAC.exit(-1)
             return S_ERROR(error)
 
-        # We need to make sure components are connecting to the Master CS, that is the only one being update
+        # We need to make sure components are connecting to the Controller CS, that is the only one being update
         localServers = self.localCfg.getOption(cfgPath("DIRAC", "Configuration", "Servers"))
-        masterServer = gConfig.getValue(cfgPath("DIRAC", "Configuration", "MasterServer"), "")
+        controllerServer = gConfig.getValue(cfgPath("DIRAC", "Configuration", "MasterServer"), "")
         initialCfg = self.__getCfg(cfgPath("DIRAC", "Configuration"), "Servers", localServers)
-        masterCfg = self.__getCfg(cfgPath("DIRAC", "Configuration"), "Servers", masterServer)
-        self._addCfgToDiracCfg(masterCfg)
+        controllerCfg = self.__getCfg(cfgPath("DIRAC", "Configuration"), "Servers", controllerServer)
+        self._addCfgToDiracCfg(controllerCfg)
 
         # 1.- Setup the instances in the CS
-        # If the Configuration Server used is not the Master, it can take some time for this
+        # If the Configuration Server used is not the Controller, it can take some time for this
         # info to be propagated, this may cause the later self.setup to fail
         if setupAddConfiguration:
             for system, service in setupServices:
@@ -1564,7 +1564,7 @@ class ComponentInstaller:
         if setupWeb:
             self.setupPortal()
 
-        if localServers != masterServer:
+        if localServers != controllerServer:
             self._addCfgToDiracCfg(initialCfg)
             for system, service in setupServices:
                 self.runsvctrlComponent(system, service, "t")

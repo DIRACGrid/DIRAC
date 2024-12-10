@@ -132,7 +132,7 @@ Configuration Service
 The Configuration Service is built in the DISET framework to provide static configuration parameters to
 all the distributed DIRAC components. This is the backbone of the whole system and necessitates excellent
 reliability. Therefore, it is organized as a single master service where all the parameter
-updates are done and multiple read-only slave services which are distributed geographically, on VO-boxes
+updates are done and multiple read-only worker services which are distributed geographically, on VO-boxes
 at Tier-1 LCG sites in the case of LHCb. All the servers are queried by clients in a load balancing way.
 This arrangement ensures configuration data consistency together with very good scalability properties.
 

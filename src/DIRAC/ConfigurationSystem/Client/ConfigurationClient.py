@@ -63,7 +63,7 @@ class ConfigurationClient(Client):
 
     def __init__(self, **kwargs):
         # By default we use Configuration/Server as url, client do the resolution
-        # In some case url has to be static (when a slave register to the master server for example)
+        # In some case url has to be static (when a worker register to the controller server for example)
         # It's why we can use 'url' as keyword arguments
         if "url" not in kwargs:
             kwargs["url"] = "Configuration/Server"
