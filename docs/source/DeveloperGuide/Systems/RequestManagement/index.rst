@@ -201,7 +201,7 @@ The agent will try to execute request as a whole in one go.
    :alt: Treating of Request in the RequestExecutionAgent.
    :align: center
 
-The `RequestExecutingAgent` is using the `ProcessPool` utility to create slave workers (subprocesses running `RequestTask`)
+The `RequestExecutingAgent` is using the `ProcessPool` utility to create workers (subprocesses running `RequestTask`)
 designated to execute requests read from `ReqDB`. Each worker is processing request execution using following steps:
 
   * downloading and setting up request's owner proxy

@@ -201,7 +201,7 @@ def _runConfigurationWizard(setups, defaultSetup):
         if confirm.lower() not in ["y", "yes"]:
             return None
 
-    # Get the URL to the master CS
+    # Get the URL to the controller CS
     csURL = prompt(HTML("<b>Choose a configuration server URL (leave blank for default):</b>\n"))
     if not csURL:
         csURL = setups[setup]
@@ -328,7 +328,7 @@ def login(params):
         return result
     DIRAC.gLogger.debug(f"New token is saved to {result['Value']}.")
 
-    # Get server setups and master CS server URL
+    # Get server setups and controller CS server URL
     csURL = idpObj.get_metadata("configuration_server")
     setups = idpObj.get_metadata("setups")
 

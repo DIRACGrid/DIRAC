@@ -98,7 +98,7 @@ class CSAPI:
             return self.__initialized
         retVal = gConfig.getOption("/DIRAC/Configuration/MasterServer")
         if not retVal["OK"]:
-            self.__initialized = S_ERROR("Master server is not known. Is everything initialized?")
+            self.__initialized = S_ERROR("Controller server is not known. Is everything initialized?")
             return self.__initialized
         self.__rpcClient = ConfigurationClient(url=gConfig.getValue("/DIRAC/Configuration/MasterServer", ""))
         self.__csMod = Modificator(
@@ -925,7 +925,7 @@ class CSAPI:
     def showDiff(self):
         """Just shows the differences accumulated within the Modificator object"""
         diffData = self.__csMod.showCurrentDiff()
-        gLogger.notice("Accumulated diff with master CS")
+        gLogger.notice("Accumulated diff with Controller CS")
         for line in diffData:
             if line[0] in ("+", "-"):
                 gLogger.notice(line)

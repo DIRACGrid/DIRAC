@@ -43,7 +43,7 @@ class CSCLI(CLI):
     def __init__(self):
         CLI.__init__(self)
         self.connected = False
-        self.masterURL = "unset"
+        self.controllerURL = "unset"
         self.writeEnabled = False
         self.modifiedData = False
         self.rpcClient = None
@@ -83,11 +83,11 @@ class CSCLI(CLI):
         self.writeEnabled = writeEnabled
         if connected:
             if writeEnabled:
-                self.prompt = f"({self.masterURL})-{colorize('Connected', 'green')}> "
+                self.prompt = f"({self.controllerURL})-{colorize('Connected', 'green')}> "
             else:
-                self.prompt = f"({self.masterURL})-{colorize('Connected (RO)', 'yellow')}> "
+                self.prompt = f"({self.controllerURL})-{colorize('Connected (RO)', 'yellow')}> "
         else:
-            self.prompt = f"({self.masterURL})-{colorize('Disconnected', 'red')}> "
+            self.prompt = f"({self.controllerURL})-{colorize('Disconnected', 'red')}> "
 
     def do_quit(self, dummy):
         """
@@ -104,7 +104,7 @@ class CSCLI(CLI):
 
     def _setStatus(self, connected=True):
         if not connected:
-            self.masterURL = "unset"
+            self.controllerURL = "unset"
             self._setConnected(False, False)
         else:
             retVal = self.rpcClient.writeEnabled()
@@ -118,23 +118,23 @@ class CSCLI(CLI):
                 self._setConnected(True, False)
 
     def _tryConnection(self):
-        print(f"Trying connection to {self.masterURL}")
+        print(f"Trying connection to {self.controllerURL}")
         try:
-            self.rpcClient = ConfigurationClient(url=self.masterURL)
+            self.rpcClient = ConfigurationClient(url=self.controllerURL)
             self._setStatus()
         except Exception as x:
-            gLogger.error("Couldn't connect to master CS server", f"{self.masterURL} ({str(x)})")
+            gLogger.error("Couldn't connect to controller CS server", f"{self.controllerURL} ({str(x)})")
             self._setStatus(False)
 
     def do_connect(self, args=""):
         """
-        Connects to configuration master server (in specified url if provided).
+        Connects to configuration controller server (in specified url if provided).
 
         Usage: connect <url>
         """
         if not args or not isinstance(args, str):
-            self.masterURL = gConfigurationData.getMasterServer()
-            if self.masterURL != "unknown" and self.masterURL:
+            self.controllerURL = gConfigurationData.getMasterServer()
+            if self.controllerURL != "unknown" and self.controllerURL:
                 self._tryConnection()
             else:
                 self._setStatus(False)
@@ -144,7 +144,7 @@ class CSCLI(CLI):
                 print("Must specify witch url to connect")
                 self._setStatus(False)
             else:
-                self.masterURL = splitted[0].strip()
+                self.controllerURL = splitted[0].strip()
                 self._tryConnection()
 
     def do_sections(self, args):
@@ -247,7 +247,7 @@ class CSCLI(CLI):
             choice = input("Do you really want to send changes to server? yes/no [no]: ")
             choice = choice.lower()
             if choice in ("yes", "y"):
-                print(f"Uploading changes to {self.masterURL} (It may take some seconds)...")
+                print(f"Uploading changes to {self.controllerURL} (It may take some seconds)...")
                 response = self.modificator.commit()
                 if response["OK"]:
                     self.modifiedData = False

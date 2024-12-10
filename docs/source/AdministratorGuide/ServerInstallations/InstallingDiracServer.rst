@@ -443,7 +443,7 @@ operation is the registration of the new host in the already functional Configur
 
         #
         #   These options define the DIRAC components being installed on "this" DIRAC server.
-        #   The simplest option is to install a slave of the Configuration Server and a
+        #   The simplest option is to install a worker of the Configuration Server and a
         #   SystemAdministrator for remote management.
         #
         #  The following options defined components to be installed
