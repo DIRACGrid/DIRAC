@@ -296,7 +296,7 @@ class TwoLevelCache:
         self.futures: dict[str, Future] = {}
         self.pool = ThreadPoolExecutor(max_workers=max_workers)
 
-    def get(self, key: str, populate_func: Callable[[], Any]):
+    def get(self, key: str, populate_func: Callable[[], Any]) -> dict:
         """Retrieve a value from the cache, populating it if necessary.
 
         This method first checks the soft cache for the key. If not found,
@@ -328,7 +328,7 @@ class TwoLevelCache:
                 return result
             # It is critical that ``future`` is waited for outside of the lock as
             # _work aquires the lock before filling the caches. This also means
-            # we can gaurentee that the future has not yet been removed from the
+            # we can guarantee that the future has not yet been removed from the
             # futures dict.
             future = self.futures[key]
         wait([future])
@@ -353,4 +353,3 @@ class TwoLevelCache:
             self.futures.pop(key)
             self.hard_cache[key] = result
             self.soft_cache[key] = result
-

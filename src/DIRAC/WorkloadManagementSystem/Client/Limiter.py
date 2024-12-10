@@ -45,72 +45,76 @@ class Limiter:
         orCond = self.condCache.get("GLOBAL")
         if orCond:
             return orCond
-        negCond = {}
+        negativeCondition = {}
+
         # Run Limit
         result = self.__opsHelper.getSections(self.__runningLimitSection)
-        sites = []
-        if result["OK"]:
-            sites = result["Value"]
-        for siteName in sites:
+        if not result["OK"]:
+            self.log.error("Issue getting running conditions", result["Message"])
+            sites_with_running_limits = []
+        else:
+            sites_with_running_limits = result["Value"]
+            self.log.verbose(f"Found running conditions for {len(sites_with_running_limits)} sites")
+
+        for siteName in sites_with_running_limits:
             result = self.__getRunningCondition(siteName)
             if not result["OK"]:
-                continue
-            data = result["Value"]
-            if data:
-                negCond[siteName] = data
-        # Delay limit
-        result = self.__opsHelper.getSections(self.__matchingDelaySection)
-        sites = []
-        if result["OK"]:
-            sites = result["Value"]
-        for siteName in sites:
-            result = self.__getDelayCondition(siteName)
-            if not result["OK"]:
-                continue
-            data = result["Value"]
-            if not data:
-                continue
-            if siteName in negCond:
-                negCond[siteName] = self.__mergeCond(negCond[siteName], data)
+                self.log.error("Issue getting running conditions", result["Message"])
+                running_condition = {}
             else:
-                negCond[siteName] = data
+                running_condition = result["Value"]
+            if running_condition:
+                negativeCondition[siteName] = running_condition
+
+        # Delay limit
+        if self.__opsHelper.getValue("JobScheduling/CheckMatchingDelay", True):
+            result = self.__opsHelper.getSections(self.__matchingDelaySection)
+            if not result["OK"]:
+                self.log.error("Issue getting delay conditions", result["Message"])
+                sites_with_matching_delay = []
+            else:
+                sites_with_matching_delay = result["Value"]
+                self.log.verbose(f"Found delay conditions for {len(sites_with_matching_delay)} sites")
+
+            for siteName in sites_with_matching_delay:
+                delay_condition = self.__getDelayCondition(siteName)
+                if siteName in negativeCondition:
+                    negativeCondition[siteName] = self.__mergeCond(negativeCondition[siteName], delay_condition)
+                else:
+                    negativeCondition[siteName] = delay_condition
+
         orCond = []
-        for siteName in negCond:
-            negCond[siteName]["Site"] = siteName
-            orCond.append(negCond[siteName])
+        for siteName in negativeCondition:
+            negativeCondition[siteName]["Site"] = siteName
+            orCond.append(negativeCondition[siteName])
         self.condCache.add("GLOBAL", 10, orCond)
         return orCond
 
     def getNegativeCondForSite(self, siteName, gridCE=None):
         """Generate a negative query based on the limits set on the site"""
         # Check if Limits are imposed onto the site
-        negativeCond = {}
         if self.__opsHelper.getValue("JobScheduling/CheckJobLimits", True):
             result = self.__getRunningCondition(siteName)
             if not result["OK"]:
                 self.log.error("Issue getting running conditions", result["Message"])
+                negativeCond = {}
             else:
                 negativeCond = result["Value"]
-            self.log.verbose(
-                "Negative conditions for site", f"{siteName} after checking limits are: {str(negativeCond)}"
-            )
+                self.log.verbose(
+                    "Negative conditions for site", f"{siteName} after checking limits are: {str(negativeCond)}"
+                )
 
             if gridCE:
                 result = self.__getRunningCondition(siteName, gridCE)
                 if not result["OK"]:
                     self.log.error("Issue getting running conditions", result["Message"])
                 else:
-                    negativeCondCE = result["Value"]
-                    negativeCond = self.__mergeCond(negativeCond, negativeCondCE)
+                    negativeCond = self.__mergeCond(negativeCond, result["Value"])
 
         if self.__opsHelper.getValue("JobScheduling/CheckMatchingDelay", True):
-            result = self.__getDelayCondition(siteName)
-            if result["OK"]:
-                delayCond = result["Value"]
-                self.log.verbose(
-                    "Negative conditions for site", f"{siteName} after delay checking are: {str(delayCond)}"
-                )
-                negativeCond = self.__mergeCond(negativeCond, delayCond)
+            delayCond = self.__getDelayCondition(siteName)
+            self.log.verbose("Negative conditions for site", f"{siteName} after delay checking are: {str(delayCond)}")
+            negativeCond = self.__mergeCond(negativeCond, delayCond)
 
         if negativeCond:
             self.log.info("Negative conditions for site", f"{siteName} are: {str(negativeCond)}")
@@ -230,14 +234,14 @@ class Limiter:
     def __getDelayCondition(self, siteName):
         """Get extra conditions allowing matching delay"""
         if siteName not in self.delayMem:
-            return S_OK({})
+            return {}
         lastRun = self.delayMem[siteName].getKeys()
         negCond = {}
         for attName, attValue in lastRun:
             if attName not in negCond:
                 negCond[attName] = []
             negCond[attName].append(attValue)
-        return S_OK(negCond)
+        return negCond
 
     def _countsByJobType(self, siteName, attName):
         result = self.jobDB.getCounters(
@@ -247,6 +251,5 @@ class Limiter:
         )
         if not result["OK"]:
             return result
-        data = result["Value"]
-        data = {k[0][attName]: k[1] for k in data}
+        data = {k[0][attName]: k[1] for k in result["Value"]}
         return data
