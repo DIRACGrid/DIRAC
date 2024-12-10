@@ -11,7 +11,7 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 
 class ServiceInterface(ServiceInterfaceBase, threading.Thread):
     """
-    Service interface, manage Slave/Master server for CS
+    Service interface, manage Worker/Controller server for CS
     Thread components
     """
 
@@ -19,11 +19,11 @@ class ServiceInterface(ServiceInterfaceBase, threading.Thread):
         threading.Thread.__init__(self)
         ServiceInterfaceBase.__init__(self, sURL)
 
-    def _launchCheckSlaves(self):
+    def _launchCheckWorkers(self):
         """
-        Start loop which check if slaves are alive
+        Start loop which check if Workers are alive
         """
-        gLogger.info("Starting purge slaves thread")
+        gLogger.info("Starting purge Workers thread")
         self.daemon = True
         self.start()
 
@@ -31,24 +31,24 @@ class ServiceInterface(ServiceInterfaceBase, threading.Thread):
         while True:
             iWaitTime = gConfigurationData.getSlavesGraceTime()
             time.sleep(iWaitTime)
-            self._checkSlavesStatus()
+            self._checkWorkersStatus()
 
-    def _updateServiceConfiguration(self, urlSet, fromMaster=False):
+    def _updateServiceConfiguration(self, urlSet, fromController=False):
         """
-        Update configuration of a set of slave services in parallel
+        Update configuration of a set of Worker services in parallel
 
         :param set urlSet: a set of service URLs
-        :param fromMaster: flag to force updating from the master CS
+        :param fromController: flag to force updating from the master CS
         :return: Nothing
         """
         if not urlSet:
             return
         with ThreadPoolExecutor(max_workers=len(urlSet)) as executor:
-            futureUpdate = {executor.submit(self._forceServiceUpdate, url, fromMaster): url for url in urlSet}
+            futureUpdate = {executor.submit(self._forceServiceUpdate, url, fromController): url for url in urlSet}
             for future in as_completed(futureUpdate):
                 url = futureUpdate[future]
                 result = future.result()
                 if result["OK"]:
-                    gLogger.info("Successfully updated slave configuration", url)
+                    gLogger.info("Successfully updated Worker configuration", url)
                 else:
-                    gLogger.error("Failed to update slave configuration", url)
+                    gLogger.error("Failed to update Worker configuration", url)

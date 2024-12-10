@@ -70,7 +70,7 @@ class Refresher(RefresherBase, threading.Thread):
         """
         gLogger.debug("Setting configuration refresh as automatic")
         if not gConfigurationData.getAutoPublish():
-            gLogger.debug("Slave server won't auto publish itself")
+            gLogger.debug("Worker server won't auto publish itself")
         if not gConfigurationData.getName():
             import DIRAC
 

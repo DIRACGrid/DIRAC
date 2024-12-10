@@ -103,7 +103,7 @@ class Bdii2CSAgent(AgentModule):
         if not result["OK"]:
             self.log.warn("Could not download a fresh copy of the CS data", result["Message"])
 
-        # Refresh the configuration from the master server
+        # Refresh the configuration from the controller server
         gConfig.forceRefresh(fromMaster=True)
 
         if self.processCEs:

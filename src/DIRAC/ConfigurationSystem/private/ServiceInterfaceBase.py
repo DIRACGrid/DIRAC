@@ -1,4 +1,4 @@
-"""Service interface is the service which provide config for client and synchronize Master/Slave servers"""
+"""Service interface is the service which provide config for client and synchronize Controller/Worker servers"""
 
 import os
 import time
@@ -17,7 +17,7 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 
 class ServiceInterfaceBase:
-    """Service interface is the service which provide config for client and synchronize Master/Slave servers"""
+    """Service interface is the service which provide config for client and synchronize Controller/Worker servers"""
 
     def __init__(self, sURL):
         self.sURL = sURL
@@ -25,19 +25,19 @@ class ServiceInterfaceBase:
         self.__modificationsIgnoreMask = ["/DIRAC/Configuration/Servers", "/DIRAC/Configuration/Version"]
         gConfigurationData.setAsService()
         if not gConfigurationData.isMaster():
-            gLogger.info("Starting configuration service as slave")
+            gLogger.info("Starting configuration service as Worker")
             gRefresher.autoRefreshAndPublish(self.sURL)
         else:
-            gLogger.info("Starting configuration service as master")
+            gLogger.info("Starting configuration service as controller")
             gRefresher.disable()
             self.__loadConfigurationData()
-            self.dAliveSlaveServers = {}
-            self._launchCheckSlaves()
+            self.dAliveWorkerServers = {}
+            self._launchCheckWorkers()
 
     def isMaster(self):
         return gConfigurationData.isMaster()
 
-    def _launchCheckSlaves(self):
+    def _launchCheckWorkers(self):
         raise NotImplementedError("Should be implemented by the children class")
 
     def __loadConfigurationData(self):
@@ -75,91 +75,91 @@ class ServiceInterfaceBase:
             gConfigurationData.generateNewVersion()
             gConfigurationData.writeRemoteConfigurationToDisk()
 
-    def publishSlaveServer(self, sSlaveURL):
+    def publishSlaveServer(self, sWorkerURL):
         """
-        Called by the slave server via service, it register a new slave server
+        Called by the Worker server via service, it register a new Worker server
 
-        :param sSlaveURL: url of slave server
+        :param sWorkerURL: url of Worker server
         """
 
         if not gConfigurationData.isMaster():
             return S_ERROR("Configuration modification is not allowed in this server")
-        gLogger.info(f"Pinging slave {sSlaveURL}")
-        rpcClient = ConfigurationClient(url=sSlaveURL, timeout=10, useCertificates=True)
+        gLogger.info(f"Pinging Worker {sWorkerURL}")
+        rpcClient = ConfigurationClient(url=sWorkerURL, timeout=10, useCertificates=True)
         retVal = rpcClient.ping()
         if not retVal["OK"]:
-            gLogger.info(f"Slave {sSlaveURL} didn't reply")
+            gLogger.info(f"Worker {sWorkerURL} didn't reply")
             return
         if retVal["Value"]["name"] != "Configuration/Server":
-            gLogger.info(f"Slave {sSlaveURL} is not a CS serveR")
+            gLogger.info(f"Worker {sWorkerURL} is not a CS serveR")
             return
-        bNewSlave = False
-        if sSlaveURL not in self.dAliveSlaveServers:
-            bNewSlave = True
-            gLogger.info("New slave registered", sSlaveURL)
-        self.dAliveSlaveServers[sSlaveURL] = time.time()
-        if bNewSlave:
-            gConfigurationData.setServers(", ".join(self.dAliveSlaveServers))
+        bNewWorker = False
+        if sWorkerURL not in self.dAliveWorkerServers:
+            bNewWorker = True
+            gLogger.info("New Worker registered", sWorkerURL)
+        self.dAliveWorkerServers[sWorkerURL] = time.time()
+        if bNewWorker:
+            gConfigurationData.setServers(", ".join(self.dAliveWorkerServers))
             self.__generateNewVersion()
 
-    def _checkSlavesStatus(self, forceWriteConfiguration=False):
+    def _checkWorkersStatus(self, forceWriteConfiguration=False):
         """
-        Check if Slaves server are still availlable
+        Check if Workers server are still availlable
 
-        :param forceWriteConfiguration: (default False) Force rewriting configuration after checking slaves
+        :param forceWriteConfiguration: (default False) Force rewriting configuration after checking workers
         """
 
-        gLogger.info("Checking status of slave servers")
+        gLogger.info("Checking status of Worker servers")
         iGraceTime = gConfigurationData.getSlavesGraceTime()
-        bModifiedSlaveServers = False
-        for sSlaveURL in list(self.dAliveSlaveServers):
-            if time.time() - self.dAliveSlaveServers[sSlaveURL] > iGraceTime:
-                gLogger.warn("Found dead slave", sSlaveURL)
-                del self.dAliveSlaveServers[sSlaveURL]
-                bModifiedSlaveServers = True
-        if bModifiedSlaveServers or forceWriteConfiguration:
-            gConfigurationData.setServers(", ".join(self.dAliveSlaveServers))
+        bModifiedWorkerServers = False
+        for sWorkerURL in list(self.dAliveWorkerServers):
+            if time.time() - self.dAliveWorkerServers[sWorkerURL] > iGraceTime:
+                gLogger.warn("Found dead Worker", sWorkerURL)
+                del self.dAliveWorkerServers[sWorkerURL]
+                bModifiedWorkerServers = True
+        if bModifiedWorkerServers or forceWriteConfiguration:
+            gConfigurationData.setServers(", ".join(self.dAliveWorkerServers))
             self.__generateNewVersion()
 
     @staticmethod
-    def _forceServiceUpdate(url, fromMaster):
+    def _forceServiceUpdate(url, fromController):
         """
         Force updating configuration on a given service
         This should be called by _updateServiceConfiguration
 
         :param str url: service URL
-        :param bool fromMaster: flag to force updating from the master CS
+        :param bool fromController: flag to force updating from the controller CS
         :return: S_OK/S_ERROR
         """
         gLogger.info("Updating service configuration on", url)
 
-        result = Client(url=url).refreshConfiguration(fromMaster)
+        result = Client(url=url).refreshConfiguration(fromController)
         result["URL"] = url
         return result
 
-    def _updateServiceConfiguration(self, urlSet, fromMaster=False):
+    def _updateServiceConfiguration(self, urlSet, fromController=False):
         """
         Update configuration in a set of service in parallel
 
         :param set urlSet: a set of service URLs
-        :param fromMaster: flag to force updating from the master CS
+        :param fromController: flag to force updating from the controller CS
         :return: Nothing
         """
         raise NotImplementedError("Should be implemented by the children class")
 
-    def forceSlavesUpdate(self):
+    def forceWorkersUpdate(self):
         """
-        Force updating configuration on all the slave configuration servers
+        Force updating configuration on all the Worker configuration servers
 
         :return: Nothing
         """
-        gLogger.info("Updating configuration on slave servers")
+        gLogger.info("Updating configuration on Worker servers")
         iGraceTime = gConfigurationData.getSlavesGraceTime()
         urlSet = set()
-        for slaveURL in self.dAliveSlaveServers:
-            if time.time() - self.dAliveSlaveServers[slaveURL] <= iGraceTime:
-                urlSet.add(slaveURL)
-        self._updateServiceConfiguration(urlSet, fromMaster=True)
+        for workerURL in self.dAliveWorkerServers:
+            if time.time() - self.dAliveWorkerServers[workerURL] <= iGraceTime:
+                urlSet.add(workerURL)
+        self._updateServiceConfiguration(urlSet, fromController=True)
 
     def forceGlobalUpdate(self):
         """
@@ -186,7 +186,7 @@ class ServiceInterfaceBase:
 
     def updateConfiguration(self, sBuffer, committer="", updateVersionOption=False):
         """
-        Update the master configuration with the newly received changes
+        Update the controller configuration with the newly received changes
 
         :param str sBuffer: newly received configuration data
         :param str committer: the user name of the committer
@@ -233,14 +233,14 @@ class ServiceInterfaceBase:
         gConfigurationData.unlock()
         gLogger.info("Generating new version")
         gConfigurationData.generateNewVersion()
-        # self.__checkSlavesStatus( forceWriteConfiguration = True )
+        # self.__checkWorkersStatus( forceWriteConfiguration = True )
         gLogger.info("Writing new version to disk")
         retVal = gConfigurationData.writeRemoteConfigurationToDisk(f"{committer}@{gConfigurationData.getVersion()}")
         gLogger.info("New version", gConfigurationData.getVersion())
 
-        # Attempt to update the configuration on currently registered slave services
+        # Attempt to update the configuration on currently registered Worker services
         if gConfigurationData.getAutoSlaveSync():
-            self.forceSlavesUpdate()
+            self.forceWorkersUpdate()
 
         return retVal
 

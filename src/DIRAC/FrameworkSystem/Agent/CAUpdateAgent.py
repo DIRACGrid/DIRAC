@@ -1,6 +1,6 @@
 """ CAUpdateAgent is meant to be used in a multi-server installations
     where one server has some machinery of keeping up to date the CA's data
-    and other servers are just synchronized with the master one without "official" CA installations locally.
+    and other servers are just synchronized with the controller one without "official" CA installations locally.
 """
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule

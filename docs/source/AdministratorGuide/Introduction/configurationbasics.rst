@@ -16,7 +16,7 @@ Normally, services are always exposed on the same port, which is defined in the 
 
 As a general rule, services can be duplicated,
 meaning you can have the same service running on multiple hosts, thus reducing the load.
-There are only 2 cases of DIRAC services that have a "master/slave" concept, and these are the Configuration Service
+There are only 2 cases of DIRAC services that have a "controller/worker" concept, and these are the Configuration Service
 and the Accounting/DataStore service.
 The WorkloadManagement/Matcher service should also not be duplicated.
 

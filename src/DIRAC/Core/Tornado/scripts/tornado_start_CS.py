@@ -46,7 +46,7 @@ def main():
 
     gLogger.initialize("Tornado-CS", "/")
 
-    # get the specific master CS port
+    # get the specific controller CS port
     try:
         csPort = int(gConfigurationData.extractOptionFromCFG(f"{getServiceSection('Configuration/Server')}/Port"))
     except TypeError:

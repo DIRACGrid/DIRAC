@@ -59,9 +59,9 @@ class TornadoConfigurationHandler(TornadoService):
 
     def export_publishSlaveServer(self, sURL):
         """
-        Used by slave server to register as a slave server.
+        Used by worker server to register as a worker server.
 
-        :param sURL: The url of the slave server.
+        :param sURL: The url of the worker server.
         """
         self.ServiceInterface.publishSlaveServer(sURL)
         return S_OK()

@@ -42,7 +42,7 @@ class TornadoRefresher(RefresherBase):
         """
         gLogger.debug("Setting configuration refresh as automatic")
         if not gConfigurationData.getAutoPublish():
-            gLogger.debug("Slave server won't auto publish itself")
+            gLogger.debug("Worker server won't auto publish itself")
         if not gConfigurationData.getName():
             import DIRAC
 
@@ -70,7 +70,7 @@ class TornadoRefresher(RefresherBase):
             # But this version is non-blocking, so IOLoop can continue execution
             yield gen.sleep(gConfigurationData.getPropagationTime())
             # Publish step is blocking so we have to run it in executor
-            # If we are not doing it, when master try to ping we block the IOLoop
+            # If we are not doing it, when controller try to ping we block the IOLoop
 
             yield _IOLoop.current().run_in_executor(None, self.__AutoRefresh)
 

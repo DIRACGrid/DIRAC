@@ -1,6 +1,6 @@
 """ DataStore is the service for inserting accounting reports (rows) in the Accounting DB
 
-    This service CAN be duplicated iff the first is a "master" and all the others are slaves.
+    This service CAN be duplicated iff the first is a "controller" and all the others are workers.
     See the information about :ref:`datastorehelpers`.
 
 .. literalinclude:: ../ConfigTemplate.cfg
@@ -171,7 +171,7 @@ class DataStoreHandler(RequestHandler):
         """
         Compact the db by grouping buckets
         """
-        # if we are running slaves (not only one service) we can redirect the request to the master
+        # if we are running workers (not only one service) we can redirect the request to the master
         # For more information please read the Administrative guide Accounting part!
         # ADVICE: If you want to trigger the bucketing, please make sure the bucketing is not running!!!!
         if self.runBucketing:
