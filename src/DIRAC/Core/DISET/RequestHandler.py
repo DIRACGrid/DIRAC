@@ -14,7 +14,7 @@ from DIRAC.Core.Security.Properties import CS_ADMINISTRATOR
 
 
 def getServiceOption(serviceInfo, optionName, defaultValue):
-    """Get service option resolving default values from the master service"""
+    """Get service option resolving default values from the controller service"""
     if optionName[0] == "/":
         return gConfig.getValue(optionName, defaultValue)
     for csPath in serviceInfo["csPaths"]:
@@ -548,7 +548,7 @@ class RequestHandler:
         """
         Force refreshing the configuration data
 
-        :param bool fromMaster: flag to refresh from the master configuration service
+        :param bool fromMaster: flag to refresh from the controller configuration service
         """
         return gConfig.forceRefresh(fromMaster=fromMaster)
 

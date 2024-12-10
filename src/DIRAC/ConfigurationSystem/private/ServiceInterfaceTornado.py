@@ -17,29 +17,29 @@ class ServiceInterfaceTornado(ServiceInterfaceBase):
     def __init__(self, sURL):
         ServiceInterfaceBase.__init__(self, sURL)
 
-    def _launchCheckSlaves(self):
+    def _launchCheckWorkers(self):
         """
-        Start loop to check if slaves are alive
+        Start loop to check if workers are alive
         """
         IOLoop.current().spawn_callback(self.run)
-        gLogger.info("Starting purge slaves thread")
+        gLogger.info("Starting purge workers thread")
 
     def run(self):
         """
-        Check if slaves are alive
+        Check if workers are alive
         """
         while True:
             yield gen.sleep(gConfigurationData.getSlavesGraceTime())
-            self._checkSlavesStatus()
+            self._checkWorkersStatus()
 
-    def _updateServiceConfiguration(self, urlSet, fromMaster=False):
+    def _updateServiceConfiguration(self, urlSet, fromController=False):
         """
         Update configuration in a set of service in parallel
 
         :param set urlSet: a set of service URLs
-        :param fromMaster: flag to force updating from the master CS
+        :param fromController: flag to force updating from the controller CS
         :return: Nothing
         """
 
         for url in urlSet:
-            IOLoop.current().spawn_callback(self._forceServiceUpdate, [url, fromMaster])
+            IOLoop.current().spawn_callback(self._forceServiceUpdate, [url, fromController])

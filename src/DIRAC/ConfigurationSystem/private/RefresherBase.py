@@ -1,13 +1,11 @@
 import time
-import random
-
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.PathFinder import getGatewayURLs
-from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.EventDispatcher import gEventDispatcher
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 
 def _updateFromRemoteLocation(serviceClient):
@@ -90,29 +88,31 @@ class RefresherBase:
         Refresh configuration and publish local updates
         """
         self._lastUpdateTime = time.time()
-        gLogger.info("Refreshing from master server")
-        sMasterServer = gConfigurationData.getMasterServer()
-        if sMasterServer:
+        gLogger.info("Refreshing from controller server")
+        sControllerServer = gConfigurationData.getMasterServer()
+        if sControllerServer:
             from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
 
             oClient = ConfigurationClient(
-                url=sMasterServer,
+                url=sControllerServer,
                 timeout=self._timeout,
                 useCertificates=gConfigurationData.useServerCertificate(),
                 skipCACheck=gConfigurationData.skipCACheck(),
             )
             dRetVal = _updateFromRemoteLocation(oClient)
             if not dRetVal["OK"]:
-                gLogger.error("Can't update from master server", dRetVal["Message"])
+                gLogger.error("Can't update from controller server", dRetVal["Message"])
                 return False
             if gConfigurationData.getAutoPublish():
-                gLogger.info("Publishing to master server...")
+                gLogger.info("Publishing to controller server...")
                 dRetVal = oClient.publishSlaveServer(self._url)
                 if not dRetVal["OK"]:
-                    gLogger.error("Can't publish to master server", dRetVal["Message"])
+                    gLogger.error("Can't publish to controller server", dRetVal["Message"])
             return True
         else:
-            gLogger.warn("No master server is specified in the configuration, trying to get data from other slaves")
+            gLogger.warn(
+                "No controller server is specified in the configuration, trying to get data from other Workers"
+            )
             return self._refresh()["OK"]
 
     def _refresh(self, fromMaster=False):
@@ -127,9 +127,9 @@ class RefresherBase:
             initialServerList = gatewayList
             gLogger.debug("Using configuration gateway", str(initialServerList[0]))
         elif fromMaster:
-            masterServer = gConfigurationData.getMasterServer()
-            initialServerList = [masterServer]
-            gLogger.debug(f"Refreshing from master {masterServer}")
+            controllerServer = gConfigurationData.getMasterServer()
+            initialServerList = [controllerServer]
+            gLogger.debug(f"Refreshing from controller {controllerServer}")
         else:
             initialServerList = gConfigurationData.getServers()
             gLogger.debug(f"Refreshing from list {str(initialServerList)}")

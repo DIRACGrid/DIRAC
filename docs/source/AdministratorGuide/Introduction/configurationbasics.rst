@@ -14,7 +14,7 @@ Most of DIRAC services can be exposed using either the DIPs or the HTTPs protoco
 
 As a general rule, services can be duplicated,
 meaning you can have the same service running on multiple hosts, thus reducing the load.
-There are only 2 cases of DIRAC services that have a "master/slave" concept, and these are the Configuration Service
+There are only 2 cases of DIRAC services that have a "controller/worker" concept, and these are the Configuration Service
 and the Accounting/DataStore service.
 
 Same can be said for executors: you can have many residing on different hosts.
