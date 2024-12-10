@@ -7,6 +7,7 @@ import zipfile
 import _thread
 import time
 import datetime
+import secrets
 
 from diraccfg import CFG
 
@@ -352,11 +353,15 @@ class ConfigurationData:
 
     def writeRemoteConfigurationToDisk(self, backupName=False):
         configurationFile = os.path.join(DIRAC.rootPath, "etc", f"{self.getName()}.cfg")
+        configurationFileTmp = f"{configurationFile}.{secrets.token_hex(8)}"
         try:
-            with open(configurationFile, "w") as fd:
+            with open(configurationFileTmp, "w") as fd:
                 fd.write(str(self.remoteCFG))
+            os.rename(configurationFileTmp, configurationFile)
         except Exception as e:
             gLogger.fatal("Cannot write new configuration to disk!", f"file {configurationFile} exception {repr(e)}")
+            if os.path.isfile(configurationFileTmp):
+                os.remove(configurationFileTmp)
             return S_ERROR(f"Can't write cs file {configurationFile}!: {repr(e).replace(',)', ')')}")
         if backupName:
             self.__backupCurrentConfiguration(backupName)
