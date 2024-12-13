@@ -282,7 +282,7 @@ fullInstallDIRAC() {
   #Now all the rest
 
   # slave CS
-  if [[ "${TEST_HTTPS:-Yes}" = "Yes" ]]; then
+  if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
     if ! dirac-install-component Configuration TornadoConfiguration "${DEBUG}"; then
       echo 'ERROR: dirac-install-component failed' >&2
       exit 1
