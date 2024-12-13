@@ -21,6 +21,7 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.DErrno import EWMSJMAN, EWMSSUBM, cmpError
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
+from DIRAC.FrameworkSystem.Client.Logger import contextLogger
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
@@ -41,6 +42,8 @@ class JobDB(DB):
         """Standard Constructor"""
 
         DB.__init__(self, "JobDB", "WorkloadManagement/JobDB", parentLogger=parentLogger)
+
+        self._defaultLogger = self.log
 
         # data member to check if __init__ went through without error
         self.__initialized = False
@@ -63,6 +66,14 @@ class JobDB(DB):
         self.log.info("MaxReschedule", self.maxRescheduling)
         self.log.info("==================================================")
         self.__initialized = True
+
+    @property
+    def log(self):
+        return contextLogger.get() or self._defaultLogger
+
+    @log.setter
+    def log(self, value):
+        self._defaultLogger = value
 
     def isValid(self):
         """Check if correctly initialised"""

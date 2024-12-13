@@ -217,6 +217,68 @@ This option can not be modified in the children of *gLogger*, even by
 *gLogger* itself after the configuration, so the children receive
 the *gLogger* configuration.
 
+Add variables to different *Logging* objects depending on the context
+---------------------------------------------------------------------
+
+In complex cases, it can be useful to have loggers that change depending on
+the execution context, without having to pass logger instances explicitly
+through multiple layers of function calls.
+
+Python's `contextvars` module provides context-local storage, which can be used
+to store and retrieve context-specific data, such as logger instances.
+
+gLogger supports the use of context variables to manage loggers in a flexible way.
+
+Provide a Context Logger
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+When you have a *Logging* instance that you want to use in a specific context,
+you can set it in the context variable:
+
+::
+
+    # Create a logger instance
+    logger = gLogger.getSubLogger("MyContextLogger")
+
+    # Set it in the context variable
+    contextLogger.set(logger)
+
+Then, the instances within the context block will use the shared *Logging* object
+set in the context variable:
+
+::
+
+    with setContextLogger(contextualLogger):
+        # Any logging within this block will use contextualLogger
+        obj = MyClass()
+        obj.do_something()  # This will use contextualLogger
+
+Consume a Context Logger
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+In functions or classes that need to log messages, you can retrieve the logger
+from the context variable:
+
+::
+
+    class MyClass:
+        def __init__(self):
+            # Get the default logger if no context logger is set
+            self._defaultLogger = gLogger.getSubLogger("MyClass")
+
+        @property
+        def log(self):
+            # Return the context logger if set, otherwise the default logger
+            return contextLogger.get() or self._defaultLogger
+
+        @log.setter
+        def log(self, value):
+            # Optionally, allow setting a new default logger
+            self._defaultLogger = value
+
+        def do_something(self):
+            self.log.notice("Doing something")
+
 Some examples and summaries
 ---------------------------
 

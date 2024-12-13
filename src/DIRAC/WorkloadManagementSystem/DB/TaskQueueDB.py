@@ -11,6 +11,7 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.FrameworkSystem.Client.Logger import contextLogger
 from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
 
 DEFAULT_GROUP_SHARE = 1000
@@ -37,6 +38,7 @@ class TaskQueueDB(DB):
 
     def __init__(self, parentLogger=None):
         DB.__init__(self, "TaskQueueDB", "WorkloadManagement/TaskQueueDB", parentLogger=parentLogger)
+        self._defaultLogger = self.log
         self.__maxJobsInTQ = 5000
         self.__defaultCPUSegments = [
             6 * 60,
@@ -63,6 +65,14 @@ class TaskQueueDB(DB):
         result = self.__initializeDB()
         if not result["OK"]:
             raise Exception(f"Can't create tables: {result['Message']}")
+
+    @property
+    def log(self):
+        return contextLogger.get() or self._defaultLogger
+
+    @log.setter
+    def log(self, value):
+        self._defaultLogger = value
 
     def enableAllTaskQueues(self):
         """Enable all Task queues"""
