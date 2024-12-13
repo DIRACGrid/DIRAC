@@ -1,3 +1,23 @@
+[v9.0.0a38]
+
+*TransformationSystem
+
+FIX: (#7953) use updatemany in TransformationDB
+
+*WorkloadManagement
+
+FIX: (#7949) renew delegation prior to submitting pilots
+FIX: (#7941) integrity check failure in RemoteRunner
+FIX: (#7935) Run CE cleanup step at correct point
+
+*ConfigurationSystem
+
+FIX: (#7947) Make writing the CS atomic
+
+*RequestManagementSystem
+
+FIX: (#7934) call the correct executeRPCMethod depending on diset/diracx
+
 [v9.0.0a37]
 
 *TransformationSystem
