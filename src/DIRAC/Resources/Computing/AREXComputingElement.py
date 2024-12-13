@@ -621,6 +621,11 @@ class AREXComputingElement(ComputingElement):
 
                 # If we are here, we have found the right delegationID to use
                 currentDelegationID = delegationID
+                # Renew the delegation just in case
+                if not self.token or self.alwaysIncludeProxy:
+                    result = self._renewDelegation(currentDelegationID)
+                    if not result["OK"]:
+                        self.log.warn("Could not renew the delegation", f"{currentDelegationID}: {result['Message']}")
                 break
 
             if not currentDelegationID:
