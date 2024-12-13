@@ -1,3 +1,19 @@
+[v8.0.61]
+
+*ConfigurationSystem
+
+FIX: (#7946) Make writing the CS atomic
+
+*WorkloadManagement
+
+FIX: (#7940) integrity check failure in RemoteRunner
+FIX: (#7936) renew delegation prior to submitting pilots
+FIX: (#7924) correctly log the pilot job reference during the matching process
+
+*TransformationSystem
+
+FIX: (#7898) use updatemany in TransformationDB
+
 [v8.0.60]
 
 *Resources
