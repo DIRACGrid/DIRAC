@@ -426,8 +426,7 @@ class TransformationDB(DB):
         return S_OK(res["Value"][0][0])
 
     def __deleteTransformation(self, transID, connection=False):
-        req = f"DELETE FROM Transformations WHERE TransformationID={transID};"
-        return self._update(req, conn=connection)
+        return self._update(f"DELETE FROM Transformations WHERE TransformationID={transID};", conn=connection)
 
     def __updateFilterQueries(self, connection=False):
         """Get filters for all defined input streams in all the transformations."""
@@ -724,12 +723,9 @@ class TransformationDB(DB):
             fileIDs.remove(tupleIn[0])
         if not fileIDs:
             return S_OK([])
-        req = "INSERT INTO TransformationFiles (TransformationID,FileID,LastUpdate,InsertedTime) VALUES"
-        for fileID in fileIDs:
-            req = "%s (%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP())," % (req, transID, fileID)
-        req = req.rstrip(",")
-        res = self._update(req, conn=connection)
-        if not res["OK"]:
+        values = [(transID, fileID) for fileID in fileIDs]
+        req = "INSERT INTO TransformationFiles (TransformationID,FileID,LastUpdate,InsertedTime) VALUES (%s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP())"
+        if not (res := self._updatemany(req, values, conn=connection))["OK"]:
             return res
         return S_OK(fileIDs)
 
@@ -779,11 +775,9 @@ class TransformationDB(DB):
         res = self._update(req, conn=connection)
         if not res["OK"]:
             gLogger.error("Failed to assign file to task", res["Message"])
-        fileTuples = []
-        for fileID in fileIDs:
-            fileTuples.append("(%d,%d,%d)" % (transID, fileID, taskID))
-        req = f"INSERT INTO TransformationFileTasks (TransformationID,FileID,TaskID) VALUES {','.join(fileTuples)}"
-        res = self._update(req, conn=connection)
+        values = [(transID, fileID, taskID) for fileID in fileIDs]
+        req = "INSERT INTO TransformationFileTasks (TransformationID,FileID,TaskID) VALUES (%s, %s, %s)"
+        res = self._updatemany(req, values, conn=connection)
         if not res["OK"]:
             gLogger.error("Failed to assign file to task", res["Message"])
         return res
