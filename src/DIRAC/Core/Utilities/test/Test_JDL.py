@@ -79,7 +79,7 @@ def test_jdlToBaseJobDescriptionModel_valid(jdl_monkey_business):
     res = jdlToBaseJobDescriptionModel(ClassAd(jdl))
     assert res["OK"], res["Message"]
 
-    data = res["Value"].dict()
+    data = res["Value"].model_dump()
     assert JobDescriptionModel(owner="owner", ownerGroup="ownerGroup", vo="lhcb", **data)
 
 

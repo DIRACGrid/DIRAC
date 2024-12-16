@@ -231,9 +231,9 @@ def test_sitesValidator_invalid(validSites, selectedSites):
 @pytest.mark.parametrize(
     "sites, bannedSites, parsedSites, parsedBannedSites",
     [
-        ({"LCG.PIC.es", "LCG.CNAF.it", "LCG.IN2P3.fr"}, None, {"LCG.PIC.es", "LCG.CNAF.it", "LCG.IN2P3.fr"}, None),
-        (None, {"LCG.PIC.es", "LCG.CNAF.it", "LCG.IN2P3.fr"}, None, {"LCG.PIC.es", "LCG.CNAF.it", "LCG.IN2P3.fr"}),
-        ({"LCG.PIC.es", "LCG.CNAF.it", "LCG.IN2P3.fr"}, {"LCG.PIC.es", "LCG.CNAF.it"}, {"LCG.IN2P3.fr"}, None),
+        ({"LCG.PIC.es", "LCG.CNAF.it", "LCG.IN2P3.fr"}, None, {"LCG.PIC.es", "LCG.CNAF.it", "LCG.IN2P3.fr"}, set()),
+        (None, {"LCG.PIC.es", "LCG.CNAF.it", "LCG.IN2P3.fr"}, set(), {"LCG.PIC.es", "LCG.CNAF.it", "LCG.IN2P3.fr"}),
+        ({"LCG.PIC.es", "LCG.CNAF.it", "LCG.IN2P3.fr"}, {"LCG.PIC.es", "LCG.CNAF.it"}, {"LCG.IN2P3.fr"}, set()),
     ],
 )
 def test_checkThatSitesAndBannedSitesAreNotMutuallyExclusive_valid(

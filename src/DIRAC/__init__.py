@@ -55,12 +55,12 @@
 
 """
 import os
+import importlib.metadata
 import re
 import sys
 import warnings
 from pkgutil import extend_path
 from typing import Any, Optional, Union
-from pkg_resources import get_distribution, DistributionNotFound
 
 
 __path__ = extend_path(__path__, __name__)
@@ -81,9 +81,9 @@ import _strptime
 
 # Define Version
 try:
-    __version__ = get_distribution(__name__).version
+    __version__ = importlib.metadata.version(__name__)
     version = __version__
-except DistributionNotFound:
+except importlib.metadata.PackageNotFoundError:
     # package is not installed
     version = "Unknown"
 
