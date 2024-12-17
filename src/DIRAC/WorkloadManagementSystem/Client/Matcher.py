@@ -9,6 +9,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities.PrettyPrint import printDict
+from DIRAC.FrameworkSystem.Client.Logger import setContextLogger
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import JobStatus, PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
@@ -50,11 +51,7 @@ class Matcher:
             self.opsHelper = Operations()
 
         if pilotRef:
-            self.log = gLogger.getSubLogger(f"[{pilotRef}]Matcher")
-            self.pilotAgentsDB.log = gLogger.getSubLogger(f"[{pilotRef}]Matcher")
-            self.jobDB.log = gLogger.getSubLogger(f"[{pilotRef}]Matcher")
-            self.tqDB.log = gLogger.getSubLogger(f"[{pilotRef}]Matcher")
-            self.jlDB.log = gLogger.getSubLogger(f"[{pilotRef}]Matcher")
+            self.log = gLogger.getLocalSubLogger(f"[{pilotRef}]Matcher")
         else:
             self.log = gLogger.getSubLogger("Matcher")
 
@@ -64,86 +61,86 @@ class Matcher:
 
     def selectJob(self, resourceDescription, credDict):
         """Main job selection function to find the highest priority job matching the resource capacity"""
+        with setContextLogger(self.log):
+            startTime = time.time()
 
-        startTime = time.time()
+            resourceDict = self._getResourceDict(resourceDescription, credDict)
 
-        resourceDict = self._getResourceDict(resourceDescription, credDict)
+            # Make a nice print of the resource matching parameters
+            toPrintDict = dict(resourceDict)
+            if "MaxRAM" in resourceDescription:
+                toPrintDict["MaxRAM"] = resourceDescription["MaxRAM"]
+            if "NumberOfProcessors" in resourceDescription:
+                toPrintDict["NumberOfProcessors"] = resourceDescription["NumberOfProcessors"]
+            toPrintDict["Tag"] = []
+            if "Tag" in resourceDict:
+                for tag in resourceDict["Tag"]:
+                    if not tag.endswith("GB") and not tag.endswith("Processors"):
+                        toPrintDict["Tag"].append(tag)
+            if not toPrintDict["Tag"]:
+                toPrintDict.pop("Tag")
+            self.log.info("Resource description for matching", printDict(toPrintDict))
 
-        # Make a nice print of the resource matching parameters
-        toPrintDict = dict(resourceDict)
-        if "MaxRAM" in resourceDescription:
-            toPrintDict["MaxRAM"] = resourceDescription["MaxRAM"]
-        if "NumberOfProcessors" in resourceDescription:
-            toPrintDict["NumberOfProcessors"] = resourceDescription["NumberOfProcessors"]
-        toPrintDict["Tag"] = []
-        if "Tag" in resourceDict:
-            for tag in resourceDict["Tag"]:
-                if not tag.endswith("GB") and not tag.endswith("Processors"):
-                    toPrintDict["Tag"].append(tag)
-        if not toPrintDict["Tag"]:
-            toPrintDict.pop("Tag")
-        self.log.info("Resource description for matching", printDict(toPrintDict))
+            negativeCond = self.limiter.getNegativeCondForSite(resourceDict["Site"], resourceDict.get("GridCE"))
+            result = self.tqDB.matchAndGetJob(resourceDict, negativeCond=negativeCond)
 
-        negativeCond = self.limiter.getNegativeCondForSite(resourceDict["Site"], resourceDict.get("GridCE"))
-        result = self.tqDB.matchAndGetJob(resourceDict, negativeCond=negativeCond)
-
-        if not result["OK"]:
-            raise RuntimeError(result["Message"])
-        result = result["Value"]
-        if not result["matchFound"]:
-            self.log.info("No match found")
-            return {}
-
-        jobID = result["jobId"]
-        resAtt = self.jobDB.getJobAttributes(jobID, ["Status"])
-        if not resAtt["OK"]:
-            raise RuntimeError("Could not retrieve job attributes")
-        if not resAtt["Value"]:
-            raise RuntimeError("No attributes returned for job")
-        if not resAtt["Value"]["Status"] == "Waiting":
-            self.log.error("Job matched by the TQ is not in Waiting state", str(jobID))
-            result = self.tqDB.deleteJob(jobID)
             if not result["OK"]:
                 raise RuntimeError(result["Message"])
-            raise RuntimeError(f"Job {str(jobID)} is not in Waiting state")
+            result = result["Value"]
+            if not result["matchFound"]:
+                self.log.info("No match found")
+                return {}
 
-        self._reportStatus(resourceDict, jobID)
+            jobID = result["jobId"]
+            resAtt = self.jobDB.getJobAttributes(jobID, ["Status"])
+            if not resAtt["OK"]:
+                raise RuntimeError("Could not retrieve job attributes")
+            if not resAtt["Value"]:
+                raise RuntimeError("No attributes returned for job")
+            if not resAtt["Value"]["Status"] == "Waiting":
+                self.log.error("Job matched by the TQ is not in Waiting state", str(jobID))
+                result = self.tqDB.deleteJob(jobID)
+                if not result["OK"]:
+                    raise RuntimeError(result["Message"])
+                raise RuntimeError(f"Job {str(jobID)} is not in Waiting state")
 
-        result = self.jobDB.getJobJDL(jobID)
-        if not result["OK"]:
-            raise RuntimeError("Failed to get the job JDL")
+            self._reportStatus(resourceDict, jobID)
 
-        resultDict = {}
-        resultDict["JDL"] = result["Value"]
-        resultDict["JobID"] = jobID
+            result = self.jobDB.getJobJDL(jobID)
+            if not result["OK"]:
+                raise RuntimeError("Failed to get the job JDL")
 
-        matchTime = time.time() - startTime
-        self.log.verbose("Match time", f"[{str(matchTime)}]")
+            resultDict = {}
+            resultDict["JDL"] = result["Value"]
+            resultDict["JobID"] = jobID
 
-        # Get some extra stuff into the response returned
-        resOpt = self.jobDB.getJobOptParameters(jobID)
-        if resOpt["OK"]:
-            for key, value in resOpt["Value"].items():
-                resultDict[key] = value
-        resAtt = self.jobDB.getJobAttributes(jobID, ["Owner", "OwnerGroup"])
-        if not resAtt["OK"]:
-            raise RuntimeError("Could not retrieve job attributes")
-        if not resAtt["Value"]:
-            raise RuntimeError("No attributes returned for job")
+            matchTime = time.time() - startTime
+            self.log.verbose("Match time", f"[{str(matchTime)}]")
 
-        if self.opsHelper.getValue("JobScheduling/CheckMatchingDelay", True):
-            self.limiter.updateDelayCounters(resourceDict["Site"], jobID)
+            # Get some extra stuff into the response returned
+            resOpt = self.jobDB.getJobOptParameters(jobID)
+            if resOpt["OK"]:
+                for key, value in resOpt["Value"].items():
+                    resultDict[key] = value
+            resAtt = self.jobDB.getJobAttributes(jobID, ["Owner", "OwnerGroup"])
+            if not resAtt["OK"]:
+                raise RuntimeError("Could not retrieve job attributes")
+            if not resAtt["Value"]:
+                raise RuntimeError("No attributes returned for job")
 
-        pilotInfoReportedFlag = resourceDict.get("PilotInfoReportedFlag", False)
-        if not pilotInfoReportedFlag:
-            self._updatePilotInfo(resourceDict)
-        self._updatePilotJobMapping(resourceDict, jobID)
+            if self.opsHelper.getValue("JobScheduling/CheckMatchingDelay", True):
+                self.limiter.updateDelayCounters(resourceDict["Site"], jobID)
 
-        resultDict["Owner"] = resAtt["Value"]["Owner"]
-        resultDict["Group"] = resAtt["Value"]["OwnerGroup"]
-        resultDict["PilotInfoReportedFlag"] = True
+            pilotInfoReportedFlag = resourceDict.get("PilotInfoReportedFlag", False)
+            if not pilotInfoReportedFlag:
+                self._updatePilotInfo(resourceDict)
+            self._updatePilotJobMapping(resourceDict, jobID)
 
-        return resultDict
+            resultDict["Owner"] = resAtt["Value"]["Owner"]
+            resultDict["Group"] = resAtt["Value"]["OwnerGroup"]
+            resultDict["PilotInfoReportedFlag"] = True
+
+            return resultDict
 
     def _getResourceDict(self, resourceDescription, credDict):
         """from resourceDescription to resourceDict (just various mods)"""
