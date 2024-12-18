@@ -70,9 +70,10 @@ def convert_to_datetime(dstring):
         else:
             results = eval(str(dstring), {"__builtins__": None, "time": time, "math": math}, {})
         if isinstance(results, (int, float)):
+            # Use utcfromtimestamp for UTC time
             results = datetime.datetime.utcfromtimestamp(int(results))
         elif isinstance(results, datetime.datetime):
-            pass
+            results = results.astimezone(datetime.timezone.utc)  # Ensure in UTC
         else:
             raise ValueError("Unknown datetime type!")
     except Exception:
@@ -80,7 +81,7 @@ def convert_to_datetime(dstring):
         for dateformat in datestrings:
             try:
                 t = time.strptime(dstring, dateformat)
-                timestamp = calendar.timegm(t)  # -time.timezone
+                timestamp = calendar.timegm(t)  # Convert to UTC timestamp
                 results = datetime.datetime.utcfromtimestamp(timestamp)
                 break
             except Exception:
@@ -89,12 +90,12 @@ def convert_to_datetime(dstring):
             try:
                 dstring = dstring.split(".", 1)[0]
                 t = time.strptime(dstring, dateformat)
-                timestamp = time.mktime(t)  # -time.timezone
+                timestamp = calendar.timegm(t)  # Convert to UTC timestamp
                 results = datetime.datetime.utcfromtimestamp(timestamp)
             except Exception:
                 raise ValueError(
                     "Unable to create time from string!\nExpecting "
-                    "format of: '12/06/06 12:54:67'\nRecieved:%s" % orig_string
+                    "format of: '12/06/06 12:54:67'\nReceived:%s" % orig_string
                 )
     return results
 
