@@ -47,3 +47,15 @@ class MessageQueueHandler(logging.Handler):
         strRecord = self.format(record)
         if self.producer is not None:
             self.producer.put(json.loads(strRecord))
+
+    def handle(self, record):
+        """
+        Conditionally emit the specified logging record.
+
+        Override the handle method from logging.Handler as there is no need to
+        acquire the lock to emit the record.
+        """
+        rv = self.filter(record)
+        if rv:
+            self.emit(record)
+        return rv
