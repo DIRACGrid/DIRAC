@@ -77,6 +77,7 @@ def helloWorldJenkins():
             J.setInputSandbox([find_all("exe-script.py", os.environ["WORKSPACE"], "DIRAC/tests/Workflow")[0]])
     J.setExecutable("exe-script.py", "", "helloWorld.log")
     J.setDestination("DIRAC.Jenkins.ch")
+    return endOfAllJobs(J)
 
 
 def helloWorld_input():
