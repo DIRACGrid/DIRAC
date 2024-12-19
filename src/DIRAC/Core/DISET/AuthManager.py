@@ -1,5 +1,7 @@
 """ Module that holds DISET Authorization class for services
 """
+from cachetools import TTLCache
+
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security import Properties
@@ -26,6 +28,8 @@ class AuthManager:
         :param authSection: Section containing the authorization rules
         """
         self.authSection = authSection
+        self._cache_getUsersInGroup = TTLCache(maxsize=1000, ttl=60)
+        self._cache_getUsernameForDN = TTLCache(maxsize=1000, ttl=60)
 
     def authQuery(self, methodQuery, credDict, defaultProperties=False):
         """
@@ -257,10 +261,18 @@ class AuthManager:
                 return False
             credDict[self.KW_GROUP] = result["Value"]
         credDict[self.KW_PROPERTIES] = Registry.getPropertiesForGroup(credDict[self.KW_GROUP], [])
-        usersInGroup = Registry.getUsersInGroup(credDict[self.KW_GROUP], [])
+
+        usersInGroup = self._cache_getUsersInGroup.get(credDict[self.KW_GROUP])
+        if usersInGroup is None:
+            usersInGroup = Registry.getUsersInGroup(credDict[self.KW_GROUP], [])
+            self._cache_getUsersInGroup[credDict[self.KW_GROUP]] = usersInGroup
         if not usersInGroup:
             return False
-        retVal = Registry.getUsernameForDN(credDict[self.KW_DN], usersInGroup)
+
+        retVal = self._cache_getUsernameForDN.get(credDict[self.KW_DN])
+        if retVal is None:
+            retVal = Registry.getUsernameForDN(credDict[self.KW_DN], usersInGroup)
+            self._cache_getUsernameForDN[credDict[self.KW_DN]] = retVal
         if retVal["OK"]:
             credDict[self.KW_USERNAME] = retVal["Value"]
             return True
