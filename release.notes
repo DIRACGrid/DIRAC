@@ -1,3 +1,9 @@
+[v9.0.0a39]
+
+*WorkloadManagement
+
+FIX: (#7954) correctly log the pilot job reference during the matching process
+
 [v9.0.0a38]
 
 *TransformationSystem
