@@ -10,6 +10,8 @@ import os
 import random
 import time
 
+import M2Crypto.m2
+import M2Crypto.ASN1
 import M2Crypto.X509
 
 
@@ -211,8 +213,10 @@ class X509Certificate:
 
         :returns: S_OK( datetime )/S_ERROR
         """
-
-        notAfter = self.__certObj.get_not_after().get_datetime()
+        # Here we use the M2Crypto low level API, as the high level API is notably
+        # slower due to the conversion to a string and then back to an ASN1_TIME.
+        rawNotAfter = M2Crypto.m2.x509_get_not_after(self.__certObj.x509)  # pylint: disable=no-member
+        notAfter = M2Crypto.ASN1.ASN1_TIME(rawNotAfter).get_datetime()
 
         # M2Crypto does things correctly by setting a timezone info in the datetime
         # However, we do not in DIRAC, and so we can't compare the dates.
@@ -242,7 +246,10 @@ class X509Certificate:
         :returns: S_OK( datetime )/S_ERROR
 
         """
-        return S_OK(self.__certObj.get_not_before().get_datetime())
+        # Here we use the M2Crypto low level API, as the high level API is notably
+        # slower due to the conversion to a string and then back to an ASN1_TIME.
+        rawNotBefore = M2Crypto.m2.x509_get_not_before(self.__certObj.x509)  # pylint: disable=no-member
+        return S_OK(M2Crypto.ASN1.ASN1_TIME(rawNotBefore).get_datetime())
 
     # @executeOnlyIfCertLoaded
     # def setNotBefore(self, notbefore):
