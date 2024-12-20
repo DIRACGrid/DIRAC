@@ -673,9 +673,12 @@ def _gen_docker_compose(modules, *, diracx_dist_dir=None):
             "dirac-server",
             "diracx-init-cs",
             "diracx-wait-for-db",
+            "diracx-init-db",
             "diracx",
         ]:
-            docker_compose["services"][container_name]["volumes"].append(f"{diracx_dist_dir}:/diracx_sources")
+            docker_compose["services"][container_name].setdefault("volumes", []).append(
+                f"{diracx_dist_dir}:/diracx_sources"
+            )
             docker_compose["services"][container_name].setdefault("environment", []).append(
                 "DIRACX_CUSTOM_SOURCE_PREFIXES=/diracx_sources"
             )
