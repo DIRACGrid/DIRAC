@@ -51,7 +51,7 @@ def main():
     url = None
     if len(args) == 1:
         # it is a URL
-        if args[0].startswith("dips://"):
+        if args[0].startswith(("dips://", "https://")):
             url = args[0]
         # It is System/Service
         else:
