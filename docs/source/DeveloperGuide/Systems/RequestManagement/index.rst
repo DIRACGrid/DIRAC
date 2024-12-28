@@ -238,6 +238,7 @@ The timeout for the operation is then calculated from this value and the number 
 
 The `ReplicateAndRegister` section accepts extra attributes, specific to FTSTransfers:
   * FTSMode (default False): if True, delegate transfers to FTS
+  * DMMode (default True): if False, will not use DataManager as a failover transfer for FTS
   * FTSBannedGroups: list of DIRAC group whose transfers should not go through FTS.
 
 This of course does not cover all possible needs for a specific VO, hence all developers are encouraged to create and keep

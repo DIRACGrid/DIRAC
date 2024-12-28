@@ -524,7 +524,12 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
             return S_OK()
         # # loop over files
         if fromFTS:
-            self.log.info("Trying transfer using replica manager as FTS failed")
+            if getattr(self, "DMMode", True):
+                self.log.info("Trying transfer using DataManager as FTS failed")
+            else:
+                self.log.info("DataManager replication disabled, skipping")
+                return S_OK()
+
         else:
             self.log.info("Transferring files using Data manager...")
         errors = defaultdict(int)
