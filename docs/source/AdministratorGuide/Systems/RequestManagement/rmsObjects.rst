@@ -188,6 +188,7 @@ Details: :py:mod:`~DIRAC.DataManagementSystem.Agent.RequestOperations.ReplicateA
 Extra configuration options:
 
 * `FTSMode`: If True, will use FTS to transfer files
+* `DMMode`: if False, will not use DataManager transfer as FTS failover
 * `FTSBannedGroups` : list of groups for which not to use FTS
 
 ------
