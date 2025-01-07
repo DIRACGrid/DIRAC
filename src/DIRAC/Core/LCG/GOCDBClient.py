@@ -214,7 +214,7 @@ class GOCDBClient:
 
         try:
             response = requests.get(
-                "https://goc.egi.eu/gocdbpi/public/?method=get_downtime&topentity=" + params, verify=caPath
+                "https://goc.egi.eu/gocdbpi/public/?method=get_downtime&topentity=" + params, verify=caPath, timeout=20
             )
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
@@ -270,7 +270,7 @@ class GOCDBClient:
         gocdb_ep = gocdb_ep + when + gocdbpi_startDate + "&scope="
 
         caPath = getCAsLocation()
-        dtPage = requests.get(gocdb_ep, verify=caPath)
+        dtPage = requests.get(gocdb_ep, verify=caPath, timeout=20)
 
         dt = dtPage.text
 
@@ -295,7 +295,7 @@ class GOCDBClient:
         gocdb_ep = "https://goc.egi.eu/gocdbpi/public/?method=get_service_endpoint&" + granularity + "=" + entity
 
         caPath = getCAsLocation()
-        service_endpoint_page = requests.get(gocdb_ep, verify=caPath)
+        service_endpoint_page = requests.get(gocdb_ep, verify=caPath, timeout=20)
 
         return service_endpoint_page.text
 
