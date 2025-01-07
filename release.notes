@@ -1,3 +1,23 @@
+[v8.0.62]
+
+*RequestManagementSystem
+
+NEW: (#7973) Allow to disable DM transfer as an FTS failover
+
+*ResourceStatusSystem
+
+NEW: (#7967) Add a timeout for GocDB to avoid blocking the CacheFeederAgent
+
+*FrameworkSystem
+
+FIX: (#7965) Support https URLs with dirac-framework-ping-service
+
+*Core
+
+FIX: (#7964) Avoid locking in MessageQueueHandler
+CHANGE: (#7963) Optimise ASN1 decoding in X509Certificate
+CHANGE: (#7957) Introduce caches to AuthManager.getUsername
+
 [v8.0.61]
 
 *ConfigurationSystem
