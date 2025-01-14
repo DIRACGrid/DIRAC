@@ -74,12 +74,8 @@ All these agents are necessary for the WMS, and each of them should be installed
 You can duplicate some of these agents as long as you provide the correct configuration.
 A typical example is the SiteDirector, for which you may want to deploy even 1 for each of the sites managed.
 
-Optional agents are:
-
-StatesAccountingAgent or StatesMonitoringAgent
-  Use one or the other.
-  StatesMonitoringAgent is used for producing Monitoring plots through the :ref:`Monitoring System <monitoring_system>`. (so, using ElasticSearch as backend),
-  while StatesAccountingAgent does the same job but using the Accounting system (so, MySQL as backend).
+StatesAccountingAgent.
+  Used for producing Monitoring plots through the :ref:`Monitoring System <monitoring_system>`, or using the Accounting system (so, MySQL as backend).
 
 A very different type of agent is the *JobAgent*, which is run by the pilot jobs and should NOT be run in a server installation.
 

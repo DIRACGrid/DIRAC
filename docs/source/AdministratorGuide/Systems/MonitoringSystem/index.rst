@@ -20,19 +20,18 @@ The Monitoring system is used to monitor various components of DIRAC. Currently,
   - PilotSubmission Monitoring: for monitoring the DIRAC pilot submission statistics from SiteDirector agents.
   - DataOperation Monitoring: for monitoring the DIRAC data operation statistics as well as individual failures from interactive use of ``StorageElement``.
 
-It is based on Elasticsearch (OpenSearch) distributed search and analytics NoSQL database.
-If you want to use it, you have to install the Monitoring service, and of course connect to a ElasticSearch instance.
+It is based on OpenSearch distributed search and analytics NoSQL database.
+If you want to use it, you have to install the Monitoring service, and of course connect to a OpenSearch instance.
 
-Install Elasticsearch/OpenSearch
-================================
+Install OpenSearch
+==================
 
-This is not covered here, as installation and administration of ES are not part of DIRAC guide.
-Just a note on the ES versions supported: only ES7+ versions are currently supported, and are later to be replaced by OpenSearch services.
+This is not covered here.
 
 Configure the MonitoringSystem
 ===============================
 
-You can run your Elastic/OpenSearch cluster even without authentication, or using User name and password. You have to add the following parameters:
+You can run your OpenSearch cluster even without authentication, or using User name and password. You have to add the following parameters:
 
   - User
   - Password
@@ -82,7 +81,7 @@ The given periods above are also the default periods in the code.
 Enable the Monitoring System
 ============================
 
-In order to enable the monitoring of all the following types with an ElasticSearch-based backend, you should add the value `Monitoring` to the flag
+In order to enable the monitoring of all the following types with an OpenSearch-based backend, you should add the value `Monitoring` to the flag
 `MonitoringBackends/Default` in the Operations section of the CS.
 If you want to override this flag for a specific type, say, you want to only have Monitoring (and no Accounting) for WMSHistory, you just create a flag `WMSHistory` set to `Monitoring`.
 If, for example, you want both Monitoring and Accounting for WMSHistory (but not for other types), you set `WMSHistory = Accounting, Monitoring`. If no flag is set for `WMSHistory`, the `Default` flag will be used.
@@ -111,7 +110,7 @@ This can be done either via the CS or directly in the web app in the Configurati
 WMSHistory & PilotsHistory Monitoring
 =====================================
 
-The WorkloadManagement/StatesAccountingAgent creates, every 15 minutes, a snapshot with the contents of JobDB and PilotAgentsDB and sends it to an Elasticsearch-based database.
+The WorkloadManagement/StatesAccountingAgent creates, every 15 minutes, a snapshot with the contents of JobDB and PilotAgentsDB and sends it to an OpenSearch-based database.
 This same agent can also report the WMSHistory to the MySQL backend used by the Accounting system (which is in fact the default).
 
 Optionally, you can use an MQ system (like ActiveMQ) for failover, even though the agent already has a simple failover mechanism.
@@ -169,12 +168,12 @@ Accessing the Monitoring information
 
 After you installed and configured the Monitoring system, you can use the Monitoring web application for the types WMSHistory and RMS.
 
-However, every type can directly be monitored in Kibana dashboards that can be imported into your Elasticsearch (or Opensearch) instance. You can find and import these dashboards from DIRAC/dashboards as per the following example.
+However, every type can directly be monitored in Kibana dashboards that can be imported into your Opensearch instance. You can find and import these dashboards from DIRAC/dashboards as per the following example.
 Grafana dashboards are also provided for some of the types.
 
 *Kibana dashboard for WMSHistory*
   A dashboard for WMSHistory monitoring ``WMSDashboard`` is available `here <https://github.com/DIRACGrid/DIRAC/tree/integration/dashboards/WMS>`__ for import as a NDJSON (as support for JSON is being removed in the latest versions of Kibana).
-  The dashboard may not be compatible with older versions of ElasticSearch.
+  The dashboard may not be compatible with older versions of OpenSearch.
   To import it in the Kibana UI, go to Management -> Saved Objects -> Import and import the JSON file.
 
   Note: the JSON file already contains the index patterns needed for the visualizations. You may need to adapt the index patterns to your existing ones.

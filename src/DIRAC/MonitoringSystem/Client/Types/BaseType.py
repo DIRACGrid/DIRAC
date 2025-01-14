@@ -16,7 +16,7 @@ class BaseType:
     :type monitoringFields: python:list
     :param dict mapping: We can specify the mapping of the documents. It is used during the creation of an index.
                          Note: If you do not want to be analysed a string, you have to set the mapping
-    :param str period: We can configure the elasticsearch index name with a period.
+    :param str period: We can configure the opensearch index name with a period.
                        By default we use daily indexes, but we can also use weekly, monthly, yearly indexes.
                        Or use no period at all.
                        Supported values: day, week, month, year, null
@@ -62,7 +62,7 @@ class BaseType:
     ########################################################################
     def addMapping(self, mapping):
         """
-        :param dict mapping: the mapping used by elasticsearch
+        :param dict mapping: the mapping used by opensearch
         """
         self.mapping = self.timeType
         self.mapping["properties"].update(mapping)

@@ -1,6 +1,6 @@
 """
-This class a wrapper around elasticsearch-py.
-It is used to query Elasticsearch instances.
+This class a wrapper around opensearchpy
+It is used to query Opensearch instances.
 """
 
 import copy
@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from urllib import parse as urlparse
 
 import certifi
-from opensearchpy import OpenSearch as Elasticsearch
+from opensearchpy import OpenSearch
 from opensearchpy.exceptions import (
     ConflictError,
     NotFoundError,
@@ -88,7 +88,7 @@ class ElasticSearchDB:
 
     :param str url: the url to the database for example: el.cern.ch:9200
     :param str gDebugFile: is used to save the debug information to a file
-    :param int timeout: the default time out to Elasticsearch
+    :param int timeout: the default time out to OpenSearch
     :param int RESULT_SIZE: The number of data points which will be returned by the query.
     """
 
@@ -159,12 +159,12 @@ class ElasticSearchDB:
                 else:
                     casFile = retVal["Value"]
 
-            self.client = Elasticsearch(
+            self.client = OpenSearch(
                 self.__url, timeout=self.__timeout, use_ssl=True, verify_certs=True, ca_certs=casFile
             )
         elif useCRT:
             self.__url = "https" + self.__url
-            self.client = Elasticsearch(
+            self.client = OpenSearch(
                 self.__url,
                 timeout=self.__timeout,
                 use_ssl=True,
@@ -175,7 +175,7 @@ class ElasticSearchDB:
             )
         else:
             self.__url = "http" + self.__url
-            self.client = Elasticsearch(self.__url, timeout=self.__timeout)
+            self.client = OpenSearch(self.__url, timeout=self.__timeout)
 
         # Before we use the database we try to connect
         # and retrieve the cluster name
@@ -188,7 +188,7 @@ class ElasticSearchDB:
                 sLog.debug("Database info\n", json.dumps(result, indent=4))
                 self._connected = True
             else:
-                sLog.error("Cannot ping ElasticsearchDB!")
+                sLog.error("Cannot ping OpensearchDB!")
         except ElasticConnectionError as e:
             sLog.error(repr(e))
 
@@ -223,7 +223,7 @@ class ElasticSearchDB:
 
         :param self: self reference
         :param str index: index name
-        :param dict query: It is the query in ElasticSearch DSL language
+        :param dict query: It is the query in OpenSearch DSL language
 
         """
         try:
@@ -237,7 +237,7 @@ class ElasticSearchDB:
         """Executes an update of a document, and returns S_OK/S_ERROR
 
         :param index: index name
-        :param query: It is the query in ElasticSearch DSL language
+        :param query: It is the query in OpenSearch DSL language
         :param updateByQuery: A bool to determine update by query or index values using index function.
         :param docID: ID for the document to be created.
 
@@ -492,7 +492,7 @@ class ElasticSearchDB:
         """
         :param str indexPrefix: index name.
         :param list data: contains a list of dictionary
-        :param dict mapping: the mapping used by elasticsearch
+        :param dict mapping: the mapping used by Opensearch
         :param str period: Accepts 'day' and 'month'. We can specify which kind of indexes will be created.
         :param bool withTimeStamp: add timestamp to data, if not there already.
 

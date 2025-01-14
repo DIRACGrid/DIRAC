@@ -22,7 +22,7 @@ from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 
 class StatesAccountingAgent(AgentModule):
     """Agent that every 15 minutes will report
-    to the AccountingDB (MySQL) or the Monitoring DB (ElasticSearch), or both,
+    to the AccountingDB (MySQL) or the Monitoring DB (OpenSearch), or both,
     a snapshot of the JobDB.
     Also sends a snapshot of PilotAgentsDB to Monitoring.
     """

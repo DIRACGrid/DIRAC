@@ -98,7 +98,7 @@ ESQLA = 1132
 EMQUKN = 1140
 EMQNOM = 1141
 EMQCONN = 1142
-# Elasticsearch
+# OpenSearch
 EELNOFOUND = 1146
 # Tokens
 EATOKENFIND = 1150
@@ -182,7 +182,7 @@ dErrorCode = {
     1140: "EMQUKN",
     1141: "EMQNOM",
     1142: "EMQCONN",
-    # Elasticsearch
+    # OpenSearch
     1146: "EELNOFOUND",
     # 115X: Tokens
     1150: "EATOKENFIND",
@@ -259,7 +259,7 @@ dStrError = {  # Generic (10XX)
     EMQUKN: "Unknown MQ Error",
     EMQNOM: "No messages",
     EMQCONN: "MQ connection failure",
-    # 114X Elasticsearch
+    # 114X OpenSearch
     EELNOFOUND: "Index not found",
     # 115X: Tokens
     EATOKENFIND: "Can't find a bearer access token.",

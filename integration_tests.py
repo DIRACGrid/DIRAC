@@ -1198,10 +1198,10 @@ def _make_config(modules, flags, release_var, editable):
         "DB_ROOTPWD": DB_ROOTPWD,
         "DB_HOST": DB_HOST,
         "DB_PORT": DB_PORT,
-        # ElasticSearch settings
+        # OpenSearch settings
         "NoSQLDB_USER": "elastic",
         "NoSQLDB_PASSWORD": "changeme",
-        "NoSQLDB_HOST": "elasticsearch",
+        "NoSQLDB_HOST": "opensearch",
         "NoSQLDB_PORT": "9200",
         # IAM initial settings
         "IAM_INIT_CLIENT_ID": IAM_INIT_CLIENT_ID,

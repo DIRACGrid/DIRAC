@@ -31,8 +31,8 @@ jobs:
       matrix:
         # TEST_NAME is a dummy variable used to make it easier to read the web interface
         include:
-          - TEST_NAME: "MariaDB 11.4, elasticsearch:7.9.1"
-            ARGS: MYSQL_VER=mariadb:11.4.3 ES_VER=elasticsearch:7.9.1
+          - TEST_NAME: "MariaDB 11.4"
+            ARGS: MYSQL_VER=mariadb:11.4.3
           - TEST_NAME: "HTTPS"
             ARGS: TEST_HTTPS=Yes
           - TEST_NAME: "Force DEncode"
@@ -72,8 +72,8 @@ jobs:
       run: ./integration_tests.py test-client || touch client-tests-failed
     - name: Pilot tests
       run: ./integration_tests.py test-pilot || touch pilot-tests-failed
-    - name: Elasticsearch logs
-      run: docker logs elasticsearch
+    - name: Opensearch logs
+      run: docker logs opensearch
     - name: Check test status
       run: |
         has_error=0

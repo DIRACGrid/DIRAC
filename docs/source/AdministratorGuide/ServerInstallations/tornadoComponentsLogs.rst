@@ -158,7 +158,7 @@ dirac-json.conf (Add all needed components and choose the output you want)::
   [SERVICE] where we describe our json parser (from dirac Json log backend)
   [INPUT] where we describe dirac components log file and the way it will be parsed (json)
   [FILTER] where we apply modifications to parsed data, for example adding a levelname "DEV" whenever logs are not well formatted, typically "print" in code, or adding fields like hostname to know from which host logs are coming, but also more complex treatments like in dirac.lua script (described later)
-  [OUTPUT] where we describe formatted logs destination, here, we have stdout, files on disks and elasticsearch.
+  [OUTPUT] where we describe formatted logs destination, here, we have stdout, files on disks and opensearch.
 
 dirac-parsers.conf::
 
@@ -203,19 +203,19 @@ dirac.lua::
 Testing
 -------
 
-Before throwing logs to ElasticSearch, config can be tested in Standard output by uncommenting::
+Before throwing logs to OpenSearch, config can be tested in Standard output by uncommenting::
 
   [OUTPUT]
       name             stdout
       match            *
 
-...and commenting ElasticSearch outputs.
+...and commenting OpenSearch outputs.
 
 Then by using command::
 
   /opt/fluent-bit/bin/fluent-bit -c //etc/fluent-bit/fluent-bit.conf
 
-NOTE: When all is OK, uncomment ElasticSearch outputs and comment stdout output
+NOTE: When all is OK, uncomment OpenSearch outputs and comment stdout output
 
 Service
 -------

@@ -14,7 +14,7 @@ The system is storing monitoring information. It means the data stored in the da
    -computing infrastructures (for example: machines, etc.)
    -data movement (for example: Data operation etc.)
 
-This system is based on ElasticSearch.
+This system is based on OpenSearch.
 
 ------------
 Architecture
@@ -30,9 +30,9 @@ It is based on layered architecture and is based on DIRAC architecture:
 * **DB**
 
   * MonitoringDB:
-    It is a based on ElasticSearch database and provides all the methods which needed to create the reports. Currently, it supports only
+    It is a based on OpenSearch database and provides all the methods which needed to create the reports. Currently, it supports only
     one type of query: It creates a dynamic buckets which will be used to retrieve the data points. The query used to retrieve the data points
-    is retrieveBucketedData. As you can see it uses the ElasticSearch QueryDSL language. Before you modify this method please learn this language.
+    is retrieveBucketedData. As you can see it uses the OpenSearch QueryDSL language. Before you modify this method please learn this language.
 
    * private:
       - Plotters: It contains all Plotters used to create the plots. More information will be provided later.

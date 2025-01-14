@@ -1,8 +1,8 @@
 """
-This class is used to insert data to a db (currently elasticsearch).
+This class is used to insert data to a db (currently opensearch).
 It uses an internal list which is used to keep messages in the memory.
 addRecord is used to insert messages to the internal queue. commit is used
-to insert the acumulated messages to elasticsearch.
+to insert the acumulated messages to opensearch.
 It provides two failover mechanism:
 1.) If the database is not available, the data will be kept in the memory.
 2.) If a MQ is available, we store the messages in MQ service.

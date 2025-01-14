@@ -248,7 +248,7 @@ Continuous Integration software
 -------------------------------
 
 There are several tools, on the free market, for so-called *Continuous Integration*, or simply CI_.
-One possibility is to use Jenkins, but today (from branch *rel-v7r0*) all DIRAC integration tests are run
+One possibility is to use Jenkins, but all DIRAC integration tests are run
 by `GitHub Actions <https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Integration+tests%22>`_
 
 If you have looked in the `DIRAC/tests <https://github.com/DIRACGrid/DIRAC/tree/integration/tests>`_
@@ -273,7 +273,7 @@ What can you do with those above? You can run the Integration tests you read abo
 How do I do that?
 
 - you need a MySQL DB somewhere, empty, to be used only for testing purposes (in GitHub Actions and GitLab-CI a docker container is instantiated for the purpose)
-- you need a ElasticSearch instance running somewhere, empty, to be used only for testing purposes (in GitHub Actions and GitLab-CI a docker container is instantiated for the purpose)
+- you need a OpenSearch instance running somewhere, empty, to be used only for testing purposes (in GitHub Actions and GitLab-CI a docker container is instantiated for the purpose)
 - if you have tests that need to access other DBs, you should also have them ready, again used for testing purposes.
 
 The files ``DIRAC/tests/Integration/all_integration_client_tests.sh`` and ``DIRAC/tests/Integration/all_integration_server_tests.sh``

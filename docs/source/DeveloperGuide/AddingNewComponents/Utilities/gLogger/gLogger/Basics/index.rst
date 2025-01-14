@@ -761,7 +761,7 @@ To summarize, this file configures two agents respectively named *SimplestAgent*
 In *SimplestAgent*, it sets the level of *gLogger* at *info*, adds 5 *Backend* objects to it, which
 are *stdout*, *stderr*, two *file Backend* objects and an *ElastiSearch* access. Thus, each log record superior to
 *info* level, created by a *Logging* object in the agent, will be sent
-to 5 different outputs: *stdout*, *stderr*, */tmp/logtmp.log*, */tmp/logtmp2.log* and ElasticSearch. In *AnotherAgent*, the same process is performed, and each log record superior to *notice* level is sent to *stdout* and another ElasticSearch database because of the redifinition. None of the default *Backend* objects of the *Operations* section are used because of the overwriting.
+to 5 different outputs: *stdout*, *stderr*, */tmp/logtmp.log*, */tmp/logtmp2.log* and OpenSearch. In *AnotherAgent*, the same process is performed, and each log record superior to *notice* level is sent to *stdout* and another OpenSearch database because of the redifinition. None of the default *Backend* objects of the *Operations* section are used because of the overwriting.
 In addition, the log records will be not displayed with color.
 
 Summary of the command line argument configuration

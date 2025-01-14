@@ -38,17 +38,13 @@ generic connection details can be applied in CS location below (the shown values
    }
 
 
-ElasticSearch versions
-----------------------
+OpenSearch versions
+-------------------
 
-ElasticSearch is an optional dependency for DIRAC servers installations. Supported versions:
+OpenSearch is a non-optional dependency for DIRAC servers installations.
+OpenSearch server is not shipped with DIRAC. You are responsible of its administration.
 
-- 7.x up until 7.13
-- OpenDistro and OpenSearch releases "compatible" with the above ElasticSearch versions.
-
-ElasticSearch server is not shipped with DIRAC. You are responsible of its administration.
-
-You can run your ES cluster without authentication, or using User name and password, or using certificates. You may add the following parameters:
+You can run your OpenSearch cluster without authentication, or using User name and password, or using certificates. You may add the following parameters:
 
   - ``User`` (default:``''``)
   - ``Password`` (default:``''``)

@@ -62,7 +62,7 @@ Logstash and ELK configurations
 
 The suggested logstash configuration (``/etc/logstash/conf.d/configname``) can be found in https://gitlab.cern.ch/ai/it-puppet-module-dirac/-/blob/qa/code/templates/logstash.conf.erb (check the `full documentation <https://opensearch.org/docs/latest/clients/logstash/index/>`_)
 
-The ElasticSearch template ``lhcb-dirac-logs_default`` looks like::
+The OpenSearch template ``lhcb-dirac-logs_default`` looks like::
 
   {
     "order": 1,
