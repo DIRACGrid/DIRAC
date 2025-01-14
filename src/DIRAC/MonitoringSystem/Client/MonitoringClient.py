@@ -1,5 +1,5 @@
 """
-This is the client of the Monitoring service based on Elasticsearch.
+This is the client of the Monitoring service based on OpenSearch.
 """
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.Plotting.FileCoding import codeRequestInFileId

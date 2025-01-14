@@ -1,5 +1,5 @@
 """
-The Monitoring/Monitoring service interacts with the ElasticSearch backend
+The Monitoring/Monitoring service interacts with the OpenSearch backend
 exposed by MonitoringDB.
 
 .. literalinclude:: ../ConfigTemplate.cfg
@@ -13,16 +13,14 @@ exposed by MonitoringDB.
 import datetime
 import os
 
-from DIRAC import gLogger, S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import TimeUtilities
+from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.Plotting import gDataCache
 from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
 from DIRAC.Core.Utilities.Plotting.Plots import generateErrorMessagePlot
-from DIRAC.Core.Utilities.File import mkDir
-
 from DIRAC.MonitoringSystem.private.MainReporter import MainReporter
 
 

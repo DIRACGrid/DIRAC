@@ -53,12 +53,12 @@ Parameters
 +-----------+------------------------------------------------------------------+----------------------+
 
 
-ElasticSearchBackend
+OpenSearch Backend
 --------------------
 
 Description
 ~~~~~~~~~~~
-Used to emit log records in the an ElasticSearch database.
+Used to emit log records in the an OpenSearch database.
 The *Backend* acccepts logs from *Debug* to *Always* level.
 
 Parameters
@@ -66,15 +66,15 @@ Parameters
 +-----------+------------------------------------------------------------------+----------------------+
 | Option    | Description                                                      | Default value        |
 +===========+==================================================================+======================+
-| Host      | host machine where the ElasticSearch DB is installed             | ''                   |
+| Host      | host machine where the OpenSearch DB is installed                | ''                   |
 +-----------+------------------------------------------------------------------+----------------------+
-| Port      | port where the ElasticSearch DB listen                           | 9203                 |
+| Port      | port where the OpenSearch DB listen                              | 9203                 |
 +-----------+------------------------------------------------------------------+----------------------+
-| User      | username of the ElasticSearch DB   (optional)                    | None                 |
+| User      | username of the OpenSearch DB   (optional)                       | None                 |
 +-----------+------------------------------------------------------------------+----------------------+
-| Password  | password of the ElasticSearch DB   (optional)                    | None                 |
+| Password  | password of the OpenSearch DB   (optional)                       | None                 |
 +-----------+------------------------------------------------------------------+----------------------+
-| Index     | ElasticSearch index                                              | ''                   |
+| Index     | OpenSearch index                                                 | ''                   |
 +-----------+------------------------------------------------------------------+----------------------+
 | BufferSize| maximum size of the buffer before sending                        | 1000                 |
 +-----------+------------------------------------------------------------------+----------------------+

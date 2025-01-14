@@ -445,7 +445,7 @@ def getElasticDBParameters(fullname):
     parameters = {}
 
     # Check if connection is through certificates and get certificate parameters
-    # Elasticsearch use certs
+    # OpenSearch use certs
     result = gConfig.getOption(cs_path + "/CRT")
     if not result["OK"]:
         # No CRT option found, try at the common place
@@ -464,7 +464,7 @@ def getElasticDBParameters(fullname):
         parameters["Password"] = None
         parameters["User"] = None
 
-        # Elasticsearch ca_certs
+        # OpenSearch ca_certs
         result = gConfig.getOption(cs_path + "/ca_certs")
         if not result["OK"]:
             # No CA certificate found, try at the common place
@@ -477,7 +477,7 @@ def getElasticDBParameters(fullname):
             ca_certs = result["Value"]
         parameters["ca_certs"] = ca_certs
 
-        # Elasticsearch client_key
+        # OpenSearch client_key
         result = gConfig.getOption(cs_path + "/client_key")
         if not result["OK"]:
             # No client private key found, try at the common place
@@ -490,7 +490,7 @@ def getElasticDBParameters(fullname):
             client_key = result["Value"]
         parameters["client_key"] = client_key
 
-        # Elasticsearch client_cert
+        # OpenSearch client_cert
         result = gConfig.getOption(cs_path + "/client_cert")
         if not result["OK"]:
             # No cient certificate found, try at the common place
@@ -542,7 +542,7 @@ def getElasticDBParameters(fullname):
             dbHost = "localhost"
     parameters["Host"] = dbHost
 
-    # Elasticsearch standard port
+    # OpenSearch standard port
     result = gConfig.getOption(cs_path + "/Port")
     if not result["OK"]:
         # No individual port number found, try at the common place

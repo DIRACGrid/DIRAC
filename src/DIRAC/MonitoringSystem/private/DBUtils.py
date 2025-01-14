@@ -31,7 +31,7 @@ class DBUtils:
 
     It implements few methods used to create the plots.
 
-    param: list __units it is elasticsearch specific unites
+    param: list __units it is opensearch specific unites
     param: list __unitvalues the units in second
     param: list __esunits used to determine the buckets size
 

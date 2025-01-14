@@ -21,10 +21,10 @@ services:
       start_period: 60s
     pull_policy: always
 
-  elasticsearch:
+  opensearch:
     image: ${ES_VER}
-    container_name: elasticsearch
-    hostname: elasticsearch
+    container_name: opensearch
+    hostname: opensearch
     ports:
       - 9200:9200
     env_file: "${ES_VER}.env"
@@ -110,7 +110,7 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-      elasticsearch:
+      opensearch:
         condition: service_healthy
       s3-direct:
         condition: service_started

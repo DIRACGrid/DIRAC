@@ -1,6 +1,6 @@
 """
 It is used to test the MonitoringReporter.
-It requires MonitoringDB which is based on elasticsearch and MQ which is optional...
+It requires MonitoringDB which is based on opensearch and MQ which is optional...
 
 CS (not strictly necessary):
 

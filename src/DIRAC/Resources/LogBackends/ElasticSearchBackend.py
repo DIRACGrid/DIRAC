@@ -1,7 +1,8 @@
 """
-ElasticSearch wrapper
+OpenSearch wrapper
 """
 import logging
+
 from cmreslogging.handlers import CMRESHandler
 
 from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
@@ -11,16 +12,16 @@ class ElasticSearchBackend(AbstractBackend):
     """
     ElasticsearchBackend is used to create an abstraction of the handler and the formatter concepts from logging.
     Here, we have a CMRESHandler which is part of an external library named 'cmreslogging' based on 'logging'.
-    CMRESHandler is a specific handler created to send log records to an ElasticSearch DB. It does not need a Formatter
+    CMRESHandler is a specific handler created to send log records to an OpenSearch DB. It does not need a Formatter
     object.
     """
 
     def __init__(self, backendParams=None, backendFilters=None):
         """
         CMRESHandler needs, at least, a hostname, a username, a password, a port and a specific index
-        from the ElasticSearch DB to send log records.
+        from the OpenSearch DB to send log records.
         """
-        # We give a format containing only asctime to add the field in elasticsearch
+        # We give a format containing only asctime to add the field in opensearch
         # asctime is not created at the initialization of the LogRecords but built in the format process
         if not backendParams:
             backendParams = {}

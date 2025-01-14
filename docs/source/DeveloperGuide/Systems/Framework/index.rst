@@ -111,6 +111,6 @@ The MonitoringUtilities module provides the functionality needed to store or del
 Dynamic Component Monitoring
 ============================
 
-This system takes care of managing monitoring information of DIRAC component. It is based on ElasticSearch database. It is based on MonitoringSystem.
+This system takes care of managing monitoring information of DIRAC component. It is based on OpenSearch.
 The information is collected by the __storeProfiling periodic task on the SystemAdministartor. The task is disabled by default.
 The MonitoringReporter is used to propagate the DB whith the collected values.

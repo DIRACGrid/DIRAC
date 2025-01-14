@@ -1,4 +1,4 @@
-""" Module containing a front-end to the ElasticSearch-based JobParametersDB.
+""" Module containing a front-end to the OpenSearch-based JobParametersDB.
     This is a drop-in replacement for MySQL-based table JobDB.JobParameters.
 
     The following class methods are provided for public usage

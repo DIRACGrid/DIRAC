@@ -1,5 +1,5 @@
 """ MonitoringHistoryCorrector is the implementation class of the BaseHistoryCorrector
-    which gets resources consumption history data from the ElasticSearch Monitoring
+    which gets resources consumption history data from the OpenSearch Monitoring
     database
 """
 import datetime
@@ -16,7 +16,7 @@ class MonitoringHistoryCorrector(BaseHistoryCorrector):
         return S_OK()
 
     def _getHistoryData(self, timeSpan, groupToUse):
-        """Get history data from ElasticSearch Monitoring database
+        """Get history data from OpenSearch Monitoring database
 
         :param int timeSpan: time span
         :param str groupToUse: requested user group

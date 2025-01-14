@@ -928,14 +928,14 @@ killRunsv() {
 #
 # killES:
 #
-#   it makes sure there are no ElasticSearch processes running. If it finds any, it
+#   it makes sure there are no OpenSearch processes running. If it finds any, it
 #   terminates it.
 #
 #.............................................................................
 
 killES() {
   echo '==> [killES]'
-  pkill -u lhcbci elasticsearch
+  pkill -u lhcbci opensearch
   echo '==> [Done killES]'
 }
 

@@ -1,5 +1,5 @@
 """ MySQL based WMSHistory accounting.
-    It's suggested to replace this with the ElasticSearch based WMSHistory monitoring.
+    It's suggested to replace this with the OpenSearch based WMSHistory monitoring.
 
     Filled by the agent "WorkloadManagement/StatesAccountingAgent"
 """

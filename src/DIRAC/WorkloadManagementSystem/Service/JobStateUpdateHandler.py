@@ -22,7 +22,7 @@ class JobStateUpdateHandlerMixin:
     @classmethod
     def initializeHandler(cls, svcInfoDict):
         """
-        Determines the switching of ElasticSearch and MySQL backends
+        Determines the switching of OpenSearch and MySQL backends
         """
         try:
             result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobDB", "JobDB")
@@ -214,7 +214,7 @@ class JobStateUpdateHandlerMixin:
         for key, value in staticData.items():
             result = self.elasticJobParametersDB.setJobParameter(int(jobID), key, value, vo=self.vo)
             if not result["OK"]:
-                self.log.error("Failed to add Job Parameters to ElasticSearch", result["Message"])
+                self.log.error("Failed to add Job Parameters to OpenSearch", result["Message"])
 
         # Restore the Running status if necessary
         result = self.jobDB.getJobAttributes(jobID, ["Status"])
