@@ -1,3 +1,22 @@
+[v8.0.63]
+
+*Core
+
+FIX: (#7984) Add locks to AuthManager caches
+
+*ResourceStatusSystem
+
+CHANGE: (#7982) dirac-rss-sync: flip the default status to Active
+FIX: (#7979) Docs: removed Setup from Operations
+
+*WorkloadManagementSystem
+
+FIX: (#7977) PilotBundle: compatibility with py2 and py3
+
+*DataManagementSystem
+
+FIX: (#7976) Apply a workaround for https://github.com/xrootd/xrootd/issues/2396
+
 [v8.0.62]
 
 *RequestManagementSystem
