@@ -85,26 +85,17 @@ Copy over the values that we had on the CS for the StorageElements::
 
     $ dirac-rss-sync --init -o LogLevel=VERBOSE
 
-*WARNING*: If the StorageElement does not have a particular StatusType declared
+*WARNING*: If the StorageElement does not have a particular StatusType declared, on the CS, this script will set it to Active.
 
-*WARNING*: on the CS, this script will set it to Banned. If that happens, you will
+You can check the status of the resources with the following command::
 
-*WARNING*: have to issue the dirac-rss-status script over the elements that need
-
-*WARNING*: to be fixed.
-
+    $ dirac-rss-list-status --element Resource --elementType StorageElement
 
 --------------------
 Set statuses by HAND
 --------------------
 
-In case you entered the WARNING ! on point 4, you may need to identify the
-status of your StorageElements. Try to detect the Banned SEs using the
-following::
-
-    $ dirac-rss-list-status --element Resource --elementType StorageElement --status Banned
-
-If is there any SE to be modified, you can do it as follows::
+If there is any SE status to be modified, you can do it as follows::
 
     $ dirac-rss-set-status --element Resource --name CERN-USER --statusType ReadAccess --status Active --reason "Why not?"
     # This matches all StatusTypes

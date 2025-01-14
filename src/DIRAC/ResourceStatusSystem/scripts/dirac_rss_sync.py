@@ -4,7 +4,7 @@ Script that synchronizes the resources described on the CS with the RSS.
 By default, it sets their Status to `Unknown`, StatusType to `all` and
 reason to `Synchronized`. However, it can copy over the status on the CS to
 the RSS. Important: If the StatusType is not defined on the CS, it will set
-it to Banned !
+it to Active !
 """
 from DIRAC import S_OK
 from DIRAC import exit as DIRACExit
@@ -44,7 +44,7 @@ def parseSwitches():
 
     # Default values
     switches.setdefault("element", None)
-    switches.setdefault("defaultStatus", "Banned")
+    switches.setdefault("defaultStatus", "Active")
     if not switches["element"] in ("all", "Site", "Resource", "Node", None):
         gLogger.error(f"Found {switches['element']} as element switch")
         gLogger.error("Please, check documentation below")
@@ -242,7 +242,7 @@ def main():
 
     registerSwitches()
     switchDict = parseSwitches()
-    DEFAULT_STATUS = switchDict.get("defaultStatus", "Banned")
+    DEFAULT_STATUS = switchDict.get("defaultStatus", "Active")
 
     # Run script
     run()
