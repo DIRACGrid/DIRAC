@@ -17,8 +17,6 @@ dependencies:
   - cmreshandler >1.0.0b4
   - cwltool
   - db12
-  - elasticsearch <7.14
-  - elasticsearch-dsl
   - opensearch-py
   - fts3
   - gitpython >=2.1.0

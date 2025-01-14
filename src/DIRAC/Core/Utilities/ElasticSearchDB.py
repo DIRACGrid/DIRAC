@@ -11,39 +11,22 @@ from datetime import datetime, timedelta
 from urllib import parse as urlparse
 
 import certifi
+from opensearchpy import OpenSearch as Elasticsearch
+from opensearchpy.exceptions import (
+    ConflictError,
+    NotFoundError,
+    RequestError,
+    TransportError,
+)
+from opensearchpy.exceptions import (
+    ConnectionError as ElasticConnectionError,
+)
+from opensearchpy.helpers import BulkIndexError, bulk
 
 try:
-    from opensearchpy import OpenSearch as Elasticsearch
-    from opensearchpy.exceptions import (
-        ConflictError,
-        NotFoundError,
-        RequestError,
-        TransportError,
-    )
-    from opensearchpy.exceptions import (
-        ConnectionError as ElasticConnectionError,
-    )
-    from opensearchpy.helpers import BulkIndexError, bulk
+    from opensearchpy import A, Q, Search
 except ImportError:
-    from elasticsearch import Elasticsearch
-    from elasticsearch.exceptions import (
-        ConflictError,
-        NotFoundError,
-        RequestError,
-        TransportError,
-    )
-    from elasticsearch.exceptions import (
-        ConnectionError as ElasticConnectionError,
-    )
-    from elasticsearch.helpers import BulkIndexError, bulk
-
-try:
-    try:
-        from opensearchpy import A, Q, Search
-    except ImportError:
-        from opensearch_dsl import A, Q, Search
-except ImportError:
-    from elasticsearch_dsl import A, Q, Search
+    from opensearch_dsl import A, Q, Search
 
 
 from DIRAC import S_ERROR, S_OK, gLogger
