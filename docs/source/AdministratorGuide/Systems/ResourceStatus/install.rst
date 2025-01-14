@@ -14,11 +14,11 @@ CS Configuration
 
 The configuration for RSS sits under the following path on the CS following the usual /Operations section convention::
 
-    /Operations/[Defaults|SetupName]/ResourceStatus
+    /Operations/Defaults/ResourceStatus
 
 Please, make sure you have the following schema::
 
-    /Operations/[Defaults|SetupName]/ResourceStatus
+    /Operations/Defaults/ResourceStatus
       /Config
         State        = InActive
         Cache        = 300

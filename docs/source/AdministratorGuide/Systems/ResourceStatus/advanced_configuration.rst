@@ -25,7 +25,7 @@ This section describes the policies and the conditions to match elements.
 
 ::
 
-  /Operations/[Defaults|SetupName]/ResourceStatus
+  /Operations/Defaults/ResourceStatus
                           /Policies
                               /PolicyName
                                   policyType = policyType
@@ -70,7 +70,7 @@ It applies the same idea as in `Policies`_, but the number of options is larger.
 
 ::
 
-  /Operations/[Defaults|SetupName]/ResourceStatus
+  /Operations/Defaults/ResourceStatus
                           /PolicyActions
                               /PolicyActionName
                                   actionType = actionType
@@ -110,7 +110,7 @@ This section defines the notification groups ( right now, only for EmailAction )
 
 ::
 
-  /Operations/[Defaults|SetupName]/ResourceStatus
+  /Operations/Defaults/ResourceStatus
                           /Notification
                               /NotificationGroupName
                                   users = email@address, email@address
