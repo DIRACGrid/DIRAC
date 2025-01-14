@@ -311,11 +311,11 @@ fullInstallDIRAC() {
 
   # populate RSS
   echo "==> Populating RSS DB"
-  dirac-rss-sync --element Site -o LogLevel=VERBOSE
-  dirac-rss-sync --element Resource -o LogLevel=VERBOSE
+  dirac-rss-sync --element Site --defaultStatus Banned -o LogLevel=VERBOSE
+  dirac-rss-sync --element Resource --defaultStatus Banned -o LogLevel=VERBOSE
   # init RSS
   echo "==> Initializing status of sites and resources in RSS"
-  dirac-rss-sync --init -o LogLevel=VERBOSE
+  dirac-rss-sync --init --defaultStatus Banned -o LogLevel=VERBOSE
   # Setting by hand
   dirac-rss-set-status --element Resource --name ProductionSandboxSE --status Active --reason "Why not?"
   dirac-rss-set-status --element Resource --name jenkins.cern.ch --status Active --reason "Why not?"
