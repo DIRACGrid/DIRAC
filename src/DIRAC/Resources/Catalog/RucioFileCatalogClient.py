@@ -717,7 +717,6 @@ class RucioFileCatalogClient(FileCatalogClientBase):
         except DataIdentifierNotFound:
             resDict["Failed"][path] = "No such file or directory"
         except Exception as err:
-            breakpoint()
             return S_ERROR(str(err))
         return S_OK(resDict)
 
