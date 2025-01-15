@@ -27,6 +27,7 @@ from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, S_IRWXG, S_IRWXU, 
 from urllib import parse
 
 from collections.abc import Iterator
+from resource import getrlimit, setrlimit, RLIMIT_NPROC
 from typing import cast, Literal, Union, Any, Optional
 
 import gfal2  # pylint: disable=import-error
@@ -138,7 +139,12 @@ class GFAL2_StorageBase(StorageBase):
             gfal2.set_verbose(gfal2.verbose_level.trace)
 
         # # gfal2 API
+        # Workaround for https://github.com/xrootd/xrootd/issues/2396
+        # xrootd internaly sets nproc, so we save the limit and reset it
+        # just after creating the context
+        saved_limits = getrlimit(RLIMIT_NPROC)
         self.ctx = gfal2.creat_context()
+        setrlimit(RLIMIT_NPROC, saved_limits)
 
         # by default turn off BDII checks
         self.ctx.set_opt_boolean("BDII", "ENABLE", False)
