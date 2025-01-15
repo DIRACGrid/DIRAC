@@ -60,6 +60,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
         "resolveDataset",
         "getLFNForPFN",
         "getUserDirectory",
+        "getFileUserMetadata",
     ]
 
     WRITE_METHODS = FileCatalogClientBase.WRITE_METHODS + [
@@ -78,6 +79,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
         "createDataset",
         "changePathOwner",
         "changePathMode",
+        "setMetadata",
     ]
 
     NO_LFN_METHODS = FileCatalogClientBase.NO_LFN_METHODS + [
@@ -703,10 +705,11 @@ class RucioFileCatalogClient(FileCatalogClientBase):
         """Get the meta data attached to a file, but also to
         all its parents
         """
+        path=next(iter(path))
         resDict = {"Successful": {}, "Failed": {}}
         try:
             did = self.__getDidsFromLfn(path)
-            meta = [met for met in self.client.get_metadata_bulk(dids=[did], inherit=True)]
+            meta = next(self.client.get_metadata_bulk(dids=[did], inherit=True, plugin="ALL"))
             if meta["did_type"] == "FILE":  # Should we also return the metadata for the directories ?
                 resDict["Successful"][path] = meta
             else:
@@ -763,6 +766,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
     def setMetadata(self, path, metadataDict):
         """Add metadata to the given path"""
         pathMetadataDict = {}
+        path=next(iter(path))
         pathMetadataDict[path] = metadataDict
         return self.setMetadataBulk(pathMetadataDict)
 
