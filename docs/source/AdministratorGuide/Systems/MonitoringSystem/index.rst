@@ -55,7 +55,7 @@ For example::
    }
 
 
-The following option can be set in `Systems/Monitoring/<Setup>/Databases/MonitoringDB`:
+The following option can be set in `Systems/Monitoring/Databases/MonitoringDB`:
 
    *IndexPrefix*:  Prefix used to prepend to indexes created in the ES instance. If this
                    is not present in the CS, the indices are prefixed with the setup name.
@@ -93,7 +93,7 @@ This can be done either via the CS or directly in the web app in the Configurati
 
    Operations
    {
-     <VO|Setup|Defaults>
+     <VO|Defaults>
      {
        MonitoringBackends
        {

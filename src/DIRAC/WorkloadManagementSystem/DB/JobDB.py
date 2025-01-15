@@ -5,7 +5,7 @@
 
 **Configuration Parameters**:
 
-The following options can be set in ``Systems/WorkloadManagement/<Setup>/Databases/JobDB``
+The following options can be set in ``Systems/WorkloadManagement/Databases/JobDB``
 
 * *MaxRescheduling*:     Set the maximum number of times a job can be rescheduled, default *3*.
 * *CompressJDLs*:        Enable compression of JDLs when they are stored in the database, default *False*.

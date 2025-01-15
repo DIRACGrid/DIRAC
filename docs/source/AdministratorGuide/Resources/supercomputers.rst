@@ -112,7 +112,7 @@ Solutions seen in the previous section cannot work in an environment without ext
 The well-known Pilot-Job paradigm on which the DIRAC WMS is based does not apply in these circumstances: the Pilot-Jobs cannot fetch jobs from DIRAC.
 Thus, such supercomputers require slightly changes in the WMS: we reintroduced the push model.
 
-To leverage the Push model, one has to add the :mod:`~DIRAC.WorkloadManagementSystem.Agent.PushJobAgent` to the ``Systems/WorkloadManagement/<Setup>/Agents`` CS section, such as::
+To leverage the Push model, one has to add the :mod:`~DIRAC.WorkloadManagementSystem.Agent.PushJobAgent` to the ``Systems/WorkloadManagement/Agents`` CS section, such as::
 
    Systems
    PushJobAgent_<Name>

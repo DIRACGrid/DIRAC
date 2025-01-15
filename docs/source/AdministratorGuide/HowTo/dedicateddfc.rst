@@ -14,7 +14,7 @@ Prepare the CS for the new Database
 ------------------------------------
 
 First the information for the new database is added to the Configuration System. All the parameters in the
-``Systems/DataManagement/<SETUP>/Databases/NFCDB`` section can be copied from the ``FileCatalogDB`` section, except that
+``Systems/DataManagement/Databases/NFCDB`` section can be copied from the ``FileCatalogDB`` section, except that
 the ``DBName`` has to be pointing to the soon to be created database::
 
   DBName = NFCDB

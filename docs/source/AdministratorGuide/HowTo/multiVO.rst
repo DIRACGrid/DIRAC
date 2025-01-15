@@ -213,7 +213,7 @@ Option value could be different, it depends on UI
 installed on server
 ::
 
-   Systems/WorkloadManagement/<setup>/Agents/PilotStatusAgent/GridEnv = /etc/profile.d/grid-env
+   Systems/WorkloadManagement/Agents/PilotStatusAgent/GridEnv = /etc/profile.d/grid-env
 
 
 
