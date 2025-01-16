@@ -219,6 +219,7 @@ services:
       - DIRACX_DB_URL_JOBDB=mysql+aiomysql://Dirac:Dirac@mysql/JobDB
       - DIRACX_DB_URL_JOBLOGGINGDB=mysql+aiomysql://Dirac:Dirac@mysql/JobLoggingDB
       - DIRACX_DB_URL_SANDBOXMETADATADB=mysql+aiomysql://Dirac:Dirac@mysql/SandboxMetadataDB
+      - DIRACX_DB_URL_PILOTAGENTSDB=mysql+aiomysql://Dirac:Dirac@mysql/PilotAgentsDB
       - 'DIRACX_OS_DB_PILOTLOGSDB={"sqlalchemy_dsn": "mysql+aiomysql://Dirac:Dirac@mysql/PilotLogsDB"}'
       - DIRACX_SERVICE_AUTH_TOKEN_KEY=file:///signing-key/rs256.key
       - DIRACX_SERVICE_AUTH_ALLOWED_REDIRECTS=["http://diracx:8000/docs/oauth2-redirect"]
