@@ -10,7 +10,7 @@ for authentication and authorization purposes.
 Components can be instructed to use a "shifter proxy" for authN and authZ of their service calls.
 A shifter proxy is proxy certificate, which should be:
 
-- specified in the "Operations/<setup>/Shifter" section of the CS
+- specified in the "Operations/Shifter" section of the CS
 - uploaded to the ProxyManager (i.e. using "--upload" option of dirac-proxy-init)
 
 Within an agent, in the "initialize" method, we can specify::

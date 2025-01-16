@@ -4,7 +4,7 @@
 Job Scheduling
 =========================================
 
-The */Operations/<vo>/<setup>/JobScheduling* section contains all parameters that define DIRAC's behaviour when deciding what job has to be
+The */Operations/<vo>/JobScheduling* section contains all parameters that define DIRAC's behaviour when deciding what job has to be
 executed. Here's a list of parameters that can be defined:
 
 =========================  ========================================================  ===============================================================================================
@@ -46,7 +46,7 @@ Example
 ========
 
 An example with all the options under *JobScheduling* follows. Remember that JobScheduling is defined under
-*/Operations/<vo>/<setup>/JobScheduling* for multi-VO installations, and */Operations/<setup>/JobScheduling* for single-VO ones::
+*/Operations/<vo>/JobScheduling* for multi-VO installations, and */Operations/JobScheduling* for single-VO ones::
 
  JobScheduling
  {

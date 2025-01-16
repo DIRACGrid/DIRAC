@@ -10,7 +10,7 @@ class CTAStorage(GFAL2_XROOTStorage):
 
     It basically is XROOT with added tape capabilities.
     Since CTA supports ONLY xroot, do not forget to add
-    xroot in your `Operations/<Setup>/DataManagement/RegistrationProtocols` list
+    xroot in your `Operations/DataManagement/RegistrationProtocols` list
 
     Configuration example::
 

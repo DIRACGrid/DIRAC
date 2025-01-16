@@ -43,7 +43,7 @@ For this reason, there is the possibility to define a entry in the Operation sec
 
 .. code-block:: guess
 
-  Operations/<Setup>/MainServers = server1, server2
+  Operations/MainServers = server1, server2
 
 
 There should be no port, no protocol. In the system configuration, one can then write:
