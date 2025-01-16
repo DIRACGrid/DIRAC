@@ -4,8 +4,8 @@ Helper for accessing /Operations
 
 */Operations* section is *VO* and *setup* aware. That means that configuration for different *VO/setup* will have a different CS path:
 
- * For multi-VO installations */Operations/<vo>/<setup>* should be used.
- * For single-VO installations */Operations/<setup>* should be used.
+ * For multi-VO installations */Operations/<vo>* should be used.
+ * For single-VO installations */Operations* should be used.
 
 In any case, there is the possibility to define a default configuration, that is valid for all the *setups*. The *Defaults* keyword can be used instead of the setup. For instance */Operations/myvo/Defaults*.
 
