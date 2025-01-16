@@ -170,7 +170,7 @@ class HTCondorCEComputingElement(ComputingElement):
 
         executable = os.path.join(self.workingDirectory, executable)
 
-        useCredentials = "use_x509userproxy = true"
+        useCredentials = ""
         # If tokenFile is present, then we transfer it to the worker node
         if tokenFile:
             useCredentials += textwrap.dedent(
@@ -242,10 +242,7 @@ class HTCondorCEComputingElement(ComputingElement):
         if not result["OK"]:
             return result
 
-        htcEnv = {
-            "_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "GSI",
-        }
-
+        htcEnv = {}
         if self.useSSLSubmission:
             # this is guaranteed by _prepareProxy above
             proxyFile = os.environ.get("X509_USER_PROXY")
