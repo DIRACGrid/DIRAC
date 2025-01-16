@@ -1,3 +1,11 @@
+[v8.0.64]
+
+*Resources
+
+FIX: (#7993) adapt HTCondorCE to latest htcondor version
+
+FIX: (#7992) pensearch configuration should consume the ca_certs parameter if it is there
+
 [v8.0.63]
 
 *Core
