@@ -441,6 +441,19 @@ def getElasticDBParameters(fullname):
     :return: S_OK(dict)/S_ERROR()
     """
 
+    def _getCACerts(cs_path):
+        result = gConfig.getOption(cs_path + "/ca_certs")
+        if not result["OK"]:
+            # No CA certificate found, try at the common place
+            result = gConfig.getOption("/Systems/NoSQLDatabases/ca_certs")
+            if not result["OK"]:
+                return None
+            else:
+                ca_certs = result["Value"]
+        else:
+            ca_certs = result["Value"]
+        return ca_certs
+
     cs_path = getDatabaseSection(fullname)
     parameters = {}
 
@@ -464,17 +477,9 @@ def getElasticDBParameters(fullname):
         parameters["Password"] = None
         parameters["User"] = None
 
-        # OpenSearch ca_certs
-        result = gConfig.getOption(cs_path + "/ca_certs")
-        if not result["OK"]:
-            # No CA certificate found, try at the common place
-            result = gConfig.getOption("/Systems/NoSQLDatabases/ca_certs")
-            if not result["OK"]:
-                return S_ERROR("Failed to get the configuration parameter: ca_certs.")
-            else:
-                ca_certs = result["Value"]
-        else:
-            ca_certs = result["Value"]
+        ca_certs = _getCACerts(cs_path)
+        if ca_certs is None:
+            return S_ERROR("Failed to get the configuration parameter: ca_certs.")
         parameters["ca_certs"] = ca_certs
 
         # OpenSearch client_key
@@ -521,6 +526,11 @@ def getElasticDBParameters(fullname):
                 return S_ERROR("Failed to get the configuration parameter: User.")
         dbUser = result["Value"]
         parameters["User"] = dbUser
+
+        # ca_certs is not mandatory
+        ca_certs = _getCACerts(cs_path)
+        if ca_certs:
+            parameters["ca_certs"] = ca_certs
 
     # Check optional parameters: Host, Port, SSL
     result = gConfig.getOption(cs_path + "/Host")
