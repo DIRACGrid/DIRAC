@@ -92,7 +92,7 @@ This can be done either via the CS or directly in the web app in the Configurati
 
    Operations
    {
-     <VO|Setup|Defaults>
+     <VO|Defaults>
      {
        MonitoringBackends
        {

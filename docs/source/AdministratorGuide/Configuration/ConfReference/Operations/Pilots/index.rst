@@ -2,7 +2,7 @@
 Pilot version
 =========================================
 
-The */Operations/<vo>/<setup>/Pilot* section define What version of DIRAC will be used to submit pilot jobs to the resources.
+The */Operations/<vo>/Pilot* section define What version of DIRAC will be used to submit pilot jobs to the resources.
 
 ==================  ========================================================  ===============================================================================================
 Parameter           Description                                               Default value
