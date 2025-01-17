@@ -5,7 +5,6 @@ import uuid
 import datetime
 from copy import deepcopy
 
-import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security import Locations
 from DIRAC.Resources.Catalog.Utilities import checkCatalogArguments
@@ -20,7 +19,7 @@ from rucio.common.exception import (
     CannotAuthenticate,
     MissingClientParameter,
 )
-from rucio.common.utils import chunks, extract_scope
+from rucio.common.utils import extract_scope
 
 sLog = gLogger.getSubLogger(__name__)
 
@@ -704,10 +703,11 @@ class RucioFileCatalogClient(FileCatalogClientBase):
         all its parents
         """
         resDict = {"Successful": {}, "Failed": {}}
+        path = next(iter(path))
         try:
             did = self.__getDidsFromLfn(path)
-            meta = [met for met in self.client.get_metadata_bulk(dids=[did], inherit=True)]
-            if meta["did_type"] == "FILE":  # Should we also return the metadata for the directories ?
+            meta = next(self.client.get_metadata_bulk(dids=[did], inherit=True, plugin="ALL"))
+            if meta["did_type"] == "FILE":
                 resDict["Successful"][path] = meta
             else:
                 resDict["Failed"][path] = "Not a file"
@@ -763,13 +763,13 @@ class RucioFileCatalogClient(FileCatalogClientBase):
     def setMetadata(self, path, metadataDict):
         """Add metadata to the given path"""
         pathMetadataDict = {}
+        path = next(iter(path))
         pathMetadataDict[path] = metadataDict
         return self.setMetadataBulk(pathMetadataDict)
 
     @checkCatalogArguments
     def removeMetadata(self, path, metadata):
         """Remove the specified metadata for the given file"""
-        resDict = {"Successful": {}, "Failed": {}}
         try:
             did = self.__getDidsFromLfn(path)
             failedMeta = {}
@@ -783,9 +783,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                     failedMeta[meta] = str(err)
 
             if failedMeta:
-                metaExample = list(failedMeta)[0]
-                result = S_ERROR(f"Failed to remove {len(failedMeta)} metadata, e.g. {failedMeta[metaExample]}")
-                result["FailedMetadata"] = failedMeta
+                return S_ERROR(f"Failed to remove {len(failedMeta)} metadata")
         except Exception as err:
             return S_ERROR(str(err))
         return S_OK()
