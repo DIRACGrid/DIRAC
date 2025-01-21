@@ -11,14 +11,13 @@
     See the Configuration/Resources/Computing documention for details on
     where to set the option parameters.
 """
-
-import io
 import json
 import os
 import re
 import shutil
 import sys
 import tempfile
+from pathlib import Path
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -64,10 +63,6 @@ chmod 644 retcode
 echo "Finishing inner container wrapper scripts at `date`."
 
 """
-# Path to a directory on CVMFS to use as a fallback if no
-# other version found: Only used if node has user namespaces
-FALLBACK_SINGULARITY = "/cvmfs/oasis.opensciencegrid.org/mis/singularity/current/bin"
-
 CONTAINER_WRAPPER_NO_INSTALL = """#!/bin/bash
 
 echo "Starting inner container wrapper scripts (no install) at `date`."
@@ -112,7 +107,6 @@ class SingularityComputingElement(ComputingElement):
             self.__root = self.ceParameters["ContainerRoot"]
         self.__workdir = CONTAINER_WORKDIR
         self.__innerdir = CONTAINER_INNERDIR
-        self.__singularityBin = "singularity"
         self.__installDIRACInContainer = self.ceParameters.get("InstallDIRACInContainer", False)
         if isinstance(self.__installDIRACInContainer, str) and self.__installDIRACInContainer.lower() in (
             "false",
@@ -121,47 +115,6 @@ class SingularityComputingElement(ComputingElement):
             self.__installDIRACInContainer = False
 
         self.processors = int(self.ceParameters.get("NumberOfProcessors", 1))
-
-    def __hasUserNS(self):
-        """Detect if this node has user namespaces enabled.
-        Returns True if they are enabled, False otherwise.
-        """
-        try:
-            with open("/proc/sys/user/max_user_namespaces") as proc_fd:
-                maxns = int(proc_fd.readline().strip())
-                # Any "reasonable number" of namespaces is sufficient
-                return maxns > 100
-        except Exception:
-            # Any failure, missing file, doesn't contain a number, etc. and we
-            # assume they are disabled.
-            return False
-
-    def __hasSingularity(self):
-        """Search the current PATH for an exectuable named singularity.
-        Returns True if it is found, False otherwise.
-        """
-        if self.ceParameters.get("ContainerBin"):
-            binPath = self.ceParameters["ContainerBin"]
-            if os.path.isfile(binPath) and os.access(binPath, os.X_OK):
-                self.__singularityBin = binPath
-                self.log.debug(f'Use singularity from "{self.__singularityBin}"')
-                return True
-        if "PATH" not in os.environ:
-            return False  # Hmm, PATH not set? How unusual...
-        searchPaths = os.environ["PATH"].split(os.pathsep)
-        # We can use CVMFS as a last resort if userNS is enabled
-        if self.__hasUserNS():
-            searchPaths.append(FALLBACK_SINGULARITY)
-        for searchPath in searchPaths:
-            binPath = os.path.join(searchPath, "singularity")
-            if os.path.isfile(binPath):
-                # File found, check it's executable to be certain:
-                if os.access(binPath, os.X_OK):
-                    self.log.debug(f'Found singularity at "{binPath}"')
-                    self.__singularityBin = binPath
-                    return True
-        # No suitable binaries found
-        return False
 
     @staticmethod
     def __findInstallBaseDir():
@@ -326,11 +279,12 @@ class SingularityComputingElement(ComputingElement):
         We blank almost everything to prevent contamination from the host system.
         """
 
-        if not self.__installDIRACInContainer:
-            payloadEnv = {k: v for k, v in os.environ.items() if ENV_VAR_WHITELIST.match(k)}
-        else:
+        if self.__installDIRACInContainer:
             payloadEnv = {}
+        else:
+            payloadEnv = {k: v for k, v in os.environ.items() if ENV_VAR_WHITELIST.match(k)}
 
+        payloadEnv["PATH"] = str(Path(sys.executable).parent)
         payloadEnv["TMP"] = "/tmp"
         payloadEnv["TMPDIR"] = "/tmp"
         payloadEnv["X509_USER_PROXY"] = os.path.join(self.__innerdir, "proxy")
@@ -361,10 +315,6 @@ class SingularityComputingElement(ComputingElement):
         """
         rootImage = self.__root
         renewTask = None
-        # Check that singularity is available
-        if not self.__hasSingularity():
-            self.log.error("Singularity is not installed on PATH.")
-            return S_ERROR("Failed to find singularity")
 
         self.log.info("Creating singularity container")
 
@@ -396,19 +346,19 @@ class SingularityComputingElement(ComputingElement):
         # Mount /cvmfs in if it exists on the host
         withCVMFS = os.path.isdir("/cvmfs")
         innerCmd = os.path.join(self.__innerdir, "dirac_container.sh")
-        cmd = [self.__singularityBin, "exec"]
-        cmd.extend(["--contain"])  # use minimal /dev and empty other directories (e.g. /tmp and $HOME)
-        cmd.extend(["--ipc"])  # run container in a new IPC namespace
-        cmd.extend(["--workdir", baseDir])  # working directory to be used for /tmp, /var/tmp and $HOME
-        cmd.extend(["--home", "/tmp"])  # Avoid using small tmpfs for default $HOME and use scratch /tmp instead
-        if self.__hasUserNS():
-            cmd.append("--userns")
+        outerCmd = ["apptainer", "exec"]
+        outerCmd.extend(["--contain"])  # use minimal /dev and empty other directories (e.g. /tmp and $HOME)
+        outerCmd.extend(["--ipc"])  # run container in a new IPC namespace
+        outerCmd.extend(["--workdir", baseDir])  # working directory to be used for /tmp, /var/tmp and $HOME
+        outerCmd.extend(["--home", "/tmp"])  # Avoid using small tmpfs for default $HOME and use scratch /tmp instead
+        outerCmd.append("--userns")
         if withCVMFS:
-            cmd.extend(["--bind", "/cvmfs"])
+            outerCmd.extend(["--bind", "/cvmfs"])
         if not self.__installDIRACInContainer:
-            cmd.extend(["--bind", "{0}:{0}:ro".format(self.__findInstallBaseDir())])
+            outerCmd.extend(["--bind", "{0}:{0}:ro".format(self.__findInstallBaseDir())])
 
-        bindPaths = self.ceParameters.get("ContainerBind", "").split(",")
+        rawBindPaths = self.ceParameters.get("ContainerBind", "")
+        bindPaths = rawBindPaths.split(",") if rawBindPaths else []
         siteName = gConfig.getValue("/LocalSite/Site", "")
         ceName = gConfig.getValue("/LocalSite/GridCE", "")
         if siteName and ceName:
@@ -441,20 +391,20 @@ class SingularityComputingElement(ComputingElement):
 
         for bindPath in bindPaths:
             if len(bindPath.split(":::")) == 1:
-                cmd.extend(["--bind", bindPath.strip()])
+                outerCmd.extend(["--bind", bindPath.strip()])
             elif len(bindPath.split(":::")) in [2, 3]:
-                cmd.extend(["--bind", ":".join([bp.strip() for bp in bindPath.split(":::")])])
+                outerCmd.extend(["--bind", ":".join([bp.strip() for bp in bindPath.split(":::")])])
 
         if "ContainerOptions" in self.ceParameters:
             containerOpts = self.ceParameters["ContainerOptions"].split(",")
             for opt in containerOpts:
-                cmd.extend([opt.strip()])
-        if os.path.isdir(rootImage) or os.path.isfile(rootImage):
-            cmd.extend([rootImage, innerCmd])
-        else:
+                outerCmd.extend([opt.strip()])
+        if not (os.path.isdir(rootImage) or os.path.isfile(rootImage)):
             # if we are here is because there's no image, or it is not accessible (e.g. not on CVMFS)
             self.log.error("Singularity image to exec not found: ", rootImage)
             return S_ERROR("Failed to find singularity image to exec")
+        outerCmd.append(rootImage)
+        cmd = outerCmd + [innerCmd]
 
         self.log.debug(f"Execute singularity command: {cmd}")
         self.log.debug(f"Execute singularity env: {self.__getEnv()}")
@@ -464,6 +414,13 @@ class SingularityComputingElement(ComputingElement):
 
         if not result["OK"]:
             self.log.error("Fail to run Singularity", result["Message"])
+            # If we fail to run the container try to run it again with verbose output
+            # to help with debugging.
+            self.log.error("Singularity command was: ", cmd)
+            self.log.error(f"Singularity env was: {self.__getEnv()}")
+            debugCmd = [outerCmd[0], "--debug"] + outerCmd[1:] + ["echo", "All okay"]
+            self.log.error("Running with debug output to facilitate debugging", debugCmd)
+            result = systemCall(0, debugCmd, callbackFunction=self.sendOutput, env=self.__getEnv())
             if proxy and renewTask:
                 gThreadScheduler.removeTask(renewTask)
             self.__deleteWorkArea(baseDir)

@@ -1,9 +1,11 @@
 """ Test class for Job Agent
 """
+import multiprocessing
 import os
 import pytest
 import time
-from unittest.mock import MagicMock
+from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
@@ -587,7 +589,7 @@ def test_submitJob(mocker, mockJWInput, expected):
         ("Pool/Singularity", jobScript % "1", (["Failed to find singularity"], []), ([], [])),
     ],
 )
-def test_submitAndCheckJob(mocker, localCE, job, expectedResult1, expectedResult2):
+def test_submitAndCheckJob(monkeypatch, mocker, localCE, job, expectedResult1, expectedResult2):
     """Test the submission and the management of the job status."""
     jobName = "testJob.py"
     with open(jobName, "w") as execFile:
@@ -606,8 +608,14 @@ def test_submitAndCheckJob(mocker, localCE, job, expectedResult1, expectedResult
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobAgent._sendFailoverRequest", return_value=S_OK())
     mocker.patch("DIRAC.Core.Security.X509Chain.X509Chain.dumpAllToString", return_value=S_OK())
     mocker.patch(
-        "DIRAC.Resources.Computing.SingularityComputingElement.SingularityComputingElement._SingularityComputingElement__hasSingularity",
-        return_value=False,
+        "DIRAC.Resources.Computing.SingularityComputingElement.SingularityComputingElement.submitJob",
+        return_value=S_ERROR("Failed to find singularity"),
+    )
+    # We need to force ProcessPoolExecutor to use the fork context to enable the
+    # mocks to propagate to the subprocesses used by PoolComputingElement
+    mocker.patch(
+        "concurrent.futures.ProcessPoolExecutor",
+        side_effect=partial(ProcessPoolExecutor, mp_context=multiprocessing.get_context("fork")),
     )
 
     jobAgent = JobAgent("JobAgent", "Test")
