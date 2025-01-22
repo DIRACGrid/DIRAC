@@ -15,6 +15,10 @@ Example:
   /formation/user/v/vhamar/0/20: 1 files, 0 sub-directories
   16 matched files have been put in formation-user-v-vhamar.lfns
 """
+
+import fnmatch
+from datetime import datetime, timedelta
+
 from DIRAC.Core.Base.Script import Script
 
 
@@ -54,11 +58,6 @@ def main():
     from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
     from DIRAC.Core.Security.ProxyInfo import getProxyInfo
     from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-    from datetime import datetime, timedelta
-    import sys
-    import os
-    import time
-    import fnmatch
 
     fc = FileCatalog()
 
@@ -108,8 +107,10 @@ def main():
     res = fc.getDirectoryDump(baseDir, timeout=360)
     if not res["OK"]:
         gLogger.error("Error retrieving directory contents", f"{baseDir} {res['Message']}")
+        DIRAC.exit(1)
     elif baseDir in res["Value"]["Failed"]:
         gLogger.error("Error retrieving directory contents", f"{baseDir} {res['Value']['Failed'][baseDir]}")
+        DIRAC.exit(1)
     else:
         dirContents = res["Value"]["Successful"][baseDir]
         subdirs = dirContents["SubDirs"]
