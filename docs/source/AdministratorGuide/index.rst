@@ -22,8 +22,6 @@ This administration documentation refers to the "Core" DIRAC project.
    HowTo/index
    Configuration/index
    Resources/index
-   Tutorials/index
-   technologyPreviews
    Systems/index
 
 .. toctree::
