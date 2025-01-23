@@ -6,9 +6,9 @@ class TestRucioFileCatalogClient(unittest.TestCase):
 
     def setUp(self):
         self.patcher = patch.object(RucioFileCatalogClient, 'client', new_callable=MagicMock)
-        self.mock_client = self.patcher.start()
         self.client = RucioFileCatalogClient()
         self.client.scopes = ['test_scope']
+        self.patcher.start()
 
     def tearDown(self):
         self.patcher.stop()
