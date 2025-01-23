@@ -4,8 +4,6 @@
 FTS3 support in DIRAC
 ---------------------
 
-.. versionadded:: v6r20
-
 .. contents:: Table of contents
    :depth: 2
 
@@ -148,10 +146,6 @@ The FTS3Operation goes to ``Processed`` when all the files are in a final state,
 FTS3 Plugins
 ------------
 
-.. versionadded:: v7r1p37
-    The ``FTS3Plugin`` option
-
-
 The ``FTS3Plugin`` option allows one to specify a plugin to alter some default choices made by the FTS3 system. These choices concern:
 
    * the list of third party protocols used
@@ -164,8 +158,6 @@ This can be useful if you want to implement a matrix-like selection of protocols
 
 MultiHop support
 ----------------
-
-.. versionadded:: v7r3p21
 
 .. |trade|   unicode:: U+2122
 

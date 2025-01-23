@@ -46,10 +46,7 @@ Within the TS a user can (for example):
 
 Disadvantages:
 
-- For very large installations, the submission may be perceived as slow, since there is no use (not yet) of Parametric jobs.
-
-  .. versionadded:: v6r20p3
-     Bulk submission of jobs is working for the transformations, so job submission can be sped up considerably.
+- For very large installations, the submission may be perceived as slow, since there is no use (not yet) of Parametric jobs. Bulk submission of jobs is working for the transformations, so job submission can be sped up considerably.
 
 Several improvements have been made in the TS to handle scalability, and extensibility issues.
 While the system structure remains intact, "tricks" like threading and caching have been extensively applied.
@@ -690,9 +687,6 @@ Important: if the old production has some files already in MaxReset status, then
 Multi VO Configuration
 ----------------------
 
-
-
-.. versionadded:: v6r20p5
 
 There are two possibilities to configure the agents of the transformation system for the use in a multi VO installation.
 

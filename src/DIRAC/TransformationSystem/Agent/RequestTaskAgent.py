@@ -12,8 +12,6 @@ The following options can be set for the RequestTaskAgent.
 * The options *SubmitTasks*, *MonitorTasks*, *MonitorFiles*, and *CheckReserved*
   need to be assigned any non-empty value to be activated
 
-* .. versionadded:: v6r20p5
-
    It is possible to run the RequestTaskAgent without a *shifterProxy* or
    *ShifterCredentials*, in this case the credentials of the authors of the
    transformations are used to submit the jobs to the RMS. This enables the use of
