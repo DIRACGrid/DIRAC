@@ -90,10 +90,7 @@ source "${TESTCODE}/DIRAC/tests/Jenkins/utilities.sh"
 installSite() {
   echo "==> [installSite]"
 
-  generateCA
-  generateCertificates
-
-  echo -n > "${SERVERINSTALLDIR}/dirac-ci-install.cfg"
+  # echo -n > "${SERVERINSTALLDIR}/dirac-ci-install.cfg"
   getCFGFile
 
   echo "==> Fixing install.cfg file"
@@ -127,7 +124,30 @@ installSite() {
   bash "installer.sh"
   rm "installer.sh"
   echo "source \"$PWD/diracos/diracosrc\"" > "$PWD/bashrc"
-  mv "${SERVERINSTALLDIR}/etc/grid-security/"* "${SERVERINSTALLDIR}/diracos/etc/grid-security/"
+
+  mkdir -p "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/"
+  mkdir -p "${SERVERINSTALLDIR}/user/"
+
+  echo "==> CAs and certificates"
+
+  # Copy the CA to the list of trusted CA
+  cp "/ca/certs/ca.cert.pem" "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/"
+
+  # Copy the cert and host key to the certificates directory
+  cp /ca/certs/hostcert.pem "${SERVERINSTALLDIR}/diracos/etc/grid-security/"
+  cp /ca/certs/hostkey.pem "${SERVERINSTALLDIR}/diracos/etc/grid-security/"
+
+  # Generate the hash link file required by openSSL to index CA certificates
+  caHash=$(openssl x509 -in "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/ca.cert.pem" -noout -hash)
+  # We make a relative symlink on purpose (i.e. not the full path to ca.cert.pem)
+  # because otherwise the BundleDeliveryClient will send the full path, which
+  # will be wrong on the client
+  ln -s "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/ca.cert.pem" "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/$caHash.0"
+
+  # Copy the user cert and key to the correct directory
+  cp /ca/certs/client.pem "${SERVERINSTALLDIR}/user/"
+  cp /ca/certs/client.key "${SERVERINSTALLDIR}/user/"
+
   rm -rf "${SERVERINSTALLDIR}/etc"
   ln -s "${SERVERINSTALLDIR}/diracos/etc" "${SERVERINSTALLDIR}/etc"
   source diracos/diracosrc
@@ -135,7 +155,6 @@ installSite() {
     pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}[server]"
   done
   cd -
-
 
   echo "==> Sourcing bashrc"
   source "${SERVERINSTALLDIR}/bashrc"
@@ -210,13 +229,6 @@ fullInstallDIRAC() {
   fi
   if [[ -e "${SERVERINSTALLDIR}/diracos/etc/Production.cfg" ]]; then
     cat "${SERVERINSTALLDIR}/diracos/etc/Production.cfg"
-  fi
-
-  # Dealing with security stuff
-  # generateCertificates
-  if ! generateUserCredentials; then
-    echo "ERROR: generateUserCredentials failed" >&2
-    exit 1
   fi
 
   if ! diracCredentials; then
