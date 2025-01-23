@@ -86,13 +86,13 @@ Creating a user proxy
   The switches below will create a proxy of group "dirac_user" (if defined) and will securely upload such
   proxy to the DIRAC proxy store (ProxyManager), from where it could later be downloaded::
 
-        dirac-proxy-init --group dirac_user --upload
+        dirac-proxy-init --group dirac_user
 
 
   The additional "--debug" switch (alias of "-ddd") can be used for debugging purposes,
   and its output would end up being similar to the following::
 
-        $ dirac-proxy-init --group dirac_user --upload --debug
+        $ dirac-proxy-init --group dirac_user --debug
         Generating proxy...
         Enter Certificate password:
         Contacting CS...
@@ -129,9 +129,6 @@ Creating a user proxy
   - a short user proxy is created with the DIRAC extension carrying the DIRAC group name and with the
     VOMS extension corresponding to the DIRAC group if the gLite UI environment is available.
     This proxy is stored in the local "/tmp/" directory, as shown.
-
-  If the gLite UI environment is not available, the VOMS extensions will not be loaded into the proxy.
-  This is not a serious problem, still most of the operations will be possible.
 
 
 Getting the proxy information
