@@ -282,11 +282,9 @@ class RequestValidator(metaclass=DIRACSingleton):
             ownershipCheck = request.OwnerDN
         if not hasattr(request, "OwnerDN") and hasattr(
             request, "Owner"
-        ):  # Requests created by v8.1 client for v8.1 servers
+        ):  # Requests created by v9 client for v9 servers
             ownershipCheck = request.Owner
-        if hasattr(request, "OwnerDN") and hasattr(
-            request, "Owner"
-        ):  # Requests created by v8.0 client for v8.1 servers
+        if hasattr(request, "OwnerDN") and hasattr(request, "Owner"):  # Requests created by v8.0 client for v9 servers
             ownershipCheck = request.Owner
         # ##
 
