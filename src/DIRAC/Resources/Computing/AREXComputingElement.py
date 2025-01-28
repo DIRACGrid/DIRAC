@@ -304,7 +304,7 @@ class AREXComputingElement(ComputingElement):
         if not delegationURL:
             return S_ERROR(f"Cannot extract delegation ID from the response: {response.headers}")
 
-        delegationID = delegationURL.split("new/")[-1]
+        delegationID = delegationURL.split("/")[-1]
         certificateSigningRequestData = response.text
         return S_OK((delegationID, certificateSigningRequestData))
 
