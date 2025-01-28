@@ -34,7 +34,6 @@ Example:
    'RescheduleCounter': '0',
    'RescheduleTime': 'None',
    'RetrievedFlag': 'False',
-   'RunNumber': '0',
    'Site': 'EELA.UTFSM.cl',
    'StartExecTime': '2011-02-14 11:27:48',
    'Status': 'Done',
