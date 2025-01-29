@@ -7,6 +7,7 @@
     In case you want to further extend it you are required to follow the note on the
     initialize method and on the _getClients method.
 """
+
 import time
 import datetime
 import concurrent.futures
@@ -27,6 +28,9 @@ from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 
 AGENT_NAME = "Transformation/TaskManagerAgentBase"
+
+
+HACKED_TRANS_ID = 98765
 
 
 class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
@@ -598,14 +602,16 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         self._logInfo(f"Obtained {len(tasks)} tasks for submission", method=method, transID=transID)
 
         # Prepare tasks and submits them, by chunks
-        chunkSize = self.maxParametricJobs if self.bulkSubmissionFlag else self.tasksPerLoop
+
+        bulkSubmissionFlag = True if transID == HACKED_TRANS_ID else self.bulkSubmissionFlag
+        chunkSize = self.maxParametricJobs if bulkSubmissionFlag else self.tasksPerLoop
         for taskDictChunk in breakDictionaryIntoChunks(tasks, chunkSize):
             res = self._prepareAndSubmitAndUpdateTasks(
                 transID, transBody, taskDictChunk, owner, ownerDN, ownerGroup, clients
             )
             if not res["OK"]:
                 return res
-            self._logVerbose(f"Submitted {len(taskDictChunk)} jobs, bulkSubmissionFlag = {self.bulkSubmissionFlag}")
+            self._logVerbose(f"Submitted {len(taskDictChunk)} jobs, bulkSubmissionFlag = {bulkSubmissionFlag}")
 
         return S_OK()
 
@@ -625,8 +631,11 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
 
         method = "_prepareAndSubmitAndUpdateTasks"
         # prepare tasks
+
+        bulkSubmissionFlag = True if transID == HACKED_TRANS_ID else self.bulkSubmissionFlag
+
         preparedTransformationTasks = clients["TaskManager"].prepareTransformationTasks(
-            transBody, tasks, owner, ownerGroup, ownerDN, self.bulkSubmissionFlag
+            transBody, tasks, owner, ownerGroup, ownerDN, bulkSubmissionFlag
         )
         self._logDebug(
             "prepareTransformationTasks return value:", preparedTransformationTasks, method=method, transID=transID
