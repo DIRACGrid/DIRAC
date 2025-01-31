@@ -112,11 +112,11 @@ class WorkflowTasks(TaskBase):
             ownerDN = res["Value"][0]
 
         if bulkSubmissionFlag:
-            return self.__prepareTasksBulk(transBody, taskDict, owner, ownerGroup, ownerDN)
+            return self._prepareTasksBulk(transBody, taskDict, owner, ownerGroup, ownerDN)
         # not a bulk submission
-        return self.__prepareTasks(transBody, taskDict, owner, ownerGroup, ownerDN)
+        return self._prepareTasks(transBody, taskDict, owner, ownerGroup, ownerDN)
 
-    def __prepareTasksBulk(self, transBody, taskDict, owner, ownerGroup, ownerDN):
+    def _prepareTasksBulk(self, transBody, taskDict, owner, ownerGroup, ownerDN):
         """Prepare transformation tasks with a single job object for bulk submission
 
         :param str transBody: transformation job template
@@ -132,7 +132,7 @@ class WorkflowTasks(TaskBase):
         else:
             return S_OK({})
 
-        method = "__prepareTasksBulk"
+        method = "_prepareTasksBulk"
         startTime = time.time()
 
         # Prepare the bulk Job object with common parameters
@@ -257,7 +257,7 @@ class WorkflowTasks(TaskBase):
         taskDict["BulkJobObject"] = oJob
         return S_OK(taskDict)
 
-    def __prepareTasks(self, transBody, taskDict, owner, ownerGroup, ownerDN):
+    def _prepareTasks(self, transBody, taskDict, owner, ownerGroup, ownerDN):
         """Prepare transformation tasks with a job object per task
 
         :param str transBody: transformation job template
@@ -273,7 +273,7 @@ class WorkflowTasks(TaskBase):
         else:
             return S_OK({})
 
-        method = "__prepareTasks"
+        method = "_prepareTasks"
         startTime = time.time()
 
         oJobTemplate = self.jobClass(transBody)
