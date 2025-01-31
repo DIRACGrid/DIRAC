@@ -453,14 +453,12 @@ class StalledJobAgent(AgentModule):
         return result
 
     def _checkHeartBeat(self, jobID, jobDict):
-        """Get info from HeartBeat."""
-        result = self.jobDB.getHeartBeatData(jobID)
+        """Get info from HeartBeat"""
         lastCPUTime = 0
         lastWallTime = 0
-        lastHeartBeatTime = jobDict["StartExecTime"]
-        if lastHeartBeatTime == "None":
-            lastHeartBeatTime = 0
+        lastHeartBeatTime = jobDict.get("StartExecTime")
 
+        result = self.jobDB.getHeartBeatData(jobID)
         if result["OK"]:
             for name, value, heartBeatTime in result["Value"]:
                 if name == "CPUConsumed":
@@ -479,7 +477,8 @@ class StalledJobAgent(AgentModule):
                         pass
                 if isinstance(heartBeatTime, str):
                     heartBeatTime = datetime.datetime.strptime(heartBeatTime, "%Y-%m-%d %H:%M:%S")
-                if heartBeatTime > lastHeartBeatTime:
+
+                if not lastHeartBeatTime or lastHeartBeatTime == "None" or heartBeatTime > lastHeartBeatTime:
                     lastHeartBeatTime = heartBeatTime
 
         return lastCPUTime, lastWallTime, lastHeartBeatTime
