@@ -1,3 +1,28 @@
+[v8.0.65]
+
+*TransformationSystem
+
+FIX: (#8019) make 2 methods of WorkflowTaskAgent extendable
+
+*WorkloadManagementSystem
+
+FIX: (#8015) StalledJobAgent: if StartExecTime is not set, use the last recorded heartbeat
+
+*Resources
+
+FIX: (#8011) adapt AREX to ARC7 delegation output
+
+*DataManagementSystem
+
+FIX: (#8001) exit with status 1 in case of error
+
+*WorkloadManagement
+
+CHANGE: (#8000) Use apptainer for SingularityComputingElement
+CHANGE: (#8000) Drop support for SingularityComputingElement without user namespaces
+CHANGE: (#8000) Enchance debugging output if SingularityComputingElement fails
+CHANGE: (#8000) Drop support for using apptainer from outside of DIRACOS2
+
 [v8.0.64]
 
 *Resources
