@@ -38,9 +38,7 @@ def main():
     diracAdmin = DiracAdmin()
 
     result = diracAdmin.getPilotSummary()
-    if result["OK"]:
-        DIRAC.exit(0)
-    else:
+    if not result["OK"]:
         print(result["Message"])
         DIRAC.exit(2)
 

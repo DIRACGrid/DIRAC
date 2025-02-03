@@ -71,7 +71,7 @@ def main():
     Script.disableCS()
     Script.parseCommandLine()
 
-    from DIRAC import gLogger
+    from DIRAC import gLogger, exit as dExit
     from DIRAC.Core.Security.ProxyInfo import getProxyInfo, getProxyStepsInfo
     from DIRAC.Core.Security.ProxyInfo import formatProxyInfoAsString, formatProxyStepsInfoAsString
     from DIRAC.Core.Security import VOMS
@@ -87,7 +87,7 @@ def main():
     result = getProxyInfo(params.proxyLoc, not params.vomsEnabled)
     if not result["OK"]:
         gLogger.error(result["Message"])
-        sys.exit(1)
+        dExit(1)
     infoDict = result["Value"]
     gLogger.notice(formatProxyInfoAsString(infoDict))
     if not infoDict["isProxy"]:
@@ -101,12 +101,13 @@ def main():
 
     def invalidProxy(msg):
         gLogger.error("Invalid proxy:", msg)
-        sys.exit(1)
+        dExit(1)
 
     if params.uploadedInfo:
         result = gProxyManager.getUserProxiesInfo()
         if not result["OK"]:
             gLogger.error("Could not retrieve the uploaded proxies info", result["Message"])
+            dExit(1)
         else:
             uploadedInfo = result["Value"]
             if not uploadedInfo:
@@ -156,8 +157,6 @@ def main():
                 api.auth.userinfo()
         except Exception as e:
             invalidProxy(f"Failed to access DiracX: {e}")
-
-    sys.exit(0)
 
 
 if __name__ == "__main__":

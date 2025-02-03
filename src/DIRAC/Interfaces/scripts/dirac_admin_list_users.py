@@ -45,6 +45,9 @@ def main():
                 print("All users registered:")
             for username in result["Value"]:
                 print(f" {username}")
+        else:
+            print(result["Message"])
+            DIRAC.exit(1)
 
     def describeUsersInGroup(group=False):
         result = diracAdmin.csListUsers(group)
@@ -55,6 +58,9 @@ def main():
                 print("All users registered:")
             result = diracAdmin.csDescribeUsers(result["Value"])
             print(diracAdmin.pPrint.pformat(result["Value"]))
+        else:
+            print(result["Message"])
+            DIRAC.exit(1)
 
     for group in args:
         if "all" in args:
@@ -63,9 +69,6 @@ def main():
             printUsersInGroup(group)
         else:
             describeUsersInGroup(group)
-
-    for error in errorList:
-        print("ERROR %s: %s" % error)
 
     DIRAC.exit(exitCode)
 
