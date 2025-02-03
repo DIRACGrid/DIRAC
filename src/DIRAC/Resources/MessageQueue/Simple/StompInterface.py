@@ -10,6 +10,32 @@ from typing import Optional, Type
 from DIRAC import gConfig
 from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueOrRaise
 
+# Setting for the reconnection handling by stomp interface.
+# See e.g. the description of Transport class in
+# https://github.com/jasonrbriggs/stomp.py/blob/master/stomp/transport.py
+
+RECONNECT_SLEEP_INITIAL = 1  # [s]  Initial delay before reattempting to establish a connection.
+RECONNECT_SLEEP_INCREASE = 0.5  # Factor by which sleep delay is increased 0.5 means increase by 50%.
+RECONNECT_SLEEP_MAX = 120  # [s] The maximum delay that can be reached independent of increasing procedure.
+RECONNECT_SLEEP_JITTER = 0.1  # Random factor to add. 0.1 means a random number from 0 to 10% of the current time.
+RECONNECT_ATTEMPTS_MAX = 1e4  # Maximum attempts to reconnect.
+
+OUTGOING_HEARTBEAT_MS = 15_000
+INCOMING_HEARTBEAT_MS = 15_000
+STOMP_TIMEOUT = 60
+
+
+DEFAULT_CONNECTION_KWARGS = {
+    "keepalive": True,
+    "timeout": STOMP_TIMEOUT,
+    "heartbeats": (OUTGOING_HEARTBEAT_MS, INCOMING_HEARTBEAT_MS),
+    "reconnect_sleep_initial": RECONNECT_SLEEP_INITIAL,
+    "reconnect_sleep_increase": RECONNECT_SLEEP_INCREASE,
+    "reconnect_sleep_max": RECONNECT_SLEEP_MAX,
+    "reconnect_sleep_jitter": RECONNECT_SLEEP_JITTER,
+    "reconnect_attempts_max": RECONNECT_ATTEMPTS_MAX,
+}
+
 
 def _resolve_brokers(alias: str, port: int, ipv4Only: bool = False, ipv6Only: bool = False) -> list[tuple[str, int]]:
     """
@@ -207,7 +233,9 @@ class StompConsumer:
         as a callback to the reconnect listener
 
         """
-
+        # We need to explicitely call disconnect to avoid leaving
+        # threads behind
+        conn.disconnect()
         conn.connect(username=username, passcode=password, wait=True)
         for dest in destinations:
             subscribtionID = getSubscriptionID(broker, dest)
@@ -283,6 +311,7 @@ class StompProducer(stomp.Connection):
         :param kwargs: given to ~stomp.Connection constructor
         """
         brokers = _resolve_brokers(host, port)
+
         super().__init__(brokers, *args, **kwargs)
 
         self.connect(username, password, True)
@@ -306,6 +335,7 @@ class StompProducer(stomp.Connection):
             try:
                 super().send(self._destination, body, **kwargs)
             except stomp.exception.StompException:
+                self.disconnect()
                 self.connect(self._username, self._password, True)
             else:
                 return True
@@ -400,6 +430,6 @@ def createProducer(
             raise ValueError("There should be exactly one destination given in parameter or in the CS")
         destination = csDestinations[0]
 
-    producer = StompProducer(host, port, username, password, destination)
+    producer = StompProducer(host, port, username, password, destination, **DEFAULT_CONNECTION_KWARGS)
 
     return producer
