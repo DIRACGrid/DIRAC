@@ -200,6 +200,9 @@ class StompMQConnector(MQConnector):
 
         for _ in range(10):
             try:
+                # We need to explicitely call disconnect to avoid leaving
+                # threads behind
+                self.connection.disconnect()
                 self.connection.connect(username=user, passcode=password, wait=True)
 
                 if self.connection.is_connected():
