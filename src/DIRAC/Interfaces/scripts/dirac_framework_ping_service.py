@@ -78,7 +78,7 @@ def main():
         exitCode = 2
     elif not result["OK"]:
         print("ERROR: ", result["Message"])
-        exitCode = 2
+        exitCode = 1
 
     DIRAC.exit(exitCode)
 

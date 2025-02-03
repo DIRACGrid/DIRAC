@@ -10,8 +10,9 @@ Example:
   $ dirac-wms-job-status 2
   JobID=2 Status=Done; MinorStatus=Execution Complete; Site=EELA.UTFSM.cl;
 """
-import os
 import datetime
+import os
+
 from DIRAC.Core.Base.Script import Script
 
 
@@ -28,7 +29,6 @@ def main():
     from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
 
     dirac = Dirac()
-    exitCode = 0
 
     jobs = []
     for key, value in sws:
@@ -58,12 +58,9 @@ def main():
             print("JobID=" + str(job), end=" ")
             for status in result["Value"][job].items():
                 print("%s=%s;" % status, end=" ")
-            print()
     else:
-        exitCode = 2
         print(f"ERROR: {result['Message']}")
-
-    DIRACExit(exitCode)
+        DIRACExit(2)
 
 
 if __name__ == "__main__":

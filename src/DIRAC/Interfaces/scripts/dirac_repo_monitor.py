@@ -17,13 +17,10 @@ def main():
 
     dirac = Dirac(withRepo=True, repoLocation=repoLocation)
 
-    exitCode = 0
     result = dirac.monitorRepository(printOutput=True)
     if not result["OK"]:
         print("ERROR: ", result["Message"])
-        exitCode = 2
-
-    DIRAC.exit(exitCode)
+        DIRAC.exit(2)
 
 
 if __name__ == "__main__":
