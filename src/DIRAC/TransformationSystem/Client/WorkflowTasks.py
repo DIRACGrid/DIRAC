@@ -3,18 +3,18 @@ import os
 import time
 from io import StringIO
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.DErrno import ETSDATA, ETSUKN
+from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.TransformationSystem.Client.TaskManager import TaskBase
-from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 
 
 class WorkflowTasks(TaskBase):
@@ -106,11 +106,11 @@ class WorkflowTasks(TaskBase):
             ownerGroup = proxyInfo["group"]
 
         if bulkSubmissionFlag:
-            return self.__prepareTasksBulk(transBody, taskDict, owner, ownerGroup)
+            return self._prepareTasksBulk(transBody, taskDict, owner, ownerGroup)
         # not a bulk submission
-        return self.__prepareTasks(transBody, taskDict, owner, ownerGroup)
+        return self._prepareTasks(transBody, taskDict, owner, ownerGroup)
 
-    def __prepareTasksBulk(self, transBody, taskDict, owner, ownerGroup):
+    def _prepareTasksBulk(self, transBody, taskDict, owner, ownerGroup):
         """Prepare transformation tasks with a single job object for bulk submission
 
         :param str transBody: transformation job template
@@ -125,7 +125,7 @@ class WorkflowTasks(TaskBase):
         else:
             return S_OK({})
 
-        method = "__prepareTasksBulk"
+        method = "_prepareTasksBulk"
         startTime = time.time()
 
         # Prepare the bulk Job object with common parameters
@@ -248,7 +248,7 @@ class WorkflowTasks(TaskBase):
         taskDict["BulkJobObject"] = oJob
         return S_OK(taskDict)
 
-    def __prepareTasks(self, transBody, taskDict, owner, ownerGroup):
+    def _prepareTasks(self, transBody, taskDict, owner, ownerGroup):
         """Prepare transformation tasks with a job object per task
 
         :param str transBody: transformation job template
@@ -263,7 +263,7 @@ class WorkflowTasks(TaskBase):
         else:
             return S_OK({})
 
-        method = "__prepareTasks"
+        method = "_prepareTasks"
         startTime = time.time()
 
         oJobTemplate = self.jobClass(transBody)
