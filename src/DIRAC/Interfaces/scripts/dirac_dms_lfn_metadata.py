@@ -37,7 +37,6 @@ def main():
 
     dirac = Dirac()
     exitCode = 0
-    errorList = []
 
     if len(lfns) == 1:
         try:
