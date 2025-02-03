@@ -32,9 +32,7 @@ def main():
 
     diracAdmin = DiracAdmin()
     result = diracAdmin.getServicePorts(setup, printOutput=True)
-    if result["OK"]:
-        DIRAC.exit(0)
-    else:
+    if not result["OK"]:
         print(result["Message"])
         DIRAC.exit(2)
 

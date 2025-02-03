@@ -9,8 +9,7 @@ Upload proxy.
 Example:
   $ dirac-admin-proxy-upload
 """
-import sys
-
+from DIRAC import exit as dExit
 from DIRAC.Core.Base.Script import Script
 from DIRAC.FrameworkSystem.Client.ProxyUpload import CLIParams, uploadProxy
 
@@ -25,8 +24,8 @@ def main():
     retVal = uploadProxy(cliParams)
     if not retVal["OK"]:
         print(retVal["Message"])
-        sys.exit(1)
-    sys.exit(0)
+        dExit(1)
+    dExit(0)
 
 
 if __name__ == "__main__":

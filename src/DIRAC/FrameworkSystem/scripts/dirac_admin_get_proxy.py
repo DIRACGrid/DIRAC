@@ -13,10 +13,10 @@ Example:
 import os
 
 import DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Base.Script import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 
 class Params:
