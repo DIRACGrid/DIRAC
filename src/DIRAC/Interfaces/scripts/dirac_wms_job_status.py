@@ -58,6 +58,7 @@ def main():
             print("JobID=" + str(job), end=" ")
             for status in result["Value"][job].items():
                 print("%s=%s;" % status, end=" ")
+            print()
     else:
         print(f"ERROR: {result['Message']}")
         DIRACExit(2)
