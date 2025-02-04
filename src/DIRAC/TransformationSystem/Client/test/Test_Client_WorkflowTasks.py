@@ -3,6 +3,7 @@
 # pylint: disable=protected-access,missing-docstring,invalid-name
 
 from unittest.mock import MagicMock
+
 import pytest
 
 from DIRAC import gLogger
@@ -136,3 +137,28 @@ def test__handleDestination(mocker, paramsDict, expected):
     mocker.patch("DIRAC.TransformationSystem.Client.TaskManagerPlugin.getSitesForSE", side_effect=ourgetSitesForSE)
     res = wfTasks._handleDestination(paramsDict)
     assert sorted(res) == sorted(expected)
+
+
+@pytest.mark.parametrize(
+    "seqDict, paramsDict, expected",
+    [
+        ({}, {}, None),
+        ({"Site": "Site1", "JobName": "Job1", "JOB_ID": "00000001"}, {}, None),
+        (
+            {"Site": "Site1", "JobName": "Job1", "JOB_ID": "00000001"},
+            {"Site": "Site1", "JobType": "Sprucing", "TransformationID": 1},
+            None,
+        ),
+        (
+            {"Site": "Site1", "JobName": "Job1", "JOB_ID": "00000001"},
+            {"Site": "Site1", "JobType": "Sprucing", "TransformationID": 1, "InputData": ["a1", "a2"]},
+            ["a1", "a2"],
+        ),
+        # ({"a1": "aa1", "a2": "aa2", "a3": "aa3"}, {"b1": "bb1", "b2": "bb2", "b3": "bb3"}, {"b1": "bb1", "b2": "bb2"}, ["a1", "a2"]),
+    ],
+)
+def test__handleInputsBulk(mocker, seqDict, paramsDict, expected):
+    """Test the _handleInputsBulk method WorkflowTasks"""
+    mocker.patch("DIRAC.TransformationSystem.Client.TaskManagerPlugin.getSitesForSE", side_effect=ourgetSitesForSE)
+    res = wfTasks._handleInputsBulk(seqDict, paramsDict, transID=1)
+    assert res == expected
