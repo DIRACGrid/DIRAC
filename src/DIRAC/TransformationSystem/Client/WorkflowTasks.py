@@ -7,7 +7,7 @@ from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.DErrno import ETSDATA, ETSUKN
+from DIRAC.Core.Utilities.DErrno import ETSUKN
 from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Interfaces.API.Job import Job
@@ -82,6 +82,8 @@ class WorkflowTasks(TaskBase):
 
         self.outputDataModule_o = None
         self.objectLoader = ObjectLoader()
+
+        self.parametricSequencedKeys = ["JOB_ID", "PRODUCTION_ID", "InputData"]
 
     def prepareTransformationTasks(self, transBody, taskDict, owner="", ownerGroup="", bulkSubmissionFlag=False):
         """Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
@@ -191,22 +193,7 @@ class WorkflowTasks(TaskBase):
                 method=method,
             )
 
-            # Handle Input Data
-            inputData = paramsDict.get("InputData")
-            if inputData:
-                if isinstance(inputData, str):
-                    inputData = inputData.replace(" ", "").split(";")
-                self._logVerbose(f"Setting input data to {inputData}", transID=transID, method=method)
-                seqDict["InputData"] = inputData
-            elif paramSeqDict.get("InputData") is not None:
-                self._logError("Invalid mixture of jobs with and without input data")
-                return S_ERROR(ETSDATA, "Invalid mixture of jobs with and without input data")
-
-            for paramName, paramValue in paramsDict.items():
-                if paramName not in ("InputData", "Site", "TargetSE"):
-                    if paramValue:
-                        self._logVerbose(f"Setting {paramName} to {paramValue}", transID=transID, method=method)
-                        seqDict[paramName] = paramValue
+            inputData = self._handleInputsBulk(seqDict, paramsDict, transID)
 
             outputParameterList = []
             if self.outputDataModule:
@@ -235,7 +222,7 @@ class WorkflowTasks(TaskBase):
                 paramSeqDict.setdefault(pName, []).append(seq)
 
         for paramName, paramSeq in paramSeqDict.items():
-            if paramName in ["JOB_ID", "PRODUCTION_ID", "InputData"] + outputParameterList:
+            if paramName in self.parametricSequencedKeys + outputParameterList:
                 res = oJob.setParameterSequence(paramName, paramSeq, addToWorkflow=paramName)
             else:
                 res = oJob.setParameterSequence(paramName, paramSeq)
@@ -398,6 +385,28 @@ class WorkflowTasks(TaskBase):
             res = oJob.setInputData(inputData)
             if not res["OK"]:
                 self._logError(f"Could not set the inputs: {res['Message']}", transID=transID, method="_handleInputs")
+
+    def _handleInputsBulk(self, seqDict, paramsDict, transID):
+        """set job inputs (+ metadata)"""
+        method = "_handleInputsBulk"
+        if seqDict:
+            self._logVerbose(f"Setting job input data to {seqDict}", transID=transID, method=method)
+
+        # Handle Input Data
+        inputData = paramsDict.get("InputData")
+        if inputData:
+            if isinstance(inputData, str):
+                inputData = inputData.replace(" ", "").split(";")
+            self._logVerbose(f"Setting input data {inputData} to {seqDict}", transID=transID, method=method)
+            seqDict["InputData"] = inputData
+
+        for paramName, paramValue in paramsDict.items():
+            if paramName not in ("InputData", "Site", "TargetSE"):
+                if paramValue:
+                    self._logVerbose(f"Setting {paramName} to {paramValue}", transID=transID, method=method)
+                    seqDict[paramName] = paramValue
+
+        return inputData
 
     def _handleRest(self, oJob, paramsDict):
         """add as JDL parameters all the other parameters that are not for inputs or destination"""
