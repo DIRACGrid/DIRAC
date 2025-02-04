@@ -493,7 +493,8 @@ class SSLTransport(BaseTransport):
             # And writting on a socket that received an RST packet
             # triggers a SIGPIPE.
             # In practice, this means that if the server replies to a
-            # dead client with less that 16384 bytes (see),
+            # dead client with less that 16384 bytes
+            # (see https://datatracker.ietf.org/doc/html/rfc8446#section-5.1),
             # we will never notice that we sent the answer to the vacuum.
             # And don't look for a fix, there just isn't.
             wrote = self.oSocket.write(buf)
