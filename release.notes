@@ -1,3 +1,62 @@
+[v9.0.0a41]
+
+*TransformationSystem
+
+FIX: (#8031) make the setting of inputDataBulk extendable
+FIX: (#8022) make 2 methods of WorkflowTaskAgent extendable
+
+*Core
+
+FIX: (#8029) read at most 2^14 bytes at the same time
+FIX: (#8002) one less flag for EnableSecurityLogging
+FIX: (#7988) Add locks to AuthManager caches
+CHANGE: (#7971) Optimise ASN1 decoding in X509Certificate
+FIX: (#7969) Avoid locking in MessageQueueHandler
+
+*Resources
+
+FIX: (#8027) explicitly disconnect Stomp before reconnecting
+FIX: (#8012) adapt AREX to ARC7 delegation output
+FIX: (#7995) adapt HTCondorCE to latest htcondor version
+
+*WorkloadManagementSystem
+
+FIX: (#8020) StalledJobAgent: if StartExecTime is not set, use the last recorded heartbeat
+FIX: (#7986) PilotBundle: compatibility with py2 and py3
+
+*DataManagementSystem
+
+FIX: (#8003) exit with status 1 in case of error
+FIX: (#7989) Apply a workaround for https://github.com/xrootd/xrootd/issues/2396
+
+*CI
+
+FIX: (#7999) Add PilotAgentsDB definition to `tests/CI/docker-compose.yml`
+
+FIX: (#7997) pensearch configuration should consume the ca_certs parameter if it is there
+
+*ResourceStatusSystem
+
+CHANGE: (#7987) dirac-rss-sync: flip the default status to Active
+FIX: (#7983) Docs: removed Setup from Operations
+NEW: (#7972) Add a timeout for GocDB to avoid blocking the CacheFeederAgent
+
+*MonitoringSystem
+
+CHANGE: (#7978) removed ElasticSearch in favor or OpenSearch
+
+*RequestManagementSystem
+
+NEW: (#7975) Allow to disable DM transfer as an FTS failover
+
+*FrameworkSystem
+
+FIX: (#7970) Support https URLs with dirac-framework-ping-service
+
+*Integration tests
+
+FIX: (#7968) mount diracx in init-db container
+
 [v9.0.0a40]
 
 *Core
