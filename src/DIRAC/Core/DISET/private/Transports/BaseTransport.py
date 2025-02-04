@@ -17,6 +17,7 @@ Client <- RequestHandler : Response
 
 Client <- Service        : Close
 """
+
 import time
 from io import BytesIO
 from hashlib import md5
@@ -26,6 +27,9 @@ import selectors
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import MixedEncode
+
+# https://datatracker.ietf.org/doc/html/rfc8446#section-5.1
+TLS_PAYLOAD_SIZE = 16384
 
 
 class BaseTransport:
@@ -198,7 +202,7 @@ class BaseTransport:
             isKeepAlive = self.byteStream.find(BaseTransport.keepAliveMagic, 0, keepAliveMagicLen) == 0
             # While not found the message length or the ka, keep receiving
             while iSeparatorPosition == -1 and not isKeepAlive:
-                retVal = self._read(16384)
+                retVal = self._read(TLS_PAYLOAD_SIZE)
                 # If error return
                 if not retVal["OK"]:
                     return retVal
@@ -225,6 +229,7 @@ class BaseTransport:
             pkgSize = int(self.byteStream[:iSeparatorPosition])
             pkgData = self.byteStream[iSeparatorPosition + 1 :]
             readSize = len(pkgData)
+
             if readSize >= pkgSize:
                 # If we already have all the data we need
                 data = pkgData[:pkgSize]
@@ -235,7 +240,7 @@ class BaseTransport:
                 pkgMem.write(pkgData)
                 # Receive while there's still data to be received
                 while readSize < pkgSize:
-                    retVal = self._read(pkgSize - readSize, skipReadyCheck=True)
+                    retVal = self._read(min(TLS_PAYLOAD_SIZE, pkgSize - readSize), skipReadyCheck=True)
                     if not retVal["OK"]:
                         return retVal
                     if not retVal["Value"]:
