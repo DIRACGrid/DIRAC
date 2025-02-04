@@ -80,6 +80,8 @@ class WorkflowTasks(TaskBase):
 
         self.outputDataModule_o = None
 
+        self.parametricSequencedKeys = ["JOB_ID", "PRODUCTION_ID", "InputData"]
+
     def prepareTransformationTasks(
         self, transBody, taskDict, owner="", ownerGroup="", ownerDN="", bulkSubmissionFlag=False
     ):
@@ -228,7 +230,7 @@ class WorkflowTasks(TaskBase):
                 paramSeqDict.setdefault(pName, []).append(seq)
 
         for paramName, paramSeq in paramSeqDict.items():
-            if paramName in ["JOB_ID", "PRODUCTION_ID", "InputData"] + outputParameterList:
+            if paramName in self.parametricSequencedKeys + outputParameterList:
                 res = oJob.setParameterSequence(paramName, paramSeq, addToWorkflow=paramName)
             else:
                 res = oJob.setParameterSequence(paramName, paramSeq)
