@@ -1,3 +1,17 @@
+[v8.0.66]
+
+*Core
+
+FIX: (#8028) read at most 2^14 bytes at the same time
+
+*TransformationSystem
+
+FIX: (#8026) make the setting of inputDataBulk extendable
+
+*Resources
+
+FIX: (#8025) explicitly disconnect Stomp before reconnecting
+
 [v8.0.65]
 
 *TransformationSystem
