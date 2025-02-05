@@ -151,7 +151,7 @@ class IAMService:
     def getUsersSub(self) -> dict[str, str]:
         """
         Return the mapping based on IAM sub:
-        {sub : nickname}
+        {nickname : sub}
 
         """
         iam_users_raw = self._getIamUserDump()
@@ -171,7 +171,7 @@ class IAMService:
                 nickname = user_info["userName"]
             sub = user_info["id"]
 
-            diracx_user_section[sub] = nickname
+            diracx_user_section[nickname] = sub
 
         # reorder it
         diracx_user_section = dict(sorted(diracx_user_section.items()))
