@@ -112,7 +112,6 @@ Interfaces
    control the ongoing tasks. The Web interfaces are based on the DIRAC Web Portal framework which ensures
    secure access to the system service using X509 certificates loaded into the user browsers.
 
-.. versionadded:: 8.0
     DIRAC also has the ability to implement additional interfaces based on the http protocol, see :ref:`apis`.
 
 DIRAC Framework

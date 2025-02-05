@@ -58,7 +58,7 @@ DIRAC_NO_CFG
   If set to anything, cfg files on the command line must be passed to the command using the --cfg option.
 
 DIRAC_USE_JSON_ENCODE
-  Controls the transition to JSON serialization. See the information in :ref:`jsonSerialization` page (default=Yes since 8.1)
+  Controls the transition to JSON serialization (default=Yes since 9.0)
 
 DIRAC_ROOT_PATH
   If set, overwrites the value of DIRAC.rootPath.

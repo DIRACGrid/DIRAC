@@ -4,8 +4,6 @@
 S3 support in DIRAC
 -------------------
 
-.. versionadded:: v7r0p19
-
 .. contents:: Table of contents
    :depth: 2
 
