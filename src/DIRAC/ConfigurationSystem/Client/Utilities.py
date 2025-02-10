@@ -472,9 +472,9 @@ def getElasticDBParameters(fullname):
             gLogger.debug("Failed to get the configuration parameter: CRT. Using False")
             certs = False
         else:
-            certs = result["Value"]
+            certs = result["Value"].lower() in ("true", "yes", "y", "1")
     else:
-        certs = result["Value"]
+        certs = result["Value"].lower() in ("true", "yes", "y", "1")
     parameters["CRT"] = certs
 
     # If connection is through certificates get the mandatory parameters: ca_certs, client_key, client_cert
@@ -579,9 +579,9 @@ def getElasticDBParameters(fullname):
             gLogger.debug("Failed to get the configuration parameter: SSL. Assuming SSL is needed")
             ssl = True
         else:
-            ssl = False if result["Value"].lower() in ("false", "no", "n") else True
+            ssl = result["Value"].lower() in ("true", "yes", "y", "1")
     else:
-        ssl = False if result["Value"].lower() in ("false", "no", "n") else True
+        ssl = result["Value"].lower() in ("true", "yes", "y", "1")
     parameters["SSL"] = ssl
 
     return S_OK(parameters)
