@@ -17,6 +17,8 @@ from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC.Core.Utilities import TimeUtilities
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
 try:
     from opensearchpy.exceptions import NotFoundError, RequestError
@@ -49,7 +51,8 @@ class ElasticJobParametersDB(ElasticDB):
         """Standard Constructor"""
 
         try:
-            indexPrefix = CSGlobals.getSetup().lower()
+            section = getDatabaseSection("WorkloadManagement/ElasticJobParametersDB")
+            indexPrefix = gConfig.getValue(f"{section}/IndexPrefix", CSGlobals.getSetup()).lower()
 
             # Connecting to the ES cluster
             super().__init__(name, "WorkloadManagement/ElasticJobParametersDB", indexPrefix, parentLogger=parentLogger)
