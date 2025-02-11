@@ -1,3 +1,17 @@
+[v8.0.68]
+
+*WorkloadManagement
+
+FIX: (#8037) get ElasticJobParametersDB index prefix from the configuration
+
+*ConfigurationSystem
+
+FIX: (#8037) evaluate useCRT flag as boolean in Utilities.getElasticDBParameters()
+
+*Core
+
+NEW: (#8036) new command dirac-apptainer-exec for running DIRAC commands inside apptainer
+
 [v8.0.67]
 
 
