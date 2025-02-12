@@ -23,7 +23,7 @@ CREATE TABLE Tasks(
   `CompleteTime` DATETIME,
   `CallBackMethod` VARCHAR(255),
   `SourceTaskID` VARCHAR(32),
-  PRIMARY KEY(`TaskID`,`Status`),
+  PRIMARY KEY(`TaskID`),
   INDEX(`TaskID`,`Status`)
 )ENGINE=INNODB;
 
@@ -41,7 +41,7 @@ CREATE TABLE CacheReplicas(
   `LastUpdate` DATETIME,
   `Reason` VARCHAR(255),
   `Links` INTEGER DEFAULT 0,
-  PRIMARY KEY (`ReplicaID`,`LFN`,`SE`),
+  PRIMARY KEY (`ReplicaID`),
   INDEX(`ReplicaID`,`Status`,`SE`)
 )ENGINE=INNODB;
 
