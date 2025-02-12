@@ -1,3 +1,22 @@
+[v9.0.0a42]
+
+*Core
+
+NEW: (#8041) new command dirac-apptainer-exec for running DIRAC commands inside apptainer
+FIX: (#8034) Correct user mapping for DiracX from IAM
+
+*WorkloadManagement
+
+FIX: (#8040) get ElasticJobParametersDB index prefix from the configuration
+CHANGE: (#8014) Use apptainer for SingularityComputingElement
+CHANGE: (#8014) Drop support for SingularityComputingElement without user namespaces
+CHANGE: (#8014) Enchance debugging output if SingularityComputingElement fails
+CHANGE: (#8014) Drop support for using apptainer from outside of DIRACOS2
+
+*ConfigurationSystem
+
+FIX: (#8040) evaluate useCRT flag as boolean in Utilities.getElasticDBParameters()
+
 [v9.0.0a41]
 
 *TransformationSystem
