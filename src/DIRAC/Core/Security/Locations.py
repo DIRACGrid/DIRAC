@@ -53,18 +53,11 @@ def getCAsLocation():
     casPath = "/etc/grid-security/certificates"
     if os.path.isdir(casPath):
         return casPath
-    # No CA's location found
-    return False
-
-
-# Retrieve CA's location
-
-
-def getCAsDefaultLocation():
-    """Retrievethe CAs Location inside DIRAC etc directory"""
     # rootPath./etc/grid-security/certificates
     casPath = f"{DIRAC.rootPath}/etc/grid-security/certificates"
-    return casPath
+    if os.path.isdir(casPath):
+        return casPath
+    return False
 
 
 # TODO: Static depending on files specified on CS

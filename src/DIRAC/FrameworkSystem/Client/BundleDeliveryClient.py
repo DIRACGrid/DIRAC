@@ -135,8 +135,6 @@ class BundleDeliveryClient(Client):
             X509_CERT_DIR = os.environ["X509_CERT_DIR"]
             del os.environ["X509_CERT_DIR"]
         casLocation = Locations.getCAsLocation()
-        if not casLocation:
-            casLocation = Locations.getCAsDefaultLocation()
         result = self.syncDir("CAs", casLocation)
         if X509_CERT_DIR:
             os.environ["X509_CERT_DIR"] = X509_CERT_DIR
