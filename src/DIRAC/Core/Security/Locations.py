@@ -60,8 +60,31 @@ def getCAsLocation():
     return False
 
 
-# TODO: Static depending on files specified on CS
-# Retrieve certificate
+def getVOMSLocation():
+    """Retrieve the CA's files location"""
+    # Grid-Security
+    retVal = gConfig.getOption(f"{g_SecurityConfPath}/Grid-Security")
+    if retVal["OK"]:
+        vomsPath = f"{retVal['Value']}/vomsdir"
+        if os.path.isdir(vomsPath):
+            return vomsPath
+    # Look up the X509_VOMS_DIR environment variable
+    if "X509_VOMS_DIR" in os.environ:
+        vomsPath = os.environ["X509_VOMS_DIR"]
+        return vomsPath
+    # rootPath./etc/grid-security/vomsdir
+    vomsPath = f"{DIRAC.rootPath}/etc/grid-security/vomsdir"
+    if os.path.isdir(vomsPath):
+        return vomsPath
+    # /etc/grid-security/vomsdir
+    vomsPath = "/etc/grid-security/vomsdir"
+    if os.path.isdir(vomsPath):
+        return vomsPath
+    # rootPath./etc/grid-security/vomsdir
+    vomsPath = f"{DIRAC.rootPath}/etc/grid-security/vomsdir"
+    if os.path.isdir(vomsPath):
+        return vomsPath
+    return False
 
 
 def getHostCertificateAndKeyLocation(specificLocation=None):
