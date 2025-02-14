@@ -70,7 +70,7 @@ if ! dirac-apptainer-exec dirac-platform; then
    exit 1
 fi
 
-echo " "dira
+echo " "
 echo "======  dirac-apptainer-exec dirac-proxy-info --help"
 if ! dirac-apptainer-exec dirac-proxy-info --help; then
    exit 1

@@ -134,11 +134,9 @@ class BundleDeliveryClient(Client):
         if "X509_CERT_DIR" in os.environ:
             X509_CERT_DIR = os.environ["X509_CERT_DIR"]
             del os.environ["X509_CERT_DIR"]
-        casLocation = Locations.getCAsLocation()
-        result = self.syncDir("CAs", casLocation)
         if X509_CERT_DIR:
             os.environ["X509_CERT_DIR"] = X509_CERT_DIR
-        return result
+        return self.syncDir("CAs", Locations.getCAsLocation())
 
     def syncCRLs(self):
         """Synchronize CRLs
@@ -149,10 +147,9 @@ class BundleDeliveryClient(Client):
         if "X509_CERT_DIR" in os.environ:
             X509_CERT_DIR = os.environ["X509_CERT_DIR"]
             del os.environ["X509_CERT_DIR"]
-        result = self.syncDir("CRLs", Locations.getCAsLocation())
         if X509_CERT_DIR:
             os.environ["X509_CERT_DIR"] = X509_CERT_DIR
-        return result
+        return self.syncDir("CRLs", Locations.getCAsLocation())
 
     def getCAs(self):
         """This method can be used to create the CAs. If the file can not be created,
