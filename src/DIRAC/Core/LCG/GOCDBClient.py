@@ -209,11 +209,11 @@ class GOCDBClient:
         if ongoing:
             params += "&ongoing_only=yes"
 
-        caPath = getCAsLocation()
-
         try:
             response = requests.get(
-                "https://goc.egi.eu/gocdbpi/public/?method=get_downtime&topentity=" + params, verify=caPath, timeout=20
+                "https://goc.egi.eu/gocdbpi/public/?method=get_downtime&topentity=" + params,
+                verify=getCAsLocation(),
+                timeout=20,
             )
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
@@ -268,8 +268,7 @@ class GOCDBClient:
                 gocdb_ep = gocdb_ep + "&topentity=" + entity
         gocdb_ep = gocdb_ep + when + gocdbpi_startDate + "&scope="
 
-        caPath = getCAsLocation()
-        dtPage = requests.get(gocdb_ep, verify=caPath, timeout=20)
+        dtPage = requests.get(gocdb_ep, verify=getCAsLocation(), timeout=20)
 
         dt = dtPage.text
 
@@ -293,8 +292,7 @@ class GOCDBClient:
         # GOCDB-PI query
         gocdb_ep = "https://goc.egi.eu/gocdbpi/public/?method=get_service_endpoint&" + granularity + "=" + entity
 
-        caPath = getCAsLocation()
-        service_endpoint_page = requests.get(gocdb_ep, verify=caPath, timeout=20)
+        service_endpoint_page = requests.get(gocdb_ep, verify=getCAsLocation(), timeout=20)
 
         return service_endpoint_page.text
 

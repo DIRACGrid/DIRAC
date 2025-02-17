@@ -52,12 +52,6 @@ if dirac-proxy-info; then
 fi
 
 echo " "
-echo "dirac-login"
-if ! dirac-login; then
-   exit 1
-fi
-
-echo " "
 echo "======  dirac-platform"
 if ! dirac-platform; then
    exit 1
@@ -69,3 +63,15 @@ if ! dirac-configuration-dump-local-cache; then
    exit 1
 fi
 echo " "
+
+echo " "
+echo "======  dirac-apptainer-exec dirac-platform"
+if ! dirac-apptainer-exec dirac-platform; then
+   exit 1
+fi
+
+echo " "
+echo "======  dirac-apptainer-exec dirac-proxy-info --help"
+if ! dirac-apptainer-exec dirac-proxy-info --help; then
+   exit 1
+fi
