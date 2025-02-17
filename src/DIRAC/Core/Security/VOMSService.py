@@ -64,8 +64,6 @@ class VOMSService:
         if not self.urls:
             return S_ERROR(DErrno.ENOAUTH, "No VOMS server defined")
 
-        userProxy = getProxyLocation()
-        caPath = getCAsLocation()
         rawUserList = []
         result = None
         for url in self.urls:
@@ -79,8 +77,8 @@ class VOMSService:
                     result = requests.get(
                         url,
                         headers={"X-VOMS-CSRF-GUARD": "y"},
-                        cert=userProxy,
-                        verify=caPath,
+                        cert=getProxyLocation(),
+                        verify=getCAsLocation(),
                         params={"startIndex": str(startIndex), "pageSize": "100"},
                     )
                 except requests.ConnectionError as exc:

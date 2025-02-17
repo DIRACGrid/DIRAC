@@ -81,3 +81,15 @@ if ! dirac-configuration-dump-local-cache; then
    exit 1
 fi
 echo " "
+
+echo " "
+echo "======  dirac-apptainer-exec dirac-platform"
+if ! dirac-apptainer-exec dirac-platform; then
+   exit 1
+fi
+
+echo " "
+echo "======  dirac-apptainer-exec dirac-proxy-info --help"
+if ! dirac-apptainer-exec dirac-proxy-info --help; then
+   exit 1
+fi

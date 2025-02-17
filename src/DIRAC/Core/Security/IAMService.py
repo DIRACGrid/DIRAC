@@ -3,11 +3,7 @@
 
 import requests
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Security.Locations import getProxyLocation, getCAsLocation
-from DIRAC.Core.Utilities.Decorators import deprecated
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
+from DIRAC import S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
 
