@@ -708,26 +708,18 @@ class RucioFileCatalogClient(FileCatalogClientBase):
         """Get the meta data attached to a file, but also to
         all its parents
         """
-        print('in getfileusermetadata')
         path=next(iter(path))
-        print('in getfileusermetadata1'+path)
-
         resDict = {"Successful": {}, "Failed": {}}
         try:
-            print('in getfileusermetadata2')
             did = self.__getDidsFromLfn(path)
             meta = next(self.client.get_metadata_bulk(dids=[did], inherit=True, plugin="ALL"))
-            print('in getfileusermetadata3')
-            print(meta)
             if meta["did_type"] == "FILE":  # Should we also return the metadata for the directories ?
                 resDict["Successful"][path] = meta
             else:
                 resDict["Failed"][path] = "Not a file"
-            print('in getfileusermetadata4')
         except DataIdentifierNotFound:
             resDict["Failed"][path] = "No such file or directory"
         except Exception as err:
-            print(err)
             return S_ERROR(str(err))
         return S_OK(resDict)
 
@@ -775,7 +767,6 @@ class RucioFileCatalogClient(FileCatalogClientBase):
 
     @checkCatalogArguments
     def setMetadata(self, path, metadataDict):
-        print('in setmetadata')
         """Add metadata to the given path"""
         pathMetadataDict = {}
         path=next(iter(path))
@@ -806,10 +797,8 @@ class RucioFileCatalogClient(FileCatalogClientBase):
             return S_ERROR(str(err))
         return S_OK()
     
-    #@checkCatalogArguments
     def findFilesByMetadata(self, metadataFilterDict, path="/", timeout=120):
         """find the dids for the given metadataFilterDict"""
-        print(metadataFilterDict)
         ruciometadataFilterDict=self.__transform_DIRAC_filter_dict_to_Rucio_filter_dict([metadataFilterDict])
         dids=[]
         for scope in self.scopes:
@@ -858,7 +847,6 @@ class RucioFileCatalogClient(FileCatalogClientBase):
             input_dict_list = [{'particle': {'in': ['proton','electron']},'site': {'in': [ "LaPalma", 'paranal']},'configuration_id': {'=': 14} }    ]
             return = [{'particle': 'proton', 'site': 'LaPalma', 'configuration_id': {'=': 14} }, {'particle': 'proton', 'site': 'paranal', 'configuration_id': {'=': 14} }, {'particle': 'electron', 'site': 'LaPalma', 'configuration_id': {'=': 14} }, {'particle': 'electron', 'site': 'paranal', 'configuration_id': {'=': 14} }]
         """
-        print (DIRAC_dict_with_in_operator_list)
         if not isinstance(DIRAC_dict_with_in_operator_list, list):
             raise TypeError("DIRAC_dict_with_in_operator_list must be a list of dictionaries")
 
@@ -904,8 +892,6 @@ class RucioFileCatalogClient(FileCatalogClientBase):
             input_dict_list = [{'particle': {'in': ['proton','electron']},'site': {'in': [ "LaPalma", 'paranal']},'configuration_id': {'=': 14} }    ]
             return = [{'particle': 'proton', 'site': 'LaPalma', 'configuration_id': 14}, {'particle': 'proton', 'site': 'paranal', 'configuration_id': 14}, {'particle': 'electron', 'site': 'LaPalma', 'configuration_id': 14}, {'particle': 'electron', 'site': 'paranal', 'configuration_id': 14}]
         """
-        
-        
         break_detected=True
         DIRAC_expanded_filters=DIRAC_filter_dict_list
         while break_detected:
