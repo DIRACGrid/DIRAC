@@ -1,6 +1,7 @@
 """ Collection of utilities for locating certs, proxy, CAs
 """
 import os
+
 import DIRAC
 from DIRAC import gConfig
 
@@ -23,12 +24,6 @@ def getProxyLocation():
     proxyName = "x509up_u%d" % os.getuid()
     if os.path.isfile(f"/tmp/{proxyName}"):
         return f"/tmp/{proxyName}"
-
-    # No gridproxy found
-    return False
-
-
-# Retrieve CA's location
 
 
 def getCAsLocation():
@@ -63,22 +58,36 @@ def getCAsLocationNoConfig():
     casPath = "/etc/grid-security/certificates"
     if os.path.isdir(casPath):
         return casPath
-    # No CA's location found
-    return False
-
-
-# Retrieve CA's location
-
-
-def getCAsDefaultLocation():
-    """Retrievethe CAs Location inside DIRAC etc directory"""
     # rootPath./etc/grid-security/certificates
     casPath = f"{DIRAC.rootPath}/etc/grid-security/certificates"
-    return casPath
+    if os.path.isdir(casPath):
+        return casPath
 
 
-# TODO: Static depending on files specified on CS
-# Retrieve certificate
+def getVOMSLocation():
+    """Retrieve the CA's files location"""
+    # Grid-Security
+    retVal = gConfig.getOption(f"{g_SecurityConfPath}/Grid-Security")
+    if retVal["OK"]:
+        vomsPath = f"{retVal['Value']}/vomsdir"
+        if os.path.isdir(vomsPath):
+            return vomsPath
+    # Look up the X509_VOMS_DIR environment variable
+    if "X509_VOMS_DIR" in os.environ:
+        vomsPath = os.environ["X509_VOMS_DIR"]
+        return vomsPath
+    # rootPath./etc/grid-security/vomsdir
+    vomsPath = f"{DIRAC.rootPath}/etc/grid-security/vomsdir"
+    if os.path.isdir(vomsPath):
+        return vomsPath
+    # /etc/grid-security/vomsdir
+    vomsPath = "/etc/grid-security/vomsdir"
+    if os.path.isdir(vomsPath):
+        return vomsPath
+    # rootPath./etc/grid-security/vomsdir
+    vomsPath = f"{DIRAC.rootPath}/etc/grid-security/vomsdir"
+    if os.path.isdir(vomsPath):
+        return vomsPath
 
 
 def getHostCertificateAndKeyLocation(specificLocation=None):

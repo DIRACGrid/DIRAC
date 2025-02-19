@@ -65,14 +65,13 @@ class StorageElementCache:
         # Because the gfal2 context caches the proxy location,
         # we also use the proxy location as a key.
         # In practice, there should almost always be one, except for the REA
-        # If we see its memory consumtpion exploding, this might be a place to look
-        proxyLoc = getProxyLocation()
+        # If we see its memory consumption exploding, this might be a place to look
 
         # ensure protocolSections is hashable! (tuple)
         if isinstance(protocolSections, list):
             protocolSections = tuple(protocolSections)
 
-        argTuple = (tId, name, protocolSections, vo, proxyLoc)
+        argTuple = (tId, name, protocolSections, vo, getProxyLocation())
         seObj = self.seCache.get(argTuple)
 
         if not seObj:
