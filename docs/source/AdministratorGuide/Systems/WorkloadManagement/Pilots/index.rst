@@ -181,7 +181,6 @@ Pilots started when not controlled by the SiteDirector
 
 You should keep reading if your resources include IAAS and IAAC type of resources, like Virtual Machines.
 If this is the case, then you need to:
-
 - provide a certificate, or a proxy, to start the pilot;
 - such certificate/proxy should have the `GenericPilot` property;
 - in case of multi-VO environment, the Pilot should set the `/Resources/Computing/CEDefaults/VirtualOrganization` (as done e.g. by `vm-pilot <https://github.com/DIRACGrid/DIRAC/blob/integration/src/DIRAC/WorkloadManagementSystem/Utilities/CloudBootstrap/vm-pilot#L122>`_);
@@ -190,7 +189,7 @@ If this is the case, then you need to:
 We have introduced a special command named "GetPilotVersion" that you should use,
 and possibly extend, in case you want to send/start pilots that don't know beforehand the (VO)DIRAC version they are going to install.
 In this case, you have to provide a json file freely accessible that contains the pilot version.
-This is tipically the case for VMs in IAAS and IAAC.
+This is typically the case for VMs in IAAS and IAAC.
 
 The files to consider are in https://github.com/DIRACGrid/Pilot
 
@@ -269,3 +268,72 @@ A simple example using the LHCbPilot extension follows::
    --name "$1" \
    --cert \
    --certLocation=/scratch/dirac/etc/grid-security \
+Centralised Pilot Logging
+===========================
+The pilot jobs generate log files which are primarily accessed for debugging if
+there are issues with a particular resource; these (*classic*) log files are stored in a
+resource dependent manner. On a grid CE, the pilot writes logs to stdout/stderr
+which are captured by the batch system and can later be retrieved using a CE
+specific tool. For a cloud resource the logs are typically written to a file on
+a given virtual machine instance where there is no standard or simple way for
+them to be retrieved.
+
+The centralised (*remote*) pilot logging system offers a new resource agnostic logging
+to ensure that the pilot logs are captured and made readily accessible for all
+resources as an extra debugging facility in parallel with the existing CE-based
+logging system. It also offers the ability to preview logs while the pilot
+is running.
+
+The design of the new pilot logging system for DIRAC is based around having the
+pilot jobs periodically send their logs back to a central storage service based on the
+Tornado web server. For this to work *TornadoPilotLoggingHandler* has to be installed on Tornado.
+Further processing of the log entries is done by a back-end plugin;
+the plugin to use is selected by the collector service configuration. Currently only
+a plugin which stores logs in a file on Tornado is implemented (*FileCacheLoggingPlugin*).
+When a pilot job marks a log file finalised, it can be copied by the *PilotLoggingAgent*
+to a selected SE.
+
+The centralised logger can be enabled on a VO-by-VO basis. In addition a CE whitelist can
+also be provided to restrict pilot logging to those CEs.
+
+Remote logger *FileCacheLoggingPlugin* requires following obligatory configuration parameters set in *Operations/<vo_name>/Pilot* or *Operations/Defaults/Pilot*:
+
+- *RemoteLogging* - Enable remote logging (default False - disabled).
+- *RemoteLoggerURL* - to be set to the Tornado endpoint, e.g. *https://<host.name>:8443/WorkloadManagement/TornadoPilotLogging*.
+- *UploadSE* - Dirac SE name, where complete logs will be periodically uploaded to by the *PilotLoggingAgent*.
+- *UploadPath* - VO-specific upload path on the SE (e.g. */<vo_name>/pilotlogs/*).
+
+To fine-tune the logger the following parameters could also be adjusted, if necessary:
+
+- *PilotLogLevel* - log level, default INFO.
+- *RemoteLoggerBufsize* - client-side buffer size in lines; default=1000. If the buffer is full it is flushed, causing log records
+  to be sent to the server.  The buffer
+  is also flushed when an initial pilot activity is finished (i.e. before pilot commands are run) and when a pilot command
+  finishes (successfully ot not).
+- *RemoteLoggerTimerInterval* - a client-side timer interval in seconds. The logs are
+  periodically flushed. Default: 0 - disabled. The idea behind this option is to make logs available for inspection, should a pilot get stuck.
+- *RemoteLoggerCEsWhiteList* - a list of CEs for which the logger records are sent.
+  Default: no CE restriction.
+- *RemoteLogsPriority* - which logs to get first, default False; this will attempt to retrieve
+  classic logs first.
+
+*PilotLoggingAgent* configuration:
+
+- in *Operations* - *Shifter/DataManager* User and Group of a shifter proxy used to upload data.
+
+Agent's options:
+
+- *ClearPilotsDelay* -  logs lifetime in days on Tornado document area, default: 30.
+- *proxyTimeleftLimit*  -  time limit in seconds, before we get a new one; default: 600.
+
+The administrator interface for retrieving pilot log files has also been
+connected to the collector. When the admin requests a pilot log from the DIRAC
+PilotManager service, the default resource-based method for fetching the log
+file is tried first; if for any reason this fails (e.g. log not available or
+the resource is offline) then the remote log collector is queried instead. The
+collector uses the configured plugin to try to retrieve the log file from the
+store. The order of the log sources is configurable by the DIRAC administrator (see
+*RemoteLogsPriority* flag above)
+allowing the collector to be queried before the resource-based system. This
+fallback mechanism is completely transparent to the administrator, the log is
+simply fetched from whichever source has it available.
