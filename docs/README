@@ -3,16 +3,27 @@ How to build DIRAC documentation
 
 1. Create DIRAC client environment by an appropriate
    source bashrc
+   or
+   source diracos/diracosrc
+
+   Appropriate means according to the version of DIRAC you want to build the documentation for. See also the [developer
+   instructions](https://dirac.readthedocs.io/en/latest/DeveloperGuide/DevelopmentEnvironment/DeveloperInstallation/editingCode.html#installing-the-local-version)
+
+
+1.1 Depending on how you installed DIRAC you might need to install
+   pip install sphinx_rtd_theme sphinx_design
 
 2. Go to the Documentation directory of the DIRAC source code repository
    cd DIRAC/docs/
-   export PYTHONPATH=$PWD/diracdoctools:$PYTHONPATH
+   export PYTHONPATH=$PWD:$PYTHONPATH
 
 3. Run the documentation building script
 
    This also creates all the automatically generated rst files
 
       make htmlall
+
+   Note: You must avoid having the string "test" in your folder structure or no code documentation will be created.
 
 3.1 to run incremental builds after rst files have changed, only run
 
