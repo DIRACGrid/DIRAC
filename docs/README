@@ -6,6 +6,10 @@ How to build DIRAC documentation
    or
    source diracos/diracosrc
 
+   Appropriate means according to the version of DIRAC you want to build the documentation for. See also the [developer
+   instructions](https://dirac.readthedocs.io/en/latest/DeveloperGuide/DevelopmentEnvironment/DeveloperInstallation/editingCode.html#installing-the-local-version)
+
+
 1.1 Depending on how you installed DIRAC you might need to install
    pip install sphinx_rtd_theme sphinx_design
 
