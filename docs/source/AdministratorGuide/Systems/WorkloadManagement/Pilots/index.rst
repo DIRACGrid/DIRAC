@@ -268,6 +268,7 @@ A simple example using the LHCbPilot extension follows::
    --name "$1" \
    --cert \
    --certLocation=/scratch/dirac/etc/grid-security \
+
 Centralised Pilot Logging
 ===========================
 The pilot jobs generate log files which are primarily accessed for debugging if
