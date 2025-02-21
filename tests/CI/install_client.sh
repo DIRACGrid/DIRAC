@@ -61,7 +61,7 @@ echo -e "*** $(date -u) **** Client INSTALLATION START ****\n"
 installDIRAC
 
 echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a clientTestOutputs.txt
-dirac-login -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
+dirac-proxy-init -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** Submit a job ****\n"

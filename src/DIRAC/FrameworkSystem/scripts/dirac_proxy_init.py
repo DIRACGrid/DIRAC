@@ -6,21 +6,20 @@ Example:
   $ dirac-proxy-init -g dirac_user
   Enter Certificate password: **************
 """
+import datetime
+import glob
 import os
 import sys
-import glob
 import time
-import datetime
 
 import DIRAC
-
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Base.Script import Script
-from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
-from DIRAC.Core.Security import X509Chain, ProxyInfo, VOMS
+from DIRAC.Core.Security import VOMS, ProxyInfo, X509Chain
 from DIRAC.Core.Security.DiracX import addTokenToPEM
 from DIRAC.Core.Security.Locations import getCAsLocation, getDefaultProxyLocation
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 

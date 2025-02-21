@@ -378,7 +378,7 @@ def install_server():
     # for the diracx container to use
     # It needs to be started and running before the DIRAC server installation
     # because after installing the databases, the install server script
-    # calls dirac-login.
+    # calls dirac-proxy-init.
     # At this point we need the new CS to have been updated
     # already else the token exchange fails.
 

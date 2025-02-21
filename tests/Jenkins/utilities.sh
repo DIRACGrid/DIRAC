@@ -247,6 +247,13 @@ installDIRAC() {
   echo "source \"$PWD/diracos/diracosrc\"" > "$PWD/bashrc"
   echo "export X509_CERT_DIR=\"$PWD/diracos/etc/grid-security/certificates\"" >> "$PWD/bashrc"
   source diracos/diracosrc
+
+  # Copy the user cert and key to the correct directory
+  cp /ca/certs/client.pem "${SERVERINSTALLDIR}/user/"
+  cp /ca/certs/client.key "${SERVERINSTALLDIR}/user/"
+  cp /ca/certs/client.pem /home/dirac/.globus/usercert.pem
+  cp /ca/certs/client.key /home/dirac/.globus/userkey.pem
+
   if [[ -n "${DIRAC_RELEASE+x}" ]]; then
     if [[ -z "${ALTERNATIVE_MODULES}" ]]; then
       pip install DIRAC "${DIRAC_RELEASE}"
@@ -388,8 +395,8 @@ diracCredentials() {
   echo '==> [diracCredentials]'
 
   sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' "${SERVERINSTALLDIR}/etc/Configuration_Server.cfg"
-  if ! dirac-login dirac_admin --nocs -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" -T 72 "${DEBUG}"; then
-    echo 'ERROR: dirac-login failed' >&2
+  if ! dirac-proxy-init dirac_admin --nocs -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
+    echo 'ERROR: dirac-proxy-init failed' >&2
     exit 1
   fi
   sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' "${SERVERINSTALLDIR}/etc/Configuration_Server.cfg"
@@ -471,7 +478,7 @@ diracProxies() {
   if [[ -n $TEST_DIRACX ]]; then
     echo "Waiting for for DiracX to be available" >&2
     for i in {1..10}; do
-      if dirac-login -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" -T 72 "${DEBUG}"; then
+      if dirac-proxy-init -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
         break
       fi
       sleep 5
@@ -479,13 +486,13 @@ diracProxies() {
   fi
 
   # User proxy
-  if ! dirac-login -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" -T 72 "${DEBUG}"; then
-    echo 'ERROR: dirac-login failed' >&2
+  if ! dirac-proxy-init -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
+    echo 'ERROR: dirac-init failed' >&2
     exit 1
   fi
   # group proxy
-  if ! dirac-login prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" -T 72 "${DEBUG}"; then
-    echo 'ERROR: dirac-login failed' >&2
+  if ! dirac-proxy-init prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
+    echo 'ERROR: dirac-init failed' >&2
     exit 1
   fi
 }
