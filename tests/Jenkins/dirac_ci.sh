@@ -83,7 +83,7 @@ source "${TESTCODE}/DIRAC/tests/Jenkins/utilities.sh"
 #
 # installSite:
 #
-#   This function will install DIRAC
+#   This function will install DIRAC server
 #
 #...............................................................................
 

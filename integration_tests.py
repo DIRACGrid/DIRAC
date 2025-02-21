@@ -409,35 +409,6 @@ def install_server():
         ],
         check=True,
     )
-    for path in [
-        "etc/grid-security",
-        "user/client.pem",
-        "user/client.key",
-        f"/tmp/x509up_u{os.getuid()}",
-    ]:
-        source = os.path.join("/home/dirac/ServerInstallDIR", path)
-        ret = subprocess.run(
-            ["docker", "cp", f"server:{source}", "-"],
-            check=True,
-            text=False,
-            stdout=subprocess.PIPE,
-        )
-        if path.startswith("user/"):
-            dest = f"client:/home/dirac/ServerInstallDIR/{os.path.dirname(path)}"
-        elif path.startswith("/"):
-            dest = f"client:{os.path.dirname(path)}"
-        else:
-            dest = f"client:/home/dirac/ClientInstallDIR/{os.path.dirname(path)}"
-        subprocess.run(["docker", "cp", "-", dest], check=True, text=False, input=ret.stdout)
-    subprocess.run(
-        base_cmd
-        + [
-            "bash",
-            "-c",
-            "cp /home/dirac/ServerInstallDIR/user/client.* /home/dirac/.globus/",
-        ],
-        check=True,
-    )
 
     base_cmd = _build_docker_cmd("pilot", tty=False)
     subprocess.run(
@@ -448,35 +419,6 @@ def install_server():
             "/home/dirac/ServerInstallDIR/user",
             "/home/dirac/PilotInstallDIR/etc",
             "/home/dirac/.globus",
-        ],
-        check=True,
-    )
-    for path in [
-        "etc/grid-security",
-        "user/client.pem",
-        "user/client.key",
-        f"/tmp/x509up_u{os.getuid()}",
-    ]:
-        source = os.path.join("/home/dirac/ServerInstallDIR", path)
-        ret = subprocess.run(
-            ["docker", "cp", f"server:{source}", "-"],
-            check=True,
-            text=False,
-            stdout=subprocess.PIPE,
-        )
-        if path.startswith("user/"):
-            dest = f"pilot:/home/dirac/ServerInstallDIR/{os.path.dirname(path)}"
-        elif path.startswith("/"):
-            dest = f"pilot:{os.path.dirname(path)}"
-        else:
-            dest = f"pilot:/home/dirac/PilotInstallDIR/{os.path.dirname(path)}"
-        subprocess.run(["docker", "cp", "-", dest], check=True, text=False, input=ret.stdout)
-    subprocess.run(
-        base_cmd
-        + [
-            "bash",
-            "-c",
-            "cp /home/dirac/ServerInstallDIR/user/client.* /home/dirac/.globus/",
         ],
         check=True,
     )
