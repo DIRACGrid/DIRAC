@@ -1,3 +1,17 @@
+[v9.0.0a43]
+
+*Documentation
+
+CHANGE: (#8055) extend pilot documentation.
+
+*docs
+
+FIX: (#8054) update and correct the README to build the DIRAC documenation
+
+*Subsystem
+
+CHANGE: (#8044) default MySQL version from 8.0 to 8.4
+
 [v9.0.0a42]
 
 *Core
