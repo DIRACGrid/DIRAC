@@ -11,7 +11,6 @@ import sys
 import time
 
 from DIRAC import gConfig, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.Core.Base.CLI import CLI, colorize
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities import List
@@ -623,6 +622,11 @@ class SystemAdministratorClientCLI(CLI):
           install agent <system> <agent> [-m <ModuleName>] [-p <Option>=<Value>] [-p <Option>=<Value>] ...
           install executor <system> <executor> [-m <ModuleName>] [-p <Option>=<Value>] [-p <Option>=<Value>] ...
         """
+        result = getProxyInfo()
+        if not result["OK"]:
+            self._errMsg(result["Message"])
+        user = result["Value"]["username"]
+
         argss = args.split()
         hostSetup = extension = None
         if not argss:
@@ -673,7 +677,7 @@ class SystemAdministratorClientCLI(CLI):
 
                 if database != "InstalledComponentsDB":
                     result = MonitoringUtilities.monitorInstallation(
-                        "DB", system.replace("System", ""), database, cpu=cpu, hostname=hostname
+                        "DB", system.replace("System", ""), database, cpu=cpu, hostname=hostname, user=user
                     )
                     if not result["OK"]:
                         self._errMsg(result["Message"])
@@ -786,14 +790,14 @@ class SystemAdministratorClientCLI(CLI):
                     return
 
                 result = MonitoringUtilities.monitorInstallation(
-                    "DB", system, "InstalledComponentsDB", cpu=cpu, hostname=hostname
+                    "DB", system, "InstalledComponentsDB", cpu=cpu, hostname=hostname, user=user
                 )
                 if not result["OK"]:
                     self._errMsg(f"Error registering installation into database: {result['Message']}")
                     return
 
             result = MonitoringUtilities.monitorInstallation(
-                option, system, component, module, cpu=cpu, hostname=hostname
+                option, system, component, module, cpu=cpu, hostname=hostname, user=user
             )
             if not result["OK"]:
                 self._errMsg(f"Error registering installation into database: {result['Message']}")
@@ -820,6 +824,7 @@ class SystemAdministratorClientCLI(CLI):
         result = getProxyInfo()
         if not result["OK"]:
             self._errMsg(result["Message"])
+        user = result["Value"]["username"]
 
         option = argss[0]
         if option == "db":
@@ -842,7 +847,7 @@ class SystemAdministratorClientCLI(CLI):
                 self._errMsg(result["Message"])
                 return
             system = result["Value"][component]["System"]
-            result = MonitoringUtilities.monitorUninstallation(system, component, hostname=hostname, cpu=cpu)
+            result = MonitoringUtilities.monitorUninstallation(system, component, hostname=hostname, cpu=cpu, user=user)
             if not result["OK"]:
                 self._errMsg(result["Message"])
                 return
@@ -937,7 +942,7 @@ class SystemAdministratorClientCLI(CLI):
             else:
                 cpu = result["Value"]["CPUModel"]
             hostname = self.host
-            result = MonitoringUtilities.monitorUninstallation(system, component, hostname=hostname, cpu=cpu)
+            result = MonitoringUtilities.monitorUninstallation(system, component, hostname=hostname, cpu=cpu, user=user)
             if not result["OK"]:
                 return result
 

@@ -6,10 +6,9 @@ import socket
 
 from DIRAC import S_OK
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 
-def monitorInstallation(componentType, system, component, module=None, cpu=None, hostname=None):
+def monitorInstallation(componentType, system, component, module=None, cpu=None, hostname=None, user=None):
     """
     Register the installation of a component in the InstalledComponentsDB
     """
@@ -19,14 +18,6 @@ def monitorInstallation(componentType, system, component, module=None, cpu=None,
         module = component
 
     # Retrieve user installing the component
-    user = None
-    result = getProxyInfo()
-    if result["OK"]:
-        proxyInfo = result["Value"]
-        if "username" in proxyInfo:
-            user = proxyInfo["username"]
-    else:
-        return result
     if not user:
         user = "unknown"
 
@@ -61,21 +52,13 @@ def monitorInstallation(componentType, system, component, module=None, cpu=None,
     return result
 
 
-def monitorUninstallation(system, component, cpu=None, hostname=None):
+def monitorUninstallation(system, component, cpu=None, hostname=None, user=None):
     """
     Register the uninstallation of a component in the InstalledComponentsDB
     """
     monitoringClient = ComponentMonitoringClient()
 
     # Retrieve user uninstalling the component
-    user = None
-    result = getProxyInfo()
-    if result["OK"]:
-        proxyInfo = result["Value"]
-        if "username" in proxyInfo:
-            user = proxyInfo["username"]
-    else:
-        return result
     if not user:
         user = "unknown"
 
