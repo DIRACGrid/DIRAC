@@ -548,7 +548,7 @@ csAPI.setOption("Registry/Groups/jenkins_user/VO", "Jenkins")
 
 csAPI.setOption(
     "Registry/Hosts/server/Properties",
-    "TrustedHost,CSAdministrator,JobAdministrator,FullDelegation,ProxyManagement,Operator,ProductionManagement,GenericPilot",
+    "TrustedHost,SiteManager,CSAdministrator,ServiceAdministrator,JobAdministrator,FullDelegation,ProxyManagement,Operator,ProductionManagement,GenericPilot",
 )
 
 # Setting Systems/WorkloadManagement/Executors/Optimizers/JobScheduling/RescheduleDelays

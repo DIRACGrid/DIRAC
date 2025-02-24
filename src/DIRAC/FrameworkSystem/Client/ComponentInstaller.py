@@ -69,7 +69,6 @@ from DIRAC import gConfig, gLogger, rootPath
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers import (
-    CSGlobals,
     cfgInstallPath,
     cfgInstallSection,
     cfgPath,
@@ -85,6 +84,7 @@ from DIRAC.Core.Security.Properties import (
     PRODUCTION_MANAGEMENT,
     PROXY_MANAGEMENT,
     SERVICE_ADMINISTRATOR,
+    SITE_MANAGER,
     TRUSTED_HOST,
 )
 from DIRAC.Core.Utilities.Extensions import (
@@ -432,6 +432,8 @@ class ComponentInstaller:
         defaultHostProperties = [
             TRUSTED_HOST,
             CS_ADMINISTRATOR,
+            SERVICE_ADMINISTRATOR,
+            SITE_MANAGER,
             JOB_ADMINISTRATOR,
             FULL_DELEGATION,
             PROXY_MANAGEMENT,

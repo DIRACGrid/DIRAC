@@ -249,8 +249,8 @@ installDIRAC() {
   source diracos/diracosrc
 
   # Copy the user cert and key to the correct directory
-  cp /ca/certs/client.pem "${SERVERINSTALLDIR}/user/"
-  cp /ca/certs/client.key "${SERVERINSTALLDIR}/user/"
+  # cp /ca/certs/client.pem "${SERVERINSTALLDIR}/user/"
+  # cp /ca/certs/client.key "${SERVERINSTALLDIR}/user/"
   cp /ca/certs/client.pem /home/dirac/.globus/usercert.pem
   cp /ca/certs/client.key /home/dirac/.globus/userkey.pem
 
@@ -395,7 +395,8 @@ diracCredentials() {
   echo '==> [diracCredentials]'
 
   sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' "${SERVERINSTALLDIR}/etc/Configuration_Server.cfg"
-  if ! dirac-proxy-init dirac_admin --nocs -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
+  if ! dirac-proxy-init dirac_admin --nocs -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" --valid 72:00; then
+  # if ! dirac-login dirac_admin --nocs -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" -T 72; then
     echo 'ERROR: dirac-proxy-init failed' >&2
     exit 1
   fi
@@ -415,47 +416,47 @@ diracCredentials() {
 diracUserAndGroup() {
   echo '==> [diracUserAndGroup]'
 
-  if ! dirac-admin-add-user -N ciuser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=ciuser -M lhcb-dirac-ci@cern.ch -G dirac_user "${DEBUG}"; then
+  if ! dirac-admin-add-user -N ciuser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=ciuser -M lhcb-dirac-ci@cern.ch -G dirac_user -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-user failed' >&2
     exit 1
   fi
 
-  if ! dirac-admin-add-user -N trialUser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=trialUser -M lhcb-dirac-ci@cern.ch -G dirac_user "${DEBUG}"; then
+  if ! dirac-admin-add-user -N trialUser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=trialUser -M lhcb-dirac-ci@cern.ch -G dirac_user -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-user failed' >&2
     exit 1
   fi
 
-  if ! dirac-admin-add-group -G prod -U adminusername,ciuser,trialUser -P Operator,FullDelegation,ProxyManagement,ServiceAdministrator,JobAdministrator,CSAdministrator,FileCatalogManagement,SiteManager,NormalUser,ProductionManagement VO=vo "${DEBUG}"; then
+  if ! dirac-admin-add-group -G prod -U adminusername,ciuser,trialUser -P Operator,FullDelegation,ProxyManagement,ServiceAdministrator,JobAdministrator,CSAdministrator,FileCatalogManagement,SiteManager,NormalUser,ProductionManagement VO=vo -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-group failed' >&2
     exit 1
   fi
 
-  if ! dirac-admin-add-group -G jenkins_fcadmin -U adminusername,ciuser,trialUser -P FileCatalogManagement,NormalUser VO=vo "${DEBUG}"; then
+  if ! dirac-admin-add-group -G jenkins_fcadmin -U adminusername,ciuser,trialUser -P FileCatalogManagement,NormalUser -o /DIRAC/Security/UseServerCertificate=True VO=vo "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-group failed' >&2
     exit 1
   fi
 
-  if ! dirac-admin-add-group -G jenkins_user -U adminusername,ciuser,trialUser -P NormalUser VO=vo "${DEBUG}"; then
+  if ! dirac-admin-add-group -G jenkins_user -U adminusername,ciuser,trialUser -P NormalUser VO=vo -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-group failed' >&2
     exit 1
   fi
 
-  if ! dirac-admin-add-shifter DataManager adminusername prod "${DEBUG}"; then
+  if ! dirac-admin-add-shifter DataManager adminusername prod -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-shifter failed' >&2
     exit 1
   fi
 
-  if ! dirac-admin-add-shifter TestManager adminusername prod "${DEBUG}"; then
+  if ! dirac-admin-add-shifter TestManager adminusername prod -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-shifter failed' >&2
     exit 1
   fi
 
-  if ! dirac-admin-add-shifter ProductionManager adminusername prod "${DEBUG}"; then
+  if ! dirac-admin-add-shifter ProductionManager adminusername prod -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-shifter failed' >&2
     exit 1
   fi
 
-  if ! dirac-admin-add-shifter LHCbPR adminusername prod "${DEBUG}"; then
+  if ! dirac-admin-add-shifter LHCbPR adminusername prod -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-shifter failed' >&2
     exit 1
   fi
@@ -470,32 +471,27 @@ diracUserAndGroup() {
 #
 #.............................................................................
 
-diracProxies() {
-  echo '==> [diracProxies]'
+# diracProxies() {
+#   echo '==> [diracProxies]'
 
-  # Make sure DiracX is running
-  # And make sure it was synced
-  if [[ -n $TEST_DIRACX ]]; then
-    echo "Waiting for for DiracX to be available" >&2
-    for i in {1..10}; do
-      if dirac-proxy-init -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
-        break
-      fi
-      sleep 5
-    done
-  fi
+#   # Make sure DiracX is running
+#   # And make sure it was synced
+#   if [[ -n $TEST_DIRACX ]]; then
+#     echo "Waiting for DiracX to be available" >&2
+#     for i in {1..10}; do
+#       if dirac-proxy-init "${DEBUG}"; then
+#         break
+#       fi
+#       sleep 5
+#     done
+#   fi
 
-  # User proxy
-  if ! dirac-proxy-init -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
-    echo 'ERROR: dirac-init failed' >&2
-    exit 1
-  fi
-  # group proxy
-  if ! dirac-proxy-init prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
-    echo 'ERROR: dirac-init failed' >&2
-    exit 1
-  fi
-}
+#   # group proxy
+#   if ! dirac-proxy-init prod "${DEBUG}"; then
+#     echo 'ERROR: dirac-init failed' >&2
+#     exit 1
+#   fi
+# }
 
 #.............................................................................
 #
@@ -507,7 +503,7 @@ diracProxies() {
 
 diracRefreshCS() {
   echo '==> [diracRefreshCS]'
-  if ! python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-refresh-cs.py" "${DEBUG}"; then
+  if ! python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-refresh-cs.py" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
     echo 'ERROR: dirac-refresh-cs failed' >&2
     exit 1
   fi
@@ -527,7 +523,7 @@ diracRefreshCS() {
 diracAddSite() {
   echo '==> [diracAddSite]'
 
-  if ! dirac-admin-add-site DIRAC.Jenkins.ch aNameWhatSoEver jenkins.cern.ch "${DEBUG}"; then
+  if ! dirac-admin-add-site DIRAC.Jenkins.ch aNameWhatSoEver jenkins.cern.ch -o /DIRAC/Security/UseServerCertificate=yes "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-site failed' >&2
     exit 1
   fi
@@ -550,15 +546,15 @@ diracServices(){
   #  dirac-proxy-init -U -g prod -C ${SERVERINSTALLDIR}/user/client.pem -K ${SERVERINSTALLDIR}/user/client.key "${DEBUG}"
 
   for serv in $services; do
-    echo "==> calling dirac-install-component $serv ${DEBUG}"
-    if ! dirac-install-component "$serv" "${DEBUG}"; then
+    echo "==> calling dirac-install-component $serv -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}"
+    if ! dirac-install-component "$serv" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
       echo 'ERROR: dirac-install-component failed' >&2
       exit 1
     fi
-    if ! dirac-restart-component Tornado Tornado "${DEBUG}"; then
-      echo 'ERROR: could not restart Tornado' >&2
-      exit 1
-    fi
+    # if ! dirac-restart-component Tornado Tornado -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
+    #   echo 'ERROR: could not restart Tornado' >&2
+    #   exit 1
+    # fi
   done
 }
 
@@ -569,7 +565,7 @@ diracSEs(){
   echo "==> Installing SE-1"
   seDir=${SERVERINSTALLDIR}/Storage/SE-1
   mkdir -p "${seDir}"
-  if ! dirac-install-component DataManagement SE-1 -m StorageElement -p BasePath="${seDir}" -p Port=9148 "${DEBUG}"; then
+  if ! dirac-install-component DataManagement SE-1 -m StorageElement -p BasePath="${seDir}" -p Port=9148 -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
     echo 'ERROR: dirac-install-component failed' >&2
     exit 1
   fi
@@ -577,7 +573,7 @@ diracSEs(){
   echo "==> Installing SE-2"
   seDir=${SERVERINSTALLDIR}/Storage/SE-2
   mkdir -p "${seDir}"
-  if ! dirac-install-component DataManagement SE-2 -m StorageElement -p BasePath="${seDir}" -p Port=9147 "${DEBUG}"; then
+  if ! dirac-install-component DataManagement SE-2 -m StorageElement -p BasePath="${seDir}" -p Port=9147 -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
     echo 'ERROR: dirac-install-component failed' >&2
     exit 1
   fi
@@ -611,8 +607,8 @@ diracUninstallServices(){
   fi
 
   for serv in $services; do
-    echo '==> calling dirac-uninstall-component' "$serv" "${DEBUG}"
-    dirac-uninstall-component -f "$serv" "${DEBUG}"
+    echo '==> calling dirac-uninstall-component' "$serv" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"
+    dirac-uninstall-component -f "$serv" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"
   done
 
   if [[ $save =~ e ]]; then
@@ -638,10 +634,10 @@ diracAgents(){
     if [[ $agent == *" JobAgent"* ]]; then
       echo '==> '
     else
-      echo "==> calling dirac-cfg-add-option agent $agent"
-      python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-add-option.py" "agent" "$agent"
-      echo "==> calling dirac-agent $agent -o MaxCycles=1 ${DEBUG}"
-      if ! dirac-agent "$agent"  -o MaxCycles=1 "${DEBUG}"; then
+      echo "==> calling dirac-cfg-add-option agent $agent -o /DIRAC/Security/UseServerCertificate=True "
+      python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-add-option.py" "agent" "$agent" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"
+      echo "==> calling dirac-agent $agent -o MaxCycles=1 -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}"
+      if ! dirac-agent "$agent" -o MaxCycles=1 -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
         echo 'ERROR: dirac-agent failed' >&2
         exit 1
       fi
@@ -662,7 +658,7 @@ diracDBs(){
 
   local dbs=$(cut -d ' ' -f 2 < databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB | grep -v ^InstalledComponentsDB)
   for db in $dbs; do
-    if ! dirac-install-db "$db" "${DEBUG}"; then
+    if ! dirac-install-db "$db" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
       echo 'ERROR: dirac-install-db failed' >&2
       exit 1
     fi
@@ -695,7 +691,7 @@ dropDBs(){
 
   # make dbs a real array to avoid future mistake with escaping
   mapfile -t dbs < <(cut -d ' ' -f 2 < databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB)
-  python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-drop-db.py" "${dbs[@]}" "${DEBUG}"
+  python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-drop-db.py" "${dbs[@]}" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"
 }
 
 #-------------------------------------------------------------------------------
@@ -712,8 +708,7 @@ diracOptimizers(){
   for executor in $executors
   do
     echo "==> calling dirac-install-component WorkloadManagement/$executor"
-    if ! dirac-install-component "WorkloadManagement/$executor"
-    then
+    if ! dirac-install-component "WorkloadManagement/$executor" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
       echo 'ERROR: dirac-install-component failed' >&2
       exit 1
     fi
