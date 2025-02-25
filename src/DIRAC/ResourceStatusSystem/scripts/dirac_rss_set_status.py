@@ -227,7 +227,6 @@ def run(switchDict):
         tokenOwner = tokenOwner["Value"]
 
     gLogger.notice(f"TokenOwner is {tokenOwner}")
-    print(switchDict)
     result = setStatus(switchDict, tokenOwner)
     if not result["OK"]:
         gLogger.error(result["Message"])
@@ -241,9 +240,7 @@ def main():
     # Script initialization
     registerSwitches()
     switchDict = parseSwitches()
-    print(switchDict)
     switchDictSets = unpack(switchDict)
-    print(switchDictSets)
 
     # Run script
     for switchDict in switchDictSets:

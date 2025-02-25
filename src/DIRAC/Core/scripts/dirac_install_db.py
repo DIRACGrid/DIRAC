@@ -19,6 +19,8 @@ def main():
     from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
     from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
 
+    user = "DIRAC"
+
     gComponentInstaller.exitOnError = True
     gComponentInstaller.getMySQLPasswords()
     for db in args:
@@ -34,9 +36,7 @@ def main():
 
         if db != "InstalledComponentsDB":
             # get the user that installed the DB
-            if useServerCertificate():
-                user = "DIRAC"
-            else:
+            if not useServerCertificate():
                 result = getProxyInfo()
                 if not result["OK"]:
                     return result
