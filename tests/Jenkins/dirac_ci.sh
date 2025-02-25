@@ -126,7 +126,6 @@ installSite() {
   echo "source \"$PWD/diracos/diracosrc\"" > "$PWD/bashrc"
 
   mkdir -p "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/"
-  mkdir -p "${SERVERINSTALLDIR}/user/"
 
   echo "==> CAs and certificates"
 
@@ -143,10 +142,6 @@ installSite() {
   # because otherwise the BundleDeliveryClient will send the full path, which
   # will be wrong on the client
   ln -s "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/ca.cert.pem" "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/$caHash.0"
-
-  # # Copy the user cert and key to the correct directory
-  # cp /ca/certs/client.pem "${SERVERINSTALLDIR}/user/"
-  # cp /ca/certs/client.key "${SERVERINSTALLDIR}/user/"
 
   rm -rf "${SERVERINSTALLDIR}/etc"
   ln -s "${SERVERINSTALLDIR}/diracos/etc" "${SERVERINSTALLDIR}/etc"
@@ -230,11 +225,6 @@ fullInstallDIRAC() {
   if [[ -e "${SERVERINSTALLDIR}/diracos/etc/Production.cfg" ]]; then
     cat "${SERVERINSTALLDIR}/diracos/etc/Production.cfg"
   fi
-
-  # if ! diracCredentials; then
-  #   echo "ERROR: diracCredentials failed" >&2
-  #   exit 1
-  # fi
 
   #just add a site
   if ! diracAddSite; then

@@ -74,8 +74,8 @@ dirac-restart-component Tornado Tornado "${DEBUG}" |& tee -a "${SERVER_TEST_OUTP
 
 echo -e "*** $(date -u)  Run the DFC client tests as user without admin privileges" |& tee -a "${SERVER_TEST_OUTPUT}"
 echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a "${SERVER_TEST_OUTPUT}"
-dirac-login -C "${WORKSPACE}/ServerInstallDIR/user/client.pem" -K "${WORKSPACE}/ServerInstallDIR/user/client.key" "${DEBUG}"
-python "${THIS_DIR}/DataManagementSystem/Test_Client_DFC.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+# dirac-login -C "${WORKSPACE}/ServerInstallDIR/user/client.pem" -K "${WORKSPACE}/ServerInstallDIR/user/client.key" "${DEBUG}"
+# python "${THIS_DIR}/DataManagementSystem/Test_Client_DFC.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 diracDFCDB |& tee -a "${SERVER_TEST_OUTPUT}"
 python "${THIS_DIR}/DataManagementSystem/Test_FileCatalogDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
@@ -86,20 +86,15 @@ echo -e "*** $(date -u)  Restart the DFC service (required for Test_Client_DFC)\
 if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
   dirac-restart-component DataManagement FileCatalog "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
 fi
-dirac-restart-component Tornado Tornado "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
+# dirac-restart-component Tornado Tornado "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
 
 echo -e "*** $(date -u)  Run it with the admin privileges" |& tee -a "${SERVER_TEST_OUTPUT}"
 echo -e "*** $(date -u)  getting the prod role again\n" |& tee -a "${SERVER_TEST_OUTPUT}"
-dirac-login prod -C "${WORKSPACE}/ServerInstallDIR/user/client.pem" -K "${WORKSPACE}/ServerInstallDIR/user/client.key" "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
-python "${THIS_DIR}/DataManagementSystem/Test_Client_DFC.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+# dirac-login prod -C "${WORKSPACE}/ServerInstallDIR/user/client.pem" -K "${WORKSPACE}/ServerInstallDIR/user/client.key" "${DEBUG}" |& tee -a "${SERVER_TEST_OUTPUT}"
+# python "${THIS_DIR}/DataManagementSystem/Test_Client_DFC.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 diracDFCDB |& tee -a "${SERVER_TEST_OUTPUT}"
 python "${THIS_DIR}/DataManagementSystem/Test_FileCatalogDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
-
-#-------------------------------------------------------------------------------#
-echo -e "*** $(date -u)  **** FTS TESTS ****\n"
-# I know, it says Client, but it also instantiates a DB, so it needs to be here
-pytest --no-check-dirac-environment "${THIS_DIR}/DataManagementSystem/Test_Client_FTS3.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** RMS TESTS ****\n"

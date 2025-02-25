@@ -248,9 +248,6 @@ installDIRAC() {
   echo "export X509_CERT_DIR=\"$PWD/diracos/etc/grid-security/certificates\"" >> "$PWD/bashrc"
   source diracos/diracosrc
 
-  # Copy the user cert and key to the correct directory
-  # cp /ca/certs/client.pem "${SERVERINSTALLDIR}/user/"
-  # cp /ca/certs/client.key "${SERVERINSTALLDIR}/user/"
   cp /ca/certs/client.pem /home/dirac/.globus/usercert.pem
   cp /ca/certs/client.key /home/dirac/.globus/userkey.pem
 
@@ -395,8 +392,7 @@ diracCredentials() {
   echo '==> [diracCredentials]'
 
   sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' "${SERVERINSTALLDIR}/etc/Configuration_Server.cfg"
-  if ! dirac-proxy-init dirac_admin --nocs -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" --valid 72:00; then
-  # if ! dirac-login dirac_admin --nocs -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" -T 72; then
+  if ! dirac-proxy-init dirac_admin --nocs "${DEBUG}" --valid 72:00; then
     echo 'ERROR: dirac-proxy-init failed' >&2
     exit 1
   fi
@@ -541,10 +537,6 @@ diracServices(){
 
   local services=$(cut -d '.' -f 1 < services | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
 
-  # group proxy, will be uploaded explicitly
-  #  echo '==> getting/uploading proxy for prod'
-  #  dirac-proxy-init -U -g prod -C ${SERVERINSTALLDIR}/user/client.pem -K ${SERVERINSTALLDIR}/user/client.key "${DEBUG}"
-
   for serv in $services; do
     echo "==> calling dirac-install-component $serv -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}"
     if ! dirac-install-component "$serv" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
@@ -595,10 +587,6 @@ diracUninstallServices(){
 
   # Ignore tornado services
   local services=$(cut -d '.' -f 1 < services | grep -v TokenManager | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | grep -v Tornado | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
-
-  # group proxy, will be uploaded explicitly
-  #  echo '==> getting/uploading proxy for prod'
-  #  dirac-proxy-init -U -g prod -C ${SERVERINSTALLDIR}/user/client.pem -K ${SERVERINSTALLDIR}/user/client.key "${DEBUG}"
 
   # check if errexit mode is set and disabling as the component may not exist
   local save=$-
