@@ -4,20 +4,20 @@
 # pylint: disable=invalid-name,wrong-import-position,protected-access
 import os
 import re
-import sys
-import stat
 import shutil
-import tempfile
+import stat
 
 # TODO: This should be modernised to use subprocess(32)
 import subprocess as commands
+import sys
+import tempfile
 import unittest
 
 from diraccfg import CFG
 
 import DIRAC
 
-DIRAC.initialize()  # Initialize configuration
+DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
 import DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR

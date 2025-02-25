@@ -28,7 +28,7 @@ fi
 echo
 
 echo "====================="
-echo "===  dirac-login --status"
+echo "===  dirac-proxy-info"
 echo
 dirac-proxy-info
 if [[ "${?}" -ne 0 ]]; then

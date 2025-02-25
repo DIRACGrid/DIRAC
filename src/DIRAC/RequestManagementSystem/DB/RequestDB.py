@@ -435,10 +435,13 @@ class RequestDB:
             # FIXME: code for backward compatibility
             if not request.Owner:
                 # We go under the assumption that in this case OwnerDN exists
-                res = getDNForUsername(request.OwnerDN)
-                if not res["OK"]:
-                    return res
-                request.Owner = res["Value"][0]
+                if request.OwnerDN:
+                    res = getDNForUsername(request.OwnerDN)
+                    if not res["OK"]:
+                        return res
+                    request.Owner = res["Value"][0]
+                else:
+                    request.Owner = "Unknown"
             # ##
 
             return S_OK(request)

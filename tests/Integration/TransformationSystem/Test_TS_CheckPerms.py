@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 """ This tests the TransformationManager checkPermission function
 """
-import unittest
 import functools
 import sys
+import unittest
 
 import DIRAC
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK
 
-DIRAC.initialize()  # Initialize configuration
+DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
 from DIRAC.TransformationSystem.Service.TransformationManagerHandler import TransformationManagerHandlerMixin
 

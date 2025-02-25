@@ -9,10 +9,11 @@
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
-import DIRAC
 import pytest
 
-DIRAC.initialize()  # Initialize configuration
+import DIRAC
+
+DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
 from DIRAC import S_OK, gLogger
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus

@@ -4,7 +4,7 @@
 # pylint: disable=invalid-name,wrong-import-position
 import DIRAC
 
-DIRAC.initialize()  # Initialize configuration
+DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
 from pytest import fixture
 

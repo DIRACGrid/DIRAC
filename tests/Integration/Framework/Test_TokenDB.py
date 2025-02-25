@@ -5,7 +5,7 @@ import time
 
 import DIRAC
 
-DIRAC.initialize()  # Initialize configuration
+DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
 payload = {
     "sub": "user",
