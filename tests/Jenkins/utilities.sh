@@ -707,7 +707,7 @@ diracOptimizers(){
   local executors=$(cat executors | grep WorkloadManagementSystem | cut -d ' ' -f 2 | grep -v Base)
   for executor in $executors
   do
-    echo "==> calling dirac-install-component WorkloadManagement/$executor"
+    echo "==> calling dirac-install-component WorkloadManagement/$executor  -o /DIRAC/Security/UseServerCertificate=True"
     if ! dirac-install-component "WorkloadManagement/$executor" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
       echo 'ERROR: dirac-install-component failed' >&2
       exit 1

@@ -33,7 +33,6 @@ def main():
             DIRACExit(1)
 
         if db != "InstalledComponentsDB":
-
             # get the user that installed the DB
             if useServerCertificate():
                 user = "DIRAC"

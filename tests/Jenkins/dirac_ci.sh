@@ -383,18 +383,18 @@ fullInstallDIRAC() {
 
   # populate RSS
   echo "==> Populating RSS DB"
-  dirac-rss-sync --element Site --defaultStatus Banned -o LogLevel=VERBOSE -o /DIRAC/Security/UseServerCertificate=True 
-  dirac-rss-sync --element Resource --defaultStatus Banned -o LogLevel=VERBOSE -o /DIRAC/Security/UseServerCertificate=True 
+  dirac-rss-sync --element Site --defaultStatus Banned -o LogLevel=VERBOSE -o /DIRAC/Security/UseServerCertificate=True
+  dirac-rss-sync --element Resource --defaultStatus Banned -o LogLevel=VERBOSE -o /DIRAC/Security/UseServerCertificate=True
   # init RSS
   echo "==> Initializing status of sites and resources in RSS"
-  dirac-rss-sync --init --defaultStatus Banned -o LogLevel=VERBOSE -o /DIRAC/Security/UseServerCertificate=True 
+  dirac-rss-sync --init --defaultStatus Banned -o LogLevel=VERBOSE -o /DIRAC/Security/UseServerCertificate=True
   # Setting by hand
-  dirac-rss-set-status --element Resource --name ProductionSandboxSE --status Active --reason "Why not?" -o /DIRAC/Security/UseServerCertificate=True 
-  dirac-rss-set-status --element Resource --name jenkins.cern.ch --status Active --reason "Why not?" -o /DIRAC/Security/UseServerCertificate=True 
-  dirac-rss-set-status --element Resource --name JENKINS-FTS3 --status Active --reason "Why not?" -o /DIRAC/Security/UseServerCertificate=True 
-  dirac-rss-set-status --element Resource --name FileCatalog --status Active --reason "Why not?" -o /DIRAC/Security/UseServerCertificate=True 
-  dirac-rss-set-status --element Site --name DIRAC.Jenkins.ch --status Active --reason "Why not?" -o /DIRAC/Security/UseServerCertificate=True 
-  dirac-admin-allow-se SE-1 SE-2 S3-DIRECT S3-INDIRECT --All -o /DIRAC/Security/UseServerCertificate=True 
+  dirac-rss-set-status --element Resource --name ProductionSandboxSE --status Active --reason "Why not?" --tokenOwner DIRAC -o /DIRAC/Security/UseServerCertificate=True
+  dirac-rss-set-status --element Resource --name jenkins.cern.ch --status Active --reason "Why not?" --tokenOwner DIRAC -o /DIRAC/Security/UseServerCertificate=True
+  dirac-rss-set-status --element Resource --name JENKINS-FTS3 --status Active --reason "Why not?" --tokenOwner DIRAC -o /DIRAC/Security/UseServerCertificate=True
+  dirac-rss-set-status --element Resource --name FileCatalog --status Active --reason "Why not?" --tokenOwner DIRAC -o /DIRAC/Security/UseServerCertificate=True
+  dirac-rss-set-status --element Site --name DIRAC.Jenkins.ch --status Active --reason "Why not?" --tokenOwner DIRAC -o /DIRAC/Security/UseServerCertificate=True
+  dirac-admin-allow-se SE-1 SE-2 S3-DIRECT S3-INDIRECT --All --tokenOwner DIRAC -o /DIRAC/Security/UseServerCertificate=True
 
   #agents
   findAgents

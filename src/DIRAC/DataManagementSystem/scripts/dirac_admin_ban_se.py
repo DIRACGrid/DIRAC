@@ -18,6 +18,7 @@ def main():
     remove = True
     sites = []
     mute = False
+    userName = ""
 
     Script.registerSwitch("r", "BanRead", "     Ban only reading from the storage element")
     Script.registerSwitch("w", "BanWrite", "     Ban writing to the storage element")
@@ -28,6 +29,7 @@ def main():
     Script.registerSwitch(
         "S:", "Site=", "     Ban all SEs associate to site (note that if writing is allowed, check is always allowed)"
     )
+    Script.registerSwitch("t:", "tokenOwner=", "     Optional Name of the token owner")
     # Registering arguments will automatically add their description to the help menu
     Script.registerArgument(["seGroupList: list of SEs or comma-separated SEs"])
 
@@ -56,6 +58,8 @@ def main():
             mute = True
         if switch[0].lower() in ("s", "site"):
             sites = switch[1].split(",")
+        if switch[0] in ("t", "tokenOwner"):
+            userName = switch[1]
 
     # from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
     from DIRAC import gLogger
@@ -68,15 +72,16 @@ def main():
     ses = resolveSEGroup(ses)
     diracAdmin = DiracAdmin()
 
-    res = getProxyInfo()
-    if not res["OK"]:
-        gLogger.error("Failed to get proxy information", res["Message"])
-        DIRAC.exit(2)
-
-    userName = res["Value"].get("username")
     if not userName:
-        gLogger.error("Failed to get username for proxy")
-        DIRAC.exit(2)
+        res = getProxyInfo()
+        if not res["OK"]:
+            gLogger.error("Failed to get proxy information", res["Message"])
+            DIRAC.exit(2)
+
+        userName = res["Value"].get("username")
+        if not userName:
+            gLogger.error("Failed to get username for proxy")
+            DIRAC.exit(2)
 
     for site in sites:
         res = DMSHelpers().getSEsForSite(site)
