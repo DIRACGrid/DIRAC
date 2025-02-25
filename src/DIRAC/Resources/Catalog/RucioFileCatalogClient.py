@@ -62,7 +62,6 @@ class RucioFileCatalogClient(FileCatalogClientBase):
         "getUserDirectory",
         "getFileUserMetadata",
         "findFilesByMetadata",
-
     ]
 
     WRITE_METHODS = FileCatalogClientBase.WRITE_METHODS + [
@@ -708,7 +707,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
         """Get the meta data attached to a file, but also to
         all its parents
         """
-        path=next(iter(path))
+        path = next(iter(path))
         resDict = {"Successful": {}, "Failed": {}}
         try:
             did = self.__getDidsFromLfn(path)
@@ -769,7 +768,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
     def setMetadata(self, path, metadataDict):
         """Add metadata to the given path"""
         pathMetadataDict = {}
-        path=next(iter(path))
+        path = next(iter(path))
         pathMetadataDict[path] = metadataDict
         return self.setMetadataBulk(pathMetadataDict)
 
@@ -796,37 +795,29 @@ class RucioFileCatalogClient(FileCatalogClientBase):
         except Exception as err:
             return S_ERROR(str(err))
         return S_OK()
-    
+
     def findFilesByMetadata(self, metadataFilterDict, path="/", timeout=120):
         """find the dids for the given metadataFilterDict"""
-        ruciometadataFilterDict=self.__transform_DIRAC_filter_dict_to_Rucio_filter_dict([metadataFilterDict])
-        dids=[]
+        ruciometadataFilterDict = self.__transform_DIRAC_filter_dict_to_Rucio_filter_dict([metadataFilterDict])
+        dids = []
         for scope in self.scopes:
             try:
-                dids.extend(self.client.list_dids(scope=scope, filters=ruciometadataFilterDict,did_type="all" ))
+                dids.extend(self.client.list_dids(scope=scope, filters=ruciometadataFilterDict, did_type="all"))
             except Exception as err:
                 return S_ERROR(str(err))
-        return S_OK(dids)   
-          
+        return S_OK(dids)
+
     def __transform_DIRAC_operator_to_Rucio(self, DIRAC_dict):
         """
         Transforms a DIRAC's metadata Query dictionary to a Rucio-compatible dictionary.
-        This method takes a dictionary with DIRAC operators and converts it to a 
+        This method takes a dictionary with DIRAC operators and converts it to a
         dictionary with Rucio-compatible operators based on predefined mappings.
         for example :
             input_dict={'key1': 'value1', 'key2': {'>': 10}, 'key3': {'=': 10}}
             return = {'key1': 'value1', 'key2.gt': 10, 'key3': 10}
         """
         rucio_dict = {}
-        operator_mapping = {
-            '>': '.gt',
-            '<': '.lt',
-            '>=': '.gte',
-            '<=': '.lte',
-            '=<': '.lte', 
-            '!=': '.ne',
-            '=' : ''
-        }
+        operator_mapping = {">": ".gt", "<": ".lt", ">=": ".gte", "<=": ".lte", "=<": ".lte", "!=": ".ne", "=": ""}
 
         for key, value in DIRAC_dict.items():
             if isinstance(value, dict):
@@ -838,7 +829,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                 rucio_dict[key] = value
 
         return rucio_dict
-     
+
     def __transform_dict_with_in_operateur(self, DIRAC_dict_with_in_operator_list):
         """
         Transforms a list of DIRAC dictionaries containing 'in' operators into a combined list of dictionaries,
@@ -851,7 +842,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
             raise TypeError("DIRAC_dict_with_in_operator_list must be a list of dictionaries")
 
         combined_dict_list = []  # Final list of transformed dictionaries
-        break_reached = False    # Boolean to track if 'in' was found and processed in any dictionary
+        break_reached = False  # Boolean to track if 'in' was found and processed in any dictionary
 
         # Process each dictionary in the input list
         for DIRAC_dict_with_in_operator in DIRAC_dict_with_in_operator_list:
@@ -863,9 +854,9 @@ class RucioFileCatalogClient(FileCatalogClientBase):
 
             # Extract the key with 'in' operator and the list of values
             for key, value in DIRAC_dict_with_in_operator.items():
-                if isinstance(value, dict) and 'in' in value:
+                if isinstance(value, dict) and "in" in value:
                     in_key = key
-                    in_values = value['in']
+                    in_values = value["in"]
                     break_reached = True  # 'in' operator found
                     break
 
@@ -892,11 +883,11 @@ class RucioFileCatalogClient(FileCatalogClientBase):
             input_dict_list = [{'particle': {'in': ['proton','electron']},'site': {'in': [ "LaPalma", 'paranal']},'configuration_id': {'=': 14} }    ]
             return = [{'particle': 'proton', 'site': 'LaPalma', 'configuration_id': 14}, {'particle': 'proton', 'site': 'paranal', 'configuration_id': 14}, {'particle': 'electron', 'site': 'LaPalma', 'configuration_id': 14}, {'particle': 'electron', 'site': 'paranal', 'configuration_id': 14}]
         """
-        break_detected=True
-        DIRAC_expanded_filters=DIRAC_filter_dict_list
+        break_detected = True
+        DIRAC_expanded_filters = DIRAC_filter_dict_list
         while break_detected:
             DIRAC_expanded_filters, break_detected = self.__transform_dict_with_in_operateur(DIRAC_expanded_filters)
-        Rucio_filters=[]
+        Rucio_filters = []
         for filter in DIRAC_expanded_filters:
             Rucio_filters.append(self.__transform_DIRAC_operator_to_Rucio(filter))
         return Rucio_filters
