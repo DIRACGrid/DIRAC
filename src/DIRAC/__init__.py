@@ -318,5 +318,6 @@ def extension_metadata():
         "priority": 0,
         "setups": {
             "DIRAC-Certification": "https://lbcertifdirac70.cern.ch:9135/Configuration/Server",
+            "DIRAC-CI": "https://server:9135/Configuration/Server",
         },
     }

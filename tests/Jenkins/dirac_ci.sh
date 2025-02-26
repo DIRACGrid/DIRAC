@@ -141,7 +141,7 @@ installSite() {
   # We make a relative symlink on purpose (i.e. not the full path to ca.cert.pem)
   # because otherwise the BundleDeliveryClient will send the full path, which
   # will be wrong on the client
-  ln -s "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/ca.cert.pem" "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/$caHash.0"
+  ln -s "ca.cert.pem" "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/$caHash.0"
 
   rm -rf "${SERVERINSTALLDIR}/etc"
   ln -s "${SERVERINSTALLDIR}/diracos/etc" "${SERVERINSTALLDIR}/etc"

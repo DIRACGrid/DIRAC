@@ -279,7 +279,10 @@ installDIRAC() {
   fi
 
   # now configuring
-
+  if ! dirac-proxy-init --nocs --no-upload; then
+    echo 'ERROR: dirac-proxy-init failed' >&2
+    exit 1
+  fi
   if [[ -n "${INSTALLATION_BRANCH}" ]]; then
     # Use this for (e.g.) running backward-compatibility tests
     cmd="dirac-configure -S ${DIRACSETUP} -C ${CSURL} --SkipCAChecks ${CONFIGUREOPTIONS} ${DEBUG}"
