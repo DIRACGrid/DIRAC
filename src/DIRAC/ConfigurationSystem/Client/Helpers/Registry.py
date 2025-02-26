@@ -1,6 +1,12 @@
 """ Helper for /Registry section
 """
+
 import errno
+
+from threading import Lock
+
+from cachetools import TTLCache, cached
+
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
@@ -628,6 +634,10 @@ def getDNProperty(userDN, value, defaultValue=None):
     return S_OK(defaultValue)
 
 
+_cache_getProxyProvidersForDN = TTLCache(maxsize=1000, ttl=60)
+
+
+@cached(_cache_getProxyProvidersForDN, lock=Lock())
 def getProxyProvidersForDN(userDN):
     """Get proxy providers by user DN
 
