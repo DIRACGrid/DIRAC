@@ -90,7 +90,6 @@ source "${TESTCODE}/DIRAC/tests/Jenkins/utilities.sh"
 installSite() {
   echo "==> [installSite]"
 
-  # echo -n > "${SERVERINSTALLDIR}/dirac-ci-install.cfg"
   getCFGFile
 
   echo "==> Fixing install.cfg file"
@@ -234,7 +233,6 @@ fullInstallDIRAC() {
 
   echo "==> Restarting Configuration Server"
   dirac-restart-component Configuration Server -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
-  # dirac-restart-component Tornado Tornado -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
 
   #Install the Framework
   findDatabases 'FrameworkSystem'
@@ -279,7 +277,6 @@ fullInstallDIRAC() {
 
   echo "==> Restarting Framework services"
   dirac-restart-component Framework '*' -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
-  # dirac-restart-component Tornado Tornado -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
 
   #Now all the rest
 
@@ -344,9 +341,6 @@ fullInstallDIRAC() {
 
   #fix the SandboxStore and other stuff
   python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-server.py" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"
-
-  echo "==> Restarting Tornado Tornado"
-  # dirac-restart-component Tornado Tornado -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
 
   if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
     echo "==> Restarting WorkloadManagement SandboxStore"
@@ -413,10 +407,6 @@ fullInstallDIRAC() {
 
   echo "==> Restarting Configuration Server"
   dirac-restart-component Configuration Server -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
-
-  echo "==> Restarting Tornado Tornado"
-  # dirac-restart-component Tornado Tornado -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
-
 }
 
 

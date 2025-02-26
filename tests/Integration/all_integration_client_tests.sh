@@ -12,7 +12,7 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 echo -e "THIS_DIR=${THIS_DIR}" |& tee -a clientTestOutputs.txt
 
 echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a clientTestOutputs.txt
-dirac-login -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+dirac-proxy-init "${DEBUG}" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** Accounting TESTS ****\n"
@@ -29,13 +29,13 @@ pytest --no-check-dirac-environment "${THIS_DIR}/DataManagementSystem/Test_Clien
 echo -e "*** $(date -u)  **** RMS TESTS ****\n"
 
 echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a clientTestOutputs.txt
-dirac-login -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
+dirac-proxy-init "${DEBUG}" |& tee -a clientTestOutputs.txt
 
 echo -e "*** $(date -u)  Starting RMS Client test as a non privileged user\n" |& tee -a clientTestOutputs.txt
 pytest --no-check-dirac-environment "${THIS_DIR}/RequestManagementSystem/Test_Client_Req.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 echo -e "*** $(date -u)  getting the prod role again\n" |& tee -a clientTestOutputs.txt
-dirac-login prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
+dirac-proxy-init -g prod "${DEBUG}" |& tee -a clientTestOutputs.txt
 echo -e "*** $(date -u)  Starting RMS Client test as an admin user\n" |& tee -a clientTestOutputs.txt
 pytest --no-check-dirac-environment "${THIS_DIR}/RequestManagementSystem/Test_Client_Req.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
@@ -63,7 +63,7 @@ pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_W
 pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_Client_WMS.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 # Make sure we have the prod role for these tests to get the VmRpcOperator permission
-dirac-login prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
+dirac-proxy-init -g prod "${DEBUG}" |& tee -a clientTestOutputs.txt
 
 ## no real tests
 python "${THIS_DIR}/WorkloadManagementSystem/createJobXMLDescriptions.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
@@ -95,14 +95,14 @@ echo -e "*** $(date -u) **** DataManager TESTS ****\n"
 
 
 echo -e "*** $(date -u)  Getting a non privileged user to find its VO dynamically\n" |& tee -a clientTestOutputs.txt
-dirac-login jenkins_user -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG |& tee -a clientTestOutputs.txt
+dirac-proxy-init -g jenkins_user $DEBUG |& tee -a clientTestOutputs.txt
 
 userVO=$(python -c "import DIRAC; DIRAC.initialize(); from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup; print(getVOfromProxyGroup().get('Value',''))")
 userVO="${userVO:-Jenkins}"
 echo -e "*** $(date -u) VO is "${userVO}"\n" |& tee -a clientTestOutputs.txt
 
 echo -e "*** $(date -u)  Getting a privileged user\n" |& tee -a clientTestOutputs.txt
-dirac-login jenkins_fcadmin -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
+dirac-proxy-init -g jenkins_fcadmin "${DEBUG}" |& tee -a clientTestOutputs.txt
 
 cat >> dataManager_create_folders <<EOF
 
@@ -118,7 +118,7 @@ EOF
 dirac-dms-filecatalog-cli -f FileCatalog < dataManager_create_folders
 
 echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a clientTestOutputs.txt
-dirac-login jenkins_user -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
+dirac-proxy-init -g jenkins_user "${DEBUG}" |& tee -a clientTestOutputs.txt
 
 pytest --no-check-dirac-environment "${THIS_DIR}/DataManagementSystem/Test_DataManager.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
@@ -128,7 +128,7 @@ pytest --no-check-dirac-environment "${THIS_DIR}/DataManagementSystem/Test_DataM
 # respectively.
 
 # normal user proxy
-dirac-login jenkins_user -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
+dirac-proxy-init -g jenkins_user "${DEBUG}" |& tee -a clientTestOutputs.txt
 echo -e "*** $(date -u) **** MultiVO User Metadata TESTS ****\n"
 python -m pytest --no-check-dirac-environment "${THIS_DIR}/DataManagementSystem/Test_UserMetadata.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 

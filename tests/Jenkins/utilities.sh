@@ -461,37 +461,6 @@ diracUserAndGroup() {
   fi
 }
 
-
-#.............................................................................
-#
-# diracProxies:
-#
-#   Upload proxies in the ProxyDB (which is supposed to be installed...)
-#
-#.............................................................................
-
-# diracProxies() {
-#   echo '==> [diracProxies]'
-
-#   # Make sure DiracX is running
-#   # And make sure it was synced
-#   if [[ -n $TEST_DIRACX ]]; then
-#     echo "Waiting for DiracX to be available" >&2
-#     for i in {1..10}; do
-#       if dirac-proxy-init "${DEBUG}"; then
-#         break
-#       fi
-#       sleep 5
-#     done
-#   fi
-
-#   # group proxy
-#   if ! dirac-proxy-init prod "${DEBUG}"; then
-#     echo 'ERROR: dirac-init failed' >&2
-#     exit 1
-#   fi
-# }
-
 #.............................................................................
 #
 # diracRefreshCS:
@@ -546,10 +515,6 @@ diracServices(){
       echo 'ERROR: dirac-install-component failed' >&2
       exit 1
     fi
-    # if ! dirac-restart-component Tornado Tornado -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
-    #   echo 'ERROR: could not restart Tornado' >&2
-    #   exit 1
-    # fi
   done
 }
 
