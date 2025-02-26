@@ -11,11 +11,18 @@ set -x
 source CONFIG
 
 # Creating "the worker node"
+mkdir -p /home/dirac/PilotInstallDIR/etc/grid-security/certificates
+mkdir -p /home/dirac/PilotInstallDIR/etc/grid-security/vomsdir
+mkdir -p /home/dirac/PilotInstallDIR/etc/grid-security/vomses
+
+cp /ca/certs/pilot.pem /home/dirac/PilotInstallDIR/etc/grid-security/hostcert.pem
+cp /ca/certs/pilot.key /home/dirac/PilotInstallDIR/etc/grid-security/hostkey.pem
+cp /ca/certs/ca.cert.pem /home/dirac/PilotInstallDIR/etc/grid-security/certificates
+
+touch /home/dirac/PilotInstallDIR/etc/grid-security/vomsdir/vomsdir
+touch /home/dirac/PilotInstallDIR/etc/grid-security/vomses/vomses
+
 cd /home/dirac/PilotInstallDIR
-mkdir -p etc/grid-security/vomsdir
-mkdir -p etc/grid-security/vomses
-touch etc/grid-security/vomsdir/vomsdir
-touch etc/grid-security/vomses/vomses
 
 eval "${PILOT_DOWNLOAD_COMMAND}"
 
@@ -29,7 +36,7 @@ elif command -v python2 &> /dev/null; then
   py='python2'
 fi
 
-more pilot.json
+more pilot.json | jq
 
 # shellcheck disable=SC2086
 $py ${PILOT_INSTALLATION_COMMAND}

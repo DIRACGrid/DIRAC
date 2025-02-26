@@ -16,6 +16,9 @@ source CONFIG
 # shellcheck disable=SC2034
 CSURL=https://$SERVER_HOST:9135/Configuration/Server
 
+mkdir -p /home/dirac/ClientInstallDIR/etc
+mkdir -p /home/dirac/.globus
+
 echo -e "*** $(date -u) **** Getting the tests ****\n"
 
 mkdir -p "$PWD/TestCode"

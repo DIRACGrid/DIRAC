@@ -396,33 +396,6 @@ def install_server():
         check=True,
     )
 
-    typer.secho("Copying credentials and certificates", fg=c.GREEN)
-    base_cmd = _build_docker_cmd("client", tty=False)
-    subprocess.run(
-        base_cmd
-        + [
-            "mkdir",
-            "-p",
-            "/home/dirac/ServerInstallDIR/user",
-            "/home/dirac/ClientInstallDIR/etc",
-            "/home/dirac/.globus",
-        ],
-        check=True,
-    )
-
-    base_cmd = _build_docker_cmd("pilot", tty=False)
-    subprocess.run(
-        base_cmd
-        + [
-            "mkdir",
-            "-p",
-            "/home/dirac/ServerInstallDIR/user",
-            "/home/dirac/PilotInstallDIR/etc",
-            "/home/dirac/.globus",
-        ],
-        check=True,
-    )
-
 
 @app.command()
 def install_client():
