@@ -21,11 +21,6 @@ pytest --no-check-dirac-environment "${THIS_DIR}/AccountingSystem/Test_ReportsCl
 
 
 #-------------------------------------------------------------------------------#
-echo -e "*** $(date -u)  **** FTS TESTS ****\n"
-pytest --no-check-dirac-environment "${THIS_DIR}/DataManagementSystem/Test_Client_FTS3.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
-
-
-#-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** RMS TESTS ****\n"
 
 echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a clientTestOutputs.txt

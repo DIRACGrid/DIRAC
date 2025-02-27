@@ -38,7 +38,7 @@ def test_storeRetrieveDelete():
 
         retVal = up.listAvailableVars()
         assert retVal["OK"], retVal
-        assert retVal["Value"] == [["adminusername", currentGroup, "vo", key]]
+        assert retVal["Value"] == [["ciuser", currentGroup, "vo", key]]
 
         retVal = up.getUserProfiles()
         assert retVal["OK"], retVal
