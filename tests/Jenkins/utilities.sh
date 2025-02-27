@@ -3,15 +3,6 @@
 # General utility functions
 ############################################
 
-if [[ -z "${SERVERINSTALLDIR}" ]]; then
-  if [[ -z "${PILOTINSTALLDIR}" ]]; then
-    echo 'Environmental variable "PILOTINSTALLDIR" is not set.'
-    exit 1
-  else
-    SERVERINSTALLDIR=${PILOTINSTALLDIR}
-  fi
-fi
-
 if [[ "${TESTCODE}" ]]; then
   # Path to ci config files
   CI_CONFIG=${TESTCODE}/DIRAC/tests/Jenkins/config/ci
@@ -273,11 +264,6 @@ installDIRAC() {
   echo "$DIRAC"
   echo "$PATH"
 
-  if ! dirac-proxy-init -g dirac_admin --nocs --no-upload -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
-    echo 'ERROR: dirac-proxy-init --nocs --no-upload failed' >&2
-    exit 1
-  fi
-
   # now configuring
   if ! dirac-proxy-init --nocs --no-upload; then
     echo 'ERROR: dirac-proxy-init failed' >&2
@@ -332,20 +318,7 @@ submitJob() {
   fi
 
   export PYTHONPATH=${TESTCODE}:${PYTHONPATH}
-  # Get a proxy and submit the job: this job will go to the certification setup, so we suppose the JobManager there is accepting jobs
 
-  # check if errexit mode is set and disabling as the component may not exist
-  save=$-
-  if [[ $save =~ e ]]; then
-    set +e
-  fi
-  getUserProxy #this won't really download the proxy, so that's why the next command is needed
-  # re-enabling it
-  if [[ ${save} =~ e ]]; then
-    set -e
-  fi
-
-  dirac-admin-get-proxy "${DIRACUSERDN}" "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem  --out="/tmp/x509up_u${UID}" -ddd
   if [[ -f "${TESTCODE}/${VO}DIRAC/tests/Jenkins/dirac-test-job.py" ]]; then
     cp "${TESTCODE}/${VO}DIRAC/tests/Jenkins/dirac-test-job.py" "."
   else
@@ -356,54 +329,6 @@ submitJob() {
   echo '==> Done submitJob'
 }
 
-getUserProxy() {
-
-  echo '==> Started getUserProxy'
-
-  cp "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update.py" "."
-
-  if [[ -e "${CLIENTINSTALLDIR}/etc/dirac.cfg" ]]; then
-    cfgFile="${CLIENTINSTALLDIR}/etc/dirac.cfg"
-  elif [[ -e "${CLIENTINSTALLDIR}/diracos/etc/dirac.cfg" ]]; then
-    cfgFile="${CLIENTINSTALLDIR}/diracos/etc/dirac.cfg"
-  fi
-
-  if ! python dirac-cfg-update.py --cfg "${cfgFile}" -F "${cfgFile}" -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem "${DEBUG}"; then
-    echo 'ERROR: dirac-cfg-update failed' >&2
-    exit 1
-  fi
-
-  #Getting a user proxy, so that we can run jobs
-  if ! downloadProxy; then
-    echo 'ERROR: downloadProxy failed' >&2
-    exit 1
-  fi
-
-  echo '==> Done getUserProxy'
-}
-
-#.............................................................................
-#
-# diracCredentials:
-#
-#   hacks CS service to create a first dirac_admin proxy that will be used
-#   to install the components and run the test ( some of them ).
-#
-#.............................................................................
-
-diracCredentials() {
-  echo '==> [diracCredentials]'
-
-  sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' "${SERVERINSTALLDIR}/etc/Configuration_Server.cfg"
-  if ! dirac-proxy-init dirac_admin --nocs "${DEBUG}" --valid 72:00; then
-    echo 'ERROR: dirac-proxy-init failed' >&2
-    exit 1
-  fi
-  sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' "${SERVERINSTALLDIR}/etc/Configuration_Server.cfg"
-}
-
-
-
 #.............................................................................
 #
 # diracUserAndGroup:
@@ -412,6 +337,12 @@ diracCredentials() {
 #
 #.............................................................................
 
+# Create a user and a group (the CS has to be running)
+#
+# This function is used to create a user and a group in the CS.
+# The user is created with the name 'ciuser' and the group is created with the name 'prod'
+# The user is added to the group and the shifter is added to the group.
+# The user is also added to the group 'jenkins_fcadmin' and 'jenkins_user'
 diracUserAndGroup() {
   echo '==> [diracUserAndGroup]'
 
@@ -460,24 +391,6 @@ diracUserAndGroup() {
     exit 1
   fi
 }
-
-#.............................................................................
-#
-# diracRefreshCS:
-#
-#   refresh the CS
-#
-#.............................................................................
-
-diracRefreshCS() {
-  echo '==> [diracRefreshCS]'
-  if ! python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-refresh-cs.py" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
-    echo 'ERROR: dirac-refresh-cs failed' >&2
-    exit 1
-  fi
-}
-
-
 
 
 #.............................................................................
@@ -747,70 +660,4 @@ stopRunsv() {
   killRunsv
 
   echo '==> [Done stopRunsv]'
-}
-
-
-#.............................................................................
-#
-# startRunsv:
-#
-#   starts runsv processes
-#
-#.............................................................................
-
-startRunsv(){
-  echo '==> [startRunsv]'
-
-  # Let's try to be a bit more delicate than the function above
-
-  source "${SERVERINSTALLDIR}/bashrc"
-  runsvdir -P "${SERVERINSTALLDIR}/startup" &
-
-  # Gives some time to the components to start
-  sleep 10
-  # Just in case 10 secs are not enough, we disable exit on error for this call.
-  local save=$-
-  if [[ $save =~ e ]]; then
-    set +e
-  fi
-  runsvctrl u "${SERVERINSTALLDIR}/startup/"*
-  if [[ $save =~ e ]]; then
-    set -e
-  fi
-
-  runsvstat "${SERVERINSTALLDIR}/startup/"*
-
-  echo '==> [Done startRunsv]'
-}
-
-
-#.............................................................................
-#
-# downloadProxy:
-#
-#   dowloads a proxy from the ProxyManager (a real one - which is probably the certification one) into a file
-#
-#.............................................................................
-
-downloadProxy() {
-  echo '==> [downloadProxy]'
-
-  if [[ "${PILOTCFG}" ]]; then
-    if [[ -e "${CLIENTINSTALLDIR}/diracos/etc/dirac.cfg" ]]; then # called from the py3 client directory
-      dirac-admin-get-proxy "${DIRACUSERDN}" "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True --cfg "${CLIENTINSTALLDIR}/diracos/etc/dirac.cfg" "${PILOTINSTALLDIR}/$PILOTCFG" --out="/tmp/x509up_u${UID}" "${DEBUG}"
-    else # assuming it's the pilot
-      dirac-admin-get-proxy "${DIRACUSERDN}" "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True --cfg "${PILOTINSTALLDIR}/$PILOTCFG" --out="/tmp/x509up_u${UID}" "${DEBUG}"
-    fi
-  else
-    if [[ -e "${CLIENTINSTALLDIR}/diracos/etc/dirac.cfg" ]]; then # called from the py3 client directory
-      dirac-admin-get-proxy "${DIRACUSERDN}" "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True --cfg "${CLIENTINSTALLDIR}/diracos/etc/dirac.cfg" "${PILOTINSTALLDIR}/etc/dirac.cfg" --out="/tmp/x509up_u${UID}" "${DEBUG}"
-    else # assuming it's the pilot
-      dirac-admin-get-proxy "${DIRACUSERDN}" "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True --cfg "${PILOTINSTALLDIR}/etc/dirac.cfg" --out="/tmp/x509up_u${UID}" "${DEBUG}"
-    fi
-  fi
-
-  if [[ "${?}" -ne 0 ]]; then
-    echo 'ERROR: cannot download proxy' >&2
-    exit 1
-  fi
 }

@@ -18,7 +18,7 @@
 #
 # === optional environment variables:
 #
-# WORKSPACE (set by Jenkins, normally. If not there, will be $PWD)
+# WORKSPACE (/home/dirac)
 # DEBUG (set it to whatever value to turn on debug messages)
 #
 # DIRAC_RELEASE (for installing a specific release)
@@ -40,8 +40,6 @@
 # ~/TestCode
 # ~/ServerInstallDIR
 # ~/ClientInstallDIR
-# ~/PilotInstallDIR
-
 
 # Def of environment variables:
 
@@ -67,8 +65,6 @@ mkdir -p "$WORKSPACE/ServerInstallDIR" # Where servers are installed
 SERVERINSTALLDIR=${_}
 mkdir -p "$WORKSPACE/ClientInstallDIR" # Where clients are installed
 CLIENTINSTALLDIR=${_}
-mkdir -p "$WORKSPACE/PilotInstallDIR" # Where pilots run
-PILOTINSTALLDIR=${_}
 
 # Location of the CFG file to be used (this can be replaced by the extensions)
 INSTALL_CFG_FILE="${TESTCODE}/DIRAC/tests/Jenkins/install.cfg"
@@ -407,6 +403,10 @@ fullInstallDIRAC() {
 
   echo "==> Restarting Configuration Server"
   dirac-restart-component Configuration Server -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
+
+  echo 'Generate a pilot proxy, to be used by the pilot'
+  dirac-proxy-init -g pilot -C /ca/certs/pilot.pem -K /ca/certs/pilot.key ${DEBUG}
+  mv /tmp/x509up_u$UID /ca/certs/pilot_proxy
 }
 
 

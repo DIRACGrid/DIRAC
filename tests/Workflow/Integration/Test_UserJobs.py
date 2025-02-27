@@ -51,7 +51,7 @@ class HelloWorldSuccess(UserJobTestCase):
         j.setLogLevel("DEBUG")
         try:
             # This is the standard location in Jenkins
-            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             j.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         j.setConfigArgs("pilot.cfg")
@@ -90,7 +90,7 @@ class HelloWorldPlusSuccess(UserJobTestCase):
         job.setLogLevel("DEBUG")
         try:
             # This is the standard location in Jenkins
-            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             job.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         job.setConfigArgs("pilot.cfg")
@@ -125,7 +125,7 @@ class HelloWorldPlusSuccess(UserJobTestCase):
         job.setLogLevel("DEBUG")
         try:
             # This is the standard location in Jenkins
-            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             job.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         job.setConfigArgs("pilot.cfg")
@@ -145,7 +145,7 @@ class LSSuccess(UserJobTestCase):
         job.setLogLevel("DEBUG")
         try:
             # This is the standard location in Jenkins
-            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             job.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         job.setConfigArgs("pilot.cfg")
@@ -164,7 +164,7 @@ class DownloadSuccess(UserJobTestCase):
         job.setLogLevel("DEBUG")
         try:
             # This is the standard location in Jenkins
-            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             job.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         job.setConfigArgs("pilot.cfg")
@@ -187,7 +187,7 @@ class MPSuccess(UserJobTestCase):
         j.setLogLevel("DEBUG")
         try:
             # This is the standard location in Jenkins
-            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             j.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         j.setConfigArgs("pilot.cfg")
@@ -214,7 +214,7 @@ class MPSuccessMinMax(UserJobTestCase):
         j.setLogLevel("DEBUG")
         try:
             # This is the standard location in Jenkins
-            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             j.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         j.setConfigArgs("pilot.cfg")
@@ -233,7 +233,7 @@ class MPSuccessMinMax(UserJobTestCase):
         j.setLogLevel("DEBUG")
         try:
             # This is the standard location in Jenkins
-            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             j.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         j.setConfigArgs("pilot.cfg")
@@ -252,7 +252,7 @@ class MPSuccessMinMax(UserJobTestCase):
         j.setLogLevel("DEBUG")
         try:
             # This is the standard location in Jenkins
-            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"] + "/PilotInstallDIR")[0])
+            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
         except (IndexError, KeyError):
             j.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         j.setConfigArgs("pilot.cfg")
