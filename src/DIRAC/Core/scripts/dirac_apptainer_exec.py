@@ -27,8 +27,7 @@ CONTAINER_DEFROOT = ""  # Should add something like "/cvmfs/dirac.egi.eu/contain
 
 @Script()
 def main():
-    Script.registerArgument(" command: Command to execute inside the container")
-    command = Script.getPositionalArgs(group=True)
+    command = sys.argv[1]
 
     user_image = None
     Script.registerSwitch("i:", "image=", "   apptainer image to use")
