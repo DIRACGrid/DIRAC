@@ -7,6 +7,7 @@
   :dedent: 2
   :caption: SandboxStore options
 """
+
 import os
 import time
 import threading
@@ -562,6 +563,7 @@ class SandboxStoreHandlerMixin:
                 physicalRemoval.TargetSE = SEName
                 fileToRemove = File()
                 fileToRemove.PFN = SEPFN
+                fileToRemove.LFN = SEPFN
                 physicalRemoval.addFile(fileToRemove)
                 request.addOperation(physicalRemoval)
                 return ReqClient().putRequest(request)
