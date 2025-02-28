@@ -110,7 +110,15 @@ logger.addHandler(buffer)
 # just logging the environment as first thing
 logger.debug('===========================================================')
 logger.debug('Environment of execution host\\n')
-for key, val in os.environ.items():
+for key, val in getattr(os, "environb", os.environ).items():
+  # Clean the environment of non-utf-8 characters
+  try:
+    key = key.decode("utf-8")
+    val = val.decode("utf-8")
+  except UnicodeDecodeError as e:
+    logger.error("Dropping %%s=%%s due to: %%s", key, val, e)
+    del os.environ[key]
+    continue
   logger.debug(key + '=' + val)
 logger.debug('===========================================================\\n')
 
