@@ -3,7 +3,10 @@
 """
 import random
 import sys
-from typing import Any
+from typing import Any, TypeVar
+from collections.abc import Iterable
+
+T = TypeVar("T")
 
 
 def uniqueElements(aList: list) -> list:
@@ -37,7 +40,7 @@ def fromChar(inputString: str, sepChar: str = ","):
     return [fieldString.strip() for fieldString in inputString.split(sepChar) if len(fieldString.strip()) > 0]
 
 
-def randomize(aList: list) -> list:
+def randomize(aList: Iterable[T]) -> list[T]:
     """Return a randomly sorted list.
 
     :param aList: list to permute

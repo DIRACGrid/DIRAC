@@ -1,6 +1,11 @@
 """ Collection of utilities for finding paths in the CS
 """
+import re
+from copy import deepcopy
+from collections.abc import Iterable
 from urllib import parse
+
+from cachetools import cached, TTLCache
 
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
@@ -207,6 +212,43 @@ def getSystemURLs(system, setup=False, failover=False):
     return urlDict
 
 
+def groupURLsByPriority(urls: Iterable[str]) -> list[set[str]]:
+    """Group URLs by priority.
+
+    :param Iterable[str] preferredURLPatterns: patterns to check in ranked order
+    :param set[str] urls: URLs to check
+
+    :return: list[set[str]] -- list of URL groups, ordered by priority
+    """
+    return deepcopy(_groupURLsByPriority(frozenset(urls)))
+
+
+@cached(cache=TTLCache(maxsize=1024, ttl=300))
+def _groupURLsByPriority(urls: frozenset[str]) -> list[set[str]]:
+    preferredURLPatterns = []
+    if patterns := gConfigurationData.extractOptionFromCFG("/DIRAC/PreferredURLPatterns"):
+        preferredURLPatterns = [re.compile(pattern) for pattern in List.fromChar(patterns)]
+
+    urlGroups = [set() for _ in range(len(preferredURLPatterns) + 1)]
+    for url in urls:
+        urlGroups[findURLPriority(preferredURLPatterns, url)].add(url)
+    return urlGroups
+
+
+def findURLPriority(preferredURLPatterns: list[re.Pattern[str]], url: str) -> int:
+    """Find which preferred URL pattern the URL matches.
+
+    :param str preferredURLPatterns: patterns to check in ranked order
+    :param str url: URL to check
+
+    :return: int -- index of the pattern that matched, smallest is the most preferred
+    """
+    for i, pattern in enumerate(preferredURLPatterns):
+        if re.match(pattern, url):
+            return i
+    return len(preferredURLPatterns)
+
+
 def getServiceURLs(system, service=None, setup=False, failover=False):
     """Generate url.
 
@@ -225,8 +267,8 @@ def getServiceURLs(system, service=None, setup=False, failover=False):
     # Add failover URLs at the end of the list
     failover = "Failover" if failover else ""
     for fURLs in ["", "Failover"] if failover else [""]:
-        urlList = []
         urls = List.fromChar(gConfigurationData.extractOptionFromCFG(f"{systemSection}/{fURLs}URLs/{service}"))
+        urlList = set()
 
         # Be sure that urls not None
         for url in urls or []:
@@ -243,16 +285,13 @@ def getServiceURLs(system, service=None, setup=False, failover=False):
 
                 for srv in mainServers:
                     _url = checkComponentURL(url.replace("$MAINSERVERS$", srv), system, service, pathMandatory=True)
-                    if _url not in urlList:
-                        urlList.append(_url)
+                    urlList.add(_url)
                 continue
 
-            _url = checkComponentURL(url, system, service, pathMandatory=True)
-            if _url not in urlList:
-                urlList.append(_url)
+            urlList.add(checkComponentURL(url, system, service, pathMandatory=True))
 
-        # Randomize list if needed
-        resList.extend(List.randomize(urlList))
+        for urlGroup in groupURLsByPriority(urlList):
+            resList.extend(List.randomize(urlGroup))
 
     return resList
 

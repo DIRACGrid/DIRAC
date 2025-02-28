@@ -34,6 +34,44 @@ In each system, per setup, you normally find the following sections:
 * FailoverURLs: Like URLs, but they are only tried if no server in URLs was successfully contacted.
 
 
+Preferred URLs
+--------------
+
+For most services, the standard ``URLs`` and ``FailoverURLs`` mechanism provides a way to specify primary and backup service endpoints.
+
+However, this approach has limitations in certain scenarios:
+
+- Some services (like the Configuration service) have replicas that automatically register themselves in the Configuration System
+- External servers ("voboxes") running at sites may not be accessible from all clients
+- Connection attempts to inaccessible servers cause errors that, while harmless due to fallback mechanisms, slow down DIRAC and generate misleading error messages
+
+To address these issues, you can define a ``PreferredURLPatterns`` that identifies a subset of URLs to try first:
+
+.. code-block:: guess
+
+  System
+  {
+    URLs
+    {
+      Service = dips://host1.main.invalid:1234/System/Service,dips://host2.main.invalid:1234/System/Service,dips://external.invalid:1234/System/Service
+    }
+  }
+  DIRAC
+  {
+    PreferredURLPatterns = .*\.main\.invalid/.*
+  }
+
+In this example:
+
+1. The ``PreferredURLPatterns`` specifies a regular expression that matches servers in the ``main.invalid`` domain
+2. When connecting to the service, DIRAC will first try URLs matching this pattern (``host1.main.invalid`` and ``host2.main.invalid``)
+3. Only if these preferred servers fail will DIRAC attempt to connect to other servers (``external.invalid``)
+
+This approach reduces connection errors and improves performance by prioritizing servers that are more likely to be accessible from the client.
+
+.. note:: The ``PreferredURLPatterns`` is a list of regular expressions, not a single regular expression. This allows you to specify multiple patterns to match different subsets of servers if desired.
+
+
 Main Servers
 ------------
 
