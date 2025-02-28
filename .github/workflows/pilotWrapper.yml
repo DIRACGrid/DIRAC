@@ -35,6 +35,7 @@ jobs:
         conda create -c conda-forge -c free -n python_${{ matrix.python }} python=${{ matrix.python }}
     - name: run pilot wrapper test
       run: |
+        export INVALID_UTF8_VAR=$'\xff'
         cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py .
         eval "$(conda shell.bash hook)" && conda activate python_${{ matrix.python }}
         # use github APIs to get the artifacts URLS from https://github.com/DIRACGrid/Pilot/, for those named Pilot_${{ matrix.pilot_branch }}
