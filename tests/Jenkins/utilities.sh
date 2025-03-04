@@ -239,9 +239,6 @@ installDIRAC() {
   echo "export X509_CERT_DIR=\"$PWD/diracos/etc/grid-security/certificates\"" >> "$PWD/bashrc"
   source diracos/diracosrc
 
-  cp /ca/certs/client.pem /home/dirac/.globus/usercert.pem
-  cp /ca/certs/client.key /home/dirac/.globus/userkey.pem
-
   if [[ -n "${DIRAC_RELEASE+x}" ]]; then
     if [[ -z "${ALTERNATIVE_MODULES}" ]]; then
       pip install DIRAC "${DIRAC_RELEASE}"

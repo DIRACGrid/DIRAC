@@ -18,6 +18,8 @@ CSURL=https://$SERVER_HOST:9135/Configuration/Server
 
 mkdir -p /home/dirac/ClientInstallDIR/etc
 mkdir -p /home/dirac/.globus
+cp /ca/certs/client.pem /home/dirac/.globus/usercert.pem
+cp /ca/certs/client.key /home/dirac/.globus/userkey.pem
 
 echo -e "*** $(date -u) **** Getting the tests ****\n"
 
@@ -27,10 +29,7 @@ cd "$PWD/TestCode"
 if [[ -n "${INSTALLATION_BRANCH}" ]]; then
     # Use this for (e.g.) running backward-compatibility tests
     echo "Using https://github.com/DIRACGrid/DIRAC.git@${INSTALLATION_BRANCH} for the tests"
-    git clone "https://github.com/DIRACGrid/DIRAC.git"
-    cd DIRAC
-    git checkout "$INSTALLATION_BRANCH"
-    cd -
+    git clone --single-branch --branch "$INSTALLATION_BRANCH" "https://github.com/DIRACGrid/DIRAC.git"
 else
     for repo_path in "${TESTREPO[@]}"; do
         if [[ -d "${repo_path}" ]]; then
@@ -39,11 +38,8 @@ else
             echo "Using local test repository in branch $(git branch | grep "\*" | sed -e "s/* //")"
             cd -
         else
-            git clone "https://github.com/$repo_path/DIRAC.git"
-            cd "$(basename "${repo_path}")"
-            git checkout "$TESTBRANCH"
+            git clone --single-branch --branch "$TESTBRANCH" "https://github.com/$repo_path/DIRAC.git"
             echo "Using remote test repository ${repo_path} in branch ${TESTBRANCH}"
-            cd -
         fi
     done
 fi
