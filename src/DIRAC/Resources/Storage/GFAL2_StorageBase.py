@@ -164,6 +164,10 @@ class GFAL2_StorageBase(StorageBase):
             os.environ.get("DIRAC_GFAL_GRIDFTP_ENABLE_IPV6", "true").lower() not in ["false", "no"],
         )
 
+        # Disable retrieving the bearer token for every operations.
+        # It is only useful for TPC
+        self.ctx.set_opt_boolean("HTTP PLUGIN", "RETRIEVE_BEARER_TOKEN", False)
+
         # spaceToken used for copying from and to the storage element
         self.spaceToken = parameters.get("SpaceToken", "")
         # stageTimeout, default timeout to try and stage/pin a file
@@ -304,20 +308,23 @@ class GFAL2_StorageBase(StorageBase):
         failed = {}
         successful = {}
 
-        for dest_url, src_file in urls.items():
-            if not src_file:
-                errStr = "GFAL2_StorageBase.putFile: Source file not set. Argument must be a dictionary \
-                                             (or a list of a dictionary) {url : local path}"
-                self.log.debug(errStr)
-                failed[dest_url] = errStr
-                continue
+        # In principle we only need the bearer token when doing TPC, however it's a
+        # bit cumbersome to test, so we always re-enable it when uploading
+        with setGfalSetting(self.ctx, "HTTP PLUGIN", "RETRIEVE_BEARER_TOKEN", True):
+            for dest_url, src_file in urls.items():
+                if not src_file:
+                    errStr = "GFAL2_StorageBase.putFile: Source file not set. Argument must be a dictionary \
+                                                (or a list of a dictionary) {url : local path}"
+                    self.log.debug(errStr)
+                    failed[dest_url] = errStr
+                    continue
 
-            try:
-                successful[dest_url] = self._putSingleFile(src_file, dest_url, sourceSize)
-            except (gfal2.GError, ValueError, RuntimeError) as e:
-                detailMsg = f"Failed to copy {src_file} to {dest_url}: {repr(e)}"
-                self.log.debug("Exception while copying", detailMsg)
-                failed[dest_url] = detailMsg
+                try:
+                    successful[dest_url] = self._putSingleFile(src_file, dest_url, sourceSize)
+                except (gfal2.GError, ValueError, RuntimeError) as e:
+                    detailMsg = f"Failed to copy {src_file} to {dest_url}: {repr(e)}"
+                    self.log.debug("Exception while copying", detailMsg)
+                    failed[dest_url] = detailMsg
 
         return {"Failed": failed, "Successful": successful}
 
