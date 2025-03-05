@@ -168,7 +168,7 @@ class SiteDirector(AgentModule):
         self.log.always("MaxPilotsToSubmit:", self.maxPilotsToSubmit)
 
         # Build the dictionary of queues that are going to be used: self.queueDict
-        if not (result := self._buildQueueDict(siteNames, ceTypes, ces, tags))["OK"]:
+        if not (result := self._buildQueueDict(siteNames, ces, ceTypes, tags))["OK"]:
             return result
 
         # Stop the execution if there is no usable queue
