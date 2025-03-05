@@ -143,9 +143,11 @@ class GFAL2_StorageBase(StorageBase):
         # Workaround for https://github.com/xrootd/xrootd/issues/2396
         # xrootd internaly sets nproc, so we save the limit and reset it
         # just after creating the context
-        saved_limits = getrlimit(RLIMIT_NPROC)
+        saved_limit = getrlimit(RLIMIT_NPROC)
         self.ctx = gfal2.creat_context()
-        setrlimit(RLIMIT_NPROC, saved_limits)
+        new_limit = getrlimit(RLIMIT_NPROC)
+        if saved_limit != new_limit:
+            setrlimit(RLIMIT_NPROC, saved_limit)
 
         # by default turn off BDII checks
         self.ctx.set_opt_boolean("BDII", "ENABLE", False)
