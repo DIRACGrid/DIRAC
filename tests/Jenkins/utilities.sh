@@ -266,6 +266,11 @@ installDIRAC() {
   echo "$DIRAC"
   echo "$PATH"
 
+  if ! dirac-proxy-init -g dirac_admin --nocs --no-upload -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}"; then
+    echo 'ERROR: dirac-proxy-init --nocs --no-upload failed' >&2
+    exit 1
+  fi
+
   # now configuring
   cmd="dirac-configure -S ${DIRACSETUP} -C ${CSURL} --SkipCAChecks ${CONFIGUREOPTIONS} ${DEBUG}"
   if ! bash -c "${cmd}"; then
