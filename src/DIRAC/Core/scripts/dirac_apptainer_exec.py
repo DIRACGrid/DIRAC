@@ -1,8 +1,10 @@
+#!/usr/bin/env python
 """ Starts a DIRAC command inside an apptainer container.
 """
 
 import os
 import sys
+from pathlib import Path
 
 import DIRAC
 from DIRAC import S_ERROR, gConfig, gLogger
@@ -10,17 +12,30 @@ from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Security.Locations import getCAsLocation, getProxyLocation, getVOMSLocation
 from DIRAC.Core.Utilities.Subprocess import systemCall
 
-CONTAINER_WRAPPER = """#!/bin/bash
 
-export DIRAC=%(dirac_env_var)s
-export DIRACOS=%(diracos_env_var)s
-export X509_USER_PROXY=/etc/proxy
-export X509_CERT_DIR=/etc/grid-security/certificates
-export X509_VOMS_DIR=/etc/grid-security/vomsdir
-export DIRACSYSCONFIG=%(etc_dir)s/dirac.cfg
-source %(rc_script)s
-%(command)s
-"""
+def generate_container_wrapper(dirac_env_var, diracos_env_var, etc_dir, rc_script, command, include_proxy=True):
+    lines = [
+        "#!/bin/bash",
+        f"export DIRAC={dirac_env_var}",
+        f"export DIRACOS={diracos_env_var}",
+    ]
+
+    if include_proxy:
+        lines.append("export X509_USER_PROXY=/etc/proxy")
+
+    lines.extend(
+        [
+            "export X509_CERT_DIR=/etc/grid-security/certificates",
+            "export X509_VOMS_DIR=/etc/grid-security/vomsdir",
+            "export X509_VOMSES=/etc/grid-security/vomses",
+            f"export DIRACSYSCONFIG={etc_dir}/dirac.cfg",
+            f"source {rc_script}",
+            command,
+        ]
+    )
+
+    return "\n".join(lines)
+
 
 CONTAINER_DEFROOT = ""  # Should add something like "/cvmfs/dirac.egi.eu/container/apptainer/alma9/x86_64"
 
@@ -36,28 +51,36 @@ def main():
         if switch[0].lower() == "i" or switch[0].lower() == "image":
             user_image = switch[1]
 
+    dirac_env_var = os.environ.get("DIRAC", os.getcwd())
+    diracos_env_var = os.environ.get("DIRACOS", os.getcwd())
     etc_dir = os.path.join(DIRAC.rootPath, "etc")
+    rc_script = os.path.join(os.path.realpath(sys.base_prefix), "diracosrc")
 
-    wrapSubs = {
-        "dirac_env_var": os.environ.get("DIRAC", os.getcwd()),
-        "diracos_env_var": os.environ.get("DIRACOS", os.getcwd()),
-        "etc_dir": etc_dir,
-    }
-    wrapSubs["rc_script"] = os.path.join(os.path.realpath(sys.base_prefix), "diracosrc")
-    wrapSubs["command"] = command
+    include_proxy = True
+    proxy_location = getProxyLocation()
+    if not proxy_location:
+        include_proxy = False
 
-    rawfd = os.open("dirac_container.sh", os.O_WRONLY | os.O_CREAT, 0o700)
-    fd = os.fdopen(rawfd, "w")
-    fd.write(CONTAINER_WRAPPER % wrapSubs)
-    fd.close()
+    with open("dirac_container.sh", "w", encoding="utf-8") as fd:
+        script = generate_container_wrapper(
+            dirac_env_var, diracos_env_var, etc_dir, rc_script, command, include_proxy=include_proxy
+        )
+        fd.write(script)
+    os.chmod("dirac_container.sh", 0o755)
 
+    # Now let's construct the apptainer command
     cmd = ["apptainer", "exec"]
     cmd.extend(["--contain"])  # use minimal /dev and empty other directories (e.g. /tmp and $HOME)
     cmd.extend(["--ipc"])  # run container in a new IPC namespace
+    cmd.extend(["--pid"])  # run container in a new PID namespace
     cmd.extend(["--bind", f"{os.getcwd()}:/mnt"])  # bind current directory for dirac_container.sh
-    cmd.extend(["--bind", f"{getProxyLocation()}:/etc/proxy"])  # bind proxy file
+    if proxy_location:
+        cmd.extend(["--bind", f"{proxy_location}:/etc/proxy"])  # bind proxy file
     cmd.extend(["--bind", f"{getCAsLocation()}:/etc/grid-security/certificates"])  # X509_CERT_DIR
-    cmd.extend(["--bind", f"{getVOMSLocation()}:/etc/grid-security/vomsdir"])  # X509_VOMS_DIR
+    voms_location = Path(getVOMSLocation())
+    cmd.extend(["--bind", f"{voms_location}:/etc/grid-security/vomsdir"])  # X509_VOMS_DIR
+    vomses_location = voms_location.parent / "vomses"
+    cmd.extend(["--bind", f"{vomses_location}:/etc/grid-security/vomses"])  # X509_VOMSES
     cmd.extend(["--bind", "{0}:{0}:ro".format(etc_dir)])  # etc dir for dirac.cfg
     cmd.extend(["--bind", "{0}:{0}:ro".format(os.path.join(os.path.realpath(sys.base_prefix)))])  # code dir
 
@@ -73,7 +96,11 @@ def main():
     gLogger.debug(f"Execute Apptainer command: {' '.join(cmd)}")
     result = systemCall(0, cmd)
     if not result["OK"]:
+        gLogger.error(result["Message"])
         DIRAC.exit(1)
+    if result["Value"][0] != 0:
+        gLogger.error(result["Value"][2])
+        DIRAC.exit(2)
     gLogger.notice(result["Value"][1])
 
 
