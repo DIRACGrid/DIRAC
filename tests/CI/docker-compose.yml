@@ -222,6 +222,7 @@ services:
       - DIRACX_DB_URL_PILOTAGENTSDB=mysql+aiomysql://Dirac:Dirac@mysql/PilotAgentsDB
       - 'DIRACX_OS_DB_PILOTLOGSDB={"sqlalchemy_dsn": "mysql+aiomysql://Dirac:Dirac@mysql/PilotLogsDB"}'
       - DIRACX_SERVICE_AUTH_TOKEN_KEY=file:///signing-key/rs256.key
+      - DIRACX_SERVICE_AUTH_TOKEN_ISSUER=http://diracx:8000
       - DIRACX_SERVICE_AUTH_ALLOWED_REDIRECTS=["http://diracx:8000/docs/oauth2-redirect"]
       # Obtained with head -c 32 /dev/urandom | base64
       - DIRACX_SERVICE_AUTH_STATE_KEY=uSNPPtZ1EbC5np13zOwmWJ84Duix753Hejzk/u/MQE4=
