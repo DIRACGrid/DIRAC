@@ -24,7 +24,7 @@ class Token(Model, OAuth2TokenMixin):
     """This class describes token fields"""
 
     __tablename__ = "Token"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8"}
+    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
     # access_token too large for varchar(255)
     # 767 bytes is the stated prefix limitation for InnoDB tables in MySQL version 5.6
     # https://stackoverflow.com/questions/1827063/mysql-error-key-specification-without-a-key-length

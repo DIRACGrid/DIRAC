@@ -48,7 +48,7 @@ CREATE TABLE Transformations(
     INDEX(TransformationFamily),
     INDEX(Status),
     INDEX(Type)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS DataFiles;
@@ -59,7 +59,7 @@ CREATE TABLE DataFiles(
     INDEX(Status),
     INDEX(LFN),
     PRIMARY KEY(FileID)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS AdditionalParameters;
@@ -70,7 +70,7 @@ CREATE TABLE AdditionalParameters(
     ParameterType VARCHAR(32) DEFAULT 'StringType',
     PRIMARY KEY(TransformationID, ParameterName),
     FOREIGN KEY(TransformationID) REFERENCES Transformations(TransformationID)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationLog;
@@ -84,7 +84,7 @@ CREATE TABLE TransformationLog(
     INDEX(TransformationID),
     INDEX(MessageDate),
     FOREIGN KEY(TransformationID) REFERENCES Transformations(TransformationID)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationTasks;
@@ -100,7 +100,7 @@ CREATE TABLE TransformationTasks(
     INDEX(ExternalStatus),
     INDEX(TransformationID,ExternalStatus),
     FOREIGN KEY(TransformationID) REFERENCES Transformations(TransformationID)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- This is required to mimic the AUTO_INCREMENT behavior of TaskID which was possible with MyISAM:
 CREATE TRIGGER `TaskID_Generator` BEFORE INSERT ON TransformationTasks
@@ -125,7 +125,7 @@ CREATE TABLE TransformationFiles(
     INDEX(TransformationID,Status),
     FOREIGN KEY(TransformationID) REFERENCES Transformations(TransformationID),
     FOREIGN KEY(FileID) REFERENCES DataFiles(FileID)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationFileTasks;
@@ -137,7 +137,7 @@ CREATE TABLE TransformationFileTasks(
     FOREIGN KEY(TransformationID) REFERENCES Transformations(TransformationID),
     FOREIGN KEY(TransformationID, FileID) REFERENCES TransformationFiles(TransformationID, FileID),
     FOREIGN KEY(TransformationID, TaskID) REFERENCES TransformationTasks(TransformationID, TaskID)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TaskInputs;
@@ -147,7 +147,7 @@ CREATE TABLE TaskInputs(
     InputVector MEDIUMTEXT,
     PRIMARY KEY(TransformationID, TaskID),
     FOREIGN KEY(TransformationID, TaskID) REFERENCES TransformationTasks(TransformationID, TaskID)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationMetaQueries;
@@ -159,6 +159,6 @@ CREATE TABLE TransformationMetaQueries(
     QueryType ENUM('Input', 'Output') DEFAULT 'Input',
     PRIMARY KEY(TransformationID, MetaDataName, QueryType),
     FOREIGN KEY(TransformationID) REFERENCES Transformations(TransformationID)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 SET FOREIGN_KEY_CHECKS = 1;
