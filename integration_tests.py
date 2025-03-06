@@ -181,7 +181,7 @@ def destroy():
     with _gen_docker_compose(DEFAULT_MODULES) as docker_compose_fn:
         os.execvpe(
             "docker",
-            ["docker", "compose", "-f", docker_compose_fn, "down", "--remove-orphans", "-t", "0"],
+            ["docker", "compose", "-f", docker_compose_fn, "down", "--remove-orphans", "-t", "0", "--volumes"],
             _make_env({}),
         )
 
@@ -510,16 +510,21 @@ class TestExit(typer.Exit):
 
 @contextmanager
 def _gen_docker_compose(modules):
-    # Load the docker-compose configuration and mount the necessary volumes
+    # Load the docker compose configuration and mount the necessary volumes
     input_fn = Path(__file__).parent / "tests/CI/docker-compose.yml"
     docker_compose = yaml.safe_load(input_fn.read_text())
+    for ctn in ("dirac-server", "dirac-client"):
+        if "volumes" not in docker_compose["services"][ctn]:
+            docker_compose["services"][ctn]["volumes"] = []
     volumes = [f"{path}:/home/dirac/LocalRepo/ALTERNATIVE_MODULES/{name}" for name, path in modules.items()]
     volumes += [f"{path}:/home/dirac/LocalRepo/TestCode/{name}" for name, path in modules.items()]
-    docker_compose["services"]["dirac-server"]["volumes"] = volumes[:]
-    docker_compose["services"]["dirac-client"]["volumes"] = volumes[:]
+    docker_compose["services"]["dirac-server"]["volumes"].extend(volumes[:])
+    docker_compose["services"]["dirac-client"]["volumes"].extend(volumes[:])
+
+    module_configs = _load_module_configs(modules)
 
     # Add any extension services
-    for module_name, module_configs in _load_module_configs(modules).items():
+    for module_name, module_configs in module_configs.items():
         for service_name, service_config in module_configs["extra-services"].items():
             typer.secho(f"Adding service {service_name} for {module_name}", err=True, fg=c.GREEN)
             docker_compose["services"][service_name] = service_config.copy()

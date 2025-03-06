@@ -1,4 +1,6 @@
 volumes:
+  # Volume used to store the certificates of dirac
+  certs_data:
   # Volume used to store the jwks of the IAM service
   diracx-iam-key-store:
 
@@ -88,6 +90,15 @@ services:
       - debug=true
     pull_policy: always
 
+  dirac-init-certificates:
+    image: ghcr.io/diracgrid/management/certificates-generation:latest
+    container_name: dirac-init-certificates
+    volumes:
+      - certs_data:/ca/certs/
+    entrypoint: |
+      /entrypoint.sh
+    pull_policy: always
+
   dirac-server:
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
     container_name: server
@@ -98,8 +109,12 @@ services:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
+      dirac-init-certificates:
+        condition: service_completed_successfully # Let the init container create the certificates
     ulimits:
       nofile: 8192
+    volumes:
+      - certs_data:/ca/certs
     pull_policy: always
     command: ["sleep", "infinity"] # This is necessary because of the issue described in https://github.com/moby/moby/issues/42275. What is added here is a hack/workaround.
 
@@ -111,6 +126,8 @@ services:
     user: "${DIRAC_UID}:${DIRAC_GID}"
     depends_on:
       - dirac-server
+    volumes:
+      - certs_data:/ca/certs
     ulimits:
       nofile: 8192
     pull_policy: always
