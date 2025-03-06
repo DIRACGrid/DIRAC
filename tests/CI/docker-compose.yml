@@ -3,6 +3,8 @@ volumes:
   diracx-cs-store:
   # Volume used to store the pair of keys to sign the tokens
   diracx-key-store:
+  # Volume used to store the certificates of dirac
+  certs_data:
   # Volume used to store the jwks of the IAM service
   diracx-iam-key-store:
 
@@ -99,6 +101,14 @@ services:
       mysql:
         condition: service_healthy
     command: /home/dirac/LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/CI/check_db_initialized.sh
+
+  dirac-init-certificates:
+    image: ghcr.io/diracgrid/management/certificates-generation:latest
+    container_name: dirac-init-certificates
+    volumes:
+      - certs_data:/ca/certs/
+    entrypoint: |
+      /entrypoint.sh
     pull_policy: always
 
   dirac-server:
@@ -125,6 +135,7 @@ services:
     volumes:
       - diracx-cs-store:/cs_store
       - diracx-key-store:/signing-key
+      - certs_data:/ca/certs
     environment:
       - DIRACX_CONFIG_BACKEND_URL=git+file:///cs_store/initialRepo
       - DIRACX_SERVICE_AUTH_TOKEN_KEY=file:///signing-key/rs256.key
@@ -139,6 +150,8 @@ services:
     user: "${DIRAC_UID}:${DIRAC_GID}"
     depends_on:
       - dirac-server
+    volumes:
+      - certs_data:/ca/certs
     ulimits:
       nofile: 8192
     pull_policy: always
