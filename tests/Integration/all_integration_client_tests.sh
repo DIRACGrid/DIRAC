@@ -11,6 +11,12 @@ echo -e '********' "client -> server tests" '********\n'
 THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 echo -e "THIS_DIR=${THIS_DIR}" |& tee -a clientTestOutputs.txt
 
+if [[ -n "${INSTALLATION_BRANCH}" ]]; then
+    echo -r "*** re-configure ***"
+    dirac-proxy-init --nocs --no-upload
+    dirac-configure -S dirac-JenkinsSetup -C https://server:9135/Configuration/Server --SkipCAChecks
+fi
+
 echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a clientTestOutputs.txt
 dirac-proxy-init "${DEBUG}" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
@@ -23,13 +29,10 @@ pytest --no-check-dirac-environment "${THIS_DIR}/AccountingSystem/Test_ReportsCl
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** RMS TESTS ****\n"
 
-echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a clientTestOutputs.txt
-dirac-proxy-init "${DEBUG}" |& tee -a clientTestOutputs.txt
-
 echo -e "*** $(date -u)  Starting RMS Client test as a non privileged user\n" |& tee -a clientTestOutputs.txt
 pytest --no-check-dirac-environment "${THIS_DIR}/RequestManagementSystem/Test_Client_Req.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
-echo -e "*** $(date -u)  getting the prod role again\n" |& tee -a clientTestOutputs.txt
+echo -e "*** $(date -u)  getting a privileged user\n" |& tee -a clientTestOutputs.txt
 dirac-proxy-init -g prod "${DEBUG}" |& tee -a clientTestOutputs.txt
 echo -e "*** $(date -u)  Starting RMS Client test as an admin user\n" |& tee -a clientTestOutputs.txt
 pytest --no-check-dirac-environment "${THIS_DIR}/RequestManagementSystem/Test_Client_Req.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))

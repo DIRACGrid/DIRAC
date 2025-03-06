@@ -52,7 +52,7 @@ elif [[ "$INSTALLTYPE" == "client" ]]; then
 
 elif [[ "$INSTALLTYPE" == "pilot" ]]; then
     # shellcheck source=/dev/null
-    source "$WORKSPACE/PilotInstallDIR/bashrc"
+    source "$WORKSPACE/bashrc"
     # If not unset, assert will not trigger
     unset PYTHONOPTIMIZE
     set -o pipefail
