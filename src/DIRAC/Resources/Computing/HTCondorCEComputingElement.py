@@ -172,7 +172,9 @@ class HTCondorCEComputingElement(ComputingElement):
 
         executable = os.path.join(self.workingDirectory, executable)
 
-        useCredentials = ""
+        # For now, we still need to include a proxy in the submit file
+        # HTCondor extracts VOMS attribute from it for the sites
+        useCredentials = "use_x509userproxy = true"
         # If tokenFile is present, then we transfer it to the worker node
         if tokenFile:
             useCredentials += textwrap.dedent(
@@ -274,6 +276,10 @@ class HTCondorCEComputingElement(ComputingElement):
             htcEnv = {
                 "_CONDOR_SEC_CLIENT_AUTHENTICATION_METHODS": "SCITOKENS",
                 "_CONDOR_SCITOKENS_FILE": self.tokenFile.name,
+                # This options is needed because we are still passing the proxy in the JDL (see use_x509userproxy)
+                # In condor v24.4, there is a bug preventing us from delegating the proxy, so we have to set
+                # it to false: https://opensciencegrid.atlassian.net/browse/HTCONDOR-2904
+                "_CONDOR_DELEGATE_JOB_GSI_CREDENTIALS": "false",
             }
             if cas := getCAsLocation():
                 htcEnv["_CONDOR_AUTH_SSL_CLIENT_CADIR"] = cas
