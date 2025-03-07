@@ -18,7 +18,6 @@
 #
 # === optional environment variables:
 #
-# WORKSPACE (/home/dirac)
 # DEBUG (set it to whatever value to turn on debug messages)
 #
 # DIRAC_RELEASE (for installing a specific release)
@@ -52,18 +51,12 @@ else
   DEBUG='-dd'
 fi
 
-if [[ "$WORKSPACE" ]]; then
-  echo "==> We are in Jenkins I guess"
-else
-  WORKSPACE=$PWD
-fi
-
 # Creating default structure
-mkdir -p "$WORKSPACE/TestCode" # Where the test code resides
+mkdir -p /home/dirac/TestCode # Where the test code resides
 TESTCODE=${_}
-mkdir -p "$WORKSPACE/ServerInstallDIR" # Where servers are installed
+mkdir -p /home/dirac/ServerInstallDIR # Where servers are installed
 SERVERINSTALLDIR=${_}
-mkdir -p "$WORKSPACE/ClientInstallDIR" # Where clients are installed
+mkdir -p /home/dirac/ClientInstallDIR # Where clients are installed
 CLIENTINSTALLDIR=${_}
 
 # Location of the CFG file to be used (this can be replaced by the extensions)

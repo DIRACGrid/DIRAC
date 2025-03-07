@@ -34,10 +34,10 @@ class UserJobTestCase(IntegrationTest):
             self.mpExe = find_all("mpTest.py", rootPath, "/DIRAC/tests/Utilities")[0]
             self.mpExeFlex = find_all("mpTest-flexible.py", rootPath, "/DIRAC/tests/Utilities")[0]
         except IndexError:  # we are in Jenkins
-            self.exeScriptLocation = find_all("exe-script.py", os.environ["WORKSPACE"], integration_test_dir)[0]
-            self.helloWorld = find_all("helloWorld.py", os.environ["WORKSPACE"], integration_test_dir)[0]
-            self.mpExe = find_all("mpTest.py", os.environ["WORKSPACE"], "/DIRAC/tests/Utilities")[0]
-            self.mpExeFlex = find_all("mpTest-flexible.py", os.environ["WORKSPACE"], "/DIRAC/tests/Utilities")[0]
+            self.exeScriptLocation = find_all("exe-script.py", "/home/dirac", integration_test_dir)[0]
+            self.helloWorld = find_all("helloWorld.py", "/home/dirac", integration_test_dir)[0]
+            self.mpExe = find_all("mpTest.py", "/home/dirac", "/DIRAC/tests/Utilities")[0]
+            self.mpExeFlex = find_all("mpTest-flexible.py", "/home/dirac", "/DIRAC/tests/Utilities")[0]
 
         gLogger.setLevel("DEBUG")
 
@@ -51,7 +51,7 @@ class HelloWorldSuccess(UserJobTestCase):
         j.setLogLevel("DEBUG")
         try:
             # This is the standard location in Jenkins
-            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
+            j.setInputSandbox(find_all("pilot.cfg", "/home/dirac")[0])
         except (IndexError, KeyError):
             j.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         j.setConfigArgs("pilot.cfg")
@@ -90,7 +90,7 @@ class HelloWorldPlusSuccess(UserJobTestCase):
         job.setLogLevel("DEBUG")
         try:
             # This is the standard location in Jenkins
-            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
+            job.setInputSandbox(find_all("pilot.cfg", "/home/dirac")[0])
         except (IndexError, KeyError):
             job.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         job.setConfigArgs("pilot.cfg")
@@ -125,7 +125,7 @@ class HelloWorldPlusSuccess(UserJobTestCase):
         job.setLogLevel("DEBUG")
         try:
             # This is the standard location in Jenkins
-            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
+            job.setInputSandbox(find_all("pilot.cfg", "/home/dirac")[0])
         except (IndexError, KeyError):
             job.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         job.setConfigArgs("pilot.cfg")
@@ -144,8 +144,7 @@ class LSSuccess(UserJobTestCase):
         job.setExecutable("/bin/ls", "-l")
         job.setLogLevel("DEBUG")
         try:
-            # This is the standard location in Jenkins
-            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
+            job.setInputSandbox(find_all("pilot.cfg", "/home/dirac")[0])
         except (IndexError, KeyError):
             job.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         job.setConfigArgs("pilot.cfg")
@@ -163,8 +162,7 @@ class DownloadSuccess(UserJobTestCase):
         job.setExecutable("/bin/ls", "-l")
         job.setLogLevel("DEBUG")
         try:
-            # This is the standard location in Jenkins
-            job.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
+            job.setInputSandbox(find_all("pilot.cfg", "/home/dirac")[0])
         except (IndexError, KeyError):
             job.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         job.setConfigArgs("pilot.cfg")
@@ -186,8 +184,7 @@ class MPSuccess(UserJobTestCase):
         j.setNumberOfProcessors(4)  # This requires a fixed number of processors
         j.setLogLevel("DEBUG")
         try:
-            # This is the standard location in Jenkins
-            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
+            j.setInputSandbox(find_all("pilot.cfg", "/home/dirac")[0])
         except (IndexError, KeyError):
             j.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         j.setConfigArgs("pilot.cfg")
@@ -213,8 +210,7 @@ class MPSuccessMinMax(UserJobTestCase):
         j.setNumberOfProcessors(minNumberOfProcessors=2)  # This requires at least 2 processors
         j.setLogLevel("DEBUG")
         try:
-            # This is the standard location in Jenkins
-            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
+            j.setInputSandbox(find_all("pilot.cfg", "/home/dirac")[0])
         except (IndexError, KeyError):
             j.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         j.setConfigArgs("pilot.cfg")
@@ -232,8 +228,7 @@ class MPSuccessMinMax(UserJobTestCase):
         j.setNumberOfProcessors(minNumberOfProcessors=2, maxNumberOfProcessors=4)  # This requires 2 to 4 processors
         j.setLogLevel("DEBUG")
         try:
-            # This is the standard location in Jenkins
-            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
+            j.setInputSandbox(find_all("pilot.cfg", "/home/dirac")[0])
         except (IndexError, KeyError):
             j.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         j.setConfigArgs("pilot.cfg")
@@ -251,8 +246,7 @@ class MPSuccessMinMax(UserJobTestCase):
         j.setNumberOfProcessors(minNumberOfProcessors=1)  # This requires 1 to infinite processors
         j.setLogLevel("DEBUG")
         try:
-            # This is the standard location in Jenkins
-            j.setInputSandbox(find_all("pilot.cfg", os.environ["WORKSPACE"])[0])
+            j.setInputSandbox(find_all("pilot.cfg", "/home/dirac")[0])
         except (IndexError, KeyError):
             j.setInputSandbox(find_all("pilot.cfg", rootPath)[0])
         j.setConfigArgs("pilot.cfg")

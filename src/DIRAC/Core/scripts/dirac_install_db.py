@@ -26,12 +26,12 @@ def main():
     for db in args:
         result = gComponentInstaller.installDatabase(db)
         if not result["OK"]:
-            gLogger.error(f"ERROR: failed to correctly install {db}", result["Message"])
+            gLogger.error(f"Failed to correctly install {db}:", result["Message"])
             DIRACExit(1)
         extension, system = result["Value"]
         result = gComponentInstaller.addDatabaseOptionsToCS(gConfig, system, db, overwrite=True)
         if not result["OK"]:
-            gLogger.error(f"ERROR: failed to add database options to CS: {result['Message']}")
+            gLogger.error("Failed to add database options to CS:", result["Message"])
             DIRACExit(1)
 
         if db != "InstalledComponentsDB":
@@ -46,7 +46,7 @@ def main():
 
             result = MonitoringUtilities.monitorInstallation("DB", system, db, user=user)
             if not result["OK"]:
-                gLogger.error(f"ERROR: failed to register installation in database: {result['Message']}")
+                gLogger.error("Failed to register installation in database:", result["Message"])
                 DIRACExit(1)
 
 

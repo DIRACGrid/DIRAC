@@ -30,8 +30,8 @@ class RegressionTestCase(IntegrationTest):
             exeScriptLoc = find_all("exe-script.py", rootPath, "/DIRAC/tests/Workflow")[0]
             helloWorldLoc = find_all("helloWorld.py", rootPath, "/DIRAC/tests/Workflow")[0]
         except IndexError:  # we are in Jenkins
-            exeScriptLoc = find_all("exe-script.py", os.environ["WORKSPACE"], "/DIRAC/tests/Workflow")[0]
-            helloWorldLoc = find_all("helloWorld.py", os.environ["WORKSPACE"], "/DIRAC/tests/Workflow")[0]
+            exeScriptLoc = find_all("exe-script.py", "/home/dirac", "/DIRAC/tests/Workflow")[0]
+            helloWorldLoc = find_all("helloWorld.py", "/home/dirac", "/DIRAC/tests/Workflow")[0]
 
         shutil.copyfile(exeScriptLoc, "./exe-script.py")
         shutil.copyfile(helloWorldLoc, "./helloWorld.py")
@@ -39,9 +39,7 @@ class RegressionTestCase(IntegrationTest):
         try:
             helloWorldXMLLocation = find_all("helloWorld.xml", rootPath, "/DIRAC/tests/Workflow/Regression")[0]
         except IndexError:  # we are in Jenkins
-            helloWorldXMLLocation = find_all(
-                "helloWorld.xml", os.environ["WORKSPACE"], "/DIRAC/tests/Workflow/Regression"
-            )[0]
+            helloWorldXMLLocation = find_all("helloWorld.xml", "/home/dirac", "/DIRAC/tests/Workflow/Regression")[0]
 
         self.j_u_hello = Job(helloWorldXMLLocation)
         self.j_u_hello.setConfigArgs("pilot.cfg")
@@ -50,7 +48,7 @@ class RegressionTestCase(IntegrationTest):
             helloWorldXMLFewMoreLocation = find_all("helloWorld.xml", rootPath, "/DIRAC/tests/Workflow/Regression")[0]
         except IndexError:  # we are in Jenkins
             helloWorldXMLFewMoreLocation = find_all(
-                "helloWorld.xml", os.environ["WORKSPACE"], "/DIRAC/tests/Workflow/Regression"
+                "helloWorld.xml", "/home/dirac", "/DIRAC/tests/Workflow/Regression"
             )[0]
 
         self.j_u_helloPlus = Job(helloWorldXMLFewMoreLocation)
