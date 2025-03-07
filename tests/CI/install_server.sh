@@ -33,11 +33,8 @@ for repo_path in "${TESTREPO[@]}"; do
         echo "Using local test repository in branch $(git branch | grep "\*" | sed -e "s/* //")"
         cd -
     else
-        git clone "https://github.com/$repo_path/DIRAC.git"
-        cd "$(basename "${repo_path}")"
-        git checkout "$TESTBRANCH"
+        git clone --single-branch --branch "$TESTBRANCH" "https://github.com/$repo_path/DIRAC.git"
         echo "Using remote test repository ${repo_path} in branch ${TESTBRANCH}"
-        cd -
     fi
 done
 

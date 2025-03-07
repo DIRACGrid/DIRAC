@@ -93,13 +93,9 @@ the private key. You will need two different sets certificates and the CA certif
 The following commands should do the trick for you, by creating a fake CA, a fake user certificate, and a fake host certificate::
 
    cd $DEVROOT/DIRAC
-   git checkout release/integration
-   source tests/Jenkins/utilities.sh
-   generateCA
-   generateCertificates 365
-   generateUserCredentials 365
+   docker run ghcr.io/diracgrid/diracx/certificates-generation:latest
    mkdir -p ~/.globus/
-   cp $DEVROOT/user/*.{pem,key} ~/.globus/
+   docker cp certificates-generation:/ca/certs/client.{pem,key} ~/.globus/
    mv ~/.globus/client.key ~/.globus/userkey.pem
    mv ~/.globus/client.pem ~/.globus/usercert.pem
 

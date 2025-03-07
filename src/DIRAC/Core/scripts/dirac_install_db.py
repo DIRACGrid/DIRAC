@@ -2,6 +2,8 @@
 """
 Create a new DB in the MySQL server
 """
+from DIRAC import exit as DIRACExit
+from DIRAC import gConfig, gLogger
 from DIRAC.Core.Base.Script import Script
 
 
@@ -12,24 +14,40 @@ def main():
     _, args = Script.parseCommandLine()
 
     # Script imports
-    from DIRAC import gConfig
+    from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import useServerCertificate
+    from DIRAC.Core.Security.ProxyInfo import getProxyInfo
     from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
     from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
+
+    user = "DIRAC"
 
     gComponentInstaller.exitOnError = True
     gComponentInstaller.getMySQLPasswords()
     for db in args:
         result = gComponentInstaller.installDatabase(db)
         if not result["OK"]:
-            print(f"ERROR: failed to correctly install {db}", result["Message"])
-            continue
+            gLogger.error(f"Failed to correctly install {db}:", result["Message"])
+            DIRACExit(1)
         extension, system = result["Value"]
-        gComponentInstaller.addDatabaseOptionsToCS(gConfig, system, db, overwrite=True)
+        result = gComponentInstaller.addDatabaseOptionsToCS(gConfig, system, db, overwrite=True)
+        if not result["OK"]:
+            gLogger.error("Failed to add database options to CS:", result["Message"])
+            DIRACExit(1)
 
         if db != "InstalledComponentsDB":
-            result = MonitoringUtilities.monitorInstallation("DB", system, db)
+            # get the user that installed the DB
+            if not useServerCertificate():
+                result = getProxyInfo()
+                if not result["OK"]:
+                    return result
+                proxyInfo = result["Value"]
+                if "username" in proxyInfo:
+                    user = proxyInfo["username"]
+
+            result = MonitoringUtilities.monitorInstallation("DB", system, db, user=user)
             if not result["OK"]:
-                print(f"ERROR: failed to register installation in database: {result['Message']}")
+                gLogger.error("Failed to register installation in database:", result["Message"])
+                DIRACExit(1)
 
 
 if __name__ == "__main__":

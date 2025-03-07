@@ -7,7 +7,7 @@ import pytest
 
 import DIRAC
 
-DIRAC.initialize()  # Initialize configuration
+DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
 import DIRAC.DataManagementSystem.DB.test.FTS3TestUtils as baseTestModule
 from DIRAC.DataManagementSystem.Client.FTS3Client import FTS3Client

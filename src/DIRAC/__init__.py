@@ -227,6 +227,7 @@ def initialize(
 
     if host_credentials:
         gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "yes")
+    if isinstance(host_credentials, tuple):
         gConfigurationData.setOptionInCFG("/DIRAC/Security/CertFile", str(host_credentials[0]))
         gConfigurationData.setOptionInCFG("/DIRAC/Security/KeyFile", str(host_credentials[1]))
 
@@ -317,5 +318,6 @@ def extension_metadata():
         "priority": 0,
         "setups": {
             "DIRAC-Certification": "https://lbcertifdirac70.cern.ch:9135/Configuration/Server",
+            "DIRAC-CI": "https://server:9135/Configuration/Server",
         },
     }

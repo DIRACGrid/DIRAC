@@ -18,7 +18,6 @@
 #
 # === optional environment variables:
 #
-# WORKSPACE (set by Jenkins, normally. If not there, will be $PWD)
 # DEBUG (set it to whatever value to turn on debug messages)
 #
 # DIRAC_RELEASE (for installing a specific release)
@@ -40,8 +39,6 @@
 # ~/TestCode
 # ~/ServerInstallDIR
 # ~/ClientInstallDIR
-# ~/PilotInstallDIR
-
 
 # Def of environment variables:
 
@@ -54,21 +51,13 @@ else
   DEBUG='-dd'
 fi
 
-if [[ "$WORKSPACE" ]]; then
-  echo "==> We are in Jenkins I guess"
-else
-  WORKSPACE=$PWD
-fi
-
 # Creating default structure
-mkdir -p "$WORKSPACE/TestCode" # Where the test code resides
+mkdir -p /home/dirac/TestCode # Where the test code resides
 TESTCODE=${_}
-mkdir -p "$WORKSPACE/ServerInstallDIR" # Where servers are installed
+mkdir -p /home/dirac/ServerInstallDIR # Where servers are installed
 SERVERINSTALLDIR=${_}
-mkdir -p "$WORKSPACE/ClientInstallDIR" # Where clients are installed
+mkdir -p /home/dirac/ClientInstallDIR # Where clients are installed
 CLIENTINSTALLDIR=${_}
-mkdir -p "$WORKSPACE/PilotInstallDIR" # Where pilots run
-PILOTINSTALLDIR=${_}
 
 # Location of the CFG file to be used (this can be replaced by the extensions)
 INSTALL_CFG_FILE="${TESTCODE}/DIRAC/tests/Jenkins/install.cfg"
@@ -83,17 +72,13 @@ source "${TESTCODE}/DIRAC/tests/Jenkins/utilities.sh"
 #
 # installSite:
 #
-#   This function will install DIRAC
+#   This function will install DIRAC server
 #
 #...............................................................................
 
 installSite() {
   echo "==> [installSite]"
 
-  generateCA
-  generateCertificates
-
-  echo -n > "${SERVERINSTALLDIR}/dirac-ci-install.cfg"
   getCFGFile
 
   echo "==> Fixing install.cfg file"
@@ -127,7 +112,25 @@ installSite() {
   bash "installer.sh"
   rm "installer.sh"
   echo "source \"$PWD/diracos/diracosrc\"" > "$PWD/bashrc"
-  mv "${SERVERINSTALLDIR}/etc/grid-security/"* "${SERVERINSTALLDIR}/diracos/etc/grid-security/"
+
+  mkdir -p "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/"
+
+  echo "==> CAs and certificates"
+
+  # Copy the CA to the list of trusted CA
+  cp "/ca/certs/ca.cert.pem" "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/"
+
+  # Copy the cert and host key to the certificates directory
+  cp /ca/certs/hostcert.pem "${SERVERINSTALLDIR}/diracos/etc/grid-security/"
+  cp /ca/certs/hostkey.pem "${SERVERINSTALLDIR}/diracos/etc/grid-security/"
+
+  # Generate the hash link file required by openSSL to index CA certificates
+  caHash=$(openssl x509 -in "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/ca.cert.pem" -noout -hash)
+  # We make a relative symlink on purpose (i.e. not the full path to ca.cert.pem)
+  # because otherwise the BundleDeliveryClient will send the full path, which
+  # will be wrong on the client
+  ln -s "ca.cert.pem" "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/$caHash.0"
+
   rm -rf "${SERVERINSTALLDIR}/etc"
   ln -s "${SERVERINSTALLDIR}/diracos/etc" "${SERVERINSTALLDIR}/etc"
   source diracos/diracosrc
@@ -135,7 +138,6 @@ installSite() {
     pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}[server]"
   done
   cd -
-
 
   echo "==> Sourcing bashrc"
   source "${SERVERINSTALLDIR}/bashrc"
@@ -212,18 +214,6 @@ fullInstallDIRAC() {
     cat "${SERVERINSTALLDIR}/diracos/etc/Production.cfg"
   fi
 
-  # Dealing with security stuff
-  # generateCertificates
-  if ! generateUserCredentials; then
-    echo "ERROR: generateUserCredentials failed" >&2
-    exit 1
-  fi
-
-  if ! diracCredentials; then
-    echo "ERROR: diracCredentials failed" >&2
-    exit 1
-  fi
-
   #just add a site
   if ! diracAddSite; then
     echo "ERROR: diracAddSite failed" >&2
@@ -231,7 +221,7 @@ fullInstallDIRAC() {
   fi
 
   echo "==> Restarting Configuration Server"
-  dirac-restart-component Configuration Server ${DEBUG}
+  dirac-restart-component Configuration Server -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
 
   #Install the Framework
   findDatabases 'FrameworkSystem'
@@ -241,7 +231,6 @@ fullInstallDIRAC() {
     exit 1
   fi
 
-  dirac-restart-component Tornado Tornado ${DEBUG}
 
   findServices 'FrameworkSystem'
   grep -v 'Tornado' services > disetServices
@@ -276,14 +265,13 @@ fullInstallDIRAC() {
   cat "${SERVERINSTALLDIR}/etc/Production.cfg"
 
   echo "==> Restarting Framework services"
-  dirac-restart-component Framework '*' ${DEBUG}
-  dirac-restart-component Tornado Tornado ${DEBUG}
+  dirac-restart-component Framework '*' -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
 
   #Now all the rest
 
   # slave CS
   if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
-    if ! dirac-install-component Configuration TornadoConfiguration "${DEBUG}"; then
+    if ! dirac-install-component Configuration TornadoConfiguration -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
       echo 'ERROR: dirac-install-component failed' >&2
       exit 1
     fi
@@ -297,16 +285,10 @@ fullInstallDIRAC() {
     exit 1
   fi
 
-  #upload proxies
-  if ! diracProxies; then
-    echo "ERROR: diracProxies failed" >&2
-    exit 1
-  fi
-
   #fix the DBs (for the FileCatalog and MultiVOFileCatalog)
   diracDFCDB
   diracMVDFCDB
-  python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-dbs.py" "${DEBUG}"
+  python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-dbs.py" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"
 
   # services (not looking for FrameworkSystem already installed)
   findServices 'exclude' 'FrameworkSystem'
@@ -329,14 +311,14 @@ fullInstallDIRAC() {
 
   # install an additional FileCatalog service for multi VO metadata tests
   if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
-    echo "==> calling dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB ${DEBUG}"
-    if ! dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB "${DEBUG}"; then
+    echo "==> calling dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}"
+    if ! dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
         echo 'ERROR: dirac-install-component failed' >&2
         exit 1
     fi
   else
-    echo "==> calling dirac-install-component DataManagement TornadoMultiVOFileCatalog -m TornadoFileCatalog -p Port=9198 -p Protocol=https -p Database=MultiVOFileCatalogDB ${DEBUG}"
-    if ! dirac-install-component DataManagement TornadoMultiVOFileCatalog -m TornadoFileCatalog -p Port=9198 -p Protocol=https -p Database=MultiVOFileCatalogDB "${DEBUG}"; then
+    echo "==> calling dirac-install-component DataManagement TornadoMultiVOFileCatalog -m TornadoFileCatalog -p Port=9198 -p Protocol=https -p Database=MultiVOFileCatalogDB -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}"
+    if ! dirac-install-component DataManagement TornadoMultiVOFileCatalog -m TornadoFileCatalog -p Port=9198 -p Protocol=https -p Database=MultiVOFileCatalogDB -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
         echo 'ERROR: dirac-install-component failed' >&2
         exit 1
     fi
@@ -344,51 +326,48 @@ fullInstallDIRAC() {
     dirac-restart-component Tornado Tornado ${DEBUG}
   fi
   #fix the DFC services options
-  python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-services.py" "${DEBUG}"
+  python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-services.py" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"
 
   #fix the SandboxStore and other stuff
-  python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-server.py" "${DEBUG}"
-
-  echo "==> Restarting Tornado Tornado"
-  dirac-restart-component Tornado Tornado ${DEBUG}
+  python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-server.py" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"
 
   if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
     echo "==> Restarting WorkloadManagement SandboxStore"
-    dirac-restart-component WorkloadManagement SandboxStore ${DEBUG}
+    dirac-restart-component WorkloadManagement SandboxStore -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
     echo "==> Restarting DataManagement FileCatalog"
-    dirac-restart-component DataManagement FileCatalog ${DEBUG}
+    dirac-restart-component DataManagement FileCatalog -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
     echo "==> Restarting DataManagement MultiVOFileCatalog"
-    dirac-restart-component DataManagement MultiVOFileCatalog ${DEBUG}
+    dirac-restart-component DataManagement MultiVOFileCatalog -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
     echo "==> Restarting ResourceStatus *"
-    dirac-restart-component ResourceStatus ResourceStatus ${DEBUG}
-    dirac-restart-component ResourceStatus ResourceManagement ${DEBUG}
-    dirac-restart-component ResourceStatus Publisher ${DEBUG}
+    dirac-restart-component ResourceStatus ResourceStatus -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
+    dirac-restart-component ResourceStatus ResourceManagement -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
+    dirac-restart-component ResourceStatus Publisher -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
   fi
 
   echo "==> Restarting WorkloadManagement Matcher"
-  dirac-restart-component WorkloadManagement Matcher ${DEBUG}
+  dirac-restart-component WorkloadManagement Matcher -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
 
   echo "==> Restarting Configuration Server"
-  dirac-restart-component Configuration Server ${DEBUG}
+  dirac-restart-component Configuration Server -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
 
   echo "==> Restarting DataManagement StorageElement(s)"
-  dirac-restart-component DataManagement SE-1 ${DEBUG}
-  dirac-restart-component DataManagement SE-2 ${DEBUG}
+  dirac-restart-component DataManagement SE-1 -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
+  dirac-restart-component DataManagement SE-2 -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
 
   # populate RSS
   echo "==> Populating RSS DB"
-  dirac-rss-sync --element Site --defaultStatus Banned -o LogLevel=VERBOSE
-  dirac-rss-sync --element Resource --defaultStatus Banned -o LogLevel=VERBOSE
+  dirac-rss-sync --element Site --defaultStatus Banned -o LogLevel=VERBOSE -o /DIRAC/Security/UseServerCertificate=True
+  dirac-rss-sync --element Resource --defaultStatus Banned -o LogLevel=VERBOSE -o /DIRAC/Security/UseServerCertificate=True
   # init RSS
   echo "==> Initializing status of sites and resources in RSS"
-  dirac-rss-sync --init --defaultStatus Banned -o LogLevel=VERBOSE
+  dirac-rss-sync --init --defaultStatus Banned -o LogLevel=VERBOSE -o /DIRAC/Security/UseServerCertificate=True
   # Setting by hand
-  dirac-rss-set-status --element Resource --name ProductionSandboxSE --status Active --reason "Why not?"
-  dirac-rss-set-status --element Resource --name jenkins.cern.ch --status Active --reason "Why not?"
-  dirac-rss-set-status --element Resource --name JENKINS-FTS3 --status Active --reason "Why not?"
-  dirac-rss-set-status --element Resource --name FileCatalog --status Active --reason "Why not?"
-  dirac-rss-set-status --element Site --name DIRAC.Jenkins.ch --status Active --reason "Why not?"
-  dirac-admin-allow-se SE-1 SE-2 S3-DIRECT S3-INDIRECT --All
+  dirac-rss-set-status --element Resource --name ProductionSandboxSE --status Active --reason "Why not?" --tokenOwner DIRAC -o /DIRAC/Security/UseServerCertificate=True
+  dirac-rss-set-status --element Resource --name jenkins.cern.ch --status Active --reason "Why not?" --tokenOwner DIRAC -o /DIRAC/Security/UseServerCertificate=True
+  dirac-rss-set-status --element Resource --name JENKINS-FTS3 --status Active --reason "Why not?" --tokenOwner DIRAC -o /DIRAC/Security/UseServerCertificate=True
+  dirac-rss-set-status --element Resource --name FileCatalog --status Active --reason "Why not?" --tokenOwner DIRAC -o /DIRAC/Security/UseServerCertificate=True
+  dirac-rss-set-status --element Site --name DIRAC.Jenkins.ch --status Active --reason "Why not?" --tokenOwner DIRAC -o /DIRAC/Security/UseServerCertificate=True
+  dirac-admin-allow-se SE-1 SE-2 S3-DIRECT S3-INDIRECT --All --tokenOwner DIRAC -o /DIRAC/Security/UseServerCertificate=True
 
   #agents
   findAgents
@@ -406,21 +385,21 @@ fullInstallDIRAC() {
 
   if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
     echo "==> Restarting WorkloadManagement JobManager"
-    dirac-restart-component WorkloadManagement JobManager ${DEBUG}
+    dirac-restart-component WorkloadManagement JobManager -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
   else
     echo "==> Restarting Tornado Tornado"
-    dirac-restart-component Tornado Tornado ${DEBUG}
+    dirac-restart-component Tornado Tornado -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
     fi
 
   echo 'Content of etc/Production.cfg:'
   cat "${SERVERINSTALLDIR}/etc/Production.cfg"
 
   echo "==> Restarting Configuration Server"
-  dirac-restart-component Configuration Server ${DEBUG}
+  dirac-restart-component Configuration Server -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
 
-  echo "==> Restarting Tornado Tornado"
-  dirac-restart-component Tornado Tornado ${DEBUG}
-
+  echo 'Generate a pilot proxy, to be used by the pilot'
+  dirac-proxy-init -g pilot -C /ca/certs/pilot.pem -K /ca/certs/pilot.key ${DEBUG}
+  mv /tmp/x509up_u$UID /ca/certs/pilot_proxy
 }
 
 

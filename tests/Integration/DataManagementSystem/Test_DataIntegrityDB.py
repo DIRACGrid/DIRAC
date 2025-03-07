@@ -7,11 +7,10 @@
 # pylint: disable=invalid-name,wrong-import-position
 import time
 
+import DIRAC
 from DIRAC import gLogger
 
-import DIRAC
-
-DIRAC.initialize()  # Initialize configuration
+DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
 from DIRAC.DataManagementSystem.DB.DataIntegrityDB import DataIntegrityDB
 

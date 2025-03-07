@@ -25,7 +25,7 @@ echo -e "*** $(date -u) **** Starting integration tests on ${INSTALLTYPE} ****\n
 
 if [[ "$INSTALLTYPE" == "server" ]]; then
     # shellcheck source=/dev/null
-    source "$WORKSPACE/ServerInstallDIR/bashrc"
+    source /home/dirac/ServerInstallDIR/bashrc
     # If not unset, assert will not trigger
     unset PYTHONOPTIMIZE
     # shellcheck disable=SC2034
@@ -34,14 +34,14 @@ if [[ "$INSTALLTYPE" == "server" ]]; then
     ERR=0
     for repo_path in "${TESTREPO[@]}"; do
         # TODO: The tests should be refactored to remove the need for this
-        cp -r "${repo_path}/tests" "$WORKSPACE/ServerInstallDIR/$(basename "${repo_path}")"
+        cp -r "${repo_path}/tests" "/home/dirac/ServerInstallDIR/$(basename "${repo_path}")"
     done
     for repo_path in "${TESTREPO[@]}"; do
         source "${repo_path}/tests/Integration/all_integration_server_tests.sh"
     done
 elif [[ "$INSTALLTYPE" == "client" ]]; then
     # shellcheck source=/dev/null
-    source "$WORKSPACE/ClientInstallDIR/bashrc"
+    source /home/dirac/ClientInstallDIR/bashrc
     # If not unset, assert will not trigger
     unset PYTHONOPTIMIZE
     set -o pipefail
@@ -52,7 +52,7 @@ elif [[ "$INSTALLTYPE" == "client" ]]; then
 
 elif [[ "$INSTALLTYPE" == "pilot" ]]; then
     # shellcheck source=/dev/null
-    source "$WORKSPACE/PilotInstallDIR/bashrc"
+    source /home/dirac/bashrc
     # If not unset, assert will not trigger
     unset PYTHONOPTIMIZE
     set -o pipefail

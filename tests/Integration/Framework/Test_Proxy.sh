@@ -6,12 +6,6 @@
 # Submitter should follow through the logs
 #
 
-if [[ -z ${SERVERINSTALLDIR+x} ]]; then
-  PARAMS=""
-else  # To run in Jenkins
-  PARAMS="-C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key"
-fi
-
 echo
 echo
 echo " ########################## REAL BASICS #############################"
@@ -28,7 +22,7 @@ fi
 echo
 
 echo "====================="
-echo "===  dirac-login --status"
+echo "===  dirac-proxy-info"
 echo
 dirac-proxy-info
 if [[ "${?}" -ne 0 ]]; then

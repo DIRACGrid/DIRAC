@@ -10,11 +10,10 @@
     Suggestion: for local testing, run this with::
         python -m pytest -c ../pytest.ini  -vv tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py
 """
+import DIRAC
 from DIRAC import gLogger
 
-import DIRAC
-
-DIRAC.initialize()  # Initialize configuration
+DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 

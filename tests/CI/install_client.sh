@@ -16,6 +16,11 @@ source CONFIG
 # shellcheck disable=SC2034
 CSURL=https://$SERVER_HOST:9135/Configuration/Server
 
+mkdir -p /home/dirac/ClientInstallDIR/etc
+mkdir -p /home/dirac/.globus
+cp /ca/certs/client.pem /home/dirac/.globus/usercert.pem
+cp /ca/certs/client.key /home/dirac/.globus/userkey.pem
+
 echo -e "*** $(date -u) **** Getting the tests ****\n"
 
 mkdir -p "$PWD/TestCode"
@@ -24,10 +29,11 @@ cd "$PWD/TestCode"
 if [[ -n "${INSTALLATION_BRANCH}" ]]; then
     # Use this for (e.g.) running backward-compatibility tests
     echo "Using https://github.com/DIRACGrid/DIRAC.git@${INSTALLATION_BRANCH} for the tests"
-    git clone "https://github.com/DIRACGrid/DIRAC.git"
-    cd DIRAC
-    git checkout "$INSTALLATION_BRANCH"
-    cd -
+    git clone --single-branch --branch "$INSTALLATION_BRANCH" "https://github.com/DIRACGrid/DIRAC.git"
+    mkdir -p /home/dirac/ServerInstallDIR/user
+    cd /home/dirac/ServerInstallDIR/user
+    ln -s /home/dirac/.globus/usercert.pem client.pem
+    ln -s /home/dirac/.globus/userkey.pem client.key
 else
     for repo_path in "${TESTREPO[@]}"; do
         if [[ -d "${repo_path}" ]]; then
@@ -36,11 +42,8 @@ else
             echo "Using local test repository in branch $(git branch | grep "\*" | sed -e "s/* //")"
             cd -
         else
-            git clone "https://github.com/$repo_path/DIRAC.git"
-            cd "$(basename "${repo_path}")"
-            git checkout "$TESTBRANCH"
+            git clone --single-branch --branch "$TESTBRANCH" "https://github.com/$repo_path/DIRAC.git"
             echo "Using remote test repository ${repo_path} in branch ${TESTBRANCH}"
-            cd -
         fi
     done
 fi
@@ -60,29 +63,31 @@ echo -e "*** $(date -u) **** Client INSTALLATION START ****\n"
 
 installDIRAC
 
-echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a clientTestOutputs.txt
-dirac-login -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" |& tee -a clientTestOutputs.txt
+if [[ -z "${INSTALLATION_BRANCH}" ]]; then
+    echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a clientTestOutputs.txt
+    dirac-proxy-init "${DEBUG}" |& tee -a clientTestOutputs.txt
 
-#-------------------------------------------------------------------------------#
-echo -e "*** $(date -u) **** Submit a job ****\n"
+    #-------------------------------------------------------------------------------#
+    echo -e "*** $(date -u) **** Submit a job ****\n"
 
-echo -e '[\n    Arguments = "Hello World";\n    Executable = "echo";\n    Site = "DIRAC.Jenkins.ch";' > test.jdl
-echo "    JobName = \"${GITHUB_JOB}_$(date +"%Y-%m-%d_%T" | sed 's/://g')\"" >> test.jdl
-echo "]" >> test.jdl
-dirac-wms-job-submit test.jdl "${DEBUG}" |& tee -a clientTestOutputs.txt
+    echo -e '[\n    Arguments = "Hello World";\n    Executable = "echo";\n    Site = "DIRAC.Jenkins.ch";' > test.jdl
+    echo "    JobName = \"${GITHUB_JOB}_$(date +"%Y-%m-%d_%T" | sed 's/://g')\"" >> test.jdl
+    echo "]" >> test.jdl
+    dirac-wms-job-submit test.jdl "${DEBUG}" |& tee -a clientTestOutputs.txt
 
-#-------------------------------------------------------------------------------#
-echo -e "*** $(date -u) **** add a file ****\n"
+    #-------------------------------------------------------------------------------#
+    echo -e "*** $(date -u) **** add a file ****\n"
 
-echo "${CLIENT_UPLOAD_BASE64}" > b64_lfn
-base64 b64_lfn --decode > "${CLIENT_UPLOAD_FILE}"
-dirac-dms-add-file "${CLIENT_UPLOAD_LFN}" "${CLIENT_UPLOAD_FILE}" S3-DIRECT
-echo $?
+    echo "${CLIENT_UPLOAD_BASE64}" > b64_lfn
+    base64 b64_lfn --decode > "${CLIENT_UPLOAD_FILE}"
+    dirac-dms-add-file "${CLIENT_UPLOAD_LFN}" "${CLIENT_UPLOAD_FILE}" S3-DIRECT
+    echo $?
 
-#-------------------------------------------------------------------------------#
-echo -e "*** $(date -u) **** Submit a job with an input ****\n"
+    #-------------------------------------------------------------------------------#
+    echo -e "*** $(date -u) **** Submit a job with an input ****\n"
 
-echo -e '[\n    Arguments = "Hello World";\n    Executable = "echo";\n    Site = "DIRAC.Jenkins.ch";\n    InputData = "/vo/test_lfn.txt";' > test_dl.jdl
-echo "    JobName = \"${GITHUB_JOB}_$(date +"%Y-%m-%d_%T" | sed 's/://g')\"" >> test_dl.jdl
-echo "]" >> test_dl.jdl
-dirac-wms-job-submit test_dl.jdl "${DEBUG}" |& tee -a clientTestOutputs.txt
+    echo -e '[\n    Arguments = "Hello World";\n    Executable = "echo";\n    Site = "DIRAC.Jenkins.ch";\n    InputData = "/vo/test_lfn.txt";' > test_dl.jdl
+    echo "    JobName = \"${GITHUB_JOB}_$(date +"%Y-%m-%d_%T" | sed 's/://g')\"" >> test_dl.jdl
+    echo "]" >> test_dl.jdl
+    dirac-wms-job-submit test_dl.jdl "${DEBUG}" |& tee -a clientTestOutputs.txt
+fi

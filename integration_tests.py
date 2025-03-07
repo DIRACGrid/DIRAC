@@ -378,7 +378,7 @@ def install_server():
     # for the diracx container to use
     # It needs to be started and running before the DIRAC server installation
     # because after installing the databases, the install server script
-    # calls dirac-login.
+    # calls dirac-proxy-init.
     # At this point we need the new CS to have been updated
     # already else the token exchange fails.
 
@@ -393,91 +393,6 @@ def install_server():
     base_cmd = _build_docker_cmd("server", tty=False)
     subprocess.run(
         base_cmd + ["bash", "/home/dirac/LocalRepo/TestCode/DIRAC/tests/CI/install_server.sh"],
-        check=True,
-    )
-
-    typer.secho("Copying credentials and certificates", fg=c.GREEN)
-    base_cmd = _build_docker_cmd("client", tty=False)
-    subprocess.run(
-        base_cmd
-        + [
-            "mkdir",
-            "-p",
-            "/home/dirac/ServerInstallDIR/user",
-            "/home/dirac/ClientInstallDIR/etc",
-            "/home/dirac/.globus",
-        ],
-        check=True,
-    )
-    for path in [
-        "etc/grid-security",
-        "user/client.pem",
-        "user/client.key",
-        f"/tmp/x509up_u{os.getuid()}",
-    ]:
-        source = os.path.join("/home/dirac/ServerInstallDIR", path)
-        ret = subprocess.run(
-            ["docker", "cp", f"server:{source}", "-"],
-            check=True,
-            text=False,
-            stdout=subprocess.PIPE,
-        )
-        if path.startswith("user/"):
-            dest = f"client:/home/dirac/ServerInstallDIR/{os.path.dirname(path)}"
-        elif path.startswith("/"):
-            dest = f"client:{os.path.dirname(path)}"
-        else:
-            dest = f"client:/home/dirac/ClientInstallDIR/{os.path.dirname(path)}"
-        subprocess.run(["docker", "cp", "-", dest], check=True, text=False, input=ret.stdout)
-    subprocess.run(
-        base_cmd
-        + [
-            "bash",
-            "-c",
-            "cp /home/dirac/ServerInstallDIR/user/client.* /home/dirac/.globus/",
-        ],
-        check=True,
-    )
-
-    base_cmd = _build_docker_cmd("pilot", tty=False)
-    subprocess.run(
-        base_cmd
-        + [
-            "mkdir",
-            "-p",
-            "/home/dirac/ServerInstallDIR/user",
-            "/home/dirac/PilotInstallDIR/etc",
-            "/home/dirac/.globus",
-        ],
-        check=True,
-    )
-    for path in [
-        "etc/grid-security",
-        "user/client.pem",
-        "user/client.key",
-        f"/tmp/x509up_u{os.getuid()}",
-    ]:
-        source = os.path.join("/home/dirac/ServerInstallDIR", path)
-        ret = subprocess.run(
-            ["docker", "cp", f"server:{source}", "-"],
-            check=True,
-            text=False,
-            stdout=subprocess.PIPE,
-        )
-        if path.startswith("user/"):
-            dest = f"pilot:/home/dirac/ServerInstallDIR/{os.path.dirname(path)}"
-        elif path.startswith("/"):
-            dest = f"pilot:{os.path.dirname(path)}"
-        else:
-            dest = f"pilot:/home/dirac/PilotInstallDIR/{os.path.dirname(path)}"
-        subprocess.run(["docker", "cp", "-", dest], check=True, text=False, input=ret.stdout)
-    subprocess.run(
-        base_cmd
-        + [
-            "bash",
-            "-c",
-            "cp /home/dirac/ServerInstallDIR/user/client.* /home/dirac/.globus/",
-        ],
         check=True,
     )
 

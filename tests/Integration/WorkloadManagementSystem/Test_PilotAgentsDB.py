@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import DIRAC
 
-DIRAC.initialize()  # Initialize configuration
+DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
 from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB, PivotedPilotSummaryTable

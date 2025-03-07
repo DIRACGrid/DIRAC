@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import DIRAC
 
-DIRAC.initialize()  # Initialize configuration
+DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
 from DIRAC import S_OK
 from DIRAC.FrameworkSystem.private.authorization import AuthServer

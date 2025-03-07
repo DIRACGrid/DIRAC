@@ -4,15 +4,15 @@
 """
 
 # pylint: disable=invalid-name,wrong-import-position
-import unittest
 import itertools
 import os
 import sys
+import unittest
 from collections import defaultdict
 
 import DIRAC
 
-DIRAC.initialize()  # Initialize configuration
+DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
 

@@ -17,6 +17,7 @@ def main():
     remove = False
     site = ""
     mute = False
+    userName = ""
 
     Script.registerSwitch("r", "AllowRead", "     Allow only reading from the storage element")
     Script.registerSwitch("w", "AllowWrite", "     Allow only writing to the storage element")
@@ -25,6 +26,7 @@ def main():
     Script.registerSwitch("a", "All", "    Allow all access to the storage element")
     Script.registerSwitch("m", "Mute", "     Do not send email")
     Script.registerSwitch("S:", "Site=", "     Allow all SEs associated to site")
+    Script.registerSwitch("t:", "tokenOwner=", "     Optional Name of the token owner")
     # Registering arguments will automatically add their description to the help menu
     Script.registerArgument(["seGroupList: list of SEs or comma-separated SEs"])
 
@@ -48,6 +50,8 @@ def main():
             mute = True
         if switch[0].lower() in ("s", "site"):
             site = switch[1]
+        if switch[0] in ("t", "tokenOwner"):
+            userName = switch[1]
 
     # imports
     from DIRAC import gLogger
@@ -69,15 +73,16 @@ def main():
     ses = resolveSEGroup(ses)
     diracAdmin = DiracAdmin()
 
-    res = getProxyInfo()
-    if not res["OK"]:
-        gLogger.error("Failed to get proxy information", res["Message"])
-        DIRAC.exit(2)
-
-    userName = res["Value"].get("username")
     if not userName:
-        gLogger.error("Failed to get username for proxy")
-        DIRAC.exit(2)
+        res = getProxyInfo()
+        if not res["OK"]:
+            gLogger.error("Failed to get proxy information", res["Message"])
+            DIRAC.exit(2)
+
+        userName = res["Value"].get("username")
+        if not userName:
+            gLogger.error("Failed to get username for proxy")
+            DIRAC.exit(2)
 
     if site:
         res = getSites()

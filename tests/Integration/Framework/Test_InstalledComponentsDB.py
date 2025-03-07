@@ -4,13 +4,13 @@ updating and removing several instances of each table in the DB
 This program assumes that the service Framework/ComponentMonitoring is running
 """
 # pylint: disable=invalid-name,wrong-import-position
-import unittest
-import sys
 import datetime
+import sys
+import unittest
 
 import DIRAC
 
-DIRAC.initialize()  # Initialize configuration
+DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 

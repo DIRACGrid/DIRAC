@@ -1,15 +1,15 @@
 """ Test for MonitoringDB
 """
 
-import time
 import json
+import time
+
 import pytest
 
+import DIRAC
 from DIRAC.tests.Utilities.utils import find_all
 
-import DIRAC
-
-DIRAC.initialize()  # Initialize configuration
+DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
