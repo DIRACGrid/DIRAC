@@ -1,3 +1,17 @@
+[v8.0.71]
+
+*Resources
+
+FIX: (#8085) Catch ConnectionError when calling send on a MQ
+FIX: (#8083) htcondor x509 unsupported version
+CHANGE: (#8072) conditionally reset the rlimit for xroot
+CHANGE: (#8070) Disable Bearer token for HTTPs unless upload/TPC
+NEW: (#8046) findFileByMetadata method for Rucio
+
+*Core
+
+FIX: (#8071) dirac-apptainer-exec should work also in the case of no proxy
+
 [v8.0.70]
 
 *WorkloadManagement
