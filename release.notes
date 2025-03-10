@@ -1,3 +1,32 @@
+[v9.0.0a44]
+
+*Resources
+
+FIX: (#8084) htcondor x509 unsupported version
+CHANGE: (#8075) Disable Bearer token for HTTPs unless upload/TPC
+CHANGE: (#8074) conditionally reset the rlimit for xroot
+NEW: (#8069) findFileByMetadata method for Rucio
+
+*Core
+
+FIX: (#8080) dirac-apptainer-exec should work also in the case of no proxy
+
+*WorkloadManagement
+
+FIX: (#8073) pass args to buildQueueDict() in the right order
+
+*Workload Management
+
+FIX: (#8067) Supress non-UTF8 variables from pilot environment
+
+*ConfigurationSystem
+
+CHANGE: (#8061) TTLCache for getProxyPrrovidersForDN
+
+*Test
+
+NEW: (#8005) use containerized certs creation for integration tests
+
 [v9.0.0a43]
 
 *Documentation
