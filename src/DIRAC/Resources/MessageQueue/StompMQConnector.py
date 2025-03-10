@@ -175,7 +175,7 @@ class StompMQConnector(MQConnector):
         try:
             try:
                 self.connection.send(body=json.dumps(message), destination=destination)
-            except stomp.exception.StompException:
+            except (stomp.exception.StompException, ConnectionError):
                 self.connect()
                 self.connection.send(body=json.dumps(message), destination=destination)
         except Exception as e:
