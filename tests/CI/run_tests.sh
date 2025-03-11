@@ -50,7 +50,8 @@ elif [[ "$INSTALLTYPE" == "client" ]]; then
         source "${repo_path}/tests/Integration/all_integration_client_tests.sh"
     done
 
-elif [[ "$INSTALLTYPE" == "pilot" ]]; then
+# if "$INSTALLTYPE" == "pilot" and if INSTALLATION_BRANCH is not set
+elif [[ "$INSTALLTYPE" == "pilot" ]] && [[ -z "${INSTALLATION_BRANCH}" ]]; then
     # shellcheck source=/dev/null
     source /home/dirac/bashrc
     # If not unset, assert will not trigger

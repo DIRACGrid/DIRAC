@@ -10,11 +10,9 @@ Script.setUsageMessage("\n".join([__doc__.split("\n")[1], "Usage:", f"  {Script.
 
 Script.parseCommandLine()
 
-setupName = "dirac-JenkinsSetup"
-
 # Where to store outputs
-if not os.path.isdir(f"{setupName}/sandboxes"):
-    os.makedirs(f"{setupName}/sandboxes")
+if not os.path.isdir("sandboxes"):
+    os.makedirs("sandboxes")
 
 # now updating the CS
 
@@ -22,9 +20,9 @@ from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
 csAPI = CSAPI()
 
-csAPI.setOption("Systems/WorkloadManagement/Services/SandboxStore/BasePath", f"{setupName}/sandboxes")
+csAPI.setOption("Systems/WorkloadManagement/Services/SandboxStore/BasePath", "sandboxes")
 csAPI.setOption("Systems/WorkloadManagement/Services/SandboxStore/LogLevel", "DEBUG")
-csAPI.setOption("Systems/WorkloadManagement/Services/TornadoSandboxStore/BasePath", f"{setupName}/sandboxes")
+csAPI.setOption("Systems/WorkloadManagement/Services/TornadoSandboxStore/BasePath", "sandboxes")
 csAPI.setOption("Systems/WorkloadManagement/Services/TornadoSandboxStore/LogLevel", "DEBUG")
 
 # Now setting a SandboxSE as the following:
@@ -63,7 +61,7 @@ csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/DIP/Port", "9196"
 csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/DIP/ProtocolName", "DIP")
 csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/DIP/Protocol", "dips")
 csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/DIP/Access", "remote")
-csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/DIP/Path", f"{setupName}/sandboxes")
+csAPI.setOption("Resources/StorageElements/ProductionSandboxSE/DIP/Path", "sandboxes")
 
 # Now setting a FileCatalogs section as the following:
 #     FileCatalogs

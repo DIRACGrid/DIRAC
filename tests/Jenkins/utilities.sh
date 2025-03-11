@@ -261,14 +261,21 @@ installDIRAC() {
   echo "$DIRAC"
   echo "$PATH"
 
-  # now configuring
+  echo "==> Done installing, now configuring"
+
   if ! dirac-proxy-init --nocs --no-upload; then
     echo 'ERROR: dirac-proxy-init failed' >&2
     exit 1
   fi
+
+  configureArgs=()
+  if [[ "${TEST_DIRACX:-}" = "Yes" ]]; then
+    configureArgs+=("--LegacyExchangeApiKey=diracx:legacy:InsecureChangeMe")
+  fi
+
   if [[ -n "${INSTALLATION_BRANCH}" ]]; then
     # Use this for (e.g.) running backward-compatibility tests
-    cmd="dirac-configure -S ${DIRACSETUP} -C ${CSURL} --SkipCAChecks ${CONFIGUREOPTIONS} ${DEBUG}"
+    cmd="dirac-configure -S ${DIRACSETUP} -C ${CSURL} --SkipCAChecks "${configureArgs[@]}" ${CONFIGUREOPTIONS} ${DEBUG}"
   else
     cmd="dirac-configure -C ${CSURL} --SkipCAChecks ${CONFIGUREOPTIONS} ${DEBUG}"
   fi
