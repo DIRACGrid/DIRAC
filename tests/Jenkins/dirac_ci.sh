@@ -396,10 +396,6 @@ fullInstallDIRAC() {
 
   echo "==> Restarting Configuration Server"
   dirac-restart-component Configuration Server -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
-
-  echo 'Generate a pilot proxy, to be used by the pilot'
-  dirac-proxy-init -g pilot -C /ca/certs/pilot.pem -K /ca/certs/pilot.key ${DEBUG}
-  mv /tmp/x509up_u$UID /ca/certs/pilot_proxy
 }
 
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import argparse
-import os
 
 from diraccfg import CFG
 

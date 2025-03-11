@@ -64,6 +64,10 @@ echo -e "*** $(date -u) **** Client INSTALLATION START ****\n"
 installDIRAC
 
 if [[ -z "${INSTALLATION_BRANCH}" ]]; then
+    echo 'Generate a pilot proxy, to be used by the pilot'
+    dirac-proxy-init -g pilot -C /ca/certs/pilot.pem -K /ca/certs/pilot.key "${DEBUG}"
+    mv /tmp/x509up_u$UID /ca/certs/pilot_proxy
+
     echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a clientTestOutputs.txt
     dirac-proxy-init "${DEBUG}" |& tee -a clientTestOutputs.txt
 
