@@ -50,16 +50,6 @@ CREATE TABLE Transformations(
     INDEX(Type)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
--- -------------------------------------------------------------------------------
-DROP TABLE IF EXISTS DataFiles;
-CREATE TABLE DataFiles(
-    FileID INTEGER NOT NULL AUTO_INCREMENT,
-    LFN VARCHAR(255) UNIQUE NOT NULL DEFAULT '',
-    Status varchar(32) DEFAULT 'AprioriGood',
-    INDEX(Status),
-    INDEX(LFN),
-    PRIMARY KEY(FileID)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS AdditionalParameters;
@@ -108,34 +98,33 @@ FOR EACH ROW SET NEW.TaskID = (SELECT @last:= IFNULL(MAX(TaskID) + 1, 1) FROM Tr
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationFiles;
-CREATE TABLE TransformationFiles(
+CREATE TABLE TransformationFiles (
     TransformationID INTEGER NOT NULL,
-    FileID INTEGER NOT NULL,
+    LFN VARCHAR(255) NOT NULL DEFAULT '',
     Status VARCHAR(32) DEFAULT 'Unused',
-    ErrorCount INTEGER(4) NOT NULL DEFAULT 0,
+    ErrorCount INTEGER NOT NULL DEFAULT 0,
     TaskID INTEGER,
     TargetSE VARCHAR(255) DEFAULT 'Unknown',
     UsedSE VARCHAR(255) DEFAULT 'Unknown',
     LastUpdate DATETIME,
     InsertedTime DATETIME,
-    PRIMARY KEY(TransformationID, FileID),
-    INDEX(TransformationID),
-    INDEX(Status),
-    INDEX(FileID),
-    INDEX(TransformationID,Status),
-    FOREIGN KEY(TransformationID) REFERENCES Transformations(TransformationID),
-    FOREIGN KEY(FileID) REFERENCES DataFiles(FileID)
+    PRIMARY KEY (TransformationID, LFN),
+    INDEX (TransformationID),
+    INDEX (Status),
+    INDEX (LFN),
+    INDEX (TransformationID, Status),
+    FOREIGN KEY (TransformationID) REFERENCES Transformations(TransformationID)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationFileTasks;
 CREATE TABLE TransformationFileTasks(
     TransformationID INTEGER NOT NULL,
-    FileID INTEGER NOT NULL,
+    LFN VARCHAR(255) NOT NULL DEFAULT '',
     TaskID INTEGER NOT NULL,
-    PRIMARY KEY(TransformationID, FileID, TaskID),
+    PRIMARY KEY(TransformationID, LFN, TaskID),
     FOREIGN KEY(TransformationID) REFERENCES Transformations(TransformationID),
-    FOREIGN KEY(TransformationID, FileID) REFERENCES TransformationFiles(TransformationID, FileID),
+    FOREIGN KEY(TransformationID, LFN) REFERENCES TransformationFiles(TransformationID, LFN),
     FOREIGN KEY(TransformationID, TaskID) REFERENCES TransformationTasks(TransformationID, TaskID)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4;
 

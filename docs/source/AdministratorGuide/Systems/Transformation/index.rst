@@ -82,7 +82,6 @@ The TS is a standard DIRAC system, and therefore it is composed by components in
       | Tables_in_TransformationDB   |
       +------------------------------+
       | AdditionalParameters         |
-      | DataFiles                    |
       | TaskInputs                   |
       | TransformationFileTasks      |
       | TransformationFiles          |

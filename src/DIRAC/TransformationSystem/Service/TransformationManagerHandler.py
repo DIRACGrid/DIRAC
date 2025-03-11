@@ -501,27 +501,12 @@ class TransformationManagerHandlerMixin:
     def export_addDirectory(cls, path, force=False):
         return cls.transformationDB.addDirectory(path, force=force)
 
-    types_exists = [list]
-
-    @classmethod
-    def export_exists(cls, lfns):
-        return cls.transformationDB.exists(lfns)
-
     types_addFile = [[list, dict, str]]
 
     @classmethod
     def export_addFile(cls, fileDicts, force=False):
         """Interface provides { LFN1 : { PFN1, SE1, ... }, LFN2 : { PFN2, SE2, ... } }"""
         return cls.transformationDB.addFile(fileDicts, force=force)
-
-    types_removeFile = [[list, dict]]
-
-    @classmethod
-    def export_removeFile(cls, lfns):
-        """Interface provides [ LFN1, LFN2, ... ]"""
-        if isinstance(lfns, dict):
-            lfns = list(lfns)
-        return cls.transformationDB.removeFile(lfns)
 
     types_setMetadata = [str, dict]
 

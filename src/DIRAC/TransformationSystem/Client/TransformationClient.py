@@ -46,7 +46,6 @@ class TransformationClient(Client):
     File/directory manipulation methods (the remainder of the interface can be found below)
 
         getFileSummary(lfns)
-        exists(lfns)
 
     Web monitoring tools
 
