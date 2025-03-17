@@ -17,9 +17,9 @@ source CONFIG
 CSURL=https://$SERVER_HOST:9135/Configuration/Server
 
 mkdir -p /home/dirac/ClientInstallDIR/etc
-mkdir -p /home/dirac/.globus
-cp /ca/certs/client.pem /home/dirac/.globus/usercert.pem
-cp /ca/certs/client.key /home/dirac/.globus/userkey.pem
+mkdir -p "${HOME}/.globus"
+cp /ca/certs/client.pem "${HOME}/.globus/usercert.pem"
+cp /ca/certs/client.key "${HOME}/.globus/userkey.pem"
 
 echo -e "*** $(date -u) **** Getting the tests ****\n"
 
@@ -32,8 +32,8 @@ if [[ -n "${INSTALLATION_BRANCH}" ]]; then
     git clone --single-branch --branch "$INSTALLATION_BRANCH" "https://github.com/DIRACGrid/DIRAC.git"
     mkdir -p /home/dirac/ServerInstallDIR/user
     cd /home/dirac/ServerInstallDIR/user
-    ln -s /home/dirac/.globus/usercert.pem client.pem
-    ln -s /home/dirac/.globus/userkey.pem client.key
+    ln -s "${HOME}/.globus/usercert.pem" client.pem
+    ln -s "${HOME}/.globus/userkey.pem" client.key
 else
     for repo_path in "${TESTREPO[@]}"; do
         if [[ -d "${repo_path}" ]]; then
