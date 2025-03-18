@@ -72,12 +72,11 @@ def merge_cs_sections_operations_cfg(cs_cfg: CFG, default_setup, known_vos):
                 contents=merged_section,
             )
 
-            # print(f"Removing {default_setup}")
-            # operation_section.deleteKey(default_setup)
         elif section in known_vos:
             vo_section = operation_section[section]
             if default_setup in vo_section:
                 merged_section = vo_section.mergeWith(vo_section[default_setup])
+
                 operation_section.deleteKey(section)
                 operation_section.createNewSection(
                     section,
@@ -136,7 +135,12 @@ def compare_dicts(d1, d2):
     )
 
 
-def main(diff_folder: Path = "/tmp/", master_cs_file: Path = "", setup: str = "", execute_update: bool = False):
+def main(
+    diff_folder: Path = "/tmp/",
+    master_cs_file: Path = "",
+    setup: str = "",
+    execute_update: bool = False,
+):
     """
     Copy the Setup sections from the Operations section into the Default part.
     Copy the Instance sections of the Systems in the System directly.
