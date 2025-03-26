@@ -99,9 +99,7 @@ class Params:
         self.includeAllServers = True
 
     def setSetup(self, optionValue):
-        self.setup = optionValue
-        DIRAC.gConfig.setOptionValue("/DIRAC/Setup", self.setup)
-        DIRAC.gConfig.setOptionValue(cfgInstallPath("Setup"), self.setup)
+        DIRAC.gLogger.warn("Ignoring Setup option as it is not used for DIRAC v9.0+")
         return DIRAC.S_OK()
 
     def setSiteName(self, optionValue):
