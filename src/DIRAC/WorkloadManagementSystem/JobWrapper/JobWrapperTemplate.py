@@ -15,16 +15,6 @@ import sys
 import json
 import os
 
-from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapperUtilities import (
-    createAndEnterWorkingDirectory,
-    executePayload,
-    finalize,
-    getJobWrapper,
-    processJobOutputs,
-    resolveInputData,
-    transferInputSandbox,
-)
-
 sitePython = os.path.realpath("@SITEPYTHON@")
 if sitePython:
     sys.path.insert(0, sitePython)
@@ -35,6 +25,15 @@ Script.parseCommandLine()
 
 from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
+from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapperUtilities import (
+    createAndEnterWorkingDirectory,
+    executePayload,
+    finalize,
+    getJobWrapper,
+    processJobOutputs,
+    resolveInputData,
+    transferInputSandbox,
+)
 
 
 os.umask(0o22)
