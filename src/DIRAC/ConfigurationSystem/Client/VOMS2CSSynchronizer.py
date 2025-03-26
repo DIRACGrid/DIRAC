@@ -396,11 +396,16 @@ class VOMS2CSSynchronizer:
                         self.log.info(f"Adding new user {newDiracName}: {str(userDict)}")
                         result = self.csapi.modifyUser(newDiracName, userDict, createIfNonExistant=True)
                         if not result["OK"]:
-                            self.log.warn(f"Failed adding new user {newDiracName}")
+                            self.log.warn(f"Failed adding new user {newDiracName}", result["Message"])
                         resultDict["NewUsers"].append(newDiracName)
                         newAddedUserDict[newDiracName] = userDict
                     continue
 
+            # If we have a new user with multiple DN,
+            # it's a bit tricky, so first create it with a single one
+            # and at the next iteration add more DNs
+            if diracName in newAddedUserDict:
+                continue
             # We have an already existing user
             modified = False
             suspendedInVOMS = self.vomsUserDict[dn]["suspended"] or self.vomsUserDict[dn]["certSuspended"]
