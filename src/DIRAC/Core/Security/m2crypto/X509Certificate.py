@@ -99,13 +99,11 @@ class X509Certificate:
         proxySubject = M2Crypto.X509.X509_Name()
 
         issuerSubjectObj = x509Issuer.__certObj.get_subject()
-        # pylint: disable=no-member
-        issuerSubjectParts = issuerSubjectObj.as_text(flags=M2Crypto.m2.XN_FLAG_RFC2253).split(",")
 
-        # XN_FLAG_RFC2253 prints in reverse order but DIRAC has historically used the standard order
-        for isPart in issuerSubjectParts[::-1]:
-            nid, val = isPart.split("=", 1)
-            proxySubject.add_entry_by_txt(field=nid, type=M2Crypto.ASN1.MBSTRING_ASC, entry=val, len=-1, loc=-1, set=0)
+        # Copy the X509 entry components into the new name
+        for entry in issuerSubjectObj:
+            # pylint: disable=no-member
+            M2Crypto.m2.x509_name_add_entry(proxySubject.x509_name, entry.x509_name_entry, -1, 0)
 
         # Finally we add a random Common Name  component. And we might as well use the serial.. :)
         proxySubject.add_entry_by_txt(
