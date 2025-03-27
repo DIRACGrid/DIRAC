@@ -1,3 +1,27 @@
+[v9.0.0a45]
+
+*WorkloadManagemnt
+
+FIX: (#8106) Clear any non-UTF encodable environment variables in pilots
+
+*ConfigurationSystem
+
+NEW: (#8104) backport the export of the Sub in DiracX
+
+*Core
+
+FIX: (#8102) Don't use string processing on X509 name objects
+NEW: (#8099) -S option on dirac-configure is now ignored
+FIX: (#8088) force M2Crypto to use the proxy instead of the host certificate if provided
+
+*WorkloadManagement
+
+FIX: (#8100) Move JobWrapperUtilities after import Script.parseCommandLine()
+
+*Resources
+
+FIX: (#8086) Catch ConnectionError when calling send on a MQ
+
 [v9.0.0a44]
 
 *Resources
