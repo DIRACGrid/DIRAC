@@ -116,7 +116,9 @@ def getM2SSLContext(ctx=None, **kwargs):
     # CHRIS: I think clientMode was just an internal of pyGSI implementation
     # if kwargs.get('clientMode', False) and not kwargs.get('useCertificates', False):
     # if not kwargs.get('useCertificates', False):
-    if kwargs.get("bServerMode", False) or kwargs.get("useCertificates", False):
+    if kwargs.get("bServerMode", False) or (
+        kwargs.get("useCertificates", False) and not kwargs.get("proxyLocation", False)
+    ):
         # Server mode always uses hostcert
         __loadM2SSLCTXHostcert(ctx)
 
