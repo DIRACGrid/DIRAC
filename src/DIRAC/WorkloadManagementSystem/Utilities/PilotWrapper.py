@@ -110,16 +110,26 @@ logger.addHandler(buffer)
 # just logging the environment as first thing
 logger.debug('===========================================================')
 logger.debug('Environment of execution host\\n')
-for key, val in getattr(os, "environb", os.environ).items():
-  # Clean the environment of non-utf-8 characters
-  try:
-    key = key.decode("utf-8")
-    val = val.decode("utf-8")
-  except UnicodeDecodeError as e:
-    logger.error("Dropping %%s=%%s due to: %%s", key, val, e)
-    del os.environ[key]
-    continue
-  logger.debug(key + '=' + val)
+# Clear any non-UTF encodable environment variables as they cause the pilot to fail
+# Use os.environb if it exists (gives raw bytes), else fall back to os.environ.
+environb = getattr(os, "environb", os.environ)
+for key, val in environb.items():
+    try:
+        # Decode if these are bytes; if they're already text, leave them as-is.
+        if isinstance(key, bytes):
+            key_decoded = key.decode("utf-8")
+        else:
+            key_decoded = key
+        if isinstance(val, bytes):
+            val_decoded = val.decode("utf-8")
+        else:
+            val_decoded = val
+    except UnicodeDecodeError as e:
+        logger.error("Dropping %%s=%%s due to decode error: %%s", key, val, e)
+        del environb[key]
+        continue
+
+    logger.debug(key_decoded + '=' + val_decoded)
 logger.debug('===========================================================\\n')
 
 logger.debug(sys.version)
