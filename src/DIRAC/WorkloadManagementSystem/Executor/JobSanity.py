@@ -48,6 +48,7 @@ class JobSanity(OptimizerExecutor):
         ownerName = manifest.getOption("Owner")
         ownerGroup = manifest.getOption("OwnerGroup")
         isbList = manifest.getOption("InputSandbox", [])
+        vo = manifest.getOption("VirtualOrganization")
         sbsToAssign = []
         for isb in isbList:
             if isb.startswith("SB:"):
@@ -55,7 +56,7 @@ class JobSanity(OptimizerExecutor):
         numSBsToAssign = len(sbsToAssign)
         if not numSBsToAssign:
             return S_OK(0)
-        self.jobLog.info("Assigning sandboxes", f"({numSBsToAssign} on behalf of {ownerName}@{ownerGroup})")
+        self.jobLog.info("Assigning sandboxes", f"({numSBsToAssign} on behalf of {ownerName}@{ownerGroup}@{vo})")
         result = self.sandboxClient.assignSandboxesToJob(jobState.jid, sbsToAssign, ownerName, ownerGroup)
         if not result["OK"]:
             self.jobLog.error("Could not assign sandboxes in the SandboxStore")
