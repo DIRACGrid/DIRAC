@@ -21,7 +21,7 @@ from pathlib import Path
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.Core.Utilities.CGroups2 import CG2Manager
 from DIRAC.ConfigurationSystem.Client.Helpers import Operations
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
@@ -413,7 +413,9 @@ class SingularityComputingElement(ComputingElement):
 
         self.log.debug(f"Execute singularity command: {cmd}")
         self.log.debug(f"Execute singularity env: {self.__getEnv()}")
-        result = systemCall(0, cmd, callbackFunction=self.sendOutput, env=self.__getEnv())
+        result = CG2Manager().systemCall(
+            0, cmd, callbackFunction=self.sendOutput, env=self.__getEnv(), ceParameteres=self.ceParameters
+        )
 
         self.__runningJobs -= 1
 
@@ -425,7 +427,9 @@ class SingularityComputingElement(ComputingElement):
             self.log.error(f"Singularity env was: {self.__getEnv()}")
             debugCmd = [outerCmd[0], "--debug"] + outerCmd[1:] + ["echo", "All okay"]
             self.log.error("Running with debug output to facilitate debugging", debugCmd)
-            result = systemCall(0, debugCmd, callbackFunction=self.sendOutput, env=self.__getEnv())
+            result = CG2Manager().systemCall(
+                0, debugCmd, callbackFunction=self.sendOutput, env=self.__getEnv(), ceParameters=self.ceParameters
+            )
             if proxy and renewTask:
                 gThreadScheduler.removeTask(renewTask)
             self.__deleteWorkArea(baseDir)
