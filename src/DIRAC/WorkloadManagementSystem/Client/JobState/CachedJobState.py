@@ -364,6 +364,9 @@ class CachedJobState:
     def getInputData(self):
         return self.__cacheResult("inputData", self.__jobState.getInputData)
 
+    def setInputData(self, inputData):
+        return self.__jobState.setInputData(inputData)
+
     def insertIntoTQ(self):
         if self.valid:
             self.__insertIntoTQ = True
