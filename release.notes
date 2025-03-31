@@ -1,3 +1,13 @@
+[v9.0.0a46]
+
+*Subsystem
+
+NEW: (#8109) added setInputData to JobState
+
+*ConfigurationSystem
+
+FIX: (#8108) VOMS2CSAgent newDiracName might not be defined yet
+
 [v9.0.0a45]
 
 *WorkloadManagemnt
