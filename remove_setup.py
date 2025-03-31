@@ -171,8 +171,11 @@ def main(
     typer.echo(f"Default setup is {default_setup}")
     known_vos = cs_json["Registry"]["VO"]
     typer.echo(f"Known VOs {known_vos}")
-    master_cs = cs_json["DIRAC"]["Configuration"]["MasterServer"]
-    typer.echo(f"MasterCS {master_cs}")
+    try:
+        master_cs = cs_json["DIRAC"]["Configuration"]["MasterServer"]
+        typer.echo(f"MasterCS {master_cs}")
+    except:
+        typer.echo(f"No MasterCS, will not be able to commit")
 
     ######### Update the Operation section
 
@@ -244,6 +247,8 @@ def main(
         json.dump(cs_json, f, indent=3)
 
     if execute_update:
+        if not master_cs:
+            typer.echo("No master CS found, not updating", error=True)
         compressed_data = zlib.compress(str(cs_cfg).encode(), 9)
         update_res = ConfigurationClient(url=master_cs).commitNewData(compressed_data)
         if update_res["OK"]:
