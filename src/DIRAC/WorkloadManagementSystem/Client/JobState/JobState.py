@@ -11,6 +11,7 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     RIGHT_GET_INFO,
     RIGHT_RESCHEDULE,
     RIGHT_RESET,
+    RIGHT_SUBMIT,
 )
 from DIRAC.WorkloadManagementSystem.Utilities.JobStatusUtility import JobStatusUtility
 
@@ -316,6 +317,11 @@ class JobState:
 
     def getInputData(self):
         return JobState.__db.jobDB.getInputData(self.__jid)
+
+    right_setInputData = RIGHT_SUBMIT
+
+    def setInputData(self, inputData):
+        return JobState.__db.jobDB.setInputData(self.__jid, inputData)
 
     right_insertIntoTQ = RIGHT_CHANGE_STATUS
 
