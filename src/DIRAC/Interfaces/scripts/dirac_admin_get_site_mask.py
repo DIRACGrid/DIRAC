@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-########################################################################
-# File :    dirac-admin-get-site-mask
-# Author :  Stuart Paterson
-########################################################################
 """
 Get the list of sites enabled in the mask for job submission
 
@@ -25,16 +21,11 @@ def main():
     from DIRAC import exit as DIRACExit, gLogger
     from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-    diracAdmin = DiracAdmin()
-
-    gLogger.setLevel("ALWAYS")
-
-    result = diracAdmin.getSiteMask(printOutput=True, status="Active")
-    if result["OK"]:
-        DIRACExit(0)
-    else:
-        print(result["Message"])
+    if not (result := DiracAdmin().getSiteMask(printOutput=True, status="Active"))["OK"]:
+        gLogger.error(result["Message"])
         DIRACExit(2)
+
+    DIRACExit(0)
 
 
 if __name__ == "__main__":

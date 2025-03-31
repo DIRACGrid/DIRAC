@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-########################################################################
-# File :    dirac-admin-allow-site
-# Author :  Stuart Paterson
-########################################################################
 """
 Add Site to Active mask for current Setup
 
@@ -23,7 +19,7 @@ def main():
     Script.parseCommandLine(ignoreErrors=True)
 
     from DIRAC import exit as DIRACExit
-    from DIRAC import gLogger
+    from DIRAC import gConfig, gLogger
     from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
     from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
@@ -44,14 +40,6 @@ def main():
     exitCode = 0
     errorList = []
 
-    # result = promptUser(
-    #     'All the elements that are associated with this site will be active, '
-    #     'are you sure about this action?'
-    # )
-    # if not result['OK'] or result['Value'] is 'n':
-    #  print 'Script stopped'
-    #  DIRACExit( 0 )
-
     # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
     site, comment = Script.getPositionalArgs(group=True)
     result = diracAdmin.allowSite(site, comment, printOutput=True)
@@ -59,10 +47,10 @@ def main():
         errorList.append((site, result["Message"]))
         exitCode = 2
     else:
-        if email:
+        if email and not gConfig.getValue("/DIRAC/Security/UseServerCertificate"):
             userName = diracAdmin._getCurrentUser()
             if not userName["OK"]:
-                print("ERROR: Could not obtain current username from proxy")
+                gLogger.error("Could not obtain current username from proxy")
                 exitCode = 2
                 DIRACExit(exitCode)
             userName = userName["Value"]
@@ -81,10 +69,10 @@ def main():
                 fromAddress = Operations().getValue("ResourceStatus/Config/FromAddress", "")
                 result = diracAdmin.sendMail(address, subject, body, fromAddress=fromAddress)
         else:
-            print("Automatic email disabled by flag.")
+            gLogger.warn("Automatic email disabled by flag.")
 
     for error in errorList:
-        print("ERROR %s: %s" % error)
+        gLogger.error(error)
 
     DIRACExit(exitCode)
 

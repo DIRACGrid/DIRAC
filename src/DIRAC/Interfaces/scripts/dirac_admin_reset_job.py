@@ -1,8 +1,4 @@
 #!/usr/bin/env python
-########################################################################
-# File :    dirac-admin-reset-job
-# Author :  Stuart Paterson
-########################################################################
 """
 Reset a job or list of jobs in the WMS
 
@@ -20,6 +16,7 @@ def main():
     Script.registerArgument(["JobID:    DIRAC Job IDs"])
     _, args = Script.parseCommandLine(ignoreErrors=True)
 
+    from DIRAC import gLogger
     from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
     diracAdmin = DiracAdmin()
@@ -36,13 +33,13 @@ def main():
 
         result = diracAdmin.resetJob(job)
         if result["OK"]:
-            print(f"Reset Job {job}")
+            gLogger.notice(f"Reset Job {job}")
         else:
             errorList.append((job, result["Message"]))
             exitCode = 2
 
     for error in errorList:
-        print("ERROR %s: %s" % error)
+        gLogger.error(error)
 
     DIRAC.exit(exitCode)
 
