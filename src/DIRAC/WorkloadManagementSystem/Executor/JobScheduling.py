@@ -591,6 +591,10 @@ class JobScheduling(OptimizerExecutor):
         if not result["OK"]:
             return result
 
+        result = jobState.commitChanges()
+        if not result["OK"]:
+            self.jobLog.error("Could not save changes for job", result["Message"])
+
         return S_OK(stageLFNs)
 
     def __updateSharedSESites(self, jobManifest, stageSite, stagedLFNs, opData):
