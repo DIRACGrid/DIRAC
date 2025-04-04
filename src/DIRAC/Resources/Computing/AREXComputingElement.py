@@ -258,9 +258,6 @@ class AREXComputingElement(ComputingElement):
         if not (self.token or self.proxy):
             self.log.error("Proxy or token not set")
             return S_ERROR("Proxy or token not set")
-        if not self.proxy and self.alwaysIncludeProxy:
-            self.log.error("Proxy required but not set")
-            return S_ERROR("Proxy required but not set")
 
         # If a token is set, we use it
         if self.token:
