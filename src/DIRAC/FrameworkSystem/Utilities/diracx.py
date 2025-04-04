@@ -14,7 +14,12 @@ from diracx.core.preferences import DiracxPreferences
 from diracx.core.utils import write_credentials
 
 from diracx.core.models import TokenResponse
-from diracx.client import DiracClient
+
+try:
+    from diracx.client.sync import SyncDiracClient
+except ImportError:
+    # TODO: Remove this once diracx is tagged
+    from diracx.client import DiracClient as SyncDiracClient
 
 # How long tokens are kept
 DEFAULT_TOKEN_CACHE_TTL = 5 * 60
@@ -61,11 +66,11 @@ def _get_token_file(username: str, group: str, dirac_properties: set[str]) -> Pa
     return token_location
 
 
-def TheImpersonator(credDict: dict[str, Any]) -> DiracClient:
+def TheImpersonator(credDict: dict[str, Any]) -> SyncDiracClient:
     """
     Client to be used by DIRAC server needing to impersonate
     a user for diracx.
-    It queries a token, places it in a file, and returns the `DiracClient`
+    It queries a token, places it in a file, and returns the `SyncDiracClient`
     class
 
     Use as a context manager
@@ -81,4 +86,4 @@ def TheImpersonator(credDict: dict[str, Any]) -> DiracClient:
     )
     pref = DiracxPreferences(url=diracxUrl, credentials_path=token_location)
 
-    return DiracClient(diracx_preferences=pref)
+    return SyncDiracClient(diracx_preferences=pref)

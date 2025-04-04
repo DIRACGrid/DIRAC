@@ -14,12 +14,17 @@ import importlib
 import json
 import re
 import textwrap
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any
 
-from diracx.client import DiracClient as _DiracClient
+try:
+    from diracx.client.sync import SyncDiracClient
+except ImportError:
+    # TODO: Remove this once diracx is tagged
+    from diracx.client import DiracClient as SyncDiracClient
 from diracx.core.models import TokenResponse
 from diracx.core.preferences import DiracxPreferences
 from diracx.core.utils import serialize_credentials
@@ -82,7 +87,7 @@ class FutureClient:
 
 
 @contextmanager
-def DiracXClient() -> _DiracClient:
+def DiracXClient() -> Iterator[SyncDiracClient]:
     """Get a DiracX client instance with the current user's credentials"""
     diracxUrl = gConfig.getValue("/DiracX/URL")
     if not diracxUrl:
@@ -99,7 +104,7 @@ def DiracXClient() -> _DiracClient:
         token_file.seek(0)
 
         pref = DiracxPreferences(url=diracxUrl, credentials_path=token_file.name)
-        with _DiracClient(diracx_preferences=pref) as api:
+        with SyncDiracClient(diracx_preferences=pref) as api:
             yield api
 
 
