@@ -349,7 +349,7 @@ class JobWrapper:
 
     def __prepareEnvironment(self):
         """Prepare the environment to be used by the payload."""
-        os.environ["DIRACJOBID"] = str(self.jobID)
+        os.environ["JOBID"] = str(self.jobID)
 
         diracSite = DIRAC.siteName()
         os.environ["DIRACSITE"] = diracSite
