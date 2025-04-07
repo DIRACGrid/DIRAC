@@ -22,31 +22,25 @@
 
    Note that several executables can be provided and wil be executed sequentially.
 """
-import re
 import os
+import re
 import shlex
-
 from io import StringIO
 from urllib.parse import quote
-from pathlib import Path
 
 from DIRAC import S_OK, gLogger
-from DIRAC.Core.Base.API import API
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Workflow.Parameter import Parameter
-from DIRAC.Core.Workflow.Workflow import Workflow
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC.Core.Utilities.Subprocess import systemCall
-from DIRAC.Core.Utilities.List import uniqueElements
-from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping, getDIRACPlatforms
+from DIRAC.Core.Base.API import API
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.List import uniqueElements
+from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.Core.Workflow.Parameter import Parameter
+from DIRAC.Core.Workflow.Workflow import Workflow
 from DIRAC.Interfaces.API.Dirac import Dirac
-from DIRAC.Workflow.Utilities.Utils import getStepDefinition, addStepToWorkflow
-
-
-COMPONENT_NAME = "/Interfaces/API/Job"
+from DIRAC.Workflow.Utilities.Utils import addStepToWorkflow, getStepDefinition
 
 
 class BadJobParameterError(ValueError):

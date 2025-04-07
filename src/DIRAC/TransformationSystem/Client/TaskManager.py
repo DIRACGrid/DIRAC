@@ -6,11 +6,9 @@ for managing jobs and requests tasks
 
 import time
 
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
-
-COMPONENT_NAME = "TaskManager"
+from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 
 class TaskBase(TransformationAgentsUtilities):

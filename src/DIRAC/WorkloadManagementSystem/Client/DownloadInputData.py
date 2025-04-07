@@ -12,8 +12,6 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
-COMPONENT_NAME = "DownloadInputData"
-
 
 def _isCached(lfn, seName):
     result = returnSingleResult(StorageElement(seName).getFileMetadata(lfn))
@@ -137,7 +135,7 @@ class DownloadInputData:
         if not result["Value"]:
             self.log.warn("Not enough disk space available for download", f"{result['Value']} / {totalSize} bytes")
             self.__setJobParam(
-                COMPONENT_NAME,
+                self.__class__.__name__,
                 f"Not enough disk space available for download: {result['Value']} / {totalSize} bytes",
             )
             return S_OK({"Failed": self.inputData, "Successful": {}})
@@ -216,7 +214,7 @@ class DownloadInputData:
             report += "\n".join(failedReplicas)
 
         if report:
-            self.__setJobParam(COMPONENT_NAME, report)
+            self.__setJobParam(self.__class__.__name__, report)
 
         return S_OK({"Successful": resolvedData, "Failed": failedReplicas})
 

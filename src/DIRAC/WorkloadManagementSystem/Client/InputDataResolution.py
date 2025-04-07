@@ -7,12 +7,11 @@
     for applications.
 """
 import DIRAC
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.WorkloadManagementSystem.Client.PoolXMLSlice import PoolXMLSlice
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-COMPONENT_NAME = "InputDataResolution"
 CREATE_CATALOG = False
 
 
@@ -22,8 +21,7 @@ class InputDataResolution:
     def __init__(self, argumentsDict):
         """Standard constructor"""
         self.arguments = argumentsDict
-        self.name = COMPONENT_NAME
-        self.log = gLogger.getSubLogger(self.name)
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         op = Operations()
         self.arguments.setdefault("Configuration", {})["AllReplicas"] = op.getValue(
             "InputDataPolicy/AllReplicas", False

@@ -3,13 +3,11 @@
 import pprint
 import sys
 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo, formatProxyInfoAsString
-from DIRAC.Core.Utilities.Version import getCurrentVersion
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
-
-COMPONENT_NAME = "API"
+from DIRAC.Core.Security.ProxyInfo import formatProxyInfoAsString, getProxyInfo
+from DIRAC.Core.Utilities.Version import getCurrentVersion
 
 
 def _printFormattedDictList(dictList, fields, uniqueField, orderBy):
@@ -60,8 +58,7 @@ class API:
     def __init__(self):
         """c'tor"""
         self._printFormattedDictList = _printFormattedDictList
-        self.log = gLogger.getSubLogger(COMPONENT_NAME)
-        self.section = COMPONENT_NAME
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
         self.pPrint = pprint.PrettyPrinter()
         # Global error dictionary
         self.errorDict = {}
