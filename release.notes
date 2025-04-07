@@ -1,3 +1,31 @@
+[v9.0.0a47]
+
+*WorkloadManagement
+
+FIX: (#8123) PilotManager not using tokens to kill pilots
+NEW: (#8119) JobStateUpdate legacy adapter
+
+*RequestManagementSystem
+
+CHANGE: (#8121) No longer directly use of the JobStateUpdateClient when processing requests
+FIX: (#8121) Calling setJobParameter when processing requests
+
+*TransformationSystem
+
+CHANGE: (#8121) No longer directly use of the JobStateUpdateClient from the DataRecoveryAgent
+
+*DBs
+
+FIX: (#8120) Escape password when giving it to sqlalchemy
+
+*WorkloadManagementSystem
+
+FIX: (#8116) avoid repeating optimization when job goes to STAGING
+
+*Resources
+
+FIX: (#8115) Fix AREX CE pilot logs in alwaysIncludeProxy case
+
 [v9.0.0a46]
 
 *Subsystem
