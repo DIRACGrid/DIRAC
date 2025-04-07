@@ -651,7 +651,7 @@ class JobAgent(AgentModule):
             self.log.exception("Exception occurred when submitting", f"JobID: {jobID}")
             taskID = 0
             # We create a S_ERROR from the exception to compute it as a normal error
-            self.computingElement.taskResults[taskID] = S_ERROR(unexpectedSubmitException)
+            self.computingElement.taskResults[taskID] = S_ERROR(str(unexpectedSubmitException))
             self.jobs[jobID]["TaskID"] = taskID
             return S_OK()
 

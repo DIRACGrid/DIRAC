@@ -381,7 +381,12 @@ class SingularityComputingElement(ComputingElement):
         for seName in localSEs:
             try:
                 # Find the base path if a File protocol is defined
-                mountedPath = StorageElement(seName).getStorageParameters(protocol="file")["Value"]["Path"]
+                se = StorageElement(seName)
+                if not se.valid:
+                    self.log.warn(f"Storage Element {seName} not valid")
+                    continue
+
+                mountedPath = se.getStorageParameters(protocol="file")["Value"]["Path"]
                 bindPaths.append(f"{mountedPath}:{mountedPath}:ro")
             except KeyError:
                 pass
