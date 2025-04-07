@@ -6,26 +6,25 @@
 
 """
 
-import os
-import time
-import random
-import json
 import datetime
+import json
+import os
+import random
+import time
 from functools import cached_property
 
 # # from DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.List import randomize, fromChar
-from DIRAC.Core.Utilities.JEncode import strToIntDict
-from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
-from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.Core.Utilities.ReturnValues import returnValueOrRaise
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client, createClient
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
+from DIRAC.Core.Utilities.JEncode import strToIntDict
+from DIRAC.Core.Utilities.List import fromChar, randomize
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Utilities.ReturnValues import returnValueOrRaise
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
+from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.Utilities.JobStatusUtility import JobStatusUtility
@@ -718,7 +717,7 @@ class _JobDBInteraction:
                 int(jobID), status=newStatus, minorStatus=minorStatus, source=source
             )
         else:
-            return self._client.setJobStatus(jobID, minorStatus, minorStatus, source)
+            return self._client.setJobStatus(jobID, newStatus, minorStatus, source)
 
     def setJobApplicationStatus(self, jobID: int, appStatus: str, source: str):
         if self._useCertificates:
