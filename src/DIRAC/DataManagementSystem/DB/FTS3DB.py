@@ -1,5 +1,5 @@
-""" Frontend to FTS3 MySQL DB. Written using sqlalchemy
-"""
+"""Frontend to FTS3 MySQL DB. Written using sqlalchemy"""
+
 # We disable the no-member error because
 # they are constructed by SQLAlchemy for all
 # the objects mapped to a table.
@@ -7,6 +7,7 @@
 
 import datetime
 import errno
+from urllib.parse import quote_plus
 
 from sqlalchemy import (
     BigInteger,
@@ -184,7 +185,7 @@ class FTS3DB:
         self.dbHost = dbParameters["Host"]
         self.dbPort = dbParameters["Port"]
         self.dbUser = dbParameters["User"]
-        self.dbPass = dbParameters["Password"]
+        self.dbPass = quote_plus(dbParameters["Password"])
         self.dbName = dbParameters["DBName"]
 
     def __init__(self, pool_size=15, url=None, parentLogger=None):

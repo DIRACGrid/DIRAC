@@ -3,6 +3,7 @@
 
     Uses sqlalchemy
 """
+
 import datetime
 from urllib import parse as urlparse
 from sqlalchemy import create_engine, desc, exc
