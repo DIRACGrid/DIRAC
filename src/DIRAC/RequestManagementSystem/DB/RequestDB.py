@@ -16,6 +16,8 @@ import datetime
 import errno
 import random
 
+from urllib.parse import quote_plus
+
 from sqlalchemy import (
     TEXT,
     BigInteger,
@@ -198,7 +200,7 @@ class RequestDB:
         self.dbHost = dbParameters["Host"]
         self.dbPort = dbParameters["Port"]
         self.dbUser = dbParameters["User"]
-        self.dbPass = dbParameters["Password"]
+        self.dbPass = quote_plus(dbParameters["Password"])
         self.dbName = dbParameters["DBName"]
 
     def __init__(self, parentLogger=None):
