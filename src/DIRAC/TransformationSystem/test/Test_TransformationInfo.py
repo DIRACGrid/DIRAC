@@ -1,19 +1,19 @@
 """Test the Transformationinfo."""
 from collections import OrderedDict
 from contextlib import contextmanager
+from unittest.mock import MagicMock as Mock
+from unittest.mock import patch
 
 import pytest
-from unittest.mock import MagicMock as Mock, patch
 
-from DIRAC import S_OK, S_ERROR
 import DIRAC
-import DIRAC.TransformationSystem.Client.TransformationClient
 import DIRAC.Resources.Catalog.FileCatalogClient
+import DIRAC.TransformationSystem.Client.TransformationClient
 import DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient
+from DIRAC import S_ERROR, S_OK
+from DIRAC.tests.Utilities.utils import MatchStringWith
 from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
-
-from DIRAC.tests.Utilities.utils import MatchStringWith
 
 # pylint: disable=W0212, redefined-outer-name
 
@@ -63,10 +63,15 @@ def tiFixture():
     )
 
     tri = TransformationInfo(
-        transformationID=1234, transInfoDict=transInfoDict, enabled=False, tClient=tMock, fcClient=fcMock, jobMon=jmMock
+        transformationID=1234,
+        transInfoDict=transInfoDict,
+        enabled=False,
+        tClient=tMock,
+        fcClient=fcMock,
+        jobMon=jmMock,
+        jobStatusUtility=jsucMock,
     )
     tri.log = Mock(name="LogMock")
-    tri.jobStatusUtility = jsucMock
     return tri
 
 
@@ -216,23 +221,25 @@ def test_setTaskStatus(tiFixture):
 def test_updateJobStatus(tiFixture):
     """DIRAC.TransformationSystem.Utilities.TransformationInfo updateJobStatus................"""
 
-    tiFixture.jobStateClient.setJobStatus = Mock()
-    tiFixture.jobStateClient.setJobStatus.return_value = S_OK()
+    tiFixture.jobStatusUtility.setJobStatus = Mock()
+    tiFixture.jobStatusUtility.setJobStatus.return_value = S_OK()
     tiFixture.enabled = False
     res = tiFixture._TransformationInfo__updateJobStatus(1234, "Failed", minorstatus=None)
     assert res["OK"]
     assert res["Value"] == "DisabledMode"
-    tiFixture.jobStateClient.setJobStatus.assert_not_called()
+    tiFixture.jobStatusUtility.setJobStatus.assert_not_called()
 
-    tiFixture.jobStateClient.setJobStatus.reset()
-    tiFixture.jobStateClient.setJobStatus.return_value = S_OK("added record")
+    tiFixture.jobStatusUtility.setJobStatus.reset()
+    tiFixture.jobStatusUtility.setJobStatus.return_value = S_OK("added record")
     tiFixture.enabled = True
     res = tiFixture._TransformationInfo__updateJobStatus(1234, "Failed", minorstatus=None)
     assert res["OK"]
     assert res["Value"] == "added record"
-    tiFixture.jobStateClient.setJobStatus.assert_called_once_with(1234, "Failed", None, "DataRecoveryAgent", None, True)
+    tiFixture.jobStatusUtility.setJobStatus.assert_called_once_with(
+        1234, status="Failed", minorStatus=None, source="DataRecoveryAgent", dateTime=None, force=True
+    )
 
-    tiFixture.jobStateClient.setJobStatus.return_value = S_ERROR("Error setting job status")
+    tiFixture.jobStatusUtility.setJobStatus.return_value = S_ERROR("Error setting job status")
     tiFixture.enabled = True
     with pytest.raises(RuntimeError) as re:
         tiFixture._TransformationInfo__updateJobStatus(1234, "Failed", minorstatus=None)
