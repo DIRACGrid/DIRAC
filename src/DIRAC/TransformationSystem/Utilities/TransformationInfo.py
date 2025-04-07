@@ -2,7 +2,7 @@
 from collections import OrderedDict, defaultdict
 from itertools import zip_longest
 
-from DIRAC import gLogger, S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Proxy import UserProxy
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
@@ -14,7 +14,7 @@ from DIRAC.WorkloadManagementSystem.Utilities.JobStatusUtility import JobStatusU
 class TransformationInfo:
     """Hold information about a transformation."""
 
-    def __init__(self, transformationID, transInfoDict, enabled, tClient, fcClient, jobMon):
+    def __init__(self, transformationID, transInfoDict, enabled, tClient, fcClient, jobMon, jobStatusUtility=None):
         """Store clients etc."""
         self.log = gLogger.getSubLogger(__name__ + f"[{transformationID}]")
         self.enabled = enabled
@@ -26,7 +26,7 @@ class TransformationInfo:
         self.transType = transInfoDict["Type"]
         self.author = transInfoDict["Author"]
         self.authorGroup = transInfoDict["AuthorGroup"]
-        self.jobStatusUtility = JobStatusUtility()
+        self.jobStatusUtility = jobStatusUtility or JobStatusUtility()
 
     def checkTasksStatus(self):
         """Check the status for the task of given transformation and taskID"""
