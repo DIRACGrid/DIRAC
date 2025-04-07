@@ -121,6 +121,7 @@ def killPilotsInQueues(pilotRefDict):
             return result
         ce = result["Value"]
 
+        pilotDict["VO"] = vo
         result = setPilotCredentials(ce, pilotDict)
         if not result["OK"]:
             return result
