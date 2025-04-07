@@ -227,9 +227,15 @@ def initialize(
 
     if host_credentials:
         gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "yes")
-    if isinstance(host_credentials, tuple):
-        gConfigurationData.setOptionInCFG("/DIRAC/Security/CertFile", str(host_credentials[0]))
-        gConfigurationData.setOptionInCFG("/DIRAC/Security/KeyFile", str(host_credentials[1]))
+        if isinstance(
+            host_credentials,
+            (
+                tuple,
+                list,
+            ),
+        ):
+            gConfigurationData.setOptionInCFG("/DIRAC/Security/CertFile", str(host_credentials[0]))
+            gConfigurationData.setOptionInCFG("/DIRAC/Security/KeyFile", str(host_credentials[1]))
 
     if log_level:
         gLogger.setLevel(log_level)
