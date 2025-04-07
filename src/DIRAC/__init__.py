@@ -182,6 +182,7 @@ def initialize(
     extra_config_files: Optional[list[os.PathLike]] = None,
     extra_config: Optional[dict[str, Any]] = None,
     host_credentials: Optional[tuple[os.PathLike, os.PathLike]] = None,
+    use_server_cert: bool = False,
 ) -> None:
     """Prepare the global state so that DIRAC clients can be used.
 
@@ -225,9 +226,11 @@ def initialize(
         cfg.loadFromDict(extra_config)
         gConfigurationData.mergeWithLocal(cfg)
 
+    if use_server_cert:
+        gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "yes")
+
     if host_credentials:
         gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "yes")
-    if isinstance(host_credentials, tuple):
         gConfigurationData.setOptionInCFG("/DIRAC/Security/CertFile", str(host_credentials[0]))
         gConfigurationData.setOptionInCFG("/DIRAC/Security/KeyFile", str(host_credentials[1]))
 

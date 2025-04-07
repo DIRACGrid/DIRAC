@@ -8,7 +8,7 @@ import unittest
 import DIRAC
 from DIRAC import S_ERROR, S_OK
 
-DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
+DIRAC.initialize(require_auth=False, use_server_cert=True)  # Initialize configuration
 
 from DIRAC.TransformationSystem.Service.TransformationManagerHandler import TransformationManagerHandlerMixin
 
