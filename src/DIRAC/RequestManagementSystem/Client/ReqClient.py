@@ -11,20 +11,24 @@ import time
 import random
 import json
 import datetime
+from functools import cached_property
 
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import randomize, fromChar
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Utilities.ReturnValues import returnValueOrRaise
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
-from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
+from DIRAC.WorkloadManagementSystem.Utilities.JobStatusUtility import JobStatusUtility
 
 
 @createClient("RequestManagement/ReqManager")
@@ -309,8 +313,7 @@ class ReqClient(Client):
         :param str requestID: request id
         :param int jobID: job id
         """
-
-        stateServer = JobStateUpdateClient(useCertificates=useCertificates)
+        stateServer = _JobDBInteraction(useCertificates)
 
         # Checking if to update the job status - we should fail here, so it will be re-tried later
         # Checking the state, first
@@ -688,3 +691,52 @@ def recoverableRequest(request):
                         return False
                     return True
     return True
+
+
+class _JobDBInteraction:
+    """Class to handle the JobDB interaction.
+
+    This will either connect to the DB directly or use the client depending on
+    if use_certificates is set or not.
+
+    WARNING: This is not intended for use outside of ReqClient!
+    """
+
+    def __init__(self, useCertificates: bool):
+        self._useCertificates = useCertificates
+
+    def setJobParameter(self, jobID: int, key: str, value: str):
+        if self._useCertificates:
+            vo = returnValueOrRaise(self._jobStatusUtility.jobDB.getJobAttribute(jobID, "VO"))
+            return self._elasticJobParametersDB.setJobParameter(int(jobID), key, value, vo=vo)
+        else:
+            return self._client.setJobParameter(jobID, key, value)
+
+    def setJobStatus(self, jobID: int, newStatus: str, minorStatus: str, source: str):
+        if self._useCertificates:
+            return self._jobStatusUtility.setJobStatus(
+                int(jobID), status=newStatus, minorStatus=minorStatus, source=source
+            )
+        else:
+            return self._client.setJobStatus(jobID, minorStatus, minorStatus, source)
+
+    def setJobApplicationStatus(self, jobID: int, appStatus: str, source: str):
+        if self._useCertificates:
+            return self._jobStatusUtility.setJobStatus(int(jobID), appStatus=appStatus, source=source)
+        else:
+            return self._client.setJobApplicationStatus(jobID, appStatus, source)
+
+    @cached_property
+    def _client(self):
+        return JobStateUpdateClient(useCertificates=False)
+
+    @cached_property
+    def _jobStatusUtility(self):
+        return JobStatusUtility()
+
+    @cached_property
+    def _elasticJobParametersDB(self):
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobParametersDB", "JobParametersDB")
+        if not result["OK"]:
+            return result
+        return result["Value"]()

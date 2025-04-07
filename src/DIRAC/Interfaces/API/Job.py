@@ -28,6 +28,7 @@ import shlex
 
 from io import StringIO
 from urllib.parse import quote
+from pathlib import Path
 
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.API import API
