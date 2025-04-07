@@ -184,16 +184,6 @@ class BaseJobDescriptionModel(BaseModel):
                 raise ValueError("sites and bannedSites are mutually exclusive")
         return self
 
-    @field_validator("platform")
-    def checkPlatform(cls, v: str):
-        if v:
-            res = getDIRACPlatforms()
-            if not res["OK"]:
-                raise ValueError(res["Message"])
-            if v not in res["Value"]:
-                raise ValueError("Invalid platform")
-        return v
-
     @field_validator("priority")
     def checkPriorityBounds(cls, v):
         minPriority = Operations().getValue("JobDescription/MinPriority", 0)
