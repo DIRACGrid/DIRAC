@@ -121,24 +121,9 @@ def killPilotsInQueues(pilotRefDict):
             return result
         ce = result["Value"]
 
-        opsH = Operations(vo=vo)
-
-        pilotDN = opsH.getValue("Pilot/GenericPilotDN")
-        if not pilotDN:
-            owner = opsH.getValue("Pilot/GenericPilotUser")
-            res = getDNForUsername(owner)
-            if not res["OK"]:
-                return S_ERROR(f"Cannot get the generic pilot DN: {res['Message']}")
-            pilotDN = res["Value"][0]
-
-        pilotGroup = opsH.getValue("Pilot/GenericPilotGroup")
-        group = getGroupOption(pilotGroup, "VOMSRole")
-        ret = gProxyManager.getPilotProxyFromVOMSGroup(pilotDN, group)
-        if not ret["OK"]:
-            gLogger.error("Could not get proxy:", f"User '{pilotDN}' Group '{group}' : {ret['Message']}")
-            return S_ERROR("Failed to get the pilot's owner proxy")
-        proxy = ret["Value"]
-        ce.setProxy(proxy)
+        result = setPilotCredentials(ce, pilotDict)
+        if not result["OK"]:
+            return result
 
         pilotList = pilotDict["PilotList"]
         result = ce.killJob(pilotList)
