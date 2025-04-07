@@ -8,7 +8,7 @@ from DIRAC.Core.Utilities.Proxy import UserProxy
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
+from DIRAC.WorkloadManagementSystem.Utilities.JobStatusUtility import JobStatusUtility
 
 
 class TransformationInfo:
@@ -26,7 +26,7 @@ class TransformationInfo:
         self.transType = transInfoDict["Type"]
         self.author = transInfoDict["Author"]
         self.authorGroup = transInfoDict["AuthorGroup"]
-        self.jobStateClient = JobStateUpdateClient()
+        self.jobStatusUtility = JobStatusUtility()
 
     def checkTasksStatus(self):
         """Check the status for the task of given transformation and taskID"""
@@ -97,7 +97,9 @@ class TransformationInfo:
         """Update the job status."""
         if self.enabled:
             source = "DataRecoveryAgent"
-            result = self.jobStateClient.setJobStatus(jobID, status, minorstatus, source, None, True)
+            result = self.jobStatusUtility.setJobStatus(
+                int(jobID), status=status, minorStatus=minorstatus, source=source, dateTime=None, force=True
+            )
         else:
             return S_OK("DisabledMode")
         if not result["OK"]:

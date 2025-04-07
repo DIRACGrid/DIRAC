@@ -53,7 +53,7 @@ def tiFixture():
     tMock.setFileStatusForTransformation = Mock(name="setFileStat")
     fcMock = Mock(name="fcMock", spec=DIRAC.Resources.Catalog.FileCatalogClient.FileCatalogClient)
     jmMock = Mock(name="jobMonMock", spec=DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient.JobMonitoringClient)
-    jsucMock = Mock(name="jsuc", spec=DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient.JobStateUpdateClient)
+    jsucMock = Mock(name="jsuc", spec=DIRAC.WorkloadManagementSystem.Utilities.JobStatusUtility.JobStatusUtility)
     transInfoDict = dict(
         TransformationID=1234,
         TransformationName="TestProd12",
@@ -66,7 +66,7 @@ def tiFixture():
         transformationID=1234, transInfoDict=transInfoDict, enabled=False, tClient=tMock, fcClient=fcMock, jobMon=jmMock
     )
     tri.log = Mock(name="LogMock")
-    tri.jobStateClient = jsucMock
+    tri.jobStatusUtility = jsucMock
     return tri
 
 
