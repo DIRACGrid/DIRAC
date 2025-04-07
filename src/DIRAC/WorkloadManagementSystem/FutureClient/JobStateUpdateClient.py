@@ -1,11 +1,17 @@
-import importlib
-import functools
-from datetime import datetime, timezone
+from __future__ import annotations
 
+import functools
+import time
+from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from DIRAC.Core.Security.DiracX import DiracXClient, FutureClient, addRPCStub
-from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue
+from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueOrRaise
 from DIRAC.Core.Utilities.TimeUtilities import fromString
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
+
+if TYPE_CHECKING:
+    from diracx.client.models import JobCommand
 
 
 def stripValueIfOK(func):
@@ -21,30 +27,49 @@ def stripValueIfOK(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
         if result.get("OK"):
-            assert result.pop("Value") is None, "Value should be None if OK"
+            if result.get("Value") is None:
+                result.pop("Value")
         return result
 
     return wrapper
 
 
 class JobStateUpdateClient(FutureClient):
-    @stripValueIfOK
     @convertToReturnValue
     def sendHeartBeat(self, jobID: str | int, dynamicData: dict, staticData: dict):
-        print("HACK: This is a no-op until we decide what to do")
+        """Send a heartbeat from a Job.
+
+        The behaviour of this function is not strictly the same as in legacy
+        DIRAC. Most notably, in legacy DIRAC the heartbeat always overrides the
+        job status to Running whereas in DiracX the job state machine is still
+        respected. Additionally, DiracX updates the job logging information
+        when status transitions occur as a result of the heartbeat.
+        """
+
+        with DiracXClient() as api:
+            body = {jobID: dynamicData | staticData}
+            if len(body[jobID]) != len(dynamicData) + len(staticData):
+                raise NotImplementedError(f"Duplicate keys: {dynamicData=} {staticData=}")
+            commands: list[JobCommand] = api.jobs.add_heartbeat(body)
+        # Legacy DIRAC returns a dictionary of {command: arguments}
+        result = {}
+        for command in commands:
+            if command.job_id != jobID:
+                raise NotImplementedError(f"Job ID mismatch: {jobID=} {command.job_id=}")
+            result[command.command] = command.arguments
+        return result
 
     @stripValueIfOK
     @convertToReturnValue
     def setJobApplicationStatus(self, jobID: str | int, appStatus: str, source: str = "Unknown"):
         statusDict = {
-            "application_status": appStatus,
+            "ApplicationStatus": appStatus,
         }
         if source:
             statusDict["Source"] = source
         with DiracXClient() as api:
-            api.jobs.set_single_job_status(
-                jobID,
-                {datetime.now(tz=timezone.utc): statusDict},
+            api.jobs.set_job_statuses(
+                {jobID: {datetime.now(tz=timezone.utc): statusDict}},
             )
 
     @stripValueIfOK
@@ -52,34 +77,35 @@ class JobStateUpdateClient(FutureClient):
     def setJobAttribute(self, jobID: str | int, attribute: str, value: str):
         with DiracXClient() as api:
             if attribute == "Status":
-                api.jobs.set_single_job_status(
-                    jobID,
-                    {datetime.now(tz=timezone.utc): {"status": value}},
+                api.jobs.set_job_statuses(
+                    {jobID: {datetime.now(tz=timezone.utc): {"Status": value}}},
                 )
             else:
-                api.jobs.set_single_job_properties(jobID, {attribute: value})
+                api.jobs.patch_metadata({jobID: {attribute: value}})
 
     @stripValueIfOK
     @convertToReturnValue
     def setJobFlag(self, jobID: str | int, flag: str):
         with DiracXClient() as api:
-            api.jobs.set_single_job_properties(jobID, {flag: True})
+            api.jobs.patch_metadata({jobID: {flag: True}})
 
     @stripValueIfOK
     @convertToReturnValue
     def setJobParameter(self, jobID: str | int, name: str, value: str):
-        print("HACK: This is a no-op until we decide what to do")
+        with DiracXClient() as api:
+            api.jobs.patch_metadata({jobID: {name: value}})
 
     @stripValueIfOK
     @convertToReturnValue
     def setJobParameters(self, jobID: str | int, parameters: list):
-        print("HACK: This is a no-op until we decide what to do")
+        with DiracXClient() as api:
+            api.jobs.patch_metadata({jobID: {k: v for k, v in parameters}})
 
     @stripValueIfOK
     @convertToReturnValue
     def setJobSite(self, jobID: str | int, site: str):
         with DiracXClient() as api:
-            api.jobs.set_single_job_properties(jobID, {"Site": site})
+            api.jobs.patch_metadata({jobID: {"Site": site}})
 
     @stripValueIfOK
     @convertToReturnValue
@@ -102,9 +128,8 @@ class JobStateUpdateClient(FutureClient):
         if datetime_ is None:
             datetime_ = datetime.utcnow()
         with DiracXClient() as api:
-            api.jobs.set_single_job_status(
-                jobID,
-                {fromString(datetime_).replace(tzinfo=timezone.utc): statusDict},
+            api.jobs.set_job_statuses(
+                {jobID: {fromString(datetime_).replace(tzinfo=timezone.utc): statusDict}},
                 force=force,
             )
 
@@ -114,7 +139,7 @@ class JobStateUpdateClient(FutureClient):
     def setJobStatusBulk(self, jobID: str | int, statusDict: dict, force=False):
         statusDict = {fromString(k).replace(tzinfo=timezone.utc): v for k, v in statusDict.items()}
         with DiracXClient() as api:
-            api.jobs.set_job_status_bulk(
+            api.jobs.set_job_statuses(
                 {jobID: statusDict},
                 force=force,
             )
@@ -122,13 +147,42 @@ class JobStateUpdateClient(FutureClient):
     @stripValueIfOK
     @convertToReturnValue
     def setJobsParameter(self, jobsParameterDict: dict):
-        print("HACK: This is a no-op until we decide what to do")
+        with DiracXClient() as api:
+            updates = {job_id: {k: v} for job_id, (k, v) in jobsParameterDict.items()}
+            api.jobs.patch_metadata(updates)
 
     @stripValueIfOK
     @convertToReturnValue
     def unsetJobFlag(self, jobID: str | int, flag: str):
         with DiracXClient() as api:
-            api.jobs.set_single_job_properties(jobID, {flag: False})
+            api.jobs.patch_metadata({jobID: {flag: False}})
 
+    @stripValueIfOK
+    @convertToReturnValue
     def updateJobFromStager(self, jobID: str | int, status: str):
-        raise NotImplementedError("TODO")
+        if status == "Done":
+            jobStatus = JobStatus.CHECKING
+            minorStatus = "JobScheduling"
+        else:
+            jobStatus = None
+            minorStatus = "Staging input files failed"
+
+        trials = 10
+        query = [{"parameter": "JobID", "operator": "eq", "value": jobID}]
+        with DiracXClient() as api:
+            for i in range(trials):
+                result = api.jobs.search(parameters=["Status"], search=query)
+                if not result:
+                    return None
+                if result[0]["Status"] == JobStatus.STAGING:
+                    break
+                time.sleep(1)
+            else:
+                return f"Job is not in Staging after {trials} seconds"
+
+            retVal = self.setJobStatus(jobID, status=jobStatus, minorStatus=minorStatus, source="StagerSystem")
+            # As there might not be a value (see stripValueIfOK), only call
+            # returnValueOrRaise if the return value is not OK
+            if not retVal["OK"]:  # pylint: disable=unsubscriptable-object
+                returnValueOrRaise(retVal)
+            return None if i == 0 else f"Found job in Staging after {i} seconds"

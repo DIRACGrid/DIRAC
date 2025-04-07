@@ -45,3 +45,5 @@ def compare_results2(monkeypatch, test_func1, test_func2):
     # if 3 * legacy_duration < diracx_duration:
     #     print(f"Legacy DIRAC took {legacy_duration:.3f}s, FutureClient took {diracx_duration:.3f}s")
     #     assert False, "FutureClient should be faster than legacy DIRAC!"
+
+    return future_result, old_result
