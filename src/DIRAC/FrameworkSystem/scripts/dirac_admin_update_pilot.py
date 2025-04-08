@@ -25,8 +25,9 @@ def main():
         if switch[0] == "v" or switch[0] == "vo":
             vo = switch[1]
 
-    from DIRAC import S_OK, S_ERROR
-    from DIRAC import gConfig, gLogger
+    from DIRAC import S_OK
+    from DIRAC import gLogger
+    from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
     from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
     def updatePilot(version, vo):
@@ -38,21 +39,24 @@ def main():
         :param version: version vArBpC of pilot you want to use
         :param vo: Location of pilot version in CS /Operations/<vo>/Pilot/Version
         """
-        # FIXME: use Operations() object
-        pilotVersion = gConfig.getValue(f"Operations/{vo}/Pilot/Version", [])
-        if not pilotVersion:
-            return S_ERROR(f"No pilot version set under Operations/{vo}/Pilot/Version in CS")
-
-        pilotVersion.pop()
-        pilotVersion.insert(0, version)
+        res = Operations(vo=vo).getValue("Pilot/Version", [])
+        if not res["OK"]:
+            gLogger.warn("No pilot version set in CS")
+            pilotVersion = [version]
+        else:
+            pilotVersion = [res["Value"].pop()]
+            pilotVersion.insert(0, version)
         api = CSAPI()
-        api.setOption(f"Operations/{vo}/Pilot/Version", ", ".join(pilotVersion))
+        if vo:
+            api.setOption(f"Operations/{vo}/Pilot/Version", ", ".join(pilotVersion))
+        else:
+            api.setOption("Operations/Defaults/Pilot/Version", ", ".join(pilotVersion))
         result = api.commit()
         if not result["OK"]:
             gLogger.fatal("Could not commit new version of pilot!")
             return result
 
-        newVersion = gConfig.getValue(f"Operations/{vo}/Pilot/Version")
+        newVersion = Operations(vo=vo).getValue("Pilot/Version")
         return S_OK(f"New version of pilot set to {newVersion}")
 
     result = updatePilot(version, vo)
