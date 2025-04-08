@@ -4,16 +4,14 @@ See the information about transformation parameters below.
 """
 import json
 
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Base.API import API
 from DIRAC.Core.Utilities.JEncode import encode
 from DIRAC.Core.Utilities.PromptUser import promptUser
-from DIRAC.Core.Base.API import API
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.TransformationSystem.Client.BodyPlugin.BaseBody import BaseBody
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.RequestManagementSystem.Client.Operation import Operation
-
-COMPONENT_NAME = "Transformation"
 
 
 class Transformation(API):

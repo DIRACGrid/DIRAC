@@ -5,21 +5,16 @@
 """
 import os
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Resources.Catalog.PoolXMLCatalog import PoolXMLCatalog
-
-COMPONENT_NAME = "PoolXMLSlice"
 
 
 class PoolXMLSlice:
-    #############################################################################
     def __init__(self, catalogName):
         """Standard constructor"""
         self.fileName = catalogName
-        self.name = COMPONENT_NAME
-        self.log = gLogger.getSubLogger(self.name)
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
-    #############################################################################
     def execute(self, dataDict):
         """Given a dictionary of resolved input data, this will creates a POOL XML slice."""
         poolXMLCatName = self.fileName
@@ -61,6 +56,3 @@ class PoolXMLSlice:
             return S_ERROR("Exception during construction of POOL XML slice")
 
         return S_OK("POOL XML Slice created")
-
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

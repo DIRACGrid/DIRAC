@@ -47,8 +47,6 @@ from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitor
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 
-COMPONENT_NAME = "DiracAPI"
-
 
 def parseArguments(args):
     argList = []

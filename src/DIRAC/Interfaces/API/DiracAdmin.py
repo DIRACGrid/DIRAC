@@ -25,8 +25,6 @@ ret = getProxyInfo(disableVOMS=True)
 if ret["OK"] and "group" in ret["Value"]:
     voName = getVOForGroup(ret["Value"]["group"])
 
-COMPONENT_NAME = "/Interfaces/API/DiracAdmin"
-
 
 class DiracAdmin(API):
     """Administrative functionalities"""
@@ -38,11 +36,6 @@ class DiracAdmin(API):
 
         self.csAPI = CSAPI()
 
-        self.dbg = False
-        if gConfig.getValue(self.section + "/LogLevel", "DEBUG") == "DEBUG":
-            self.dbg = True
-
-        self.scratchDir = gConfig.getValue(self.section + "/ScratchDir", "/tmp")
         self.currentDir = os.getcwd()
         self.sitestatus = SiteStatus()
 
