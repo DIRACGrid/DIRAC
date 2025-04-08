@@ -1,3 +1,13 @@
+[v9.0.0a49]
+
+*Core
+
+FIX: (#8136) Proxy Pilots are sent with a token
+
+*WorkloadManagementSystem
+
+FIX: (#8135) the PoolXMLSlice should be created in the same directory where the job runs
+
 [v9.0.0a48]
 
 *WorkloadManagement
