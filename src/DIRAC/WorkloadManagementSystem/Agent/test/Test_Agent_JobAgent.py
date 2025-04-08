@@ -611,7 +611,7 @@ def test_submitJob(mocker, mockJWInput, expected):
         ("Pool/Singularity", jobScript % "1", (["Failed to find singularity"], []), ([], [])),
     ],
 )
-def test_submitAndCheckJob(mocker, manageJobFiles, localCE, job, expectedResult1, expectedResult2):
+def test_submitAndCheckJob(mocker, manageJobFiles, localCE, job, expectedResult1, expectedResult2, tmp_path):
     """Test the submission and the management of the job status."""
     jobID = "123"
     jobExecutablePath, jobWrapperPath, jobWrapperConfigPath = manageJobFiles
@@ -635,7 +635,12 @@ def test_submitAndCheckJob(mocker, manageJobFiles, localCE, job, expectedResult1
         ),
     )
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobAgent._sendFailoverRequest", return_value=S_OK())
-    mocker.patch("DIRAC.Core.Security.X509Chain.X509Chain.dumpAllToString", return_value=S_OK())
+    empty_file_path = tmp_path / "empty_file"
+    empty_file_path.touch()
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.JobAgent.writeChainToTemporaryFile",
+        return_value=S_OK(str(empty_file_path)),
+    )
     mocker.patch(
         "DIRAC.Resources.Computing.SingularityComputingElement.SingularityComputingElement.submitJob",
         return_value=S_ERROR("Failed to find singularity"),
@@ -712,7 +717,7 @@ def test_submitAndCheckJob(mocker, manageJobFiles, localCE, job, expectedResult1
     assert len(jobAgent.computingElement.taskResults) == 0
 
 
-def test_submitAndCheck2Jobs(mocker):
+def test_submitAndCheck2Jobs(mocker, tmp_path):
     """Test the submission and the management of the job status.
 
     This time, a first job is successfully submitted, but the second submission fails.
@@ -728,7 +733,17 @@ def test_submitAndCheck2Jobs(mocker):
         ),
     )
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.JobAgent._sendFailoverRequest", return_value=S_OK())
-    mocker.patch("DIRAC.Core.Security.X509Chain.X509Chain.dumpAllToString", return_value=S_OK())
+
+    def make_empty_file(*args, **kwargs):
+        """Create an empty file and return its path."""
+        empty_file_path = tmp_path / "empty_file"
+        empty_file_path.touch()
+        return S_OK(str(empty_file_path))
+
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.JobAgent.writeChainToTemporaryFile",
+        make_empty_file,
+    )
     mocker.patch(
         "DIRAC.Resources.Computing.InProcessComputingElement.InProcessComputingElement.submitJob",
         side_effect=[S_OK(), S_ERROR("ComputingElement error")],

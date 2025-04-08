@@ -8,6 +8,7 @@ import os
 import sys
 import re
 import time
+from pathlib import Path
 
 from diraccfg import CFG
 
@@ -17,6 +18,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Security import Properties
+from DIRAC.Core.Security.ProxyFile import writeChainToTemporaryFile
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
@@ -626,13 +628,15 @@ class JobAgent(AgentModule):
 
         self.log.info("Submitting JobWrapper", f"{os.path.basename(wrapperFile)} to {self.ceName}CE")
 
-        # Pass proxy to the CE
-        proxy = proxyChain.dumpAllToString()
-        if not proxy["OK"]:
-            self.log.error("Invalid proxy", proxy)
-            return S_ERROR("Payload Proxy Not Found")
+        # Pass proxy to the CE, writing it to a temporary file to ensure the DiracX token is included
+        retVal = writeChainToTemporaryFile(proxyChain)
+        if not retVal["OK"]:
+            self.log.error("Invalid proxy", retVal["Message"])
+            return S_ERROR("Failed to write proxy to temporary file")
+        proxyLocation = Path(retVal["Value"])
+        payloadProxy = proxyLocation.read_text()
+        proxyLocation.unlink()
 
-        payloadProxy = proxy["Value"]
         try:
             result = self.computingElement.submitJob(
                 wrapperFile,

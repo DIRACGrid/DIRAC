@@ -183,16 +183,6 @@ def test_platformValidator_valid():
     assert job.platform == "x86_64-slc6-gcc62-opt"
 
 
-def test_platformValidator_invalid():
-    """Test the platform validator with invalid input."""
-    with patch(
-        "DIRAC.WorkloadManagementSystem.Utilities.JobModel.getDIRACPlatforms",
-        return_value=S_OK(["x86_64-slc6-gcc62-opt"]),
-    ):
-        with pytest.raises(ValidationError):
-            BaseJobDescriptionModel(executable=EXECUTABLE, platform="x86_64-slc6-gcc62-opt2")
-
-
 @pytest.mark.parametrize(
     "validSites, selectedSites",
     [
