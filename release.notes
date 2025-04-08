@@ -1,3 +1,25 @@
+[v9.0.0a48]
+
+*WorkloadManagement
+
+FIX: (#8134) replace DIRACJOBID with JOBID in JobWrapper environment
+FIX: (#8126) Write DiracX token in JobAgent
+FIX: (#8126) Remove platform validation as extensions can redefine it
+FIX: (#8125) add VO information to the pilotDict when killing pilots
+FIX: (#8124) report the message of the Exception instead of the Exception itself in JobAgent.submitJob
+
+*Core
+
+CHANGE: (#8131) DIRAC.initialize(): ensure host credentials are not ignored in case passed as a list and not a tuple
+
+*ConfigurationSystem
+
+FIX: (#8127) dirac-admin-update-pilot can work without a specified VO
+
+*Resources
+
+FIX: (#8124) do not try to use a malformed StorageElement instance in SingularityCE
+
 [v9.0.0a47]
 
 *WorkloadManagement
