@@ -13,7 +13,7 @@
 import DIRAC
 from DIRAC import gLogger
 
-DIRAC.initialize(require_auth=False, use_server_cert=True)  # Initialize configuration
+DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 

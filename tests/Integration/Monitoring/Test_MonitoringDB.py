@@ -9,7 +9,7 @@ import pytest
 import DIRAC
 from DIRAC.tests.Utilities.utils import find_all
 
-DIRAC.initialize(require_auth=False, use_server_cert=True)  # Initialize configuration
+DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB

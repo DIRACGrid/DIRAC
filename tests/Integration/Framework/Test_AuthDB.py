@@ -5,7 +5,7 @@ import time
 
 import DIRAC
 
-DIRAC.initialize(require_auth=False, use_server_cert=True)  # Initialize configuration
+DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
 from authlib.jose import JsonWebKey, JsonWebSignature, jwt, RSAKey
 from authlib.common.encoding import json_b64encode, urlsafe_b64decode, json_loads
