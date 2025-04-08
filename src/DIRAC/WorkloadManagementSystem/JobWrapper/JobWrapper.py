@@ -765,6 +765,7 @@ class JobWrapper:
 
         configDict = {
             "JobID": self.jobID,
+            "JobIDPath": self.jobIDPath,
             "LocalSEList": localSEList,
             "DiskSEList": self.diskSE,
             "TapeSEList": self.tapeSE,

@@ -6,6 +6,8 @@
     result and in principle has all the necessary information to resolve input data
     for applications.
 """
+from pathlib import Path
+
 import DIRAC
 from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -76,7 +78,7 @@ class InputDataResolution:
         self.log.verbose(f"Catalog name will be: {catalogName}")
 
         resolvedData = tmpDict
-        appCatalog = PoolXMLSlice(catalogName)
+        appCatalog = PoolXMLSlice(catalogName, Path(self.arguments["Configuration"].get("JobIDPath", "")))
         return appCatalog.execute(resolvedData)
 
     def __resolveInputData(self):

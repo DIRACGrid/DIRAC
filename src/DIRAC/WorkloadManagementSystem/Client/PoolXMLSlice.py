@@ -10,14 +10,14 @@ from DIRAC.Resources.Catalog.PoolXMLCatalog import PoolXMLCatalog
 
 
 class PoolXMLSlice:
-    def __init__(self, catalogName):
+    def __init__(self, catalogName, jobID_path: os.PathLike):
         """Standard constructor"""
         self.fileName = catalogName
+        self.jobID_path = jobID_path
         self.log = gLogger.getSubLogger(self.__class__.__name__)
 
     def execute(self, dataDict):
         """Given a dictionary of resolved input data, this will creates a POOL XML slice."""
-        poolXMLCatName = self.fileName
         try:
             poolXMLCat = PoolXMLCatalog()
             self.log.verbose("Creating POOL XML slice")
@@ -41,18 +41,19 @@ class PoolXMLSlice:
             xmlSlice = poolXMLCat.toXML()
             self.log.verbose("POOL XML Slice is: ")
             self.log.verbose(xmlSlice)
-            with open(poolXMLCatName, "w") as poolSlice:
+            with open(self.jobID_path / self.fileName, "w") as poolSlice:
                 poolSlice.write(xmlSlice)
-            self.log.info(f"POOL XML Catalogue slice written to {poolXMLCatName}")
+            self.log.info(f"POOL XML Catalogue slice written to {self.jobID_path / self.fileName}")
             try:
                 # Temporary solution to the problem of storing the SE in the Pool XML slice
-                with open(f"{poolXMLCatName}.temp", "w") as poolSlice_temp:
+                with open(self.jobID_path / (self.fileName + ".temp"), "w") as poolSlice_temp:
                     xmlSlice = poolXMLCat.toXML(True)
                     poolSlice_temp.write(xmlSlice)
-            except Exception as x:
-                self.log.warn(f"Attempted to write catalog also to {poolXMLCatName}.temp but this failed")
-        except Exception as x:
-            self.log.error(str(x))
+            except Exception:
+                self.log.warn(f"Attempted to write catalog also to {self.fileName}.temp but this failed")
+                self.log.exception()
+        except Exception:
+            self.log.exception()
             return S_ERROR("Exception during construction of POOL XML slice")
 
         return S_OK("POOL XML Slice created")
