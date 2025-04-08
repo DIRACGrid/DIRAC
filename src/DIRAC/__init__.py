@@ -54,14 +54,13 @@
     - getPlatformTuple(): DIRAC platform tuple for current host
 
 """
-import os
 import importlib.metadata
+import os
 import re
 import sys
-import warnings
+from collections.abc import Sequence
 from pkgutil import extend_path
 from typing import Any, Optional, Union
-
 
 __path__ = extend_path(__path__, __name__)
 
@@ -181,7 +180,7 @@ def initialize(
     log_level: Optional[LogLevel] = None,
     extra_config_files: Optional[list[os.PathLike]] = None,
     extra_config: Optional[dict[str, Any]] = None,
-    host_credentials: Optional[tuple[os.PathLike, os.PathLike]] = None,
+    host_credentials: Optional[Union[Sequence[os.PathLike], bool]] = None,
 ) -> None:
     """Prepare the global state so that DIRAC clients can be used.
 
@@ -227,9 +226,9 @@ def initialize(
 
     if host_credentials:
         gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "yes")
-    if isinstance(host_credentials, tuple):
-        gConfigurationData.setOptionInCFG("/DIRAC/Security/CertFile", str(host_credentials[0]))
-        gConfigurationData.setOptionInCFG("/DIRAC/Security/KeyFile", str(host_credentials[1]))
+        if isinstance(host_credentials, Sequence) and len(host_credentials) == 2:
+            gConfigurationData.setOptionInCFG("/DIRAC/Security/CertFile", str(host_credentials[0]))
+            gConfigurationData.setOptionInCFG("/DIRAC/Security/KeyFile", str(host_credentials[1]))
 
     if log_level:
         gLogger.setLevel(log_level)
