@@ -1,7 +1,8 @@
 """
-  Collection of Utilities to handle pilot jobs
+Collection of Utilities to handle pilot jobs
 
 """
+
 import os
 import base64
 import bz2
@@ -11,7 +12,16 @@ import tempfile
 def bundleProxy(executableFile, proxy):
     """Create a self extracting archive bundling together an executable script and a proxy"""
 
-    compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()["Value"])).decode()
+    from pathlib import Path
+    from DIRAC.Core.Security.ProxyFile import writeChainToTemporaryFile
+
+    retVal = writeChainToTemporaryFile(proxy)
+    proxyLocation = Path(retVal["Value"])
+    proxy_string = proxyLocation.read_text()
+    proxyLocation.unlink()
+
+    # Note: I'd expect that to fail, as bz2.compress expects bytes, and not a string
+    compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy_string)).decode()
     with open(executableFile, "rb") as fp:
         compressedAndEncodedExecutable = base64.b64encode(bz2.compress(fp.read(), 9)).decode()
 
