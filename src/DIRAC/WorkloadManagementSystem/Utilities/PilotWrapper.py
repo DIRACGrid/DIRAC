@@ -1,22 +1,24 @@
-""" Module holding function(s) creating the pilot wrapper.
+"""Module holding function(s) creating the pilot wrapper.
 
-    This is a DIRAC-free module, so it could possibly be used also outside of DIRAC installations.
+This is a DIRAC-free module, so it could possibly be used also outside of DIRAC installations.
 
-    The main client of this module is the SiteDirector, that invokes the functions here more or less like this::
+The main client of this module is the SiteDirector, that invokes the functions here more or less like this::
 
-        pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict(pilotFiles)
-        localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict,
-                                        pilotOptions,
-                                        pilotExecDir)
-       _writePilotWrapperFile(localPilot=localPilot)
+    pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict(pilotFiles)
+    localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict,
+                                    pilotOptions,
+                                    pilotExecDir)
+   _writePilotWrapperFile(localPilot=localPilot)
 
 """
+
 from __future__ import absolute_import, division, print_function
 
 import base64
 import bz2
 import os
 import tempfile
+
 
 pilotWrapperContent = """#!/bin/bash
 # Reduce the maximum allowed number of open file descriptors as micromamba
@@ -411,7 +413,15 @@ def getPilotFilesCompressedEncodedDict(pilotFiles, proxy=None):
         pilotFilesCompressedEncodedDict[os.path.basename(pf)] = pfContentEncoded
 
     if proxy is not None:
-        compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy.dumpAllToString()["Value"].encode()))
+        from pathlib import Path  # pylint: disable=import-error
+        from DIRAC.Core.Security.ProxyFile import writeChainToTemporaryFile  # pylint: disable=import-error
+
+        retVal = writeChainToTemporaryFile(proxy)
+        proxyLocation = Path(retVal["Value"])
+        proxy_string = proxyLocation.read_text()
+        proxyLocation.unlink()
+
+        compressedAndEncodedProxy = base64.b64encode(bz2.compress(proxy_string.encode()))
         pilotFilesCompressedEncodedDict["proxy"] = compressedAndEncodedProxy
 
     return pilotFilesCompressedEncodedDict

@@ -695,6 +695,8 @@ class SiteDirector(AgentModule):
         :returns: file name of the pilot wrapper created
         """
 
+        pilotFilesCompressedEncodedDict = None
+
         try:
             pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict([], proxy)
         except Exception as be:
