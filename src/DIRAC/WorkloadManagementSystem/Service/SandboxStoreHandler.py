@@ -120,7 +120,7 @@ class SandboxStoreHandlerMixin:
                     format=extension,
                 )
 
-                with TheImpersonator(credDict) as client:
+                with TheImpersonator(credDict, source="SandboxStore") as client:
                     res = client.jobs.initiate_sandbox_upload(sandbox_info)
 
                 if res.url:
@@ -415,7 +415,7 @@ class SandboxStoreHandlerMixin:
         # If the PFN starts with S3, we know it has been uploaded to the
         # S3 sandbox store, so download it from there before sending it
         if filePath.startswith("/S3"):
-            with TheImpersonator(credDict) as client:
+            with TheImpersonator(credDict, source="SandboxStore") as client:
                 res = client.jobs.get_sandbox_file(pfn=filePath)
                 r = requests.get(res.url)
                 r.raise_for_status()
