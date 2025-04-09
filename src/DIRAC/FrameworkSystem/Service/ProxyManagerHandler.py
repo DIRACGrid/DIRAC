@@ -1,11 +1,12 @@
-""" ProxyManager is the implementation of the ProxyManagement service in the DISET framework
+"""ProxyManager is the implementation of the ProxyManagement service in the DISET framework
 
-    .. literalinclude:: ../ConfigTemplate.cfg
-      :start-after: ##BEGIN ProxyManager:
-      :end-before: ##END
-      :dedent: 2
-      :caption: ProxyManager options
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN ProxyManager:
+  :end-before: ##END
+  :dedent: 2
+  :caption: ProxyManager options
 """
+
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
@@ -325,6 +326,7 @@ class ProxyManagerHandlerMixin:
             credDict["group"],
             set(credDict.get("groupProperties", []) + credDict.get("properties", [])),
             expires_minutes=credDict["secondsLeft"] // 60 + 1,
+            source="ProxyManager",
         )
 
 

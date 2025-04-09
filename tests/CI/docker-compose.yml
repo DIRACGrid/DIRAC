@@ -83,7 +83,9 @@ services:
 
   # Mock of an S3 storage
   s3-direct:
-    image: adobe/s3mock
+    # Fix the version until https://github.com/adobe/S3Mock/issues/2321
+    # is resolved
+    image: adobe/s3mock:3.12.0
     container_name: s3-direct
     hostname: s3-direct
     ports:

@@ -26,8 +26,12 @@ DEFAULT_TOKEN_CACHE_TTL = 5 * 60
 DEFAULT_TOKEN_CACHE_SIZE = 1024
 
 
-def get_token(username: str, group: str, dirac_properties: set[str], *, expires_minutes: int | None = None):
-    """Do a legacy exchange to get a DiracX access_token+refresh_token"""
+def get_token(
+    username: str, group: str, dirac_properties: set[str], *, expires_minutes: int | None = None, source: str = ""
+):
+    """Do a legacy exchange to get a DiracX access_token+refresh_token
+
+    The source parameter only purpose is to appear in the URL on diracx logs"""
     diracxUrl = gConfig.getValue("/DiracX/URL")
     if not diracxUrl:
         raise ValueError("Missing mandatory /DiracX/URL configuration")
@@ -44,6 +48,7 @@ def get_token(username: str, group: str, dirac_properties: set[str], *, expires_
             "preferred_username": username,
             "scope": " ".join(scopes),
             "expires_minutes": expires_minutes,
+            "source": source,
         },
         headers={"Authorization": f"Bearer {apiKey}"},
         timeout=10,
@@ -58,15 +63,15 @@ def get_token(username: str, group: str, dirac_properties: set[str], *, expires_
     TTLCache(maxsize=DEFAULT_TOKEN_CACHE_SIZE, ttl=DEFAULT_TOKEN_CACHE_TTL),
     key=lambda a, b, c: hashkey(a, b, *sorted(c)),
 )
-def _get_token_file(username: str, group: str, dirac_properties: set[str]) -> Path:
+def _get_token_file(username: str, group: str, dirac_properties: set[str], *, source: str = "") -> Path:
     """Write token to a temporary file and return the path to that file"""
-    data = get_token(username, group, dirac_properties)
+    data = get_token(username, group, dirac_properties, source=source)
     token_location = Path(NamedTemporaryFile().name)
     write_credentials(TokenResponse(**data), location=token_location)
     return token_location
 
 
-def TheImpersonator(credDict: dict[str, Any]) -> SyncDiracClient:
+def TheImpersonator(credDict: dict[str, Any], *, source: str = "") -> SyncDiracClient:
     """
     Client to be used by DIRAC server needing to impersonate
     a user for diracx.
@@ -83,6 +88,7 @@ def TheImpersonator(credDict: dict[str, Any]) -> SyncDiracClient:
         credDict["username"],
         credDict["group"],
         set(credDict.get("groupProperties", []) + credDict.get("properties", [])),
+        source=source,
     )
     pref = DiracxPreferences(url=diracxUrl, credentials_path=token_location)
 
