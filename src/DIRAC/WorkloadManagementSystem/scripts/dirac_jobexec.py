@@ -9,6 +9,7 @@ import sys
 
 import DIRAC
 from DIRAC.Core.Base.Script import Script
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR
 
 
 @Script()
@@ -87,9 +88,13 @@ def main():
             parDict[name] = value
 
     gLogger.debug("PYTHONPATH:\n%s" % ("\n".join(sys.path)))
-    jobExec = jobexec(jobXMLfile, parDict)
+    try:
+        jobExec = jobexec(jobXMLfile, parDict)
+    except Exception as e:
+        gLogger.exception("Workflow execution failed")
+        jobExec = S_ERROR(f"Workflow execution failed: {e}")
     if not jobExec["OK"]:
-        gLogger.debug("Workflow execution finished with errors, exiting")
+        gLogger.notice("Workflow execution finished with errors, exiting")
         if jobExec["Errno"]:
             sys.exit(jobExec["Errno"])
         else:
