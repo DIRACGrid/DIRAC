@@ -160,10 +160,6 @@ def executeWithoutServerCertificate(fcn):
 
         try:
             return fcn(*args, **kwargs)
-        except Exception as lException:  # pylint: disable=broad-except
-            value = ",".join([str(arg) for arg in lException.args])
-            exceptType = lException.__class__.__name__
-            return S_ERROR(f"Exception - {exceptType}: {value}")
         finally:
             # Restore the default host certificate usage if necessary
             if useServerCertificate:
