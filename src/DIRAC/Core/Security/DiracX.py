@@ -10,6 +10,7 @@ __all__ = (
 
 import base64
 import functools
+import hashlib
 import importlib
 import json
 import re
@@ -17,7 +18,7 @@ import textwrap
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile, gettempdir
 from typing import Any
 
 try:
@@ -30,6 +31,7 @@ from diracx.core.preferences import DiracxPreferences
 from diracx.core.utils import serialize_credentials
 
 from DIRAC import gConfig, gLogger
+from DIRAC.Core.Utilities.File import secureOpenForWrite
 
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security.Locations import getDefaultProxyLocation
@@ -98,14 +100,16 @@ def DiracXClient() -> Iterator[SyncDiracClient]:
     if not diracxToken:
         raise ValueError(f"No diracx token in the proxy file {proxyLocation}")
 
-    with NamedTemporaryFile(mode="wt") as token_file:
-        token_file.write(json.dumps(diracxToken))
-        token_file.flush()
-        token_file.seek(0)
+    hash = hashlib.sha256(diracxToken["refresh_token"].split(".")[1].encode())
+    token_file = Path(gettempdir()) / f"dx_{hash.hexdigest()}"
+    if not token_file.exists():
+        token_file.parent.mkdir(parents=True, exist_ok=True)
+        with secureOpenForWrite(token_file) as (fd, _):
+            fd.write(json.dumps(diracxToken))
 
-        pref = DiracxPreferences(url=diracxUrl, credentials_path=token_file.name)
-        with SyncDiracClient(diracx_preferences=pref) as api:
-            yield api
+    pref = DiracxPreferences(url=diracxUrl, credentials_path=token_file)
+    with SyncDiracClient(diracx_preferences=pref) as api:
+        yield api
 
 
 def addRPCStub(meth):
