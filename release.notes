@@ -1,3 +1,11 @@
+[v9.0.0a50]
+
+*Core
+
+FIX: (#8140) Make it possible to debug dirac-jobexec failures
+NEW: (#8139) add a source parameter to the impersonator
+NEW: (#8138) DiracX token from PEM is always stored in $TMP/dx_.....
+
 [v9.0.0a49]
 
 *Core
