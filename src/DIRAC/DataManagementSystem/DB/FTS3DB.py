@@ -7,6 +7,7 @@
 
 import datetime
 import errno
+from urllib.parse import quote_plus
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import SQLAlchemyError
@@ -184,7 +185,7 @@ class FTS3DB:
         self.dbHost = dbParameters["Host"]
         self.dbPort = dbParameters["Port"]
         self.dbUser = dbParameters["User"]
-        self.dbPass = dbParameters["Password"]
+        self.dbPass = quote_plus(dbParameters["Password"])
         self.dbName = dbParameters["DBName"]
 
     def __init__(self, pool_size=15, url=None, parentLogger=None):
