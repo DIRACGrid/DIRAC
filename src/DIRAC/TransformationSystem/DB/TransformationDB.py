@@ -397,14 +397,11 @@ class TransformationDB(DB):
     def __updateTransformationParameter(self, transID, paramName, paramValue, connection=False):
         if paramName not in self.mutable:
             return S_ERROR(f"Can not update the '{paramName}' transformation parameter")
-        if paramName == "Body":
-            res = self._escapeString(paramValue)
-            if not res["OK"]:
-                return S_ERROR("Failed to parse parameter value")
-            paramValue = res["Value"]
-            req = f"UPDATE Transformations SET {paramName}='{paramValue}', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID={transID}"
-            return self._update(req, conn=connection)
-        req = f"UPDATE Transformations SET {paramName}='{paramValue}', LastUpdate=UTC_TIMESTAMP() WHERE TransformationID={transID}"
+        res = self._escapeString(paramValue)
+        if not res["OK"]:
+            return S_ERROR("Failed to parse parameter value")
+        paramValue = res["Value"]
+        req = f"UPDATE Transformations SET {paramName}={paramValue}, LastUpdate=UTC_TIMESTAMP() WHERE TransformationID={transID}"
         return self._update(req, conn=connection)
 
     def _getTransformationID(self, transName, connection=False):
