@@ -2,6 +2,8 @@
 """
 Script to update pilot version in CS
 """
+from packaging.version import Version
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 
@@ -39,13 +41,14 @@ def main():
         :param version: version vArBpC of pilot you want to use
         :param vo: Location of pilot version in CS /Operations/<vo>/Pilot/Version
         """
-        res = Operations(vo=vo).getValue("Pilot/Version", [])
-        if not res["OK"]:
+        pilotVersion = sorted(Operations(vo=vo).getValue("Pilot/Version", []), key=lambda x: Version(x), reverse=True)
+        if version in pilotVersion:
+            gLogger.warn(f"Version {version} already set in CS")
+        elif pilotVersion:
+            pilotVersion = [version, pilotVersion[0]]
+        else:
             gLogger.warn("No pilot version set in CS")
             pilotVersion = [version]
-        else:
-            pilotVersion = [res["Value"].pop()]
-            pilotVersion.insert(0, version)
         api = CSAPI()
         if vo:
             api.setOption(f"Operations/{vo}/Pilot/Version", ", ".join(pilotVersion))
