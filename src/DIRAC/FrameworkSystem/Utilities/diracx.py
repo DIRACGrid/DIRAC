@@ -61,7 +61,7 @@ def get_token(
 
 @cached(
     TTLCache(maxsize=DEFAULT_TOKEN_CACHE_SIZE, ttl=DEFAULT_TOKEN_CACHE_TTL),
-    key=lambda a, b, c: hashkey(a, b, *sorted(c)),
+    key=lambda a, b, c, **_: hashkey(a, b, *sorted(c)),
 )
 def _get_token_file(username: str, group: str, dirac_properties: set[str], *, source: str = "") -> Path:
     """Write token to a temporary file and return the path to that file"""
