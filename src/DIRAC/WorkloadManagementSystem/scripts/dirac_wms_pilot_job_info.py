@@ -19,7 +19,7 @@ def _stringInList(subStr, sList):
 
 @Script()
 def main():
-    parameters = ["OwnerDN", "StartExecTime", "EndExecTime"]
+    parameters = ["Owner", "StartExecTime", "EndExecTime"]
     Script.registerSwitch("", "Parameters=", "   List of strings to be matched by job parameters or attributes")
     # Registering arguments will automatically add their description to the help menu
     Script.registerArgument(["PilotID:  Grid ID of the pilot"])

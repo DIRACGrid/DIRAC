@@ -330,7 +330,7 @@ class SandboxMetadataDB(DB):
                 return result
         return S_OK()
 
-    def getSandboxId(self, SEName, SEPFN, requesterName, requesterGroup, field="SBId", requesterDN=None):
+    def getSandboxId(self, SEName, SEPFN, requesterName, requesterGroup, field="SBId"):
         """
         Get the sandboxId if it exists
 
@@ -350,7 +350,7 @@ class SandboxMetadataDB(DB):
             "s.OwnerId=o.OwnerId",
         ]
         sqlCmd = f"SELECT s.{field} FROM `sb_SandBoxes` s, `sb_Owners` o WHERE"
-        requesterProps = Registry.getPropertiesForEntity(requesterGroup, name=requesterName, dn=requesterDN)
+        requesterProps = Registry.getPropertiesForEntity(requesterGroup, name=requesterName)
         if Properties.JOB_ADMINISTRATOR in requesterProps or Properties.JOB_MONITOR in requesterProps:
             # Do nothing, just ensure it doesn't fit in the other cases
             pass
@@ -370,24 +370,3 @@ class SandboxMetadataDB(DB):
         if not data:
             return S_ERROR("No sandbox matches the requirements")
         return S_OK(data[0][0])
-
-    def getSandboxOwner(self, SEName, SEPFN, requesterDN, requesterGroup):
-        """get the sandbox owner, if such sandbox exists
-
-        :param SEName: name of the StorageElement
-        :param SEPFN: PFN of the Sandbox
-        :param requesterDN: host DN used as credentials
-        :param requesterGroup: group used to use as credentials (should be 'hosts')
-
-        :returns: S_OK with tuple (owner, ownerGroup, VO)
-        """
-        if not (res := self.getSandboxId(SEName, SEPFN, None, requesterGroup, "OwnerId", requesterDN=requesterDN))[
-            "OK"
-        ]:
-            return res
-
-        if not (
-            res := self._query(f"SELECT `Owner`, `OwnerGroup`, `VO` FROM `sb_Owners` WHERE `OwnerId` = {res['Value']}")
-        )["OK"]:
-            return res
-        return S_OK(res["Value"][0])
