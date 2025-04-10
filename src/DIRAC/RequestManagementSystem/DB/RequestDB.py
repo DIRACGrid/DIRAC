@@ -19,6 +19,7 @@
 """
 import errno
 import random
+from urllib.parse import quote_plus
 
 import datetime
 
@@ -199,7 +200,7 @@ class RequestDB:
         dbParameters = result["Value"]
         self.dbHost = dbParameters["Host"]
         self.dbPort = dbParameters["Port"]
-        self.dbUser = dbParameters["User"]
+        self.dbUser = quote_plus(dbParameters["User"])
         self.dbPass = dbParameters["Password"]
         self.dbName = dbParameters["DBName"]
 
