@@ -24,7 +24,7 @@ def main():
     prodID = args[0]
     res = prodClient.getProduction(prodID)
 
-    fields = ["ProductionName", "Status", "ProductionID", "CreationDate", "LastUpdate", "AuthorDN", "AuthorGroup"]
+    fields = ["ProductionName", "Status", "ProductionID", "CreationDate", "LastUpdate", "Author", "AuthorGroup"]
     records = []
 
     if res["OK"]:
@@ -39,7 +39,7 @@ def main():
                     str(prod["ProductionID"]),
                     str(prod["CreationDate"]),
                     str(prod["LastUpdate"]),
-                    str(prod["AuthorDN"]),
+                    str(prod["Author"]),
                     str(prod["AuthorGroup"]),
                 ]
             )

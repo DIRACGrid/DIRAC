@@ -15,7 +15,6 @@ def test_SandboxMetadataDB():
     smDB = SandboxMetadataDB()
 
     owner = "adminusername"
-    ownerDN = "/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser"
     ownerGroup = "dirac_admin"
     VO = "vo"
 
@@ -32,10 +31,6 @@ def test_SandboxMetadataDB():
     res = smDB.assignSandboxesToEntities(assignTo, owner, ownerGroup)
     assert res["OK"], res["Message"]
     assert res["Value"] == 1
-
-    res = smDB.getSandboxOwner(sbSE, sbPFN, ownerDN, ownerGroup)
-    assert res["OK"], res["Message"]
-    assert res["Value"] == (owner, ownerGroup, VO)
 
     res = smDB.getSandboxId(sbSE, sbPFN, owner, ownerGroup)
     assert res["OK"], res["Message"]
