@@ -1,49 +1,49 @@
-""" :mod: RequestValidator
+""":mod: RequestValidator
 
-    ======================
+======================
 
-    .. module: RequestValidator
+.. module: RequestValidator
 
-    :synopsis: request validator
+:synopsis: request validator
 
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    A general and simple request validator checking for required attributes and logic.
-    It checks if required attributes are set/unset but not for their values.
+A general and simple request validator checking for required attributes and logic.
+It checks if required attributes are set/unset but not for their values.
 
-    RequestValidator class implements the DIRACSingleton pattern, no global object is
-    required to keep a single instance.
+RequestValidator class implements the DIRACSingleton pattern, no global object is
+required to keep a single instance.
 
-    If you need to extend this one with your own specific checks consider:
+If you need to extend this one with your own specific checks consider:
 
-      * for adding Operation or Files required attributes use :any:`addReqAttrsCheck` function::
+  * for adding Operation or Files required attributes use :any:`addReqAttrsCheck` function::
 
-          RequestValidator().addReqAttrsCheck( "FooOperation", operationAttrs = [ "Bar", "Buzz"], filesAttrs = [ "LFN" ] )
+      RequestValidator().addReqAttrsCheck( "FooOperation", operationAttrs = [ "Bar", "Buzz"], filesAttrs = [ "LFN" ] )
 
-      * for adding generic check define a new callable object ( function or functor ) which takes only one argument,
-        say for functor::
+  * for adding generic check define a new callable object ( function or functor ) which takes only one argument,
+    say for functor::
 
-          class MyValidator( RequestValidator ):
+      class MyValidator( RequestValidator ):
 
-            @staticmethod
-            def hasFoo( request ):
-              if not request.Foo:
-                return S_ERROR("Foo not set")
-              return S_OK()
+        @staticmethod
+        def hasFoo( request ):
+          if not request.Foo:
+            return S_ERROR("Foo not set")
+          return S_OK()
 
-      * or function::
+  * or function::
 
-          def hasBar( request ):
-            if not request.Bar:
-              return S_ERROR("Bar not set")
-            return S_OK()
+      def hasBar( request ):
+        if not request.Bar:
+          return S_ERROR("Bar not set")
+        return S_OK()
 
-    and add this one to the validators set by calling `RequestValidator().addValidator`, i.e.::
+and add this one to the validators set by calling `RequestValidator().addValidator`, i.e.::
 
-      RequestValidator().addValidator( MyValidator.hasFoo )
-      RequestValidator().addValidator( hasFoo )
+  RequestValidator().addValidator( MyValidator.hasFoo )
+  RequestValidator().addValidator( hasFoo )
 
-    Notice that all validators should always return S_ERROR/S_OK, no exceptions from that whatsoever!
+Notice that all validators should always return S_ERROR/S_OK, no exceptions from that whatsoever!
 """
 
 import inspect
