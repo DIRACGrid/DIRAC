@@ -53,6 +53,7 @@ from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Security.Properties import FULL_DELEGATION, LIMITED_DELEGATION
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 
 
 class RequestValidator(metaclass=DIRACSingleton):
@@ -268,28 +269,21 @@ class RequestValidator(metaclass=DIRACSingleton):
 
         :returns: True if everything is fine, False otherwise
         """
-
         credUserName = remoteCredentials["username"]
         credGroup = remoteCredentials["group"]
         credProperties = remoteCredentials["properties"]
-        ownershipCheck = None
 
-        # FIXME: code for backward compatibility with requests created by 8.0 clients
-        # The below can be clearly simplified, leaving the extended checks for clarity
-        if hasattr(request, "OwnerDN") and not hasattr(
-            request, "Owner"
-        ):  # Requests created by v8.0 client for v8.0 servers
-            ownershipCheck = request.OwnerDN
-        if not hasattr(request, "OwnerDN") and hasattr(
-            request, "Owner"
-        ):  # Requests created by v9 client for v9 servers
-            ownershipCheck = request.Owner
-        if hasattr(request, "OwnerDN") and hasattr(request, "Owner"):  # Requests created by v8.0 client for v9 servers
-            ownershipCheck = request.Owner
-        # ##
+        # In case we have an old style request with only a DN and no Owner,
+        # get the Owner from the DN.
+        if getattr(request, "OwnerDN", None) and not getattr(request, "Owner", None):
+            res = getUsernameForDN(request.OwnerDN)
+            if not res["OK"]:
+                gLogger.error("Cannot Validate request", res)
+                return False
+            request.Owner = res["Value"]
 
         # If the owner or the group was not set, we use the one of the credentials
-        if not ownershipCheck or not request.OwnerGroup:
+        if not request.Owner or not request.OwnerGroup:
             request.Owner = credUserName
             request.OwnerGroup = credGroup
             return True
