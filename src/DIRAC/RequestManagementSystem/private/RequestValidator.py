@@ -1,49 +1,49 @@
-""" :mod: RequestValidator
+""":mod: RequestValidator
 
-    ======================
+======================
 
-    .. module: RequestValidator
+.. module: RequestValidator
 
-    :synopsis: request validator
+:synopsis: request validator
 
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    A general and simple request validator checking for required attributes and logic.
-    It checks if required attributes are set/unset but not for their values.
+A general and simple request validator checking for required attributes and logic.
+It checks if required attributes are set/unset but not for their values.
 
-    RequestValidator class implements the DIRACSingleton pattern, no global object is
-    required to keep a single instance.
+RequestValidator class implements the DIRACSingleton pattern, no global object is
+required to keep a single instance.
 
-    If you need to extend this one with your own specific checks consider:
+If you need to extend this one with your own specific checks consider:
 
-      * for adding Operation or Files required attributes use :any:`addReqAttrsCheck` function::
+  * for adding Operation or Files required attributes use :any:`addReqAttrsCheck` function::
 
-          RequestValidator().addReqAttrsCheck( "FooOperation", operationAttrs = [ "Bar", "Buzz"], filesAttrs = [ "LFN" ] )
+      RequestValidator().addReqAttrsCheck( "FooOperation", operationAttrs = [ "Bar", "Buzz"], filesAttrs = [ "LFN" ] )
 
-      * for adding generic check define a new callable object ( function or functor ) which takes only one argument,
-        say for functor::
+  * for adding generic check define a new callable object ( function or functor ) which takes only one argument,
+    say for functor::
 
-          class MyValidator( RequestValidator ):
+      class MyValidator( RequestValidator ):
 
-            @staticmethod
-            def hasFoo( request ):
-              if not request.Foo:
-                return S_ERROR("Foo not set")
-              return S_OK()
+        @staticmethod
+        def hasFoo( request ):
+          if not request.Foo:
+            return S_ERROR("Foo not set")
+          return S_OK()
 
-      * or function::
+  * or function::
 
-          def hasBar( request ):
-            if not request.Bar:
-              return S_ERROR("Bar not set")
-            return S_OK()
+      def hasBar( request ):
+        if not request.Bar:
+          return S_ERROR("Bar not set")
+        return S_OK()
 
-    and add this one to the validators set by calling `RequestValidator().addValidator`, i.e.::
+and add this one to the validators set by calling `RequestValidator().addValidator`, i.e.::
 
-      RequestValidator().addValidator( MyValidator.hasFoo )
-      RequestValidator().addValidator( hasFoo )
+  RequestValidator().addValidator( MyValidator.hasFoo )
+  RequestValidator().addValidator( hasFoo )
 
-    Notice that all validators should always return S_ERROR/S_OK, no exceptions from that whatsoever!
+Notice that all validators should always return S_ERROR/S_OK, no exceptions from that whatsoever!
 """
 
 import inspect
@@ -53,6 +53,7 @@ from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Security.Properties import FULL_DELEGATION, LIMITED_DELEGATION
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 
 
 class RequestValidator(metaclass=DIRACSingleton):
@@ -268,28 +269,21 @@ class RequestValidator(metaclass=DIRACSingleton):
 
         :returns: True if everything is fine, False otherwise
         """
-
         credUserName = remoteCredentials["username"]
         credGroup = remoteCredentials["group"]
         credProperties = remoteCredentials["properties"]
-        ownershipCheck = None
 
-        # FIXME: code for backward compatibility with requests created by 8.0 clients
-        # The below can be clearly simplified, leaving the extended checks for clarity
-        if hasattr(request, "OwnerDN") and not hasattr(
-            request, "Owner"
-        ):  # Requests created by v8.0 client for v8.0 servers
-            ownershipCheck = request.OwnerDN
-        if not hasattr(request, "OwnerDN") and hasattr(
-            request, "Owner"
-        ):  # Requests created by v9 client for v9 servers
-            ownershipCheck = request.Owner
-        if hasattr(request, "OwnerDN") and hasattr(request, "Owner"):  # Requests created by v8.0 client for v9 servers
-            ownershipCheck = request.Owner
-        # ##
+        # In case we have an old style request with only a DN and no Owner,
+        # get the Owner from the DN.
+        if getattr(request, "OwnerDN", None) and not getattr(request, "Owner", None):
+            res = getUsernameForDN(request.OwnerDN)
+            if not res["OK"]:
+                gLogger.error("Cannot Validate request", res)
+                return False
+            request.Owner = res["Value"]
 
         # If the owner or the group was not set, we use the one of the credentials
-        if not ownershipCheck or not request.OwnerGroup:
+        if not request.Owner or not request.OwnerGroup:
             request.Owner = credUserName
             request.OwnerGroup = credGroup
             return True
