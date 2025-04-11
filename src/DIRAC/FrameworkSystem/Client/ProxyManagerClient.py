@@ -418,7 +418,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
                 proxyToConnect=proxyToConnect,
             )
 
-    def dumpProxyToFile(self, chain, destinationFile=None, requiredTimeLeft=600):
+    def dumpProxyToFile(self, chain, destinationFile=None, requiredTimeLeft=600, includeToken=True):
         """Dump a proxy to a file. It's cached so multiple calls won't generate extra files
 
         :param X509Chain chain: proxy as a chain
@@ -442,7 +442,10 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         filename = retVal["Value"]
         if not (result := chain.getDIRACGroup())["OK"]:
             return result
-        if not (result := addTokenToPEM(filename, result["Value"]))["OK"]:  # pylint: disable=unsubscriptable-object
+        if (
+            includeToken
+            and not (result := addTokenToPEM(filename, result["Value"]))["OK"]  # pylint: disable=unsubscriptable-object
+        ):
             return result
         self.__filesCache.add(cHash, chain.getRemainingSecs()["Value"], filename)
         return S_OK(filename)
