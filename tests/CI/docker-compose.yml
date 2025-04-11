@@ -261,7 +261,7 @@ services:
       /entrypoint.sh bash -xc 'uvicorn --factory diracx.routers:create_app --host=0.0.0.0'
 
     healthcheck:
-      test: ["CMD", "/entrypoint.sh", "curl", "-f", "http://localhost:8000/.well-known/openid-configuration"]
+      test: ["CMD", "/opt/conda/bin/python", "-c", 'import requests; requests.get("http://localhost:8000/.well-known/openid-configuration").raise_for_status()']
       interval: 5s
       timeout: 2s
       retries: 15
