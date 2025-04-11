@@ -1,3 +1,18 @@
+[v9.0.0a51]
+
+*FrameworkSystem
+
+FIX: (#8149) DiracX tokens should not be included in the proxies used to interact with CEs
+FIX: (#8146) TypeError in TheImpersonator
+
+*TransformationSystem
+
+FIX: (#8147) bad escape in the updateTransformationParameter
+
+*WorkloadManagement
+
+FIX: (#8145) Running dirac-admin-update-pilot
+
 [v9.0.0a50]
 
 *Core
