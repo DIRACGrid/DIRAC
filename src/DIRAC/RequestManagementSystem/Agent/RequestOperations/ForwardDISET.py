@@ -1,17 +1,5 @@
-""" :mod: ForwardDISET
-
-    ==================
-
-    .. module: ForwardDISET
-
-    :synopsis: DISET forwarding operation handler
-
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
-
-    DISET forwarding operation handler
-"""
-
 import importlib
+from collections.abc import Sequence
 
 # imports
 from DIRAC import S_ERROR, S_OK, gConfig
@@ -65,7 +53,7 @@ class ForwardDISET(OperationHandlerBase):
             return S_ERROR(str(error))
 
         # This is the DISET rpcStub
-        if isinstance(stub, tuple):
+        if isinstance(stub, Sequence):
             # Ensure the forwarded request is done on behalf of the request owner
             res = getDNForUsername(self.request.Owner)
             if not res["OK"]:
