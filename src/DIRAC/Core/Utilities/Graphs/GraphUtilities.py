@@ -73,7 +73,12 @@ def convert_to_datetime(dstring):
             # Use utcfromtimestamp for UTC time
             results = datetime.datetime.utcfromtimestamp(int(results))
         elif isinstance(results, datetime.datetime):
-            results = results.astimezone(datetime.timezone.utc)  # Ensure in UTC
+            if results.tzinfo is not None:
+                # non-naive datetime: convert to UTC
+                results = results.astimezone(datetime.timezone.utc)
+            else:
+                # DIRAC naive datetimes are UTC everywhere: add tzinfo
+                results = results.replace(tzinfo=datetime.timezone.utc)
         else:
             raise ValueError("Unknown datetime type!")
     except Exception:
