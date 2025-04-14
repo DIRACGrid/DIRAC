@@ -43,7 +43,6 @@ from urllib.parse import urlparse
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
-from DIRAC.Resources.Computing.PilotBundle import bundleProxy, writeScript
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Core.Utilities.Subprocess import systemCall
 
@@ -153,26 +152,12 @@ class LocalComputingElement(ComputingElement):
         if not os.access(executableFile, 5):
             os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
-        # if no proxy is supplied, the executable can be submitted directly
-        # otherwise a wrapper script is needed to get the proxy to the execution node
-        # The wrapper script makes debugging more complicated and thus it is
-        # recommended to transfer a proxy inside the executable if possible.
-        if self.proxy and not proxy:
-            proxy = self.proxy
-        if proxy:
-            self.log.verbose("Setting up proxy for payload")
-            wrapperContent = bundleProxy(executableFile, proxy)
-            name = writeScript(wrapperContent, os.getcwd())
-            submitFile = name
-        else:  # no proxy
-            submitFile = executableFile
-
         jobStamps = []
         for _i in range(numberOfJobs):
             jobStamps.append(uuid.uuid4().hex)
 
         batchDict = {
-            "Executable": submitFile,
+            "Executable": executableFile,
             "NJobs": numberOfJobs,
             "OutputDir": self.batchOutput,
             "ErrorDir": self.batchError,
@@ -186,8 +171,6 @@ class LocalComputingElement(ComputingElement):
             "NumberOfGPUs": self.numberOfGPUs,
         }
         resultSubmit = self.batchSystem.submitJob(**batchDict)
-        if proxy:
-            os.remove(submitFile)
 
         if resultSubmit["Status"] == 0:
             self.submittedJobs += len(resultSubmit["Jobs"])

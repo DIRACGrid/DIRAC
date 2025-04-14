@@ -48,6 +48,7 @@ import json
 import os
 import shutil
 import stat
+import tempfile
 import uuid
 
 import requests
@@ -57,7 +58,6 @@ from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
-from DIRAC.Resources.Computing.PilotBundle import writeScript
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 MANDATORY_PARAMETERS = ["Queue"]
@@ -495,7 +495,11 @@ class AREXComputingElement(ComputingElement):
         if not os.access(executableFile, os.X_OK):
             os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH + stat.S_IXOTH)
 
-        return writeScript(wrapperContent, os.getcwd())
+        with tempfile.NamedTemporaryFile(
+            "w", delete=False, prefix="preamble-", suffix=f"-{executableFile}"
+        ) as bundleFile:
+            bundleFile.write(wrapperContent)
+            return bundleFile.name
 
     def _getArcJobID(self, executableFile, inputs, outputs, delegation):
         """Get an ARC JobID endpoint to upload executables and inputs.
