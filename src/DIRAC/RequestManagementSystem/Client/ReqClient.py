@@ -634,8 +634,10 @@ def printOperation(indexOperation, verbose=True, onlyFailed=False):
             output = ""
             prettyPrint(decode, offset=10)
             prStr += "\n      Arguments:\n" + output.strip("\n")
-        else:
+        elif isinstance(decode, list):
             prStr += f"\n      Service: {decode[0][0]}"
+        else:
+            prStr += f"\n      Command: {decode['dCls']}.{decode['dMeth']}(*{decode['args']!r})"
     gLogger.always(
         "  [%s] Operation Type='%s' ID=%s Order=%s Status='%s'%s%s"
         % (
