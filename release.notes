@@ -1,3 +1,9 @@
+[v9.0.0a52]
+
+*RequestManagementSystem
+
+FIX: (#8150) RequestValidator sets correct Owner for v8 requests
+
 [v9.0.0a51]
 
 *FrameworkSystem
