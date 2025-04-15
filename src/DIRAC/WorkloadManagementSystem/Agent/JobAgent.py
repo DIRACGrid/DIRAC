@@ -23,6 +23,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.CGroups2 import CG2Manager
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
@@ -139,6 +140,14 @@ class JobAgent(AgentModule):
 
         # Utilities
         self.timeLeftUtil = TimeLeft()
+
+        # Some innerCEs may want to make use of CGroup2 support, so we prepare it globally here
+        res = CG2Manager().setUp()
+        if res["OK"]:
+            self.log.info("CGroup2 support configured successfully.")
+        else:
+            self.log.info("CGroup2 support unavailable:", res["Message"])
+
         return S_OK()
 
     def _initializeComputingElement(self, localCE):
