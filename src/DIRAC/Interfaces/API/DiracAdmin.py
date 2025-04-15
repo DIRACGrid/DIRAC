@@ -449,8 +449,8 @@ class DiracAdmin(API):
         :param gridReference: Pilot Job Reference
         :return: S_OK,S_ERROR
         """
-        if not isinstance(gridReference, str):
-            return self._errorReport("Expected string for pilot reference")
+        if not isinstance(gridReference, (str, list)):
+            return self._errorReport("Expected string or list of strings for pilot reference")
 
         result = PilotManagerClient().killPilot(gridReference)
         return result
