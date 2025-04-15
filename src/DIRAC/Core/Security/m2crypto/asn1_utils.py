@@ -14,6 +14,8 @@ This is now pure python, but it might be interesting to wrap the existing
 C library (https://github.com/italiangrid/voms) instead...
 
 """
+from functools import lru_cache
+
 from pyasn1.codec.der.decoder import decode as der_decode
 from pyasn1.error import PyAsn1Error
 from pyasn1.type import namedtype, univ, char as asn1char
@@ -93,6 +95,11 @@ def decodeDIRACGroup(m2cert):
     """
 
     diracGroupOctetString = retrieveExtension(m2cert, DIRAC_GROUP_OID)
+    return _decodeDIRACGroup(diracGroupOctetString)
+
+
+@lru_cache
+def _decodeDIRACGroup(diracGroupOctetString):
     diracGroupUTF8Str, _rest = der_decode(diracGroupOctetString, asn1Spec=asn1char.IA5String())
 
     return diracGroupUTF8Str.asOctets().decode()
@@ -336,11 +343,7 @@ def retrieveExtension(m2Cert, extensionOID):
 
     :raises: LookupError if it does not have the extension
     """
-
-    # Decode the certificate as a RFC2459 Certificate object.It is compatible
-    # with the RFC proxy definition
-    cert, _rest = der_decode(m2Cert.as_der(), asn1Spec=rfc2459.Certificate())
-    extensions = cert["tbsCertificate"]["extensions"]
+    extensions = _extensionsFromCertDER(m2Cert.as_der())
 
     # Construct an OID object for comparison purpose
     extensionOIDObj = univ.ObjectIdentifier(extensionOID)
@@ -354,3 +357,12 @@ def retrieveExtension(m2Cert, extensionOID):
 
     # If we are here, it means that we could not find the expected extension.
     raise LookupError(f"Could not find extension with OID {extensionOID}")
+
+
+@lru_cache(maxsize=1024)
+def _extensionsFromCertDER(der):
+    # Decode the certificate as a RFC2459 Certificate object.It is compatible
+    # with the RFC proxy definition
+    cert, _rest = der_decode(der, asn1Spec=rfc2459.Certificate())
+    extensions = cert["tbsCertificate"]["extensions"]
+    return extensions
