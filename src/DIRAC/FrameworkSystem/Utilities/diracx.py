@@ -1,13 +1,14 @@
 import requests
 
-from cachetools import TTLCache, cached
+from cachetools import TTLCache, LRUCache, cached
 from cachetools.keys import hashkey
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any
+from collections.abc import Generator
 from DIRAC import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-
+from contextlib import contextmanager
 
 from diracx.core.preferences import DiracxPreferences
 
@@ -24,6 +25,8 @@ except ImportError:
 # How long tokens are kept
 DEFAULT_TOKEN_CACHE_TTL = 5 * 60
 DEFAULT_TOKEN_CACHE_SIZE = 1024
+
+legacy_exchange_session = requests.Session()
 
 
 def get_token(
@@ -42,7 +45,7 @@ def get_token(
     vo = Registry.getVOForGroup(group)
     scopes = [f"vo:{vo}", f"group:{group}"] + [f"property:{prop}" for prop in dirac_properties]
 
-    r = requests.get(
+    r = legacy_exchange_session.get(
         f"{diracxUrl}/api/auth/legacy-exchange",
         params={
             "preferred_username": username,
@@ -71,7 +74,11 @@ def _get_token_file(username: str, group: str, dirac_properties: set[str], *, so
     return token_location
 
 
-def TheImpersonator(credDict: dict[str, Any], *, source: str = "") -> SyncDiracClient:
+diracx_client_cache = LRUCache(maxsize=64)
+
+
+@contextmanager
+def TheImpersonator(credDict: dict[str, Any], *, source: str = "") -> Generator[SyncDiracClient, None, None]:
     """
     Client to be used by DIRAC server needing to impersonate
     a user for diracx.
@@ -90,6 +97,10 @@ def TheImpersonator(credDict: dict[str, Any], *, source: str = "") -> SyncDiracC
         set(credDict.get("groupProperties", []) + credDict.get("properties", [])),
         source=source,
     )
-    pref = DiracxPreferences(url=diracxUrl, credentials_path=token_location)
-
-    return SyncDiracClient(diracx_preferences=pref)
+    client = diracx_client_cache.get(token_location)
+    if client is None:
+        pref = DiracxPreferences(url=diracxUrl, credentials_path=token_location)
+        client = SyncDiracClient(diracx_preferences=pref)
+        client.__enter__()
+        diracx_client_cache[token_location] = client
+    yield client
