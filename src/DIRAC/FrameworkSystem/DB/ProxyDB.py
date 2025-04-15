@@ -9,6 +9,9 @@
     * ProxyDB_Log -- table with logs.
 """
 import textwrap
+from threading import Lock
+
+from cachetools import TTLCache, cached
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -395,6 +398,7 @@ class ProxyDB(DB):
             return S_ERROR(", ".join(errMsgs))
         return result
 
+    @cached(TTLCache(maxsize=1000, ttl=600), lock=Lock())
     def getProxyStrength(self, userDN, userGroup=None, vomsAttr=None):
         """Load the proxy in cache corresponding to the criteria, and check its strength
 
