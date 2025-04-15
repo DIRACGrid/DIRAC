@@ -339,16 +339,15 @@ class PilotManagerHandler(RequestHandler):
     def export_killPilot(cls, pilotRefList):
         """Kill the specified pilots"""
         # Make a list if it is not yet
-        pilotRefs = list(pilotRefList)
         if isinstance(pilotRefList, str):
-            pilotRefs = [pilotRefList]
+            pilotRefList = [pilotRefList]
 
         # Regroup pilots per site
         pilotRefDict = {}
-        for pilotReference in pilotRefs:
+        for pilotReference in pilotRefList:
             result = cls.pilotAgentsDB.getPilotInfo(pilotReference)
             if not result["OK"] or not result["Value"]:
-                return S_ERROR("Failed to get info for pilot " + pilotReference)
+                return S_ERROR(f"Failed to get info for pilot {pilotReference}")
 
             pilotDict = result["Value"][pilotReference]
             queue = "@@@".join(
