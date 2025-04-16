@@ -117,7 +117,7 @@ def get_token(
     vo = Registry.getVOForGroup(group)
     scopes = [f"vo:{vo}", f"group:{group}"] + [f"property:{prop}" for prop in dirac_properties]
 
-    r = diracx_session.get(
+    r = requests.get(
         f"{diracxUrl}/api/auth/legacy-exchange",
         params={
             "preferred_username": username,
