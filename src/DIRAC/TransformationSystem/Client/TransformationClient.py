@@ -1,4 +1,4 @@
-""" Class that contains client access to the transformation DB handler. """
+"""Class that contains client access to the transformation DB handler."""
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client import Client, createClient
@@ -62,8 +62,8 @@ class TransformationClient(Client):
         super().__init__(**kwargs)
         opsH = Operations()
         self.maxResetCounter = opsH.getValue("Transformations/FilesMaxResetCounter", 10)
-
-        self.setServer("Transformation/TransformationManager")
+        if "url" not in kwargs:
+            self.setServer("Transformation/TransformationManager")
 
     def setServer(self, url):
         self.serverURL = url
