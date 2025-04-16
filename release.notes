@@ -1,3 +1,9 @@
+[v8.0.73]
+
+*WorkloadManagement
+
+FIX: (#8161) Typo in SingularityComputingElement
+
 [v8.0.72]
 
 *Resources
