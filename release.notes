@@ -1,3 +1,31 @@
+[v8.0.72]
+
+*Resources
+
+FIX: (#8118) do not try to use a malformed StorageElement instance in SingularityCE
+FIX: (#8114) Fix AREX CE pilot logs in alwaysIncludeProxy case
+
+*WorkloadManagement
+
+FIX: (#8118) report the message of the Exception instead of the Exception itself in JobAgent.submitJob
+NEW: (#8110) cgroup2 limit support
+
+*WorkloadManagementSystem
+
+FIX: (#8113) avoid repeating optimization when job goes to STAGING
+
+*WorkloadManagemnt
+
+FIX: (#8103) Clear any non-UTF encodable environment variables in pilots
+
+*ConfigurationSystem
+
+NEW: (#8093) backport the export of the Sub in DiracX
+
+*Core
+
+FIX: (#8091) Don't use string processing on X509 name objects
+
 [v8.0.71]
 
 *Resources
