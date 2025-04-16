@@ -1,3 +1,27 @@
+[v9.0.0a53]
+
+*WorkloadManagement
+
+NEW: (#8159) cgroup2 limit support
+
+*FrameworkSystem
+
+CHANGE: (#8157) Improve performance of TheImpersonator
+FIX: (#8154) Caching the proxy strength to avoid a DB call
+NEW: (#8144) add a randomized connection pooling for diracx
+
+*WorkloadManagementSystem
+
+FIX: (#8156) we can kill a list of pilots instead of going one by one
+
+*Core
+
+NEW: (#8155) Add caches to asn1_utils for better performance
+
+*RequestManagementSystem
+
+FIX: (#8152) Printing DiracX ForwardDISET requests
+
 [v9.0.0a52]
 
 *RequestManagementSystem
