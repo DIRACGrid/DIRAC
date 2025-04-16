@@ -414,7 +414,7 @@ class SingularityComputingElement(ComputingElement):
         self.log.debug(f"Execute singularity command: {cmd}")
         self.log.debug(f"Execute singularity env: {self.__getEnv()}")
         result = CG2Manager().systemCall(
-            0, cmd, callbackFunction=self.sendOutput, env=self.__getEnv(), ceParameteres=self.ceParameters
+            0, cmd, callbackFunction=self.sendOutput, env=self.__getEnv(), ceParameters=self.ceParameters
         )
 
         self.__runningJobs -= 1
