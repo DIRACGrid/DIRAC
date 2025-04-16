@@ -7,8 +7,8 @@ import os
 import stat
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.Utilities.CGroups2 import CG2Manager
 
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
@@ -61,7 +61,9 @@ class InProcessComputingElement(ComputingElement):
             os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
         cmd = os.path.abspath(executableFile)
         self.log.verbose("CE submission command:", cmd)
-        result = systemCall(0, cmd, callbackFunction=self.sendOutput, env=payloadEnv)
+        result = CG2Manager().systemCall(
+            0, cmd, callbackFunction=self.sendOutput, env=payloadEnv, ceParameters=self.ceParameters
+        )
         if payloadProxy:
             os.unlink(payloadProxy)
 

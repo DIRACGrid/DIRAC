@@ -5,36 +5,36 @@
   and the current resource status that is used for matching.
 """
 import os
-import sys
 import re
+import sys
 import time
 from pathlib import Path
 
 from diraccfg import CFG
 
-from DIRAC import S_OK, S_ERROR, gConfig, rootPath, siteName
+from DIRAC import S_ERROR, S_OK, gConfig, rootPath, siteName
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.ProxyFile import writeChainToTemporaryFile
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.CGroups2 import CG2Manager
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
-from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
-from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
-from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
-from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
+from DIRAC.WorkloadManagementSystem.Client import JobStatus, PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
-from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 
 class JobAgent(AgentModule):
@@ -136,6 +136,14 @@ class JobAgent(AgentModule):
 
         # Utilities
         self.timeLeftUtil = TimeLeft()
+
+        # Some innerCEs may want to make use of CGroup2 support, so we prepare it globally here
+        res = CG2Manager().setUp()
+        if res["OK"]:
+            self.log.info("CGroup2 support configured successfully.")
+        else:
+            self.log.info("CGroup2 support unavailable:", res["Message"])
+
         return S_OK()
 
     def _initializeComputingElement(self, localCE):

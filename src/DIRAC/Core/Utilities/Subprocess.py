@@ -405,7 +405,7 @@ class Subprocess:
             self.killChild()
             return self.__generateSystemCommandError(1, f"{retDict['Message']} for '{self.cmdSeq}' call")
 
-    def systemCall(self, cmdSeq, callbackFunction=None, shell=False, env=None):
+    def systemCall(self, cmdSeq, callbackFunction=None, shell=False, env=None, preexec_fn=None):
         """system call (no shell) - execute :cmdSeq:"""
 
         if shell:
@@ -425,6 +425,7 @@ class Subprocess:
                 close_fds=closefd,
                 env=env,
                 universal_newlines=True,
+                preexec_fn=preexec_fn,
             )
             self.childPID = self.child.pid
         except OSError as v:
@@ -526,7 +527,7 @@ class Subprocess:
         return False
 
 
-def systemCall(timeout, cmdSeq, callbackFunction=None, env=None, bufferLimit=52428800):
+def systemCall(timeout, cmdSeq, callbackFunction=None, env=None, bufferLimit=52428800, preexec_fn=None):
     """
     Use SubprocessExecutor class to execute cmdSeq (it can be a string or a sequence)
     with a timeout wrapper, it is executed directly without calling a shell
@@ -536,13 +537,15 @@ def systemCall(timeout, cmdSeq, callbackFunction=None, env=None, bufferLimit=524
         sysCall = Watchdog(
             spObject.systemCall,
             args=(cmdSeq,),
-            kwargs={"callbackFunction": callbackFunction, "env": env, "shell": False},
+            kwargs={"callbackFunction": callbackFunction, "env": env, "shell": False, "preexec_fn": preexec_fn},
         )
         spObject.log.verbose("Subprocess Watchdog timeout set to %d" % timeout)
         result = sysCall(timeout + 1)
     else:
         spObject = Subprocess(timeout, bufferLimit=bufferLimit)
-        result = spObject.systemCall(cmdSeq, callbackFunction=callbackFunction, env=env, shell=False)
+        result = spObject.systemCall(
+            cmdSeq, callbackFunction=callbackFunction, env=env, shell=False, preexec_fn=preexec_fn
+        )
     return result
 
 

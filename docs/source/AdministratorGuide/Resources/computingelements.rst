@@ -175,3 +175,37 @@ section ::
       }
     }
   }
+
+Applying cgroup2 limits to computing resources
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+Both the :mod:`~DIRAC.Resources.Computing.InProcessComputingElement` and
+:mod:`~DIRAC.Resources.Computing.SingularityComputingElement` CEs support applying Linux cgroup2 CPU and memory limits to
+the slot. These will be applied if the site allows cgroup2 delegation, if this is not available execution will continue
+without the limits. The limit values can be specified using the following CE parameters (all settings are optional and can
+be left undefined if not needed):
+
+- CPULimit (float) - The number of cores that the job may use. Usage beyond this will be throttled.
+- MemoryLimitMB (int) - The memory limit for the job in MB. Usage beyond this will trigger the out-of-memory killer
+                        considering processes within the slot.
+- MemoryNoSwap (bool) - If yes or true, the job will not be allowed to use swap memory. Swap memory is not included
+                        in the main memory limit.
+
+Note that the memory limit should be lower than the amount requested with the submission CE in order to allow the main
+pilot processes to be protected. For example if you request 4096M (e.g. via XRSL) at submission, around 150M is needed
+for the pilot, so a limit of 3950M would be recommended.
+
+These can be specified in the CEDefaults section to apply a standardised slot size limit::
+
+  Resources
+  {
+    Computing
+    {
+      CEDefaults
+      {
+        CPULimit = 1.0
+        MemoryLimitMB = 3950
+        MemoryNoSwap = True
+      }
+    }
+  }
