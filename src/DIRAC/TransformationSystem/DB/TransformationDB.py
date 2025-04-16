@@ -1,9 +1,9 @@
-""" DIRAC Transformation DB
+"""DIRAC Transformation DB
 
-    Transformation database is used to collect and serve the necessary information
-    in order to automate the task of job preparation for high level transformations.
-    This class is typically used as a base class for more specific data processing
-    databases
+Transformation database is used to collect and serve the necessary information
+in order to automate the task of job preparation for high level transformations.
+This class is typically used as a base class for more specific data processing
+databases
 """
 
 import re
@@ -706,7 +706,7 @@ class TransformationDB(DB):
         res = self.getCounters("TransformationFiles", ["TransformationID", field], selection)
         if not res["OK"]:
             return res
-        countDict = {attrDict[field]: count for attrDict, count in res["Value"]}
+        countDict = {str(attrDict[field]): count for attrDict, count in res["Value"]}
         countDict["Total"] = sum(countDict.values())
         return S_OK(countDict)
 
