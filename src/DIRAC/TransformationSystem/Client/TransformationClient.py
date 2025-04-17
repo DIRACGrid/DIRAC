@@ -3,7 +3,8 @@
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.List import breakListIntoChunks
-from DIRAC.Core.Utilities.JEncode import decode as jdecode
+from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueOrRaise
+from DIRAC.Core.Utilities.JEncode import decode as jdecode, strToIntDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.TransformationSystem.Client import TransformationStatus
 from DIRAC.TransformationSystem.Client import TransformationFilesStatus
@@ -591,3 +592,19 @@ class TransformationClient(Client):
     def addDirectory(self, path, force=False):
         rpcClient = self._getRPC()
         return rpcClient.addDirectory(path, force)
+
+    @convertToReturnValue
+    def getTransformationFilesCount(self, transName, field, selection=None, **kwargs):
+        if not selection:
+            selection = {}
+        rpcClient = self._getRPC(**kwargs)
+
+        files_count = returnValueOrRaise(rpcClient.getTransformationFilesCount(transName, field, selection))
+        # Some of these fields are LHCb specific, however:
+        # * it seems only LHCb uses this method
+        # * it will not be necessary with diracx & pydantic anymore
+        if field in ["TransformationID", "FileID", "TaskID", "ErrorCount", "RunNumber", "Size"]:
+            total = files_count.pop("Total")
+            files_count = strToIntDict(files_count)
+            files_count["Total"] = total
+        return files_count
