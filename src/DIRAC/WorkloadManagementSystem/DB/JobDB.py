@@ -20,7 +20,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.DErrno import EWMSJMAN, EWMSSUBM, cmpError
-from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK, convertToReturnValue, returnValueOrRaise
 from DIRAC.FrameworkSystem.Client.Logger import contextLogger
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
@@ -207,13 +207,13 @@ class JobDB(DB):
             return S_ERROR("JobDB.getAtticJobParameters: failed to retrieve parameters")
 
     #############################################################################
+    @convertToReturnValue
     def getJobsAttributes(self, jobIDs, attrList=None):
         """Get all Job(s) Attributes for a given list of jobIDs.
         Return a dictionary with all Job Attributes as value pairs
         """
-
         if not jobIDs:
-            return S_OK({})
+            return {}
 
         # If no list of attributes is given, return all attributes
         if not attrList:
@@ -229,28 +229,29 @@ class JobDB(DB):
 
         attrNameListS = []
         for x in attrList:
-            ret = self._escapeString(x)
-            if not ret["OK"]:
-                return ret
-            x = "`" + ret["Value"][1:-1] + "`"
+            x = "`" + returnValueOrRaise(self._escapeString(x))[1:-1] + "`"
             attrNameListS.append(x)
         attrNames = "JobID," + ",".join(attrNameListS)
 
-        cmd = f"SELECT {attrNames} FROM Jobs WHERE JobID IN ({','.join(str(jobID) for jobID in jobIDs)})"
-        res = self._query(cmd)
-        if not res["OK"]:
-            return res
-        if not res["Value"]:
-            return S_OK({})
+        sqlCmd = "CREATE TEMPORARY TABLE to_select_Jobs (JobID INTEGER NOT NULL, PRIMARY KEY (JobID)) ENGINE=MEMORY;"
+        returnValueOrRaise(self._update(sqlCmd))
+        try:
+            sqlCmd = "INSERT INTO to_select_Jobs (JobID) VALUES ( %s )"
+            returnValueOrRaise(self._updatemany(sqlCmd, [(int(j),) for j in jobIDs]))
+            sqlCmd = f"SELECT {attrNames} FROM Jobs JOIN to_select_Jobs USING (JobID)"
+            result = returnValueOrRaise(self._query(sqlCmd))
+        finally:
+            sqlCmd = "DROP TEMPORARY TABLE to_select_Jobs"
+            returnValueOrRaise(self._update(sqlCmd))
 
         attributes = {}
-        for t_att in res["Value"]:
+        for t_att in result:
             jobID = int(t_att[0])
             attributes.setdefault(jobID, {})
             for tx, ax in zip(t_att[1:], attrList):
                 attributes[jobID].setdefault(ax, tx)
 
-        return S_OK(attributes)
+        return attributes
 
     #############################################################################
     def getJobAttributes(self, jobID, attrList=None):
@@ -527,12 +528,10 @@ class JobDB(DB):
         if not isinstance(jobID, (list, tuple)):
             jobIDList = [jobID]
 
-        jIDList = []
-        for jID in jobIDList:
-            ret = self._escapeString(jID)
-            if not ret["OK"]:
-                return ret
-            jIDList.append(ret["Value"])
+        try:
+            jIDList = [int(jID) for jID in jobIDList]
+        except ValueError as e:
+            return S_ERROR(f"JobDB.setAttributes: {e}")
 
         if len(attrNames) != len(attrValues):
             return S_ERROR("JobDB.setAttributes: incompatible Argument length")

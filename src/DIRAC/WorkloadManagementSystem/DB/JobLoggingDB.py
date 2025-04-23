@@ -164,7 +164,7 @@ class JobLoggingDB(DB):
         )
         returnValueOrRaise(self._update(sqlCmd))
         try:
-            sqlCmd = "INSERT INTO to_delete_LoggingInfo (EntityId) VALUES ( %s )"
+            sqlCmd = "INSERT INTO to_delete_LoggingInfo (JobID) VALUES ( %s )"
             returnValueOrRaise(self._updatemany(sqlCmd, [(j,) for j in jobList]))
             sqlCmd = "DELETE l from `LoggingInfo` l JOIN to_delete_LoggingInfo t USING (JobID)"
             result = returnValueOrRaise(self._update(sqlCmd))
