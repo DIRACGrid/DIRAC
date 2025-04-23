@@ -78,7 +78,6 @@ from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities.List import breakListIntoChunks, uniqueElements
 from DIRAC.Resources.Computing.BatchSystems.executeBatch import executeBatchContent
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
-from DIRAC.Resources.Computing.PilotBundle import bundleProxy, writeScript
 
 
 class SSH:
@@ -532,23 +531,7 @@ class SSHComputingElement(ComputingElement):
         if not os.access(executableFile, 5):
             os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
-        # if no proxy is supplied, the executable can be submitted directly
-        # otherwise a wrapper script is needed to get the proxy to the execution node
-        # The wrapper script makes debugging more complicated and thus it is
-        # recommended to transfer a proxy inside the executable if possible.
-        if proxy:
-            self.log.verbose("Setting up proxy for payload")
-            wrapperContent = bundleProxy(executableFile, proxy)
-            name = writeScript(wrapperContent, os.getcwd())
-            submitFile = name
-        else:  # no proxy
-            submitFile = executableFile
-
-        result = self._submitJobToHost(submitFile, numberOfJobs)
-        if proxy:
-            os.remove(submitFile)
-
-        return result
+        return self._submitJobToHost(executableFile, numberOfJobs)
 
     def _submitJobToHost(self, executableFile, numberOfJobs, host=None):
         """Submit prepared executable to the given host"""

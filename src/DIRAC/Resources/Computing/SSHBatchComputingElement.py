@@ -7,7 +7,6 @@ import stat
 from urllib.parse import urlparse
 
 from DIRAC import S_ERROR, S_OK
-from DIRAC.Resources.Computing.PilotBundle import bundleProxy, writeScript
 from DIRAC.Resources.Computing.SSHComputingElement import SSHComputingElement
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
@@ -80,18 +79,6 @@ class SSHBatchComputingElement(SSHComputingElement):
         if not os.access(executableFile, 5):
             os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)
 
-        # if no proxy is supplied, the executable can be submitted directly
-        # otherwise a wrapper script is needed to get the proxy to the execution node
-        # The wrapper script makes debugging more complicated and thus it is
-        # recommended to transfer a proxy inside the executable if possible.
-        if proxy:
-            self.log.verbose("Setting up proxy for payload")
-            wrapperContent = bundleProxy(executableFile, proxy)
-            name = writeScript(wrapperContent, os.getcwd())
-            submitFile = name
-        else:  # no proxy
-            submitFile = executableFile
-
         # Submit jobs now
         restJobs = numberOfJobs
         submittedJobs = []
@@ -100,7 +87,7 @@ class SSHBatchComputingElement(SSHComputingElement):
             if slots not in rankHosts:
                 continue
             for host in rankHosts[slots]:
-                result = self._submitJobToHost(submitFile, min(slots, restJobs), host)
+                result = self._submitJobToHost(executableFile, min(slots, restJobs), host)
                 if not result["OK"]:
                     continue
 
@@ -113,9 +100,6 @@ class SSHBatchComputingElement(SSHComputingElement):
                         break
             if restJobs <= 0:
                 break
-
-        if proxy:
-            os.remove(submitFile)
 
         result = S_OK(submittedJobs)
         result["PilotStampDict"] = stampDict
