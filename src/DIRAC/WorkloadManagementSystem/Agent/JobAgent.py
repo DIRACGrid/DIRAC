@@ -706,7 +706,13 @@ class JobAgent(AgentModule):
         # Here we iterate over a copy of the keys because we are modifying the dictionary within the loop
         for jobID in list(self.jobs.keys()):
             taskID = self.jobs[jobID].get("TaskID")
-            if taskID is None or taskID not in self.computingElement.taskResults:
+            if taskID is None:
+                # This generally means that there was an error before the submission
+                # and the TaskID was not set and will never be.
+                self.log.info("No taskID found for job", jobID)
+                del self.jobs[jobID]
+                continue
+            if taskID not in self.computingElement.taskResults:
                 continue
 
             result = self.computingElement.taskResults[taskID]
