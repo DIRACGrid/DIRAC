@@ -735,17 +735,11 @@ class TransformationManagerHandlerMixin:
             return res
 
         # The full list of columns in contained here
-        allRows = res["Records"]
+        allRows = res["Value"]
         # Prepare the standard structure now within the resultDict dictionary
         resultDict = {}
         # Create the total records entry
         resultDict["TotalRecords"] = len(allRows)
-        # Create the ParameterNames entry
-        resultDict["ParameterNames"] = res["ParameterNames"]
-        # Find which element in the tuple contains the requested status
-        if statusColumn not in resultDict["ParameterNames"]:
-            return S_ERROR("Provided status column not present")
-        statusColumnIndex = resultDict["ParameterNames"].index(statusColumn)
 
         # Get the rows which are within the selected window
         if resultDict["TotalRecords"] == 0:
@@ -756,13 +750,22 @@ class TransformationManagerHandlerMixin:
             return S_ERROR("Item number out of range")
         if last > resultDict["TotalRecords"]:
             last = resultDict["TotalRecords"]
+
         selectedRows = allRows[ini:last]
-        resultDict["Records"] = selectedRows
+        resultDict["Records"] = []
+        for row in selectedRows:
+            resultDict["Records"].append(list(row.values()))
+
+        # Create the ParameterNames entry
+        resultDict["ParameterNames"] = list(selectedRows[0].keys())
+        # Find which element in the tuple contains the requested status
+        if statusColumn not in resultDict["ParameterNames"]:
+            return S_ERROR("Provided status column not present")
 
         # Generate the status dictionary
         statusDict = {}
         for row in selectedRows:
-            status = row[statusColumnIndex]
+            status = row[statusColumn]
             statusDict[status] = statusDict.setdefault(status, 0) + 1
         resultDict["Extras"] = statusDict
 
