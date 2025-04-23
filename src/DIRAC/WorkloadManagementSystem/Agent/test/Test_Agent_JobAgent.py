@@ -754,3 +754,27 @@ def test_submitAndCheck2Jobs(mocker):
 
     # From here, taskResults should be empty
     assert len(jobAgent.computingElement.taskResults) == 0
+
+
+def test_failureBeforeSubmission(mocker):
+    """Test that a failure before job submission is handled correctly.
+
+    We want to make sure that there is no endless loop in the finalize method.
+    """
+    # Mock the JobAgent
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+
+    jobAgent = JobAgent("JobAgent", "Test")
+    jobAgent.log = gLogger.getSubLogger("JobAgent")
+
+    # Here we simulate a failure before the job submission: no TaskID
+    jobID = "123"
+    jobAgent.jobs[jobID] = {}
+    jobAgent.jobs[jobID]["JobReport"] = JobReport(jobID)
+
+    # Make sure that the job is removed from jobAgent.jobs
+    result = jobAgent._checkSubmittedJobs()
+    assert result["OK"]
+    assert result["Value"] == ([], [])
+
+    assert jobAgent.jobs == {}
