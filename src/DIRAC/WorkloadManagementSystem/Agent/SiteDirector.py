@@ -624,6 +624,11 @@ class SiteDirector(AgentModule):
         else:
             self.log.info("DIRAC project will be installed by pilots")
 
+        # Architecture script to use
+        architectureScript = opsHelper.getValue("Pilot/ArchitectureScript", "")
+        if architectureScript:
+            pilotOptions.append(f"--architectureScript={architectureScript}")
+
         # Preinstalled environment or list of CVMFS locations defined ?
         preinstalledEnv = opsHelper.getValue("Pilot/PreinstalledEnv", "")
         preinstalledEnvPrefix = opsHelper.getValue("Pilot/PreinstalledEnvPrefix", "")

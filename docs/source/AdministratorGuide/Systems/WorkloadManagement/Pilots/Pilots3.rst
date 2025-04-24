@@ -50,8 +50,8 @@ Other options that can be set also in the Operations part of the CS include:
 | *CVMFS_locations*                  | CVMFS locations to use for finding pilot   | CVMFS_locations = /cvmfs/lhcb.cern.ch/,/cvmfs/lhcbdev.cern.ch           |
 |                                    | files, DIRAC installations, CAs, CRLS      |                                                                         |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
-| *workDir*                          | Local directory of the master CS where the | workDir = /tmp/pilotSyncDir                                             |
-|                                    | files will be downloaded before the upload | There is no default (so /opt/dirac/runit/Configuration/Server)          |
+| *ArchitectureScript*               | The script to be used for                  | ArchitectureScript = dirac-apptainer-exec dirac-platform                |
+|                                    | discovering the local architecture.        | Default: dirac-platform                                                 |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 
 
