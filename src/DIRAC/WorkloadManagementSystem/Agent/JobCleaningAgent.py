@@ -236,7 +236,7 @@ class JobCleaningAgent(AgentModule):
                 result = wmsClient.deleteJob(jobsList)
             if not result["OK"]:
                 self.log.error(
-                    "Could not {'remove' if remove else 'delete'} jobs",
+                    f"Could not {'remove' if remove else 'delete'} jobs",
                     f"for {user} : {ownerGroup} (n={len(jobsList)}) : {result['Message']}",
                 )
                 fail = True

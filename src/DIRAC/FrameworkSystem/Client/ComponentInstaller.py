@@ -2108,7 +2108,8 @@ class ComponentInstaller:
 
         perms = (
             "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES,"
-            "CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE"
+            "CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE,"
+            "CREATE TEMPORARY TABLES"
         )
         cmd = f"GRANT {perms} ON `{dbName}`.* TO '{self.mysqlUser}'@'%'"
         result = self.execMySQL(cmd)

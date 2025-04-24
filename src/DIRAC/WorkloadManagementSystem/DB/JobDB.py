@@ -20,7 +20,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.DErrno import EWMSJMAN, EWMSSUBM, cmpError
-from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK, convertToReturnValue, returnValueOrRaise, SErrorException
 from DIRAC.FrameworkSystem.Client.Logger import contextLogger
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
@@ -106,18 +106,7 @@ class JobDB(DB):
         Returns a dictionary with the Job Parameters.
         If parameterList is empty - all the parameters are returned.
         """
-
-        if isinstance(jobID, (str, int)):
-            jobID = [jobID]
-
-        jobIDList = []
-        for jID in jobID:
-            ret = self._escapeString(str(jID))
-            if not ret["OK"]:
-                return ret
-            jobIDList.append(ret["Value"])
-
-        # self.log.debug('JobDB.getParameters: Getting Parameters for jobs %s' % ','.join(jobIDList))
+        jobIDList = [jobID] if isinstance(jobID, (str, int)) else jobID
 
         resultDict = {}
         if paramList:
@@ -130,7 +119,7 @@ class JobDB(DB):
                     return ret
                 paramNameList.append(ret["Value"])
             cmd = "SELECT JobID, Name, Value FROM JobParameters WHERE JobID IN ({}) AND Name IN ({})".format(
-                ",".join(jobIDList),
+                ",".join(str(int(j)) for j in jobIDList),
                 ",".join(paramNameList),
             )
             result = self._query(cmd)
@@ -207,13 +196,13 @@ class JobDB(DB):
             return S_ERROR("JobDB.getAtticJobParameters: failed to retrieve parameters")
 
     #############################################################################
+    @convertToReturnValue
     def getJobsAttributes(self, jobIDs, attrList=None):
         """Get all Job(s) Attributes for a given list of jobIDs.
         Return a dictionary with all Job Attributes as value pairs
         """
-
         if not jobIDs:
-            return S_OK({})
+            return {}
 
         # If no list of attributes is given, return all attributes
         if not attrList:
@@ -229,28 +218,29 @@ class JobDB(DB):
 
         attrNameListS = []
         for x in attrList:
-            ret = self._escapeString(x)
-            if not ret["OK"]:
-                return ret
-            x = "`" + ret["Value"][1:-1] + "`"
+            x = "`" + returnValueOrRaise(self._escapeString(x))[1:-1] + "`"
             attrNameListS.append(x)
         attrNames = "JobID," + ",".join(attrNameListS)
 
-        cmd = f"SELECT {attrNames} FROM Jobs WHERE JobID IN ({','.join(str(jobID) for jobID in jobIDs)})"
-        res = self._query(cmd)
-        if not res["OK"]:
-            return res
-        if not res["Value"]:
-            return S_OK({})
+        sqlCmd = "CREATE TEMPORARY TABLE to_select_Jobs (JobID INTEGER NOT NULL, PRIMARY KEY (JobID)) ENGINE=MEMORY;"
+        returnValueOrRaise(self._update(sqlCmd))
+        try:
+            sqlCmd = "INSERT INTO to_select_Jobs (JobID) VALUES ( %s )"
+            returnValueOrRaise(self._updatemany(sqlCmd, [(int(j),) for j in jobIDs]))
+            sqlCmd = f"SELECT {attrNames} FROM Jobs JOIN to_select_Jobs USING (JobID)"
+            result = returnValueOrRaise(self._query(sqlCmd))
+        finally:
+            sqlCmd = "DROP TEMPORARY TABLE to_select_Jobs"
+            returnValueOrRaise(self._update(sqlCmd))
 
         attributes = {}
-        for t_att in res["Value"]:
+        for t_att in result:
             jobID = int(t_att[0])
             attributes.setdefault(jobID, {})
             for tx, ax in zip(t_att[1:], attrList):
                 attributes[jobID].setdefault(ax, tx)
 
-        return S_OK(attributes)
+        return attributes
 
     #############################################################################
     def getJobAttributes(self, jobID, attrList=None):
@@ -527,12 +517,10 @@ class JobDB(DB):
         if not isinstance(jobID, (list, tuple)):
             jobIDList = [jobID]
 
-        jIDList = []
-        for jID in jobIDList:
-            ret = self._escapeString(jID)
-            if not ret["OK"]:
-                return ret
-            jIDList.append(ret["Value"])
+        try:
+            jIDList = [int(jID) for jID in jobIDList]
+        except ValueError as e:
+            return S_ERROR(f"JobDB.setAttributes: {e}")
 
         if len(attrNames) != len(attrValues):
             return S_ERROR("JobDB.setAttributes: incompatible Argument length")
@@ -561,7 +549,7 @@ class JobDB(DB):
         if not attr:
             return S_ERROR("JobDB.setAttributes: Nothing to do")
 
-        cmd = f"UPDATE Jobs SET {', '.join(attr)} WHERE JobID in ( {', '.join(jIDList)} )"
+        cmd = f"UPDATE Jobs SET {', '.join(attr)} WHERE JobID in ( {', '.join(str(int(j)) for j in jIDList)} )"
 
         if myDate:
             cmd += f" AND LastUpdateTime < {myDate}"
@@ -987,44 +975,42 @@ class JobDB(DB):
         return S_OK()
 
     #############################################################################
+    @convertToReturnValue
     def removeJobFromDB(self, jobIDs):
         """
         Remove jobs from the Job DB and clean up all the job related data in various tables
         """
-
-        # ret = self._escapeString(jobID)
-        # if not ret['OK']:
-        #  return ret
-        # e_jobID = ret['Value']
-
         if not jobIDs:
-            return S_OK()
-
-        if not isinstance(jobIDs, list):
-            jobIDList = [jobIDs]
-        else:
-            jobIDList = jobIDs
+            return None
+        jobIDList = jobIDs if isinstance(jobIDs, list) else [jobIDs]
 
         failedTablesList = []
-        for table in [
-            "InputData",
-            "JobParameters",
-            "AtticJobParameters",
-            "HeartBeatLoggingInfo",
-            "OptimizerParameters",
-            "JobCommands",
-            "Jobs",
-            "JobJDLs",
-        ]:
-            cmd = f"DELETE FROM {table} WHERE JobID in ({','.join(str(j) for j in jobIDList)})"
-            result = self._update(cmd)
-            if not result["OK"]:
-                failedTablesList.append(table)
+
+        sqlCmd = "CREATE TEMPORARY TABLE to_delete_Jobs (JobID INT(11) UNSIGNED NOT NULL, PRIMARY KEY (JobID)) ENGINE=MEMORY;"
+        returnValueOrRaise(self._update(sqlCmd))
+        try:
+            sqlCmd = "INSERT INTO to_delete_Jobs (JobID) VALUES ( %s )"
+            returnValueOrRaise(self._updatemany(sqlCmd, [(j,) for j in jobIDList]))
+
+            for table in [
+                "InputData",
+                "JobParameters",
+                "AtticJobParameters",
+                "HeartBeatLoggingInfo",
+                "OptimizerParameters",
+                "JobCommands",
+                "Jobs",
+                "JobJDLs",
+            ]:
+                sqlCmd = f"DELETE m from `{table}` m JOIN to_delete_Jobs t USING (JobID)"
+                if not self._update(sqlCmd)["OK"]:
+                    failedTablesList.append(table)
+        finally:
+            sqlCmd = "DROP TEMPORARY TABLE to_delete_Jobs"
+            returnValueOrRaise(self._update(sqlCmd))
 
         if failedTablesList:
-            return S_ERROR(f"Errors while job removal (tables {','.join(failedTablesList)})")
-
-        return S_OK()
+            raise SErrorException(f"Errors while job removal (tables {','.join(failedTablesList)})")
 
     #############################################################################
     def rescheduleJob(self, jobID):

@@ -5,6 +5,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueOrRaise
 
 
 class SandboxMetadataDB(DB):
@@ -219,11 +220,8 @@ class SandboxMetadataDB(DB):
             return result
         return S_OK(assigned)
 
-    def __filterEntitiesByRequester(self, entitiesList, requesterName, requesterGroup):
-        """
-        Given a list of entities and a requester, return the ones that the requester is allowed to modify
-        """
-        sqlCond = ["s.OwnerId=o.OwnerId", "s.SBId=e.SBId"]
+    def __entitiesByRequesterCond(self, requesterName, requesterGroup):
+        sqlCond = []
         requesterProps = Registry.getPropertiesForEntity(requesterGroup, name=requesterName)
         if Properties.JOB_ADMINISTRATOR in requesterProps:
             # Do nothing, just ensure it doesn't fit in the other cases
@@ -235,44 +233,40 @@ class SandboxMetadataDB(DB):
             sqlCond.append(f"o.Owner='{requesterName}'")
         else:
             return S_ERROR("Not authorized to access sandbox")
-        for i in range(len(entitiesList)):
-            entitiesList[i] = self._escapeString(entitiesList[i])["Value"]
-        if len(entitiesList) == 1:
-            sqlCond.append(f"e.EntityId = {entitiesList[0]}")
-        else:
-            sqlCond.append(f"e.EntityId in ( {', '.join(entitiesList)} )")
-        sqlCmd = "SELECT DISTINCT e.EntityId FROM `sb_EntityMapping` e, `sb_SandBoxes` s, `sb_Owners` o WHERE"
-        sqlCmd = f"{sqlCmd} {' AND '.join(sqlCond)}"
-        result = self._query(sqlCmd)
-        if not result["OK"]:
-            return result
-        return S_OK([row[0] for row in result["Value"]])
+        return sqlCond
 
+    @convertToReturnValue
     def unassignEntities(self, entities, requesterName, requesterGroup):
         """
         Unassign jobs to sandboxes
 
         :param list entities: list of entities to unassign
         """
-        updated = 0
         if not entities:
-            return S_OK()
-        result = self.__filterEntitiesByRequester(entities, requesterName, requesterGroup)
-        if not result["OK"]:
-            gLogger.error("Cannot filter entities", result["Message"])
-            return result
-        ids = result["Value"]
-        if not ids:
-            return S_OK(0)
-        sqlCmd = "DELETE FROM `sb_EntityMapping` WHERE EntityId in ( %s )" % ", ".join(
-            ["'%s'" % str(eid) for eid in ids]
-        )
-        result = self._update(sqlCmd)
-        if not result["OK"]:
-            gLogger.error("Cannot unassign entities", result["Message"])
-        else:
-            updated += 1
-        return S_OK(updated)
+            return None
+        conds = self.__entitiesByRequesterCond(requesterName, requesterGroup)
+
+        sqlCmd = "CREATE TEMPORARY TABLE to_delete_EntityId (EntityId VARCHAR(128)  NOT NULL, PRIMARY KEY (EntityId)) ENGINE=MEMORY;"
+        returnValueOrRaise(self._update(sqlCmd))
+        try:
+            sqlCmd = "INSERT INTO to_delete_EntityId (EntityId) VALUES ( %s )"
+            returnValueOrRaise(self._updatemany(sqlCmd, [(e,) for e in entities]))
+            sqlCmd = "DELETE m from `sb_EntityMapping` m JOIN to_delete_EntityId t USING (EntityId)"
+            if conds:
+                sqlCmd = " ".join(
+                    [
+                        sqlCmd,
+                        "JOIN `sb_SandBoxes` s ON s.SBId = m.SBId",
+                        "JOIN `sb_Owners` o ON s.OwnerId = o.OwnerId",
+                        "WHERE",
+                        " AND ".join(conds),
+                    ]
+                )
+            returnValueOrRaise(self._update(sqlCmd))
+        finally:
+            sqlCmd = "DROP TEMPORARY TABLE to_delete_EntityId"
+            returnValueOrRaise(self._update(sqlCmd))
+        return 1
 
     def getSandboxesAssignedToEntity(self, entityId, requesterName, requesterGroup, requestedVO):
         """
