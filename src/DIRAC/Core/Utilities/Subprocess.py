@@ -268,18 +268,33 @@ class Subprocess:
 
         :param boolean recursive: flag to kill all descendants
         """
-
-        parent = psutil.Process(self.childPID)
-        children = parent.children(recursive=recursive)
-        children.append(parent)
-        for p in children:
+        pgid = os.getpgid(self.childPID)
+        if pgid != os.getpgrp():
             try:
-                p.send_signal(signal.SIGTERM)
-            except psutil.NoSuchProcess:
+                # Child is in its own group: kill the group
+                os.killpg(pgid, signal.SIGTERM)
+            except OSError:
+                # Process is already dead
                 pass
-        _gone, alive = psutil.wait_procs(children, timeout=10)
-        for p in alive:
-            p.kill()
+        else:
+            # No separate group: walk the tree
+            parent = psutil.Process(self.childPID)
+            procs = parent.children(recursive=recursive)
+            procs.append(parent)
+            for p in procs:
+                try:
+                    p.terminate()
+                except psutil.NoSuchProcess:
+                    pass
+            _gone, alive = psutil.wait_procs(procs, timeout=10)
+            # Escalate any survivors
+            for p in alive:
+                try:
+                    p.kill()
+                except psutil.NoSuchProcess:
+                    pass
+
+        self.childKilled = True
 
     def pythonCall(self, function, *stArgs, **stKeyArgs):
         """call python function :function: with :stArgs: and :stKeyArgs:"""
@@ -405,7 +420,9 @@ class Subprocess:
             self.killChild()
             return self.__generateSystemCommandError(1, f"{retDict['Message']} for '{self.cmdSeq}' call")
 
-    def systemCall(self, cmdSeq, callbackFunction=None, shell=False, env=None, preexec_fn=None):
+    def systemCall(
+        self, cmdSeq, callbackFunction=None, shell=False, env=None, preexec_fn=None, start_new_session=False
+    ):
         """system call (no shell) - execute :cmdSeq:"""
 
         if shell:
@@ -426,6 +443,7 @@ class Subprocess:
                 env=env,
                 universal_newlines=True,
                 preexec_fn=preexec_fn,
+                start_new_session=start_new_session,
             )
             self.childPID = self.child.pid
         except OSError as v:

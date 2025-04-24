@@ -297,6 +297,30 @@ def test_processFailedSubprocess(mocker):
 
 
 @pytest.mark.slow
+def test_processKilledSubprocess(mocker):
+    """Test the process method of the JobWrapper class: the job is stalled and is killed by the Watchdog."""
+    jw = JobWrapper()
+    jw.jobArgs = {"CPUTime": 100, "Memory": 1}
+
+    mocker.patch.object(jw, "_JobWrapper__report")
+    mocker.patch.object(jw, "_JobWrapper__setJobParam")
+
+    mock_progress_call = mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog.Watchdog._checkProgress")
+    mock_progress_call.return_value = S_ERROR("Job is stalled!")
+
+    with tempfile.NamedTemporaryFile(delete=True) as std_out, tempfile.NamedTemporaryFile(delete=True) as std_err:
+        jw.outputFile = std_out.name
+        jw.errorFile = std_err.name
+        result = jw.process("sleep 20", {})
+
+    assert result["OK"]
+    assert result["Value"]["payloadStatus"] == 15  # SIGTERM
+    assert not result["Value"]["payloadOutput"]
+    assert not result["Value"]["payloadExecutorError"]
+    assert result["Value"]["watchdogError"] == "Job is stalled!"  # Error message from the watchdog
+
+
+@pytest.mark.slow
 def test_processQuickExecutionNoWatchdog(mocker):
     """Test the process method of the JobWrapper class: the payload is too fast to start the watchdog."""
     jw = JobWrapper()

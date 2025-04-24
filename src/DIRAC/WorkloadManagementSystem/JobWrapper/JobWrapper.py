@@ -1584,7 +1584,9 @@ class ExecutionThread(threading.Thread):
         start = time.time()
         initialStat = os.times()
         log.verbose("Cmd called", self.cmd)
-        output = self.spObject.systemCall(self.cmd, env=self.exeEnv, callbackFunction=self.sendOutput, shell=True)
+        output = self.spObject.systemCall(
+            self.cmd, env=self.exeEnv, callbackFunction=self.sendOutput, shell=True, start_new_session=True
+        )
         log.verbose(f"Output of system call within execution thread: {output}")
         self.executionResults["Thread"] = output
         timing = time.time() - start
