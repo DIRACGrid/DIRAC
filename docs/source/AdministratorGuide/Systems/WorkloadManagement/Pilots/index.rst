@@ -181,8 +181,8 @@ Pilots started when not controlled by the SiteDirector
 
 You should keep reading if your resources include IAAS and IAAC type of resources, like Virtual Machines.
 If this is the case, then you need to:
-- provide a certificate, or a proxy, to start the pilot;
-- such certificate/proxy should have the `GenericPilot` property;
+- provide a proxy to start the pilot;
+- such proxy should have the `GenericPilot` property;
 - in case of multi-VO environment, the Pilot should set the `/Resources/Computing/CEDefaults/VirtualOrganization` (as done e.g. by `vm-pilot <https://github.com/DIRACGrid/DIRAC/blob/integration/src/DIRAC/WorkloadManagementSystem/Utilities/CloudBootstrap/vm-pilot#L122>`_);
 - find a way to start the pilots: DIRAC will make sure to create VirtualMachine contextualized to start DIRAC Pilots.
 
@@ -218,14 +218,6 @@ A simple example using the LHCbPilot extension follows::
       CE_NAME="${i#*=}"
       shift
       ;;
-      --vm-uuid=*)
-      VM_UUID="${i#*=}"
-      shift
-      ;;
-      --vmtype=*)
-      VMTYPE="${i#*=}"
-      shift
-      ;;
       *)
       # unknown option
       ;;
@@ -240,10 +232,6 @@ A simple example using the LHCbPilot extension follows::
   export CONTEXTDIR=`readlink -f \`dirname $0\``
 
   export TMPDIR=/scratch/
-  export EDG_WL_SCRATCH=$TMPDIR
-
-  # Needed to find software area
-  export VO_LHCB_SW_DIR=/cvmfs/lhcb.cern.ch
 
   # Clear it to avoid problems ( be careful if there is more than one agent ! )
   rm -rf /tmp/area/*
@@ -252,22 +240,17 @@ A simple example using the LHCbPilot extension follows::
   DIRAC_PILOT='https://lhcb-portal-dirac.cern.ch/pilot/dirac-pilot.py'
   DIRAC_PILOT_TOOLS='https://lhcb-portal-dirac.cern.ch/pilot/pilotTools.py'
   DIRAC_PILOT_COMMANDS='https://lhcb-portal-dirac.cern.ch/pilot/pilotCommands.py'
-  LHCbDIRAC_PILOT_COMMANDS='https://lhcb-portal-dirac.cern.ch/pilot/LHCbPilotCommands.py'
 
   #
   ##get the necessary scripts
   wget --no-check-certificate -O dirac-pilot.py $DIRAC_PILOT
   wget --no-check-certificate -O pilotTools.py $DIRAC_PILOT_TOOLS
   wget --no-check-certificate -O pilotCommands.py $DIRAC_PILOT_COMMANDS
-  wget --no-check-certificate -O LHCbPilotCommands.py $LHCbDIRAC_PILOT_COMMANDS
 
   #run the dirac-pilot script
   python dirac-pilot.py \
-   --project LHCb \
    --Name "$CE_NAME" \
    --name "$1" \
-   --cert \
-   --certLocation=/scratch/dirac/etc/grid-security \
 
 Centralised Pilot Logging
 ===========================
