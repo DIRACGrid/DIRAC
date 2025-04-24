@@ -28,6 +28,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.MySQL import _quotedList
+from DIRAC.Core.Utilities.ReturnValues import returnValueOrRaise
 from DIRAC.FrameworkSystem.Client.Logger import contextLogger
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
@@ -401,9 +402,18 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             if result["Value"]:
                 return int(result["Value"][0][0])
             return 0
-        refString = ",".join(["'" + ref + "'" for ref in pilotRef])
-        req = f"SELECT PilotID from PilotAgents WHERE PilotJobReference in ( {refString} )"
-        result = self._query(req)
+
+        sqlCmd = "CREATE TEMPORARY TABLE to_select_PilotAgents (PilotID VARCHAR(255) NOT NULL, PRIMARY KEY (PilotID)) ENGINE=MEMORY;"
+        returnValueOrRaise(self._update(sqlCmd))
+        try:
+            sqlCmd = "INSERT INTO to_select_PilotAgents (PilotID) VALUES ( %s )"
+            returnValueOrRaise(self._updatemany(sqlCmd, [(p,) for p in pilotRef]))
+            sqlCmd = "SELECT PilotID FROM PilotAgents JOIN to_select_PilotAgents USING (PilotID)"
+            result = self._query(sqlCmd)
+        finally:
+            sqlCmd = "DROP TEMPORARY TABLE to_select_PilotAgents"
+            returnValueOrRaise(self._update(sqlCmd))
+
         if not result["OK"]:
             return []
         if result["Value"]:
