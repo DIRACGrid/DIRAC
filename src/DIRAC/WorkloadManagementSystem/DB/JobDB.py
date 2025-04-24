@@ -106,18 +106,7 @@ class JobDB(DB):
         Returns a dictionary with the Job Parameters.
         If parameterList is empty - all the parameters are returned.
         """
-
-        if isinstance(jobID, (str, int)):
-            jobID = [jobID]
-
-        jobIDList = []
-        for jID in jobID:
-            ret = self._escapeString(str(jID))
-            if not ret["OK"]:
-                return ret
-            jobIDList.append(ret["Value"])
-
-        # self.log.debug('JobDB.getParameters: Getting Parameters for jobs %s' % ','.join(jobIDList))
+        jobIDList = [jobID] if isinstance(jobID, (str, int)) else jobID
 
         resultDict = {}
         if paramList:
@@ -130,7 +119,7 @@ class JobDB(DB):
                     return ret
                 paramNameList.append(ret["Value"])
             cmd = "SELECT JobID, Name, Value FROM JobParameters WHERE JobID IN ({}) AND Name IN ({})".format(
-                ",".join(jobIDList),
+                ",".join(str(int(j)) for j in jobIDList),
                 ",".join(paramNameList),
             )
             result = self._query(cmd)
@@ -560,7 +549,7 @@ class JobDB(DB):
         if not attr:
             return S_ERROR("JobDB.setAttributes: Nothing to do")
 
-        cmd = f"UPDATE Jobs SET {', '.join(attr)} WHERE JobID in ( {', '.join(jIDList)} )"
+        cmd = f"UPDATE Jobs SET {', '.join(attr)} WHERE JobID in ( {', '.join(str(int(j)) for j in jIDList)} )"
 
         if myDate:
             cmd += f" AND LastUpdateTime < {myDate}"
