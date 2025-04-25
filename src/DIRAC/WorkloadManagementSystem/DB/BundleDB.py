@@ -1,26 +1,18 @@
 """ BundleDB class is a front-end to the bundle db
 """
 from DIRAC import S_ERROR, S_OK
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.DB import DB
 from DIRAC.FrameworkSystem.Client.Logger import contextLogger
 
-# NOTE:
-# THIS BLOCK SHOULD BE ITS OWN FUNCTION:
-#
-# result = self._query(cmd)
-# if not result["OK"]:
-#     return result
-# return S_OK(result["Value"][0])
+# This might not be necessary
+BUNDLE_STATUS = ('Storing', 'Full', 'Sent', 'Finalized')
 
-BUNDLE_STATUS = ('Storing', 'Full', 'Sent','Finalized')
-
-def formatSelectOutput(listOfResults):
+def formatSelectOutput(listOfResults, keys):
     retVal = []
 
     for kvTuple in listOfResults:
         inner = {}
-        for k, v in kvTuple:
+        for k, v in zip(keys, list(kvTuple)):
             inner[k] = v
         retVal.append(inner)
 
@@ -30,9 +22,8 @@ class BundleDB(DB):
     """BundleDB MySQL Database Manager"""
 
     def __init__(self, parentLogger=None):
-        DB.__init__(self, "BundleDB", "WorkloadManagement/BundleDB", parentLogger=parentLogger)
+        super().__init__("BundleDB", "WorkloadManagement/BundleDB", parentLogger=parentLogger)
         self._defaultLogger = self.log
-        self.__opsHelper = Operations()
 
     @property
     def log(self):
@@ -48,7 +39,10 @@ class BundleDB(DB):
         if not result["OK"]:
             return result
         
-        return S_OK(result["Value"][0])
+        if not result["Value"]:
+            return S_ERROR("JobId not present in any bundle")
+
+        return S_OK(result["Value"][0][0])
 
     def insertJobToBundle(self, jobId, executable, inputs, processors, ceDict): 
         result = self.__getBundlesFromCEDict(ceDict)
@@ -60,20 +54,38 @@ class BundleDB(DB):
 
         # No bundles matching ceDict, so create a new one
         if not bundles:
-            bundleId = self.__createNewBundle(ceDict)
-            return S_OK(bundleId)
+            result = self.__createNewBundle(ceDict)
+
+            if not result["OK"]:
+                return result
+
+            bundleId = result["Value"]
+            result = self.__insertJobInBundle(jobId, bundleId, executable, inputs, processors)
+
+            if not result["OK"]:
+                return result
+
+            return S_OK({"BundleId": bundleId, "Ready": result["Value"]})
 
         # Check the best possible bundle to insert the job
         bundleId = self.__selectBestBundle(bundles, processors)
         
         # If it does not fit in an already created bundle, create a new one
         if not bundleId:
-            bundleId = self.__createNewBundle(ceDict)
+            result = self.__createNewBundle(ceDict)
             
-        # Insert it and obtain if it is ready to be submitted
-        readyForSubmission = self.__insertJobInBundle(jobId, bundleId, executable, inputs, processors)
+            if not result["OK"]:
+                return result
 
-        return S_OK({"BundleId": bundleId, "Ready": readyForSubmission})
+            bundleId = result["Value"]
+
+        # Insert it and obtain if it is ready to be submitted
+        result = self.__insertJobInBundle(jobId, bundleId, executable, inputs, processors)
+
+        if not result["OK"]:
+            return result
+
+        return S_OK({"BundleId": bundleId, "Ready": result["Value"]})
 
     def getBundle(self, bundleId):
         result = self.getFields("BundlesInfo", [], {"BundleID": bundleId})
@@ -81,7 +93,7 @@ class BundleDB(DB):
         if not result["OK"]:
             return result
 
-        retVal = formatSelectOutput(result["Value"])
+        retVal = formatSelectOutput(result["Value"], [])
         return S_OK(retVal[0])
 
     def getJobsOfBundle(self, bundleId):
@@ -90,7 +102,7 @@ class BundleDB(DB):
         if not result["OK"]:
             return result
 
-        retVal = formatSelectOutput(result["Value"])
+        retVal = formatSelectOutput(result["Value"], ["JobID", "ExecutablePath", "Inputs"])
         return S_OK(retVal)
 
     def setTaskId(self, bundleId, taskId):
@@ -121,11 +133,8 @@ class BundleDB(DB):
         if not result["OK"]:
             return result
 
-        #! WILL THIS WORK??
-        result = self.getFields("BundlesInfo", ["BundleID"], {"lastRowId": result["lastRowId"]})
-        retVal = formatSelectOutput(result["Value"])
-
-        return S_OK(retVal[0]) #! IT SHOULD RETURN THE ID OF THE BUNDLE
+        # Returns the ID of the Bundle (which is automatically incremented)
+        return S_OK(result["lastRowId"])
     
     def __insertJobInBundle(self, jobId, bundleId, executable, inputs, nProcessors):
         # Insert the job into the bundle
@@ -133,7 +142,7 @@ class BundleDB(DB):
             "JobID": jobId,
             "BundleID": bundleId,
             "ExecutablePath": executable,
-            "Inputs": inputs
+            "Inputs": ' '.join(inputs)
         }
 
         result = self.insertFields(
@@ -160,7 +169,7 @@ class BundleDB(DB):
         if not result["OK"]:
             return result
 
-        retVal = formatSelectOutput(result["Value"])
+        retVal = formatSelectOutput(result["Value"], ["ProcessorSum", "MaxProcessors"])
         selection = retVal[0]
 
         # TODO: Change this to a strategy based selection and remove self.__selectBestBundle(...)
@@ -180,8 +189,9 @@ class BundleDB(DB):
         
         if not result["Value"]:
             return S_OK()
-
-        retVal = formatSelectOutput(result["Value"])
+        
+        # TODO: This line is awful, should change to something easier to scale
+        retVal = formatSelectOutput(result["Value"], ["BundleID", "ProcessorSum", "MaxProcessors", "Site", "CE", "Queue", "CEDict", "ExecTemplate", "TaskID", "Status"])
         return S_OK(retVal) 
 
     def __updateBundleStatus(self, bundleId, newStatus):
@@ -237,6 +247,7 @@ class BundleDB(DB):
                 continue
             
             elif newProcSum > currentBestProcs:
+                currentBestProcs = newProcSum
                 bestBundleId = bundleId
         
         return bestBundleId
