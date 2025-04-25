@@ -49,6 +49,8 @@ class StatesAccountingAgent(AgentModule):
         """Standard initialization"""
         # This agent will always loop every 15 minutes
         self.am_setOption("PollingTime", 900)
+        # This agent will restart every 24 hours
+        self.am_setOption("MaxCycles", 96)
 
         # Check whether to send to Monitoring or Accounting or both
         self.jobMonitoringOption = Operations().getMonitoringBackends(monitoringType="WMSHistory")
@@ -64,6 +66,11 @@ class StatesAccountingAgent(AgentModule):
             )
         if "Monitoring" in self.pilotMonitoringOption:
             self.pilotReporter = MonitoringReporter(monitoringType="PilotsHistory", failoverQueueName=messageQueue)
+
+        res = JobDB().fillJobsHistorySummary()
+        if not res["OK"]:
+            self.log.error("Could not fill the JobDB summary", res["Message"])
+            return S_ERROR()
 
         self.__jobDBFields = []
         for field in self.__summaryKeyFieldsMapping:

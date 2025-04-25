@@ -20,7 +20,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.DErrno import EWMSJMAN, EWMSSUBM, cmpError
-from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK, convertToReturnValue, returnValueOrRaise, SErrorException
+from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK, SErrorException, convertToReturnValue, returnValueOrRaise
 from DIRAC.FrameworkSystem.Client.Logger import contextLogger
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
@@ -1510,6 +1510,24 @@ class JobDB(DB):
         return self._update(f"UPDATE JobCommands SET Status={status} WHERE JobID={jobID} AND Command={command}")
 
     #####################################################################################
+    def fillJobsHistorySummary(self):
+        """Fill the JobsHistorySummary table with the summary of the jobs in a final state"""
+
+        defString = "Status, Site, Owner, OwnerGroup, JobGroup, JobType, ApplicationStatus, MinorStatus"
+        valuesString = "COUNT(JobID), SUM(RescheduleCounter)"
+        final_states = "', '".join(JobStatus.JOB_FINAL_STATES + JobStatus.JOB_REALLY_FINAL_STATES)
+        final_states = f"'{final_states}'"
+
+        query = (
+            f"INSERT INTO JobsHistorySummary SELECT {defString}, {valuesString} "
+            f"FROM Jobs WHERE Status IN ({final_states}) AND LastUpdateTime < UTC_DATE() "
+            f"GROUP BY {defString}"
+        )
+        result = self._update(query)
+        if not result["OK"]:
+            return result
+        return S_OK(result["Value"])
+
     def getSummarySnapshot(self, requestedFields=False):
         """Get the summary snapshot for a given combination"""
         if not requestedFields:
@@ -1517,7 +1535,28 @@ class JobDB(DB):
         valueFields = ["COUNT(JobID)", "SUM(RescheduleCounter)"]
         defString = ", ".join(requestedFields)
         valueString = ", ".join(valueFields)
-        result = self._query(f"SELECT {defString}, {valueString} FROM Jobs GROUP BY {defString}")
+        final_states = "', '".join(JobStatus.JOB_FINAL_STATES + JobStatus.JOB_REALLY_FINAL_STATES)
+        final_states = f"'{final_states}'"
+
+        query = f"SELECT {defString}, {valueString} FROM ("
+        # All jobs that are NOT in a final state
+        query += (
+            f"SELECT {defString}, {valueString}, COUNT(JobID), SUM(RescheduleCounter) "
+            f"FROM Jobs WHERE STATUS NOT IN ({final_states}) "
+            f"GROUP BY {defString}, {valueString} "
+        )
+        query += "UNION ALL "
+        # Recent jobs only (today) that are in a final state
+        query += (
+            f"SELECT {defString}, {valueString}, COUNT(JobID), SUM(RescheduleCounter) "
+            f"FROM Jobs WHERE Status IN ({final_states}) AND LastUpdateTime >= UTC_DATE() "
+            f"GROUP BY {defString}, {valueString} "
+        )
+        query += "UNION ALL "
+        # Cached history (of jobs in a final state)
+        query += f"SELECT * FROM JobsHistorySummary) AS combined GROUP BY {defString}, {valueString}"
+
+        result = self._query(query)
         if not result["OK"]:
             return result
         return S_OK(((requestedFields + valueFields), result["Value"]))

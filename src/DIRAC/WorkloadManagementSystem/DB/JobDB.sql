@@ -132,3 +132,19 @@ CREATE TABLE `JobCommands` (
   PRIMARY KEY (`JobID`,`Arguments`,`ReceptionTime`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------------------------------------------------------
+DROP TABLE IF EXISTS `JobsHistorySummary`;
+CREATE TABLE `JobsHistorySummary` (
+  `Status` VARCHAR(32),
+  `Site` VARCHAR(100),
+  `Owner` VARCHAR(32),
+  `OwnerGroup` VARCHAR(128),
+  `JobGroup` VARCHAR(32),
+  `JobType` VARCHAR(32),
+  `ApplicationStatus` VARCHAR(255),
+  `MinorStatus` VARCHAR(128),
+  `JobCount` INT,
+  `RescheduleSum` INT,
+  PRIMARY KEY (Status, Site, Owner, OwnerGroup, JobGroup, JobType, ApplicationStatus, MinorStatus)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
