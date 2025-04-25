@@ -338,6 +338,9 @@ class JobWrapper:
             submissionPolicy = self.ceArgs.get("SubmissionPolicy", gConfig.getValue("/LocalSite/SubmissionPolicy", ""))
             if submissionPolicy == "Application":
                 configOptions += "-o /LocalSite/RemoteExecution=True "
+                # Disable the watchdog CPU wallclock check because the application is running
+                # on a remote worker node, so values are not relevant
+                (self.jobIDPath / "DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK").touch()
 
         command = executable
         if jobArguments:
