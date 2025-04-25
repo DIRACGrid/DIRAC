@@ -261,6 +261,7 @@ def test_getPilotWrapper(mocker, sd, pilotWrapperDirectory):
     # Get pilot options
     pilotOptions = sd._getPilotOptions("ce1.site1.com_condor")
     assert {
+        "--architectureScript=123",
         "--preinstalledEnv=123",
         "--wnVO=dteam",
         "-n LCG.Site1.com",
