@@ -25,8 +25,8 @@ CREATE TABLE `BundlesInfo` (
     `CEDict`        TEXT NOT NULL,
     `ExecTemplate`  TEXT NOT NULL,
     `TaskID`        INTEGER(11) UNSIGNED,
-    `Status`        ENUM('Storing', 'Full', 'Sent','Finalized') NOT NULL DEFAULT 'Storing',
-    PRIMARY KEY (BundleID),
+    `Status`        ENUM('Storing', 'Full', 'Sent', 'Finalized') NOT NULL DEFAULT 'Storing',
+    PRIMARY KEY (BundleID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------------------------
@@ -37,5 +37,5 @@ CREATE TABLE `JobToBundle` (
     `ExecutablePath`    TEXT NOT NULL,
     `Inputs`            TEXT NOT NULL,
     PRIMARY KEY (`JobID`),
-    FOREIGN KEY (`BundleID`) REFERENCES `BundlesInfo`(`BundleID`),
+    FOREIGN KEY (`BundleID`) REFERENCES `BundlesInfo`(`BundleID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
