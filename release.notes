@@ -1,3 +1,37 @@
+[v9.0.0a54]
+
+*WorkloadManagement
+
+FIX: (#8180) disable watchdgo wallclock check for remote executions
+FIX: (#8179) Watchdog does not kill payload properly and runs endlessly
+FIX: (#8170) JobAgent endlessly looping in checkSubmittedJobs
+FIX: (#8163) Typo in SingularityComputingElement
+
+*Subsystem
+
+FIX: (#8177) SiteDirector: the architecture script can be set in the options
+
+*TransformationSystem
+
+FIX: (#8172) adapt getTableSummaryWeb to the new data access layer response format
+NEW: (#8165) Cast return of getTransformationFilesCount in the client
+FIX: (#8162) Explicitly cast to string when returning dates
+
+*WorklodManagement
+
+FIX: (#8171) Optimize SandboxMetadataDB.unassignEntities
+FIX: (#8171) Optimize JobLoggingDB.deleteJob
+FIX: (#8171) Optimize JobDB.getJobsAttributes
+FIX: (#8171) Optimize PilotAgentsDB.__getPilotID
+
+*Resources
+
+CHANGE: (#8153) remove PilotBundle
+
+*GraphUtilities
+
+FIX: (#8151) prevent any local-UTC offset being introduced in plots
+
 [v9.0.0a53]
 
 *WorkloadManagement
