@@ -306,7 +306,6 @@ autodoc_mock_imports = DIRAC_DOC_MOCK_LIST
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "matplotlib": ("https://matplotlib.org/", None),
-    "requests": ("https://requests.readthedocs.io/en/latest/", None),
 }
 
 # check for :param / :return in html, points to faulty syntax, missing empty lines, etc.
