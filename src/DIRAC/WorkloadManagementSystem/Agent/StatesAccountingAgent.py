@@ -72,6 +72,11 @@ class StatesAccountingAgent(AgentModule):
             self.log.error("Could not fill the JobDB summary", res["Message"])
             return S_ERROR()
 
+        res = PilotAgentsDB().fillPilotsHistorySummary()
+        if not res["OK"]:
+            self.log.error("Could not fill the PilotAgentsDB summary", res["Message"])
+            return S_ERROR()
+
         self.__jobDBFields = []
         for field in self.__summaryKeyFieldsMapping:
             if field == "User":

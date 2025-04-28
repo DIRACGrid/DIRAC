@@ -1047,6 +1047,24 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
 
         return S_OK(resultDict)
 
+    def fillPilotsHistorySummary(self):
+        """Fill the PilotsHistorySummary table with the summary of the Pilots in a final state"""
+
+        defString = "GridSite, GridType, Status"
+        valuesString = "COUNT(PilotID)"
+        final_states = "', '".join(PilotStatus.PILOT_FINAL_STATES)
+        final_states = f"'{final_states}'"
+
+        query = (
+            f"INSERT INTO PilotsHistorySummary SELECT {defString}, {valuesString} "
+            f"FROM PilotAgents WHERE Status IN ({final_states}) AND LastUpdateTime < UTC_DATE() "
+            f"GROUP BY {defString}"
+        )
+        result = self._update(query)
+        if not result["OK"]:
+            return result
+        return S_OK(result["Value"])
+
     def getSummarySnapshot(self, requestedFields=False):
         """Get the summary snapshot for a given combination"""
         if not requestedFields:
@@ -1054,10 +1072,32 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         valueFields = ["COUNT(PilotID)"]
         defString = ", ".join(requestedFields)
         valueString = ", ".join(valueFields)
-        result = self._query(f"SELECT {defString}, {valueString} FROM PilotAgents GROUP BY {defString}")
+        final_states = "', '".join(PilotStatus.PILOT_FINAL_STATES)
+        final_states = f"'{final_states}'"
+
+        query = f"SELECT {defString}, {valueString} FROM ("
+        # All Pilots that are NOT in a final state
+        query += (
+            f"SELECT {defString}, {valueString}, COUNT(PilotID) "
+            f"FROM PilotsAgents WHERE STATUS NOT IN ({final_states}) "
+            f"GROUP BY {defString}, {valueString} "
+        )
+        query += "UNION ALL "
+        # Recent Pilots only (today) that are in a final state
+        query += (
+            f"SELECT {defString}, {valueString}, COUNT(PilotID) "
+            f"FROM Pilots WHERE Status IN ({final_states}) AND LastUpdateTime >= UTC_DATE() "
+            f"GROUP BY {defString}, {valueString} "
+        )
+        query += "UNION ALL "
+        # Cached history (of Pilots in a final state)
+        query += f"SELECT * FROM PilotsHistorySummary) AS combined GROUP BY {defString}, {valueString}"
+
+        result = self._query(query)
         if not result["OK"]:
             return result
         return S_OK(((requestedFields + valueFields), result["Value"]))
+
 
 
 class PivotedPilotSummaryTable:

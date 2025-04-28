@@ -65,3 +65,12 @@ CREATE TABLE `PilotOutput` (
   `StdError` MEDIUMTEXT,
   PRIMARY KEY (`PilotID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `PilotsHistorySummary`;
+CREATE TABLE `PilotsHistorySummary` (
+  `GridSite` VARCHAR(128),
+  `GridType` VARCHAR(32),
+  `Status` VARCHAR(32),
+  `PilotCount` INT,
+  PRIMARY KEY (`GridSite`,`GridType`,`Status`),
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
