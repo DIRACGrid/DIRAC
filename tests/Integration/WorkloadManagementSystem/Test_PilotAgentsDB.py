@@ -5,6 +5,8 @@
 """
 # pylint: disable=wrong-import-position
 
+import csv
+
 from unittest.mock import patch
 
 import DIRAC
@@ -186,3 +188,19 @@ def test_PivotedPilotSummaryTable():
     assert "Total" in columns
 
     cleanUpPilots(pilotRef)
+
+
+def test_summarySnapshot():
+    # insert some predefined jobs to test the summary snapshot
+    with open("pilots.csv", newline="", encoding="utf-8") as csvfile:
+        csvreader = csv.reader(csvfile)
+        data = list(csvreader)
+        placeholders = ",".join(["%s"] * len(data[0]))
+        sql = f"INSERT INTO PilotAgents VALUES ({placeholders})"
+        res = paDB._updatemany(sql, data)
+        assert res["OK"], res["Message"]
+    # Act
+    res = paDB.fillPilotsHistorySummary()
+    assert res["OK"], res["Message"]
+    res = paDB.getSummarySnapshot()
+    assert res["OK"], res["Message"]

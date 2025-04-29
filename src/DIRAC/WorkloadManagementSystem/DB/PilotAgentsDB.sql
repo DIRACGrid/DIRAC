@@ -72,5 +72,5 @@ CREATE TABLE `PilotsHistorySummary` (
   `GridType` VARCHAR(32),
   `Status` VARCHAR(32),
   `PilotCount` INT,
-  PRIMARY KEY (`GridSite`,`GridType`,`Status`),
+  PRIMARY KEY (`GridSite`,`GridType`,`Status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

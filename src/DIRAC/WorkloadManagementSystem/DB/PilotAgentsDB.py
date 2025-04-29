@@ -1099,7 +1099,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         return S_OK(((requestedFields + valueFields), result["Value"]))
 
 
-
 class PivotedPilotSummaryTable:
     """
     The class creates a 'pivoted' table by combining records with the same group
