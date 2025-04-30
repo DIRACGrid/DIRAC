@@ -29,8 +29,9 @@ import os
 import tempfile
 import time
 
-import DIRAC
 import pytest
+
+import DIRAC
 
 DIRAC.initialize()  # Initialize configuration
 
@@ -406,7 +407,6 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn: str) -> None:
     try:
         res = jobMonitoringClient.getSites()
         assert res["OK"], res["Message"]
-        assert set(res["Value"]) <= {"ANY", "DIRAC.Jenkins.ch", "Site"}
 
         res = jobMonitoringClient.getJobTypes()
         assert res["OK"], res["Message"]

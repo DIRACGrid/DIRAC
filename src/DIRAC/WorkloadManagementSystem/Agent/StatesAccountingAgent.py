@@ -105,8 +105,7 @@ class StatesAccountingAgent(AgentModule):
                     f"{result['Message']}: won't commit PilotsHistory at this cycle",
                 )
 
-            values = result["Value"][1]
-            for record in values:
+            for record in result["Value"]:
                 rD = {}
                 for iP, _ in enumerate(self.__pilotsMapping):
                     rD[self.__pilotsMapping[iP]] = record[iP]
@@ -127,10 +126,8 @@ class StatesAccountingAgent(AgentModule):
             self.log.error("Can't get the JobDB summary", f"{result['Message']}: won't commit WMSHistory at this cycle")
             return S_ERROR()
 
-        values = result["Value"][1]
-
         self.log.info("Start sending WMSHistory records")
-        for record in values:
+        for record in result["Value"]:
             rD = {}
             for fV in self.__summaryDefinedFields:
                 rD[fV[0]] = fV[1]

@@ -232,20 +232,6 @@ MCSimulation,00100015,LCG.CERN.cern,00100015_00000045,cburr,lhcb_mc,Unknown,2021
 MCSimulation,00100015,LCG.CERN.cern,00100015_00000046,cburr,lhcb_mc,Unknown,2021-05-21 13:21:49,,2021-05-22 09:46:42,2021-05-21 13:22:00,2021-05-22 09:46:41,2021-05-22 09:46:42,Done,Execution Complete,Job Finished Successfully,0,0,True,False
 MCSimulation,00100015,LCG.CERN.cern,00100015_00000047,cburr,lhcb_mc,Unknown,2021-05-21 13:21:49,,2021-05-22 03:53:36,2021-05-21 13:22:12,2021-05-22 03:53:31,2021-05-22 03:53:36,Done,Execution Complete,Job Finished Successfully,0,0,True,False
 MCSimulation,00100015,LCG.Manchester.uk,00100015_00000048,cburr,lhcb_mc,Unknown,2021-05-21 13:21:49,,2021-05-22 12:19:26,2021-05-21 13:22:13,2021-05-22 10:53:22,2021-05-22 12:19:26,Failed,Failed sending requests,Failed to upload output data,0,0,True,False
-MCSimulation,00100015,LCG.RAL-HEP.uk,00100015_00000050,cburr,lhcb_mc,2021-05-21 13:21:49,,2021-05-22 15:51:42,2021-05-21 13:22:18,2021-05-22 14:25:38,2021-05-22 15:51:43,Failed,Failed sending requests,Failed to upload output data,0,0,True,False,Unknown
-MCSimulation,00100015,LCG.CERN.cern,00100015_00000051,cburr,lhcb_mc,2021-05-21 13:21:49,,2021-05-22 16:47:54,2021-05-21 13:22:18,2021-05-22 16:47:53,2021-05-22 16:47:54,Done,Execution Complete,Job Finished Successfully,0,0,True,False,Unknown
-MCSimulation,00100015,LCG.CERN.cern,00100015_00000052,cburr,lhcb_mc,2021-05-21 13:21:49,,2021-05-22 18:02:54,2021-05-21 13:22:16,2021-05-22 18:02:52,2021-05-22 18:02:54,Done,Execution Complete,Job Finished Successfully,0,0,True,False,Unknown
-MCSimulation,00100015,LCG.Manchester.uk,00100015_00000053,cburr,lhcb_mc,2021-05-21 13:21:49,,2021-05-22 11:24:41,2021-05-21 13:22:45,2021-05-22 09:58:25,2021-05-22 11:24:41,Failed,Failed sending requests,Failed to upload output data,0,0,True,False,Unknown
-MCSimulation,00100015,LCG.CERN.cern,00100015_00000054,cburr,lhcb_mc,2021-05-21 13:21:49,,2021-05-22 20:15:57,2021-05-21 13:22:19,2021-05-22 20:15:55,2021-05-22 20:15:57,Done,Execution Complete,Job Finished Successfully,0,0,True,False,Unknown
-MCSimulation,00100015,LCG.RAL.uk,00100015_00000055,cburr,lhcb_mc,2021-05-21 13:21:49,,2021-05-22 08:03:14,2021-05-21 13:22:31,2021-05-22 06:37:22,2021-05-22 08:03:15,Failed,Failed sending requests,Failed to upload output data,0,0,True,False,Unknown
-MCSimulation,00100015,LCG.CERN.cern,00100015_00000056,cburr,lhcb_mc,2021-05-21 13:21:50,,2021-05-22 18:42:18,2021-05-21 13:22:22,2021-05-22 18:42:16,2021-05-22 18:42:18,Done,Execution Complete,Job Finished Successfully,0,0,True,False,Unknown
-MCSimulation,00100015,LCG.CERN.cern,00100015_00000057,cburr,lhcb_mc,2021-05-21 13:21:50,,2021-05-22 21:35:07,2021-05-21 13:22:28,2021-05-22 21:35:06,2021-05-22 21:35:07,Done,Execution Complete,Job Finished Successfully,0,0,True,False,Unknown
-MCSimulation,00100015,LCG.RAL.uk,00100015_00000058,cburr,lhcb_mc,2021-05-21 13:21:50,,2021-05-22 09:47:09,2021-05-21 13:22:49,2021-05-22 08:21:13,2021-05-22 09:47:09,Failed,Failed sending requests,Failed to upload output data,0,0,True,False,Unknown
-MCSimulation,00100015,LCG.CERN.cern,00100015_00000059,cburr,lhcb_mc,2021-05-21 13:21:50,,2021-05-22 20:18:15,2021-05-21 13:22:16,2021-05-22 20:18:14,2021-05-22 20:18:16,Done,Execution Complete,Job Finished Successfully,0,0,True,False,Unknown
-MCSimulation,00100015,LCG.CERN.cern,00100015_00000060,cburr,lhcb_mc,2021-05-21 13:21:50,,2021-05-22 04:27:25,2021-05-21 13:22:14,2021-05-22 02:22:30,,Failed,Job stalled: pilot not running,Gauss step 1,0,0,True,True,Unknown
-MCSimulation,00100015,LCG.CERN.cern,00100015_00000061,cburr,lhcb_mc,2021-05-21 13:21:50,,2021-05-22 07:01:32,2021-05-21 13:22:19,2021-05-22 07:01:25,2021-05-22 07:01:31,Done,Execution Complete,Job Finished Successfully,0,0,True,False,Unknown
-MCSimulation,00100015,LCG.RAL-HEP.uk,00100015_00000062,cburr,lhcb_mc,2021-05-21 13:21:50,,2021-05-22 14:11:33,2021-05-21 13:23:19,2021-05-22 12:45:45,2021-05-22 14:11:33,Failed,Failed sending requests,Failed to upload output data,0,0,True,False,Unknown
-MCReconstruction,00100016,LCG.CERN.cern,00100016_00000019,cburr,lhcb_data,2021-05-22 18:05:34,,2021-05-22 20:22:37,2021-05-22 20:16:20,2021-05-22 20:22:37,2021-05-22 20:22:38,Failed,Application Finished With Errors,Boole v30r4 exited with status 2,8,0,True,False,Unknown
 MCReconstruction,00100016,LCG.CERN.cern,00100016_00000021,cburr,lhcb_data,Unknown,2021-05-22 22:33:54,,2021-05-23 01:26:34,2021-05-23 01:23:07,2021-05-23 01:26:33,2021-05-23 01:26:34,Failed,Application Finished With Errors,Boole v30r4 exited with status 2,8,0,True,False
 MCReconstruction,00100016,LCG.CERN.cern,00100016_00000022,cburr,lhcb_data,Unknown,2021-05-23 01:26:56,,2021-05-23 02:02:13,2021-05-23 01:27:37,2021-05-23 02:02:10,2021-05-23 02:02:13,Failed,Application Finished With Errors,Boole v30r4 exited with status 2,8,0,True,False
 MCReconstruction,00100016,LCG.CERN.cern,00100016_00000023,cburr,lhcb_data,Unknown,2021-05-23 02:02:57,,2021-05-23 02:07:09,2021-05-23 02:03:51,2021-05-23 02:07:08,2021-05-23 02:07:09,Failed,Application Finished With Errors,Boole v30r4 exited with status 2,8,0,True,False
@@ -4304,7 +4290,7 @@ User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 04:11:21,,2025-03-28 0
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 04:11:21,,2025-03-28 04:11:20,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 04:11:21,,2025-03-28 04:11:21,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 04:11:21,,2025-03-28 04:11:21,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
-User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 04:11:21,,2025-03-28 04:11:21,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,
+User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 04:11:21,,2025-03-28 04:11:21,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 04:11:21,,2025-03-28 04:11:21,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 04:17:02,,2025-03-28 04:17:02,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 04:17:02,,2025-03-28 04:17:02,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
@@ -4395,7 +4381,7 @@ User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 09:52:16,,2025-03-28 0
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 09:52:16,,2025-03-28 09:52:15,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 09:52:16,,2025-03-28 09:52:16,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 09:52:16,,2025-03-28 09:52:16,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
-User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 09:52:17,,2025-03-28 09:52:16,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,
+User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 09:52:17,,2025-03-28 09:52:16,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 09:52:17,,2025-03-28 09:52:17,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 09:52:18,,2025-03-28 09:52:23,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 09:52:18,,2025-03-28 09:52:23,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
@@ -4421,7 +4407,7 @@ User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:06:08,,2025-03-28 1
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:06:08,,2025-03-28 10:06:07,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:06:08,,2025-03-28 10:06:08,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:06:08,,2025-03-28 10:06:08,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
-User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:06:08,,2025-03-28 10:06:08,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,
+User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:06:08,,2025-03-28 10:06:08,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:06:08,,2025-03-28 10:06:08,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:06:09,,2025-03-28 10:06:13,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:06:09,,2025-03-28 10:06:13,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
@@ -4471,7 +4457,7 @@ User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:19:23,,2025-03-28 1
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:19:24,,2025-03-28 10:19:24,,,,Waiting,Pilot Agent Submission,Something,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:19:25,,2025-03-28 10:19:25,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:19:25,,2025-03-28 10:19:25,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
-User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:19:27,,2025-03-28 10:19:27,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,
+User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:19:27,,2025-03-28 10:19:27,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:19:28,,2025-03-28 10:19:28,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:19:29,,2025-03-28 10:19:34,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:19:30,,2025-03-28 10:19:34,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
@@ -4497,7 +4483,7 @@ User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:22:42,,2025-03-28 1
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:22:42,,2025-03-28 10:22:42,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:22:42,,2025-03-28 10:22:42,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:22:42,,2025-03-28 10:22:42,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
-User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:22:42,,2025-03-28 10:22:42,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,
+User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:22:42,,2025-03-28 10:22:42,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:22:43,,2025-03-28 10:22:42,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:22:43,,2025-03-28 10:22:47,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:22:43,,2025-03-28 10:22:47,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
@@ -4523,7 +4509,7 @@ User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:41:18,,2025-03-28 1
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:41:18,,2025-03-28 10:41:18,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:41:18,,2025-03-28 10:41:18,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:41:18,,2025-03-28 10:41:18,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
-User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:41:19,,2025-03-28 10:41:18,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,
+User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:41:19,,2025-03-28 10:41:18,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:41:19,,2025-03-28 10:41:18,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:41:19,,2025-03-28 10:41:24,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:41:19,,2025-03-28 10:41:24,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
@@ -4549,7 +4535,7 @@ User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:43:30,,2025-03-28 1
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:43:30,,2025-03-28 10:43:29,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:43:30,,2025-03-28 10:43:29,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:43:30,,2025-03-28 10:43:30,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
-User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:43:30,,2025-03-28 10:43:30,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,
+User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:43:30,,2025-03-28 10:43:30,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:43:30,,2025-03-28 10:43:30,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:43:30,,2025-03-28 10:43:35,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 10:43:31,,2025-03-28 10:43:35,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
@@ -4592,7 +4578,7 @@ User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 15:00:25,,2025-03-28 1
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 15:00:25,,2025-03-28 15:00:25,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 15:00:26,,2025-03-28 15:00:25,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 15:00:26,,2025-03-28 15:00:25,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
-User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 15:00:26,,2025-03-28 15:00:26,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,
+User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 15:00:26,,2025-03-28 15:00:26,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 15:00:27,,2025-03-28 15:00:26,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 15:00:27,,2025-03-28 15:00:31,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-28 15:00:27,,2025-03-28 15:00:31,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
@@ -4634,7 +4620,7 @@ User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-31 09:40:07,,2025-03-31 0
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-31 09:40:07,,2025-03-31 09:43:47,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-31 09:40:07,,2025-03-31 09:40:23,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-31 09:40:07,,2025-03-31 09:40:23,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
-User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-31 09:40:07,,2025-03-31 09:40:23,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,
+User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-31 09:40:07,,2025-03-31 09:40:23,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-03-31 09:40:07,,2025-03-31 09:40:23,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,Unknown,jobName,cburr,lhcb_user,lhcb,2025-03-31 09:40:07,,2025-03-31 09:40:12,,,,Waiting,Job accepted,Unknown,1,0,True,False
 User,jobGroup,Unknown,jobName,cburr,lhcb_user,lhcb,2025-03-31 09:40:07,,2025-03-31 09:40:12,,,,Waiting,Job accepted,Unknown,1,0,True,False
@@ -4702,7 +4688,7 @@ User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-05 19:42:48,,2025-04-05 1
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-05 19:42:48,,2025-04-05 19:42:47,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-05 19:42:48,,2025-04-05 19:42:48,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-05 19:42:48,,2025-04-05 19:42:48,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
-User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-05 19:42:48,,2025-04-05 19:42:48,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,
+User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-05 19:42:48,,2025-04-05 19:42:48,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-05 19:42:48,,2025-04-05 19:42:48,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-05 19:42:49,,2025-04-05 19:42:53,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-05 19:42:49,,2025-04-05 19:42:53,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
@@ -4739,7 +4725,7 @@ User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 19:22:42,,2025-04-06 1
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 19:22:43,,2025-04-06 19:22:42,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 19:22:43,,2025-04-06 19:22:42,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 19:22:43,,2025-04-06 19:22:42,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
-User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 19:22:43,,2025-04-06 19:22:43,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,
+User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 19:22:43,,2025-04-06 19:22:43,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 19:22:43,,2025-04-06 19:22:43,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 19:22:43,,2025-04-06 19:22:48,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 19:22:44,,2025-04-06 19:22:48,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
@@ -4775,7 +4761,7 @@ User,newJobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 20:56:21,,2025-04-0
 User,newJobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 20:56:21,,2025-04-06 20:56:20,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 20:56:21,,2025-04-06 20:56:20,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,True
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 20:56:21,,2025-04-06 20:56:21,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,True
-User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 20:56:22,,2025-04-06 20:56:22,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,
+User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 20:56:22,,2025-04-06 20:56:22,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 20:56:22,,2025-04-06 20:56:22,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:08:30,,2025-04-06 21:08:30,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:08:31,,2025-04-06 21:08:30,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
@@ -4801,7 +4787,7 @@ User,newJobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:15:27,,2025-04-0
 User,newJobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:15:27,,2025-04-06 21:15:26,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:15:27,,2025-04-06 21:15:27,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,True
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:15:27,,2025-04-06 21:15:27,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,True
-User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:15:27,,2025-04-06 21:15:27,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,
+User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:15:27,,2025-04-06 21:15:27,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:15:28,,2025-04-06 21:15:27,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:15:37,,2025-04-06 21:15:37,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:15:37,,2025-04-06 21:15:37,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
@@ -4815,7 +4801,7 @@ User,newJobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:27:52,,2025-04-0
 User,newJobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:27:52,,2025-04-06 21:27:52,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:27:52,,2025-04-06 21:27:52,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,True
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:27:52,,2025-04-06 21:27:52,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,True
-User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:27:53,,2025-04-06 21:27:53,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,
+User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:27:53,,2025-04-06 21:27:53,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:27:53,,2025-04-06 21:27:53,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:27:56,,2025-04-06 21:27:56,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False
 User,jobGroup,ANY,jobName,cburr,lhcb_user,lhcb,2025-04-06 21:27:56,,2025-04-06 21:27:56,,,,Waiting,Pilot Agent Submission,Unknown,1,0,True,False

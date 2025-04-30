@@ -1513,53 +1513,61 @@ class JobDB(DB):
     def fillJobsHistorySummary(self):
         """Fill the JobsHistorySummary table with the summary of the jobs in a final state"""
 
+        # Create the staging table
+        createStagingTable_sql = "CREATE TABLE IF NOT EXISTS JobsHistorySummary_staging LIKE JobsHistorySummary"
+        if not (result := self._update(createStagingTable_sql))["OK"]:
+            return result
+
+        # Insert the data into the staging table
         defString = "Status, Site, Owner, OwnerGroup, JobGroup, JobType, ApplicationStatus, MinorStatus"
         valuesString = "COUNT(JobID), SUM(RescheduleCounter)"
         final_states = "', '".join(JobStatus.JOB_FINAL_STATES + JobStatus.JOB_REALLY_FINAL_STATES)
         final_states = f"'{final_states}'"
-
         query = (
-            f"INSERT INTO JobsHistorySummary SELECT {defString}, {valuesString} "
+            f"INSERT INTO JobsHistorySummary_staging SELECT {defString}, {valuesString} "
             f"FROM Jobs WHERE Status IN ({final_states}) AND LastUpdateTime < UTC_DATE() "
             f"GROUP BY {defString}"
         )
-        result = self._update(query)
-        if not result["OK"]:
+        if not (result := self._update(query))["OK"]:
             return result
-        return S_OK(result["Value"])
+
+        # Atomic swap
+        sql = (
+            "RENAME TABLE JobsHistorySummary TO JobsHistorySummary_old,"
+            "JobsHistorySummary_staging TO JobsHistorySummary;"
+            "DROP TABLE JobsHistorySummary_old;"
+        )
+        return self._update(sql)
 
     def getSummarySnapshot(self, requestedFields=False):
         """Get the summary snapshot for a given combination"""
         if not requestedFields:
             requestedFields = ["Status", "MinorStatus", "Site", "Owner", "OwnerGroup", "JobGroup"]
-        valueFields = ["COUNT(JobID)", "SUM(RescheduleCounter)"]
         defString = ", ".join(requestedFields)
-        valueString = ", ".join(valueFields)
         final_states = "', '".join(JobStatus.JOB_FINAL_STATES + JobStatus.JOB_REALLY_FINAL_STATES)
         final_states = f"'{final_states}'"
 
-        query = f"SELECT {defString}, {valueString} FROM ("
+        query = f"SELECT {defString}, SUM(JobCount) AS JobCount, SUM(RescheduleSum) AS RescheduleSum FROM ("
         # All jobs that are NOT in a final state
         query += (
-            f"SELECT {defString}, {valueString}, COUNT(JobID), SUM(RescheduleCounter) "
+            f"SELECT {defString}, COUNT(JobID) AS JobCount, SUM(RescheduleCounter) AS RescheduleSum "
             f"FROM Jobs WHERE STATUS NOT IN ({final_states}) "
-            f"GROUP BY {defString}, {valueString} "
+            f"GROUP BY {defString} "
         )
         query += "UNION ALL "
         # Recent jobs only (today) that are in a final state
         query += (
-            f"SELECT {defString}, {valueString}, COUNT(JobID), SUM(RescheduleCounter) "
+            f"SELECT {defString}, COUNT(JobID) AS JobCount, SUM(RescheduleCounter) AS RescheduleSum "
             f"FROM Jobs WHERE Status IN ({final_states}) AND LastUpdateTime >= UTC_DATE() "
-            f"GROUP BY {defString}, {valueString} "
+            f"GROUP BY {defString} "
         )
         query += "UNION ALL "
         # Cached history (of jobs in a final state)
-        query += f"SELECT * FROM JobsHistorySummary) AS combined GROUP BY {defString}, {valueString}"
+        query += (
+            f"SELECT {defString}, JobCount, RescheduleSum FROM JobsHistorySummary) AS combined GROUP BY {defString}"
+        )
 
-        result = self._query(query)
-        if not result["OK"]:
-            return result
-        return S_OK(((requestedFields + valueFields), result["Value"]))
+        return self._query(query)
 
     def removeInfoFromHeartBeatLogging(self, status, delTime, maxLines):
         """Remove HeartBeatLoggingInfo from DB.

@@ -6,7 +6,7 @@
 # pylint: disable=wrong-import-position
 
 import csv
-
+from datetime import datetime
 from unittest.mock import patch
 
 import DIRAC
@@ -190,17 +190,65 @@ def test_PivotedPilotSummaryTable():
     cleanUpPilots(pilotRef)
 
 
+# Parse date strings into datetime objects
+def process_data(data):
+    converted_data = []
+
+    for row in data:
+        # date fields
+        date_indices = [10, 11]  # Positions of date fields
+        for i in date_indices:
+            if not row[i]:
+                row[i] = None
+            else:
+                try:
+                    row[i] = datetime.strptime(row[i], "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    # Handle invalid dates
+                    row[i] = None
+        # Convert other fields to appropriate types
+        int_indices = [0, 1]  # Positions of integer fields
+        for i in int_indices:
+            if not row[i]:
+                row[i] = 0
+            else:
+                try:
+                    row[i] = int(row[i])
+                except ValueError:
+                    # Handle invalid integers
+                    row[i] = 0
+        float_indices = [9]  # Positions of float fields
+        for i in float_indices:
+            if not row[i]:
+                row[i] = 0
+            else:
+                try:
+                    row[i] = float(row[i])
+                except ValueError:
+                    # Handle invalid float
+                    row[i] = 0
+        converted_data.append(tuple(row))
+    return converted_data
+
+
 def test_summarySnapshot():
-    # insert some predefined jobs to test the summary snapshot
+    # insert some predefined pilots to test the summary snapshot
     with open("pilots.csv", newline="", encoding="utf-8") as csvfile:
         csvreader = csv.reader(csvfile)
         data = list(csvreader)
-        placeholders = ",".join(["%s"] * len(data[0]))
-        sql = f"INSERT INTO PilotAgents VALUES ({placeholders})"
-        res = paDB._updatemany(sql, data)
+        processed_data = process_data(data)
+        placeholders = ",".join(["%s"] * len(processed_data[0]))
+        sql = f"INSERT INTO PilotAgents (InitialJobID, CurrentJobID, PilotJobReference, PilotStamp, DestinationSite, Queue, GridSite, VO, GridType, BenchMark, SubmissionTime, LastUpdateTime, Status, StatusReason, AccountingSent) VALUES ({placeholders})"
+        res = paDB._updatemany(sql, processed_data)
         assert res["OK"], res["Message"]
     # Act
     res = paDB.fillPilotsHistorySummary()
     assert res["OK"], res["Message"]
     res = paDB.getSummarySnapshot()
     assert res["OK"], res["Message"]
+    requestedFields = ["GridSite", "GridType", "Status"]
+    defString = ", ".join(requestedFields)
+    simple_query = f"SELECT {defString}, COUNT(PilotID) AS PilotCount FROM PilotAgents GROUP BY {defString}"
+    res_sq = paDB._query(simple_query)
+    assert res_sq["OK"], res_sq["Message"]
+    assert sorted(res_sq["Value"]) == sorted(res["Value"])

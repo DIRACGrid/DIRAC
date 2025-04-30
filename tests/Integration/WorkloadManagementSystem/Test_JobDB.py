@@ -450,15 +450,12 @@ def test_attributes(jobDB):
 def process_data(jobIDs, data):
     converted_data = []
 
-    print(data[0])
     full_data = []
 
     for j, d in zip(jobIDs, data):
         row = list(d)
         row.insert(0, j)  # Insert JobID at the beginning of the row
         full_data.append(row)
-
-    print(full_data[0])
 
     for row in full_data:
         # date fields
@@ -483,12 +480,25 @@ def process_data(jobIDs, data):
                 except ValueError:
                     # Handle invalid integers
                     row[i] = 0
-        # Convert boolean fields
         converted_data.append(tuple(row))
     return converted_data
 
 
-def test_summarySnapshot(jobDB: JobDB):
+def test_summarySnapshot():
+    jobDB = JobDB()
+    for table in [
+        "InputData",
+        "JobParameters",
+        "AtticJobParameters",
+        "HeartBeatLoggingInfo",
+        "OptimizerParameters",
+        "JobCommands",
+        "Jobs",
+        "JobJDLs",
+    ]:
+        sqlCmd = f"DELETE from `{table}`"
+        jobDB._update(sqlCmd)
+
     # insert some predefined jobs to test the summary snapshot
     with open("jobs.csv", newline="", encoding="utf-8") as csvfile:
         csvreader = csv.reader(csvfile)
@@ -514,3 +524,9 @@ def test_summarySnapshot(jobDB: JobDB):
     assert res["OK"], res["Message"]
     res = jobDB.getSummarySnapshot()
     assert res["OK"], res["Message"]
+    requestedFields = ["Status", "MinorStatus", "Site", "Owner", "OwnerGroup", "JobGroup"]
+    defString = ", ".join(requestedFields)
+    simple_query = f"SELECT {defString}, COUNT(JobID) AS JobCount, SUM(RescheduleCounter) AS RescheduleSum FROM Jobs GROUP BY {defString}"
+    res_sq = jobDB._query(simple_query)
+    assert res_sq["OK"], res_sq["Message"]
+    assert sorted(res_sq["Value"]) == sorted(res["Value"])

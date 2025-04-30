@@ -1050,53 +1050,61 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
     def fillPilotsHistorySummary(self):
         """Fill the PilotsHistorySummary table with the summary of the Pilots in a final state"""
 
+        # Create the staging table
+        createStagingTable_sql = "CREATE TABLE IF NOT EXISTS PilotsHistorySummary_staging LIKE PilotsHistorySummary"
+        if not (result := self._update(createStagingTable_sql))["OK"]:
+            return result
+
+        # Insert the data into the staging table
         defString = "GridSite, GridType, Status"
         valuesString = "COUNT(PilotID)"
         final_states = "', '".join(PilotStatus.PILOT_FINAL_STATES)
         final_states = f"'{final_states}'"
 
         query = (
-            f"INSERT INTO PilotsHistorySummary SELECT {defString}, {valuesString} "
+            f"INSERT INTO PilotsHistorySummary_staging SELECT {defString}, {valuesString} "
             f"FROM PilotAgents WHERE Status IN ({final_states}) AND LastUpdateTime < UTC_DATE() "
             f"GROUP BY {defString}"
         )
-        result = self._update(query)
-        if not result["OK"]:
+        if not (result := self._update(query))["OK"]:
             return result
-        return S_OK(result["Value"])
+
+        # Atomic swap
+        sql = (
+            "RENAME TABLE PilotsHistorySummary TO PilotsHistorySummary_old,"
+            "PilotsHistorySummary_staging TO PilotsHistorySummary;"
+            "DROP TABLE PilotsHistorySummary_old;"
+        )
+        return self._update(sql)
 
     def getSummarySnapshot(self, requestedFields=False):
         """Get the summary snapshot for a given combination"""
         if not requestedFields:
             requestedFields = ["GridSite", "GridType", "Status"]
-        valueFields = ["COUNT(PilotID)"]
         defString = ", ".join(requestedFields)
-        valueString = ", ".join(valueFields)
+        valueString = "COUNT(PilotID) AS PilotCount"
         final_states = "', '".join(PilotStatus.PILOT_FINAL_STATES)
         final_states = f"'{final_states}'"
 
-        query = f"SELECT {defString}, {valueString} FROM ("
+        query = f"SELECT {defString}, SUM(PilotCount) AS PilotCount FROM ("
         # All Pilots that are NOT in a final state
         query += (
-            f"SELECT {defString}, {valueString}, COUNT(PilotID) "
-            f"FROM PilotsAgents WHERE STATUS NOT IN ({final_states}) "
-            f"GROUP BY {defString}, {valueString} "
+            f"SELECT {defString}, {valueString} "
+            f"FROM PilotAgents WHERE STATUS NOT IN ({final_states}) "
+            f"GROUP BY {defString} "
         )
         query += "UNION ALL "
         # Recent Pilots only (today) that are in a final state
         query += (
-            f"SELECT {defString}, {valueString}, COUNT(PilotID) "
-            f"FROM Pilots WHERE Status IN ({final_states}) AND LastUpdateTime >= UTC_DATE() "
-            f"GROUP BY {defString}, {valueString} "
+            f"SELECT {defString}, {valueString} "
+            f"FROM PilotAgents WHERE Status IN ({final_states}) AND LastUpdateTime >= UTC_DATE() "
+            f"GROUP BY {defString} "
         )
         query += "UNION ALL "
         # Cached history (of Pilots in a final state)
-        query += f"SELECT * FROM PilotsHistorySummary) AS combined GROUP BY {defString}, {valueString}"
+        query += f"SELECT * FROM PilotsHistorySummary) AS combined GROUP BY {defString}"
 
-        result = self._query(query)
-        if not result["OK"]:
-            return result
-        return S_OK(((requestedFields + valueFields), result["Value"]))
+        return self._query(query)
 
 
 class PivotedPilotSummaryTable:
