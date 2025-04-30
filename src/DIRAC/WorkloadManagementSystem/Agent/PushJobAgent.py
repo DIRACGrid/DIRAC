@@ -230,6 +230,12 @@ class PushJobAgent(JobAgent):
             return result
         pilotProxy = result["Value"]
 
+        # Dump the proxy to a file to get DiracX token (it's later used by DiracX)
+        result = gProxyManager.dumpProxyToFile(pilotProxy)
+        if not result["OK"]:
+            return result
+        os.environ["X509_USER_PROXY"] = result["Value"]
+
         for queueName, queueDictionary in queueDictItems:
             # Make sure there is no problem with the queue before trying to submit
             if not self._allowedToSubmit(queueName):

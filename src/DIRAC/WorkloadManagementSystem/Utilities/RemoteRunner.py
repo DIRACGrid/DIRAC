@@ -49,6 +49,11 @@ class RemoteRunner:
             f"site {self._workloadSite}, CE {self._workloadCE}, queue {self._workloadQueue}",
         )
 
+        # The CE interface needs to drop the token section from the proxy file to interact with the CE
+        # So we save the current proxy file location (which likely contains the DiracX token)
+        # and we will restore it at the end of the job
+        originalProxyLocation = os.environ.get("X509_USER_PROXY")
+
         # Set up Application Queue
         if not (result := self._setUpWorkloadCE(numberOfProcessors))["OK"]:
             result["Errno"] = DErrno.ERESUNA
@@ -87,6 +92,8 @@ class RemoteRunner:
             time.sleep(timeBetweenRetries)
         else:
             result["Errno"] = DErrno.EWMSSUBM
+            # Restore the original proxy location
+            os.environ["X509_USER_PROXY"] = originalProxyLocation
             return result
 
         jobID = result["Value"][0]
@@ -107,6 +114,8 @@ class RemoteRunner:
                 time.sleep(timeBetweenRetries)
             else:
                 result["Errno"] = DErrno.EWMSSTATUS
+                # Restore the original proxy location
+                os.environ["X509_USER_PROXY"] = originalProxyLocation
                 return result
 
             jobStatus = result["Value"][jobID]
@@ -123,6 +132,8 @@ class RemoteRunner:
             time.sleep(timeBetweenRetries)
         else:
             result["Errno"] = DErrno.EWMSJMAN
+            # Restore the original proxy location
+            os.environ["X509_USER_PROXY"] = originalProxyLocation
             return result
 
         output, error = result["Value"]
@@ -131,6 +142,8 @@ class RemoteRunner:
         self.log.info("Checking the integrity of the outputs...")
         if not (result := self._checkOutputIntegrity("."))["OK"]:
             result["Errno"] = DErrno.EWMSJMAN
+            # Restore the original proxy location
+            os.environ["X509_USER_PROXY"] = originalProxyLocation
             return result
         self.log.info("The output has been retrieved and declared complete")
 
@@ -145,6 +158,9 @@ class RemoteRunner:
             if not (result := workloadCE.cleanJob(jobID))["OK"]:
                 self.log.warn("Failed to clean the output remotely", result["Message"])
             self.log.info("The job has been remotely removed")
+
+        # Restore the original proxy location
+        os.environ["X509_USER_PROXY"] = originalProxyLocation
 
         commandStatus = {"Done": 0, "Failed": -1, "Killed": -2}
         return S_OK((commandStatus[jobStatus], output, error))
