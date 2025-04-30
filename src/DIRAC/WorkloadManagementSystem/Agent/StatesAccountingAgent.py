@@ -8,6 +8,7 @@
   :caption: StatesAccountingAgent options
 """
 import datetime
+import threading
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
@@ -67,15 +68,13 @@ class StatesAccountingAgent(AgentModule):
         if "Monitoring" in self.pilotMonitoringOption:
             self.pilotReporter = MonitoringReporter(monitoringType="PilotsHistory", failoverQueueName=messageQueue)
 
-        res = JobDB().fillJobsHistorySummary()
-        if not res["OK"]:
-            self.log.error("Could not fill the JobDB summary", res["Message"])
-            return S_ERROR()
+        threadJobDB = threading.Thread(target=JobDB().fillJobsHistorySummary)
+        threadJobDB.daemon = True
+        threadJobDB.start()
 
-        res = PilotAgentsDB().fillPilotsHistorySummary()
-        if not res["OK"]:
-            self.log.error("Could not fill the PilotAgentsDB summary", res["Message"])
-            return S_ERROR()
+        threadPilotDB = threading.Thread(target=PilotAgentsDB().fillPilotsHistorySummary)
+        threadPilotDB.daemon = True
+        threadPilotDB.start()
 
         self.__jobDBFields = []
         for field in self.__summaryKeyFieldsMapping:
