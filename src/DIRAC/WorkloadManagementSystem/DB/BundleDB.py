@@ -93,7 +93,7 @@ class BundleDB(DB):
         if not result["OK"]:
             return result
 
-        retVal = formatSelectOutput(result["Value"], [])
+        retVal = formatSelectOutput(result["Value"], ["BundleID", "ProcessorSum", "MaxProcessors", "Site", "CE", "Queue", "CEDict", "ExecTemplate", "TaskID", "Status"])
         return S_OK(retVal[0])
 
     def getJobsOfBundle(self, bundleId):
@@ -103,6 +103,7 @@ class BundleDB(DB):
             return result
 
         retVal = formatSelectOutput(result["Value"], ["JobID", "ExecutablePath", "Inputs"])
+        retVal["Inputs"] = retVal["Inputs"].split(" ")
         return S_OK(retVal)
 
     def setTaskId(self, bundleId, taskId):
@@ -114,6 +115,9 @@ class BundleDB(DB):
         return S_OK()
 
     def __createNewBundle(self, ceDict):
+        if "ExecTemplate" not in ceDict:
+            return S_ERROR("CE must have a properly formatted ExecTemplate")
+
         insertInfo = {
             "ProcessorSum": 0,
             "MaxProcessors": ceDict["NumberOfProcessors"],
