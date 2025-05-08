@@ -12,7 +12,6 @@ from DIRAC.WorkloadManagementSystem.Utilities.BundlerTemplates import generate_t
 
 
 class BundlerHandler(RequestHandler):
-
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         try:
@@ -22,12 +21,12 @@ class BundlerHandler(RequestHandler):
             cls.bundleDB = result["Value"](parentLogger=cls.log)
             cls.jobToCE = {}
             cls.ceFactory = ComputingElementFactory()
-        
+
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp}")
 
         return S_OK()
-    
+
     types_storeInBundle = [str, str, list, str, int, dict]
 
     def export_storeInBundle(self, jobId, executable, inputs, proxy, processors, ceDict):
@@ -77,7 +76,7 @@ class BundlerHandler(RequestHandler):
             self.log.error("Failed to obtain Bundle of JobId ", str(jobId))
             return result
 
-        bundleID = result["Value"]        
+        bundleID = result["Value"]
 
         # TODO: THIS CAN BE CACHED
         ce = self.__getJobCE(jobId)
@@ -85,12 +84,12 @@ class BundlerHandler(RequestHandler):
 
         if not result["OK"]:
             self.log.error("Failed to obtain Job Output of JobId ", str(jobId))
-        
+
         return result
 
     def __getJobBundle(self, jobId):
         result = self.bundleDB.getBundleIdFromJobId(jobId)
-        
+
         if not result["OK"]:
             self.log.error("Failed to obtain BundleId of JobId ", str(jobId))
             return result
@@ -108,7 +107,7 @@ class BundlerHandler(RequestHandler):
         if jobId not in self.jobToCE:
             # Look for it in the DB
             result = self.__getJobBundle(jobId)
-            
+
             if not result["OK"]:
                 self.log.error("Failed to obtain Bundle of JobId ", str(jobId))
                 return result
@@ -117,13 +116,13 @@ class BundlerHandler(RequestHandler):
             ceDict = literal_eval(result["Value"]["CEDict"])
             # Build the ce obtained from the DB
             result = self.ceFactory.getCE(ceParametersDict=ceDict)
-            
+
             if not result["OK"]:
                 self.log.error("Failed to CE of JobId ", str(jobId))
                 return result
-            
+
             self.jobToCE[jobId] = result["Value"]
-        
+
         return self.jobToCE[jobId]
 
     def __getJobTask(self, jobId):
@@ -137,7 +136,7 @@ class BundlerHandler(RequestHandler):
 
     def __wrapBundle(self, bundleId):
         result = self.bundleDB.getBundle(bundleId)
-        
+
         if not result["OK"]:
             self.log.error("Failed to obtain bundle while wrapping. BundleID=", str(bundleId))
             return result
@@ -145,25 +144,25 @@ class BundlerHandler(RequestHandler):
         bundle = result["Value"]
 
         result = self.bundleDB.getJobsOfBundle(bundleId)
-        
+
         if not result["OK"]:
             self.log.error("Failed to obtain bundled job while wrapping. BundleID=", str(bundleId))
             return result
 
         jobs = result["Value"]
-        
+
         template = bundle["ExecTemplate"]
         inputs = []
 
         for job in jobs:
             inputs.append(job["ExecutablePath"])
             inputs.append(job["Inputs"])
-        
+
         result = generate_template(template, inputs)
-        
+
         if not result["OK"]:
             return result
-        
+
         wrappedBundle = result["Value"]
         wrapperPath = f"/tmp/bundle_wrapper_{bundleId}"
 

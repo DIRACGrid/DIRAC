@@ -5,13 +5,14 @@ def generate_template(template: str, inputs: list[str]):
     template_lower = template.lower()
     func_name = "_generate_" + template_lower
     generator = globals()[func_name]
-    
+
     if not generator:
         return S_ERROR("Template not found")
-    
+
     template, formatted_inputs = generator(inputs)
 
     return S_OK(template.format(inputs=formatted_inputs))
+
 
 def _generate_bash(inputs: list[str]):
     template = """\
@@ -41,7 +42,7 @@ run_task() {{
 }}
 
 # execute tasks
-for input in ${{INPUT}}; do 
+for input in ${{INPUT}}; do
     [ -f "$input" ] || break
     taskdir="task_$(get_id ${{input}})"
     mkdir ${{taskdir}} && cd "$_" &&
@@ -53,6 +54,6 @@ done
 wait
 """
 
-    formatted_inputs = '(' + ', '.join(inputs) + ')'
+    formatted_inputs = "(" + ", ".join(inputs) + ")"
 
     return template, formatted_inputs
