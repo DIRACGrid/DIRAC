@@ -8,9 +8,11 @@ from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
+from DIRAC.WorkloadManagementSystem.Utilities.BundlerTemplates import generate_template
 
 
 class BundlerHandler(RequestHandler):
+
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         try:
@@ -26,56 +28,71 @@ class BundlerHandler(RequestHandler):
 
         return S_OK()
     
-    types_storeInBundle = [int, str, list, str, int, dict]
+    types_storeInBundle = [str, str, list, str, int, dict]
 
     def export_storeInBundle(self, jobId, executable, inputs, proxy, processors, ceDict):
-        ce = self.ceFactory.getCE(ceParametersDict=ceDict)
+        result = self.ceFactory.getCE(ceType=ceDict["CEType"], ceParametersDict=ceDict)
+
+        if not result["OK"]:
+            self.log.error("Failed obtain the CE with configuration: ", str(ceDict))
+            return result
+
+        ce = result["Value"]
         self.jobToCE[jobId] = ce
 
         result = self.bundleDB.insertJobToBundle(jobId, executable, inputs, processors, ceDict)
         if not result["OK"]:
-            return S_ERROR()
+            self.log.error("Failed to insert into a bundle the job with id ", str(jobId))
+            return result
 
-        bundleID = result["Value"]["BundleId"]
+        bundleId = result["Value"]["BundleId"]
         readyForSubmission = result["Value"]["Ready"]
+        self.log.info("Job inserted in bundle successfully")
 
         if readyForSubmission:
-            bundle_exe, bundle_inputs = self.__wrapBundle(bundleID)
+            self.log.info(f"Submitting bundle '{bundleId}' to CE '{ce.ceName}'")
+
+            bundle_exe, bundle_inputs = self.__wrapBundle(bundleId)
             result = ce.submitJob(bundle_exe, inputs=bundle_inputs, proxy=proxy)
 
             if not result["OK"]:
+                self.log.error("Failed to submit job to with id ", str(jobId))
                 return result
 
             taskID = result["Value"]
-            result = self.bundleDB.setTaskId(bundleID, taskID)
+            result = self.bundleDB.setTaskId(bundleId, taskID)
 
-            if not bundleID["OK"]:
+            if not result["OK"]:
+                self.log.error("Failed to set task id of JobId ", str(jobId))
                 return result
 
-        return S_OK({"BundleID": bundleID, "Executing": readyForSubmission})
+        return S_OK({"BundleID": bundleId, "Executing": readyForSubmission})
 
+    types_getOutput = [str]
 
-    types_getOutput = [int]
-
-    def export_getOutput(self, jobID):
-        result = self.bundleDB.getBundleIdFromJobId(jobID)
+    def export_getOutput(self, jobId):
+        result = self.bundleDB.getBundleIdFromJobId(jobId)
 
         if not result["OK"]:
+            self.log.error("Failed to obtain Bundle of JobId ", str(jobId))
             return result
+
         bundleID = result["Value"]        
 
-        ce = self.__getJobCE(jobID)
+        # TODO: THIS CAN BE CACHED
+        ce = self.__getJobCE(jobId)
         result = ce.getJobOutput(bundleID)
 
         if not result["OK"]:
-            return result
+            self.log.error("Failed to obtain Job Output of JobId ", str(jobId))
         
-        return result["Value"]
+        return result
 
-    def __getJobBundle(self, jobID):
-        result = self.bundleDB.getBundleIdFromJobId(jobID)
+    def __getJobBundle(self, jobId):
+        result = self.bundleDB.getBundleIdFromJobId(jobId)
         
         if not result["OK"]:
+            self.log.error("Failed to obtain BundleId of JobId ", str(jobId))
             return result
 
         bundleId = result["Value"]
@@ -83,17 +100,18 @@ class BundlerHandler(RequestHandler):
         result = self.bundleDB.getBundle(bundleId)
 
         if not result["OK"]:
-            return S_ERROR()
-        
-        return S_OK(result["Value"])
+            self.log.error
 
-    def __getJobCE(self, jobID):
-        if jobID not in self.jobToCE:
+        return result
+
+    def __getJobCE(self, jobId):
+        if jobId not in self.jobToCE:
             # Look for it in the DB
-            result = self.__getJobBundle(jobID)
+            result = self.__getJobBundle(jobId)
             
             if not result["OK"]:
-                return S_ERROR("Job not in a bundle")
+                self.log.error("Failed to obtain Bundle of JobId ", str(jobId))
+                return result
 
             # Convert the CEDict from string to a dictionary
             ceDict = literal_eval(result["Value"]["CEDict"])
@@ -101,23 +119,18 @@ class BundlerHandler(RequestHandler):
             result = self.ceFactory.getCE(ceParametersDict=ceDict)
             
             if not result["OK"]:
+                self.log.error("Failed to CE of JobId ", str(jobId))
                 return result
             
-            self.jobToCE[jobID] = result["Value"]
+            self.jobToCE[jobId] = result["Value"]
         
-        return self.jobToCE[jobID]
+        return self.jobToCE[jobId]
 
     def __getJobTask(self, jobId):
-        result = self.bundleDB.getBundleIdFromJobId(jobId)
+        result = self.__getJobBundle(jobId)
 
         if not result["OK"]:
-            return result
-        
-        bundleId = result["Value"]
-
-        result = self.bundleDB.getBundle(bundleId)
-
-        if not result["OK"]:
+            self.log.error("Failed to obtain task id of Job ", str(jobId))
             return result
 
         return result["Value"]["TaskID"]
@@ -126,6 +139,7 @@ class BundlerHandler(RequestHandler):
         result = self.bundleDB.getBundle(bundleId)
         
         if not result["OK"]:
+            self.log.error("Failed to obtain bundle while wrapping. BundleID=", str(bundleId))
             return result
 
         bundle = result["Value"]
@@ -133,19 +147,24 @@ class BundlerHandler(RequestHandler):
         result = self.bundleDB.getJobsOfBundle(bundleId)
         
         if not result["OK"]:
+            self.log.error("Failed to obtain bundled job while wrapping. BundleID=", str(bundleId))
             return result
 
         jobs = result["Value"]
         
-        wrapper = bundle["ExecTemplate"]
+        template = bundle["ExecTemplate"]
         inputs = []
-        execs = []
 
         for job in jobs:
-            execs.append(job["ExecutablePath"])
+            inputs.append(job["ExecutablePath"])
             inputs.append(job["Inputs"])
         
-        wrappedBundle = wrapper.format(inputs=','.join(execs))
+        result = generate_template(template, inputs)
+        
+        if not result["OK"]:
+            return result
+        
+        wrappedBundle = result["Value"]
         wrapperPath = f"/tmp/bundle_wrapper_{bundleId}"
 
         with open(wrapperPath, "x") as f:
