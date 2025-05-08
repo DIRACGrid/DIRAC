@@ -14,27 +14,28 @@
 USE BundleDB;
 
 -- ------------------------------------------------------------------------------
+DROP TABLE IF EXISTS `JobToBundle`;
 DROP TABLE IF EXISTS `BundlesInfo`;
+
 CREATE TABLE `BundlesInfo` (
     `BundleID`      INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
     `ProcessorSum`  INT(5) UNSIGNED NOT NULL DEFAULT 0,
     `MaxProcessors` INT(5) UNSIGNED NOT NULL,
-    `Site`          TEXT NOT NULL,
-    `CE`            TEXT NOT NULL,
-    `Queue`         TEXT NOT NULL,
+    `Site`          VARCHAR(128) NOT NULL,
+    `CE`            VARCHAR(128) NOT NULL,
+    `Queue`         VARCHAR(128) NOT NULL,
     `CEDict`        TEXT NOT NULL,
-    `ExecTemplate`  TEXT NOT NULL,
+    `ExecTemplate`  VARCHAR(25) NOT NULL,
     `TaskID`        INTEGER(11) UNSIGNED,
     `Status`        ENUM('Storing', 'Full', 'Sent', 'Finalized') NOT NULL DEFAULT 'Storing',
     PRIMARY KEY (BundleID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS `JobToBundle`;
 CREATE TABLE `JobToBundle` (
-    `JobID`             INTEGER(11) UNSIGNED NOT NULL,
+    `JobID`             VARCHAR(255) NOT NULL,
     `BundleID`          INTEGER(11) UNSIGNED NOT NULL,
-    `ExecutablePath`    TEXT NOT NULL,
+    `ExecutablePath`    VARCHAR(255) NOT NULL,
     `Inputs`            TEXT NOT NULL,
     PRIMARY KEY (`JobID`),
     FOREIGN KEY (`BundleID`) REFERENCES `BundlesInfo`(`BundleID`)
