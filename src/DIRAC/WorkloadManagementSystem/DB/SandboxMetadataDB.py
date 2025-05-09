@@ -309,7 +309,8 @@ class SandboxMetadataDB(DB):
             "TIMESTAMPDIFF( DAY, LastAccessTime, UTC_TIMESTAMP() ) >= %d" % self.__assignedSBGraceDays,
             f"! Assigned AND TIMESTAMPDIFF( DAY, LastAccessTime, UTC_TIMESTAMP() ) >= {self.__unassignedSBGraceDays}",
         ]
-        sqlCmd = f"SELECT SBId, SEName, SEPFN FROM `sb_SandBoxes` WHERE ( {' ) OR ( '.join(sqlCond)} )"
+        # Exclude sandboxes that are in S3 as those are handled by DiracX
+        sqlCmd = f"SELECT SBId, SEName, SEPFN FROM `sb_SandBoxes` WHERE SEPFN not like '/S3/%' AND (( {' ) OR ( '.join(sqlCond)} ))"
         return self._query(sqlCmd)
 
     def deleteSandboxes(self, SBIdList):
