@@ -350,6 +350,7 @@ class WebAppHandler(RequestHandler):
 
     types_getTransformationFilesSummaryWeb = [dict, list, int, int]
 
+    @classmethod
     def export_getTransformationFilesSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
         selectColumns = (["TransformationID", "Status", "UsedSE", "TargetSE"],)
         timeStamp = ("LastUpdate",)
@@ -426,6 +427,7 @@ class WebAppHandler(RequestHandler):
 
     types_getTransformationSummaryWeb = [dict, list, int, int]
 
+    @classmethod
     def export_getTransformationSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
         """Get the summary of the transformation information for a given page in the generic format"""
 
