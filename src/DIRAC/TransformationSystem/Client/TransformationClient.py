@@ -48,13 +48,6 @@ class TransformationClient(Client):
 
         getFileSummary(lfns)
         exists(lfns)
-
-    Web monitoring tools
-
-        getDistinctAttributeValues(attribute, selectDict)
-        getTransformationStatusCounters()
-        getTransformationSummary()
-        getTransformationSummaryWeb(selectDict, sortList, startItem, maxItems)
     """
 
     def __init__(self, **kwargs):

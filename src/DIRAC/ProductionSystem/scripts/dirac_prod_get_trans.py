@@ -16,14 +16,13 @@ def main():
     Script.registerArgument("prodID: Production ID")
     _, args = Script.parseCommandLine()
 
+    from DIRAC.MonitoringSystem.Client.WebAppClient import WebAppClient
     from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
-    from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
     # get arguments
     prodID = args[0]
 
     prodClient = ProductionClient()
-    transClient = TransformationClient()
 
     res = prodClient.getProductionTransformations(prodID)
     transIDs = []
@@ -70,7 +69,7 @@ def main():
     ]
     resList = []
 
-    res = transClient.getTransformationSummaryWeb({"TransformationID": transIDs}, [], 0, len(transIDs))
+    res = WebAppClient().getTransformationSummaryWeb({"TransformationID": transIDs}, [], 0, len(transIDs))
 
     if not res["OK"]:
         DIRAC.gLogger.error(res["Message"])

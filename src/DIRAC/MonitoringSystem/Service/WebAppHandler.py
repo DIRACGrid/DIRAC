@@ -8,7 +8,16 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.TransformationSystem.Client import TransformationFilesStatus
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_GET_INFO, JobPolicy
+
+TASKS_STATE_NAMES = ["TotalCreated", "Created"] + sorted(
+    set(JobStatus.JOB_STATES) | set(Request.ALL_STATES) | set(Operation.ALL_STATES)
+)
+FILES_STATE_NAMES = ["PercentProcessed", "Total"] + TransformationFilesStatus.TRANSFORMATION_FILES_STATES
 
 
 class WebAppHandler(RequestHandler):
@@ -26,6 +35,11 @@ class WebAppHandler(RequestHandler):
             if not result["OK"]:
                 return result
             cls.jobDB = result["Value"](parentLogger=cls.log)
+
+            result = ObjectLoader().loadObject("TransformationSystem.DB.TransformationDB", "TransformationDB")
+            if not result["OK"]:
+                return result
+            cls.transformationDB = result["Value"](parentLogger=cls.log)
 
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp}")
@@ -319,4 +333,199 @@ class WebAppHandler(RequestHandler):
         siteList.sort()
         resultDict["Site"] = siteList
 
+        return S_OK(resultDict)
+
+    ##############################################################################
+    # Transformations
+    ##############################################################################
+
+    types_getDistinctAttributeValues = [str, dict]
+
+    @classmethod
+    def export_getDistinctAttributeValues(cls, attribute, selectDict):
+        res = cls.transformationDB.getTableDistinctAttributeValues("Transformations", [attribute], selectDict)
+        if not res["OK"]:
+            return res
+        return S_OK(res["Value"][attribute])
+
+    types_getTransformationFilesSummaryWeb = [dict, list, int, int]
+
+    def export_getTransformationFilesSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
+        selectColumns = (["TransformationID", "Status", "UsedSE", "TargetSE"],)
+        timeStamp = ("LastUpdate",)
+        statusColumn = ("Status",)
+        fromDate = selectDict.get("FromDate", None)
+        if fromDate:
+            del selectDict["FromDate"]
+        # if not fromDate:
+        #  fromDate = last_update
+        toDate = selectDict.get("ToDate", None)
+        if toDate:
+            del selectDict["ToDate"]
+        # Sorting instructions. Only one for the moment.
+        if sortList:
+            orderAttribute = sortList[0][0] + ":" + sortList[0][1]
+        else:
+            orderAttribute = None
+        # Get the columns that match the selection
+        fcn = None
+        fcnName = "getTransformationFiles"
+        if hasattr(cls.transformationDB, fcnName) and callable(getattr(cls.transformationDB, fcnName)):
+            fcn = getattr(cls.transformationDB, fcnName)
+        if not fcn:
+            return S_ERROR(f"Unable to invoke gTransformationDB.{fcnName}, it isn't a member function")
+        res = fcn(condDict=selectDict, older=toDate, newer=fromDate, timeStamp=timeStamp, orderAttribute=orderAttribute)
+        if not res["OK"]:
+            return res
+
+        # The full list of columns in contained here
+        allRows = res["Value"]
+        # Prepare the standard structure now within the resultDict dictionary
+        resultDict = {}
+        # Create the total records entry
+        resultDict["TotalRecords"] = len(allRows)
+
+        # Get the rows which are within the selected window
+        if resultDict["TotalRecords"] == 0:
+            return S_OK(resultDict)
+        ini = startItem
+        last = ini + maxItems
+        if ini >= resultDict["TotalRecords"]:
+            return S_ERROR("Item number out of range")
+        if last > resultDict["TotalRecords"]:
+            last = resultDict["TotalRecords"]
+
+        selectedRows = allRows[ini:last]
+        resultDict["Records"] = []
+        for row in selectedRows:
+            resultDict["Records"].append(list(row.values()))
+
+        # Create the ParameterNames entry
+        resultDict["ParameterNames"] = list(selectedRows[0].keys())
+        # Find which element in the tuple contains the requested status
+        if statusColumn not in resultDict["ParameterNames"]:
+            return S_ERROR("Provided status column not present")
+
+        # Generate the status dictionary
+        statusDict = {}
+        for row in selectedRows:
+            status = row[statusColumn]
+            statusDict[status] = statusDict.setdefault(status, 0) + 1
+        resultDict["Extras"] = statusDict
+
+        # Obtain the distinct values of the selection parameters
+        res = cls.transformationDB.getTableDistinctAttributeValues(
+            "TransformationFiles", selectColumns, selectDict, older=toDate, newer=fromDate
+        )
+        distinctSelections = zip(selectColumns, [])
+        if res["OK"]:
+            distinctSelections = res["Value"]
+        resultDict["Selections"] = distinctSelections
+
+        return S_OK(resultDict)
+
+    types_getTransformationSummaryWeb = [dict, list, int, int]
+
+    def export_getTransformationSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
+        """Get the summary of the transformation information for a given page in the generic format"""
+
+        # Obtain the timing information from the selectDict
+        last_update = selectDict.get("CreationDate", None)
+        if last_update:
+            del selectDict["CreationDate"]
+        fromDate = selectDict.get("FromDate", None)
+        if fromDate:
+            del selectDict["FromDate"]
+        if not fromDate:
+            fromDate = last_update
+        toDate = selectDict.get("ToDate", None)
+        if toDate:
+            del selectDict["ToDate"]
+        # Sorting instructions. Only one for the moment.
+        if sortList:
+            orderAttribute = []
+            for i in sortList:
+                orderAttribute += [i[0] + ":" + i[1]]
+        else:
+            orderAttribute = None
+
+        # Get the transformations that match the selection
+        res = cls.transformationDB.getTransformations(
+            condDict=selectDict, older=toDate, newer=fromDate, orderAttribute=orderAttribute
+        )
+        if not res["OK"]:
+            return res
+
+        ops = Operations()
+        # Prepare the standard structure now within the resultDict dictionary
+        resultDict = {}
+        trList = res["Records"]
+        # Create the total records entry
+        nTrans = len(trList)
+        resultDict["TotalRecords"] = nTrans
+        # Create the ParameterNames entry
+        # As this list is a reference to the list in the DB, we cannot extend it, therefore copy it
+        resultDict["ParameterNames"] = list(res["ParameterNames"])
+        # Add the job states to the ParameterNames entry
+        taskStateNames = TASKS_STATE_NAMES + ops.getValue("Transformations/AdditionalTaskStates", [])
+        resultDict["ParameterNames"] += ["Jobs_" + x for x in taskStateNames]
+        # Add the file states to the ParameterNames entry
+        fileStateNames = FILES_STATE_NAMES + ops.getValue("Transformations/AdditionalFileStates", [])
+        resultDict["ParameterNames"] += ["Files_" + x for x in fileStateNames]
+
+        # Get the transformations which are within the selected window
+        if nTrans == 0:
+            return S_OK(resultDict)
+        ini = startItem
+        last = ini + maxItems
+        if ini >= nTrans:
+            return S_ERROR("Item number out of range")
+        if last > nTrans:
+            last = nTrans
+        transList = trList[ini:last]
+
+        statusDict = {}
+        extendableTranfs = ops.getValue("Transformations/ExtendableTransfTypes", ["Simulation", "MCsimulation"])
+        givenUpFileStatus = ops.getValue("Transformations/GivenUpFileStatus", ["MissingInFC"])
+        problematicStatuses = ops.getValue("Transformations/ProblematicStatuses", ["Problematic"])
+        # Add specific information for each selected transformation
+        for trans in transList:
+            transDict = dict(zip(resultDict["ParameterNames"], trans))
+
+            # Update the status counters
+            status = transDict["Status"]
+            statusDict[status] = statusDict.setdefault(status, 0) + 1
+
+            # Get the statistics on the number of jobs for the transformation
+            transID = transDict["TransformationID"]
+            res = cls.transformationDB.getTransformationTaskStats(transID)
+            taskDict = {}
+            if res["OK"] and res["Value"]:
+                taskDict = res["Value"]
+            for state in taskStateNames:
+                trans.append(taskDict.get(state, 0))
+
+            # Get the statistics for the number of files for the transformation
+            fileDict = {}
+            transType = transDict["Type"]
+            if transType.lower() in extendableTranfs:
+                fileDict["PercentProcessed"] = "-"
+            else:
+                res = cls.transformationDB.getTransformationStats(transID)
+                if res["OK"]:
+                    fileDict = res["Value"]
+                    total = fileDict["Total"]
+                    for stat in givenUpFileStatus:
+                        total -= fileDict.get(stat, 0)
+                    processed = fileDict.get(TransformationFilesStatus.PROCESSED, 0)
+                    fileDict["PercentProcessed"] = f"{int(processed * 1000.0 / total) / 10.0:.1f}" if total else 0.0
+            problematic = 0
+            for stat in problematicStatuses:
+                problematic += fileDict.get(stat, 0)
+            fileDict["Problematic"] = problematic
+            for state in fileStateNames:
+                trans.append(fileDict.get(state, 0))
+
+        resultDict["Records"] = transList
+        resultDict["Extras"] = statusDict
         return S_OK(resultDict)
