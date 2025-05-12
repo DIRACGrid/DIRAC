@@ -4,17 +4,13 @@
     The following methods are available in the Service interface
 """
 
-import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
-from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_GET_INFO, JobPolicy
 
 
 class JobMonitoringHandlerMixin:
@@ -46,44 +42,6 @@ class JobMonitoringHandlerMixin:
     def initializeRequest(self):
         credDict = self.getRemoteCredentials()
         self.vo = credDict.get("VO", Registry.getVOForGroup(credDict["group"]))
-
-    @classmethod
-    def parseSelectors(cls, selectDict=None):
-        """Parse selectors before DB query
-
-        :param dict selectDict: selectors
-
-        :return: str, str, dict -- start/end date, selectors
-        """
-        selectDict = selectDict or {}
-
-        # Get time period
-        startDate = selectDict.get("FromDate", None)
-        if startDate:
-            del selectDict["FromDate"]
-        # For backward compatibility
-        if startDate is None:
-            startDate = selectDict.get("LastUpdate", None)
-            if startDate:
-                del selectDict["LastUpdate"]
-        endDate = selectDict.get("ToDate", None)
-        if endDate:
-            del selectDict["ToDate"]
-
-        # Provide JobID bound to a specific PilotJobReference
-        # There is no reason to have both PilotJobReference and JobID in selectDict
-        # If that occurs, use the JobID instead of the PilotJobReference
-        pilotJobRefs = selectDict.get("PilotJobReference")
-        if pilotJobRefs:
-            del selectDict["PilotJobReference"]
-            if not selectDict.get("JobID"):
-                for pilotJobRef in [pilotJobRefs] if isinstance(pilotJobRefs, str) else pilotJobRefs:
-                    res = cls.pilotManager.getPilotInfo(pilotJobRef)
-                    if res["OK"] and "Jobs" in res["Value"][pilotJobRef]:
-                        selectDict["JobID"] = selectDict.get("JobID", [])
-                        selectDict["JobID"].extend(res["Value"][pilotJobRef]["Jobs"])
-
-        return startDate, endDate, selectDict
 
     @classmethod
     def getJobsAttributes(cls, *args, **kwargs):
@@ -190,22 +148,6 @@ class JobMonitoringHandlerMixin:
         return cls.jobDB.selectJobs(attrDict, newer=cutDate)
 
     ##############################################################################
-    types_getCounters = [list]
-
-    @classmethod
-    def export_getCounters(cls, attrList, attrDict=None, cutDate=""):
-        """
-        Retrieve list of distinct attributes values from attrList
-        with attrDict as condition.
-        For each set of distinct values, count number of occurences.
-        Return a list. Each item is a list with 2 items, the list of distinct
-        attribute values and the counter
-        """
-
-        _, _, attrDict = cls.parseSelectors(attrDict)
-        return cls.jobDB.getCounters("Jobs", attrList, attrDict, newer=str(cutDate), timeStamp="LastUpdateTime")
-
-    ##############################################################################
     types_getJobOwner = [int]
 
     @classmethod
@@ -294,122 +236,6 @@ class JobMonitoringHandlerMixin:
     @classmethod
     def export_getJobsSummary(cls, jobIDs):
         return cls.getJobsAttributes(jobIDs)
-
-    ##############################################################################
-    types_getJobPageSummaryWeb = [dict, list, int, int]
-
-    def export_getJobPageSummaryWeb(self, selectDict, sortList, startItem, maxItems, selectJobs=True):
-        """Get the summary of the job information for a given page in the
-        job monitor in a generic format
-        """
-
-        resultDict = {}
-
-        startDate, endDate, selectDict = self.parseSelectors(selectDict)
-
-        # initialize jobPolicy
-        credDict = self.getRemoteCredentials()
-        owner = credDict["username"]
-        ownerGroup = credDict["group"]
-        operations = Operations(group=ownerGroup)
-        globalJobsInfo = operations.getValue("/Services/JobMonitoring/GlobalJobsInfo", True)
-        jobPolicy = JobPolicy(owner, ownerGroup, globalJobsInfo)
-        jobPolicy.jobDB = self.jobDB
-        result = jobPolicy.getControlledUsers(RIGHT_GET_INFO)
-        if not result["OK"]:
-            return result
-        if not result["Value"]:
-            return S_ERROR(f"User and group combination has no job rights ({owner!r}, {ownerGroup!r})")
-        if result["Value"] != "ALL":
-            selectDict[("Owner", "OwnerGroup")] = result["Value"]
-
-        # Sorting instructions. Only one for the moment.
-        if sortList:
-            orderAttribute = sortList[0][0] + ":" + sortList[0][1]
-        else:
-            orderAttribute = None
-
-        result = self.jobDB.getCounters(
-            "Jobs", ["Status"], selectDict, newer=startDate, older=endDate, timeStamp="LastUpdateTime"
-        )
-        if not result["OK"]:
-            return result
-
-        statusDict = {}
-        nJobs = 0
-        for stDict, count in result["Value"]:
-            nJobs += count
-            statusDict[stDict["Status"]] = count
-
-        resultDict["TotalRecords"] = nJobs
-        if nJobs == 0:
-            return S_OK(resultDict)
-
-        resultDict["Extras"] = statusDict
-
-        if selectJobs:
-            iniJob = startItem
-            if iniJob >= nJobs:
-                return S_ERROR("Item number out of range")
-
-            result = self.jobDB.selectJobs(
-                selectDict, orderAttribute=orderAttribute, newer=startDate, older=endDate, limit=(maxItems, iniJob)
-            )
-            if not result["OK"]:
-                return result
-
-            summaryJobList = result["Value"]
-            if not globalJobsInfo:
-                validJobs, _invalidJobs, _nonauthJobs, _ownJobs = jobPolicy.evaluateJobRights(
-                    summaryJobList, RIGHT_GET_INFO
-                )
-                summaryJobList = validJobs
-
-            result = self.getJobsAttributes(summaryJobList)
-            if not result["OK"]:
-                return result
-
-            summaryDict = result["Value"]
-            # If no jobs can be selected after the properties check
-            if not summaryDict:
-                return S_OK(resultDict)
-
-            # Evaluate last sign of life time
-            for jobDict in summaryDict.values():
-                if not jobDict.get("HeartBeatTime") or jobDict["HeartBeatTime"] == "None":
-                    jobDict["LastSignOfLife"] = jobDict["LastUpdateTime"]
-                else:
-                    jobDict["LastSignOfLife"] = jobDict["HeartBeatTime"]
-
-            # prepare the standard structure now
-            # This should be faster than making a list of values()
-            for jobDict in summaryDict.values():
-                paramNames = list(jobDict)
-                break
-            records = [list(jobDict.values()) for jobDict in summaryDict.values()]
-
-            resultDict["ParameterNames"] = paramNames
-            resultDict["Records"] = records
-
-        return S_OK(resultDict)
-
-    ##############################################################################
-    types_getJobStats = [str, dict]
-
-    @classmethod
-    def export_getJobStats(cls, attribute, selectDict):
-        """Get job statistics distribution per attribute value with a given selection"""
-        startDate, endDate, selectDict = cls.parseSelectors(selectDict)
-        result = cls.jobDB.getCounters(
-            "Jobs", [attribute], selectDict, newer=startDate, older=endDate, timeStamp="LastUpdateTime"
-        )
-        if not result["OK"]:
-            return result
-        resultDict = {}
-        for cDict, count in result["Value"]:
-            resultDict[cDict[attribute]] = count
-
-        return S_OK(resultDict)
 
     ##############################################################################
     types_getJobParameter = [[str, int], str]

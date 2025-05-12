@@ -22,10 +22,10 @@ from DIRAC.Core.Utilities.TimeUtilities import fromString, second, toEpoch
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 
 
 class StalledJobAgent(AgentModule):
@@ -262,7 +262,7 @@ class StalledJobAgent(AgentModule):
             # There is no pilot reference, hence its status is unknown
             return S_OK("NoPilot")
 
-        result = PilotManagerClient().getPilotInfo(pilotReference)
+        result = PilotAgentsDB().getPilotInfo(pilotReference)
         if not result["OK"]:
             if DErrno.cmpError(result, DErrno.EWMSNOPILOT):
                 self.log.warn("No pilot found", f"for job {jobID}: {result['Message']}")

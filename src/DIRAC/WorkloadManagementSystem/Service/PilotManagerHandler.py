@@ -276,37 +276,6 @@ class PilotManagerHandler(RequestHandler):
         return cls.pilotAgentsDB.getPilotSummary(startdate, enddate)
 
     ##############################################################################
-    types_getPilotMonitorWeb = [dict, list, int, int]
-
-    @classmethod
-    def export_getPilotMonitorWeb(cls, selectDict, sortList, startItem, maxItems):
-        """Get the summary of the pilot information for a given page in the
-        pilot monitor in a generic format
-        """
-
-        return cls.pilotAgentsDB.getPilotMonitorWeb(selectDict, sortList, startItem, maxItems)
-
-    ##############################################################################
-    types_getPilotMonitorSelectors = []
-
-    @classmethod
-    def export_getPilotMonitorSelectors(cls):
-        """Get all the distinct selector values for the Pilot Monitor web portal page"""
-
-        return cls.pilotAgentsDB.getPilotMonitorSelectors()
-
-    ##############################################################################
-    types_getPilotSummaryWeb = [dict, list, int, int]
-
-    @classmethod
-    def export_getPilotSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
-        """Get the summary of the pilot information for a given page in the
-        pilot monitor in a generic format
-        """
-
-        return cls.pilotAgentsDB.getPilotSummaryWeb(selectDict, sortList, startItem, maxItems)
-
-    ##############################################################################
     types_getGroupedPilotSummary = [list]
 
     @classmethod
@@ -416,44 +385,6 @@ class PilotManagerHandler(RequestHandler):
         return cls.pilotAgentsDB.countPilots(condDict, older, newer, timeStamp)
 
     ##########################################################################################
-    types_getCounters = [str, list, dict]
-
-    @classmethod
-    def export_getCounters(cls, table, keys, condDict, newer=None, timeStamp="SubmissionTime"):
-        """Set the pilot agent status"""
-
-        return cls.pilotAgentsDB.getCounters(table, keys, condDict, newer=newer, timeStamp=timeStamp)
-
-    ##############################################################################
-    types_getPilotStatistics = [str, dict]
-
-    @classmethod
-    def export_getPilotStatistics(cls, attribute, selectDict):
-        """Get pilot statistics distribution per attribute value with a given selection"""
-
-        startDate = selectDict.get("FromDate", None)
-        if startDate:
-            del selectDict["FromDate"]
-
-        if startDate is None:
-            startDate = selectDict.get("LastUpdate", None)
-            if startDate:
-                del selectDict["LastUpdate"]
-        endDate = selectDict.get("ToDate", None)
-        if endDate:
-            del selectDict["ToDate"]
-
-        result = cls.pilotAgentsDB.getCounters(
-            "PilotAgents", [attribute], selectDict, newer=startDate, older=endDate, timeStamp="LastUpdateTime"
-        )
-        statistics = {}
-        if result["OK"]:
-            for status, count in result["Value"]:
-                statistics[status[attribute]] = count
-
-        return S_OK(statistics)
-
-    ##############################################################################
     types_deletePilots = [[list, str, int]]
 
     @classmethod

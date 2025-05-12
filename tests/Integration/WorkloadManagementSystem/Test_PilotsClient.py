@@ -58,14 +58,14 @@ def test_PilotsDB():
     res = pilots.getPilotSummary("", "")
     assert res["OK"], res["Message"]
     assert res["Value"]["Total"]["Submitted"] >= 1
-    res = pilots.getPilotMonitorWeb({}, [], 0, 100)
-    assert res["OK"], res["Message"]
-    assert res["Value"]["TotalRecords"] >= 1
-    res = pilots.getPilotMonitorSelectors()
-    assert res["OK"], res["Message"]
-    res = pilots.getPilotSummaryWeb({}, [], 0, 100)
-    assert res["OK"], res["Message"]
-    assert res["Value"]["TotalRecords"] >= 1
+    # res = pilots.getPilotMonitorWeb({}, [], 0, 100)
+    # assert res["OK"], res["Message"]
+    # assert res["Value"]["TotalRecords"] >= 1
+    # res = pilots.getPilotMonitorSelectors()
+    # assert res["OK"], res["Message"]
+    # res = pilots.getPilotSummaryWeb({}, [], 0, 100)
+    # assert res["OK"], res["Message"]
+    # assert res["Value"]["TotalRecords"] >= 1
 
     res = pilots.setAccountingFlag("anotherPilot", "True")
     assert res["OK"], res["Message"]
