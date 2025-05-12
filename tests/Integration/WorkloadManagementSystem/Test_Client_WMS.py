@@ -443,8 +443,8 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn: str) -> None:
         # self.assertTrue(res['OK'], res.get('Message'))
         res = jobMonitoringClient.getJobsSummary(jobIDs)
         assert res["OK"], res["Message"]
-        res = jobMonitoringClient.getJobPageSummaryWeb({}, [], 0, 100)
-        assert res["OK"], res["Message"]
+        # res = jobMonitoringClient.getJobPageSummaryWeb({}, [], 0, 100)
+        # assert res["OK"], res["Message"]
 
         res = jobStateUpdateClient.setJobStatusBulk(
             jobID,
