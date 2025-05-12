@@ -4,7 +4,7 @@
 from DIRAC.Core.Base.Client import Client, createClient
 
 
-@createClient("MonitoringSystem/WebApp")
+@createClient("Monitoring/WebApp")
 class WebAppClient(Client):
     """WebAppClient sets url for the WebAppHandler."""
 

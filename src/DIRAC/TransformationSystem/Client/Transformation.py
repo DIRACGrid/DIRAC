@@ -9,6 +9,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.API import API
 from DIRAC.Core.Utilities.JEncode import encode
 from DIRAC.Core.Utilities.PromptUser import promptUser
+from DIRAC.MonitoringSystem.Client.WebAppClient import WebAppClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.TransformationSystem.Client.BodyPlugin.BaseBody import BaseBody
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -498,7 +499,7 @@ class Transformation(API):
         ]
         dictList = []
 
-        result = self.transClient.getTransformationSummaryWeb(condDict, orderby, start, maxitems)
+        result = WebAppClient().getTransformationSummaryWeb(condDict, orderby, start, maxitems)
         if not result["OK"]:
             self._prettyPrint(result)
             return result
