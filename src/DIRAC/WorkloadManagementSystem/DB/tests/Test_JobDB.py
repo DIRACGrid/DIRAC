@@ -28,7 +28,7 @@ def test_getInputData(jobDB: JobDB):
     """Test the getInputData method from JobDB"""
     # Arrange
     jobDB._escapeString = MagicMock(return_value=S_OK())
-    jobDB._query = MagicMock(return_value=S_OK((("/vo/user/lfn1",), ("LFN:/vo/user/lfn2",))))
+    jobDB._query = MagicMock(return_value=S_OK([(1234, "/vo/user/lfn1"), (1234, "LFN:/vo/user/lfn2")]))
 
     # Act
     res = jobDB.getInputData(1234)
