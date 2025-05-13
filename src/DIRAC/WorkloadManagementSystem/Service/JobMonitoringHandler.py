@@ -276,7 +276,7 @@ class JobMonitoringHandlerMixin:
                 return res
             parameters = res["Value"]
         else:  # a service is connecting, no proxy, e.g. StalledJobAgent
-            q = "SELECT JobID, VO FROM Jobs WHERE JobID IN (%s)" % ",".join([str(jobID) for jobID in jobIDs])
+            q = f"SELECT JobID, VO FROM Jobs WHERE JobID IN ({','.join([str(jobID) for jobID in jobIDs])})"
             res = self.jobDB._query(q)
             if not res["OK"]:
                 return res

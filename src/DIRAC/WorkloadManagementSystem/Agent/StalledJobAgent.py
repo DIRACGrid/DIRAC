@@ -518,8 +518,7 @@ class StalledJobAgent(AgentModule):
         return startTime, endTime
 
     def _kickStuckJobs(self):
-        """Reschedule jobs stuck in initialization status Rescheduled,
-        Matched."""
+        """Reschedule jobs stuck in initialization status Rescheduled, Matched."""
 
         message = ""
 
@@ -550,7 +549,7 @@ class StalledJobAgent(AgentModule):
 
         jobIDs = result["Value"]
         if jobIDs:
-            self.log.info(f"Rescheduling {len(jobIDs)} jobs stuck in Rescheduled status")
+            self.log.info(f"Rescheduling {len(jobIDs)} jobs stuck in {JobStatus.RESCHEDULED} status")
             result = jobManagerClient.rescheduleJob(jobIDs)
             if not result["OK"]:
                 message = f"Failed to reschedule jobs stuck in {JobStatus.RESCHEDULED} status"
