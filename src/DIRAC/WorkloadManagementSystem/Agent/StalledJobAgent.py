@@ -21,11 +21,11 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.TimeUtilities import fromString, second, toEpoch
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
-from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getJobParameters
 
 
 class StalledJobAgent(AgentModule):
@@ -254,11 +254,11 @@ class StalledJobAgent(AgentModule):
 
     def _getJobPilotStatus(self, jobID):
         """Get the job pilot status."""
-        result = JobMonitoringClient().getJobParameter(jobID, "Pilot_Reference")
+        result = getJobParameters(jobID, "Pilot_Reference")
         if not result["OK"]:
             return result
-        pilotReference = result["Value"].get("Pilot_Reference", "Unknown")
-        if pilotReference == "Unknown":
+        pilotReference = result["Value"].get("Pilot_Reference")
+        if not pilotReference:
             # There is no pilot reference, hence its status is unknown
             return S_OK("NoPilot")
 
@@ -389,7 +389,7 @@ class StalledJobAgent(AgentModule):
             if lastHeartBeatTime is not None and lastHeartBeatTime > endTime:
                 endTime = lastHeartBeatTime
 
-            result = JobMonitoringClient().getJobParameter(jobID, "CPUNormalizationFactor")
+            result = getJobParameters(jobID, "CPUNormalizationFactor")
             if not result["OK"] or not result["Value"]:
                 self.log.error(
                     "Error getting Job Parameter CPUNormalizationFactor, setting 0",

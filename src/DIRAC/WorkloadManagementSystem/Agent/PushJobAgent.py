@@ -12,16 +12,14 @@
 import hashlib
 import json
 import os
-from pathlib import Path
 import random
 import shutil
 import sys
-from collections import defaultdict
 import time
+from collections import defaultdict
+from pathlib import Path
 
-from diraccfg import CFG
-
-from DIRAC import gConfig, S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues
 from DIRAC.Core.Utilities import DErrno
@@ -30,6 +28,7 @@ from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Resources.Computing import ComputingElement
+from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus, PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
@@ -41,11 +40,11 @@ from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapperUtilities import (
     resolveInputData,
     transferInputSandbox,
 )
-from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
-from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
-from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
 from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
+from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
+from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getJobParameters
+
 
 MAX_JOBS_MANAGED = 100
 
@@ -740,7 +739,7 @@ class PushJobAgent(JobAgent):
             return S_OK()
 
         # Get their parameters
-        if not (result := self.jobMonitoring.getJobParameters(jobs, ["GridCE", "TaskID", "Stamp"]))["OK"]:
+        if not (result := getJobParameters(jobs, ["GridCE", "TaskID", "Stamp"]))["OK"]:
             self.log.error("Failed to get the list of taskIDs", result["Message"])
             return result
 

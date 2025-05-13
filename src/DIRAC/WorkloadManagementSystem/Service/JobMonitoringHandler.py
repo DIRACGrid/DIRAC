@@ -11,6 +11,7 @@ from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
+from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getJobParameters
 
 
 class JobMonitoringHandlerMixin:
@@ -270,48 +271,8 @@ class JobMonitoringHandlerMixin:
         if not isinstance(jobIDs, list):
             jobIDs = [jobIDs]
         jobIDs = [int(jobID) for jobID in jobIDs]
-        if self.vo:  # a user is connecting, with a proxy
-            res = self.elasticJobParametersDB.getJobParameters(jobIDs, self.vo, parName)
-            if not res["OK"]:
-                return res
-            parameters = res["Value"]
-        else:  # a service is connecting, no proxy, e.g. StalledJobAgent
-            q = f"SELECT JobID, VO FROM Jobs WHERE JobID IN ({','.join([str(jobID) for jobID in jobIDs])})"
-            res = self.jobDB._query(q)
-            if not res["OK"]:
-                return res
-            if not res["Value"]:
-                return S_OK({})
-            # get the VO for each jobID
-            voDict = {}
-            for jobID, vo in res["Value"]:
-                if vo not in voDict:
-                    voDict[vo] = []
-                voDict[vo].append(jobID)
-            # get the parameters for each VO
-            parameters = {}
-            for vo, jobIDs in voDict.items():
-                res = self.elasticJobParametersDB.getJobParameters(jobIDs, vo, parName)
-                if not res["OK"]:
-                    return res
-                parameters.update(res["Value"])
 
-        # Need anyway to get also from JobDB, for those jobs with parameters registered in MySQL or in both backends
-        res = self.jobDB.getJobParameters(jobIDs, parName)
-        if not res["OK"]:
-            return res
-        parametersM = res["Value"]
-
-        # and now combine
-        final = dict(parametersM)
-        # if job in JobDB, update with parameters from ES if any
-        for jobID in final:
-            final[jobID].update(parameters.get(jobID, {}))
-        # if job in ES and not in JobDB, take ES
-        for jobID in parameters:
-            if jobID not in final:
-                final[jobID] = parameters[jobID]
-        return S_OK(final)
+        return getJobParameters(jobIDs, parName, self.vo or "")
 
     ##############################################################################
     types_getAtticJobParameters = [int]
