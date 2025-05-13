@@ -1510,7 +1510,7 @@ class JobDB(DB):
         return self._update(f"UPDATE JobCommands SET Status={status} WHERE JobID={jobID} AND Command={command}")
 
     #####################################################################################
-    def fillJobsHistorySummary(self):
+    def fillJobsHistorySummary(self, fill_time: str):
         """Fill the JobsHistorySummary table with the summary of the jobs in a final state"""
 
         # Create the staging table
@@ -1525,7 +1525,7 @@ class JobDB(DB):
         final_states = f"'{final_states}'"
         query = (
             f"INSERT INTO JobsHistorySummary_staging SELECT {defString}, {valuesString} "
-            f"FROM Jobs WHERE Status IN ({final_states}) AND LastUpdateTime < UTC_DATE() "
+            f"FROM Jobs WHERE Status IN ({final_states}) AND LastUpdateTime < '{fill_time}' "
             f"GROUP BY {defString}"
         )
         if not (result := self._update(query))["OK"]:
@@ -1539,7 +1539,7 @@ class JobDB(DB):
         )
         return self._update(sql)
 
-    def getSummarySnapshot(self, requestedFields=False):
+    def getSummarySnapshot(self, fill_time: str, requestedFields=False):
         """Get the summary snapshot for a given combination"""
         if not requestedFields:
             requestedFields = ["Status", "MinorStatus", "Site", "Owner", "OwnerGroup", "JobGroup"]
@@ -1555,10 +1555,10 @@ class JobDB(DB):
             f"GROUP BY {defString} "
         )
         query += "UNION ALL "
-        # Recent jobs only (today) that are in a final state
+        # Recent jobs only (after fill_time) that are in a final state
         query += (
             f"SELECT {defString}, COUNT(JobID) AS JobCount, SUM(RescheduleCounter) AS RescheduleSum "
-            f"FROM Jobs WHERE Status IN ({final_states}) AND LastUpdateTime >= UTC_DATE() "
+            f"FROM Jobs WHERE Status IN ({final_states}) AND LastUpdateTime >= '{fill_time}' "
             f"GROUP BY {defString} "
         )
         query += "UNION ALL "

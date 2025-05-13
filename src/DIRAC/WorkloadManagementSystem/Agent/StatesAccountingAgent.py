@@ -68,11 +68,15 @@ class StatesAccountingAgent(AgentModule):
         if "Monitoring" in self.pilotMonitoringOption:
             self.pilotReporter = MonitoringReporter(monitoringType="PilotsHistory", failoverQueueName=messageQueue)
 
-        threadJobDB = threading.Thread(target=JobDB().fillJobsHistorySummary)
+        # self.fill_time: now -1h
+        now = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
+        self.fill_time = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        threadJobDB = threading.Thread(target=lambda: JobDB().fillJobsHistorySummary(self.fill_time))
         threadJobDB.daemon = True
         threadJobDB.start()
 
-        threadPilotDB = threading.Thread(target=PilotAgentsDB().fillPilotsHistorySummary)
+        threadPilotDB = threading.Thread(target=lambda: PilotAgentsDB().fillPilotsHistorySummary(self.fill_time))
         threadPilotDB.daemon = True
         threadPilotDB.start()
 
@@ -96,7 +100,7 @@ class StatesAccountingAgent(AgentModule):
         # PilotsHistory to Monitoring
         if "Monitoring" in self.pilotMonitoringOption:
             self.log.info("Committing PilotsHistory to Monitoring")
-            result = PilotAgentsDB().getSummarySnapshot()
+            result = PilotAgentsDB().getSummarySnapshot(fill_time=self.fill_time)
             now = datetime.datetime.utcnow()
             if not result["OK"]:
                 self.log.error(
@@ -119,7 +123,7 @@ class StatesAccountingAgent(AgentModule):
 
         # WMSHistory to Monitoring or Accounting
         self.log.info(f"Committing WMSHistory to {'and '.join(self.jobMonitoringOption)} backend")
-        result = JobDB().getSummarySnapshot(self.__jobDBFields)
+        result = JobDB().getSummarySnapshot(fill_time=self.fill_time, requestedFields=self.__jobDBFields)
         now = datetime.datetime.utcnow()
         if not result["OK"]:
             self.log.error("Can't get the JobDB summary", f"{result['Message']}: won't commit WMSHistory at this cycle")

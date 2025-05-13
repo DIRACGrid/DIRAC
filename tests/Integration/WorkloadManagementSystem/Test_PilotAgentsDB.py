@@ -6,7 +6,7 @@
 # pylint: disable=wrong-import-position
 
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import DIRAC
@@ -242,9 +242,11 @@ def test_summarySnapshot():
         res = paDB._updatemany(sql, processed_data)
         assert res["OK"], res["Message"]
     # Act
-    res = paDB.fillPilotsHistorySummary()
+    now = datetime.utcnow() - timedelta(hours=1)
+    fill_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    res = paDB.fillPilotsHistorySummary(fill_time)
     assert res["OK"], res["Message"]
-    res = paDB.getSummarySnapshot()
+    res = paDB.getSummarySnapshot(fill_time)
     assert res["OK"], res["Message"]
     requestedFields = ["GridSite", "GridType", "Status"]
     defString = ", ".join(requestedFields)

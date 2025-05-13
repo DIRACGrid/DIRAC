@@ -1047,7 +1047,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
 
         return S_OK(resultDict)
 
-    def fillPilotsHistorySummary(self):
+    def fillPilotsHistorySummary(self, fill_time: str):
         """Fill the PilotsHistorySummary table with the summary of the Pilots in a final state"""
 
         # Create the staging table
@@ -1063,7 +1063,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
 
         query = (
             f"INSERT INTO PilotsHistorySummary_staging SELECT {defString}, {valuesString} "
-            f"FROM PilotAgents WHERE Status IN ({final_states}) AND LastUpdateTime < UTC_DATE() "
+            f"FROM PilotAgents WHERE Status IN ({final_states}) AND LastUpdateTime < '{fill_time}' "
             f"GROUP BY {defString}"
         )
         if not (result := self._update(query))["OK"]:
@@ -1077,7 +1077,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         )
         return self._update(sql)
 
-    def getSummarySnapshot(self, requestedFields=False):
+    def getSummarySnapshot(self, fill_time: str, requestedFields=False):
         """Get the summary snapshot for a given combination"""
         if not requestedFields:
             requestedFields = ["GridSite", "GridType", "Status"]
@@ -1097,7 +1097,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         # Recent Pilots only (today) that are in a final state
         query += (
             f"SELECT {defString}, {valueString} "
-            f"FROM PilotAgents WHERE Status IN ({final_states}) AND LastUpdateTime >= UTC_DATE() "
+            f"FROM PilotAgents WHERE Status IN ({final_states}) AND LastUpdateTime >= '{fill_time}' "
             f"GROUP BY {defString} "
         )
         query += "UNION ALL "

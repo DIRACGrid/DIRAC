@@ -520,9 +520,11 @@ def test_summarySnapshot():
         res = jobDB._updatemany(sql, processed_data)
         assert res["OK"], res["Message"]
     # Act
-    res = jobDB.fillJobsHistorySummary()
+    now = datetime.utcnow() - timedelta(hours=1)
+    fill_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    res = jobDB.fillJobsHistorySummary(fill_time)
     assert res["OK"], res["Message"]
-    res = jobDB.getSummarySnapshot()
+    res = jobDB.getSummarySnapshot(fill_time)
     assert res["OK"], res["Message"]
     requestedFields = ["Status", "MinorStatus", "Site", "Owner", "OwnerGroup", "JobGroup"]
     defString = ", ".join(requestedFields)
