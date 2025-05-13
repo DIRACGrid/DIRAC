@@ -514,7 +514,7 @@ class JobMonitoringHandlerMixin:
         return cls.jobDB.getHeartBeatData(jobID)
 
     ##############################################################################
-    types_getInputData = [int]
+    types_getInputData = [(int, list)]
 
     @classmethod
     def export_getInputData(cls, jobID):

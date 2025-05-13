@@ -11,8 +11,11 @@ The following options can be set in ``Systems/WorkloadManagement/Databases/JobDB
 * *CompressJDLs*:        Enable compression of JDLs when they are stored in the database, default *False*.
 
 """
+from __future__ import annotations
+
 import datetime
 import operator
+from typing import overload
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteTier
@@ -20,7 +23,14 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.DErrno import EWMSJMAN, EWMSSUBM, cmpError
-from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK, convertToReturnValue, returnValueOrRaise, SErrorException
+from DIRAC.Core.Utilities.ReturnValues import (
+    S_ERROR,
+    S_OK,
+    convertToReturnValue,
+    returnValueOrRaise,
+    SErrorException,
+    DReturnType,
+)
 from DIRAC.FrameworkSystem.Client.Logger import contextLogger
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
@@ -320,23 +330,42 @@ class JobDB(DB):
 
     #############################################################################
 
-    def getInputData(self, jobID):
+    @overload
+    def getInputData(self, jobID: int | str) -> DReturnType[list[str]]:
+        ...
+
+    @overload
+    def getInputData(self, jobID: list[int | str]) -> DReturnType[dict[int, list[str]]]:
+        ...
+
+    def getInputData(self, jobID: int | str | list[int | str]) -> DReturnType[list[str] | dict[int, list[str]]]:
         """Get input data for the given job"""
-        ret = self._escapeString(jobID)
-        if not ret["OK"]:
-            return ret
-        jobID = ret["Value"]
-        cmd = f"SELECT LFN FROM InputData WHERE JobID={jobID}"
+        if isinstance(jobID, (int, str)):
+            ret = self._escapeString(jobID)
+            if not ret["OK"]:
+                return ret
+            jobID = ret["Value"]
+            query = f"JobID={jobID}"
+            result = []
+        else:
+            job_ids = {int(i) for i in jobID}
+            query = f"JobID IN ({','.join(map(str, job_ids))})"
+            result = {i: [] for i in job_ids}
+        cmd = f"SELECT JobID, LFN FROM InputData WHERE {query}"
         res = self._query(cmd)
         if not res["OK"]:
             return res
 
-        inputData = [i[0] for i in res["Value"] if i[0].strip()]
-        for index, lfn in enumerate(inputData):
+        for jid, lfn in res["Value"]:
+            lfn = lfn.strip()
             if lfn.lower().startswith("lfn:"):
-                inputData[index] = lfn[4:]
+                lfn = lfn[4:]
+            if isinstance(result, list):
+                result.append(lfn)
+            else:
+                result[jid].append(lfn)
 
-        return S_OK(inputData)
+        return S_OK(result)
 
     #############################################################################
     def setInputData(self, jobID, inputData):
