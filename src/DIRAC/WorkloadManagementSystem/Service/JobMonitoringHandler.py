@@ -270,10 +270,31 @@ class JobMonitoringHandlerMixin:
         if not isinstance(jobIDs, list):
             jobIDs = [jobIDs]
         jobIDs = [int(jobID) for jobID in jobIDs]
-        res = self.elasticJobParametersDB.getJobParameters(jobIDs, self.vo, parName)
-        if not res["OK"]:
-            return res
-        parameters = res["Value"]
+        if self.vo:  # a user is connecting, with a proxy
+            res = self.elasticJobParametersDB.getJobParameters(jobIDs, self.vo, parName)
+            if not res["OK"]:
+                return res
+            parameters = res["Value"]
+        else:  # a service is connecting, no proxy, e.g. StalledJobAgent
+            q = "SELECT JobID, VO FROM Jobs WHERE JobID IN (%s)" % ",".join([str(jobID) for jobID in jobIDs])
+            res = self.jobDB._query(q)
+            if not res["OK"]:
+                return res
+            if not res["Value"]:
+                return S_OK({})
+            # get the VO for each jobID
+            voDict = {}
+            for jobID, vo in res["Value"]:
+                if vo not in voDict:
+                    voDict[vo] = []
+                voDict[vo].append(jobID)
+            # get the parameters for each VO
+            parameters = {}
+            for vo, jobIDs in voDict.items():
+                res = self.elasticJobParametersDB.getJobParameters(jobIDs, vo, parName)
+                if not res["OK"]:
+                    return res
+                parameters.update(res["Value"])
 
         # Need anyway to get also from JobDB, for those jobs with parameters registered in MySQL or in both backends
         res = self.jobDB.getJobParameters(jobIDs, parName)
