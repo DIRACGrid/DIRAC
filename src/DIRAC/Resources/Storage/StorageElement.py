@@ -438,10 +438,6 @@ class StorageElementItem:
 
             kwargs["occupancyLFN"] = occupancyLFN
 
-        filteredPlugins = self.__filterPlugins("getOccupancy")
-        if not filteredPlugins:
-            return S_ERROR(errno.EPROTONOSUPPORT, "No storage plugins to query the occupancy")
-
         # Call occupancy plugin if requested
         occupancyPlugin = self.options.get("OccupancyPlugin")
         if occupancyPlugin:
@@ -458,6 +454,10 @@ class StorageElementItem:
                 return self.checkOccupancy(occupancyDict, unit)
             except Exception as e:
                 return S_ERROR(f"Occupancy plugin failed: {str(e)}")
+
+        filteredPlugins = self.__filterPlugins("getOccupancy")
+        if not filteredPlugins:
+            return S_ERROR(errno.EPROTONOSUPPORT, "No storage plugins to query the occupancy")
 
         # Try all of the storages one by one
         for storage in filteredPlugins:
