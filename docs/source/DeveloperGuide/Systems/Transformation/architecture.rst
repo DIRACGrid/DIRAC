@@ -30,7 +30,6 @@ A technical drawing explaining the interactions between the various components f
       | Tables_in_TransformationDB   |
       +------------------------------+
       | AdditionalParameters         |
-      | DataFiles                    |
       | TaskInputs                   |
       | TransformationFileTasks      |
       | TransformationFiles          |

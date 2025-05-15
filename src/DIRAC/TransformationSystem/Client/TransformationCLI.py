@@ -4,13 +4,13 @@ import DIRAC
 
 DIRAC.initialize()  # Initialize configuration
 
-from DIRAC.Core.Base.CLI import CLI
 from DIRAC.Core.Base.API import API
+from DIRAC.Core.Base.CLI import CLI
 from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.TransformationSystem.Client.Transformation import Transformation
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 
 def printDict(dictionary):
@@ -562,25 +562,6 @@ class TransformationCLI(CLI, API):
             print(f"failed to add {lfn}: {error}")
         for lfn in sorted(res["Value"]["Successful"]):
             print(f"added {lfn}")
-
-    def do_removeFile(self, args):
-        """Remove file from transformation DB
-
-        usage: removeFile <lfn> [lfn]
-        """
-        argss = args.split()
-        if not len(argss) > 0:
-            print("no files supplied")
-            return
-        res = self.transClient.removeFile(argss)
-        if not res["OK"]:
-            print(f"failed to remove any files: {res['Message']}")
-            return
-        for lfn in sorted(res["Value"]["Failed"]):
-            error = res["Value"]["Failed"][lfn]
-            print(f"failed to remove {lfn}: {error}")
-        for lfn in sorted(res["Value"]["Successful"]):
-            print(f"removed {lfn}")
 
     def do_addReplica(self, args):
         """Add new replica to the transformation DB
