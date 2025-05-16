@@ -387,7 +387,12 @@ class SingularityComputingElement(ComputingElement):
                     continue
 
                 mountedPath = se.getStorageParameters(protocol="file")["Value"]["Path"]
-                bindPaths.append(f"{mountedPath}:{mountedPath}:ro")
+                mountOptions = se.getStorageParameters(protocol="file")["Value"].get("MountOptions", "ro")
+                if mountOptions not in ("rw", "ro"):
+                    self.log.warn(f"Unknown mount mode: {mountOptions}")
+                    continue
+
+                bindPaths.append(f"{mountedPath}:{mountedPath}:{mountOptions}")
             except KeyError:
                 pass
 
