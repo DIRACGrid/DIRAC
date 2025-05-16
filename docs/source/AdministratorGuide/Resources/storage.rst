@@ -282,6 +282,7 @@ If the local path follows the DIRAC convention (i.e. finishes with the LFN), the
       {
         Protocol = file
         Path = /mnt/lustre_3/storm_3/lhcbdisk/
+        MountOptions = rw # ro by default
         Host = localhost
         Access = local
       }
