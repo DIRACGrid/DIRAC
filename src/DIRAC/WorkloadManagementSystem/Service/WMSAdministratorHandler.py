@@ -3,7 +3,6 @@ This is a DIRAC WMS administrator interface.
 """
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -182,55 +181,6 @@ class WMSAdministratorHandlerMixin:
         if pilotReference:
             return self.pilotManager.getPilotOutput(pilotReference)
         return S_ERROR("No pilot job reference found")
-
-    ##############################################################################
-    types_getSiteSummaryWeb = [dict, list, int, int]
-
-    @classmethod
-    def export_getSiteSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
-        """Get the summary of the jobs running on sites in a generic format
-
-        :param dict selectDict: selectors
-        :param list sortList: sorting list
-        :param int startItem: start item number
-        :param int maxItems: maximum of items
-
-        :return: S_OK(dict)/S_ERROR()
-        """
-        return cls.jobDB.getSiteSummaryWeb(selectDict, sortList, startItem, maxItems)
-
-    ##############################################################################
-    types_getSiteSummarySelectors = []
-
-    @classmethod
-    def export_getSiteSummarySelectors(cls):
-        """Get all the distinct selector values for the site summary web portal page
-
-        :return: S_OK(dict)/S_ERROR()
-        """
-        resultDict = {}
-        statusList = ["Good", "Fair", "Poor", "Bad", "Idle"]
-        resultDict["Status"] = statusList
-        maskStatus = ["Active", "Banned", "NoMask", "Reduced"]
-        resultDict["MaskStatus"] = maskStatus
-
-        res = getSites()
-        if not res["OK"]:
-            return res
-        siteList = res["Value"]
-
-        countryList = []
-        for site in siteList:
-            if site.find(".") != -1:
-                country = site.split(".")[2].lower()
-                if country not in countryList:
-                    countryList.append(country)
-        countryList.sort()
-        resultDict["Country"] = countryList
-        siteList.sort()
-        resultDict["Site"] = siteList
-
-        return S_OK(resultDict)
 
 
 class WMSAdministratorHandler(WMSAdministratorHandlerMixin, RequestHandler):

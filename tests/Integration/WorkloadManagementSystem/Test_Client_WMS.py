@@ -29,8 +29,9 @@ import os
 import tempfile
 import time
 
-import DIRAC
 import pytest
+
+import DIRAC
 
 DIRAC.initialize()  # Initialize configuration
 
@@ -40,6 +41,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Interfaces.API.Dirac import Dirac
+from DIRAC.MonitoringSystem.Client.WebAppClient import WebAppClient
 from DIRAC.tests.Utilities.WMS import helloWorldJob, parametricJob
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
@@ -443,7 +445,7 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn: str) -> None:
         # self.assertTrue(res['OK'], res.get('Message'))
         res = jobMonitoringClient.getJobsSummary(jobIDs)
         assert res["OK"], res["Message"]
-        res = jobMonitoringClient.getJobPageSummaryWeb({}, [], 0, 100)
+        res = WebAppClient().getJobPageSummaryWeb({}, [], 0, 100)
         assert res["OK"], res["Message"]
 
         res = jobStateUpdateClient.setJobStatusBulk(

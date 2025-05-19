@@ -14,6 +14,7 @@ import DIRAC
 DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
+from DIRAC.MonitoringSystem.Client.WebAppClient import WebAppClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
 gLogger.setLevel("VERBOSE")
@@ -21,6 +22,7 @@ gLogger.setLevel("VERBOSE")
 
 def test_PilotsDB():
     pilots = PilotManagerClient()
+    webapp = WebAppClient()
 
     # This will allow you to run the test again if necessary
     for jobID in ["aPilot", "anotherPilot"]:
@@ -58,12 +60,12 @@ def test_PilotsDB():
     res = pilots.getPilotSummary("", "")
     assert res["OK"], res["Message"]
     assert res["Value"]["Total"]["Submitted"] >= 1
-    res = pilots.getPilotMonitorWeb({}, [], 0, 100)
+    res = webapp.getPilotMonitorWeb({}, [], 0, 100)
     assert res["OK"], res["Message"]
     assert res["Value"]["TotalRecords"] >= 1
-    res = pilots.getPilotMonitorSelectors()
+    res = webapp.getPilotMonitorSelectors()
     assert res["OK"], res["Message"]
-    res = pilots.getPilotSummaryWeb({}, [], 0, 100)
+    res = webapp.getPilotSummaryWeb({}, [], 0, 100)
     assert res["OK"], res["Message"]
     assert res["Value"]["TotalRecords"] >= 1
 

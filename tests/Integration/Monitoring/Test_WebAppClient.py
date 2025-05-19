@@ -5,15 +5,13 @@ import DIRAC
 DIRAC.initialize()  # Initialize configuration
 
 # sut
-from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
+from DIRAC.MonitoringSystem.Client.WebAppClient import WebAppClient
 
 
 def test_WMSAdministratorClient():
-    wmsAdministrator = WMSAdministratorClient()
-
-    res = wmsAdministrator.getSiteSummaryWeb({}, [], 0, 100)
+    res = WebAppClient().getSiteSummaryWeb({}, [], 0, 100)
     assert res["OK"], res["Message"]
     assert res["Value"]["TotalRecords"] in [0, 1, 2, 34]
 
-    res = wmsAdministrator.getSiteSummarySelectors()
+    res = WebAppClient().getSiteSummarySelectors()
     assert res["OK"], res["Message"]
