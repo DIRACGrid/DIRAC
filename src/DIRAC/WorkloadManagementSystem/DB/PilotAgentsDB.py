@@ -447,9 +447,10 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         """Get IDs of Jobs that were executed by a pilot"""
         cmd = "SELECT pilotID,JobID FROM JobToPilotMapping "
         if isinstance(pilotID, list):
-            cmd = cmd + " WHERE pilotID IN (%s)" % ",".join(["%s" % x for x in pilotID])
+            pilotIDs_string = ",".join(str(int(x)) for x in pilotID)
+            cmd = f"{cmd} WHERE pilotID IN ({pilotIDs_string})"
         else:
-            cmd = cmd + f" WHERE pilotID = {pilotID}"
+            cmd = f"{cmd} WHERE pilotID = {pilotID}"
 
         result = self._query(cmd)
         if not result["OK"]:

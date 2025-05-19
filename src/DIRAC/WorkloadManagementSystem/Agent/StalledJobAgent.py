@@ -20,12 +20,12 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.TimeUtilities import fromString, second, toEpoch
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
-from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getJobParameters
+from DIRAC.WorkloadManagementSystem.Utilities.JobStatusUtility import rescheduleJobs
 
 
 class StalledJobAgent(AgentModule):
@@ -529,17 +529,12 @@ class StalledJobAgent(AgentModule):
             return result
 
         jobIDs = result["Value"]
-        jobManagerClient = JobManagerClient()
         if jobIDs:
             self.log.info(f"Rescheduling {len(jobIDs)} jobs stuck in {JobStatus.MATCHED} status")
-            result = jobManagerClient.rescheduleJob(jobIDs)
+            result = rescheduleJobs(jobIDs)
             if not result["OK"]:
                 message = f"Failed to reschedule jobs stuck in {JobStatus.MATCHED} status"
                 message += "\n" + result["Message"]
-                if "InvalidJobIDs" in result:
-                    message += "\n" + "\tInvalid job IDs: " + str(result["InvalidJobIDs"])
-                if "NonauthorizedJobIDs" in result:
-                    message += "\n" + "\tNon authorized job IDs: " + str(result["NonauthorizedJobIDs"])
 
         checkTime = datetime.datetime.utcnow() - self.rescheduledTime * second
         result = self.jobDB.selectJobs({"Status": JobStatus.RESCHEDULED}, older=checkTime)
@@ -550,17 +545,13 @@ class StalledJobAgent(AgentModule):
         jobIDs = result["Value"]
         if jobIDs:
             self.log.info(f"Rescheduling {len(jobIDs)} jobs stuck in {JobStatus.RESCHEDULED} status")
-            result = jobManagerClient.rescheduleJob(jobIDs)
+            result = rescheduleJobs(jobIDs)
             if not result["OK"]:
                 message = f"Failed to reschedule jobs stuck in {JobStatus.RESCHEDULED} status"
                 message += "\n" + result["Message"]
-                if "InvalidJobIDs" in result:
-                    message += "\n" + "\tInvalid job IDs: " + str(result["InvalidJobIDs"])
-                if "NonauthorizedJobIDs" in result:
-                    message += "\n" + "\tNon authorized job IDs: " + str(result["NonauthorizedJobIDs"])
 
         if message:
-            return S_ERROR(message)
+            self.log.error(message)
         return S_OK()
 
     def _failSubmittingJobs(self):
