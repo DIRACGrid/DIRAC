@@ -1,3 +1,33 @@
+[v9.0.0a56]
+
+*Resources
+
+FIX: (#8197) SE: check the protocol only after checking the plugins when checking the occupancy
+
+*Core
+
+FIX: (#8193) consistent use of utcfromtimestamp in the Graph
+FIX: (#8187) Platform detection on recent EL9 broken
+
+*WorkloadManagementSystem
+
+FIX: (#8192) getJobParameters for the multi-VO case
+FIX: (#8192) stalledJobAgents talks directly to DBs
+
+*MonitoringSystem
+
+NEW: (#8190) WebAppHandler and Client, for WMS and TS related DIRAC WebApp calls
+
+*WorkloadManagement
+
+FIX: (#8189) Don't clean sandboxes which are on S3
+FIX: (#8184) PushJobAgent dumps the proxy to get access to DiracX token
+NEW: (#8183) Support bulk calls to JobMonitoring.getInputData
+
+*Tests
+
+CHANGE: (#8188) use a jwks instead of a single key
+
 [v9.0.0a55]
 
 
