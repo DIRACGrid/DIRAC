@@ -34,6 +34,7 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
 )
 from DIRAC.WorkloadManagementSystem.Utilities.JobModel import JobDescriptionModel
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
+from DIRAC.WorkloadManagementSystem.Utilities.JobStatusUtility import rescheduleJobs
 
 MAX_PARAMETRIC_JOBS = 20
 
@@ -345,8 +346,7 @@ class JobManagerHandlerMixin:
     types_rescheduleJob = []
 
     def export_rescheduleJob(self, jobIDs):
-        """Reschedule a single job. If the optional proxy parameter is given
-        it will be used to refresh the proxy in the Proxy Repository
+        """Reschedule a list of jobs.
 
         :param list jobIDs: list of job IDs
 
@@ -360,22 +360,12 @@ class JobManagerHandlerMixin:
         validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights(
             jobList, RIGHT_RESCHEDULE
         )
-        for jobID in validJobList:
-            self.taskQueueDB.deleteJob(jobID)
-            result = self.jobDB.rescheduleJob(jobID)
-            self.log.debug(str(result))
-            if not result["OK"]:
-                return result
-            self.jobLoggingDB.addLoggingRecord(
-                result["JobID"],
-                status=result["Status"],
-                minorStatus=result["MinorStatus"],
-                applicationStatus="Unknown",
-                source="JobManager",
-            )
+        res = rescheduleJobs(validJobList, source="JobManager")
+        if not res["OK"]:
+            self.log.error(res["Message"])
 
         if invalidJobList or nonauthJobList:
-            result = S_ERROR("Some jobs failed reschedule")
+            result = S_ERROR("Some jobs can not be rescheduled")
             if invalidJobList:
                 result["InvalidJobIDs"] = invalidJobList
             if nonauthJobList:

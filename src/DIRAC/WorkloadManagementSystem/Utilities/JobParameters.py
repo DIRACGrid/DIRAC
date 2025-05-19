@@ -146,8 +146,9 @@ def getNumberOfGPUs(siteName=None, gridCE=None, queue=None):
 def getJobParameters(jobIDs: list[int], parName: str | None, vo: str = "") -> dict:
     """Utility to get a job parameter for a list of jobIDs pertaining to a VO.
     If the jobID is not in the JobParametersDB, it will be looked up in the JobDB.
-    
+
     Requires direct access to the JobParametersDB and JobDB.
+
     :param jobIDs: list of jobIDs
     :param parName: name of the parameter to be retrieved
     :param vo: VO of the jobIDs

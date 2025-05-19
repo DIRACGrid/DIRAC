@@ -41,10 +41,9 @@ from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapperUtilities import (
     transferInputSandbox,
 )
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
+from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getJobParameters
 from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
-from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getJobParameters
-
 
 MAX_JOBS_MANAGED = 100
 
