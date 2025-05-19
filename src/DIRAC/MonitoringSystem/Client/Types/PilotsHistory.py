@@ -17,7 +17,7 @@ class PilotsHistory(BaseType):
 
         super().__init__()
 
-        self.keyFields = ["GridSite", "GridType", "Status"]
+        self.keyFields = ["GridSite", "GridType", "Status", "VO"]
 
         self.monitoringFields = ["NumOfPilots"]
 
@@ -28,6 +28,7 @@ class PilotsHistory(BaseType):
                 "GridSite": {"type": "keyword"},
                 "GridType": {"type": "keyword"},
                 "Status": {"type": "keyword"},
+                "VO": {"type": "keyword"},
                 "NumOfPilots": {"type": "long"},
             }
         )
