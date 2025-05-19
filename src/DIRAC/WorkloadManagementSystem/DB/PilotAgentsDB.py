@@ -943,15 +943,12 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
     def getPilotMonitorSelectors(self):
         """Get distinct values for the Pilot Monitor page selectors"""
 
-        paramNames = ["VO", "GridType", "Status", "DestinationSite", "GridSite"]
-
         resultDict = {}
-        for param in paramNames:
-            result = self.getDistinctAttributeValues("PilotAgents", param)
-            if result["OK"]:
-                resultDict[param] = result["Value"]
-            else:
+        for param in ["VO", "Status", "DestinationSite", "GridSite"]:
+            result = self.getDistinctAttributeValues("PilotsHistorySummary", param)
+            if not result["OK"]:
                 resultDict = []
+            resultDict[param] = result["Value"]    
 
         return S_OK(resultDict)
 
@@ -1047,18 +1044,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         resultDict["Records"] = records
 
         return S_OK(resultDict)
-
-    def getSummarySnapshot(self, requestedFields=False):
-        """Get the summary snapshot for a given combination"""
-        if not requestedFields:
-            requestedFields = ["GridSite", "GridType", "Status"]
-        valueFields = ["COUNT(PilotID)"]
-        defString = ", ".join(requestedFields)
-        valueString = ", ".join(valueFields)
-        result = self._query(f"SELECT {defString}, {valueString} FROM PilotAgents GROUP BY {defString}")
-        if not result["OK"]:
-            return result
-        return S_OK(((requestedFields + valueFields), result["Value"]))
 
 
 class PivotedPilotSummaryTable:

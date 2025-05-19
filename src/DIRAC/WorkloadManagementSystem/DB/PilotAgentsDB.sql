@@ -1,5 +1,3 @@
--- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.20 2009/08/26 09:39:53 rgracian Exp $
-
 -- ------------------------------------------------------------------------------
 --
 --  Schema definition for the PilotAgentsDB database - containing the Pilots status
@@ -48,7 +46,6 @@ CREATE TABLE `PilotAgents` (
   KEY `Statuskey` (`GridSite`,`DestinationSite`,`Status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-
 DROP TABLE IF EXISTS `JobToPilotMapping`;
 CREATE TABLE `JobToPilotMapping` (
   `PilotID` INT(11) UNSIGNED NOT NULL,
@@ -65,3 +62,77 @@ CREATE TABLE `PilotOutput` (
   `StdError` MEDIUMTEXT,
   PRIMARY KEY (`PilotID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- ------------------------------------------------------------------------------
+-- summary table and triggers
+-- ------------------------------------------------------------------------------
+
+-- summary for PilotsHistory
+
+DROP TABLE IF EXISTS `PilotsHistorySummary`;
+CREATE TABLE `PilotsHistorySummary` (
+  `GridSite` VARCHAR(128),
+  `DestinationSite` VARCHAR(128),
+  `Status` VARCHAR(32),
+  `VO` VARCHAR(128),
+  `PilotCount` INT,
+  PRIMARY KEY (`GridSite`,`DestinationSite`,`Status`, `VO`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- now the triggers
+
+DELIMITER //
+
+CREATE TRIGGER trg_PilotAgents_insert
+AFTER INSERT ON PilotAgents
+FOR EACH ROW
+BEGIN
+  INSERT INTO PilotsHistorySummary (GridSite, DestinationSite, Status, VO, PilotCount)
+  VALUES (NEW.GridSite, NEW.DestinationSite, NEW.Status, NEW.VO, 1)
+  ON DUPLICATE KEY UPDATE PilotCount = PilotCount + 1;
+END;
+//
+
+CREATE TRIGGER trg_PilotAgents_delete
+AFTER DELETE ON PilotAgents
+FOR EACH ROW
+BEGIN
+  UPDATE PilotsHistorySummary
+  SET PilotCount = PilotCount - 1
+  WHERE GridSite = OLD.GridSite
+    AND DestinationSite = OLD.DestinationSite
+    AND Status = OLD.Status
+    AND VO = OLD.VO;
+
+  -- Optional cleanup (remove zero rows)
+  DELETE FROM PilotsHistorySummary WHERE PilotCount = 0;
+END;
+//
+
+CREATE TRIGGER trg_PilotAgents_update_status
+AFTER UPDATE ON PilotAgents
+FOR EACH ROW
+BEGIN
+  IF OLD.Status != NEW.Status THEN
+
+    -- Decrease count from old status
+    UPDATE PilotsHistorySummary
+    SET PilotCount = PilotCount - 1
+    WHERE GridSite = OLD.GridSite
+      AND DestinationSite = OLD.DestinationSite
+      AND Status = OLD.Status
+      AND VO = OLD.VO;
+
+    -- Delete row if count drops to zero
+    DELETE FROM PilotsHistorySummary WHERE PilotCount = 0;
+
+    -- Increase count for new status
+    INSERT INTO PilotsHistorySummary (GridSite, DestinationSite, Status, VO, PilotCount)
+    VALUES (NEW.GridSite, NEW.DestinationSite, NEW.Status, NEW.VO, 1)
+    ON DUPLICATE KEY UPDATE PilotCount = PilotCount + 1;
+
+  END IF;
+END;
+//

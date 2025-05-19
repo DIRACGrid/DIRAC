@@ -44,7 +44,7 @@ class StatesAccountingAgent(AgentModule):
     __renameFieldsMapping = {"JobType": "JobSplitType"}
 
     # PilotsHistory fields
-    __pilotsMapping = ["GridSite", "GridType", "Status", "NumOfPilots"]
+    __pilotsMapping = ["GridSite", "GridType", "Status", "VO", "NumOfPilots"]
 
     def initialize(self):
         """Standard initialization"""
@@ -88,7 +88,8 @@ class StatesAccountingAgent(AgentModule):
         # PilotsHistory to Monitoring
         if "Monitoring" in self.pilotMonitoringOption:
             self.log.info("Committing PilotsHistory to Monitoring")
-            result = PilotAgentsDB().getSummarySnapshot()
+            sql = "SELECT * FROM PilotsHistorySummary ORDER BY GridSite, DestinationSite, Status, VO;"
+            result = PilotAgentsDB()._query(sql)
             now = datetime.datetime.utcnow()
             if not result["OK"]:
                 self.log.error(
