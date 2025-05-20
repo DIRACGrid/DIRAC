@@ -2132,14 +2132,39 @@ class ComponentInstaller:
         try:
             cmdLines = self._createMySQLCMDLines(dbSql)
 
-            # We need to run one SQL cmd at once, mysql is much happier that way.
-            # Create a string of commands, ignoring comment lines
-            sqlString = "\n".join(x for x in cmdLines if not x.startswith("--"))
+            # Now run each command (They are seperated by ;, or by a DELIMITER)
+            # We need to split the string into commands, and ignore any empty ones
 
-            # Now run each command (They are seperated by ;)
-            # Ignore any empty ones
-            cmds = [x.strip() for x in sqlString.split(";") if x.strip()]
-            for cmd in cmds:
+            # Handle DELIMITER statements in SQL
+            delimiter = ";"
+            commands = []
+            current_command = []
+            for line in cmdLines:
+                if line.startswith("--"):
+                    continue
+                if line.startswith("DELIMITER "):
+                    delimiter = line.split("DELIMITER ", 1)[1].strip()
+                    continue
+                if delimiter != ";":
+                    if line == delimiter:
+                        commands.append("\n".join(current_command).strip())
+                        current_command = []
+                    else:
+                        current_command.append(line)
+                else:
+                    if line.endswith(";"):
+                        current_command.append(line[:-1])
+                        commands.append("\n".join(current_command).strip())
+                        current_command = []
+                    else:
+                        current_command.append(line)
+            if current_command:
+                commands.append("\n".join(current_command).strip())
+
+            # Remove empty commands
+            commands = [cmd for cmd in commands if cmd]
+
+            for cmd in commands:
                 result = self.execMySQL(cmd, dbName)
                 if not result["OK"]:
                     error = "Failed to initialize Database"
