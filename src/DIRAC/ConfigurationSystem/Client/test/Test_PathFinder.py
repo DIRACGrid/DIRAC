@@ -11,9 +11,26 @@ from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationDat
 localCFGData = ConfigurationData(False)
 mergedCFG = CFG()
 mergedCFG.loadFromBuffer(
-    """
+    r"""
+DIRAC
+{
+  PreferredURLPatterns = dips://.*\.site:.*
+  PreferredURLPatterns += dips://.*\.other:.*
+}
 Systems
 {
+  Configuration
+  {
+    URLs
+    {
+      Server = dips://server1.site:1234/Configuration/Server
+      Server += dips://server2.site:1234/Configuration/Server
+      Server += dips://server3.site:1234/Configuration/Server
+      Server += dips://server4.site:1234/Configuration/Server
+      Server += dips://server.other:1234/Configuration/Server
+      Server += dips://server.external:1234/Configuration/Server
+    }
+  }
   WorkloadManagement
   {
     URLs
@@ -179,6 +196,29 @@ def test_getServiceFailoverURL(pathFinder, serviceName, service, result):
 def test_getServiceURLs(pathFinder, serviceName, service, failover, result):
     """Test getServiceURLs"""
     assert set(pathFinder.getServiceURLs(serviceName, service=service, failover=failover)) == result
+
+
+def test_getServiceURLsOrdering(pathFinder):
+    """Ensure the PreferredURLPattern option is respected"""
+    all_results = set()
+    for _ in range(10_000):
+        urls = pathFinder.getServiceURLs("Configuration", service="Server")
+        assert set(urls) == {
+            "dips://server1.site:1234/Configuration/Server",
+            "dips://server2.site:1234/Configuration/Server",
+            "dips://server3.site:1234/Configuration/Server",
+            "dips://server4.site:1234/Configuration/Server",
+            "dips://server.other:1234/Configuration/Server",
+            "dips://server.external:1234/Configuration/Server",
+        }
+        # The second to last URL should always be "other"
+        assert urls[-2] == "dips://server.other:1234/Configuration/Server"
+        # The last URL should always be the one which isn't preferred
+        assert urls[-1] == "dips://server.external:1234/Configuration/Server"
+        all_results.add(tuple(urls))
+    # There are 4! = 24 possible orderings of the preferred URLs, we should have seen all
+    # of them at least once in 10_000 iterations
+    assert len(all_results) >= 24
 
 
 @pytest.mark.parametrize(
