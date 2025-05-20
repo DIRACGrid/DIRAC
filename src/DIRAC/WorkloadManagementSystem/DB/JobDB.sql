@@ -40,7 +40,7 @@ CREATE TABLE `Jobs` (
   `JobName` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `Owner` VARCHAR(64) NOT NULL DEFAULT 'Unknown',
   `OwnerGroup` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
-  `VO` VARCHAR(32) NOT NULL DEFAULT 'Unknown',
+  `VO` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `SubmissionTime` DATETIME DEFAULT NULL,
   `RescheduleTime` DATETIME DEFAULT NULL,
   `LastUpdateTime` DATETIME DEFAULT NULL,
@@ -126,9 +126,110 @@ CREATE TABLE `JobCommands` (
   `JobID` INT(11) UNSIGNED NOT NULL,
   `Command` VARCHAR(100) NOT NULL,
   `Arguments` VARCHAR(100) NOT NULL,
-  `Status` VARCHAR(64) NOT NULL DEFAULT 'Received',
+  `Status` VARCHAR(32) NOT NULL DEFAULT 'Received',
   `ReceptionTime` DATETIME NOT NULL,
   `ExecutionTime` DATETIME DEFAULT NULL,
   PRIMARY KEY (`JobID`,`Arguments`,`ReceptionTime`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- ------------------------------------------------------------------------------
+-- summary table and triggers
+-- ------------------------------------------------------------------------------
+
+-- summary for JobsHistory
+
+DROP TABLE IF EXISTS `JobsHistorySummary`;
+CREATE TABLE `JobsHistorySummary` (
+  `ID` INT AUTO_INCREMENT PRIMARY KEY,
+  `Status` VARCHAR(32),
+  `Site` VARCHAR(100),
+  `Owner` VARCHAR(32),
+  `OwnerGroup` VARCHAR(128),
+  `VO` VARCHAR(128),
+  `JobGroup` VARCHAR(32),
+  `JobType` VARCHAR(32),
+  `ApplicationStatus` VARCHAR(255),
+  `MinorStatus` VARCHAR(128),
+  `JobCount` INT,
+  RescheduleSum INT,
+  UNIQUE KEY uq_summary (
+    `Status`, 
+    `Site`, 
+    `Owner`, 
+    `OwnerGroup`(32), 
+    `VO`,
+    `JobGroup`,
+    `JobType`,
+    `ApplicationStatus`(128),
+    `MinorStatus`
+  )
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- now the triggers
+
+DELIMITER //
+
+CREATE TRIGGER trg_Jobs_insert
+AFTER INSERT ON Jobs
+FOR EACH ROW
+BEGIN
+  INSERT INTO JobsHistorySummary (Status, Site, Owner, OwnerGroup, VO, JobGroup, JobType, ApplicationStatus, MinorStatus, JobCount, RescheduleSum)
+  VALUES (NEW.Status, NEW.Site, NEW.Owner, NEW.OwnerGroup, NEW.VO, NEW.JobGroup, NEW.JobType, NEW.ApplicationStatus, NEW.MinorStatus, 1, NEW.RescheduleCounter)
+  ON DUPLICATE KEY UPDATE JobCount = JobCount + 1, RescheduleSum = RescheduleSum + NEW.RescheduleCounter;
+END;
+//
+
+CREATE TRIGGER trg_Jobs_delete
+AFTER DELETE ON Jobs
+FOR EACH ROW
+BEGIN
+  UPDATE JobsHistorySummary
+  SET JobCount = JobCount - 1, RescheduleSum = RescheduleSum - OLD.RescheduleCounter
+  WHERE Status = OLD.Status
+    AND Site = OLD.Site
+    AND Owner = OLD.Owner
+    AND OwnerGroup = OLD.OwnerGroup
+    AND VO = OLD.VO
+    AND JobGroup = OLD.JobGroup
+    AND JobType = OLD.JobType
+    AND ApplicationStatus = OLD.ApplicationStatus
+    AND MinorStatus = OLD.MinorStatus;
+
+  -- Optional cleanup (remove zero rows)
+  DELETE FROM JobsHistorySummary WHERE JobCount = 0;
+END;
+//
+
+CREATE TRIGGER trg_Jobs_update_status
+AFTER UPDATE ON Jobs
+FOR EACH ROW
+BEGIN
+  IF OLD.Status != NEW.Status THEN
+
+    -- Decrease count from old status
+    UPDATE JobsHistorySummary
+    SET JobCount = JobCount - 1, RescheduleSum = RescheduleSum - OLD.RescheduleCounter
+    WHERE Status = OLD.Status
+      AND Site = OLD.Site
+      AND Owner = OLD.Owner
+      AND OwnerGroup = OLD.OwnerGroup
+      AND VO = OLD.VO
+      AND JobGroup = OLD.JobGroup
+      AND JobType = OLD.JobType
+      AND ApplicationStatus = OLD.ApplicationStatus
+      AND MinorStatus = OLD.MinorStatus;
+
+    -- Delete row if count drops to zero
+    DELETE FROM JobsHistorySummary WHERE JobCount = 0;
+
+    -- Increase count for new status
+    INSERT INTO JobsHistorySummary (Status, Site, Owner, OwnerGroup, JobGroup, VO, JobType, ApplicationStatus, MinorStatus, JobCount, RescheduleSum)
+    VALUES (NEW.Status, NEW.Site, NEW.Owner, NEW.OwnerGroup, NEW.JobGroup, NEW.VO, NEW.JobType, NEW.ApplicationStatus, NEW.MinorStatus, 1, NEW.RescheduleCounter)
+    ON DUPLICATE KEY UPDATE JobCount = JobCount + 1, RescheduleSum = RescheduleSum + NEW.RescheduleCounter;
+
+  END IF;
+END;
+//

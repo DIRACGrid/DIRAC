@@ -35,6 +35,7 @@ class StatesAccountingAgent(AgentModule):
         "User",
         "UserGroup",
         "JobGroup",
+        "VO",
         "JobType",
         "ApplicationStatus",
         "MinorStatus",
@@ -113,14 +114,14 @@ class StatesAccountingAgent(AgentModule):
 
         # WMSHistory to Monitoring or Accounting
         self.log.info(f"Committing WMSHistory to {'and '.join(self.jobMonitoringOption)} backend")
-        result = JobDB().getSummarySnapshot(self.__jobDBFields)
-        now = datetime.datetime.utcnow()
+        result = JobDB()._query("SELECT * FROM JobsHistorySummary")
         if not result["OK"]:
             self.log.error("Can't get the JobDB summary", f"{result['Message']}: won't commit WMSHistory at this cycle")
             return S_ERROR()
 
         values = result["Value"][1]
 
+        now = datetime.datetime.utcnow()
         self.log.info("Start sending WMSHistory records")
         for record in values:
             rD = {}

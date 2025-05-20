@@ -26,10 +26,10 @@ from DIRAC.Core.Utilities.DErrno import EWMSJMAN, EWMSSUBM, cmpError
 from DIRAC.Core.Utilities.ReturnValues import (
     S_ERROR,
     S_OK,
+    DReturnType,
+    SErrorException,
     convertToReturnValue,
     returnValueOrRaise,
-    SErrorException,
-    DReturnType,
 )
 from DIRAC.FrameworkSystem.Client.Logger import contextLogger
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
@@ -107,7 +107,7 @@ class JobDB(DB):
     def getDistinctJobAttributes(self, attribute, condDict=None, older=None, newer=None, timeStamp="LastUpdateTime"):
         """Get distinct values of the job attribute under specified conditions"""
         return self.getDistinctAttributeValues(
-            "Jobs", attribute, condDict=condDict, older=older, newer=newer, timeStamp=timeStamp
+            "JobsHistorySummary", attribute, condDict=condDict, older=older, newer=newer, timeStamp=timeStamp
         )
 
     #############################################################################
@@ -1479,19 +1479,6 @@ class JobDB(DB):
         status = ret["Value"]
 
         return self._update(f"UPDATE JobCommands SET Status={status} WHERE JobID={jobID} AND Command={command}")
-
-    #####################################################################################
-    def getSummarySnapshot(self, requestedFields=False):
-        """Get the summary snapshot for a given combination"""
-        if not requestedFields:
-            requestedFields = ["Status", "MinorStatus", "Site", "Owner", "OwnerGroup", "JobGroup"]
-        valueFields = ["COUNT(JobID)", "SUM(RescheduleCounter)"]
-        defString = ", ".join(requestedFields)
-        valueString = ", ".join(valueFields)
-        result = self._query(f"SELECT {defString}, {valueString} FROM Jobs GROUP BY {defString}")
-        if not result["OK"]:
-            return result
-        return S_OK(((requestedFields + valueFields), result["Value"]))
 
     def removeInfoFromHeartBeatLogging(self, status, delTime, maxLines):
         """Remove HeartBeatLoggingInfo from DB.
