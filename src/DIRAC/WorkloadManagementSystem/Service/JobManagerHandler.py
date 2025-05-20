@@ -34,7 +34,7 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
 )
 from DIRAC.WorkloadManagementSystem.Utilities.JobModel import JobDescriptionModel
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
-from DIRAC.WorkloadManagementSystem.Utilities.JobStatusUtility import rescheduleJobs
+from DIRAC.WorkloadManagementSystem.Utilities.Utils import rescheduleJobs
 
 MAX_PARAMETRIC_JOBS = 20
 

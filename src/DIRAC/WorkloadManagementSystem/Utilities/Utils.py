@@ -4,9 +4,12 @@ import os
 import sys
 import json
 
-from DIRAC import gLogger, S_OK
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 
 
 def createJobWrapper(
@@ -113,3 +116,35 @@ def createJobWrapper(
     if rootLocation != wrapperPath:
         generatedFiles["JobExecutableRelocatedPath"] = os.path.join(rootLocation, os.path.basename(jobExeFile))
     return S_OK(generatedFiles)
+
+
+def rescheduleJobs(jobIDs: list[int], source: str = "") -> dict:
+    """Utility to reschedule jobs (not atomic, nor bulk)
+    Requires direct access to the JobDB and TaskQueueDB
+
+    :param jobIDs: list of jobIDs
+    :param source: source of the reschedule
+    :return: S_OK/S_ERROR
+    :rtype: dict
+
+    """
+
+    failedJobs = []
+
+    for jobID in jobIDs:
+        result = JobDB().rescheduleJob(jobID)
+        if not result["OK"]:
+            failedJobs.append(jobID)
+            continue
+        TaskQueueDB().deleteJob(jobID)
+        JobLoggingDB().addLoggingRecord(
+            result["JobID"],
+            status=result["Status"],
+            minorStatus=result["MinorStatus"],
+            applicationStatus="Unknown",
+            source=source,
+        )
+
+    if failedJobs:
+        return S_ERROR(f"Failed to reschedule jobs {failedJobs}")
+    return S_OK()
