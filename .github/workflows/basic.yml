@@ -108,3 +108,49 @@ jobs:
           tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py \
           src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py \
           src/DIRAC/Resources/Computing/BatchSystems/*.py
+
+  diracx:
+    name: DiracX Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout DIRAC
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          path: DIRAC
+      - name: Checkout DiracX
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          repository: DIRACGrid/diracx
+          path: diracx
+      - uses: prefix-dev/setup-pixi@v0.8.8
+        with:
+          run-install: false
+          post-cleanup: false
+      - name: Apply workarounds
+        run: |
+          cd diracx
+          # Workaround for https://github.com/prefix-dev/pixi/issues/3762
+          sed -i.bak 's@editable = true@editable = false@g' pixi.toml
+          rm pixi.toml.bak
+          # Add annotations to github actions
+          pixi add --no-install --pypi --feature diracx-core pytest-github-actions-annotate-failures
+          # Add the current DIRAC clone to the pixi.toml
+          pixi add --no-install --pypi --feature diracx-core 'DIRAC @ file://'$PWD'/../DIRAC'
+          # Show any changes
+          git diff
+      - uses: prefix-dev/setup-pixi@v0.8.8
+        with:
+          cache: false
+          manifest-path: diracx/pixi.toml
+          environments: >-
+            diracx-core
+            diracx-db
+            diracx-logic
+            diracx-routers
+            diracx-client
+            diracx-api
+            diracx-cli
+      - name: Run pytest
+        run: cd diracx && pixi run pytest-diracx-all-one-by-one
