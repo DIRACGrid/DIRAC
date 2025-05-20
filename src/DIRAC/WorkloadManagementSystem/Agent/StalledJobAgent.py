@@ -25,7 +25,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getJobParameters
-from DIRAC.WorkloadManagementSystem.Utilities.JobStatusUtility import rescheduleJobs
+from DIRAC.WorkloadManagementSystem.Utilities.Utils import rescheduleJobs
 
 
 class StalledJobAgent(AgentModule):
