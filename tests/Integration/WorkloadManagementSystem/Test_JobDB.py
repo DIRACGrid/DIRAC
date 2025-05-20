@@ -6,6 +6,7 @@
 
 # pylint: disable=wrong-import-position, missing-docstring
 
+import csv
 from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
@@ -443,3 +444,104 @@ def test_attributes(jobDB):
     res = jobDB.getJobsAttributes([jobID_1, jobID_2], ["Status"])
     assert res["OK"], res["Message"]
     assert res["Value"] == {jobID_1: {"Status": JobStatus.DONE}, jobID_2: {"Status": JobStatus.RUNNING}}
+
+
+# Parse date strings into datetime objects
+def process_data(jobIDs, data):
+    converted_data = []
+
+    full_data = []
+
+    for j, d in zip(jobIDs, data):
+        row = list(d)
+        row.insert(0, j)  # Insert JobID at the beginning of the row
+        full_data.append(row)
+
+    for row in full_data:
+        # date fields
+        date_indices = [8, 9, 10, 11, 12, 13]  # Positions of date fields
+        for i in date_indices:
+            if not row[i]:
+                row[i] = None
+            else:
+                try:
+                    row[i] = datetime.strptime(row[i], "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    # Handle invalid dates
+                    row[i] = None
+        # Convert other fields to appropriate types
+        int_indices = [17, 18]  # Positions of integer fields
+        for i in int_indices:
+            if not row[i]:
+                row[i] = 0
+            else:
+                try:
+                    row[i] = int(row[i])
+                except ValueError:
+                    # Handle invalid integers
+                    row[i] = 0
+        converted_data.append(tuple(row))
+    return converted_data
+
+
+def test_summarySnapshot():
+    # first delete all jobs
+    jobDB = JobDB()
+    for table in [
+        "InputData",
+        "JobParameters",
+        "AtticJobParameters",
+        "HeartBeatLoggingInfo",
+        "OptimizerParameters",
+        "JobCommands",
+        "Jobs",
+        "JobJDLs",
+    ]:
+        sqlCmd = f"DELETE from `{table}`"
+        jobDB._update(sqlCmd)
+    sql = "DELETE FROM JobsHistorySummary"
+    res = jobDB._update(sql)
+    assert res["OK"], res["Message"]
+
+    # insert some predefined jobs to test the summary snapshot
+    with open("jobs.csv", newline="", encoding="utf-8") as csvfile:
+        csvreader = csv.reader(csvfile)
+        data = list(csvreader)
+
+        # First inserting the JDLs
+        jdlData = [(jdl, "", "")] * len(data)
+        res = jobDB._updatemany("INSERT INTO JobJDLs (JDL, JobRequirements, OriginalJDL) VALUES (%s,%s,%s)", jdlData)
+        assert res["OK"], res["Message"]
+        # Getting which JobIDs were inserted
+        res = jobDB._query("SELECT JobID FROM JobJDLs")
+        assert res["OK"], res["Message"]
+        jobIDs = [row[0] for row in res["Value"]][0 : len(data)]
+
+        # Now inserting the jobs
+        processed_data = process_data(jobIDs, data)
+        placeholders = ",".join(["%s"] * len(processed_data[0]))
+        sql = f"INSERT INTO Jobs (JobID, JobType, JobGroup, Site, JobName, Owner, OwnerGroup, VO, SubmissionTime, RescheduleTime, LastUpdateTime, StartExecTime, HeartBeatTime, EndExecTime, Status, MinorStatus, ApplicationStatus, UserPriority, RescheduleCounter, VerifiedFlag, AccountedFlag) VALUES ({placeholders})"
+        res = jobDB._updatemany(sql, processed_data)
+        assert res["OK"], res["Message"]
+
+    requestedFields = [
+        "Status",
+        "MinorStatus",
+        "Site",
+        "Owner",
+        "OwnerGroup",
+        "VO",
+        "JobGroup",
+        "JobType",
+        "ApplicationStatus",
+    ]
+    defString = ", ".join(requestedFields)
+
+    # Check it corresponds to the basic "GROUP BY" query
+    simple_query = f"SELECT {defString}, COUNT(JobID) AS JobCount, SUM(RescheduleCounter) AS RescheduleSum FROM Jobs GROUP BY {defString} ORDER BY {defString};"
+    res_sq = jobDB._query(simple_query)
+    assert res_sq["OK"], res_sq["Message"]
+    sql = f"SELECT {defString}, JobCount, RescheduleSum FROM JobsHistorySummary ORDER BY {defString};"
+    result_summary = jobDB._query(sql)
+    assert result_summary["OK"], result_summary["Message"]
+    assert sorted(res_sq["Value"]) == sorted(result_summary["Value"])
