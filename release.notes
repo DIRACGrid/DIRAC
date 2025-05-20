@@ -1,3 +1,9 @@
+[v9.0.0a57]
+
+*WorkloadManagement
+
+FIX: (#8200) Remove accidental dependnecies in JobStateUtility
+
 [v9.0.0a56]
 
 *Resources
