@@ -948,7 +948,8 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             result = self.getDistinctAttributeValues("PilotsHistorySummary", param)
             if not result["OK"]:
                 resultDict = []
-            resultDict[param] = result["Value"]    
+            else:
+                resultDict[param] = result["Value"]
 
         return S_OK(resultDict)
 
