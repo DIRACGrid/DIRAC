@@ -13,7 +13,6 @@ from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import (
     getPilotCE,
     getPilotRef,
-    killPilotsInQueues,
     setPilotCredentials,
 )
 
@@ -300,35 +299,6 @@ class PilotManagerHandler(RequestHandler):
             return S_ERROR(f"Failed to get pilot for Job {int(jobID)}: {result.get('Message', '')}")
 
         return cls.pilotAgentsDB.getPilotInfo(pilotID=result["Value"])
-
-    ##############################################################################
-    types_killPilot = [[str, list]]
-
-    @classmethod
-    def export_killPilot(cls, pilotRefList):
-        """Kill the specified pilots"""
-        # Make a list if it is not yet
-        if isinstance(pilotRefList, str):
-            pilotRefList = [pilotRefList]
-
-        # Regroup pilots per site
-        pilotRefDict = {}
-        for pilotReference in pilotRefList:
-            result = cls.pilotAgentsDB.getPilotInfo(pilotReference)
-            if not result["OK"] or not result["Value"]:
-                return S_ERROR(f"Failed to get info for pilot {pilotReference}")
-
-            pilotDict = result["Value"][pilotReference]
-            queue = "@@@".join(
-                [pilotDict["VO"], pilotDict["GridSite"], pilotDict["DestinationSite"], pilotDict["Queue"]]
-            )
-            gridType = pilotDict["GridType"]
-            pilotRefDict.setdefault(queue, {})
-            pilotRefDict[queue].setdefault("PilotList", [])
-            pilotRefDict[queue]["PilotList"].append(pilotReference)
-            pilotRefDict[queue]["GridType"] = gridType
-
-        return killPilotsInQueues(pilotRefDict)
 
     ##############################################################################
     types_setJobForPilot = [[str, int], str]
