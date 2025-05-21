@@ -247,7 +247,7 @@ class JobMonitoringHandlerMixin:
         :param str/int jobID: one single Job ID
         :param str parName: one single parameter name
         """
-        res = self.elasticJobParametersDB.getJobParameters(int(jobID), self.vo, [parName])
+        res = getJobParameters([int(jobID)], parName, self.vo or "")
         if not res["OK"]:
             return res
         return S_OK(res["Value"].get(int(jobID), {}))
@@ -266,7 +266,7 @@ class JobMonitoringHandlerMixin:
     def export_getJobParameters(self, jobIDs, parName=None):
         """
         :param str/int/list jobIDs: one single job ID or a list of them
-        :param str parName: one single parameter name, a list or None (meaning all of them)
+        :param str parName: one single parameter name, or None (meaning all of them)
         """
         if not isinstance(jobIDs, list):
             jobIDs = [jobIDs]

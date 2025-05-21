@@ -254,7 +254,7 @@ class StalledJobAgent(AgentModule):
 
     def _getJobPilotStatus(self, jobID):
         """Get the job pilot status."""
-        result = getJobParameters(jobID, "Pilot_Reference")
+        result = getJobParameters([jobID], "Pilot_Reference")
         if not result["OK"]:
             return result
         pilotReference = result["Value"].get("Pilot_Reference")
@@ -389,11 +389,11 @@ class StalledJobAgent(AgentModule):
             if lastHeartBeatTime is not None and lastHeartBeatTime > endTime:
                 endTime = lastHeartBeatTime
 
-            result = getJobParameters(jobID, "CPUNormalizationFactor")
-            if not result["OK"] or not result["Value"]:
+            result = getJobParameters([jobID], "CPUNormalizationFactor")
+            if not result["OK"] or not result["Value"] or not result["Value"].get("CPUNormalizationFactor"):
                 self.log.error(
                     "Error getting Job Parameter CPUNormalizationFactor, setting 0",
-                    result.get("Message", "No such value"),
+                    result.get("Message"),
                 )
                 cpuNormalization = 0.0
             else:
