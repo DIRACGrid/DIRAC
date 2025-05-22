@@ -19,6 +19,9 @@ from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import (
+    killPilotsInQueues,
+)
 
 voName = ""
 ret = getProxyInfo(disableVOMS=True)
@@ -452,8 +455,28 @@ class DiracAdmin(API):
         if not isinstance(gridReference, (str, list)):
             return self._errorReport("Expected string or list of strings for pilot reference")
 
-        result = PilotManagerClient().killPilot(gridReference)
-        return result
+        # Make a list if it is not yet
+        if isinstance(gridReference, str):
+            gridReference = [gridReference]
+
+        # Regroup pilots per site
+        pilotRefDict = {}
+        for pilotReference in gridReference:
+            result = PilotManagerClient().getPilotInfo(pilotReference)
+            if not result["OK"] or not result["Value"]:
+                return S_ERROR(f"Failed to get info for pilot {pilotReference}")
+
+            pilotDict = result["Value"][pilotReference]
+            queue = "@@@".join(
+                [pilotDict["VO"], pilotDict["GridSite"], pilotDict["DestinationSite"], pilotDict["Queue"]]
+            )
+            gridType = pilotDict["GridType"]
+            pilotRefDict.setdefault(queue, {})
+            pilotRefDict[queue].setdefault("PilotList", [])
+            pilotRefDict[queue]["PilotList"].append(pilotReference)
+            pilotRefDict[queue]["GridType"] = gridType
+
+        return killPilotsInQueues(pilotRefDict)
 
     #############################################################################
     def getPilotLoggingInfo(self, gridReference):
