@@ -188,10 +188,9 @@ class WebAppHandler(RequestHandler):
                 )
                 summaryJobList = validJobs
 
-            res = self.jobDB.getJobsAttributes(summaryJobList)
-            if not res["OK"]:
-                return res
-            return S_OK(strToIntDict(res["Value"]))
+            result = self.jobDB.getJobsAttributes(summaryJobList)
+            if not result["OK"]:
+                return result
 
             summaryDict = result["Value"]
             # If no jobs can be selected after the properties check
@@ -352,14 +351,9 @@ class WebAppHandler(RequestHandler):
 
     @classmethod
     def export_getTransformationFilesSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
-        selectColumns = (["TransformationID", "Status", "UsedSE", "TargetSE"],)
-        timeStamp = ("LastUpdate",)
-        statusColumn = ("Status",)
         fromDate = selectDict.get("FromDate", None)
         if fromDate:
             del selectDict["FromDate"]
-        # if not fromDate:
-        #  fromDate = last_update
         toDate = selectDict.get("ToDate", None)
         if toDate:
             del selectDict["ToDate"]
@@ -369,26 +363,21 @@ class WebAppHandler(RequestHandler):
         else:
             orderAttribute = None
         # Get the columns that match the selection
-        fcn = None
-        fcnName = "getTransformationFiles"
-        if hasattr(cls.transformationDB, fcnName) and callable(getattr(cls.transformationDB, fcnName)):
-            fcn = getattr(cls.transformationDB, fcnName)
-        if not fcn:
-            return S_ERROR(f"Unable to invoke gTransformationDB.{fcnName}, it isn't a member function")
-        res = fcn(condDict=selectDict, older=toDate, newer=fromDate, timeStamp=timeStamp, orderAttribute=orderAttribute)
+        res = cls.transformationDB.getTransformationFiles(
+            condDict=selectDict, older=toDate, newer=fromDate, timeStamp="LastUpdate", orderAttribute=orderAttribute
+        )
         if not res["OK"]:
             return res
-
-        # The full list of columns in contained here
         allRows = res["Value"]
+
         # Prepare the standard structure now within the resultDict dictionary
         resultDict = {}
-        # Create the total records entry
         resultDict["TotalRecords"] = len(allRows)
 
-        # Get the rows which are within the selected window
-        if resultDict["TotalRecords"] == 0:
+        if not allRows:
             return S_OK(resultDict)
+
+        # Get the rows which are within the selected window
         ini = startItem
         last = ini + maxItems
         if ini >= resultDict["TotalRecords"]:
@@ -403,25 +392,25 @@ class WebAppHandler(RequestHandler):
 
         # Create the ParameterNames entry
         resultDict["ParameterNames"] = list(selectedRows[0].keys())
-        # Find which element in the tuple contains the requested status
-        if statusColumn not in resultDict["ParameterNames"]:
-            return S_ERROR("Provided status column not present")
 
         # Generate the status dictionary
         statusDict = {}
         for row in selectedRows:
-            status = row[statusColumn]
+            status = row["Status"]
             statusDict[status] = statusDict.setdefault(status, 0) + 1
         resultDict["Extras"] = statusDict
 
         # Obtain the distinct values of the selection parameters
         res = cls.transformationDB.getTableDistinctAttributeValues(
-            "TransformationFiles", selectColumns, selectDict, older=toDate, newer=fromDate
+            "TransformationFiles",
+            ["TransformationID", "Status", "UsedSE", "TargetSE"],
+            selectDict,
+            older=toDate,
+            newer=fromDate,
         )
-        distinctSelections = zip(selectColumns, [])
-        if res["OK"]:
-            distinctSelections = res["Value"]
-        resultDict["Selections"] = distinctSelections
+        if not res["OK"]:
+            return res
+        resultDict["Selections"] = res["Value"]
 
         return S_OK(resultDict)
 
