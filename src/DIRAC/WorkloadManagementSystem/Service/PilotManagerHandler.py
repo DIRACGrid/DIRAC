@@ -339,6 +339,7 @@ class PilotManagerHandler(RequestHandler):
     types_killPilot = [[str, list]]
 
     @classmethod
+    @deprecated("Removed from DIRAC v9 (use DIRAC.Interfaces.API.DiracAdmin.DiracAdmin().killPilot() instead)")
     def export_killPilot(cls, pilotRefList):
         """Kill the specified pilots"""
         # Make a list if it is not yet
