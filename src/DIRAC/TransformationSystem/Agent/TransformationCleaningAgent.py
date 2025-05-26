@@ -32,7 +32,6 @@ from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.TransformationSystem.Client import TransformationStatus
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
@@ -44,7 +43,6 @@ class TransformationCleaningAgent(AgentModule):
     """
     .. class:: TransformationCleaningAgent
 
-    :param ~DIRAC.DataManagementSystem.Client.DataManager.DataManager dm: DataManager instance
     :param ~TransformationClient.TransformationClient transClient: TransformationClient instance
     :param ~FileCatalogClient.FileCatalogClient metadataClient: FileCatalogClient instance
 
@@ -126,8 +124,6 @@ class TransformationCleaningAgent(AgentModule):
         self.reqClient = ReqClient()
         # # file catalog client
         self.metadataClient = FileCatalogClient()
-        # # job monitoring client
-        self.jobMonitoringClient = JobMonitoringClient()
         # # job DB
         self.jobDB = JobDB()
 
@@ -227,7 +223,8 @@ class TransformationCleaningAgent(AgentModule):
         So, we should just clean from time to time.
         What I added here is done only when the agent finalize, and it's quite light-ish operation anyway.
         """
-        res = self.jobDB.getDistinctJobAttributes("JobGroup", None, datetime.utcnow() - timedelta(days=365))
+
+        res = self.jobDB.getDistinctJobAttributes("JobGroup", older=datetime.utcnow() - timedelta(days=365))
         if not res["OK"]:
             self.log.error("Failed to get job groups", res["Message"])
             return res
@@ -271,7 +268,7 @@ class TransformationCleaningAgent(AgentModule):
 
             # Remove JobIDs that were unknown to the TransformationSystem
             jobGroupsToCheck = [str(transDict["TransformationID"]).zfill(8) for transDict in toClean + toArchive]
-            res = self.jobMonitoringClient.getJobs({"JobGroup": jobGroupsToCheck})
+            res = self.jobDB.selectJobs({"JobGroup": jobGroupsToCheck})
             if not res["OK"]:
                 return res
             jobIDsToRemove = [int(jobID) for jobID in res["Value"]]
