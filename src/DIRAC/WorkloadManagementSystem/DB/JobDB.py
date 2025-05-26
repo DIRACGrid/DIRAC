@@ -107,7 +107,7 @@ class JobDB(DB):
     def getDistinctJobAttributes(self, attribute, condDict=None, older=None, newer=None, timeStamp="LastUpdateTime"):
         """Get distinct values of the job attribute under specified conditions"""
         return self.getDistinctAttributeValues(
-            "JobsHistorySummary", attribute, condDict=condDict, older=older, newer=newer, timeStamp=timeStamp
+            "Jobs", attribute, condDict=condDict, older=older, newer=newer, timeStamp=timeStamp
         )
 
     #############################################################################
