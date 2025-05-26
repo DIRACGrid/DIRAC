@@ -108,12 +108,6 @@ def test_getJobSite():
     pytest.skip()
 
 
-def test_getJobStats():
-    # JobMonitoringClient().getJobStats(attribute: str, selectDict: dict)
-    method = JobMonitoringClient().getJobStats
-    pytest.skip()
-
-
 def test_getJobSummary():
     # JobMonitoringClient().getJobSummary(jobID: int)
     method = JobMonitoringClient().getJobSummary

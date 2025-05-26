@@ -69,7 +69,7 @@ class JobParametersDB(ElasticDB):
                 raise RuntimeError(result["Message"])
             self.log.always("Index created:", indexName)
 
-    def getJobParameters(self, jobIDs: int | list[int], vo: str, paramList=None) -> dict:
+    def getJobParameters(self, jobIDs: int | list[int], vo: str, paramList: list[str] | None = None) -> dict:
         """Get Job Parameters defined for jobID.
           Returns a dictionary with the Job Parameters.
           If paramList is empty - all the parameters are returned.
