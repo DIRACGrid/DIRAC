@@ -32,7 +32,7 @@ CREATE TABLE `PilotAgents` (
   `DestinationSite` VARCHAR(128) NOT NULL DEFAULT 'NotAssigned',
   `Queue` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `GridSite` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
-  `VO` VARCHAR(128) NOT NULL,
+  `VO` VARCHAR(64) NOT NULL,
   `GridType` VARCHAR(32) NOT NULL DEFAULT 'LCG',
   `BenchMark` DOUBLE NOT NULL DEFAULT 0.0,
   `SubmissionTime` DATETIME DEFAULT NULL,
@@ -75,7 +75,7 @@ CREATE TABLE `PilotsHistorySummary` (
   `GridSite` VARCHAR(128),
   `DestinationSite` VARCHAR(128),
   `Status` VARCHAR(32),
-  `VO` VARCHAR(128),
+  `VO` VARCHAR(64),
   `PilotCount` INT,
   PRIMARY KEY (`GridSite`,`DestinationSite`,`Status`, `VO`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
