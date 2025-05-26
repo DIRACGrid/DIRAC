@@ -87,7 +87,7 @@ class JobCleaningAgent(AgentModule):
 
     def _getAllowedJobTypes(self):
         """Get valid jobTypes"""
-        result = self.jobDB.getDistinctJobAttributes("JobType")
+        result = self.jobDB._query("SELECT DISTINCT JobType FROM JobsHistorySummary")
         if not result["OK"]:
             return result
         cleanJobTypes = []
