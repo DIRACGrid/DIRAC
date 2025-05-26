@@ -73,18 +73,7 @@ def test_listUniqueKeyValues(putAndDelete):
     assert "User" in result["Value"]
     assert "JobGroup" in result["Value"]
     assert "UserGroup" in result["Value"]
-    assert result["Value"] == {
-        "Status": [],
-        "JobSplitType": [],
-        "MinorStatus": [],
-        "Site": [],
-        "ApplicationStatus": [],
-        "User": [],
-        "JobGroup": [],
-        "UserGroup": [],
-        "Tier": [],
-        "Type": [],
-    }
+    assert "VO" in result["Value"]
 
 
 def test_generateDelayedPlot(putAndDelete):

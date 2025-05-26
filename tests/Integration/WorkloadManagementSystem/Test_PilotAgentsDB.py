@@ -249,16 +249,16 @@ def test_summarySnapshot():
         sql = f"INSERT INTO PilotAgents (InitialJobID, CurrentJobID, PilotJobReference, PilotStamp, DestinationSite, Queue, GridSite, VO, GridType, BenchMark, SubmissionTime, LastUpdateTime, Status, StatusReason, AccountingSent) VALUES ({placeholders})"
         res = paDB._updatemany(sql, processed_data)
         assert res["OK"], res["Message"]
-    sql = "SELECT * FROM PilotsHistorySummary ORDER BY GridSite, GridType, Status, VO;"
+    sql = "SELECT * FROM PilotsHistorySummary ORDER BY GridSite, DestinationSite, Status, VO;"
     result = PilotAgentsDB()._query(sql)
     assert result["OK"], result["Message"]
     values = result["Value"][1]
     assert len(values) == 5, "Expected 5 record in the summary"
     # Check it corresponds to the basic "GROUP BY" query
-    sql = "SELECT GridSite, GridType, Status, VO, COUNT(*) FROM PilotAgents GROUP BY GridSite, GridType, Status, VO ORDER BY GridSite, Status, VO;"
+    sql = "SELECT GridSite, DestinationSite, Status, VO, COUNT(*) FROM PilotAgents GROUP BY GridSite, DestinationSite, Status, VO ORDER BY GridSite, DestinationSite, Status, VO;"
     result_grouped = PilotAgentsDB()._query(sql)
     assert result_grouped["OK"], result_grouped["Message"]
-    sql = "SELECT * FROM PilotsHistorySummary ORDER BY GridSite, Status, VO;"
+    sql = "SELECT * FROM PilotsHistorySummary ORDER BY GridSite, DestinationSite, Status, VO;"
     result_summary = PilotAgentsDB()._query(sql)
     assert result_summary["OK"], result_summary["Message"]
     assert result_grouped["Value"] == result_summary["Value"], "Summary and grouped query results differ"
@@ -274,10 +274,10 @@ def test_summarySnapshot():
         res = paDB._update(sql)
         assert res["OK"], res["Message"]
     # Check it corresponds to the basic "GROUP BY" query
-    sql = "SELECT GridSite, GridType, Status, VO, COUNT(*) FROM PilotAgents GROUP BY GridSite, GridType, Status, VO ORDER BY GridSite, Status, VO;"
+    sql = "SELECT GridSite, DestinationSite, Status, VO, COUNT(*) FROM PilotAgents GROUP BY GridSite, DestinationSite, Status, VO ORDER BY GridSite, DestinationSite, Status, VO;"
     result_grouped = PilotAgentsDB()._query(sql)
     assert result_grouped["OK"], result_grouped["Message"]
-    sql = "select * FROM PilotsHistorySummary ORDER BY GridSite, Status, VO;"
+    sql = "select * FROM PilotsHistorySummary ORDER BY GridSite, DestinationSite, Status, VO;"
     result_summary = PilotAgentsDB()._query(sql)
     assert result_summary["OK"], result_summary["Message"]
     assert result_grouped["Value"] == result_summary["Value"], "Summary and grouped query results differ"

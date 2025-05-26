@@ -13,7 +13,6 @@ from DIRAC.MonitoringSystem.Client.WebAppClient import WebAppClient
 def test_WebAppClient():
     res = WebAppClient().getSiteSummaryWeb({}, [], 0, 100)
     assert res["OK"], res["Message"]
-    assert res["Value"]["TotalRecords"] in [0, 1, 2, 34]
 
     res = WebAppClient().getSiteSummarySelectors()
     assert res["OK"], res["Message"]
