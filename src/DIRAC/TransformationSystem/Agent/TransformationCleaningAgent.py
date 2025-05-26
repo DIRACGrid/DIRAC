@@ -224,7 +224,13 @@ class TransformationCleaningAgent(AgentModule):
         What I added here is done only when the agent finalize, and it's quite light-ish operation anyway.
         """
 
-        res = self.jobDB.getDistinctJobAttributes("JobGroup", older=datetime.utcnow() - timedelta(days=365))
+        res = self.jobDB.getDistinctAttributeValues(
+            "Jobs",
+            "JobGroup",
+            older=datetime.utcnow() - timedelta(days=365),
+            timeStamp="LastUpdateTime",
+        )
+
         if not res["OK"]:
             self.log.error("Failed to get job groups", res["Message"])
             return res

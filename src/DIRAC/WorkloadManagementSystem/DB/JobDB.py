@@ -104,13 +104,6 @@ class JobDB(DB):
         return S_OK()
 
     #############################################################################
-    def getDistinctJobAttributes(self, attribute, condDict=None, older=None, newer=None, timeStamp="LastUpdateTime"):
-        """Get distinct values of the job attribute under specified conditions"""
-        return self.getDistinctAttributeValues(
-            "Jobs", attribute, condDict=condDict, older=older, newer=newer, timeStamp=timeStamp
-        )
-
-    #############################################################################
     def getJobParameters(self, jobID, paramList=None):
         """Get Job Parameters defined for jobID.
         Returns a dictionary with the Job Parameters.
