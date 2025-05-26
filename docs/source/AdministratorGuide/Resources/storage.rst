@@ -282,6 +282,12 @@ If the local path follows the DIRAC convention (i.e. finishes with the LFN), the
       {
         Protocol = file
         Path = /mnt/lustre_3/storm_3/lhcbdisk/
+        # Note that rw is very dangerous
+        # as it allows the payload to delete
+        # anything in the mounted folder.
+        # You should use this option only in
+        # very controled environment (without user jobs as well)
+        MountOptions = rw # ro by default
         Host = localhost
         Access = local
       }
