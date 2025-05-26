@@ -1,3 +1,25 @@
+[v9.0.0a58]
+
+*Resources
+
+NEW: (#8206) allow to mount local folder in rw mode in SingularityCE
+
+*PilotManagerHandler
+
+CHANGE: (#8203) Moved killpilot to diracAdmin itself to avoid migrating it to DiracX while migrating PilotManagerHandler
+This is useful later because in DiracX we can't use it for now: it needs a proxy to contact the CS + we would need to import `MySQLdb` in DiracX (see error below):
+```
+from DIRAC.Core.Utilities.MySQL import MySQL
+File "/opt/conda/lib/python3.11/site-packages/DIRAC/Core/Utilities/MySQL.py", line 155, in <module>
+import MySQLdb
+ModuleNotFoundError: No module named 'MySQLdb'
+```
+This error occurred while importing `killPilotsInQueues` from DiracX via an import.
+
+*ConfigurationSystem
+
+NEW: (#8202) Add PreferredURLPattern for URL sorting
+
 [v9.0.0a57]
 
 *WorkloadManagement
