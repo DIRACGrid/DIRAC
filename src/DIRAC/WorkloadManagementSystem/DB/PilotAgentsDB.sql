@@ -106,8 +106,13 @@ BEGIN
     AND Status = OLD.Status
     AND VO = OLD.VO;
 
-  -- Optional cleanup (remove zero rows)
-  DELETE FROM PilotsHistorySummary WHERE PilotCount = 0;
+  -- Remove zero rows
+  DELETE FROM PilotsHistorySummary
+  WHERE PilotCount = 0
+    AND GridSite = OLD.GridSite
+    AND DestinationSite = OLD.DestinationSite
+    AND Status = OLD.Status
+    AND VO = OLD.VO;
 END;
 //
 
@@ -136,3 +141,5 @@ BEGIN
   END IF;
 END;
 //
+
+DELIMITER ;

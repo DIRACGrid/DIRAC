@@ -198,8 +198,18 @@ BEGIN
     AND ApplicationStatus = OLD.ApplicationStatus
     AND MinorStatus = OLD.MinorStatus;
 
-  -- Optional cleanup (remove zero rows)
-  DELETE FROM JobsHistorySummary WHERE JobCount = 0;
+  -- Remove zero rows
+  DELETE FROM JobsHistorySummary
+  WHERE JobCount = 0
+    AND Status = OLD.Status
+    AND Site = OLD.Site
+    AND Owner = OLD.Owner
+    AND OwnerGroup = OLD.OwnerGroup
+    AND VO = OLD.VO
+    AND JobGroup = OLD.JobGroup
+    AND JobType = OLD.JobType
+    AND ApplicationStatus = OLD.ApplicationStatus
+    AND MinorStatus = OLD.MinorStatus;
 END;
 //
 
@@ -233,3 +243,5 @@ BEGIN
   END IF;
 END;
 //
+
+DELIMITER ;
