@@ -580,7 +580,7 @@ class SiteDirector(AgentModule):
             pilotOptions = []
 
         pilotOptions = " ".join(pilotOptions)
-        self.log.verbose(f"pilotOptions: {pilotOptions}")
+        self.log.verbose(f"{pilotOptions=}")
 
         # if a global workingDirectory is defined for the CEType (like HTCondor)
         # use it (otherwise the __cleanup done by HTCondor will be in the wrong folder !)
