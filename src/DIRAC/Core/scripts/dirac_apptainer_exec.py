@@ -83,6 +83,7 @@ def main():
     cmd.extend(["--bind", f"{vomses_location}:/etc/grid-security/vomses"])  # X509_VOMSES
     cmd.extend(["--bind", "{0}:{0}:ro".format(etc_dir)])  # etc dir for dirac.cfg
     cmd.extend(["--bind", "{0}:{0}:ro".format(os.path.join(os.path.realpath(sys.base_prefix)))])  # code dir
+    cmd.extend(["--cwd", "/mnt"])  # set working directory to /mnt
 
     rootImage = user_image or gConfig.getValue("/Resources/Computing/Singularity/ContainerRoot") or CONTAINER_DEFROOT
 
