@@ -667,7 +667,7 @@ class AREXComputingElement(ARCComputingElement):
         for qi in queueInfo:
             if qi["ID"].endswith(magic):
                 result["RunningJobs"] = int(qi["RunningJobs"])
-                result["WaitingJobs"] = int(qi["WaitingJobs"])
+                result["WaitingJobs"] = int(qi["WaitingJobs"]) + int(qi["StagingJobs"]) + int(qi["PreLRMSWaitingJobs"])
                 break  # Pick the first (should be only ...) matching queue + VO
         else:
             return S_ERROR(f"Could not find the queue {self.queue} associated to VO {vo}")
