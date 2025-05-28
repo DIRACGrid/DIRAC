@@ -136,3 +136,19 @@ def test_scriptPilot3_4():
     assert 'os.environ["someName"]="someValue"' in res
     assert "lhcb-portal.cern.ch" in res
     assert """locations += ["file:/cvmfs/dirac.egi.eu/pilot"]""" in res
+
+
+def test_scriptPilot3_5():
+    """test script creation"""
+    res = pilotWrapperScript(
+        pilotFilesCompressedEncodedDict={"proxy": "thisIsSomeProxy"},
+        pilotOptions="-l LHCb --architectureScript=dirac-architecture --CVMFS_locations=/cvmfs/lhcb.cern.ch -e LHCb -N atlasce1.lnf.infn.it -Q condor -n LCG.Frascati.it --wnVO=lhcb --architectureScript=dirac-apptainer-exec dirac-architecture -o lbRunOnly",
+        envVariables={"someName": "someValue", "someMore": "oneMore"},
+        location="lhcb-portal.cern.ch",
+        CVMFS_locations=[],
+    )
+    assert 'os.environ["someName"]="someValue"' in res
+    assert "lhcb-portal.cern.ch" in res
+    assert """locations += ["file:/cvmfs/dirac.egi.eu/pilot"]""" in res
+    assert "dirac-architecture" in res
+    assert "dirac-apptainer-exec dirac-architecture" in res
