@@ -66,7 +66,6 @@ from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import writeToToke
 from DIRAC.Resources.Computing.BatchSystems.Condor import HOLD_REASON_SUBCODE, parseCondorStatus, subTemplate
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
-from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
 MANDATORY_PARAMETERS = ["Queue"]
 DEFAULT_WORKINGDIRECTORY = "/opt/dirac/pro/runit/WorkloadManagement/SiteDirectorHT"
@@ -386,33 +385,10 @@ class HTCondorCEComputingElement(ComputingElement):
 
     #############################################################################
     def getCEStatus(self):
-        """Method to return information on running and pending jobs.
-
-        Warning: information currently returned depends on the PilotManager and not HTCondor.
-        Results might be wrong if pilots or jobs are submitted manually via the CE.
-        """
-        result = S_OK()
-        result["SubmittedJobs"] = 0
-        result["RunningJobs"] = 0
-        result["WaitingJobs"] = 0
-
-        # getWaitingPilots
-        condDict = {"DestinationSite": self.ceName, "Status": PilotStatus.PILOT_WAITING_STATES}
-        res = PilotManagerClient().countPilots(condDict)
-        if res["OK"]:
-            result["WaitingJobs"] = int(res["Value"])
-        else:
-            self.log.warn(f"Failure getting pilot count for {self.ceName}: {res['Message']} ")
-
-        # getRunningPilots
-        condDict = {"DestinationSite": self.ceName, "Status": PilotStatus.RUNNING}
-        res = PilotManagerClient().countPilots(condDict)
-        if res["OK"]:
-            result["RunningJobs"] = int(res["Value"])
-        else:
-            self.log.warn(f"Failure getting pilot count for {self.ceName}: {res['Message']} ")
-
-        return result
+        """Method to return information on running and pending jobs."""
+        return S_ERROR(
+            "getCEStatus() not supported for HTCondorCEComputingElement: HTCondor does not expose this information"
+        )
 
     def getJobStatus(self, jobIDList):
         """Get the status information for the given list of jobs"""

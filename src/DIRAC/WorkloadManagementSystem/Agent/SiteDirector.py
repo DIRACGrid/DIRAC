@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any
 
 import DIRAC
-from DIRAC import S_ERROR, S_OK, gConfig
+from DIRAC import S_ERROR, S_OK
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.Types.PilotSubmission import (
