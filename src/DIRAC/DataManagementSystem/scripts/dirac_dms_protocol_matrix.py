@@ -177,7 +177,6 @@ def main():
     for src, dst in ((x, y) for x in fromSE for y in targetSE):
         if ftsTab:
             try:
-                # breakpoint()
                 fts3TpcProto = fts3Plugin.selectTPCProtocols(sourceSEName=ses[src].name, destSEName=ses[dst].name)
                 res = ses[dst].generateTransferURLsBetweenSEs(lfn, ses[src], fts3TpcProto)
             except ValueError as e:
