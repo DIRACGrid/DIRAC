@@ -333,13 +333,13 @@ class AuthServer(_AuthorizationServer):
         """Parse request. Rewrite authlib method."""
         return self.create_oauth2_request(request, JsonRequest, True)
 
-    def validate_requested_scope(self, scope, state=None):
+    def validate_requested_scope(self, scope):
         """See :func:`authlib.oauth2.rfc6749.authorization_server.validate_requested_scope`"""
         # We also consider parametric scope containing ":" charter
         extended_scope = list_to_scope(
             [re.sub(r":.*$", ":", s) for s in scope_to_list((scope or "").replace("+", " "))]
         )
-        super().validate_requested_scope(extended_scope, state)
+        super().validate_requested_scope(extended_scope)
 
     def handle_response(self, status_code=None, payload=None, headers=None, newSession=None, delSession=None):
         """Handle response
