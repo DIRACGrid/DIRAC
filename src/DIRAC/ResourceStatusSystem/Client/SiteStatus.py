@@ -1,4 +1,4 @@
-""" SiteStatus helper
+"""SiteStatus helper
 
 Module that acts as a helper for knowing the status of a site.
 It takes care of switching between the CS and the RSS.
@@ -221,7 +221,7 @@ class SiteStatus(metaclass=DIRACSingleton):
 
         return S_OK(siteList)
 
-    def setSiteStatus(self, site, status, comment="No comment"):
+    def setSiteStatus(self, site, status, comment="No comment", expiry=None):
         """
         Set the status of a site in the 'SiteStatus' table of RSS
 
@@ -258,6 +258,8 @@ class SiteStatus(metaclass=DIRACSingleton):
                 return S_ERROR(f"Unable to get user proxy info {result['Message']} ")
 
             tokenExpiration = datetime.utcnow() + timedelta(days=1)
+            if expiry:
+                tokenExpiration = expiry
 
             self.rssCache.acquireLock()
             try:
