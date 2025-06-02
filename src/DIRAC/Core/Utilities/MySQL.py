@@ -1,151 +1,152 @@
-""" DIRAC Basic MySQL Class
-    It provides access to the basic MySQL methods in a multithread-safe mode
-    keeping used connections in a python Queue for further reuse.
+"""DIRAC Basic MySQL Class
+It provides access to the basic MySQL methods in a multithread-safe mode
+keeping used connections in a python Queue for further reuse.
 
-    These are the coded methods:
-
-
-    __init__( host, user, passwd, name, [maxConnsInQueue=10] )
-
-    Initializes the Queue and tries to connect to the DB server,
-    using the _connect method.
-    "maxConnsInQueue" defines the size of the Queue of open connections
-    that are kept for reuse. It also defined the maximum number of open
-    connections available from the object.
-    maxConnsInQueue = 0 means unlimited and it is not supported.
+These are the coded methods:
 
 
-    _except( methodName, exception, errorMessage )
+__init__( host, user, passwd, name, [maxConnsInQueue=10] )
 
-    Helper method for exceptions: the "methodName" and the "errorMessage"
-    are printed with ERROR level, then the "exception" is printed (with
-    full description if it is a MySQL Exception) and S_ERROR is returned
-    with the errorMessage and the exception.
-
-
-    _connect()
-
-    Attempts connection to DB and sets the _connected flag to True upon success.
-    Returns S_OK or S_ERROR.
+Initializes the Queue and tries to connect to the DB server,
+using the _connect method.
+"maxConnsInQueue" defines the size of the Queue of open connections
+that are kept for reuse. It also defined the maximum number of open
+connections available from the object.
+maxConnsInQueue = 0 means unlimited and it is not supported.
 
 
-    _query( cmd, [conn=conn] )
+_except( methodName, exception, errorMessage )
 
-    Executes SQL command "cmd".
-    Gets a connection from the Queue (or open a new one if none is available),
-    the used connection is  back into the Queue.
-    If a connection to the the DB is passed as second argument this connection
-    is used and is not  in the Queue.
-    Returns S_OK with fetchall() out in Value or S_ERROR upon failure.
+Helper method for exceptions: the "methodName" and the "errorMessage"
+are printed with ERROR level, then the "exception" is printed (with
+full description if it is a MySQL Exception) and S_ERROR is returned
+with the errorMessage and the exception.
 
 
-    _update( cmd, [conn=conn] )
+_connect()
 
-    Executes SQL command "cmd" and issue a commit
-    Gets a connection from the Queue (or open a new one if none is available),
-    the used connection is  back into the Queue.
-    If a connection to the the DB is passed as second argument this connection
-    is used and is not  in the Queue
-    Returns S_OK with number of updated registers in Value or S_ERROR upon failure.
+Attempts connection to DB and sets the _connected flag to True upon success.
+Returns S_OK or S_ERROR.
 
 
-    _createTables( tableDict )
+_query( cmd, [conn=conn] )
 
-    Create a new Table in the DB
-
-
-    _getConnection()
-
-    Gets a connection from the Queue (or open a new one if none is available)
-    Returns S_OK with connection in Value or S_ERROR
-    the calling method is responsible for closing this connection once it is no
-    longer needed.
+Executes SQL command "cmd".
+Gets a connection from the Queue (or open a new one if none is available),
+the used connection is  back into the Queue.
+If a connection to the the DB is passed as second argument this connection
+is used and is not  in the Queue.
+Returns S_OK with fetchall() out in Value or S_ERROR upon failure.
 
 
+_update( cmd, [conn=conn] )
+
+Executes SQL command "cmd" and issue a commit
+Gets a connection from the Queue (or open a new one if none is available),
+the used connection is  back into the Queue.
+If a connection to the the DB is passed as second argument this connection
+is used and is not  in the Queue
+Returns S_OK with number of updated registers in Value or S_ERROR upon failure.
 
 
-    Some high level methods have been added to avoid the need to write SQL
-    statement in most common cases. They should be used instead of low level
-    _insert, _update methods when ever possible.
+_createTables( tableDict )
 
-    buildCondition( self, condDict = None, older = None, newer = None,
-                      timeStamp = None, orderAttribute = None, limit = False,
-                      greater = None, smaller = None ):
-
-      Build SQL condition statement from provided condDict and other extra check on
-      a specified time stamp.
-      The conditions dictionary specifies for each attribute one or a List of possible
-      values
-      greater and smaller are dictionaries in which the keys are the names of the fields,
-      that are requested to be >= or < than the corresponding value.
-      For compatibility with current usage it uses Exceptions to exit in case of
-      invalid arguments
+Create a new Table in the DB
 
 
-    insertFields( self, tableName, inFields = None, inValues = None, conn = None, inDict = None ):
+_getConnection()
 
-      Insert a new row in "tableName" assigning the values "inValues" to the
-      fields "inFields".
-      Alternatively inDict can be used
-      String type values will be appropriately escaped.
-
-
-    updateFields( self, tableName, updateFields = None, updateValues = None,
-                  condDict = None,
-                  limit = False, conn = None,
-                  updateDict = None,
-                  older = None, newer = None,
-                  timeStamp = None, orderAttribute = None ):
-
-      Update "updateFields" from "tableName" with "updateValues".
-      updateDict alternative way to provide the updateFields and updateValues
-      N records can match the condition
-      return S_OK( number of updated rows )
-      if limit is not False, the given limit is set
-      String type values will be appropriately escaped.
+Gets a connection from the Queue (or open a new one if none is available)
+Returns S_OK with connection in Value or S_ERROR
+the calling method is responsible for closing this connection once it is no
+longer needed.
 
 
-    deleteEntries( self, tableName,
-                   condDict = None,
-                   limit = False, conn = None,
-                   older = None, newer = None,
-                   timeStamp = None, orderAttribute = None ):
-
-      Delete rows from "tableName" with
-      N records can match the condition
-      if limit is not False, the given limit is set
-      String type values will be appropriately escaped, they can be single values or lists of values.
 
 
-    getFields( self, tableName, outFields = None,
+Some high level methods have been added to avoid the need to write SQL
+statement in most common cases. They should be used instead of low level
+_insert, _update methods when ever possible.
+
+buildCondition( self, condDict = None, older = None, newer = None,
+                  timeStamp = None, orderAttribute = None, limit = False,
+                  greater = None, smaller = None ):
+
+  Build SQL condition statement from provided condDict and other extra check on
+  a specified time stamp.
+  The conditions dictionary specifies for each attribute one or a List of possible
+  values
+  greater and smaller are dictionaries in which the keys are the names of the fields,
+  that are requested to be >= or < than the corresponding value.
+  For compatibility with current usage it uses Exceptions to exit in case of
+  invalid arguments
+
+
+insertFields( self, tableName, inFields = None, inValues = None, conn = None, inDict = None ):
+
+  Insert a new row in "tableName" assigning the values "inValues" to the
+  fields "inFields".
+  Alternatively inDict can be used
+  String type values will be appropriately escaped.
+
+
+updateFields( self, tableName, updateFields = None, updateValues = None,
+              condDict = None,
+              limit = False, conn = None,
+              updateDict = None,
+              older = None, newer = None,
+              timeStamp = None, orderAttribute = None ):
+
+  Update "updateFields" from "tableName" with "updateValues".
+  updateDict alternative way to provide the updateFields and updateValues
+  N records can match the condition
+  return S_OK( number of updated rows )
+  if limit is not False, the given limit is set
+  String type values will be appropriately escaped.
+
+
+deleteEntries( self, tableName,
                condDict = None,
                limit = False, conn = None,
                older = None, newer = None,
                timeStamp = None, orderAttribute = None ):
 
-      Select "outFields" from "tableName" with condDict
-      N records can match the condition
-      return S_OK( tuple(Field,Value) )
-      if limit is not False, the given limit is set
-      String type values will be appropriately escaped, they can be single values or lists of values.
-
-      for compatibility with other methods condDict keyed argument is added
+  Delete rows from "tableName" with
+  N records can match the condition
+  if limit is not False, the given limit is set
+  String type values will be appropriately escaped, they can be single values or lists of values.
 
 
-    getCounters( self, table, attrList, condDict = None, older = None,
-                 newer = None, timeStamp = None, connection = False ):
+getFields( self, tableName, outFields = None,
+           condDict = None,
+           limit = False, conn = None,
+           older = None, newer = None,
+           timeStamp = None, orderAttribute = None ):
 
-      Count the number of records on each distinct combination of AttrList, selected
-      with condition defined by condDict and time stamps
+  Select "outFields" from "tableName" with condDict
+  N records can match the condition
+  return S_OK( tuple(Field,Value) )
+  if limit is not False, the given limit is set
+  String type values will be appropriately escaped, they can be single values or lists of values.
+
+  for compatibility with other methods condDict keyed argument is added
 
 
-    getDistinctAttributeValues( self, table, attribute, condDict = None, older = None,
-                                newer = None, timeStamp = None, connection = False ):
+getCounters( self, table, attrList, condDict = None, older = None,
+             newer = None, timeStamp = None, connection = False ):
 
-      Get distinct values of a table attribute under specified conditions
+  Count the number of records on each distinct combination of AttrList, selected
+  with condition defined by condDict and time stamps
+
+
+getDistinctAttributeValues( self, table, attribute, condDict = None, older = None,
+                            newer = None, timeStamp = None, connection = False ):
+
+  Get distinct values of a table attribute under specified conditions
 
 
 """
+
 import collections
 import functools
 import json
