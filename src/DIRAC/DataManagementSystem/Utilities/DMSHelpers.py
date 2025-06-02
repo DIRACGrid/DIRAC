@@ -402,7 +402,7 @@ class DMSHelpers:
             return sesAtSite
         foundSEs = set(seList) & set(sesAtSite["Value"])
         if not foundSEs:
-            sLog.warn("No SE found at that site", f"in group {seGroup} at {site}")
+            sLog.verbose("No SE found at that site", f"in group {seGroup} at {site}")
             return S_OK()
         return S_OK(sorted(foundSEs))
 

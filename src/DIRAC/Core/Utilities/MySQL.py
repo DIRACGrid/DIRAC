@@ -760,6 +760,7 @@ class MySQL:
 
         :return: S_OK with number of updated registers upon success.
                  S_ERROR upon error.
+                 lastRowId: if set, added to the returned dictionary
         """
 
         self.log.debug(f"_update: {self._safeCmd(cmd)}")
@@ -774,9 +775,11 @@ class MySQL:
         try:
             cursor = connection.cursor()
             res = cursor.execute(cmd, args=args)
+
             retDict = S_OK(res)
             if cursor.lastrowid:
                 retDict["lastRowId"] = cursor.lastrowid
+
         except Exception as x:
             retDict = self._except("_update", x, "Execution failed.", cmd, debug)
 
