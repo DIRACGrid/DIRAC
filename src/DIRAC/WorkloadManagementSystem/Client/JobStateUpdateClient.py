@@ -28,3 +28,6 @@ class JobStateUpdateClient(Client):
 
         else:
             self.serverURL = url
+
+    def setJobStatus(self, jobID, status="", minorStatus="", source="Unknown", datetime_=None, force=False, **kwargs):
+        return self._getRPC(**kwargs).setJobStatus(jobID, status, minorStatus, source, datetime_, force)
