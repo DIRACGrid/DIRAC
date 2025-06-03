@@ -4,8 +4,7 @@ from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.DB import DB
 from DIRAC.FrameworkSystem.Client.Logger import contextLogger
 
-# This might not be necessary
-BUNDLE_STATUS = ("Storing", "Full", "Sent", "Finalized")
+BUNDLE_STATUS = ("Storing", "Sent", "Finalized", "Failed")
 
 
 def formatSelectOutput(listOfResults, keys):
@@ -112,13 +111,23 @@ class BundleDB(DB):
         )
         return S_OK(retVal[0])
 
+    def getBundleStatus(self, bundleId):
+        result = self.getFields("BundlesInfo", ["Status"], {"BundleID": bundleId})
+        
+        if not result["Value"]:
+            return S_ERROR("Failed to get bundle Status")
+
+        return S_OK(result["Value"][0][0])
+
     def getJobsOfBundle(self, bundleId):
         result = self.getFields("JobToBundle", ["JobID", "ExecutablePath", "Inputs"], {"BundleID": bundleId})
 
         if not result["OK"]:
             return result
         retVal = formatSelectOutput(result["Value"], ["JobID", "ExecutablePath", "Inputs"])
-        retVal["Inputs"] = retVal["Inputs"].split(" ")
+        for i in range(len(retVal)):
+            retVal[i]["Inputs"] = retVal[i]["Inputs"].split(" ")
+            
         return S_OK(retVal)
 
     def setTaskId(self, bundleId, taskId):
@@ -128,6 +137,22 @@ class BundleDB(DB):
             return result
 
         return S_OK()
+    
+    def getTaskId(self, bundleId):
+        result = self.getFields("BundlesInfo", ["TaskID"], {"BundleID": bundleId})
+
+        if not result["OK"]:
+            return result
+
+        return S_OK(result["Value"][0][0])
+
+    def setBundleAsFinalized(self, bundleId):
+        result = self.__updateBundleStatus(bundleId, "Finalized")
+        return result
+    
+    def setBundleAsFailed(self, bundleId):
+        result = self.__updateBundleStatus(bundleId, "Failed")
+        return result
 
     def __createNewBundle(self, ceDict):
         if "ExecTemplate" not in ceDict:

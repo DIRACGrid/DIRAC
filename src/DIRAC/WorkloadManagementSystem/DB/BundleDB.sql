@@ -27,7 +27,7 @@ CREATE TABLE `BundlesInfo` (
     `CEDict`        TEXT NOT NULL,
     `ExecTemplate`  VARCHAR(25) NOT NULL,
     `TaskID`        INTEGER(11) UNSIGNED,
-    `Status`        ENUM('Storing', 'Full', 'Sent', 'Finalized') NOT NULL DEFAULT 'Storing',
+    `Status`        ENUM('Storing', 'Sent', 'Finalized', 'Failed') NOT NULL DEFAULT 'Storing',
     PRIMARY KEY (BundleID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
