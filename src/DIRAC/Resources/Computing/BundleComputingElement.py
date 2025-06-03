@@ -69,11 +69,14 @@ CEs
 **Code Documentation**
 """
 
+import copy
+import inspect
 import uuid
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
+from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.BundlerClient import BundlerClient
 
 
@@ -85,6 +88,7 @@ class BundleComputingElement(ComputingElement):
         self.mandatoryParameters = ["ExecTemplate", "InnerCEType"]
 
         self.innerCE = None
+        self.innerCEParams = {}
 
         self.bundler = BundlerClient()
         self.ceFactory = ComputingElementFactory()
@@ -94,20 +98,51 @@ class BundleComputingElement(ComputingElement):
         self.ceParameters["AsyncSubmission"] = True
 
         # Create the InnerCE from the config obtained from the BundleCE
-        innerCEParams = self.ceParameters.copy()
+        innerCEParams = copy.deepcopy(self.ceParameters)
         innerCEType = innerCEParams.pop("InnerCEType")
         innerCEParams["CEType"] = innerCEType
 
-        # Building of the InnerCE
-        self.innerCE = self.ceFactory.getCE(ceType=innerCEType, ceParametersDict=innerCEParams)
+        innerCeName = self.ceParameters["GridCE"].split("bundled-")[1]
+        innerCEParams["GridCE"] = innerCeName
 
-    def submitJob(self, executableFiles, proxy=None, numberOfProcessors=1, inputs=None):
-        # Create a unique ID that cannot clash with other BundleCEs and Jobs in the database
-        jobId = f"BUNDLE_{self.ceUniqueID}_{uuid.uuid4()}"
+        # Building of the InnerCE
+        result = self.ceFactory.getCE(ceType=innerCEType, ceName=innerCeName, ceParametersDict=innerCEParams)
+
+        if not result["OK"]:
+            self.log.error("Failure while creating the InnerCE")
+            return result
+
+        self.innerCE = result["Value"]
+        self.innerCE.setParameters(innerCEParams)
+        self.innerCEParams = innerCEParams
+
+        self.innerCEMethods = [
+            name
+            for name, _ in 
+            self.inspect.getmembers(self.innerCE, predicate=inspect.ismethod)
+            if name[0] != "_"
+        ]
+
+        return S_OK()
+
+    def submitJob(self, executableFiles, proxy=None, numberOfProcessors=1, inputs=None, outputs=[]):
+        jobId = f"BUNDLE_{self.ceName}_{uuid.uuid4().hex}"
 
         # Store the job in a bundle using the ceDict of the InnerCE (containing the template)
-        ceDict = self.innerCE.getDescription()
-        result = self.bundler.storeInBundle(jobId, executableFiles, inputs, proxy, numberOfProcessors, ceDict)
+        result = proxy.dumpAllToString()
+
+        if not result["OK"]:
+            self.log.error("Error while encoding proxy as string")
+            return result
+
+        result = self.bundler.storeInBundle(
+            jobId, 
+            executableFiles, 
+            inputs, 
+            result["Value"], 
+            numberOfProcessors, 
+            self.innerCEParams
+        )
 
         if not result["OK"]:
             self.log.error("Failure while storing in the Bundle")
@@ -126,37 +161,73 @@ class BundleComputingElement(ComputingElement):
             self.log.info("Submitting job to CE: ", self.ce.ceName)
 
         # Return the id of the job (NOT THE BUNDLE)
-        return S_OK([jobId])
+        return S_OK(jobId)
 
-    def getJobOutput(self, jobIDList):
+    def getJobOutput(self, jobId, workingDirectory=None):
+        if ":::" in jobId:
+            jobId = jobId.split(":::")[0]
+
+        result = self.bundler.getJobTask(jobId)
+
+        if not result["OK"]:
+            return result
+
+        bundleId, taskId = result["Value"]
+        self.innerCE.getJobOutput(taskId)
+        
+        return ()
+
+    def getJobStatus(self, jobIDList):
         resultDict = {}
 
-        for jobId in jobIDList:
-            result = self.bundler.getJobOutput(jobId)
+        if not isinstance(jobIDList, list):
+            jobIDList = [jobIDList]
 
+        for job in jobIDList:
+            if ":::" in job:
+                job = job.split(":::")[0]
+
+            result = self.bundler.getBundleStatusOfJob(job)
+            
             if not result["OK"]:
-                return result
+                self.log.error(result["Message"])
+                resultDict[job] = PilotStatus.FAILED
+            else:
+                if result["Value"] == "Finalized":
+                    resultDict[job] = PilotStatus.DONE 
+                elif result["Value"] == "Failed":
+                    resultDict[job] = PilotStatus.DONE 
+                else:
+                    resultDict[job] = PilotStatus.RUNNING
 
-            resultDict[jobId] = result["Value"]
+        return S_OK(resultDict)
 
-        return resultDict
-
-    # def getJobStatus(self, jobIDList):
-    #     pass
-
-    #
-    # CAN THIS BE IMPLEMENETED ??
-    #
     def killJob(self, jobIDList):
         resultDict = {}
 
         for jobId in jobIDList:
-            resultDict[jobId] = S_ERROR("Bundled jobs cannot be killed at the moment")
+            result = self.bundler.tryToKillJob(jobId)
+            resultDict[jobId] = result
 
         return resultDict
 
-    def getDescription(self):
-        return self.innerCE.getDescription()
-
     def getCEStatus(self):
         return self.innerCE.getCEStatus()
+    
+    def setProxy(self, proxy):
+        super().setProxy(proxy)
+        self.innerCE.setProxy(proxy)
+    
+    def setToken(self, token):
+        super().setToken(token)
+        self.innerCE.setToken(token)
+
+    def cleanJob(self, jobIDList):
+        if "cleanJob" not in self.innerCEMethods:
+           self.log.error(f"Inner CE {self.innerCE.ceName} has no function called 'cleanJob'")
+           return S_ERROR()
+
+        for job in jobIDList:
+            if ":::" in job:
+                job = job.split(":::")[0]
+            self.bundler.cleanJob(job)
