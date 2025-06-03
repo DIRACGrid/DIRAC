@@ -14,7 +14,6 @@ import datetime
 from DIRAC import S_ERROR, S_OK
 from DIRAC.AccountingSystem.DB.MultiAccountingDB import MultiAccountingDB
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -38,22 +37,6 @@ class DataStoreHandler(RequestHandler):
                 return result
             gThreadScheduler.addPeriodicTask(60, cls.__acDB.loadPendingRecords)
         return S_OK()
-
-    types_setBucketsLength = [str, list]
-
-    def export_setBucketsLength(self, typeName, bucketsLength):
-        """
-        Change the buckets Length. (Only for all powerful admins)
-        """
-        return self.__acDB.changeBucketsLength(typeName, bucketsLength)
-
-    types_regenerateBuckets = [str]
-
-    def export_regenerateBuckets(self, typeName):
-        """
-        Recalculate buckets. (Only for all powerful admins)
-        """
-        return self.__acDB.regenerateBuckets(typeName)
 
     types_getRegisteredTypes = []
 
@@ -98,51 +81,4 @@ class DataStoreHandler(RequestHandler):
             records.append((entry[0], startTime, endTime, entry[3]))
         return self.__acDB.insertRecordBundleThroughQueue(records)
 
-    types_compactDB = []
-
-    def export_compactDB(self):
-        """
-        Compact the db by grouping buckets
-        """
-        # if we are running workers (not only one service) we can redirect the request to the master
-        # For more information please read the Administrative guide Accounting part!
-        # ADVICE: If you want to trigger the bucketing, please make sure the bucketing is not running!!!!
-        if self.runBucketing:
-            return self.__acDB.compactBuckets()
-
-        return Client(url="Accounting/DataStoreMaster").compactDB()
-
     types_remove = [str, datetime.datetime, datetime.datetime, list]
-
-    def export_remove(self, typeName, startTime, endTime, valuesList):
-        """
-        Remove a record for a type
-        """
-        startTime = int(TimeUtilities.toEpoch(startTime))
-        endTime = int(TimeUtilities.toEpoch(endTime))
-        return self.__acDB.deleteRecord(typeName, startTime, endTime, valuesList)
-
-    types_removeRegisters = [list]
-
-    def export_removeRegisters(self, entriesList):
-        """
-        Remove a record for a type
-        """
-        expectedTypes = [str, datetime.datetime, datetime.datetime, list]
-        for entry in entriesList:
-            if len(entry) != 4:
-                return S_ERROR("Invalid records")
-            for i, en in enumerate(entry):
-                if not isinstance(en, expectedTypes[i]):
-                    return S_ERROR(f"{i} field in the records should be {expectedTypes[i]}")
-        ok = 0
-        for entry in entriesList:
-            startTime = int(TimeUtilities.toEpoch(entry[1]))
-            endTime = int(TimeUtilities.toEpoch(entry[2]))
-            record = entry[3]
-            result = self.__acDB.deleteRecord(entry[0], startTime, endTime, record)
-            if not result["OK"]:
-                return S_OK(ok)
-            ok += 1
-
-        return S_OK(ok)
