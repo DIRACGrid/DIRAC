@@ -1,21 +1,6 @@
 from DIRAC import S_ERROR, S_OK
 
-
-def generate_template(template: str, inputs: list[str]):
-    template_lower = template.lower()
-    func_name = "_generate_" + template_lower
-    generator = globals()[func_name]
-
-    if not generator:
-        return S_ERROR("Template not found")
-
-    template, formatted_inputs = generator(inputs)
-
-    return S_OK(template.format(inputs=formatted_inputs))
-
-
-def _generate_bash(inputs: list[str]):
-    template = """\
+GENERIC_BASH_TEMPLATE = """\
 #!/bin/bash
 set -e
 
@@ -31,7 +16,7 @@ run_task() {{
     local task_id=$(get_id ${{input}})
 
     >&2 echo "Executing task ${{task_id}}"
-    >&2 bash ${{BASEDIR}}/${{input}} >task_${{task_id}}.log 2>&1  &
+    >&2 {command} ${{BASEDIR}}/${{input}} >task_${{task_id}}.log 2>&1  &
     local task_pid=$!
 
     >&2 echo "Task ${{task_id}} waiting for pid ${{task_pid}}..."
@@ -54,6 +39,29 @@ done
 wait
 """
 
-    formatted_inputs = "(" + ", ".join(inputs) + ")"
+def generate_template(template: str, inputs: list):
+    template = template.lower().replace("-", "_")
+    func_name = "_generate_" + template
+    generator = locals()[func_name]
 
-    return template, formatted_inputs
+    if not generator:
+        return S_ERROR("Template not found")
+
+    result = generator(inputs)
+    if not result["OK"]:
+        return result
+    
+    return S_OK(result["Value"])
+
+def _generate_lb_prod_run(inputs: list):
+    template = __generate_generic_bash("lb-prod-run", inputs)
+    return S_OK(template)
+
+def _generate_bash(inputs: list):
+    template = __generate_generic_bash("bash", inputs)
+    return S_OK(template)
+
+def __generate_generic_bash(command, inputs):
+    formatted_inputs = "(" + ", ".join(inputs) + ")"
+    template = GENERIC_BASH_TEMPLATE.format(command=command, inputs=formatted_inputs)
+    return template
