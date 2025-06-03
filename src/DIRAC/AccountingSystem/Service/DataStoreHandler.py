@@ -39,14 +39,6 @@ class DataStoreHandler(RequestHandler):
             gThreadScheduler.addPeriodicTask(60, cls.__acDB.loadPendingRecords)
         return S_OK()
 
-    types_registerType = [str, list, list, list]
-
-    def export_registerType(self, typeName, definitionKeyFields, definitionAccountingFields, bucketsLength):
-        """
-        Register a new type. (Only for all powerful admins)
-        """
-        return self.__acDB.registerType(typeName, definitionKeyFields, definitionAccountingFields, bucketsLength)
-
     types_setBucketsLength = [str, list]
 
     def export_setBucketsLength(self, typeName, bucketsLength):

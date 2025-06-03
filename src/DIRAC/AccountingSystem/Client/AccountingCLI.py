@@ -57,37 +57,6 @@ class AccountingCLI(CLI):
         traceback.print_tb(sys.exc_info()[2])
         print("________________________\n")
 
-    def do_registerType(self, args):
-        """
-        Registers a new accounting type
-          Usage : registerType <typeName>
-          <DIRACRoot>/DIRAC/AccountingSystem/Client/Types/<typeName>
-           should exist and inherit the base type
-        """
-        try:
-            argList = args.split()
-            if argList:
-                typeName = argList[0].strip()
-            else:
-                gLogger.error("No type name specified")
-                return
-            # Try to import the type
-            result = self.objectLoader.loadObject(f"DIRAC.AccountingSystem.Client.Types.{typeName}")
-            if not result["OK"]:
-                return result
-            typeClass = result["Value"]
-
-            gLogger.info(f"Loaded type {typeClass.__name__}")
-            typeDef = typeClass().getDefinition()
-            acClient = DataStoreClient()
-            retVal = acClient.registerType(*typeDef)
-            if retVal["OK"]:
-                gLogger.info("Type registered successfully")
-            else:
-                gLogger.error(f"Error: {retVal['Message']}")
-        except Exception:
-            self.showTraceback()
-
     def do_resetBucketLength(self, args):
         """
         Set the bucket Length. Will trigger a recalculation of buckets. Can take a while.
