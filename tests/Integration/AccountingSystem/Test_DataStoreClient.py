@@ -28,6 +28,3 @@ def test_addAndRemoveStorageOccupancy():
     assert res["OK"], res["Message"]
     res = gDataStoreClient.commit()
     assert res["OK"], res["Message"]
-    # now removing that record
-    res = gDataStoreClient.remove(record)
-    assert res["OK"], res["Message"]

@@ -122,19 +122,6 @@ class DataStoreClient(Client):
 
         return S_OK()
 
-    def remove(self, register):
-        """
-        Remove a Register from the Accounting DataStore
-        """
-        if not self.__checkBaseType(register.__class__):
-            return S_ERROR("register is not a valid type (has to inherit from BaseAccountingType")
-        retVal = register.checkValues()
-        if not retVal["OK"]:
-            return retVal
-        if gConfig.getValue("/LocalSite/DisableAccounting", False):
-            return S_OK()
-        return self._getRPC().remove(*register.getValues())
-
 
 def _sendToFailover(rpcStub):
     """Create a ForwardDISET operation for failover"""
