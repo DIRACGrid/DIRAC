@@ -1,11 +1,9 @@
-""" DIRAC Workload Management System utility module to get available memory and processors
-"""
+"""DIRAC Workload Management System utility module to get available memory and processors"""
+
 import multiprocessing
 
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Utilities.List import fromChar
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import JobParametersDB
 
 
 def getMemoryFromProc():
@@ -155,6 +153,9 @@ def getJobParameters(jobIDs: list[int], parName: str | None, vo: str = "") -> di
     :return: dictionary with jobID as key and the parameter as value
     :rtype: dict
     """
+    from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import JobParametersDB
+    from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+
     elasticJobParametersDB = JobParametersDB()
     jobDB = JobDB()
 
