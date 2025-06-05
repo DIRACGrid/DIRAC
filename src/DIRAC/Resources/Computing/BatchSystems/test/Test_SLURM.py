@@ -198,3 +198,49 @@ def test_getJobOutputFiles(numberOfNodes, outputContent, expectedContent):
 
     os.remove(outputFile)
     os.remove(errorFile)
+
+
+def test_submitJob_cmd_generation(mocker):
+    """Test submitJob() command string generation for various kwargs"""
+    slurm = SLURM()
+    # Mock subprocess.Popen to capture the command
+    popen_mock = mocker.patch("subprocess.Popen")
+    process_mock = popen_mock.return_value
+    process_mock.communicate.return_value = ("Submitted batch job 1234\n", "")
+    process_mock.returncode = 0
+
+    # Minimal kwargs
+    kwargs = {
+        "Executable": "/bin/echo",
+        "OutputDir": "/tmp",
+        "ErrorDir": "/tmp",
+        "Queue": "testq",
+        "SubmitOptions": "",
+        "JobStamps": ["stamp1"],
+        "NJobs": 1,
+    }
+    # Test default (WholeNode False)
+    slurm.submitJob(**kwargs)
+    cmd = popen_mock.call_args[0][0]
+    assert "--cpus-per-task=1" in cmd
+    assert "--exclusive" not in cmd
+
+    # Test WholeNode True disables --cpus-per-task and adds --exclusive
+    kwargs["WholeNode"] = True
+    slurm.submitJob(**kwargs)
+    cmd = popen_mock.call_args[0][0]
+    assert "--exclusive" in cmd
+    assert "--cpus-per-task" not in cmd
+
+    # Test NumberOfProcessors
+    kwargs["WholeNode"] = False
+    kwargs["NumberOfProcessors"] = 8
+    slurm.submitJob(**kwargs)
+    cmd = popen_mock.call_args[0][0]
+    assert "--cpus-per-task=8" in cmd
+
+    # Test NumberOfGPUs
+    kwargs["NumberOfGPUs"] = 2
+    slurm.submitJob(**kwargs)
+    cmd = popen_mock.call_args[0][0]
+    assert "--gpus-per-task=2" in cmd
