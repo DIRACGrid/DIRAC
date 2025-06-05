@@ -245,25 +245,3 @@ def test_getReport(putAndDelete):
         },
         "granularity": 1800000,
     }
-
-
-def test_getLastDayData(putAndDelete):
-    params = {"Status": "Running", "Site": "LCG.NIKHEF.nl"}
-    result = client.getLastDayData("WMSHistory", params)
-    assert result["OK"], result["Message"]
-    assert len(result["Value"]) == 2
-    assert sorted(result["Value"][0]) == sorted(
-        [
-            "Status",
-            "Jobs",
-            "JobSplitType",
-            "timestamp",
-            "MinorStatus",
-            "Site",
-            "Reschedules",
-            "ApplicationStatus",
-            "User",
-            "JobGroup",
-            "UserGroup",
-        ]
-    )

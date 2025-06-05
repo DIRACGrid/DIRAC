@@ -447,26 +447,6 @@ class MonitoringDB(ElasticDB):
                 records.append({paramName: getattr(resObj["_source"], paramName) for paramName in paramNames})
             return S_OK(records)
 
-    def getLastDayData(self, typeName, condDict):
-        """
-        It returns the last day data for a given monitoring type.
-
-        :returns: for example
-
-          .. code-block:: python
-
-           {'sort': [{'timestamp': {'order': 'desc'}}],
-            'query': {'bool': {'must': [{'match': {'host': 'dzmathe.cern.ch'}},
-                                        {'match': {'component': 'Bookkeeping_BookkeepingManager'}}]}}}
-
-        :param str typeName: name of the monitoring type
-        :param dict condDict: conditions for the query
-
-                      * key -> name of the field
-                      * value -> list of possible values
-        """
-        return self.__getRawData(typeName, condDict)
-
     def getLimitedData(self, typeName, condDict, size=10):
         """
         Returns a list of records for a given selection.

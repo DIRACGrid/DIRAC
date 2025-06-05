@@ -244,24 +244,6 @@ class MonitoringHandlerMixin:
         reportRequest["generatePlot"] = False
         return reporter.generate(reportRequest)
 
-    types_addMonitoringRecords = [str, list]
-
-    def export_addMonitoringRecords(self, monitoringtype, data):
-        """
-        Bulk insert data directly to the given monitoring type.
-
-        :param str monitoringtype: monitoring type name
-        :param list data: list of documents
-        :returns: S_OK or S_ERROR
-        """
-
-        retVal = self.__db.getIndexName(monitoringtype)
-        if not retVal["OK"]:
-            return retVal
-        prefix = retVal["Value"]
-        gLogger.debug("addMonitoringRecords:", prefix)
-        return self.__db.bulk_index(prefix, data)
-
     types_addRecords = [str, str, list]
 
     def export_addRecords(self, indexname, monitoringType, data):
@@ -289,21 +271,6 @@ class MonitoringHandlerMixin:
         """
         gLogger.debug("delete index:", indexName)
         return self.__db.deleteIndex(indexName)
-
-    types_getLastDayData = [str, dict]
-
-    def export_getLastDayData(self, typeName, condDict):
-        """
-        It returns the data from the last day index. Note: we create daily indexes.
-
-        :param str typeName: name of the monitoring type
-        :param dict condDict: conditions for the query
-
-                       * key -> name of the field
-                       * value -> list of possible values
-        """
-
-        return self.__db.getLastDayData(typeName, condDict)
 
     types_getLimitedDat = [str, dict, int]
 

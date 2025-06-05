@@ -57,7 +57,6 @@ class AccountingCLI(CLI):
         traceback.print_tb(sys.exc_info()[2])
         print("________________________\n")
 
-
     def do_showRegisteredTypes(self, args):
         """
         Get a list of registered types
