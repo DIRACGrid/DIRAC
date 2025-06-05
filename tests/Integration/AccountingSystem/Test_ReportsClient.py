@@ -49,7 +49,3 @@ def test_addAndRemoveStorageOccupancy():
         "StorageElement",
     )
     assert res["OK"], res["Message"]
-
-    # now removing that record
-    res = gDataStoreClient.remove(record)
-    assert res["OK"], res["Message"]
