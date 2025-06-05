@@ -112,7 +112,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
             proxyInfo = getProxyInfo(disableVOMS=True)
             if proxyInfo["OK"]:
                 os.environ["X509_USER_PROXY"] = proxyInfo["Value"]["path"]
-                sLog.debug(f"X509_USER_PROXY not defined. Using {proxyInfo['Value']['path']}")
+                sLog.debug("X509_USER_PROXY not defined. Using value from proxyInfo")
         try:
             try:
                 self._client = Client()
@@ -125,7 +125,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                         dn = proxyInfo["Value"]["identity"]
                         username = proxyInfo["Value"]["username"]
                         self.account = username
-                        sLog.debug(f"Switching to account {username} mapped to proxy {dn}")
+                        sLog.debug(f"Switching to another account based on DN")
 
             try:
                 self._client = Client(account=self.account)
@@ -151,8 +151,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
             self.authHost = options.get("AuthHost", None)
             self.caCertPath = Locations.getCAsLocation()
             try:
-                sLog.info(f"Logging in with a proxy located at: {self.proxyPath}")
-                sLog.debug("account: ", self.username)
+                sLog.info("Logging in with a user proxy")
                 sLog.debug("rucio host: ", self.rucioHost)
                 sLog.debug("auth  host: ", self.authHost)
                 sLog.debug("CA cert path: ", self.caCertPath)
