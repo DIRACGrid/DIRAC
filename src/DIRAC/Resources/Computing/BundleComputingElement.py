@@ -79,8 +79,21 @@ from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFa
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.BundlerClient import BundlerClient
 
+class BundleTaskDict(dict):
+    def __init__(self, getProperty):
+        self.getProperty = getProperty
+
+    def __getitem__(self, jobId):
+        if jobId in self:
+            return super().__getitem__(jobId)
+
+        res = self.getProperty(jobId)
+        if res:
+            super().__setitem__(jobId, res)
+        return res
 
 class BundleComputingElement(ComputingElement):
+
     def __init__(self, ceUniqueID):
         """Standard constructor."""
         super().__init__(ceUniqueID)
@@ -92,6 +105,10 @@ class BundleComputingElement(ComputingElement):
 
         self.bundler = BundlerClient()
         self.ceFactory = ComputingElementFactory()
+
+        self.taskResults = BundleTaskDict(self.__getTraskResult)
+
+    #############################################################################
 
     def _reset(self):
         # Force the CE to make the job submissions asynchronous
@@ -119,15 +136,20 @@ class BundleComputingElement(ComputingElement):
         self.innerCEMethods = [
             name
             for name, _ in 
-            self.inspect.getmembers(self.innerCE, predicate=inspect.ismethod)
+            inspect.getmembers(self.innerCE, predicate=inspect.ismethod)
             if name[0] != "_"
         ]
 
         return S_OK()
 
+    #############################################################################
+
     def submitJob(self, executableFiles, proxy=None, numberOfProcessors=1, inputs=None, outputs=[]):
         jobId = f"BUNDLE_{self.ceName}_{uuid.uuid4().hex}"
 
+        if not proxy:
+            proxy = self.proxy
+        
         # Store the job in a bundle using the ceDict of the InnerCE (containing the template)
         result = proxy.dumpAllToString()
 
@@ -149,33 +171,54 @@ class BundleComputingElement(ComputingElement):
             return result
 
         bundleId = result["Value"]["BundleID"]
-        submitted = result["Value"]["Executing"]
+        submitted = result["Value"]["Executing"]    # For logging purposes
 
-        # The bundle is not being executed in the InnerCE
+        result = S_OK([jobId])
+        result["PilotStampDict"] = {jobId: bundleId}
+
         if not submitted:
             self.log.info(f"Job {jobId} stored successfully in bundle: ", bundleId)
-            # Return the bundle id as if it was the task id of the asynchronous executing job
-            return S_OK([jobId])
-
         else:
             self.log.info("Submitting job to CE: ", self.ce.ceName)
 
         # Return the id of the job (NOT THE BUNDLE)
-        return S_OK(jobId)
+        return result
 
     def getJobOutput(self, jobId, workingDirectory=None):
+        bundleId = None
         if ":::" in jobId:
-            jobId = jobId.split(":::")[0]
+            jobId, bundleId = jobId.split(":::")
 
-        result = self.bundler.getJobTask(jobId)
+        if workingDirectory is None:
+            workingDirectory = "."
+
+        if not bundleId:
+            bundleId = self.bundler.bundleIdFromJobId(jobId)
+
+        result = self.bundler.getTaskInfo(bundleId)
 
         if not result["OK"]:
             return result
 
-        bundleId, taskId = result["Value"]
-        self.innerCE.getJobOutput(taskId)
+        if result["Value"]["Status"] not in PilotStatus.PILOT_FINAL_STATES:
+            return S_ERROR("Output not ready yet")
+
+        # If the output path of all of the jobs hasn't been defined yet
+        if outputPath := result["Value"]["OutputPath"] is None:
+            taskId = result["Value"]["TaskId"]
+            result = self.innerCE.getJobOutput(taskId, workingDirectory)
+            
+            if not result["OK"]:
+                return result
+
+            self.bundler.setOutputPath(taskId, workingDirectory)
+
+        self.log.notice(f"Outputs at: {outputPath}")
         
-        return ()
+        error = f"{outputPath}/{jobId}/{jobId}.err"
+        output = f"{outputPath}/{jobId}/{jobId}.out"
+
+        return S_OK((output, error))
 
     def getJobStatus(self, jobIDList):
         resultDict = {}
@@ -185,7 +228,7 @@ class BundleComputingElement(ComputingElement):
 
         for job in jobIDList:
             if ":::" in job:
-                job = job.split(":::")[0]
+                jobId, bundleId = job.split(":::")
 
             result = self.bundler.getBundleStatusOfJob(job)
             
@@ -193,23 +236,11 @@ class BundleComputingElement(ComputingElement):
                 self.log.error(result["Message"])
                 resultDict[job] = PilotStatus.FAILED
             else:
-                if result["Value"] == "Finalized":
-                    resultDict[job] = PilotStatus.DONE 
-                elif result["Value"] == "Failed":
-                    resultDict[job] = PilotStatus.DONE 
-                else:
-                    resultDict[job] = PilotStatus.RUNNING
+                resultDict[job] = result["Value"]
 
         return S_OK(resultDict)
 
-    def killJob(self, jobIDList):
-        resultDict = {}
-
-        for jobId in jobIDList:
-            result = self.bundler.tryToKillJob(jobId)
-            resultDict[jobId] = result
-
-        return resultDict
+    #############################################################################
 
     def getCEStatus(self):
         return self.innerCE.getCEStatus()
@@ -229,5 +260,33 @@ class BundleComputingElement(ComputingElement):
 
         for job in jobIDList:
             if ":::" in job:
-                job = job.split(":::")[0]
+                job, bundleId = job.split(":::")
             self.bundler.cleanJob(job)
+
+    def killJob(self, jobIDList):
+        resultDict = {}
+
+        for job in jobIDList:
+            if ":::" in job:
+                jobId, bundleId = job.split(":::")
+
+            result = self.bundler.tryToKillJob(jobId)
+            resultDict[jobId] = result
+
+        return resultDict
+
+    #############################################################################
+
+    def __getTraskResult(self, jobId):
+        result = self.bundler.getJobStatus(jobId)
+
+        if not result["OK"]:
+            return result
+
+        if result["Value"] not in PilotStatus.PILOT_FINAL_STATES:
+            return None
+        
+        if result["Value"] == PilotStatus.DONE:
+            return S_OK(0)
+        
+        return S_OK(1)

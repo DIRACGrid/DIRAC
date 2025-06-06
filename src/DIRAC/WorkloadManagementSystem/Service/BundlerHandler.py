@@ -42,14 +42,8 @@ class BundlerHandler(RequestHandler):
 
     def export_storeInBundle(self, jobId, executable, inputs, proxyDict, processors, ceDict):
         self.log.debug(f"Received: \n\tjobID={jobId}\n\texecutable={executable}\n\tinputs={inputs}\n\tprocessors={processors}\n\tceDict={ceDict}")
-        
-        proxy = X509Chain()
-        result = proxy.loadChainFromString(proxy)
-        if not result["OK"]:
-            self.log.error("Failed to obtain proxy from the input string")
-            self.log.debug(f"Obtained proxy string:\n{proxy}")
-            return result
 
+        # Prepare the CE
         result = self.ceFactory.getCE(ceType=ceDict["CEType"], ceName=ceDict["CEName"] ,ceParametersDict=ceDict)
 
         if not result["OK"]:
@@ -59,6 +53,7 @@ class BundlerHandler(RequestHandler):
         ce = result["Value"]
         self.jobToCE[jobId] = ce
 
+        # Insert the Job into the DB
         result = self.bundleDB.insertJobToBundle(jobId, executable, inputs, processors, ceDict)
         if not result["OK"]:
             self.log.error("Failed to insert into a bundle the job with id ", str(jobId))
@@ -71,6 +66,14 @@ class BundlerHandler(RequestHandler):
         self.log.info("Job inserted in bundle successfully")
 
         if readyForSubmission:
+            # Try to load the Proxy
+            proxy = X509Chain()
+            result = proxy.loadChainFromString(proxy)
+            if not result["OK"]:
+                self.log.error("Failed to obtain proxy from the input string")
+                self.log.debug(f"Obtained proxy string:\n{proxy}")
+                return result
+
             self.log.info(f"Submitting bundle '{bundleId}' to CE '{ce.ceName}'")
 
             result = self._wrapBundle(bundleId)
@@ -84,8 +87,10 @@ class BundlerHandler(RequestHandler):
                 self.log.error("Failed to submit job to with id ", str(jobId))
                 return result
 
-            taskID = result["Value"]
-            result = self.bundleDB.setTaskId(bundleId, taskID)
+            innerJobId = result["Value"][0]
+            taskId = innerJobId + ":::" + result[["PilotStampDict"]][innerJobId]
+            
+            result = self.bundleDB.setTaskId(bundleId, taskId)
 
             if not result["OK"]:
                 self.log.error("Failed to set task id of JobId ", str(jobId))
@@ -95,36 +100,27 @@ class BundlerHandler(RequestHandler):
 
     #############################################################################
 
-    types_getJobTask = [str]
+    types_getTaskInfo = [str]
 
-    def export_getJobTask(self, jobId):
-        result = self._getBundleIdFromJobId(jobId)
-
-        if not result["OK"]:
-            self.log.error("Failed to obtain Bundle of JobId ", str(jobId))
-            return result
-
-        bundleId = result["Value"]
-
-        result = self.bundleDB.getBundleStatus(bundleId)
-
-        if not result["OK"]:
-            self.log.error("Failed to obtain status of bundle ", str(bundleId))
-            return result
-
-        status = result["Value"]
-        if status == "Storing":
-            return S_OK()
-
-        result = self.bundleDB.getTaskId(bundleId)
-
-        if not result["OK"]:
-            self.log.error("Failed to obtain Job Output of JobId ", str(jobId))
-        else:
-            self.bundleDB.setBundleAsFinalized(bundleId)
-
-        return S_OK((result["Value"]))
+    def export_getTaskInfo(self, bundleId):
+        return self._getTaskInfo(bundleId)
     
+    def _getTaskInfo(self, bundleId):
+        result = self.bundleDB.getWholeBundle(bundleId)
+
+        if not result["OK"]:
+            self.log.error("Failed to obtain bundle ", str(bundleId))
+            return result
+        
+        bundleDict = result["Value"]
+        resultDict = {"Status": bundleDict["Status"]}
+
+        if bundleDict["Status"] not in PilotStatus.PILOT_FINAL_STATES:
+            resultDict["TaskID"] = bundleDict["TaskID"]
+            resultDict["OutputPath"] = bundleDict["OutputPath"]
+        
+        return S_OK(resultDict)
+   
     #############################################################################
 
     types_bundleIdFromJobId = [str]
@@ -158,15 +154,31 @@ class BundlerHandler(RequestHandler):
             self.log.warn("KillBundleOnError is off, doing nothing")
             return S_ERROR(message="KillBundleOnError is off, won't kill the bundle")
     
-    def _killJob(self, jobId):
-        return S_ERROR()
-
     def _killBundleOfJob(self, jobId):
         ce = self.__getJobCE(jobId)
         result = self._getBundleIdFromJobId(jobId)
+
         if not result["OK"]:
             return result
-        return ce.killJob(result["Value"])
+
+        bundleId = result["Value"]
+        result = self._getTaskInfo(bundleId)
+        if not result["OK"]:
+            return result
+
+        if result["Value"]["Status"] in PilotStatus.PILOT_FINAL_STATES:
+            return S_ERROR("Cannot kill finished jobs")
+
+        result = ce.killJob([result["Value"]["TaskID"]])
+
+        if not result["OK"]:
+            return result
+
+        self.bundleDB.setBundleAsFailed() 
+        return 
+
+    def _killJob(self, jobId):
+        return S_ERROR("CAN'T STOP JOBS")
 
     #############################################################################
 
@@ -178,32 +190,27 @@ class BundlerHandler(RequestHandler):
             return result
         bundleId = result["Value"]
 
-        result = self.bundleDB.getBundleStatus(jobId)
+        result = self._getTaskInfo(bundleId)
+        
         if not result["OK"]:
             return result
-        status = result["Value"]
-        
-        if status != "Finalized":
-            return S_OK("There are jobs running, cleaning is not permitted")
+        status = result["Value"]["Status"]
+
+        if status not in PilotStatus.PILOT_FINAL_STATES:
+            return S_ERROR(f"The bundle hasn't finished, cleaning is not permitted. Current Status: {status}")
 
         ce = self.__getJobCE(jobId)
-        return self._cleanBundle(ce, bundleId)
-    
-    def _cleanBundle(self, ce, bundleId):
         try:
-            ce.cleanJob(bundleId)
+            ce.cleanJob(result["Value"]["TaskID"])
         except AttributeError as e: # If the CE has no method 'cleanJob'
             return S_ERROR(e)
         return S_OK()
-
+    
     #############################################################################
 
     types_getJobStatus = [str]
 
     def export_getJobStatus(self, jobId):
-        return self._getJobStatus(jobId)
-
-    def _getJobStatus(self, jobId):
         result = self._getBundleIdFromJobId(jobId)
 
         if not result["OK"]:
@@ -211,27 +218,28 @@ class BundlerHandler(RequestHandler):
         
         bundleId = result["Value"]
 
-        result = self.bundleDB.getBundleStatus(bundleId)
+        result = self._getTaskInfo(bundleId)
 
         if not result["OK"]:
             return result
 
-        status=result["Value"]
+        status = result["Value"]["Status"]
 
-        if status == "Sent":
+        if status not in PilotStatus.PILOT_FINAL_STATES:
             ce = self.__getJobCE(jobId)
-            result = ce.getJobStatus(bundleId)
+
+            task = result["Value"]["TaskID"]
+            result = ce.getJobStatus(task)
 
             if not result["OK"]:
                 return result
             
+            status = result["Value"][task]
+
             if result["Value"] == PilotStatus.DONE:
                 self.bundleDB.setBundleAsFinalized()
-                status = "Finalized"
-            
-            elif result["Value"] == PilotStatus.FAILED | result["Value"] == PilotStatus.ABORTED:
+            elif result["Value"] in PilotStatus.PILOT_FINAL_STATES:
                 self.bundleDB.setBundleAsFailed()
-                status = "Failed"
 
         return S_OK(status)
 
@@ -249,7 +257,7 @@ class BundlerHandler(RequestHandler):
         return result
 
     def _wrapBundle(self, bundleId):
-        result = self.bundleDB.getBundle(bundleId)
+        result = self.bundleDB.getWholeBundle(bundleId)
 
         if not result["OK"]:
             self.log.error("Failed to obtain bundle while wrapping. BundleID ", str(bundleId))

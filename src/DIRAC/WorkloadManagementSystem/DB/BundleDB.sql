@@ -18,7 +18,7 @@ DROP TABLE IF EXISTS `JobToBundle`;
 DROP TABLE IF EXISTS `BundlesInfo`;
 
 CREATE TABLE `BundlesInfo` (
-    `BundleID`      INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `BundleID`      VARCHAR(32) NOT NULL,
     `ProcessorSum`  INT(5) UNSIGNED NOT NULL DEFAULT 0,
     `MaxProcessors` INT(5) UNSIGNED NOT NULL,
     `Site`          VARCHAR(128) NOT NULL,
@@ -28,13 +28,14 @@ CREATE TABLE `BundlesInfo` (
     `ExecTemplate`  VARCHAR(25) NOT NULL,
     `TaskID`        INTEGER(11) UNSIGNED,
     `Status`        ENUM('Storing', 'Sent', 'Finalized', 'Failed') NOT NULL DEFAULT 'Storing',
+    `OutputPath`    VARCHAR(255),
     PRIMARY KEY (BundleID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------------------------
 CREATE TABLE `JobToBundle` (
     `JobID`             VARCHAR(255) NOT NULL,
-    `BundleID`          INTEGER(11) UNSIGNED NOT NULL,
+    `BundleID`          VARCHAR(32) NOT NULL,
     `ExecutablePath`    VARCHAR(255) NOT NULL,
     `Inputs`            TEXT NOT NULL,
     PRIMARY KEY (`JobID`),
