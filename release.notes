@@ -1,3 +1,23 @@
+[v9.0.0a59]
+
+*Resources
+
+CHANGE: (#8219) SLURM plugin now supports the WholeNode options
+CHANGE: (#8211) remove dependency from HTCondorComputingElement to PilotManager
+
+*WorkloadManagementSystem
+
+FIX: (#8217) move DB import in the function
+NEW: (#8215) define setJobStatus in the Client to allow keyword arguments
+
+*WorkloadManagement
+
+FIX: (#8212) AREXCE not detecting pilots in an accepted/staged states
+
+*Core
+
+FIX: (#8207) dirac-apptainer-exec : cd in /mnt to find locally-mounted files (e.g. pilot.cfg)
+
 [v9.0.0a58]
 
 *Resources
