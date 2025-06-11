@@ -60,7 +60,6 @@ from collections import defaultdict
 
 import importlib_metadata as metadata
 import importlib_resources
-import MySQLdb
 from diraccfg import CFG
 from prompt_toolkit import prompt
 
@@ -96,7 +95,6 @@ from DIRAC.Core.Utilities.Extensions import (
     findServices,
 )
 from DIRAC.Core.Utilities.File import mkDir, mkLink
-from DIRAC.Core.Utilities.MySQL import MySQL
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities.Subprocess import systemCall
@@ -2055,6 +2053,8 @@ class ComponentInstaller:
         """
         Install requested DB in MySQL server
         """
+        import MySQLdb
+
         dbName = MySQLdb.escape_string(dbName.encode()).decode()
         if not self.mysqlRootPwd:
             rootPwdPath = cfgInstallPath("Database", "RootPwd")
@@ -2202,6 +2202,8 @@ class ComponentInstaller:
         """
         Execute MySQL Command
         """
+        from DIRAC.Core.Utilities.MySQL import MySQL
+
         if not self.mysqlRootPwd:
             return S_ERROR("MySQL root password is not defined")
         if dbName not in self.db:
