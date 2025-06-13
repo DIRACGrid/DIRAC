@@ -50,6 +50,7 @@ When using a local condor_schedd look at the HTCondor documentation for enabling
 
 import datetime
 import errno
+import json
 import os
 import subprocess
 import tempfile
@@ -63,7 +64,7 @@ from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import writeToTokenFile
-from DIRAC.Resources.Computing.BatchSystems.Condor import HOLD_REASON_SUBCODE, parseCondorStatus, subTemplate
+from DIRAC.Resources.Computing.BatchSystems.Condor import HOLD_REASON_SUBCODE, getCondorStatus, subTemplate
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
@@ -400,45 +401,59 @@ class HTCondorCEComputingElement(ComputingElement):
         if isinstance(jobIDList, str):
             jobIDList = [jobIDList]
 
+        self.tokenFile = None
         resultDict = {}
         condorIDs = {}
         # Get all condorIDs so we can just call condor_q and condor_history once
         for jobReference in jobIDList:
             jobReference = jobReference.split(":::")[0]
-            condorIDs[jobReference] = self._jobReferenceToCondorID(jobReference)
+            condorIDs[self._jobReferenceToCondorID(jobReference)] = jobReference
 
-        self.tokenFile = None
+        attributes = "ClusterId,ProcId,JobStatus,HoldReasonCode,HoldReasonSubCode,HoldReason"
 
         qList = []
-        for _condorIDs in breakListIntoChunks(condorIDs.values(), 100):
-            # This will return a list of 1245.75 3 undefined undefined undefined
+        for _condorIDs in breakListIntoChunks(condorIDs.keys(), 100):
             cmd = ["condor_q"]
             cmd.extend(self.remoteScheddOptions.strip().split(" "))
             cmd.extend(_condorIDs)
-            cmd.extend(["-af:j", "JobStatus", "HoldReasonCode", "HoldReasonSubCode", "HoldReason"])
+            cmd.extend(["-attributes", attributes])
+            cmd.extend(["-json"])
             result = self._executeCondorCommand(cmd, keepTokenFile=True)
             if not result["OK"]:
                 return result
 
-            qList.extend(result["Value"].split("\n"))
+            if result["Value"]:
+                qList.extend(json.loads(result["Value"]))
 
             condorHistCall = ["condor_history"]
             condorHistCall.extend(self.remoteScheddOptions.strip().split(" "))
             condorHistCall.extend(_condorIDs)
-            condorHistCall.extend(["-af:j", "JobStatus", "HoldReasonCode", "HoldReasonSubCode", "HoldReason"])
+            condorHistCall.extend(["-attributes", attributes])
+            condorHistCall.extend(["-json"])
             result = self._executeCondorCommand(cmd, keepTokenFile=True)
             if not result["OK"]:
                 return result
 
-            qList.extend(result["Value"].split("\n"))
+            if result["Value"]:
+                qList.extend(json.loads(result["Value"]))
 
-        for job, jobID in condorIDs.items():
-            jobStatus, reason = parseCondorStatus(qList, jobID)
+        foundJobIDs = set()
+        for jobMetadata in qList:
+            jobStatus, reason = getCondorStatus(jobMetadata)
+            condorId = f"{jobMetadata['ClusterId']}.{jobMetadata['ProcId']}"
+            jobReference = condorIDs.get(condorId)
 
             if jobStatus == PilotStatus.ABORTED:
-                self.log.verbose("Job", f"{jobID} held: {reason}")
+                self.log.verbose("Job", f"{jobReference} held: {reason}")
 
-            resultDict[job] = jobStatus
+            resultDict[jobReference] = jobStatus
+            foundJobIDs.add(jobReference)
+
+        # Check if we have any jobs that were not found in the condor_q or condor_history
+        for jobReference in condorIDs.values():
+            if jobReference not in foundJobIDs:
+                self.log.verbose("Job", f"{jobReference} not found in condor_q or condor_history")
+                resultDict[jobReference] = PilotStatus.UNKNOWN
 
         self.tokenFile = None
 
