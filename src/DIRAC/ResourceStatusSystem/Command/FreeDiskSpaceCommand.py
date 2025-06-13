@@ -79,7 +79,7 @@ class FreeDiskSpaceCommand(Command):
         free = occupancy["Free"]
         total = occupancy["Total"]
 
-        results = {"Endpoint": "Deprecated", "Free": free, "Total": total, "ElementName": elementName}
+        results = {"Free": free, "Total": total, "ElementName": elementName}
         result = self._storeCommand(results)
         if not result["OK"]:
             return result
@@ -92,7 +92,6 @@ class FreeDiskSpaceCommand(Command):
         and adds records to the StorageOccupancy accounting.
 
         :param dict results: something like {'ElementName': 'CERN-HIST-EOS',
-                                             'Endpoint': 'httpg://srm-eoslhcb-bis.cern.ch:8443/srm/v2/server',
                                              'Free': 3264963586.10073,
                                              'Total': 8000000000.0}
         :returns: S_OK/S_ERROR dict
@@ -100,7 +99,6 @@ class FreeDiskSpaceCommand(Command):
 
         # Stores in cache
         res = self.rmClient.addOrModifySpaceTokenOccupancyCache(
-            endpoint=results["Endpoint"],
             lastCheckTime=datetime.utcnow(),
             free=results["Free"],
             total=results["Total"],
@@ -116,8 +114,6 @@ class FreeDiskSpaceCommand(Command):
             return siteRes
 
         accountingDict = {
-            "StorageElement": results["ElementName"],
-            "Endpoint": results["Endpoint"],
             "Site": siteRes["Value"] if siteRes["Value"] else "unassigned",
         }
 
@@ -191,10 +187,9 @@ class FreeDiskSpaceCommand(Command):
         return self._cleanCommand()
 
     def _cleanCommand(self, toDelete=None):
-        """Clean the spaceTokenOccupancy table from old endpoints
+        """Clean the spaceTokenOccupancy table from old SEs
 
-        :param tuple toDelete: endpoint to remove (endpoint, storage_element_name),
-                               e.g. ('httpg://srm-lhcb.cern.ch:8443/srm/managerv2', CERN-RAW)
+        :param tuple toDelete: storage_element_name
         """
         if not toDelete:
             toDelete = []
@@ -222,7 +217,7 @@ class FreeDiskSpaceCommand(Command):
             toDelete = [toDelete]
 
         for ep in toDelete:
-            res = self.rmClient.deleteSpaceTokenOccupancyCache(ep[0], ep[1])
+            res = self.rmClient.deleteSpaceTokenOccupancyCache(ep)
             if not res["OK"]:
                 self.log.warn("Could not delete entry from SpaceTokenOccupancyCache", res["Message"])
 

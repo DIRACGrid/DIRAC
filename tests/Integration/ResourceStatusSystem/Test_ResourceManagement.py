@@ -266,33 +266,31 @@ def test_SpaceTokenOccupancy(rmClient):
     SpaceTokenOccupancy table
     """
 
-    res = rmClient.deleteSpaceTokenOccupancyCache("endpoint", "token")  # just making sure it's not there (yet)
+    res = rmClient.deleteSpaceTokenOccupancyCache("token")  # just making sure it's not there (yet)
     assert res["OK"] is True, res["Message"]
 
     # TEST addOrModifySpaceTokenOccupancy
-    res = rmClient.addOrModifySpaceTokenOccupancyCache(
-        "endpoint", "token", 500.0, 1000.0, 200.0, datetime.datetime.now()
-    )
+    res = rmClient.addOrModifySpaceTokenOccupancyCache("token", 500.0, 1000.0, 200.0, datetime.datetime.now())
     assert res["OK"] is True, res["Message"]
 
-    res = rmClient.selectSpaceTokenOccupancyCache("endpoint", "token")
+    res = rmClient.selectSpaceTokenOccupancyCache("token")
     assert res["OK"] is True, res["Message"]
     # check if the name that we got is equal to the previously added 'token'
-    assert res["Value"][0][1] == "token"
+    assert res["Value"][0][0] == "token"
 
-    res = rmClient.addOrModifySpaceTokenOccupancyCache("endpoint", "token", free=100.0)
+    res = rmClient.addOrModifySpaceTokenOccupancyCache("token", free=100.0)
     assert res["OK"] is True, res["Message"]
 
-    res = rmClient.selectSpaceTokenOccupancyCache("endpoint", "token")
+    res = rmClient.selectSpaceTokenOccupancyCache("token")
     # check if the result has changed
-    assert res["Value"][0][3] == 100.0
+    assert res["Value"][0][2] == 100.0
 
     # TEST deleteSpaceTokenOccupancy
     # ...............................................................................
-    res = rmClient.deleteSpaceTokenOccupancyCache("endpoint", "token")
+    res = rmClient.deleteSpaceTokenOccupancyCache("token")
     assert res["OK"] is True, res["Message"]
 
-    res = rmClient.selectSpaceTokenOccupancyCache("endpoint", "token")
+    res = rmClient.selectSpaceTokenOccupancyCache("token")
     assert res["OK"] is True, res["Message"]
     assert not res["Value"], res["Value"]
 
