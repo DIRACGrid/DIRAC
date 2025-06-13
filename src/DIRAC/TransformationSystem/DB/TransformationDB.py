@@ -1247,7 +1247,11 @@ class TransformationDB(DB):
         connection = res["Value"]["Connection"]
         transID = res["Value"]["TransformationID"]
         req = "SELECT TransformationID, Message, Author, MessageDate FROM TransformationLog"
-        req = req + f" WHERE TransformationID={transID} ORDER BY MessageDate;"
+        if isinstance(transID, (int, str)):
+            req += f" WHERE TransformationID={int(transID)}"
+        else:
+            req += f" WHERE TransformationID IN ({','.join(str(int(x)) for x in transID)})"
+        req += " ORDER BY MessageDate;"
         res = self._query(req)
         if not res["OK"]:
             return res
