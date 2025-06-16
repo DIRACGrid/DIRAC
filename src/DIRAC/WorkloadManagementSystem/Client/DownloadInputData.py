@@ -243,12 +243,13 @@ class DownloadInputData:
             return S_ERROR(msg)
 
     def __getDownloadDir(self, incrementCounter=True):
+        jobIDPath = str(self.configuration.get("JobIDPath", os.getcwd()))
         if self.inputDataDirectory == "PerFile":
             if incrementCounter:
                 self.counter += 1
-            return tempfile.mkdtemp(prefix=f"InputData_{self.counter}", dir=os.getcwd())
+            return tempfile.mkdtemp(prefix=f"InputData_{self.counter}", dir=jobIDPath)
         elif self.inputDataDirectory == "CWD":
-            return os.getcwd()
+            return jobIDPath
         else:
             return self.inputDataDirectory
 
