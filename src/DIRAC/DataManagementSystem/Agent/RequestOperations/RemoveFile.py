@@ -4,17 +4,17 @@
 # Date: 2013/03/25 07:44:19
 ########################################################################
 
-""" :mod: RemoveFile
+""":mod: RemoveFile
 
-    ================
+================
 
-    .. module: RemoveFile
+.. module: RemoveFile
 
-    :synopsis: removeFile operation handler
+:synopsis: removeFile operation handler
 
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    removeFile operation handler
+removeFile operation handler
 """
 # #
 # @file RemoveFile.py
@@ -132,6 +132,7 @@ class RemoveFile(DMSRequestOperationsBase):
                     self.rmsMonitoringReporter.addRecord(
                         self.createRMSRecord("Successful", len(toRemoveDict) - len(bulkRemoval["Value"]))
                     )
+                toRemoveDict = bulkRemoval["Value"]
 
             # # 2nd step - single file removal
             for lfn, opFile in toRemoveDict.items():
