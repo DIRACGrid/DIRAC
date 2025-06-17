@@ -1,6 +1,8 @@
 """Test for WMS clients."""
 # pylint: disable=protected-access, missing-docstring, invalid-name
 
+from pathlib import Path
+import shutil
 import pytest
 
 from unittest.mock import MagicMock
@@ -280,3 +282,30 @@ def test_DLI_execute_NoLocal(mocker, dli, mockSE):
     assert res["Value"]["Failed"]
     assert "/a/lfn/1.txt" in res["Value"]["Failed"], res
     assert res["Value"]["Failed"][0] == "/a/lfn/1.txt", res
+
+
+def test_DLI_execute_jobIDPath(mocker, dli, mockSE):
+    """Specify a jobIDPath. Output should be in the jobIDPath directory."""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
+
+    # Create the jobIDPath directory
+    jobIDPath = Path().cwd() / "job" / "12345"
+    jobIDPath.mkdir(parents=True, exist_ok=True)
+
+    dli.configuration["JobIDPath"] = str(jobIDPath)
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.Client.DownloadInputData.gConfig.getValue", return_value=2)
+    mockObjectSE = mockSE.return_value
+    mockObjectSE.getFileMetadata.return_value = S_OK(
+        {"Successful": {"/a/lfn/1.txt": {"Cached": 1, "Accessible": 0}}, "Failed": {}}
+    )
+    dli._downloadFromSE = MagicMock(side_effect=[S_ERROR("Failed to down"), S_OK({"path": jobIDPath / "1.txt"})])
+    dli._isCache = MagicMock(return_value=True)
+    res = dli.execute(dataToResolve=["/a/lfn/1.txt"])
+
+    assert res["OK"]
+    assert not res["Value"]["Failed"]
+    assert "/a/lfn/1.txt" in res["Value"]["Successful"], res
+
+    # Check that the output path is in the jobIDPath directory
+    assert res["Value"]["Successful"]["/a/lfn/1.txt"]["path"] == jobIDPath / "1.txt", res
