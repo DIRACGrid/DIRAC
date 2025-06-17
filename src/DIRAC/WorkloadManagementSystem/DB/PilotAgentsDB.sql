@@ -74,10 +74,11 @@ DROP TABLE IF EXISTS `PilotsHistorySummary`;
 CREATE TABLE `PilotsHistorySummary` (
   `GridSite` VARCHAR(128),
   `ComputingElement` VARCHAR(128),
+  `GridType` VARCHAR(128),
   `Status` VARCHAR(32),
   `VO` VARCHAR(64),
   `PilotCount` INT,
-  PRIMARY KEY (`GridSite`,`ComputingElement`,`Status`, `VO`)
+  PRIMARY KEY (`GridSite`,`ComputingElement`,`GridType`,`Status`, `VO`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
@@ -89,8 +90,8 @@ CREATE TRIGGER trg_PilotAgents_insert
 AFTER INSERT ON PilotAgents
 FOR EACH ROW
 BEGIN
-  INSERT INTO PilotsHistorySummary (GridSite, ComputingElement, Status, VO, PilotCount)
-  VALUES (NEW.GridSite, NEW.DestinationSite, NEW.Status, NEW.VO, 1)
+  INSERT INTO PilotsHistorySummary (GridSite, ComputingElement, GridType, Status, VO, PilotCount)
+  VALUES (NEW.GridSite, NEW.DestinationSite, NEW.GridType, NEW.Status, NEW.VO, 1)
   ON DUPLICATE KEY UPDATE PilotCount = PilotCount + 1;
 END;
 //
@@ -103,6 +104,7 @@ BEGIN
   SET PilotCount = PilotCount - 1
   WHERE GridSite = OLD.GridSite
     AND ComputingElement = OLD.DestinationSite
+    AND GridType = OLD.GridType
     AND Status = OLD.Status
     AND VO = OLD.VO;
 
@@ -111,6 +113,7 @@ BEGIN
   WHERE PilotCount = 0
     AND GridSite = OLD.GridSite
     AND ComputingElement = OLD.DestinationSite
+    AND GridType = OLD.GridType
     AND Status = OLD.Status
     AND VO = OLD.VO;
 END;
@@ -127,6 +130,7 @@ BEGIN
     SET PilotCount = PilotCount - 1
     WHERE GridSite = OLD.GridSite
       AND ComputingElement = OLD.DestinationSite
+      AND GridType = OLD.GridType
       AND Status = OLD.Status
       AND VO = OLD.VO;
 
@@ -134,8 +138,8 @@ BEGIN
     DELETE FROM PilotsHistorySummary WHERE PilotCount = 0;
 
     -- Increase count for new status
-    INSERT INTO PilotsHistorySummary (GridSite, ComputingElement, Status, VO, PilotCount)
-    VALUES (NEW.GridSite, NEW.DestinationSite, NEW.Status, NEW.VO, 1)
+    INSERT INTO PilotsHistorySummary (GridSite, ComputingElement, GridType, Status, VO, PilotCount)
+    VALUES (NEW.GridSite, NEW.DestinationSite, NEW.GridType, NEW.Status, NEW.VO, 1)
     ON DUPLICATE KEY UPDATE PilotCount = PilotCount + 1;
 
   END IF;
