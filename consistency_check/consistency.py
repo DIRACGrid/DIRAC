@@ -131,6 +131,8 @@ def compare_checksum(
     # Make a single DF with both info, and only keep pfn in both
     joined = pd.concat([fc_dump, se_dump], axis=1)
     joined = joined[joined.index.isin(in_both)]
+    if joined.empty:
+        raise ValueError("Could not join properly, is something wrong with the files format ?")
 
     # Filter on non matching checksum
     non_matching = joined.loc[joined["fc_cks"] != joined["se_cks"]][["seName", "lfn", "fc_cks", "se_cks"]]
