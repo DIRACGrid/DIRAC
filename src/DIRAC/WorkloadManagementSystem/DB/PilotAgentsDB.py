@@ -944,7 +944,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         """Get distinct values for the Pilot Monitor page selectors"""
 
         resultDict = {}
-        for param in ["VO", "Status", "DestinationSite", "GridSite"]:
+        for param in ["VO", "Status", "ComputingElement", "GridSite"]:
             result = self.getDistinctAttributeValues("PilotsHistorySummary", param)
             if not result["OK"]:
                 resultDict = []
