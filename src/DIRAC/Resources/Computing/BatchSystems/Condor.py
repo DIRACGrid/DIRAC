@@ -157,7 +157,7 @@ class Condor(object):
                 holdReasonSubcode=HOLD_REASON_SUBCODE,
                 daysToKeepRemoteLogs=1,
                 scheddOptions="",
-                extraString="",
+                extraString=submitOptions,
                 pilotStampList=",".join(stamps),
             )
         )
@@ -165,7 +165,7 @@ class Condor(object):
         jdlFile.flush()
 
         cmd = "%s; " % preamble if preamble else ""
-        cmd += "condor_submit %s %s" % (submitOptions, jdlFile.name)
+        cmd += "condor_submit %s" % jdlFile.name
         sp = subprocess.Popen(
             cmd,
             shell=True,
@@ -378,4 +378,29 @@ class Condor(object):
             if job_metadata["HoldReasonCode"] == 16:
                 resultDict["Waiting"] += 1
 
+        return resultDict
+
+    def getJobOutputFiles(self, **kwargs):
+        """Get output file names and templates for the specific CE"""
+        resultDict = {}
+
+        MANDATORY_PARAMETERS = ["JobIDList", "OutputDir", "ErrorDir"]
+        for argument in MANDATORY_PARAMETERS:
+            if argument not in kwargs:
+                resultDict["Status"] = -1
+                resultDict["Message"] = "No %s" % argument
+                return resultDict
+
+        outputDir = kwargs["OutputDir"]
+        errorDir = kwargs["ErrorDir"]
+        jobIDList = kwargs["JobIDList"]
+
+        jobDict = {}
+        for jobID in jobIDList:
+            jobDict[jobID] = {}
+            jobDict[jobID]["Output"] = "%s/%s.out" % (outputDir, jobID)
+            jobDict[jobID]["Error"] = "%s/%s.err" % (errorDir, jobID)
+
+        resultDict["Status"] = 0
+        resultDict["Jobs"] = jobDict
         return resultDict
