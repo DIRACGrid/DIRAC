@@ -97,7 +97,9 @@ class BaseAccountingType:
         if errKeys:
             return S_ERROR(f"Key(s) {', '.join(errKeys)} are not valid")
         for key in dataDict:
-            self.setValueByKey(key, dataDict[key])
+            res = self.setValueByKey(key, dataDict[key])
+            if not res["OK"]:
+                return res
         return S_OK()
 
     def getValue(self, key):
