@@ -1,3 +1,17 @@
+[v9.0.0a60]
+
+*DataManagementSystem
+
+FIX: (#8228) don't remove twice in the RemoveFile operation
+
+*WorkloadManagement
+
+FIX: (#8227) Download input data in the job directory
+
+*FrameworkSystem
+
+FIX: (#8222) do not import MySQLdb unless necessary
+
 [v9.0.0a59]
 
 *Resources
