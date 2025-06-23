@@ -1,4 +1,4 @@
-""" Base Storage Class provides the base interface for all storage plug-ins
+"""Base Storage Class provides the base interface for all storage plug-ins
 
       exists()
 
@@ -33,6 +33,7 @@ These are the methods for getting information about the Storage:
       getOccupancy()
 
 """
+
 import errno
 import json
 import os
@@ -113,7 +114,8 @@ class StorageBase:
 
     def getParameters(self):
         """Get the parameters with which the storage was instantiated"""
-        parameterDict = dict(self.protocolParameters)
+        parameterDict = dict(self._allProtocolParameters)
+        parameterDict.update(self.protocolParameters)
         parameterDict["StorageName"] = self.name
         parameterDict["PluginName"] = self.pluginName
         parameterDict["URLBase"] = self.getURLBase().get("Value", "")
