@@ -282,6 +282,42 @@ def wholeNodeJob():
     return endOfAllJobs(J)
 
 
+def memory_4GB():
+    """simple hello world job, with a memory requirement of 4 GB and MultiProcessor tags"""
+
+    J = baseToAllJobs("memory_4GB")
+    try:
+        J.setInputSandbox([find_all("mpTest.py", rootPath, "DIRAC/tests/Utilities")[0]])
+    except IndexError:
+        try:
+            J.setInputSandbox([find_all("mpTest.py", ".", "DIRAC/tests/Utilities")[0]])
+        except IndexError:  # we are in Jenkins
+            J.setInputSandbox([find_all("mpTest.py", os.environ["WORKSPACE"], "DIRAC/tests/Utilities")[0]])
+
+    J.setExecutable("mpTest.py")
+    J.setNumberOfProcessors(numberOfProcessors=2)
+    J.setTag("4GB")
+    return endOfAllJobs(J)
+
+
+def memory_2_to4GB():
+    """simple hello world job, with a memory requirement of 2 to 4 GB and MultiProcessor tags"""
+
+    J = baseToAllJobs("memory_2_to_4GB")
+    try:
+        J.setInputSandbox([find_all("mpTest.py", rootPath, "DIRAC/tests/Utilities")[0]])
+    except IndexError:
+        try:
+            J.setInputSandbox([find_all("mpTest.py", ".", "DIRAC/tests/Utilities")[0]])
+        except IndexError:  # we are in Jenkins
+            J.setInputSandbox([find_all("mpTest.py", os.environ["WORKSPACE"], "DIRAC/tests/Utilities")[0]])
+
+    J.setExecutable("mpTest.py")
+    J.setNumberOfProcessors(numberOfProcessors=2)
+    J.setTag(["2GB", "4GB_MAX"])
+    return endOfAllJobs(J)
+
+
 def parametricJob():
     """Creates a parametric job with 3 subjobs which are simple hello world jobs"""
 
