@@ -1,10 +1,10 @@
 """ DIRAC Workload Management System utility module to get available memory and processors from mjf
 """
-import os
 import multiprocessing
+import os
 from urllib.request import urlopen
 
-from DIRAC import gLogger, gConfig
+from DIRAC import gConfig, gLogger
 from DIRAC.Core.Utilities.List import fromChar
 
 
@@ -116,8 +116,8 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
         if numberOfProcessors:
             return numberOfProcessors
 
-    # 4) looks in CS for tags
-    gLogger.info(f"Getting tagsfor {siteName}: {gridCE}: {queue}")
+    # 3) looks in CS for tags
+    gLogger.info(f"Getting tags for {siteName}: {gridCE}: {queue}")
     # Tags of the CE
     tags = fromChar(
         gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/CEs/{gridCE}/Tag", "")

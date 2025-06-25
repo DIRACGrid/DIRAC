@@ -232,9 +232,9 @@ def mpJob():
 
 
 def mp3Job():
-    """simple hello world job, with 2 to 4 processors"""
+    """simple hello world job, with 3 processors"""
 
-    J = baseToAllJobs("min2max4Job")
+    J = baseToAllJobs("min3Job")
     try:
         J.setInputSandbox([find_all("mpTest.py", rootPath, "DIRAC/tests/Utilities")[0]])
     except IndexError:
