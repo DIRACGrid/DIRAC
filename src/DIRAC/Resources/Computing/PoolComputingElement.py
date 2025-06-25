@@ -61,6 +61,8 @@ class PoolComputingElement(ComputingElement):
         self.taskID = 0
         self.processorsPerTask = {}
         self.userNumberPerTask = {}
+        self.ram = 1024  # Default RAM in GB (this is an arbitrary large value in case of no limit)
+        self.ramPerTask = {}
 
         # This CE will effectively submit to another "Inner"CE
         # (by default to the InProcess CE)
@@ -74,21 +76,15 @@ class PoolComputingElement(ComputingElement):
 
         self.processors = int(self.ceParameters.get("NumberOfProcessors", self.processors))
         self.ceParameters["MaxTotalJobs"] = self.processors
+        max_ram = int(self.ceParameters.get("MaxRAM", 0))
+        if max_ram > 0:
+            self.ram = max_ram // 1024  # Convert from MB to GB
+        self.ceParameters["MaxRAM"] = self.ram
         # Indicates that the submission is done asynchronously
         # The result is not immediately available
         self.ceParameters["AsyncSubmission"] = True
         self.innerCESubmissionType = self.ceParameters.get("InnerCESubmissionType", self.innerCESubmissionType)
         return S_OK()
-
-    def getProcessorsInUse(self):
-        """Get the number of currently allocated processor cores
-
-        :return: number of processors in use
-        """
-        processorsInUse = 0
-        for future in self.processorsPerTask:
-            processorsInUse += self.processorsPerTask[future]
-        return processorsInUse
 
     #############################################################################
     def submitJob(self, executableFile, proxy=None, inputs=None, **kwargs):
@@ -112,15 +108,22 @@ class PoolComputingElement(ComputingElement):
             self.taskID += 1
             return S_OK(taskID)
 
-        # Now persisting the job limits for later use in pilot.cfg file (pilot 3 default)
+        memoryForJob = self._getMemoryForJobs(kwargs)
+        if memoryForJob is None:
+            self.taskResults[self.taskID] = S_ERROR("Not enough memory for the job")
+            taskID = self.taskID
+            self.taskID += 1
+            return S_OK(taskID)
+
+        # Now persisting the job limits for later use in pilot.cfg file
         cd = ConfigurationData(loadDefaultCFG=False)
         res = cd.loadFile("pilot.cfg")
         if not res["OK"]:
             self.log.error("Could not load pilot.cfg", res["Message"])
         else:
-            # only NumberOfProcessors for now, but RAM (or other stuff) can also be added
             jobID = int(kwargs.get("jobDesc", {}).get("jobID", 0))
             cd.setOptionInCFG("/Resources/Computing/JobLimits/%d/NumberOfProcessors" % jobID, processorsForJob)
+            cd.setOptionInCFG("/Resources/Computing/JobLimits/%d/MaxRAM" % jobID, memoryForJob)
             res = cd.dumpLocalCFGToFile("pilot.cfg")
             if not res["OK"]:
                 self.log.error("Could not dump cfg to pilot.cfg", res["Message"])
@@ -132,6 +135,7 @@ class PoolComputingElement(ComputingElement):
         # Submission
         future = self.pPool.submit(executeJob, executableFile, proxy, self.taskID, inputs, **taskKwargs)
         self.processorsPerTask[future] = processorsForJob
+        self.ramPerTask[future] = memoryForJob
         future.add_done_callback(functools.partial(self.finalizeJob, self.taskID))
 
         taskID = self.taskID
@@ -141,7 +145,7 @@ class PoolComputingElement(ComputingElement):
 
     def _getProcessorsForJobs(self, kwargs):
         """helper function"""
-        processorsInUse = self.getProcessorsInUse()
+        processorsInUse = sum(self.processorsPerTask.values())
         availableProcessors = self.processors - processorsInUse
 
         self.log.verbose(
@@ -178,6 +182,24 @@ class PoolComputingElement(ComputingElement):
 
         return requestedProcessors
 
+    def _getMemoryForJobs(self, kwargs):
+        """helper function to get the memory that will be allocated for the job
+
+        :param kwargs: job parameters
+        :return: memory in GB or None if not enough memory
+        """
+
+        # # job requirements
+        requestedMemory = kwargs.get("MaxRAM", 0)
+
+        # # now check what the slot can provide
+        # Do we have enough memory?
+        availableMemory = self.ram - sum(self.ramPerTask.values())
+        if availableMemory < requestedMemory:
+            return None
+
+        return requestedMemory
+
     def finalizeJob(self, taskID, future):
         """Finalize the job by updating the process utilisation counters
 
@@ -209,7 +231,7 @@ class PoolComputingElement(ComputingElement):
         result["WaitingJobs"] = 0
 
         # dealing with processors
-        processorsInUse = self.getProcessorsInUse()
+        processorsInUse = sum(self.processorsPerTask.values())
         result["UsedProcessors"] = processorsInUse
         result["AvailableProcessors"] = self.processors - processorsInUse
         return result

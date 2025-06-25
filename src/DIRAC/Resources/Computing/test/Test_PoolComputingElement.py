@@ -83,7 +83,7 @@ def createAndDelete():
 def test_submit_and_shutdown(createAndDelete):
     time.sleep(0.5)
 
-    ceParameters = {"WholeNode": True, "NumberOfProcessors": 4}
+    ceParameters = {"WholeNode": True, "NumberOfProcessors": 4, "MaxRAM": 4}
     ce = PoolComputingElement("TestPoolCE")
     ce.setParameters(ceParameters)
 
@@ -371,28 +371,37 @@ def test_executeJob_WholeNodeJobs(createAndDelete):
 
 
 @pytest.mark.parametrize(
-    "processorsPerTask, kwargs, expected",
+    "processorsPerTask, ramPerTask, kwargs, expected_processors, expected_memory",
     [
-        (None, {}, 1),
-        (None, {"mpTag": False}, 1),
-        (None, {"mpTag": True}, 1),
-        (None, {"mpTag": True, "wholeNode": True}, 16),
-        (None, {"mpTag": True, "wholeNode": False}, 1),
-        (None, {"mpTag": True, "numberOfProcessors": 4}, 4),
-        (None, {"mpTag": True, "numberOfProcessors": 4, "maxNumberOfProcessors": 8}, 8),
-        (None, {"mpTag": True, "numberOfProcessors": 4, "maxNumberOfProcessors": 32}, 16),
-        ({1: 4}, {"mpTag": True, "wholeNode": True}, 0),
-        ({1: 4}, {"mpTag": True, "wholeNode": False}, 1),
-        ({1: 4}, {"mpTag": True, "numberOfProcessors": 2}, 2),
-        ({1: 4}, {"mpTag": True, "maxNumberOfProcessors": 2}, 2),
-        ({1: 4}, {"mpTag": True, "maxNumberOfProcessors": 16}, 12),
+        (None, None, {}, 1, 0),
+        (None, None, {"mpTag": False}, 1, 0),
+        (None, None, {"mpTag": True, "MaxRAM": 8}, 1, 8),
+        (None, None, {"mpTag": True, "wholeNode": True}, 16, 0),
+        (None, None, {"mpTag": True, "wholeNode": False}, 1, 0),
+        (None, None, {"mpTag": True, "numberOfProcessors": 4, "MaxRAM": 4}, 4, 4),
+        (None, None, {"mpTag": True, "numberOfProcessors": 4, "maxNumberOfProcessors": 8}, 8, 0),
+        (None, None, {"mpTag": True, "numberOfProcessors": 4, "maxNumberOfProcessors": 32}, 16, 0),
+        ({1: 4}, {1: 4}, {"mpTag": True, "wholeNode": True}, 0, 0),
+        ({1: 4}, {1: 4}, {"mpTag": True, "wholeNode": False}, 1, 0),
+        ({1: 4}, {1: 4}, {"mpTag": True, "numberOfProcessors": 2, "MaxRAM": 8}, 2, 8),
+        ({1: 4}, {1: 4}, {"mpTag": True, "numberOfProcessors": 16, "MaxRAM": 12}, 0, 12),
+        ({1: 4}, {1: 4}, {"mpTag": True, "maxNumberOfProcessors": 2, "MaxRAM": 16}, 2, 16),
+        ({1: 4}, {1: 4}, {"mpTag": True, "maxNumberOfProcessors": 16, "MaxRAM": 32}, 12, None),
+        ({1: 4, 2: 8}, {1: 4}, {"mpTag": True, "numberOfProcessors": 2}, 2, 0),
+        ({1: 4, 2: 8}, {1: 4}, {"mpTag": True, "numberOfProcessors": 4}, 4, 0),
+        ({1: 4, 2: 8, 3: 8}, {1: 4}, {"mpTag": True, "numberOfProcessors": 4}, 0, 0),
     ],
 )
-def test__getProcessorsForJobs(processorsPerTask, kwargs, expected):
+def test__getLimitsForJobs(processorsPerTask, ramPerTask, kwargs, expected_processors, expected_memory):
     ce = PoolComputingElement("TestPoolCE")
     ce.processors = 16
+    ce.ram = 32
 
     if processorsPerTask:
         ce.processorsPerTask = processorsPerTask
+    if ramPerTask:
+        ce.ramPerTask = ramPerTask
     res = ce._getProcessorsForJobs(kwargs)
-    assert res == expected
+    assert res == expected_processors
+    res = ce._getMemoryForJobs(kwargs)
+    assert res == expected_memory

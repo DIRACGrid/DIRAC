@@ -522,6 +522,19 @@ class Job(API):
         return S_OK()
 
     #############################################################################
+    def setRAMRequirements(self, ramRequired: int = 0):
+        """Helper function.
+        Specify the RAM requirements for the job in GB. 0 (default) means no specific requirements.
+        """
+        if ramRequired:
+            self._addParameter(
+                self.workflow,
+                "MaxRAM",
+                "JDL",
+                ramRequired,
+                "GBs of RAM requested",
+            )
+
     def setNumberOfProcessors(self, numberOfProcessors=None, minNumberOfProcessors=None, maxNumberOfProcessors=None):
         """Helper function.
 
