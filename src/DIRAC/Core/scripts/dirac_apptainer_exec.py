@@ -100,7 +100,8 @@ def main():
         gLogger.error(result["Message"])
         DIRAC.exit(1)
     if result["Value"][0] != 0:
-        gLogger.error(result["Value"][2])
+        gLogger.error("Apptainer command failed with exit code", result["Value"][0])
+        gLogger.error("Command output:", result["Value"])
         DIRAC.exit(2)
     gLogger.notice(result["Value"][1])
 
