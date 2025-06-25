@@ -709,7 +709,7 @@ class Job(API):
         Example usage:
 
         >>> job = Job()
-        >>> job.setTag( ['WholeNode','8GBMemory'] )
+        >>> job.setTag( ['WholeNode','8GB'] )
 
         :param tags: single tag string or a list of tags
         :type tags: str or python:list

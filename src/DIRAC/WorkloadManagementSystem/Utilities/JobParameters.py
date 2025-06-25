@@ -57,7 +57,11 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
             return numberOfProcessors
 
     # 3) looks in CS for tags
+<<<<<<< HEAD
     gLogger.info(f"Getting tagsfor {siteName}: {gridCE}: {queue}")
+=======
+    gLogger.info(f"Getting tags for {siteName}: {gridCE}: {queue}")
+>>>>>>> 7dffc72d65 (fix: minor typo fixes)
     # Tags of the CE
     tags = fromChar(
         gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/CEs/{gridCE}/Tag", "")
