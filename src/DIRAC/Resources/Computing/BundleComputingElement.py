@@ -79,6 +79,7 @@ from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFa
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.BundlerClient import BundlerClient
 
+
 class BundleTaskDict(dict):
     def __init__(self, getProperty):
         self.getProperty = getProperty
@@ -92,8 +93,8 @@ class BundleTaskDict(dict):
             super().__setitem__(jobId, res)
         return res
 
-class BundleComputingElement(ComputingElement):
 
+class BundleComputingElement(ComputingElement):
     def __init__(self, ceUniqueID):
         """Standard constructor."""
         super().__init__(ceUniqueID)
@@ -134,36 +135,36 @@ class BundleComputingElement(ComputingElement):
         self.innerCEParams = innerCEParams
 
         self.innerCEMethods = [
-            name
-            for name, _ in 
-            inspect.getmembers(self.innerCE, predicate=inspect.ismethod)
-            if name[0] != "_"
+            name for name, _ in inspect.getmembers(self.innerCE, predicate=inspect.ismethod) if name[0] != "_"
         ]
 
         return S_OK()
 
     #############################################################################
 
-    def submitJob(self, executableFiles, proxy=None, numberOfProcessors=1, inputs=None, outputs=[]):
-        jobId = f"BUNDLE_{self.ceName}_{uuid.uuid4().hex}"
+    def submitJob(self, executableFiles, proxy=None, numberOfProcessors=1, inputs=[], outputs=[]):
+        jobId = str(uuid.uuid4().hex)
+
+        proxy = self.proxy if self.proxy else proxy
 
         if not proxy:
-            proxy = self.proxy
-        
+            self.log.error("Proxy not defined. Use setProxy or send proxy during job submission")
+            return S_ERROR("PROXY NOT DEFINED")
+
         # Store the job in a bundle using the ceDict of the InnerCE (containing the template)
-        result = proxy.dumpAllToString()
+        if isinstance(proxy, str):
+            return S_ERROR("PROXY CANNOT BE IN A STRING FORMAT")
+
+        proxyStr = proxy.dumpAllToString()["Value"]
+        result = self.writeProxyToFile(proxyStr)
 
         if not result["OK"]:
-            self.log.error("Error while encoding proxy as string")
             return result
 
+        proxyPath = result["Value"]
+
         result = self.bundler.storeInBundle(
-            jobId, 
-            executableFiles, 
-            inputs, 
-            result["Value"], 
-            numberOfProcessors, 
-            self.innerCEParams
+            jobId, executableFiles, inputs, outputs, proxyPath, numberOfProcessors, self.innerCEParams
         )
 
         if not result["OK"]:
@@ -171,7 +172,7 @@ class BundleComputingElement(ComputingElement):
             return result
 
         bundleId = result["Value"]["BundleID"]
-        submitted = result["Value"]["Executing"]    # For logging purposes
+        submitted = result["Value"]["Executing"]  # For logging purposes
 
         result = S_OK([jobId])
         result["PilotStampDict"] = {jobId: bundleId}
@@ -207,14 +208,14 @@ class BundleComputingElement(ComputingElement):
         if outputPath := result["Value"]["OutputPath"] is None:
             taskId = result["Value"]["TaskId"]
             result = self.innerCE.getJobOutput(taskId, workingDirectory)
-            
+
             if not result["OK"]:
                 return result
 
             self.bundler.setOutputPath(taskId, workingDirectory)
 
         self.log.notice(f"Outputs at: {outputPath}")
-        
+
         error = f"{outputPath}/{jobId}/{jobId}.err"
         output = f"{outputPath}/{jobId}/{jobId}.out"
 
@@ -230,8 +231,8 @@ class BundleComputingElement(ComputingElement):
             if ":::" in job:
                 jobId, bundleId = job.split(":::")
 
-            result = self.bundler.getBundleStatusOfJob(job)
-            
+            result = self.bundler.getJobStatus(job)
+
             if not result["OK"]:
                 self.log.error(result["Message"])
                 resultDict[job] = PilotStatus.FAILED
@@ -244,19 +245,19 @@ class BundleComputingElement(ComputingElement):
 
     def getCEStatus(self):
         return self.innerCE.getCEStatus()
-    
-    def setProxy(self, proxy):
-        super().setProxy(proxy)
-        self.innerCE.setProxy(proxy)
-    
-    def setToken(self, token):
-        super().setToken(token)
-        self.innerCE.setToken(token)
+
+    def setProxy(self, proxy, valid=0):
+        super().setProxy(proxy, valid)
+        self.innerCE.setProxy(proxy, valid)
+
+    def setToken(self, token, valid=0):
+        super().setToken(token, valid)
+        self.innerCE.setToken(token, valid)
 
     def cleanJob(self, jobIDList):
         if "cleanJob" not in self.innerCEMethods:
-           self.log.error(f"Inner CE {self.innerCE.ceName} has no function called 'cleanJob'")
-           return S_ERROR()
+            self.log.error(f"Inner CE {self.innerCE.ceName} has no function called 'cleanJob'")
+            return S_ERROR()
 
         for job in jobIDList:
             if ":::" in job:
@@ -284,9 +285,9 @@ class BundleComputingElement(ComputingElement):
             return result
 
         if result["Value"] not in PilotStatus.PILOT_FINAL_STATES:
-            return None
-        
+            return S_OK()
+
         if result["Value"] == PilotStatus.DONE:
             return S_OK(0)
-        
+
         return S_OK(1)

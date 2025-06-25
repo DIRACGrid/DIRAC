@@ -490,7 +490,7 @@ class AREXComputingElement(ComputingElement):
 
     def _bundlePreamble(self, executableFile):
         """Bundle the preamble with the executable file"""
-        wrapperContent = f"{self.preamble}\n./{executableFile}"
+        wrapperContent = f"{self.preamble}\n./{os.path.basename(executableFile)}"
 
         # We need to make sure the executable file can be executed by the wrapper
         # By adding the execution mode to the file, the file will be processed as an "executable" in the XRSL

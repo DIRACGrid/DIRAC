@@ -73,13 +73,16 @@ class RemoteRunner:
         # Request the whole directory as output
         outputs = ["/"]
 
+        absWorkingDirectory = os.path.abspath(workingDirectory)
+        asbInputs = [os.path.join(absWorkingDirectory, _input) for _input in inputs]
+
         # Interactions with the CE might be unstable, we need to retry the operations
         maxRetries = 10
         timeBetweenRetries = 120
 
         # Submit the command as a job with retries
         for _ in range(maxRetries):
-            result = workloadCE.submitJob(self.executable, workloadCE.proxy, inputs=inputs, outputs=outputs)
+            result = workloadCE.submitJob(self.executable, workloadCE.proxy, inputs=asbInputs, outputs=outputs)
             if result["OK"]:
                 break
             else:

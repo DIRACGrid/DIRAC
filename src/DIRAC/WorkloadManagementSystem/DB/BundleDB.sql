@@ -26,9 +26,10 @@ CREATE TABLE `BundlesInfo` (
     `Queue`         VARCHAR(128) NOT NULL,
     `CEDict`        TEXT NOT NULL,
     `ExecTemplate`  VARCHAR(25) NOT NULL,
-    `TaskID`        INTEGER(11) UNSIGNED,
+    `TaskID`        VARCHAR(255),
     `Status`        ENUM('Storing', 'Sent', 'Finalized', 'Failed') NOT NULL DEFAULT 'Storing',
     `OutputPath`    VARCHAR(255),
+    `ProxyPath`     VARCHAR(255),
     PRIMARY KEY (BundleID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -37,7 +38,9 @@ CREATE TABLE `JobToBundle` (
     `JobID`             VARCHAR(255) NOT NULL,
     `BundleID`          VARCHAR(32) NOT NULL,
     `ExecutablePath`    VARCHAR(255) NOT NULL,
-    `Inputs`            TEXT NOT NULL,
+    `Inputs`            VARCHAR(255) NOT NULL,
+    `Outputs`           VARCHAR(255) NOT NULL,
+    `Processors`        INT(5) UNSIGNED NOT NULL DEFAULT 1,
     PRIMARY KEY (`JobID`),
     FOREIGN KEY (`BundleID`) REFERENCES `BundlesInfo`(`BundleID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

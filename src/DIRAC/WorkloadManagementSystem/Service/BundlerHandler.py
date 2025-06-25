@@ -2,10 +2,13 @@
 
     It connects to a BundleDB to store and retrive bundles.
 """
+import os
+import shutil
 from ast import literal_eval
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
@@ -21,13 +24,13 @@ class BundlerHandler(RequestHandler):
             result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.BundleDB", "BundleDB")
             if not result["OK"]:
                 return result
-            cls.bundleDB : BundleDB = result["Value"](parentLogger=cls.log)
-            
+            cls.bundleDB: BundleDB = result["Value"](parentLogger=cls.log)
+
             # Dictionaries entries should be removed afer some time
             cls.jobToCE = {}
             cls.bundleToCE = {}
             cls.jobToBundle = {}
-            
+
             cls.ceFactory = ComputingElementFactory()
             cls.killBundleOnError = True
 
@@ -38,58 +41,52 @@ class BundlerHandler(RequestHandler):
 
     #############################################################################
 
-    types_storeInBundle = [str, str, list, str, int, dict]
+    types_storeInBundle = [str, str, list, list, str, int, dict]
 
-    def export_storeInBundle(self, jobId, executable, inputs, proxyDict, processors, ceDict):
-        self.log.debug(f"Received: \n\tjobID={jobId}\n\texecutable={executable}\n\tinputs={inputs}\n\tprocessors={processors}\n\tceDict={ceDict}")
-
-        # Prepare the CE
-        result = self.ceFactory.getCE(ceType=ceDict["CEType"], ceName=ceDict["CEName"] ,ceParametersDict=ceDict)
+    def export_storeInBundle(self, jobId, executable, inputs, outputs, proxyPath, processors, ceDict):
+        result = self.__setupCE(ceDict, proxyPath)
 
         if not result["OK"]:
-            self.log.error("Failed obtain the CE with configuration: ", str(ceDict))
             return result
 
-        ce = result["Value"]
+        ce = result["Value"]["CE"]
+        proxy = result["Value"]["Proxy"]
+
         self.jobToCE[jobId] = ce
 
         # Insert the Job into the DB
-        result = self.bundleDB.insertJobToBundle(jobId, executable, inputs, processors, ceDict)
+        result = self.bundleDB.insertJobToBundle(jobId, executable, inputs, outputs, processors, ceDict)
         if not result["OK"]:
             self.log.error("Failed to insert into a bundle the job with id ", str(jobId))
             return result
 
         bundleId = result["Value"]["BundleId"]
         readyForSubmission = result["Value"]["Ready"]
+
         self.bundleToCE[bundleId] = ce
 
         self.log.info("Job inserted in bundle successfully")
 
         if readyForSubmission:
-            # Try to load the Proxy
-            proxy = X509Chain()
-            result = proxy.loadChainFromString(proxy)
-            if not result["OK"]:
-                self.log.error("Failed to obtain proxy from the input string")
-                self.log.debug(f"Obtained proxy string:\n{proxy}")
-                return result
-
             self.log.info(f"Submitting bundle '{bundleId}' to CE '{ce.ceName}'")
 
             result = self._wrapBundle(bundleId)
             if not result["OK"]:
                 return result
-            bundle_exe, bundle_inputs = result["Value"]
 
-            result = ce.submitJob(bundle_exe, inputs=bundle_inputs, proxy=proxy)
+            jobIds, bundle_exe, bundle_inputs, bundle_outputs = result["Value"]
+            extra_outputs = [item for job_id in jobIds for item in [f"{job_id}.out", f"{job_id}.status"]]
+            bundle_outputs.extend(extra_outputs)
+
+            result = ce.submitJob(bundle_exe, proxy=proxy, inputs=bundle_inputs, outputs=bundle_outputs)
 
             if not result["OK"]:
                 self.log.error("Failed to submit job to with id ", str(jobId))
                 return result
 
             innerJobId = result["Value"][0]
-            taskId = innerJobId + ":::" + result[["PilotStampDict"]][innerJobId]
-            
+            taskId = innerJobId + ":::" + result["PilotStampDict"][innerJobId]
+
             result = self.bundleDB.setTaskId(bundleId, taskId)
 
             if not result["OK"]:
@@ -104,27 +101,27 @@ class BundlerHandler(RequestHandler):
 
     def export_getTaskInfo(self, bundleId):
         return self._getTaskInfo(bundleId)
-    
+
     def _getTaskInfo(self, bundleId):
         result = self.bundleDB.getWholeBundle(bundleId)
 
         if not result["OK"]:
             self.log.error("Failed to obtain bundle ", str(bundleId))
             return result
-        
+
         bundleDict = result["Value"]
         resultDict = {"Status": bundleDict["Status"]}
 
         if bundleDict["Status"] not in PilotStatus.PILOT_FINAL_STATES:
             resultDict["TaskID"] = bundleDict["TaskID"]
             resultDict["OutputPath"] = bundleDict["OutputPath"]
-        
+
         return S_OK(resultDict)
-   
+
     #############################################################################
 
     types_bundleIdFromJobId = [str]
-    
+
     def export_bundleIdFromJobId(self, jobId):
         return self._getBundleIdFromJobId(jobId)
 
@@ -145,7 +142,7 @@ class BundlerHandler(RequestHandler):
             result = self._killBundleOfJob(jobId)
             if not result["OK"]:
                 return result
-            
+
             bundleId = result["Value"]
             self.log.info(f"Bundle {bundleId} of Job {jobId} killed successfully")
             return S_OK()
@@ -153,9 +150,12 @@ class BundlerHandler(RequestHandler):
         else:
             self.log.warn("KillBundleOnError is off, doing nothing")
             return S_ERROR(message="KillBundleOnError is off, won't kill the bundle")
-    
+
     def _killBundleOfJob(self, jobId):
-        ce = self.__getJobCE(jobId)
+        result = self.__getJobCE(jobId)
+        if not result["OK"]:
+            return result
+        ce = result["Value"]
         result = self._getBundleIdFromJobId(jobId)
 
         if not result["OK"]:
@@ -174,8 +174,8 @@ class BundlerHandler(RequestHandler):
         if not result["OK"]:
             return result
 
-        self.bundleDB.setBundleAsFailed() 
-        return 
+        self.bundleDB.setBundleAsFailed()
+        return
 
     def _killJob(self, jobId):
         return S_ERROR("CAN'T STOP JOBS")
@@ -191,7 +191,7 @@ class BundlerHandler(RequestHandler):
         bundleId = result["Value"]
 
         result = self._getTaskInfo(bundleId)
-        
+
         if not result["OK"]:
             return result
         status = result["Value"]["Status"]
@@ -199,13 +199,19 @@ class BundlerHandler(RequestHandler):
         if status not in PilotStatus.PILOT_FINAL_STATES:
             return S_ERROR(f"The bundle hasn't finished, cleaning is not permitted. Current Status: {status}")
 
-        ce = self.__getJobCE(jobId)
+        result = self.__getJobCE(jobId)
+        if not result["OK"]:
+            return result
+        ce = result["Value"]
         try:
             ce.cleanJob(result["Value"]["TaskID"])
-        except AttributeError as e: # If the CE has no method 'cleanJob'
+        except AttributeError as e:  # If the CE has no method 'cleanJob'
             return S_ERROR(e)
+
+        os.remove(f"/tmp/bundle_{bundleId}")
+
         return S_OK()
-    
+
     #############################################################################
 
     types_getJobStatus = [str]
@@ -215,7 +221,7 @@ class BundlerHandler(RequestHandler):
 
         if not result["OK"]:
             return result
-        
+
         bundleId = result["Value"]
 
         result = self._getTaskInfo(bundleId)
@@ -224,16 +230,24 @@ class BundlerHandler(RequestHandler):
             return result
 
         status = result["Value"]["Status"]
+        task = result["Value"]["TaskID"]
 
         if status not in PilotStatus.PILOT_FINAL_STATES:
-            ce = self.__getJobCE(jobId)
+            if not task:
+                return S_OK(PilotStatus.FAILED)
 
-            task = result["Value"]["TaskID"]
+            result = self.__getJobCE(jobId)
+
+            if not result["OK"]:
+                return result
+
+            ce = result["Value"]
+
             result = ce.getJobStatus(task)
 
             if not result["OK"]:
                 return result
-            
+
             status = result["Value"][task]
 
             if result["Value"] == PilotStatus.DONE:
@@ -246,13 +260,13 @@ class BundlerHandler(RequestHandler):
     #############################################################################
 
     def _getBundleIdFromJobId(self, jobId):
-        if self.jobToBundle[jobId]:
+        if jobId in self.jobToBundle:
             return self.jobToBundle[jobId]
 
         result = self.bundleDB.getBundleIdFromJobId(jobId)
         if not result["OK"]:
             return result
-        
+
         self.jobToBundle[jobId] = result["Value"]
         return result
 
@@ -274,27 +288,50 @@ class BundlerHandler(RequestHandler):
         jobs = result["Value"]
 
         template = bundle["ExecTemplate"]
+        executables = []
         inputs = []
+        outputs = ()
+        jobIds = []
+
+        basedir = f"/tmp/bundle_{bundleId}"
+        os.mkdir(basedir)
 
         for job in jobs:
-            inputs.append(job["ExecutablePath"])
-            inputs.append(job["Inputs"])
+            jobId = job["JobID"]
+            jobIds.append(jobId)
 
-        result = generate_template(template, inputs)
+            # Copy the original file in a new location with the rest
+            job_executable = job["ExecutablePath"]
+            job_executable_dst = os.path.join(basedir, jobId + "_" + os.path.basename(job_executable))
+
+            shutil.copy(job_executable, job_executable_dst)
+
+            executables.append(os.path.basename(job_executable_dst))
+            inputs.append(job_executable_dst)
+
+            for job_input in job["Inputs"]:
+                job_input_dst = os.path.join(basedir, jobId + "_" + os.path.basename(job_input))
+                shutil.copy(job_input, job_input_dst)
+                inputs.append(job_input_dst)
+
+            for job_output in job["Outputs"]:
+                outputs += job_output
+
+        result = generate_template(template, executables)
 
         if not result["OK"]:
             self.log.error("Error while generating wrapper")
             return result
 
         wrappedBundle = result["Value"]
-        wrapperPath = f"/tmp/bundle_wrapper_{bundleId}"
+        wrapperPath = os.path.join(basedir, "bundle_wrapper")
 
         with open(wrapperPath, "x") as f:
             f.write(wrappedBundle)
 
-        return S_OK((wrapperPath, inputs))
+        return S_OK((jobIds, wrapperPath, inputs, outputs))
 
-    def _getCeDict(self, jobId):
+    def _getCE(self, jobId):
         result = self._getBundleIdFromJobId(jobId)
         if not result["OK"]:
             return result
@@ -305,27 +342,53 @@ class BundlerHandler(RequestHandler):
             return result
 
         # Convert the CEDict from string to a dictionary
-        ceDict = literal_eval(result["Value"])
-        return S_OK(ceDict)
+        ceDict = literal_eval(result["Value"]["CEDict"])
+
+        return S_OK(ceDict, result["Value"]["ProxyPath"])
 
     def __getJobCE(self, jobId):
         if jobId not in self.jobToCE:
             # Look for it in the DB
-            result = self._getCeDict(jobId)
+            result = self._getCE(jobId)
 
             if not result["OK"]:
                 self.log.error("Failed to obtain CE Dict of Bundle with JobId ", str(jobId))
                 return result
 
-            ceDict = result["Value"]
-
-            # Build the ce obtained from the DB
-            result = self.ceFactory.getCE(ceType=ceDict["CEType"], ceName=ceDict["GridCE"], ceParametersDict=ceDict)
+            result = self.__setupCE(result["Value"]["CEDict"], result["Value"]["ProxyPath"])
 
             if not result["OK"]:
-                self.log.error("Failed to CE of JobId ", str(jobId))
                 return result
 
             self.jobToCE[jobId] = result["Value"]
 
-        return self.jobToCE[jobId]
+        return S_OK(self.jobToCE[jobId])
+
+    def __setupCE(self, ceDict, proxyPath):
+        result = getProxyInfo(proxy=proxyPath)
+
+        if not result["OK"]:
+            self.log.error("Failed to obtain proxy from path")
+            return result
+
+        proxy = result["Value"]["chain"]
+
+        result = proxy.getRemainingSecs()
+        if not result["OK"]:
+            self.log.error("Failed to obtain remaining seconds of proxy")
+            return result
+
+        valid = result["Value"]
+
+        # Setup CE
+        result = self.ceFactory.getCE(ceType=ceDict["CEType"], ceName=ceDict["GridCE"], ceParametersDict=ceDict)
+
+        if not result["OK"]:
+            self.log.error("Failed obtain the CE with configuration: ", str(ceDict))
+            return result
+
+        ce = result["Value"]
+
+        ce.setProxy(proxy, valid)
+
+        return S_OK({"CE": ce, "Proxy": proxy})
