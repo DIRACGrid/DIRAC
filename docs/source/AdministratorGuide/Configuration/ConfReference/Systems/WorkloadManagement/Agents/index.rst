@@ -3,13 +3,6 @@ Systems / WorkloadManagement / <INSTANCE> / Agents - Sub-subsection
 
  In this subsection each agent is described.
 
-+----------+----------------------------------+----------------+
-| **Name** | **Description**                  | **Example**    |
-+----------+----------------------------------+----------------+
-| *Agent*  | Subsection named as the agent is | InputDataAgent |
-|          | called.                          |                |
-+----------+----------------------------------+----------------+
-
 Common options for all the agents are described in the table below:
 
 +---------------------+---------------------------------------+------------------------------+
