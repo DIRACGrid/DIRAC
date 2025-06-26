@@ -142,7 +142,7 @@ CREATE TABLE `JobCommands` (
 
 DROP TABLE IF EXISTS `JobsHistorySummary`;
 CREATE TABLE `JobsHistorySummary` (
-  `ID` INT AUTO_INCREMENT PRIMARY KEY,
+  `ID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `Status` VARCHAR(32),
   `Site` VARCHAR(100),
   `Owner` VARCHAR(32),
@@ -153,7 +153,8 @@ CREATE TABLE `JobsHistorySummary` (
   `ApplicationStatus` VARCHAR(255),
   `MinorStatus` VARCHAR(128),
   `JobCount` INT,
-  RescheduleSum INT,
+  `RescheduleSum` INT,
+  PRIMARY KEY (`ID`),
   UNIQUE KEY uq_summary (
     `Status`,
     `Site`,
