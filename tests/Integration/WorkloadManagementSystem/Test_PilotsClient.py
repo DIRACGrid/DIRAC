@@ -25,8 +25,8 @@ def test_PilotsDB():
     webapp = WebAppClient()
 
     # This will allow you to run the test again if necessary
-    for jobID in ["aPilot", "anotherPilot"]:
-        pilots.deletePilots(jobID)
+    for pilot_stamp in ["aPilot", "anotherPilot"]:
+        pilots.deletePilot(pilot_stamp)
 
     res = pilots.addPilotReferences(["aPilot"], "VO")
     assert res["OK"], res["Message"]
