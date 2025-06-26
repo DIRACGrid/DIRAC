@@ -93,10 +93,10 @@ class PilotManagerHandler(RequestHandler):
 
         result = self.pilotAgentsDB.getPilotInfo(pilotReference)
         if not result["OK"]:
-            self.log.error("Failed to get info for pilot", result["Message"])
+            self.log.error("Failed to get info for pilot", f"{pilotReference}: {result['Message']}")
             return S_ERROR("Failed to get info for pilot")
         if not result["Value"]:
-            self.log.warn("The pilot info is empty", pilotReference)
+            self.log.warn("The pilot info is empty for", pilotReference)
             return S_ERROR("Pilot info is empty")
 
         pilotDict = result["Value"][pilotReference]
@@ -105,11 +105,14 @@ class PilotManagerHandler(RequestHandler):
         # classic logs first, by default
         funcs = [self._getPilotOutput, self._getRemotePilotOutput]
         if remote:
+            self.log.info("Trying to retrieve output of pilot", f"{pilotReference} remotely first")
             funcs.reverse()
 
         result = funcs[0](pilotReference, pilotDict)
         if not result["OK"]:
-            self.log.warn("Pilot log retrieval failed (first attempt), remote ?", remote)
+            self.log.warn(
+                "Failed getting output for pilot", f"{pilotReference}. Will try another approach: {result['Message']}"
+            )
             result = funcs[1](pilotReference, pilotDict)
             return result
         else:
