@@ -323,7 +323,7 @@ class BaseClient:
             pass
 
         # We randomize the list, and add at the end the failover URLs (System/FailoverURLs/Component)
-        urlsList = List.randomize(List.fromChar(urls, ",")) + failoverUrls
+        urlsList = List.fromChar(urls, ",") + failoverUrls
         self.__nbOfUrls = len(urlsList)
         self.__nbOfRetry = (
             2 if self.__nbOfUrls > 2 else 3
@@ -445,7 +445,6 @@ and this is thread {cThID}
             return self.__initStatus
         if self.__enableThreadCheck:
             self.__checkThreadID()
-
         gLogger.debug(f"Trying to connect to: {self.serviceURL}")
         try:
             # Calls the transport method of the apropriate protocol.
