@@ -47,6 +47,25 @@ class PilotManagerClient:
     @convertToReturnValue
     def deletePilots(self, pilot_stamps):
         with DiracXClient() as api:
+            pilot_ids = None
+            if isinstance(pilot_stamps, list[int]):
+                # Multiple elements (int)
+                pilot_ids = pilot_stamps  # Semantic
+            elif isinstance(pilot_stamps, int):
+                # Only one element (int)
+                pilot_ids = [pilot_stamps]
+            elif isinstance(pilot_stamps, str):
+                # Only one element (str)
+                pilot_stamps = [pilot_stamps]
+            # Else: pilot_stamps should be list[str] (or the input is random)
+
+            if pilot_ids:
+                # If we have defined pilot_ids, then we have to change them to pilot_stamps
+                query = [{"parameter": "PilotID", "operator": "in", "value": pilot_ids}]
+
+                pilots = api.pilots.search(parameters=["PilotStamp"], search=query, sort=[])
+                pilot_stamps = [pilot["PilotStamp"] for pilot in pilots]
+
             api.pilots.delete_pilots(pilot_stamps=pilot_stamps)
 
     @convertToReturnValue
