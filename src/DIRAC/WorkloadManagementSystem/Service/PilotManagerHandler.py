@@ -197,7 +197,6 @@ class PilotManagerHandler(RequestHandler):
         # return res, correct or not
         return res
 
-
     ##############################################################################
     types_selectPilots = [dict]
 
@@ -277,7 +276,6 @@ class PilotManagerHandler(RequestHandler):
         """
         return cls.pilotAgentsDB.getGroupedPilotSummary(columnList)
 
-
     types_countPilots = [dict]
 
     @classmethod
@@ -285,7 +283,6 @@ class PilotManagerHandler(RequestHandler):
         """Set the pilot agent status"""
 
         return cls.pilotAgentsDB.countPilots(condDict, older, newer, timeStamp)
-
 
     # --------------- Moved to DiracX ---------------
 
@@ -299,13 +296,11 @@ class PilotManagerHandler(RequestHandler):
         pilot_references = pilotRefDict.values()
         pilot_stamp_dict = dict(zip(pilotStamps, pilot_references))
 
-
         return cls.pilotAgentsDB.addPilotReferences(pilot_references, VO, gridType, pilot_stamp_dict)
-
 
     #############################################
     types_setJobForPilot = [[str, int], str]
-    
+
     @classmethod
     def export_setJobForPilot(cls, jobID, pilotRef, destination=None):
         """Report the DIRAC job ID which is executed by the given pilot job"""
@@ -337,7 +332,6 @@ class PilotManagerHandler(RequestHandler):
         """Set the pilot AccountingSent flag"""
         return cls.pilotAgentsDB.setAccountingFlag(pilotRef, mark)
 
-
     #############################################
     types_setPilotStatus = [str, str]
 
@@ -351,12 +345,12 @@ class PilotManagerHandler(RequestHandler):
 
     #############################################
     types_deletePilots = [[list, str, int]]
-    
+
     @classmethod
     def export_deletePilots(cls, pilotIDs):
         if isinstance(pilotIDs, str):
             return cls.pilotAgentsDB.deletePilot(pilotIDs)
-        
+
         # And list[str]????
         # pilot_id>>>S<<<
 
@@ -377,8 +371,8 @@ class PilotManagerHandler(RequestHandler):
     @classmethod
     def export_clearPilots(cls, interval=30, aborted_interval=7):
         return cls.pilotAgentsDB.clearPilots(interval, aborted_interval)
-    
-    ##############################################################################
+
+    #############################################
     types_getPilots = [[str, int]]
 
     @classmethod
@@ -389,8 +383,8 @@ class PilotManagerHandler(RequestHandler):
             return S_ERROR(f"Failed to get pilot for Job {int(jobID)}: {result.get('Message', '')}")
 
         return cls.pilotAgentsDB.getPilotInfo(pilotID=result["Value"])
-    
-    ##############################################################################
+
+    #############################################
     types_getPilotInfo = [[list, str]]
 
     @classmethod
