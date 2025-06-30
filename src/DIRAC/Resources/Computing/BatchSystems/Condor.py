@@ -63,6 +63,7 @@ environment = "DIRAC_PILOT_STAMP=$(stamp) %(environment)s"
 # Requirements
 # ------------
 request_cpus = %(processors)s
+requirements = NumJobStarts == 0
 
 # Exit options
 # ------------
@@ -74,7 +75,8 @@ on_exit_hold = ExitCode =!= 0
 # A subcode of our choice to identify who put the job on hold
 on_exit_hold_subcode = %(holdReasonSubcode)s
 # Jobs are then deleted from the system after N days if they are not idle or running
-periodic_remove = (JobStatus != 1) && (JobStatus != 2) && ((time() - EnteredCurrentStatus) > (%(daysToKeepRemoteLogs)s * 24 * 3600))
+periodic_remove = ((JobStatus == 1) && (NumJobStarts > 0)) || \
+    ((JobStatus != 1) && (JobStatus != 2) && ((time() - EnteredCurrentStatus) > (%(daysToKeepRemoteLogs)s * 24 * 3600))
 
 # Specific options
 # ----------------
@@ -143,8 +145,6 @@ class Condor(object):
         preamble = kwargs.get("Preamble")
 
         jdlFile = tempfile.NamedTemporaryFile(dir=outputDir, suffix=".jdl", mode="wt")
-        scheddOptions = 'requirements = OpSys == "LINUX"\n'
-        scheddOptions += "gentenv = False"
         jdlFile.write(
             subTemplate
             % dict(
