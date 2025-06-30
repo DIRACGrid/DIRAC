@@ -161,13 +161,6 @@ class BaseAccountingType:
                 cD[self.fieldsList[iPos]] = self.valuesList[iPos]
         return cD
 
-    def registerToServer(self):
-        """
-        Register type in server
-        """
-        rpcClient = Client(url="Accounting/DataStore")
-        return rpcClient.registerType(*self.getDefinition())
-
     def commit(self):
         """
         Commit register to server
