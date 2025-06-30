@@ -2,6 +2,7 @@
 """
 tests for HTCondorCEComputingElement module
 """
+import json
 import uuid
 
 import pytest
@@ -12,18 +13,30 @@ from DIRAC.Resources.Computing.BatchSystems import Condor
 
 MODNAME = "DIRAC.Resources.Computing.HTCondorCEComputingElement"
 
-STATUS_LINES = """
-123.2 5 4 0 undefined
-123.1 3 undefined undefined undefined
-""".strip().split(
-    "\n"
-)
+STATUS_QUEUE = [
+    {
+        "ClusterId": 123,
+        "ProcId": 2,
+        "JobStatus": 5,
+        "HoldReasonCode": 4,
+        "HoldReasonSubCode": 0,
+        "HoldReason": "The credentials for the job are invalid",
+    },
+    {
+        "ClusterId": 123,
+        "ProcId": 1,
+        "JobStatus": 3,
+    },
+]
 
-HISTORY_LINES = """
-123.0 4 undefined undefined undefined
-""".strip().split(
-    "\n"
-)
+
+STATUS_HISTORY = [
+    {
+        "ClusterId": 123,
+        "ProcId": 0,
+        "JobStatus": 4,
+    }
+]
 
 
 @pytest.fixture
@@ -32,42 +45,47 @@ def setUp():
 
 
 def test_parseCondorStatus():
-    statusLines = f"""
-  104098.1 1 undefined undefined undefined
-  104098.2 2 undefined undefined undefined
-  104098.3 3 undefined undefined undefined
-  104098.4 4 undefined undefined undefined
-  104098.5 5 16 57 Input data are being spooled
-  104098.6 5 3 {Condor.HOLD_REASON_SUBCODE} Policy
-  104098.7 5 1 0 undefined
+    statusOutput = {"ClusterId": 104098, "ProcId": 1, "JobStatus": 1}
+    assert HTCE.getCondorStatus(statusOutput) == ("Waiting", "")
 
-  foo bar
-  104096.1 3 16 test test
-  104096.2 3 test
-  104096.3 5 undefined undefined undefined
-  104096.4 7
-  """.strip().split(
-        "\n"
-    )
-    # force there to be an empty line
+    statusOutput = {"ClusterId": 104098, "ProcId": 2, "JobStatus": 2}
+    assert HTCE.getCondorStatus(statusOutput) == ("Running", "")
 
-    expectedResults = {
-        "104098.1": "Waiting",
-        "104098.2": "Running",
-        "104098.3": "Aborted",
-        "104098.4": "Done",
-        "104098.5": "Waiting",
-        "104098.6": "Failed",
-        "104098.7": "Aborted",
-        "foo": "Unknown",
-        "104096.1": "Aborted",
-        "104096.2": "Aborted",
-        "104096.3": "Aborted",
-        "104096.4": "Unknown",
+    statusOutput = {"ClusterId": 104098, "ProcId": 3, "JobStatus": 3}
+    assert HTCE.getCondorStatus(statusOutput) == ("Aborted", "")
+
+    statusOutput = {"ClusterId": 104098, "ProcId": 4, "JobStatus": 4}
+    assert HTCE.getCondorStatus(statusOutput) == ("Done", "")
+
+    statusOutput = {
+        "ClusterId": 104098,
+        "ProcId": 5,
+        "JobStatus": 5,
+        "HoldReasonCode": 16,
+        "HoldReasonSubCode": 57,
+        "HoldReason": "Input data are being spooled",
     }
+    assert HTCE.getCondorStatus(statusOutput) == ("Waiting", "Input data are being spooled")
 
-    for jobID, expected in expectedResults.items():
-        assert HTCE.parseCondorStatus(statusLines, jobID)[0] == expected
+    statusOutput = {
+        "ClusterId": 104098,
+        "ProcId": 6,
+        "JobStatus": 5,
+        "HoldReasonCode": 3,
+        "HoldReasonSubCode": HTCE.HOLD_REASON_SUBCODE,
+        "HoldReason": "Policy",
+    }
+    assert HTCE.getCondorStatus(statusOutput) == ("Failed", "Policy")
+
+    statusOutput = {
+        "ClusterId": 104098,
+        "ProcId": 7,
+        "JobStatus": 5,
+        "HoldReasonCode": 1,
+        "HoldReasonSubCode": 0,
+        "HoldReason": "Aborted by user",
+    }
+    assert HTCE.getCondorStatus(statusOutput) == ("Aborted", "Aborted by user")
 
 
 def test_getJobStatus(mocker):
@@ -75,8 +93,8 @@ def test_getJobStatus(mocker):
     mocker.patch(
         MODNAME + ".systemCall",
         side_effect=[
-            S_OK((0, "\n".join(STATUS_LINES), "")),
-            S_OK((0, "\n".join(HISTORY_LINES), "")),
+            S_OK((0, json.dumps(STATUS_QUEUE), "")),
+            S_OK((0, json.dumps(STATUS_HISTORY), "")),
             S_OK((0, "", "")),
             S_OK((0, "", "")),
         ],
@@ -110,7 +128,7 @@ def test_getJobStatus(mocker):
 def test_getJobStatusBatchSystem(mocker):
     """Test Condor Batch System plugin getJobStatus"""
     patchPopen = mocker.patch("DIRAC.Resources.Computing.BatchSystems.Condor.subprocess.Popen")
-    patchPopen.return_value.communicate.side_effect = [("\n".join(STATUS_LINES), ""), ("\n".join(HISTORY_LINES), "")]
+    patchPopen.return_value.communicate.side_effect = [(json.dumps(STATUS_QUEUE), ""), (json.dumps(STATUS_HISTORY), "")]
     patchPopen.return_value.returncode = 0
 
     ret = Condor.Condor().getJobStatus(JobIDList=["123.0", "123.1", "123.2", "333.3"])
