@@ -64,7 +64,12 @@ from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import writeToTokenFile
-from DIRAC.Resources.Computing.BatchSystems.Condor import HOLD_REASON_SUBCODE, getCondorStatus, subTemplate
+from DIRAC.Resources.Computing.BatchSystems.Condor import (
+    HOLD_REASON_SUBCODE,
+    STATE_ATTRIBUTES,
+    getCondorStatus,
+    subTemplate,
+)
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
@@ -409,38 +414,36 @@ class HTCondorCEComputingElement(ComputingElement):
             jobReference = jobReference.split(":::")[0]
             condorIDs[self._jobReferenceToCondorID(jobReference)] = jobReference
 
-        attributes = "ClusterId,ProcId,JobStatus,HoldReasonCode,HoldReasonSubCode,HoldReason"
-
-        qList = []
+        jobsMetadata = []
         for _condorIDs in breakListIntoChunks(condorIDs.keys(), 100):
             cmd = ["condor_q"]
             cmd.extend(self.remoteScheddOptions.strip().split(" "))
             cmd.extend(_condorIDs)
-            cmd.extend(["-attributes", attributes])
+            cmd.extend(["-attributes", STATE_ATTRIBUTES])
             cmd.extend(["-json"])
             result = self._executeCondorCommand(cmd, keepTokenFile=True)
             if not result["OK"]:
                 return result
 
             if result["Value"]:
-                qList.extend(json.loads(result["Value"]))
+                jobsMetadata.extend(json.loads(result["Value"]))
 
             condorHistCall = ["condor_history"]
             condorHistCall.extend(self.remoteScheddOptions.strip().split(" "))
             condorHistCall.extend(_condorIDs)
-            condorHistCall.extend(["-attributes", attributes])
+            condorHistCall.extend(["-attributes", STATE_ATTRIBUTES])
             condorHistCall.extend(["-json"])
             result = self._executeCondorCommand(cmd, keepTokenFile=True)
             if not result["OK"]:
                 return result
 
             if result["Value"]:
-                qList.extend(json.loads(result["Value"]))
+                jobsMetadata.extend(json.loads(result["Value"]))
 
         foundJobIDs = set()
-        for jobMetadata in qList:
-            jobStatus, reason = getCondorStatus(jobMetadata)
-            condorId = f"{jobMetadata['ClusterId']}.{jobMetadata['ProcId']}"
+        for jobDict in jobsMetadata:
+            jobStatus, reason = getCondorStatus(jobDict)
+            condorId = f"{jobDict['ClusterId']}.{jobDict['ProcId']}"
             jobReference = condorIDs.get(condorId)
 
             if jobStatus == PilotStatus.ABORTED:
