@@ -26,6 +26,8 @@ STATES_MAP = {
 
 HOLD_REASON_SUBCODE = "55"
 
+STATE_ATTRIBUTES = "ClusterId,ProcId,JobStatus,HoldReasonCode,HoldReasonSubCode,HoldReason"
+
 subTemplate = """
 # Environment
 # -----------
@@ -94,7 +96,7 @@ def getCondorStatus(jobMetadata):
     """parse the condor_q or condor_history output for the job status
 
     :param jobMetadata: dict with job metadata
-    :type lines: dict[str, str | int]
+    :type jobMetadata: dict[str, str | int]
     :returns: Status as known by DIRAC, and a reason if the job is being held
     """
     if jobMetadata["JobStatus"] != 5:
@@ -272,10 +274,9 @@ class Condor(object):
 
         # Prepare the command to get the status of the jobs
         cmdJobs = " ".join(str(jobID) for jobID in jobIDList)
-        attributes = "ClusterId,ProcId,JobStatus,HoldReasonCode,HoldReasonSubCode,HoldReason"
 
         # Get the status of the jobs currently active
-        cmd = "condor_q %s -attributes %s -json" % (cmdJobs, attributes)
+        cmd = "condor_q %s -attributes %s -json" % (cmdJobs, STATE_ATTRIBUTES)
         sp = subprocess.Popen(
             shlex.split(cmd),
             stdout=subprocess.PIPE,
@@ -290,10 +291,10 @@ class Condor(object):
             resultDict["Message"] = error
             return resultDict
 
-        jobMetadata = json.loads(output)
+        jobsMetadata = json.loads(output)
 
         # Get the status of the jobs in the history
-        condorHistCall = "condor_history %s -attributes %s -json" % (cmdJobs, attributes)
+        condorHistCall = "condor_history %s -attributes %s -json" % (cmdJobs, STATE_ATTRIBUTES)
         sp = subprocess.Popen(
             shlex.split(condorHistCall),
             stdout=subprocess.PIPE,
@@ -308,12 +309,12 @@ class Condor(object):
             resultDict["Message"] = error
             return resultDict
 
-        jobMetadata += json.loads(output)
+        jobsMetadata += json.loads(output)
 
         statusDict = {}
-        # Build a set of job IDs found in jobMetadata
+        # Build a set of job IDs found in jobsMetadata
         foundJobIDs = set()
-        for jobDict in jobMetadata:
+        for jobDict in jobsMetadata:
             jobID = "%s.%s" % (jobDict["ClusterId"], jobDict["ProcId"])
             statusDict[jobID], _ = getCondorStatus(jobDict)
             foundJobIDs.add(jobID)
