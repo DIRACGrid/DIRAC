@@ -1,7 +1,8 @@
 """
-  This module contains helper methods for accessing operational attributes or parameters of DMS objects
+This module contains helper methods for accessing operational attributes or parameters of DMS objects
 
 """
+
 from collections import defaultdict
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
@@ -17,6 +18,9 @@ sLog = gLogger.getSubLogger(__name__)
 def resolveSEGroup(seGroupList, allSEs=None):
     """
     Resolves recursively a (list of) SEs that can be groupSEs
+    For modules, JobWrapper or whatever runs at a given site,
+    prefer using :py:func:`~DIRAC.DataManagementSystem.Utilities.ResolveSE.getDestinationSEList`
+
 
     :param seGroupList: list of SEs to resolve or comma-separated SEs
     :type seGroupList: list or string
