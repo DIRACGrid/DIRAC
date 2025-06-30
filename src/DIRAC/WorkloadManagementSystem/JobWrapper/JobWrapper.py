@@ -10,6 +10,7 @@ and a Watchdog Agent that can monitor its progress.
   :caption: JobWrapper options
 
 """
+
 import contextlib
 import datetime
 import glob
@@ -119,14 +120,16 @@ class JobWrapper:
         self.pilotRef = gConfig.getValue("/LocalSite/PilotReference", "Unknown")
         self.cpuNormalizationFactor = gConfig.getValue("/LocalSite/CPUNormalizationFactor", 0.0)
         self.bufferLimit = gConfig.getValue(self.section + "/BufferLimit", 10485760)
-        self.defaultOutputSE = getDestinationSEList(
-            gConfig.getValue("/Resources/StorageElementGroups/SE-USER", []), self.siteName
-        )
+        try:
+            self.defaultOutputSE = getDestinationSEList("SE-USER", self.siteName)
+        except RuntimeError:
+            self.defaultOutputSE = []
         self.defaultCatalog = gConfig.getValue(self.section + "/DefaultCatalog", [])
         self.masterCatalogOnlyFlag = gConfig.getValue(self.section + "/MasterCatalogOnlyFlag", True)
-        self.defaultFailoverSE = getDestinationSEList(
-            gConfig.getValue("/Resources/StorageElementGroups/Tier1-Failover", []), self.siteName
-        )
+        try:
+            self.defaultFailoverSE = getDestinationSEList("Tier1-Failover", self.siteName)
+        except RuntimeError:
+            self.defaultFailoverSE = []
         self.defaultOutputPath = ""
         self.retryUpload = gConfig.getValue(self.section + "/RetryUpload", False)
         self.dm = DataManager()
