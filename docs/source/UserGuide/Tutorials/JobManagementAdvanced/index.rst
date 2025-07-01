@@ -345,8 +345,6 @@ using the "setNumberOfProcessors" method of the API::
 Calling ``Job().setNumberOfProcessors()``, with a value bigger than 1,
 will translate into adding also the "MultiProcessor" tag to the job description.
 
-.. versionadded:: v6r20p5
-
 Users can specify in the job descriptions NumberOfProcessors and WholeNode parameters, e.g.::
 
    NumberOfProcessors = 16;
