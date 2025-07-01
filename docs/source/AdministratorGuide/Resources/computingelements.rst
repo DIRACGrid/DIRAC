@@ -57,25 +57,22 @@ of the *ComputingElement* is located inside the corresponding site section in th
       # Site administrative domain
       LCG
       {
-        # Site section
+        # Site section. This is the DIRAC's site name.
         LCG.CNAF.it
         {
-          # Site name
+          # Alternative site name (e.g. site name in GOC DB)
           Name = CNAF
-
-          # List of valid CEs on the site
-          CE = ce01.infn.it, ce02.infn.it
 
           # Section describing each CE
           CEs
           {
-            # Specific CE description section
+            # Specific CE description section. This site name is unique.
             ce01.infn.it
             {
-              # Type of the CE
+              # Type of the CE. "HTCondorCE" and "AREX" and "SSH" are the most common types.
               CEType = HTCondorCE
 
-              # Section to describe various queue in the CE
+              # Section to describe various (logical) queues in the CE.
               Queues
               {
                 long
@@ -93,7 +90,6 @@ of the *ComputingElement* is located inside the corresponding site section in th
 
 This is the general structure in which specific CE descriptions are inserted.
 The CE configuration is part of the general DIRAC configuration
-It can be placed in the general Configuration Service or in the local configuration of the DIRAC installation.
 Examples of the configuration can be found in the :ref:`full_configuration_example`, in the *Resources/Computing* section.
 You can find the options of a specific CE in the code documentation: :mod:`DIRAC.Resources.Computing`.
 
