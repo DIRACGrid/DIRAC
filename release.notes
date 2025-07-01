@@ -1,3 +1,30 @@
+[v9.0.0a61]
+
+*WorkloadManagementSystem
+
+FIX: (#8237) The JobWrapper correctly resolves the destination SE lists
+
+*Core
+
+FIX: (#8235) do not randomized urls sorted by preferredURLPatterns
+
+*WorkloadManagement
+
+NEW: (#8234) add a warning log when the first pilot retrieval attempt fails
+
+*Resources
+
+NEW: (#8230) StorageBase.getParameters returns all parameters
+FIX: (#8225) Condor command line call compatible with v24
+
+*Accounting
+
+CHANGE: (#8216) removed few dangerous RPC calls
+
+*MonitoringSystem
+
+CHANGE: (#8216) removed useless RPC calls
+
 [v9.0.0a60]
 
 *DataManagementSystem
