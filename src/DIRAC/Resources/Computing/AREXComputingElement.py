@@ -417,7 +417,7 @@ class AREXComputingElement(ComputingElement):
 
     #############################################################################
 
-    def _writeXRSL(self, executableFile, inputs, outputs):
+    def _writeXRSL(self, executableFile, inputs, outputs, diracXSecret):
         """Create the JDL for submission
 
         :param str executableFile: executable to wrap in a XRSL file
@@ -465,7 +465,7 @@ class AREXComputingElement(ComputingElement):
 (inputFiles=({executable} "{executableFile}") {xrslInputAdditions})
 (stdout="{diracStamp}.out")
 (stderr="{diracStamp}.err")
-(environment=("DIRAC_PILOT_STAMP" "{diracStamp}"))
+(environment=("DIRAC_PILOT_STAMP" "{diracStamp}") ("DIRACX_SECRET" "{diracXSecret}"))
 (outputFiles={xrslOutputFiles})
 (queue={queue})
 {xrslMPAdditions}
@@ -476,6 +476,7 @@ class AREXComputingElement(ComputingElement):
             executable=os.path.basename(executableFile),
             xrslInputAdditions=xrslInputs,
             diracStamp=diracStamp,
+            diracXSecret=diracXSecret,
             queue=self.queue,
             xrslOutputFiles=xrslOutputs,
             xrslMPAdditions=xrslMPAdditions,
@@ -501,7 +502,7 @@ class AREXComputingElement(ComputingElement):
             bundleFile.write(wrapperContent)
             return bundleFile.name
 
-    def _getArcJobID(self, executableFile, inputs, outputs, delegation):
+    def _getArcJobID(self, executableFile, inputs, outputs, delegation, diracXSecret):
         """Get an ARC JobID endpoint to upload executables and inputs.
 
         :param str executableFile: executable to submit
@@ -516,7 +517,7 @@ class AREXComputingElement(ComputingElement):
         query = self._urlJoin("jobs")
 
         # Get the job into the ARC way
-        xrslString, diracStamp = self._writeXRSL(executableFile, inputs, outputs)
+        xrslString, diracStamp = self._writeXRSL(executableFile, inputs, outputs, diracXSecret)
         xrslString += delegation
         self.log.debug("XRSL string submitted", f"is {xrslString}")
         self.log.debug("DIRAC stamp for job", f"is {diracStamp}")
@@ -569,10 +570,12 @@ class AREXComputingElement(ComputingElement):
             self.log.verbose("Input correctly uploaded", fileToSubmit)
         return S_OK()
 
-    def submitJob(self, executableFile, proxy, numberOfJobs=1, inputs=None, outputs=None):
+    def submitJob(self, executableFile, proxy, numberOfJobs=1, inputs=None, outputs=None, diracXSecrets=[]):
         """Method to submit job
         Assume that the ARC queues are always of the format nordugrid-<batchSystem>-<queue>
         And none of our supported batch systems have a "-" in their name
+
+        For V9+: Will give back also a {"stamp": "secret"} dictionnary.
         """
         result = self._checkSession()
         if not result["OK"]:
@@ -650,8 +653,13 @@ class AREXComputingElement(ComputingElement):
         # Also : https://bugzilla.nordugrid.org/show_bug.cgi?id=4069
         batchIDList = []
         stampDict = {}
-        for _ in range(numberOfJobs):
-            result = self._getArcJobID(executableFile, inputs, outputs, delegation)
+        secretDict = {}
+        for i in range(numberOfJobs):
+            if i > len(diracXSecrets):
+                currentSecret = ""
+            else:
+                currentSecret = diracXSecrets[i]
+            result = self._getArcJobID(executableFile, inputs, outputs, delegation, currentSecret)
             if not result["OK"]:
                 break
             arcJobID, diracStamp = result["Value"]
@@ -665,6 +673,8 @@ class AREXComputingElement(ComputingElement):
             jobReference = self._arcIDToJobReference(arcJobID)
             batchIDList.append(jobReference)
             stampDict[jobReference] = diracStamp
+            secretDict[currentSecret] = {}
+            secretDict[currentSecret]["PilotStamps"] = [diracStamp]  # Used by DiracX to associate secrets and pilots
             self.log.debug(
                 "Successfully submitted job",
                 f"{jobReference} to CE {self.ceName}",
@@ -677,6 +687,7 @@ class AREXComputingElement(ComputingElement):
         if batchIDList:
             result = S_OK(batchIDList)
             result["PilotStampDict"] = stampDict
+            result["SecretDict"] = secretDict
         else:
             result = S_ERROR("No ID obtained from the ARC job submission")
         return result

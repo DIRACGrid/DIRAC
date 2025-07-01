@@ -526,7 +526,7 @@ class SSHComputingElement(ComputingElement):
         else:
             return S_ERROR("\n".join([sshStdout, sshStderr]))
 
-    def submitJob(self, executableFile, proxy, numberOfJobs=1):
+    def submitJob(self, executableFile, proxy, numberOfJobs=1, diracXSecrets=[]):
         #    self.log.verbose( "Executable file path: %s" % executableFile )
         if not os.access(executableFile, 5):
             os.chmod(executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH)

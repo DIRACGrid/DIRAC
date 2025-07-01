@@ -308,7 +308,7 @@ class HTCondorCEComputingElement(ComputingElement):
         return S_OK(stdout.strip())
 
     #############################################################################
-    def submitJob(self, executableFile, proxy, numberOfJobs=1):
+    def submitJob(self, executableFile, proxy, numberOfJobs=1, diracXSecrets=[]):
         """Method to submit job"""
 
         self.log.verbose("Executable file path:", executableFile)

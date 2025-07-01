@@ -50,7 +50,7 @@ class SSHBatchComputingElement(SSHComputingElement):
         return S_OK()
 
     #############################################################################
-    def submitJob(self, executableFile, proxy, numberOfJobs=1):
+    def submitJob(self, executableFile, proxy, numberOfJobs=1, diracXSecrets=[]):
         """Method to submit job"""
 
         # Choose eligible hosts, rank them by the number of available slots

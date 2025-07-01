@@ -37,6 +37,7 @@ from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.PilotScopes import PILOT_SCOPES
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import getPilotAgentsDB
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Utilities.PilotWrapper import (
     _writePilotWrapperFile,
     getPilotFilesCompressedEncodedDict,
@@ -103,6 +104,7 @@ class SiteDirector(AgentModule):
         self.rssClient = ResourceStatus()
         self.pilotAgentsDB = getPilotAgentsDB()
         self.matcherClient = MatcherClient()
+        self.pilotManagementClient = PilotManagerClient()
 
         return S_OK()
 
@@ -348,15 +350,15 @@ class SiteDirector(AgentModule):
         if not result["OK"]:
             self.log.info("Failed pilot submission", f"Queue: {queueName}")
             return result
-        pilotList, stampDict = result["Value"]
+        stampDict, secretDict = result["Value"]
 
-        # updating the pilotAgentsDB... done by default but maybe not strictly necessary
-        result = self._addPilotReferences(queueName, pilotList, stampDict)
+        submittedPilots = len(stampDict)
+        self.log.info("Total number of pilots submitted", f"to {queueName}: {submittedPilots}")
+
+        result = self._addPilotReferences(queueName, stampDict, secretDict)
         if not result["OK"]:
             return result
 
-        submittedPilots = len(pilotList)
-        self.log.info("Total number of pilots submitted", f"to {queueName}: {submittedPilots}")
         return S_OK(submittedPilots)
 
     def _getQueueSlots(self, queue: str):
@@ -460,8 +462,12 @@ class SiteDirector(AgentModule):
         jobProxy = result["Value"]
         executable = self._getExecutable(queue, proxy=jobProxy, jobExecDir=jobExecDir, envVariables=envVariables)
 
+        secrets = self.pilotManagementClient.createNSecrets(vo=self.vo, n=pilotsToSubmit)
+
         # Submit the job
-        submitResult = ce.submitJob(executable, "", pilotsToSubmit)
+        # NOTE FOR DIRACX /!\ : We need in each CE to create a secret
+        submitResult = ce.submitJob(executable, "", pilotsToSubmit, diracXSecrets=secrets)
+
         # In case the CE does not need the executable after the submission, we delete it
         # Else, we keep it, the CE will delete it after the end of the pilot execution
         if submitResult.get("ExecutableToKeep") != executable:
@@ -531,34 +537,56 @@ class SiteDirector(AgentModule):
             if not result["OK"]:
                 self.log.error("Failure submitting Monitoring report", result["Message"])
 
-        return S_OK((pilotList, stampDict))
+        secretDict = {}
+        if "SecretDict" in submitResult:
+            # TODO: Update this comment as we add DiracX support
+            # V9+, only for:
+            # 1. Arex
 
-    def _addPilotReferences(self, queue: str, pilotList: list[str], stampDict: dict[str, str]):
+            # Result body: {"secret": "PilotStamps": ["stamp"]}
+            secretDict = submitResult["SecretDict"]
+
+        references = stampDict.keys()
+        stamps = stampDict.values()
+        stampDict = dict(zip(stamps, references))
+
+        return S_OK((stampDict, secretDict))
+
+    def _addPilotReferences(self, queue: str, stampDict: dict[str, str], secretDict: dict[str, str]):
         """Add pilotReference to pilotAgentsDB
 
         :param queue: the queue name
         :param pilotList: list of pilots
-        :param stampDict: dictionary of pilots timestamps
+        :param refDict: dictionary {"pilotstamp":"pilotref"}
+        :param secretDict: dictionary {"pilotstamp":"secret"}
         """
-        result = self.pilotAgentsDB.addPilotReferences(
-            pilotList,
-            self.vo,
-            self.queueDict[queue]["CEType"],
-            stampDict,
+        # FIXME: Change for a client or at least request to DiracX
+
+        # First, create pilots
+        stamps = stampDict.keys()
+        result = self.pilotManagementClient.addPilotReferences(
+            stamps, self.vo, self.queueDict[queue]["CEType"], stampDict
         )
         if not result["OK"]:
-            self.log.error("Failed add pilots to the PilotAgentsDB", result["Message"])
             return result
 
-        for pilot in pilotList:
-            result = self.pilotAgentsDB.setPilotStatus(
-                pilot,
-                PilotStatus.SUBMITTED,
-                self.queueDict[queue]["CEName"],
-                "Successfully submitted by the SiteDirector",
-                self.queueDict[queue]["Site"],
-                self.queueDict[queue]["QueueName"],
+        # We associate all of the pilots with their secrets
+        if secretDict:
+            result = self.pilotManagementClient.associatePilotWithSecret(secretDict)
+            if not result["OK"]:
+                return result
+
+        for stamp in stamps:
+            result = self.pilotManagementClient.set_pilot_field(
+                stamp,
+                {
+                    "DestinationSite": self.queueDict[queue]["CEName"],
+                    "StatusReason": "Successfully submitted by the SiteDirector",
+                    "GridSite": self.queueDict[queue]["Site"],
+                    "Queue": self.queueDict[queue]["QueueName"],
+                },
             )
+
             if not result["OK"]:
                 self.log.error("Failed to set pilot status", result["Message"])
                 return result
@@ -591,14 +619,13 @@ class SiteDirector(AgentModule):
         ce = self.queueCECache[queue]["CE"]
         workingDirectory = getattr(ce, "workingDirectory", self.workingDirectory)
 
-        executable = self._writePilotScript(
+        return self._writePilotScript(
             workingDirectory=workingDirectory,
             pilotOptions=pilotOptions,
             proxy=proxy,
             pilotExecDir=jobExecDir,
             envVariables=envVariables,
         )
-        return executable
 
     def _getPilotOptions(self, queue: str) -> list[str]:
         """Prepare pilot options
@@ -679,6 +706,13 @@ class SiteDirector(AgentModule):
 
         if "PipInstallOptions" in queueDict:
             pilotOptions.append(f"--pipInstallOptions={queueDict['PipInstallOptions']}")
+
+        # FIXME: Get secret
+        # if "secret" in queueDict:
+        #     pilotOptions.append(f"--pilotSecret={queueDict['...']}")
+        # FIXME: Get clientID
+        # pilotOptions.append(f"--clientID={opsHelper.getValue('TO CHANGE')})
+        pilotOptions.append(f"--diracx_URL={DIRAC.gConfig.getValue('/DiracX/URL')}")
 
         return pilotOptions
 

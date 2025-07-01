@@ -372,7 +372,7 @@ class CloudComputingElement(ComputingElement):
         self.ceType = CE_NAME
         self._cloudDriver = None
 
-    def submitJob(self, executableFile, proxy, numberOfJobs=1):
+    def submitJob(self, executableFile, proxy, numberOfJobs=1, diracXSecrets=[]):
         """Creates VM instances
 
         :param str executableFile: Path to pilot job wrapper file to use

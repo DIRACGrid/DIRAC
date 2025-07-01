@@ -51,6 +51,8 @@ def main():
     """
     params = Params()
 
+    # TODO: Add also site here.
+    # Later deprecated in V9.
     Script.registerSwitches(params.switches)
     Script.registerArgument("pilotRef: pilot reference")
     Script.registerArgument("VO: VO, or pilot owner group")

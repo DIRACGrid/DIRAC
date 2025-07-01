@@ -182,6 +182,8 @@ def pilotWrapperScript(
 
     if envVariables is None:
         envVariables = {}
+    elif "DIRACX_SECRET" in envVariables:
+        pilotOptions += f" --pilotSecret={envVariables['DIRACX_SECRET']}"
 
     if not CVMFS_locations:
         # What is in this location is almost certainly incorrect, especially the pilot.json

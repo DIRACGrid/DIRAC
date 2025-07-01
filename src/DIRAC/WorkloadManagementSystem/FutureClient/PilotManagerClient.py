@@ -9,13 +9,13 @@ class PilotManagerClient:
         with DiracXClient() as api:
             # We will move toward a stamp as identifier for the pilot
             return api.pilots.add_pilot_stamps(
-                {"pilot_stamps": pilot_stamps, "vo": VO, "grid_type": gridType, "pilot_references": pilot_references}
-            )
+                {"pilot_stamps": pilot_stamps, "vo": VO, "grid_type": gridType, "pilot_references": pilot_references, "generate_secrets": False}  # type: ignore
+            )  # type: ignore
 
     def set_pilot_field(self, pilot_stamp, values_dict):
         with DiracXClient() as api:
             values_dict["PilotStamp"] = pilot_stamp
-            return api.pilots.update_pilot_fields(values_dict)
+            return api.pilots.update_pilot_fields({"pilot_stamps_to_fields_mapping": [values_dict]})  # type: ignore
 
     @convertToReturnValue
     def setPilotBenchmark(self, pilotStamp, mark):
@@ -48,7 +48,7 @@ class PilotManagerClient:
     def deletePilots(self, pilot_stamps):
         with DiracXClient() as api:
             pilot_ids = None
-            if isinstance(pilot_stamps, list[int]):
+            if isinstance(pilot_stamps, list[int]):  # type: ignore
                 # Multiple elements (int)
                 pilot_ids = pilot_stamps  # Semantic
             elif isinstance(pilot_stamps, int):
@@ -66,12 +66,12 @@ class PilotManagerClient:
                 pilots = api.pilots.search(parameters=["PilotStamp"], search=query, sort=[])
                 pilot_stamps = [pilot["PilotStamp"] for pilot in pilots]
 
-            api.pilots.delete_pilots(pilot_stamps=pilot_stamps)
+            api.pilots.delete_pilots(pilot_stamps=pilot_stamps)  # type: ignore
 
     @convertToReturnValue
     def setJobForPilot(self, job_id, pilot_stamp, destination=None):
         with DiracXClient() as api:
-            api.pilots.add_jobs_to_pilot({"pilot_stamp": pilot_stamp, "job_ids": [job_id]})
+            api.pilots.add_jobs_to_pilot({"pilot_stamp": pilot_stamp, "job_ids": [job_id]})  # type: ignore
 
             self.set_pilot_field(
                 pilot_stamp,
@@ -95,3 +95,21 @@ class PilotManagerClient:
             query = [{"parameter": "PilotStamp", "operator": "eq", "value": pilot_stamp}]
 
             return api.pilots.search(parameters=[], search=query, sort=[])
+
+    @convertToReturnValue
+    def associatePilotWithSecret(self, secretDict):
+        # secretDict format: {"secret": ["stamp"]}
+        with DiracXClient() as api:
+            return api.pilots.update_secrets_constraints(secretDict)  # type: ignore
+
+    @convertToReturnValue
+    def createNSecrets(self, vo, n=100, expiration_minutes=120, pilot_secret_use_count_max=1):
+        with DiracXClient() as api:
+            return api.pilots.create_pilot_secrets(
+                {
+                    "n": n,
+                    "expiration_minutes": expiration_minutes,
+                    "pilot_secret_use_count_max": pilot_secret_use_count_max,
+                    "vo": vo,
+                }
+            )  # type: ignore
