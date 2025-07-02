@@ -74,7 +74,7 @@ def main():
         if not DErrno.cmpError(res, DErrno.EWMSNOPILOT):
             gLogger.error(res["Message"])
             DIRACExit(1)
-        res = pmc.addPilotReferences(pilotStamp, VO, gridType, {pilotStamp: pilotRef})
+        res = pmc.addPilotReferences([pilotStamp], VO, gridType, {pilotStamp: pilotRef})
         if not res["OK"]:
             gLogger.error(res["Message"])
             DIRACExit(1)
