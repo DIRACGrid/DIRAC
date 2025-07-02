@@ -462,11 +462,31 @@ class SiteDirector(AgentModule):
         jobProxy = result["Value"]
         executable = self._getExecutable(queue, proxy=jobProxy, jobExecDir=jobExecDir, envVariables=envVariables)
 
-        secrets = self.pilotManagementClient.createNSecrets(vo=self.vo, n=pilotsToSubmit)
+        # ----------- Generate additionnal env variables -----------
+
+        additionalEnv = []
+
+        # First, create secrets
+        resultSecrets = self.pilotManagementClient.createNSecrets(vo=self.vo, n=pilotsToSubmit)
+        if not resultSecrets["OK"]:
+            self.log.error("Couldn't fetch secrets.")
+            secrets = []
+        else:
+            secrets = [{"DIRACX_SECRET": secret["pilot_secret"]} for secret in resultSecrets["Value"]]
+
+        # ---
+        # More env?
+        # ---
+
+        # Could be secrets, but also other things, increase in the for loop...
+        for i, el in enumerate(secrets):
+            additionalEnv[i].update(el)
+
+        # ----------------------------------------------------------
 
         # Submit the job
         # NOTE FOR DIRACX /!\ : We need in each CE to create a secret
-        submitResult = ce.submitJob(executable, "", pilotsToSubmit, diracXSecrets=secrets)
+        submitResult = ce.submitJob(executable, "", pilotsToSubmit, additionalEnv=additionalEnv)
 
         # In case the CE does not need the executable after the submission, we delete it
         # Else, we keep it, the CE will delete it after the end of the pilot execution
@@ -537,20 +557,30 @@ class SiteDirector(AgentModule):
             if not result["OK"]:
                 self.log.error("Failure submitting Monitoring report", result["Message"])
 
-        secretDict = {}
-        if "SecretDict" in submitResult:
+        secrets_request_body = {}
+        if "EnvMapping" in submitResult:
             # TODO: Update this comment as we add DiracX support
             # V9+, only for:
             # 1. Arex
 
-            # Result body: {"secret": "PilotStamps": ["stamp"]}
-            secretDict = submitResult["SecretDict"]
+            # EnvMapping body: { "Stamp1": { "DIRACX_SECRET": "I_luv_strawberries", "...": "..." }, "Stamp2": {...} }
+            # Request body for secrets: {"I_luv_stawberries": ["Stamp1", "..."]}
+            envMapping = submitResult["SecretDict"]
+            secrets_request_body = {}
 
+            for stamp, envVariables in envMapping.items():
+                diracx_secret = envVariables.get("DIRACX_SECRET")
+                if diracx_secret:
+                    if not diracx_secret in secrets_request_body:
+                        secrets_request_body[diracx_secret] = []
+                    secrets_request_body[diracx_secret].append(stamp)
+
+        # We reverse the ref-stamp dictionnary (DiracX behaviour)
         references = stampDict.keys()
         stamps = stampDict.values()
         stampDict = dict(zip(stamps, references))
 
-        return S_OK((stampDict, secretDict))
+        return S_OK((stampDict, secrets_request_body))
 
     def _addPilotReferences(self, queue: str, stampDict: dict[str, str], secretDict: dict[str, str]):
         """Add pilotReference to pilotAgentsDB
