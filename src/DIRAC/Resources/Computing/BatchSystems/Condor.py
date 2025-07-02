@@ -78,7 +78,7 @@ on_exit_hold = ExitCode =!= 0
 on_exit_hold_subcode = %(holdReasonSubcode)s
 # Jobs are then deleted from the system after N days if they are not idle or running
 periodic_remove = ((JobStatus == 1) && (NumJobStarts > 0)) || \
-    ((JobStatus != 1) && (JobStatus != 2) && ((time() - EnteredCurrentStatus) > (%(daysToKeepRemoteLogs)s * 24 * 3600))
+    ((JobStatus != 1) && (JobStatus != 2) && ((time() - EnteredCurrentStatus) > (%(daysToKeepRemoteLogs)s * 24 * 3600)))
 
 # Specific options
 # ----------------
