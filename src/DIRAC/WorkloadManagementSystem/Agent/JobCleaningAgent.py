@@ -35,10 +35,12 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_DELETE
+from DIRAC.WorkloadManagementSystem.Utilities.jobAdministration import kill_delete_jobs
+from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getJobParameters
 
 
 class JobCleaningAgent(AgentModule):
@@ -229,11 +231,11 @@ class JobCleaningAgent(AgentModule):
             if not res["OK"]:
                 self.log.error("No DN found", f"for {user}")
                 return res
-            wmsClient = WMSClient(useCertificates=True, delegatedDN=res["Value"][0], delegatedGroup=ownerGroup)
             if remove:
+                wmsClient = WMSClient(useCertificates=True, delegatedDN=res["Value"][0], delegatedGroup=ownerGroup)
                 result = wmsClient.removeJob(jobsList)
             else:
-                result = wmsClient.deleteJob(jobsList)
+                result = kill_delete_jobs(RIGHT_DELETE, jobsList)
             if not result["OK"]:
                 self.log.error(
                     f"Could not {'remove' if remove else 'delete'} jobs",
@@ -293,7 +295,8 @@ class JobCleaningAgent(AgentModule):
         failed = {}
         successful = {}
 
-        result = JobMonitoringClient().getJobParameters(jobIDList, ["OutputSandboxLFN"])
+        jobIDs = [int(jobID) for jobID in jobIDList]
+        result = getJobParameters(jobIDs, "OutputSandboxLFN")
         if not result["OK"]:
             return result
         osLFNDict = result["Value"]

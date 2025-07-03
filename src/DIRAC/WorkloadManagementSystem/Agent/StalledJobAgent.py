@@ -14,16 +14,16 @@ import datetime
 from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.AccountingSystem.Client.Types.Job import Job
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.TimeUtilities import fromString, second, toEpoch
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
-from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_KILL
+from DIRAC.WorkloadManagementSystem.Utilities.jobAdministration import kill_delete_jobs
 from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getJobParameters
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import rescheduleJobs
 
@@ -235,7 +235,7 @@ class StalledJobAgent(AgentModule):
         # Set the jobs Failed, send them a kill signal in case they are not really dead
         # and send accounting info
         if setFailed:
-            res = self._sendKillCommand(jobID)
+            res = kill_delete_jobs(RIGHT_KILL, [jobID], nonauthJobList=[], force=True)
             if not res["OK"]:
                 self.log.error("Failed to kill job", jobID)
 
@@ -574,26 +574,3 @@ class StalledJobAgent(AgentModule):
                 continue
 
         return S_OK()
-
-    def _sendKillCommand(self, job):
-        """Send a kill signal to the job such that it cannot continue running.
-
-        :param int job: ID of job to send kill command
-        """
-
-        res = self.jobDB.getJobAttribute(job, "Owner")
-        if not res["OK"]:
-            return res
-        owner = res["Value"]
-
-        res = self.jobDB.getJobAttribute(job, "OwnerGroup")
-        if not res["OK"]:
-            return res
-        ownerGroup = res["Value"]
-
-        wmsClient = WMSClient(
-            useCertificates=True,
-            delegatedDN=getDNForUsername(owner)["Value"][0] if owner else None,
-            delegatedGroup=ownerGroup,
-        )
-        return wmsClient.killJob(job)

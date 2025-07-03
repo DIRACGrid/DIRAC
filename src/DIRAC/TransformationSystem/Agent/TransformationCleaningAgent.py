@@ -16,14 +16,12 @@ from datetime import datetime, timedelta
 
 # # from DIRAC
 from DIRAC import S_ERROR, S_OK
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
@@ -35,7 +33,11 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.TransformationSystem.Client import TransformationStatus
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
+    RIGHT_DELETE,
+    RIGHT_KILL,
+)
+from DIRAC.WorkloadManagementSystem.Utilities.jobAdministration import kill_delete_jobs
 
 # # agent's name
 AGENT_NAME = "Transformation/TransformationCleaningAgent"
@@ -59,8 +61,6 @@ class TransformationCleaningAgent(AgentModule):
 
         # # transformation client
         self.transClient = None
-        # # wms client
-        self.wmsClient = None
         # # request client
         self.reqClient = None
         # # file catalog client
@@ -119,8 +119,6 @@ class TransformationCleaningAgent(AgentModule):
 
         # # transformation client
         self.transClient = TransformationClient()
-        # # wms client
-        self.wmsClient = WMSClient()
         # # request client
         self.reqClient = ReqClient()
         # # file catalog client
@@ -610,8 +608,8 @@ class TransformationCleaningAgent(AgentModule):
         # Prevent 0 job IDs
         jobIDs = [int(j) for j in transJobIDs if int(j)]
         allRemove = True
-        for jobList in breakListIntoChunks(jobIDs, 500):
-            res = self.wmsClient.killJob(jobList, force=True)
+        for jobList in breakListIntoChunks(jobIDs, 1000):
+            res = kill_delete_jobs(RIGHT_KILL, jobList, force=True)
             if res["OK"]:
                 self.log.info(f"Successfully killed {len(jobList)} jobs from WMS")
             elif ("InvalidJobIDs" in res) and ("NonauthorizedJobIDs" not in res) and ("FailedJobIDs" not in res):
@@ -623,7 +621,7 @@ class TransformationCleaningAgent(AgentModule):
                 self.log.error("Failed to kill jobs", f"(n={len(res['FailedJobIDs'])})")
                 allRemove = False
 
-            res = self.wmsClient.deleteJob(jobList)
+            res = kill_delete_jobs(RIGHT_DELETE, jobList, force=True)
             if res["OK"]:
                 self.log.info("Successfully deleted jobs from WMS", f"(n={len(jobList)})")
             elif ("InvalidJobIDs" in res) and ("NonauthorizedJobIDs" not in res) and ("FailedJobIDs" not in res):
