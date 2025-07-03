@@ -2,11 +2,10 @@
     methods necessary to communicate with the Workload Management System
 """
 import os
-from io import StringIO
 import time
+from io import StringIO
 
-from DIRAC import S_OK, S_ERROR, gLogger
-
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import File
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd

@@ -503,7 +503,12 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn: str) -> None:
         assert res["OK"], res["Message"]
         assert res["Value"]["Status"] == JobStatus.RUNNING
     finally:
-        jobManagerClient.removeJob(jobIDs)
+        res = jobManagerClient.killJob(jobIDs)
+        assert res["OK"], res["Message"]
+        res = jobManagerClient.deleteJob(jobIDs)
+        assert res["OK"], res["Message"]
+        res = jobManagerClient.removeJob(jobIDs)
+        assert res["OK"], res["Message"]
 
 
 def test_JobManagerClient_removeJob() -> None:
