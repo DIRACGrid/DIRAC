@@ -21,7 +21,7 @@ from DIRAC.Core.Utilities.JDL import jdlToBaseJobDescriptionModel
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
+from DIRAC.StorageManagementSystem.DB.StorageManagementDB import StorageManagementDB
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobStatus import filterJobStateTransition
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
@@ -537,9 +537,9 @@ class JobManagerHandlerMixin:
                     badIDs.append(jobID)
 
             if stagingJobList:
-                stagerClient = StorageManagerClient()
+                stagerDB = StorageManagementDB()
                 self.log.info("Going to send killing signal to stager as well!")
-                result = stagerClient.killTasksBySourceTaskID(stagingJobList)
+                result = stagerDB.killTasksBySourceTaskID(stagingJobList)
                 if not result["OK"]:
                     self.log.warn("Failed to kill some Stager tasks", result["Message"])
 
