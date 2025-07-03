@@ -378,8 +378,6 @@ class JobManagerHandlerMixin:
         :return: S_OK()/S_ERROR() -- confirmed job IDs
         """
 
-        # FIXME: extract the logic to a utility function
-
         jobList = self.__getJobList(jobIDs)
         if not jobList:
             return S_ERROR("Invalid job specification: " + str(jobIDs))
