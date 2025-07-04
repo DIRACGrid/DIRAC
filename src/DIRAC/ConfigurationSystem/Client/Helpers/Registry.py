@@ -1,12 +1,18 @@
-""" Helper for /Registry section
-"""
+"""Helper for /Registry section"""
 
 import errno
+import inspect
+import sys
 
 from threading import Lock
+from collections.abc import Iterable
 
 from cachetools import TTLCache, cached
+from cachetools.keys import hashkey
 
+
+from typing import Optional
+from collections.abc import Iterable
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
@@ -14,11 +20,34 @@ from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
 ID_DN_PREFIX = "/O=DIRAC/CN="
 
+# 300 is the default CS refresh time
+
+CACHE_REFRESH_TIME = 300
 # pylint: disable=missing-docstring
 
 gBaseRegistrySection = "/Registry"
 
 
+def reset_all_caches():
+    """This method is called to clear all caches.
+    It is necessary to reinitialize them after the central CS
+    has been loaded
+    """
+    for cache in [
+        obj
+        for name, obj in inspect.getmembers(sys.modules[__name__])
+        if (inspect.isfunction(obj) and hasattr(obj, "cache_clear"))
+    ]:
+        cache.cache_clear()
+
+
+def get_username_for_dn_key(dn: str, userList: Optional[Iterable[str]] = None):
+    if userList:
+        return hashkey(dn, *sorted(userList))
+    return hashkey(dn)
+
+
+@cached(TTLCache(maxsize=1000, ttl=CACHE_REFRESH_TIME), lock=Lock(), key=get_username_for_dn_key)
 def getUsernameForDN(dn, usersList=None):
     """Find DIRAC user for DN
 
@@ -39,6 +68,7 @@ def getUsernameForDN(dn, usersList=None):
     return S_ERROR(f"No username found for dn {dn}")
 
 
+@cached(TTLCache(maxsize=1000, ttl=CACHE_REFRESH_TIME), lock=Lock())
 def getDNForUsername(username):
     """Get user DN for user
 
@@ -419,6 +449,7 @@ def getBannedIPs():
     return gConfig.getValue(f"{gBaseRegistrySection}/BannedIPs", [])
 
 
+@cached(TTLCache(maxsize=1000, ttl=CACHE_REFRESH_TIME), lock=Lock())
 def getVOForGroup(group):
     """Search VO name for group
 
@@ -634,10 +665,7 @@ def getDNProperty(userDN, value, defaultValue=None):
     return S_OK(defaultValue)
 
 
-_cache_getProxyProvidersForDN = TTLCache(maxsize=1000, ttl=60)
-
-
-@cached(_cache_getProxyProvidersForDN, lock=Lock())
+@cached(TTLCache(maxsize=1000, ttl=CACHE_REFRESH_TIME), lock=Lock())
 def getProxyProvidersForDN(userDN):
     """Get proxy providers by user DN
 
