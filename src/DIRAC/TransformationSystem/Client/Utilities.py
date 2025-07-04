@@ -9,6 +9,8 @@ Utilities for Transformation system
 import ast
 import random
 
+from cachetools import LRUCache, cached
+from cachetools.keys import hashkey
 from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.Core.Utilities.List import breakListIntoChunks
@@ -400,6 +402,10 @@ class PluginUtilities:
 
         return StorageElement(se1).isSameSE(StorageElement(se2))
 
+    @cached(
+        LRUCache(maxsize=1024),
+        key=lambda _, a, b: hashkey(a, *sorted(b)),
+    )
     def isSameSEInList(self, se1, seList):
         """Check if an SE is the same as any in a list"""
         if se1 in seList:
