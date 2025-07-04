@@ -10,6 +10,7 @@ import DIRAC
 from DIRAC import S_ERROR, gConfig, gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Security.Locations import getCAsLocation, getProxyLocation, getVOMSLocation
+from DIRAC.Core.Utilities.Os import safe_listdir
 from DIRAC.Core.Utilities.Subprocess import systemCall
 
 
@@ -73,7 +74,7 @@ def main():
     cmd.extend(["--contain"])  # use minimal /dev and empty other directories (e.g. /tmp and $HOME)
     cmd.extend(["--ipc"])  # run container in a new IPC namespace
     cmd.extend(["--pid"])  # run container in a new PID namespace
-    cmd.extend(["--bind", f"{os.getcwd()}:/mnt"])  # bind current directory for dirac_container.sh
+    cmd.extend(["--bind", f"{os.getcwd()}:/"])  # bind current directory for dirac_container.sh
     if proxy_location:
         cmd.extend(["--bind", f"{proxy_location}:/etc/proxy"])  # bind proxy file
     cmd.extend(["--bind", f"{getCAsLocation()}:/etc/grid-security/certificates"])  # X509_CERT_DIR
@@ -83,12 +84,18 @@ def main():
     cmd.extend(["--bind", f"{vomses_location}:/etc/grid-security/vomses"])  # X509_VOMSES
     cmd.extend(["--bind", "{0}:{0}:ro".format(etc_dir)])  # etc dir for dirac.cfg
     cmd.extend(["--bind", "{0}:{0}:ro".format(os.path.join(os.path.realpath(sys.base_prefix)))])  # code dir
-    cmd.extend(["--cwd", "/mnt"])  # set working directory to /mnt
+    # here bind optional paths
+    for bind_path in gConfig.getValue("/Resources/Computing/Singularity/BindPaths", []):
+        if safe_listdir(bind_path):
+            cmd.extend(["--bind", f"{bind_path}:{bind_path}"])
+        else:
+            gLogger.warning(f"Bind path {bind_path} does not exist, skipping")
+    cmd.extend(["--cwd", "/"])  # set working directory
 
     rootImage = user_image or gConfig.getValue("/Resources/Computing/Singularity/ContainerRoot") or CONTAINER_DEFROOT
 
     if os.path.isdir(rootImage) or os.path.isfile(rootImage):
-        cmd.extend([rootImage, "/mnt/dirac_container.sh"])
+        cmd.extend([rootImage, "./dirac_container.sh"])
     else:
         # if we are here is because there's no image, or it is not accessible (e.g. not on CVMFS)
         gLogger.error("Apptainer image to exec not found: ", rootImage)
