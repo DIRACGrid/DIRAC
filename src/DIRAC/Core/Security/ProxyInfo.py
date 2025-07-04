@@ -1,10 +1,13 @@
 """
- Set of utilities to retrieve Information from proxy
+Set of utilities to retrieve Information from proxy
 """
+
 import base64
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
+
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.DiracX import diracxTokenFromPEM
 from DIRAC.Core.Security.VOMS import VOMS
@@ -207,10 +210,11 @@ def getVOfromProxyGroup():
     """
     Return the VO associated to the group in the proxy
     """
-    voName = Registry.getVOForGroup("NoneExistingGroup")
+
     ret = getProxyInfo(disableVOMS=True)
-    if not ret["OK"]:
-        return S_OK(voName)
-    if "group" in ret["Value"]:
+    if not ret["OK"] or "group" not in ret["Value"]:
+        voName = getVO()
+    else:
         voName = Registry.getVOForGroup(ret["Value"]["group"])
+
     return S_OK(voName)
