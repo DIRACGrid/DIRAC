@@ -1,6 +1,6 @@
 """ SandboxMetadataDB class is a front-end to the metadata for sandboxes
 """
-from DIRAC import S_ERROR, S_OK, gLogger
+from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security import Properties
@@ -246,7 +246,7 @@ class SandboxMetadataDB(DB):
             return None
         conds = self.__entitiesByRequesterCond(requesterName, requesterGroup)
 
-        sqlCmd = "CREATE TEMPORARY TABLE to_delete_EntityId (EntityId VARCHAR(128)  NOT NULL, PRIMARY KEY (EntityId)) ENGINE=MEMORY;"
+        sqlCmd = "CREATE TEMPORARY TABLE to_delete_EntityId (EntityId VARCHAR(128) NOT NULL, PRIMARY KEY (EntityId)) ENGINE=MEMORY;"
         returnValueOrRaise(self._update(sqlCmd))
         try:
             sqlCmd = "INSERT INTO to_delete_EntityId (EntityId) VALUES ( %s )"
@@ -313,16 +313,30 @@ class SandboxMetadataDB(DB):
         sqlCmd = f"SELECT SBId, SEName, SEPFN FROM `sb_SandBoxes` WHERE SEPFN not like '/S3/%' AND (( {' ) OR ( '.join(sqlCond)} ))"
         return self._query(sqlCmd)
 
+    @convertToReturnValue
     def deleteSandboxes(self, SBIdList):
         """
-        Delete sandboxes
+        Delete sandboxes using a temporary table for efficiency and consistency.
         """
-        sqlSBList = ", ".join([str(sbid) for sbid in SBIdList])
-        for table in ("sb_SandBoxes", "sb_EntityMapping"):
-            sqlCmd = f"DELETE FROM `{table}` WHERE SBId IN ( {sqlSBList} )"
-            result = self._update(sqlCmd)
-            if not result["OK"]:
-                return result
+        if not SBIdList:
+            return S_OK()
+        # Create temporary table
+        sqlCmd = "CREATE TEMPORARY TABLE to_delete_SBId (SBId INTEGER(10) UNSIGNED NOT NULL, PRIMARY KEY (SBId)) ENGINE=MEMORY;"
+        returnValueOrRaise(self._update(sqlCmd))
+        try:
+            # Insert SBIds into temporary table
+            sqlCmd = "INSERT INTO to_delete_SBId (SBId) VALUES (%s)"
+            returnValueOrRaise(self._updatemany(sqlCmd, [(sbid,) for sbid in SBIdList]))
+            # Delete from sb_EntityMapping first (to respect FK constraints if any)
+            sqlCmd = "DELETE FROM `sb_EntityMapping` WHERE SBId IN (SELECT SBId FROM to_delete_SBId)"
+            returnValueOrRaise(self._update(sqlCmd))
+            # Delete from sb_SandBoxes
+            sqlCmd = "DELETE FROM `sb_SandBoxes` WHERE SBId IN (SELECT SBId FROM to_delete_SBId)"
+            returnValueOrRaise(self._update(sqlCmd))
+        finally:
+            # Drop temporary table
+            sqlCmd = "DROP TEMPORARY TABLE to_delete_SBId"
+            returnValueOrRaise(self._update(sqlCmd))
         return S_OK()
 
     def getSandboxId(self, SEName, SEPFN, requesterName, requesterGroup, field="SBId"):
