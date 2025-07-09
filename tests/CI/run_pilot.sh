@@ -29,6 +29,8 @@ touch /home/dirac/etc/grid-security/vomses/vomses
 # Copy over the pilot proxy
 cp /ca/certs/pilot_proxy /tmp/x509up_u$UID
 
+export X509_USER_PROXY=/tmp/x509up_u$UID
+
 eval "${PILOT_DOWNLOAD_COMMAND}"
 
 echo "${PILOT_JSON}" > pilot.json
