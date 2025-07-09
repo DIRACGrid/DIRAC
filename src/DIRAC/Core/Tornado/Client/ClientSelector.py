@@ -17,7 +17,6 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
 
-
 sLog = gLogger.getSubLogger(__name__)
 
 
@@ -82,6 +81,10 @@ def ClientSelector(disetClient, *args, **kwargs):  # We use same interface as RP
             rpc = tornadoClient(*args, **kwargs)
         else:
             rpc = disetClient(*args, **kwargs)
+    except NotImplementedError as e:
+        # We catch explicitly NotImplementedError to avoid just printing "there's an error"
+        # If we mis-configured the CS for legacy adapted services, we MUST have an error.
+        raise e
     except Exception as e:  # pylint: disable=broad-except
         # If anything went wrong in the resolution, we return default RPCClient
         # So the behaviour is exactly the same as before implementation of Tornado

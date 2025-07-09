@@ -444,12 +444,13 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn: str) -> None:
         assert res["Value"]["Status"] == JobStatus.MATCHED
         assert res["Value"]["MinorStatus"] == "MinorStatus-matched"
 
-        res = jobStateUpdateClient.setJobAttribute(jobID, "Status", JobStatus.RUNNING)
+        res = jobStateUpdateClient.setJobStatus(jobID, JobStatus.RUNNING)
         assert res["OK"], res["Message"]
 
         res = jobMonitoringClient.getJobSummary(int(jobID))
         assert res["OK"], res["Message"]
-        assert res["Value"]["Status"] == JobStatus.RUNNING
+        assert res["Value"]["Status"] != JobStatus.RUNNING  # NOT equal: timedelta = 0 compared to above
+        assert res["Value"]["Status"] == JobStatus.MATCHED  # Keep previous result
     finally:
         res = jobManagerClient.killJob(jobIDs)
         assert res["OK"], res["Message"]

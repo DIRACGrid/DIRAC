@@ -457,7 +457,7 @@ def getVOForGroup(group):
 
     :return: str
     """
-    return getVO() or gConfig.getValue(f"{gBaseRegistrySection}/Groups/{group}/VO", "")
+    return gConfig.getValue(f"{gBaseRegistrySection}/Groups/{group}/VO", "") or getVO()
 
 
 def getIdPForGroup(group):

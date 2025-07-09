@@ -37,6 +37,8 @@ jobs:
             ARGS: DIRAC_USE_JSON_ENCODE=NO MYSQL_VER=mysql:8.0.40
           - TEST_NAME: "Backward Compatibility"
             ARGS: CLIENT_INSTALLATION_BRANCH=rel-v8r0 PILOT_INSTALLATION_BRANCH=rel-v8r0
+          - TEST_NAME: "Test DiracX latest"
+            ARGS: TEST_DIRACX=Yes
 
     steps:
     - uses: actions/checkout@v4

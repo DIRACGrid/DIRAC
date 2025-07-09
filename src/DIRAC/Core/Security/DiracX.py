@@ -47,7 +47,7 @@ RE_DIRACX_PEM = re.compile(rf"{PEM_BEGIN}\n(.*)\n{PEM_END}", re.MULTILINE | re.D
 def addTokenToPEM(pemPath, group):
     from DIRAC.Core.Base.Client import Client
 
-    vo = Registry.getVOMSVOForGroup(group)
+    vo = Registry.getVOForGroup(group)
     if not vo:
         gLogger.error(f"ERROR: Could not find VO for group {group}, DiracX will not work!")
     disabledVOs = gConfig.getValue("/DiracX/DisabledVOs", [])
