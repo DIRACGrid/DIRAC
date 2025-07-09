@@ -4,7 +4,9 @@ All administrative functionality is exposed through the DIRAC Admin API.  Exampl
 site banning and unbanning, WMS proxy uploading etc.
 
 """
+
 import os
+from datetime import datetime, timedelta
 
 from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
@@ -150,7 +152,7 @@ class DiracAdmin(API):
         return result
 
     #############################################################################
-    def allowSite(self, site, comment, printOutput=False):
+    def allowSite(self, site, comment, printOutput=False, days=1):
         """Adds the site to the site mask. The site must be a valid DIRAC site name
 
         Example usage:
@@ -174,7 +176,12 @@ class DiracAdmin(API):
                 gLogger.notice(f"Site {site} is already Active")
             return S_OK(f"Site {site} is already Active")
 
-        if not (result := self.sitestatus.setSiteStatus(site, "Active", comment))["OK"]:
+        tokenLifetime = int(days)
+        if tokenLifetime <= 0:
+            tokenExpiration = datetime.max
+        else:
+            tokenExpiration = datetime.utcnow().replace(microsecond=0) + timedelta(days=tokenLifetime)
+        if not (result := self.sitestatus.setSiteStatus(site, "Active", comment, expiry=tokenExpiration))["OK"]:
             return result
 
         if printOutput:
@@ -223,7 +230,7 @@ class DiracAdmin(API):
         return S_OK()
 
     #############################################################################
-    def banSite(self, site, comment, printOutput=False):
+    def banSite(self, site, comment, printOutput=False, days=1):
         """Removes the site from the site mask.
 
         Example usage:
@@ -236,7 +243,6 @@ class DiracAdmin(API):
         """
         if not (result := self._checkSiteIsValid(site))["OK"]:
             return result
-
         mask = self.getSiteMask(status="Banned")
         if not mask["OK"]:
             return mask
@@ -245,8 +251,13 @@ class DiracAdmin(API):
             if printOutput:
                 gLogger.notice(f"Site {site} is already Banned")
             return S_OK(f"Site {site} is already Banned")
+        tokenLifetime = int(days)
+        if tokenLifetime <= 0:
+            tokenExpiration = datetime.max
+        else:
+            tokenExpiration = datetime.utcnow().replace(microsecond=0) + timedelta(days=tokenLifetime)
 
-        if not (result := self.sitestatus.setSiteStatus(site, "Banned", comment))["OK"]:
+        if not (result := self.sitestatus.setSiteStatus(site, "Banned", comment, expiry=tokenExpiration))["OK"]:
             return result
 
         if printOutput:
