@@ -4,7 +4,9 @@ All administrative functionality is exposed through the DIRAC Admin API.  Exampl
 site banning and unbanning, WMS proxy uploading etc.
 
 """
+
 import os
+from datetime import datetime, timedelta
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.PromptUser import promptUser
@@ -175,7 +177,7 @@ class DiracAdmin(API):
         return result
 
     #############################################################################
-    def allowSite(self, site, comment, printOutput=False):
+    def allowSite(self, site, comment, printOutput=False, days=1):
         """Adds the site to the site mask.
 
         Example usage:
@@ -200,7 +202,12 @@ class DiracAdmin(API):
             return S_OK(f"Site {site} is already Active")
 
         if self.rssFlag:
-            result = self.sitestatus.setSiteStatus(site, "Active", comment)
+            tokenLifetime = int(days)
+            if tokenLifetime <= 0:
+                tokenExpiration = datetime.max
+            else:
+                tokenExpiration = datetime.utcnow().replace(microsecond=0) + timedelta(days=tokenLifetime)
+            result = self.sitestatus.setSiteStatus(site, "Active", comment, expiry=tokenExpiration)
         else:
             result = WMSAdministratorClient().allowSite(site, comment)
         if not result["OK"]:
@@ -258,7 +265,7 @@ class DiracAdmin(API):
         return S_OK()
 
     #############################################################################
-    def banSite(self, site, comment, printOutput=False):
+    def banSite(self, site, comment, printOutput=False, days=1):
         """Removes the site from the site mask.
 
         Example usage:
@@ -272,7 +279,6 @@ class DiracAdmin(API):
         result = self._checkSiteIsValid(site)
         if not result["OK"]:
             return result
-
         mask = self.getSiteMask(status="Banned")
         if not mask["OK"]:
             return mask
@@ -281,9 +287,13 @@ class DiracAdmin(API):
             if printOutput:
                 gLogger.notice(f"Site {site} is already Banned")
             return S_OK(f"Site {site} is already Banned")
-
         if self.rssFlag:
-            result = self.sitestatus.setSiteStatus(site, "Banned", comment)
+            tokenLifetime = int(days)
+            if tokenLifetime <= 0:
+                tokenExpiration = datetime.max
+            else:
+                tokenExpiration = datetime.utcnow().replace(microsecond=0) + timedelta(days=tokenLifetime)
+            result = self.sitestatus.setSiteStatus(site, "Banned", comment, expiry=tokenExpiration)
         else:
             result = WMSAdministratorClient().banSite(site, comment)
         if not result["OK"]:

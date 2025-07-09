@@ -17,6 +17,9 @@ from DIRAC.Core.Base.Script import Script
 @Script()
 def main():
     Script.registerSwitch("E:", "email=", "Boolean True/False (True by default)")
+    Script.registerSwitch(
+        "", "days=", "Number of days the token is valid for. Default is 1 day. 0 or less days denotes forever."
+    )
     # Registering arguments will automatically add their description to the help menu
     Script.registerArgument("Site:     Name of the Site")
     Script.registerArgument("Comment:  Reason of the action")
@@ -36,9 +39,12 @@ def main():
             Script.showHelp()
 
     email = True
+    days = 1
     for switch in Script.getUnprocessedSwitches():
         if switch[0] == "email":
             email = getBoolean(switch[1])
+        if switch[0] == "days":
+            days = int(switch[1])
 
     diracAdmin = DiracAdmin()
     exitCode = 0
@@ -59,7 +65,7 @@ def main():
 
     # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
     site, comment = Script.getPositionalArgs(group=True)
-    result = diracAdmin.banSite(site, comment, printOutput=True)
+    result = diracAdmin.banSite(site, comment, printOutput=True, days=days)
     if not result["OK"]:
         errorList.append((site, result["Message"]))
         exitCode = 2
