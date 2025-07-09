@@ -29,6 +29,7 @@ def registerSwitches():
         ("reason=", "Reason to set the Status"),
         ("VO=", "VO to change a status for. When omitted, status will be changed for all VOs"),
         ("tokenOwner=", "Owner of the token"),
+        ("days=", "Number of days the token is valid for. Default is 1 day. 0 or less days denotes forever."),
     )
 
     for switch in switches:
@@ -50,6 +51,7 @@ def parseSwitches():
     switches = dict(Script.getUnprocessedSwitches())
     switches.setdefault("statusType", None)
     switches.setdefault("VO", None)
+    switches.setdefault("days", 1)
 
     for key in ("element", "name", "status", "reason"):
         if key not in switches:
@@ -183,7 +185,11 @@ def setStatus(switchDict, tokenOwner):
         )
         return S_OK()
 
-    tomorrow = datetime.utcnow().replace(microsecond=0) + timedelta(days=1)
+    tokenLifetime = int(switchDict["days"])
+    if tokenLifetime <= 0:
+        tokenExpiration = datetime.max
+    else:
+        tokenExpiration = datetime.utcnow().replace(microsecond=0) + timedelta(days=tokenLifetime)
 
     for status, statusType in elements:
         gLogger.debug(f"{status} {statusType}")
@@ -193,8 +199,16 @@ def setStatus(switchDict, tokenOwner):
             continue
 
         gLogger.debug(
-            "About to set status %s -> %s for %s, statusType: %s, VO: %s, reason: %s"
-            % (status, switchDict["status"], switchDict["name"], statusType, switchDict["VO"], switchDict["reason"])
+            "About to set status %s -> %s for %s, statusType: %s, VO: %s, reason: %s, days: %s"
+            % (
+                status,
+                switchDict["status"],
+                switchDict["name"],
+                statusType,
+                switchDict["VO"],
+                switchDict["reason"],
+                switchDict["days"],
+            )
         )
         result = rssClient.modifyStatusElement(
             switchDict["element"],
@@ -205,7 +219,7 @@ def setStatus(switchDict, tokenOwner):
             reason=switchDict["reason"],
             vO=switchDict["VO"],
             tokenOwner=tokenOwner,
-            tokenExpiration=tomorrow,
+            tokenExpiration=tokenExpiration,
         )
         if not result["OK"]:
             return result
