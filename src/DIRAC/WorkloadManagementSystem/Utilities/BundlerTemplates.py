@@ -15,29 +15,39 @@ run_task() {{
     local input=$1
     local task_id=$(get_id ${{input}})
 
+    cd "$task_id"
+
     # Setup
     touch ${{task_id}}.status
-    touch ${{task_id}}.out
+    #touch ${{task_id}}.out
 
-    echo "Executing task ${{task_id}}"
-    {command} ${{BASEDIR}}/${{input}} >${{task_id}}.out 2>&1  &
+    echo "[${{task_id}}] Executing task"
+
+    {command} ${{BASEDIR}}/${{input}} \\
+        1> >(tee ${{task_id}}.out) \\
+        2> >(tee ${{task_id}}.err 1>&2) &
+
     local task_pid=$!
 
-    echo "Task ${{task_id}} waiting for pid ${{task_pid}}..."
+    echo "[${{task_id}}] Waiting for pid ${{task_pid}}..."
     wait ${{task_pid}} ; local task_status=$?
 
     # Report status
-    echo "${{task_id}} ${{task_pid}} ${{task_status}}" | tee ${{task_id}}.status
+    echo "[${{task_id}}] ${{task_pid}} ${{task_status}}" | tee ${{task_id}}.status
 }}
 
 # execute tasks
 for input in ${{INPUT[@]}}; do
     [ -f "$input" ] || break
+    mkdir $(get_id ${{input}})
     run_task ${{input}} &
 done
 
 # wait for all tasks
 wait
+
+# Checksum of all files in the root and the job subdirectories
+find -H ! -type d ! -name md5Checksum.txt -exec md5sum {{}} + >md5Checksum.txt
 """
 
 
@@ -66,6 +76,6 @@ def _generate_bash(inputs: list):
 
 
 def __generate_generic_bash(command, inputs):
-    formatted_inputs = "(" + ", ".join(inputs) + ")"
+    formatted_inputs = "(" + " ".join(inputs) + ")"
     template = GENERIC_BASH_TEMPLATE.format(command=command, inputs=formatted_inputs)
     return template

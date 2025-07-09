@@ -26,7 +26,6 @@ BUNDLES_INFO_COLUMNS = [
     "ExecTemplate",
     "TaskID",
     "Status",
-    "OutputPath",
     "ProxyPath",
 ]
 
@@ -79,7 +78,7 @@ class BundleDB(DB):
 
         # No bundles matching ceDict, so create a new one
         if not bundles:
-            result = self.__createNewBundle(ceDict)
+            result = self.__createNewBundle(ceDict, proxyPath)
 
             if not result["OK"]:
                 return result
@@ -97,15 +96,17 @@ class BundleDB(DB):
 
         # If it does not fit in an already created bundle, create a new one
         if not bundleId:
-            result = self.__createNewBundle(ceDict)
+            result = self.__createNewBundle(ceDict, proxyPath)
 
             if not result["OK"]:
                 return result
 
             bundleId = result["Value"]
 
+        # TODO: CHECK IF THE JOB IS ALREADY IN THE BUNDLE
+
         # Insert it and obtain if it is ready to be submitted
-        result = self.__insertJobInBundle(jobId, bundleId, executable, inputs, processors, proxyPath)
+        result = self.__insertJobInBundle(jobId, bundleId, executable, inputs, outputs, processors, proxyPath)
 
         if not result["OK"]:
             return result
@@ -171,12 +172,8 @@ class BundleDB(DB):
     #############################################################################
 
     def setTaskId(self, bundleId, taskId):
-        result = self.updateFields("BundlesInfo", ["TaskID"], [taskId], {"BundleID": bundleId})
-
-        if not result["OK"]:
-            return result
-
-        return S_OK()
+        result = self.updateFields("BundlesInfo", ["TaskID", "Status"], [taskId, "Sent"], {"BundleID": bundleId})
+        return result
 
     def getTaskId(self, bundleId):
         result = self.getFields("BundlesInfo", ["TaskID"], {"BundleID": bundleId})
@@ -198,24 +195,6 @@ class BundleDB(DB):
 
     #############################################################################
 
-    def setOutputPath(self, bundleId, outputPath):
-        result = self.updateFields("BundlesInfo", ["OutputPath"], [outputPath], {"BundleID": bundleId})
-
-        if not result["OK"]:
-            return result
-
-        return S_OK()
-
-    def getOutputPath(self, bundleId):
-        result = self.getFields("BundlesInfo", ["OutputPath"], {"BundleID": bundleId})
-
-        if not result["Value"]:
-            return S_ERROR("Failed to get bundle Output Path")
-
-        return S_OK(result["Value"][0][0])
-
-    #############################################################################
-
     def getWholeBundle(self, bundleId):
         result = self.getFields("BundlesInfo", [], {"BundleID": bundleId})
 
@@ -227,6 +206,8 @@ class BundleDB(DB):
 
         bundleDict = formatSelectOutput(result["Value"], BUNDLES_INFO_COLUMNS)[0]
         bundleDict["Status"] = STATUS_MAP[bundleDict["Status"]]
+
+        self.log.debug(f"Look at this cool bundle: {bundleDict}")
 
         return S_OK(bundleDict)
 
@@ -246,7 +227,7 @@ class BundleDB(DB):
         )
         return self._query(cmd)
 
-    def __createNewBundle(self, ceDict):
+    def __createNewBundle(self, ceDict, proxyPath):
         if "ExecTemplate" not in ceDict:
             return S_ERROR("CE must have a properly formatted ExecTemplate")
 
@@ -260,6 +241,7 @@ class BundleDB(DB):
             "CE": ceDict["GridCE"],
             "Queue": ceDict["Queue"],
             "CEDict": str(ceDict),
+            "ProxyPath": proxyPath,
         }
 
         result = self.insertFields("BundlesInfo", list(insertInfo.keys()), list(insertInfo.values()))
@@ -278,7 +260,6 @@ class BundleDB(DB):
             "Inputs": str(inputs),
             "Outputs": str(outputs),
             "Processors": nProcessors,
-            "ProxyPath": proxyPath,
         }
 
         result = self.insertFields("JobToBundle", list(insertInfo.keys()), list(insertInfo.values()))

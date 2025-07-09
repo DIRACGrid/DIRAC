@@ -28,7 +28,6 @@ CREATE TABLE `BundlesInfo` (
     `ExecTemplate`  VARCHAR(25) NOT NULL,
     `TaskID`        VARCHAR(255),
     `Status`        ENUM('Storing', 'Sent', 'Finalized', 'Failed') NOT NULL DEFAULT 'Storing',
-    `OutputPath`    VARCHAR(255),
     `ProxyPath`     VARCHAR(255),
     PRIMARY KEY (BundleID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -71,6 +71,7 @@ CEs
 
 import copy
 import inspect
+import os
 import uuid
 
 from DIRAC import S_ERROR, S_OK
@@ -180,18 +181,15 @@ class BundleComputingElement(ComputingElement):
         if not submitted:
             self.log.info(f"Job {jobId} stored successfully in bundle: ", bundleId)
         else:
-            self.log.info("Submitting job to CE: ", self.ce.ceName)
+            self.log.info("Submitting job to CE: ", self.innerCE.ceName)
 
         # Return the id of the job (NOT THE BUNDLE)
         return result
 
-    def getJobOutput(self, jobId, workingDirectory=None):
+    def getJobOutput(self, jobId, workingDirectory="."):
         bundleId = None
         if ":::" in jobId:
             jobId, bundleId = jobId.split(":::")
-
-        if workingDirectory is None:
-            workingDirectory = "."
 
         if not bundleId:
             bundleId = self.bundler.bundleIdFromJobId(jobId)
@@ -205,19 +203,44 @@ class BundleComputingElement(ComputingElement):
             return S_ERROR("Output not ready yet")
 
         # If the output path of all of the jobs hasn't been defined yet
-        if outputPath := result["Value"]["OutputPath"] is None:
-            taskId = result["Value"]["TaskId"]
-            result = self.innerCE.getJobOutput(taskId, workingDirectory)
+        taskId = result["Value"]["TaskID"]
 
-            if not result["OK"]:
-                return result
+        _, innerStamp = taskId.split(":::")
 
-            self.bundler.setOutputPath(taskId, workingDirectory)
+        result = self.innerCE.getJobOutput(taskId, workingDirectory)
 
+        if not result["OK"]:
+            return result
+
+        outputPath = os.path.abspath(workingDirectory)
         self.log.notice(f"Outputs at: {outputPath}")
 
-        error = f"{outputPath}/{jobId}/{jobId}.err"
-        output = f"{outputPath}/{jobId}/{jobId}.out"
+        # Change the name of the files containing the stamp of the real job to the BundleID
+        for item in os.listdir(outputPath):
+            if os.path.isfile(item):
+                if innerStamp in item:
+                    newName = item.replace(innerStamp, bundleId)
+                    os.rename(item, newName)
+
+        error = os.path.join(outputPath, jobId, f"{jobId}.err") 
+        output = os.path.join(outputPath, jobId, f"{jobId}.out") 
+
+        if os.path.exists("md5Checksum.txt"):
+            with open("md5Checksum.txt", "r+") as f:
+                content = f.read()
+                content = content.replace(innerStamp, bundleId)
+                f.seek(0)
+                f.write(content)
+                f.truncate()
+
+        if not os.path.exists(output) or not os.path.exists(error):
+            return S_ERROR("Outputs unable to be obtained")
+
+        with open(output, "r") as f:
+            output = f.read()
+        
+        with open(error, "r") as f:
+            error = f.read()
 
         return S_OK((output, error))
 
@@ -228,16 +251,16 @@ class BundleComputingElement(ComputingElement):
             jobIDList = [jobIDList]
 
         for job in jobIDList:
+            jobId = job
             if ":::" in job:
-                jobId, bundleId = job.split(":::")
+                jobId, _ = job.split(":::")
 
-            result = self.bundler.getJobStatus(job)
+            result = self.bundler.getJobStatus(jobId)
 
             if not result["OK"]:
-                self.log.error(result["Message"])
-                resultDict[job] = PilotStatus.FAILED
+                return S_ERROR("Failed to obtain the status of the job")
             else:
-                resultDict[job] = result["Value"]
+                resultDict[jobId] = result["Value"]
 
         return S_OK(resultDict)
 
@@ -257,12 +280,13 @@ class BundleComputingElement(ComputingElement):
     def cleanJob(self, jobIDList):
         if "cleanJob" not in self.innerCEMethods:
             self.log.error(f"Inner CE {self.innerCE.ceName} has no function called 'cleanJob'")
-            return S_ERROR()
+            return S_ERROR(f"Inner CE {self.innerCE.ceName} has no function called 'cleanJob'")
 
         for job in jobIDList:
+            
             if ":::" in job:
                 job, bundleId = job.split(":::")
-            self.bundler.cleanJob(job)
+            return self.bundler.cleanJob(job)
 
     def killJob(self, jobIDList):
         resultDict = {}

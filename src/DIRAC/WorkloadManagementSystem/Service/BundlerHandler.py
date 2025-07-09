@@ -55,7 +55,7 @@ class BundlerHandler(RequestHandler):
         self.jobToCE[jobId] = ce
 
         # Insert the Job into the DB
-        result = self.bundleDB.insertJobToBundle(jobId, executable, inputs, outputs, processors, ceDict)
+        result = self.bundleDB.insertJobToBundle(jobId, executable, inputs, outputs, processors, ceDict, proxyPath)
         if not result["OK"]:
             self.log.error("Failed to insert into a bundle the job with id ", str(jobId))
             return result
@@ -103,18 +103,25 @@ class BundlerHandler(RequestHandler):
         return self._getTaskInfo(bundleId)
 
     def _getTaskInfo(self, bundleId):
-        result = self.bundleDB.getWholeBundle(bundleId)
+        result = self.bundleDB.getBundleStatus(bundleId)
 
         if not result["OK"]:
-            self.log.error("Failed to obtain bundle ", str(bundleId))
+            self.log.error("Failed to obtain status of bundle ", str(bundleId))
             return result
 
-        bundleDict = result["Value"]
-        resultDict = {"Status": bundleDict["Status"]}
+        resultDict = {"Status": result["Value"]}
 
-        if bundleDict["Status"] not in PilotStatus.PILOT_FINAL_STATES:
-            resultDict["TaskID"] = bundleDict["TaskID"]
-            resultDict["OutputPath"] = bundleDict["OutputPath"]
+        # If it hasn't been uploaded yet
+        if resultDict["Status"] == PilotStatus.WAITING:
+            return S_OK(resultDict)
+
+        result = self.bundleDB.getTaskId(bundleId)
+
+        if not result["OK"]:
+            self.log.error("Failed to obtain taskId of bundle ", str(bundleId))
+            return result
+
+        resultDict["TaskID"] = result["Value"]
 
         return S_OK(resultDict)
 
@@ -199,12 +206,14 @@ class BundlerHandler(RequestHandler):
         if status not in PilotStatus.PILOT_FINAL_STATES:
             return S_ERROR(f"The bundle hasn't finished, cleaning is not permitted. Current Status: {status}")
 
+        taskId = result["Value"]["TaskID"]
+
         result = self.__getJobCE(jobId)
         if not result["OK"]:
             return result
         ce = result["Value"]
         try:
-            ce.cleanJob(result["Value"]["TaskID"])
+            ce.cleanJob(taskId)
         except AttributeError as e:  # If the CE has no method 'cleanJob'
             return S_ERROR(e)
 
@@ -230,11 +239,12 @@ class BundlerHandler(RequestHandler):
             return result
 
         status = result["Value"]["Status"]
-        task = result["Value"]["TaskID"]
-
+        
         if status not in PilotStatus.PILOT_FINAL_STATES:
-            if not task:
-                return S_OK(PilotStatus.FAILED)
+            task = result["Value"]["TaskID"]
+
+            if ":::" in task:
+                task = task.split(":::")[0]
 
             result = self.__getJobCE(jobId)
 
@@ -250,10 +260,10 @@ class BundlerHandler(RequestHandler):
 
             status = result["Value"][task]
 
-            if result["Value"] == PilotStatus.DONE:
-                self.bundleDB.setBundleAsFinalized()
-            elif result["Value"] in PilotStatus.PILOT_FINAL_STATES:
-                self.bundleDB.setBundleAsFailed()
+            if status == PilotStatus.DONE:
+                self.bundleDB.setBundleAsFinalized(bundleId)
+            elif status in PilotStatus.PILOT_FINAL_STATES:
+                self.bundleDB.setBundleAsFailed(bundleId)
 
         return S_OK(status)
 
@@ -261,7 +271,7 @@ class BundlerHandler(RequestHandler):
 
     def _getBundleIdFromJobId(self, jobId):
         if jobId in self.jobToBundle:
-            return self.jobToBundle[jobId]
+            return S_OK(self.jobToBundle[jobId])
 
         result = self.bundleDB.getBundleIdFromJobId(jobId)
         if not result["OK"]:
@@ -290,7 +300,7 @@ class BundlerHandler(RequestHandler):
         template = bundle["ExecTemplate"]
         executables = []
         inputs = []
-        outputs = ()
+        outputs = []
         jobIds = []
 
         basedir = f"/tmp/bundle_{bundleId}"
@@ -314,8 +324,7 @@ class BundlerHandler(RequestHandler):
                 shutil.copy(job_input, job_input_dst)
                 inputs.append(job_input_dst)
 
-            for job_output in job["Outputs"]:
-                outputs += job_output
+            outputs.extend(job["Outputs"])
 
         result = generate_template(template, executables)
 
@@ -328,6 +337,10 @@ class BundlerHandler(RequestHandler):
 
         with open(wrapperPath, "x") as f:
             f.write(wrappedBundle)
+
+        # outputs = list(set(outputs))
+        # if "/" in outputs:
+        #     outputs = outputs.remove("/")
 
         return S_OK((jobIds, wrapperPath, inputs, outputs))
 
@@ -344,7 +357,7 @@ class BundlerHandler(RequestHandler):
         # Convert the CEDict from string to a dictionary
         ceDict = literal_eval(result["Value"]["CEDict"])
 
-        return S_OK(ceDict, result["Value"]["ProxyPath"])
+        return S_OK({"CEDict": ceDict, "ProxyPath": result["Value"]["ProxyPath"]})
 
     def __getJobCE(self, jobId):
         if jobId not in self.jobToCE:
@@ -360,7 +373,7 @@ class BundlerHandler(RequestHandler):
             if not result["OK"]:
                 return result
 
-            self.jobToCE[jobId] = result["Value"]
+            self.jobToCE[jobId] = result["Value"]["CE"]
 
         return S_OK(self.jobToCE[jobId])
 
