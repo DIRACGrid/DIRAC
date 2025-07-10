@@ -286,10 +286,12 @@ class Condor(object):
         output, error = sp.communicate()
         status = sp.returncode
 
-        if status != 0 or not output:
+        if status != 0:
             resultDict["Status"] = status
             resultDict["Message"] = error
             return resultDict
+        if not output:
+            output = "[]"
 
         jobsMetadata = json.loads(output)
 
@@ -304,10 +306,12 @@ class Condor(object):
         output, _ = sp.communicate()
         status = sp.returncode
 
-        if status != 0 or not output:
+        if status != 0:
             resultDict["Status"] = status
             resultDict["Message"] = error
             return resultDict
+        if not output:
+            output = "[]"
 
         jobsMetadata += json.loads(output)
 
