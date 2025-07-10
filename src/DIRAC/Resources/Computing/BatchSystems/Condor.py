@@ -167,7 +167,7 @@ class Condor(object):
         jdlFile.flush()
 
         cmd = "%s; " % preamble if preamble else ""
-        cmd += "condor_submit %s" % jdlFile.name
+        cmd += "condor_submit -spool %s" % jdlFile.name
         sp = subprocess.Popen(
             cmd,
             shell=True,
@@ -286,10 +286,12 @@ class Condor(object):
         output, error = sp.communicate()
         status = sp.returncode
 
-        if status != 0 or not output:
+        if status != 0:
             resultDict["Status"] = status
             resultDict["Message"] = error
             return resultDict
+        if not output:
+            output = "[]"
 
         jobsMetadata = json.loads(output)
 
@@ -304,10 +306,12 @@ class Condor(object):
         output, _ = sp.communicate()
         status = sp.returncode
 
-        if status != 0 or not output:
+        if status != 0:
             resultDict["Status"] = status
             resultDict["Message"] = error
             return resultDict
+        if not output:
+            output = "[]"
 
         jobsMetadata += json.loads(output)
 
@@ -399,6 +403,21 @@ class Condor(object):
         jobDict = {}
         for jobID in jobIDList:
             jobDict[jobID] = {}
+
+            cmd = "condor_transfer_data %s" % jobID
+            sp = subprocess.Popen(
+                shlex.split(cmd),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )
+            _, error = sp.communicate()
+            status = sp.returncode
+            if status != 0:
+                resultDict["Status"] = -1
+                resultDict["Message"] = error
+                return resultDict
+
             jobDict[jobID]["Output"] = "%s/%s.out" % (outputDir, jobID)
             jobDict[jobID]["Error"] = "%s/%s.err" % (errorDir, jobID)
 
