@@ -154,10 +154,9 @@ class JobCleaningAgent(AgentModule):
         self.log.info("Unassigning sandboxes from soon to be deleted jobs", f"({len(jobList)})")
 
         entitiesList = [f"Job:{jobId}" for jobId in jobList]
-        res = SandboxMetadataDB().unassignEntities(entitiesList)
-        if not res["OK"]:
-            self.log.error("Cannot unassign jobs to sandboxes", res["Message"])
-            return res
+        if not (result := SandboxMetadataDB().unassignEntities(entitiesList))["OK"]:
+            self.log.error("Cannot unassign jobs to sandboxes", result["Message"])
+            return result
 
         self.log.info("Attempting to remove deleted jobs", f"({len(jobList)})")
 

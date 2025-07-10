@@ -139,7 +139,7 @@ class SandboxStoreHandlerMixin:
                     gLogger.debug("Sandbox already exists in storage backend", res.pfn)
 
                 assignTo = {key: [(res.pfn, assignTo[key])] for key in assignTo}
-                result = self.export_assignSandboxesToEntities(assignTo)
+                result = self.sandboxDB.assignSandboxesToEntities(assignTo, credDict["username"], credDict["group"])
                 if not result["OK"]:
                     return result
                 return S_OK(res.pfn)
@@ -153,7 +153,7 @@ class SandboxStoreHandlerMixin:
                 fileHelper.markAsTransferred()
             sbURL = f"SB:{self.__localSEName}|{sbPath}"
             assignTo = {key: [(sbURL, assignTo[key])] for key in assignTo}
-            result = self.export_assignSandboxesToEntities(assignTo)
+            result = self.sandboxDB.assignSandboxesToEntities(assignTo, credDict["username"], credDict["group"])
             if not result["OK"]:
                 return result
             return S_OK(sbURL)
@@ -210,7 +210,7 @@ class SandboxStoreHandlerMixin:
 
         sbURL = f"SB:{self.__localSEName}|{sbPath}"
         assignTo = {key: [(sbURL, assignTo[key])] for key in assignTo}
-        if not (result := self.export_assignSandboxesToEntities(assignTo))["OK"]:
+        if not (result := self.sandboxDB.assignSandboxesToEntities(assignTo, credDict["username"], credDict["group"]))["OK"]:
             return result
         return S_OK(sbURL)
 
@@ -327,21 +327,6 @@ class SandboxStoreHandlerMixin:
                 result = S_ERROR(errMsg)
 
         return result
-
-    ##################
-    # Assigning sbs to jobs
-
-    types_assignSandboxesToEntities = [dict]
-
-    def export_assignSandboxesToEntities(self, enDict, ownerName="", ownerGroup=""):
-        """
-        Assign sandboxes to jobs.
-        Expects a dict of { entityId : [ ( SB, SBType ), ... ] }
-        """
-        credDict = self.getRemoteCredentials()
-        return self.sandboxDB.assignSandboxesToEntities(
-            enDict, credDict["username"], credDict["group"], ownerName, ownerGroup
-        )
 
     ##################
     # Getting assigned sandboxes
