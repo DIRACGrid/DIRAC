@@ -220,31 +220,15 @@ class SandboxMetadataDB(DB):
             return result
         return S_OK(assigned)
 
-    def __entitiesByRequesterCond(self, requesterName, requesterGroup):
-        sqlCond = []
-        requesterProps = Registry.getPropertiesForEntity(requesterGroup, name=requesterName)
-        if Properties.JOB_ADMINISTRATOR in requesterProps:
-            # Do nothing, just ensure it doesn't fit in the other cases
-            pass
-        elif Properties.JOB_SHARING in requesterProps:
-            sqlCond.append(f"o.OwnerGroup='{requesterGroup}'")
-        elif Properties.NORMAL_USER in requesterProps:
-            sqlCond.append(f"o.OwnerGroup='{requesterGroup}'")
-            sqlCond.append(f"o.Owner='{requesterName}'")
-        else:
-            return S_ERROR("Not authorized to access sandbox")
-        return sqlCond
-
     @convertToReturnValue
-    def unassignEntities(self, entities, requesterName, requesterGroup):
+    def unassignEntities(self, entities: list):
         """
-        Unassign jobs to sandboxes
+        Unassign entities to sandboxes. Entities are a list of strings, e.g. ['job:1234', 'job:5678'].
 
         :param list entities: list of entities to unassign
         """
         if not entities:
             return None
-        conds = self.__entitiesByRequesterCond(requesterName, requesterGroup)
 
         sqlCmd = "CREATE TEMPORARY TABLE to_delete_EntityId (EntityId VARCHAR(128) NOT NULL, PRIMARY KEY (EntityId)) ENGINE=MEMORY;"
         returnValueOrRaise(self._update(sqlCmd))
@@ -252,16 +236,6 @@ class SandboxMetadataDB(DB):
             sqlCmd = "INSERT INTO to_delete_EntityId (EntityId) VALUES ( %s )"
             returnValueOrRaise(self._updatemany(sqlCmd, [(e,) for e in entities]))
             sqlCmd = "DELETE m from `sb_EntityMapping` m JOIN to_delete_EntityId t USING (EntityId)"
-            if conds:
-                sqlCmd = " ".join(
-                    [
-                        sqlCmd,
-                        "JOIN `sb_SandBoxes` s ON s.SBId = m.SBId",
-                        "JOIN `sb_Owners` o ON s.OwnerId = o.OwnerId",
-                        "WHERE",
-                        " AND ".join(conds),
-                    ]
-                )
             returnValueOrRaise(self._update(sqlCmd))
         finally:
             sqlCmd = "DROP TEMPORARY TABLE to_delete_EntityId"

@@ -344,18 +344,6 @@ class SandboxStoreHandlerMixin:
         )
 
     ##################
-    # Unassign sbs to jobs
-
-    types_unassignEntities = [(list, tuple)]
-
-    def export_unassignEntities(self, entitiesList):
-        """
-        Unassign a list of jobs
-        """
-        credDict = self.getRemoteCredentials()
-        return self.sandboxDB.unassignEntities(entitiesList, credDict["username"], credDict["group"])
-
-    ##################
     # Getting assigned sandboxes
 
     types_getSandboxesAssignedToEntity = [str]

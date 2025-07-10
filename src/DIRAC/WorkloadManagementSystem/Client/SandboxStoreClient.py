@@ -241,15 +241,6 @@ class SandboxStoreClient:
             return SandboxStoreClient.__smdb.assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup)
         return self.__getRPCClient().assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup)
 
-    def unassignJobs(self, jobIdList):
-        """Unassign SB to a job"""
-        if isinstance(jobIdList, int):
-            jobIdList = [jobIdList]
-        entitiesList = []
-        for jobId in jobIdList:
-            entitiesList.append(f"Job:{jobId}")
-        return self.__getRPCClient().unassignEntities(entitiesList)
-
     def downloadSandboxForJob(self, jobId, sbType, destinationPath="", inMemory=False, unpack=True):
         """Download SB for a job"""
         result = self.__getRPCClient().getSandboxesAssignedToEntity(f"Job:{jobId}")

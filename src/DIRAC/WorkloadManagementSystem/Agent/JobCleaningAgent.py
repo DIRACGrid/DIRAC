@@ -36,9 +36,9 @@ from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 
 
 class JobCleaningAgent(AgentModule):
@@ -152,10 +152,12 @@ class JobCleaningAgent(AgentModule):
             return S_OK()
 
         self.log.info("Unassigning sandboxes from soon to be deleted jobs", f"({len(jobList)})")
-        result = SandboxStoreClient(useCertificates=True).unassignJobs(jobList)
-        if not result["OK"]:
-            self.log.error("Cannot unassign jobs to sandboxes", result["Message"])
-            return result
+
+        entitiesList = [f"Job:{jobId}" for jobId in jobList]
+        res = SandboxMetadataDB().unassignEntities(entitiesList)
+        if not res["OK"]:
+            self.log.error("Cannot unassign jobs to sandboxes", res["Message"])
+            return res
 
         self.log.info("Attempting to remove deleted jobs", f"({len(jobList)})")
 
