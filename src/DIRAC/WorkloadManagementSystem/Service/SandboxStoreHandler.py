@@ -22,7 +22,6 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize, mkDir
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.DataManagementSystem.Service.StorageElementHandler import getDiskSpace
 from DIRAC.FrameworkSystem.Utilities.diracx import TheImpersonator
 
 
@@ -210,7 +209,9 @@ class SandboxStoreHandlerMixin:
 
         sbURL = f"SB:{self.__localSEName}|{sbPath}"
         assignTo = {key: [(sbURL, assignTo[key])] for key in assignTo}
-        if not (result := self.sandboxDB.assignSandboxesToEntities(assignTo, credDict["username"], credDict["group"]))["OK"]:
+        if not (result := self.sandboxDB.assignSandboxesToEntities(assignTo, credDict["username"], credDict["group"]))[
+            "OK"
+        ]:
             return result
         return S_OK(sbURL)
 
@@ -348,26 +349,6 @@ class SandboxStoreHandlerMixin:
                 sbDict[SBType] = []
             sbDict[SBType].append(f"SB:{SEName}|{SEPFN}")
         return S_OK(sbDict)
-
-    ##################
-    # Disk space left management
-
-    types_getFreeDiskSpace = []
-
-    def export_getFreeDiskSpace(self):
-        """Get the free disk space of the storage element
-        If no size is specified, terabytes will be used by default.
-        """
-
-        return getDiskSpace(self.getCSOption("BasePath", "/opt/dirac/storage/sandboxes"))
-
-    types_getTotalDiskSpace = []
-
-    def export_getTotalDiskSpace(self):
-        """Get the total disk space of the storage element
-        If no size is specified, terabytes will be used by default.
-        """
-        return getDiskSpace(self.getCSOption("BasePath", "/opt/dirac/storage/sandboxes"), total=True)
 
     ##################
     # Download sandboxes
