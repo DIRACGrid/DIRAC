@@ -185,9 +185,11 @@ def test_submitJob_parametricJob() -> None:
     try:
         assert len(jobIDList) == 3
 
-        res = jobMonitoringClient.getJobsParameters(jobIDList, ["JobName"])
-        assert res["OK"], res["Message"]
-        jobNames = [res["Value"][jobID]["JobName"] for jobID in res["Value"]]
+        jobNames = []
+        for j in jobIDList:
+            res = jobMonitoringClient.getJobParameter(j, "JobName")
+            assert res["OK"], res["Message"]
+            jobNames.append(res["Value"][j]["JobName"])
         assert set(jobNames) == {f"parametric_helloWorld_{nJob}" for nJob in range(3)}
 
     finally:
@@ -215,11 +217,6 @@ def test_WMSClient_rescheduleJob() -> None:
         assert jobDescription.lookupAttribute("CPUTime") is True
         assert jobDescription.lookupAttribute("Priority") is True
         assert jobDescription.lookupAttribute("JobID") is True
-
-        # Check that the owner
-        res = jobMonitoringClient.getJobOwner(jobID)
-        assert res["OK"], res["Message"]
-        assert res["Value"] == jobDescription.getAttributeString("Owner")
 
         # resourceDescription = {
         #     "OwnerGroup": jobDescription.getAttributeString("OwnerGroup"),
@@ -295,7 +292,7 @@ def test_JobStateUpdateAndJobMonitoring() -> None:
         assert res["OK"], res["Message"]
         res = jobMonitoringClient.getJobJDL(jobID, False)
         assert res["OK"], res["Message"]
-        res = jobMonitoringClient.getJobsParameters([jobID], [])
+        res = jobMonitoringClient.getJobParameters(jobID, [])
         assert res["OK"], res["Message"]
         res = jobMonitoringClient.getJobOwner(jobID)
         assert res["OK"], res["Message"]
@@ -366,9 +363,6 @@ def test_JobStateUpdateAndJobMonitoring() -> None:
         assert res["Value"] == []
 
         res = jobMonitoringClient.getJobSummary(jobID)
-        assert res["OK"], res["Message"]
-
-        res = jobMonitoringClient.getAtticJobParameters(jobID)
         assert res["OK"], res["Message"]
 
         res = jobStateUpdateClient.setJobStatus(jobID, JobStatus.DONE, "MinorStatus", "Unknown")

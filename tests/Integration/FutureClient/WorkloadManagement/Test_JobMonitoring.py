@@ -18,12 +18,6 @@ def test_getApplicationStates():
     pytest.skip()
 
 
-def test_getAtticJobParameters():
-    # JobMonitoringClient().getAtticJobParameters(jobID: int, parameters = None, rescheduleCycle = -1)
-    method = JobMonitoringClient().getAtticJobParameters
-    pytest.skip()
-
-
 def test_getCounters():
     # JobMonitoringClient().getCounters(attrList: list, attrDict = None, cutDate = )
     method = JobMonitoringClient().getCounters
@@ -72,18 +66,6 @@ def test_getJobLoggingInfo():
     pytest.skip()
 
 
-def test_getJobOptParameters():
-    # JobMonitoringClient().getJobOptParameters(jobID: int)
-    method = JobMonitoringClient().getJobOptParameters
-    pytest.skip()
-
-
-def test_getJobOwner():
-    # JobMonitoringClient().getJobOwner(jobID: int)
-    method = JobMonitoringClient().getJobOwner
-    pytest.skip()
-
-
 def test_getJobPageSummaryWeb():
     # JobMonitoringClient().getJobPageSummaryWeb(self: dict, selectDict: list, sortList: int, startItem: int, maxItems, selectJobs = True)
     method = JobMonitoringClient().getJobPageSummaryWeb
@@ -99,12 +81,6 @@ def test_getJobParameter():
 def test_getJobParameters():
     # JobMonitoringClient().getJobParameters(jobIDs: str | int | list, parName = None)
     method = JobMonitoringClient().getJobParameters
-    pytest.skip()
-
-
-def test_getJobSite():
-    # JobMonitoringClient().getJobSite(jobID: int)
-    method = JobMonitoringClient().getJobSite
     pytest.skip()
 
 
@@ -138,12 +114,6 @@ def test_getJobsMinorStatus(jobIDs):
     # JobMonitoringClient().getJobsMinorStatus(jobIDs: str | int | list)
     method = JobMonitoringClient().getJobsMinorStatus
     compare_results(partial(method, jobIDs))
-
-
-def test_getJobsParameters():
-    # JobMonitoringClient().getJobsParameters(jobIDs: str | int | list, parameters: list)
-    method = JobMonitoringClient().getJobsParameters
-    pytest.skip()
 
 
 @pytest.mark.parametrize("jobIDs", TEST_JOB_IDS)
@@ -188,12 +158,6 @@ def test_getOwnerGroup():
 def test_getOwners():
     # JobMonitoringClient().getOwners(condDict = None, older = None, newer = None)
     method = JobMonitoringClient().getOwners
-    pytest.skip()
-
-
-def test_getSiteSummary():
-    # JobMonitoringClient().getSiteSummary()
-    method = JobMonitoringClient().getSiteSummary
     pytest.skip()
 
 
