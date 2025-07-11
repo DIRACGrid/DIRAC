@@ -6,7 +6,6 @@ from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.Request import Request

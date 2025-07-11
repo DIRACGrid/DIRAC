@@ -10,7 +10,6 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getJobParameters
 
 
@@ -37,7 +36,6 @@ class JobMonitoringHandlerMixin:
             return result
         cls.elasticJobParametersDB = result["Value"](parentLogger=cls.log)
 
-        cls.pilotManager = PilotManagerClient()
         return S_OK()
 
     def initializeRequest(self):
@@ -149,20 +147,6 @@ class JobMonitoringHandlerMixin:
         return cls.jobDB.selectJobs(attrDict, newer=cutDate)
 
     ##############################################################################
-    types_getJobOwner = [int]
-
-    @classmethod
-    def export_getJobOwner(cls, jobID):
-        return cls.jobDB.getJobAttribute(jobID, "Owner")
-
-    ##############################################################################
-    types_getJobSite = [int]
-
-    @classmethod
-    def export_getJobSite(cls, jobID):
-        return cls.jobDB.getJobAttribute(jobID, "Site")
-
-    ##############################################################################
     types_getJobJDL = [int, bool]
 
     @classmethod
@@ -175,14 +159,6 @@ class JobMonitoringHandlerMixin:
     @classmethod
     def export_getJobLoggingInfo(cls, jobID):
         return cls.jobLoggingDB.getJobLoggingInfo(jobID)
-
-    ##############################################################################
-    types_getJobsParameters = [[str, int, list], list]
-
-    @classmethod
-    @ignoreEncodeWarning
-    def export_getJobsParameters(cls, jobIDs, parameters):
-        return cls.getJobsAttributes(jobIDs, parameters)
 
     ##############################################################################
     types_getJobsStates = [[str, int, list]]
@@ -253,13 +229,6 @@ class JobMonitoringHandlerMixin:
         return S_OK(res["Value"].get(int(jobID), {}))
 
     ##############################################################################
-    types_getJobOptParameters = [int]
-
-    @classmethod
-    def export_getJobOptParameters(cls, jobID):
-        return cls.jobDB.getJobOptParameters(jobID)
-
-    ##############################################################################
     types_getJobParameters = [[str, int, list]]
 
     @ignoreEncodeWarning
@@ -273,15 +242,6 @@ class JobMonitoringHandlerMixin:
         jobIDs = [int(jobID) for jobID in jobIDs]
 
         return getJobParameters(jobIDs, parName, self.vo or "")
-
-    ##############################################################################
-    types_getAtticJobParameters = [int]
-
-    @classmethod
-    def export_getAtticJobParameters(cls, jobID, parameters=None, rescheduleCycle=-1):
-        if not parameters:
-            parameters = []
-        return cls.jobDB.getAtticJobParameters(jobID, parameters, rescheduleCycle)
 
     ##############################################################################
     types_getJobAttributes = [int]
@@ -308,13 +268,6 @@ class JobMonitoringHandlerMixin:
         return cls.jobDB.getJobAttribute(jobID, attribute)
 
     ##############################################################################
-    types_getSiteSummary = []
-
-    @classmethod
-    def export_getSiteSummary(cls):
-        return cls.jobDB.getSiteSummary()
-
-    ##############################################################################
     types_getJobHeartBeatData = [int]
 
     @classmethod
@@ -328,9 +281,6 @@ class JobMonitoringHandlerMixin:
     def export_getInputData(cls, jobID):
         """Get input data for the specified jobs"""
         return cls.jobDB.getInputData(jobID)
-
-
-##############################################################################
 
 
 class JobMonitoringHandler(JobMonitoringHandlerMixin, RequestHandler):

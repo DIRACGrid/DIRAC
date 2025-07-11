@@ -39,15 +39,6 @@ class JobMonitoringClient(Client):
         return res
 
     @ignoreEncodeWarning
-    def getJobsParameters(self, jobIDs, parameters):
-        res = self._getRPC().getJobsParameters(jobIDs, parameters)
-
-        # Cast the str keys to int
-        if res["OK"]:
-            res["Value"] = strToIntDict(res["Value"])
-        return res
-
-    @ignoreEncodeWarning
     def getJobsMinorStatus(self, jobIDs):
         res = self._getRPC().getJobsMinorStatus(jobIDs)
 

@@ -1190,64 +1190,6 @@ class JobDB(DB):
 
         return retVal
 
-    #############################################################################
-    def getSiteSummary(self):
-        """Get the summary of jobs in a given status on all the sites"""
-
-        waitingList = ['"Submitted"', '"Assigned"', '"Waiting"', '"Matched"']
-        waitingString = ",".join(waitingList)
-
-        result = self.getDistinctJobAttributes("Site")
-        if not result["OK"]:
-            return result
-
-        siteList = result["Value"]
-        siteDict = {}
-        totalDict = {
-            JobStatus.WAITING: 0,
-            JobStatus.RUNNING: 0,
-            JobStatus.STALLED: 0,
-            JobStatus.DONE: 0,
-            JobStatus.FAILED: 0,
-        }
-
-        for site in siteList:
-            if site == "ANY":
-                continue
-            # Waiting
-            siteDict[site] = {}
-            ret = self._escapeString(site)
-            if not ret["OK"]:
-                return ret
-            e_site = ret["Value"]
-
-            req = f"SELECT COUNT(JobID) FROM Jobs WHERE Status IN ({waitingString}) AND Site={e_site}"
-            result = self._query(req)
-            if result["OK"]:
-                count = result["Value"][0][0]
-            else:
-                return S_ERROR("Failed to get Site data from the JobDB")
-            siteDict[site][JobStatus.WAITING] = count
-            totalDict[JobStatus.WAITING] += count
-            # Running,Stalled,Done,Failed
-            for status in [
-                f'"{JobStatus.RUNNING}"',
-                f'"{JobStatus.STALLED}"',
-                f'"{JobStatus.DONE}"',
-                f'"{JobStatus.FAILED}"',
-            ]:
-                req = f"SELECT COUNT(JobID) FROM Jobs WHERE Status={status} AND Site={e_site}"
-                result = self._query(req)
-                if result["OK"]:
-                    count = result["Value"][0][0]
-                else:
-                    return S_ERROR("Failed to get Site data from the JobDB")
-                siteDict[site][status.replace('"', "")] = count
-                totalDict[status.replace('"', "")] += count
-
-        siteDict["Total"] = totalDict
-        return S_OK(siteDict)
-
     #################################################################################
     def getSiteSummaryWeb(self, selectDict, sortList, startItem, maxItems):
         """Get the summary of jobs in a given status on all the sites in the standard Web form"""
