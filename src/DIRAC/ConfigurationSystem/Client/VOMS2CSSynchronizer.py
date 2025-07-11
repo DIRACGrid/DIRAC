@@ -86,8 +86,15 @@ def _getUserNameFromDN(dn, vo):
                     return nname
                 else:
                     robot = False
+                    # only pop if the remains are sufficient (i.e. not just digits)
                     if names[0].lower().startswith("robot"):
-                        names.pop(0)
+                        nameok = False
+                        if len(names) > 1:
+                            for name in names[1:]:
+                                if not name.isdigit():
+                                    nameok = True
+                        if nameok:
+                            names.pop(0)
                         robot = True
                     for name in list(names):
                         if name[0].isdigit() or "@" in name:
