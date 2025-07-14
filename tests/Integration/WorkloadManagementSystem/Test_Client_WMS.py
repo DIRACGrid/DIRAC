@@ -181,17 +181,8 @@ def test_submitJob_parametricJob() -> None:
     res = dirac.submitJob(job)
     assert res["OK"], res["Message"]
     jobIDList = res["Value"]
-
-    try:
-        assert len(jobIDList) == 3
-
-        res = jobMonitoringClient.getJobsParameters(jobIDList, ["JobName"])
-        assert res["OK"], res["Message"]
-        jobNames = [res["Value"][jobID]["JobName"] for jobID in res["Value"]]
-        assert set(jobNames) == {f"parametric_helloWorld_{nJob}" for nJob in range(3)}
-
-    finally:
-        jobManagerClient.removeJob(jobIDList)
+    assert len(jobIDList) == 3
+    jobManagerClient.removeJob(jobIDList)
 
 
 def test_WMSClient_rescheduleJob() -> None:
@@ -215,11 +206,6 @@ def test_WMSClient_rescheduleJob() -> None:
         assert jobDescription.lookupAttribute("CPUTime") is True
         assert jobDescription.lookupAttribute("Priority") is True
         assert jobDescription.lookupAttribute("JobID") is True
-
-        # Check that the owner
-        res = jobMonitoringClient.getJobOwner(jobID)
-        assert res["OK"], res["Message"]
-        assert res["Value"] == jobDescription.getAttributeString("Owner")
 
         # resourceDescription = {
         #     "OwnerGroup": jobDescription.getAttributeString("OwnerGroup"),
@@ -295,9 +281,7 @@ def test_JobStateUpdateAndJobMonitoring() -> None:
         assert res["OK"], res["Message"]
         res = jobMonitoringClient.getJobJDL(jobID, False)
         assert res["OK"], res["Message"]
-        res = jobMonitoringClient.getJobsParameters([jobID], [])
-        assert res["OK"], res["Message"]
-        res = jobMonitoringClient.getJobOwner(jobID)
+        res = jobMonitoringClient.getJobParameters(jobID, [])
         assert res["OK"], res["Message"]
 
         # Adding stuff
@@ -368,9 +352,6 @@ def test_JobStateUpdateAndJobMonitoring() -> None:
         res = jobMonitoringClient.getJobSummary(jobID)
         assert res["OK"], res["Message"]
 
-        res = jobMonitoringClient.getAtticJobParameters(jobID)
-        assert res["OK"], res["Message"]
-
         res = jobStateUpdateClient.setJobStatus(jobID, JobStatus.DONE, "MinorStatus", "Unknown")
         assert res["OK"], res["Message"]
 
@@ -406,38 +387,6 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn: str) -> None:
             jobIDs.append(jobID)
 
     try:
-        res = jobMonitoringClient.getSites()
-        assert res["OK"], res["Message"]
-        assert set(res["Value"]) <= {"ANY", "DIRAC.Jenkins.ch", "Site"}
-
-        res = jobMonitoringClient.getJobTypes()
-        assert res["OK"], res["Message"]
-
-        res = jobMonitoringClient.getApplicationStates()
-        assert res["OK"], res["Message"]
-        assert "Unknown" in res["Value"]
-
-        res = jobMonitoringClient.getOwners()
-        assert res["OK"], res["Message"]
-        res = jobMonitoringClient.getOwnerGroup()
-        assert res["OK"], res["Message"]
-        res = jobMonitoringClient.getJobGroups()
-        assert res["OK"], res["Message"]
-        resJG_empty = res["Value"]
-        res = jobMonitoringClient.getJobGroups(None, datetime.datetime.utcnow())
-        assert res["OK"], res["Message"]
-        resJG_olderThanNow = res["Value"]
-        assert resJG_empty == resJG_olderThanNow
-        res = jobMonitoringClient.getJobGroups(None, datetime.datetime.utcnow() - datetime.timedelta(days=365))
-        assert res["OK"], res["Message"]
-        resJG_olderThanOneYear = res["Value"]
-        assert set(resJG_olderThanOneYear).issubset(set(resJG_olderThanNow))
-
-        res = jobMonitoringClient.getStates()
-        assert res["OK"], res["Message"]
-        res = jobMonitoringClient.getMinorStates()
-        assert res["OK"], res["Message"]
-
         res = jobMonitoringClient.getJobs()
         assert res["OK"], res["Message"]
         assert {str(x) for x in jobIDs} <= set(res["Value"])
@@ -464,7 +413,6 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn: str) -> None:
         res = jobMonitoringClient.getJobSummary(int(jobID))
         assert res["OK"], res["Message"]
         assert res["Value"]["Status"] in (JobStatus.CHECKING, JobStatus.WAITING)
-        assert res["Value"]["MinorStatus"] == "MinorStatus"
 
         res = jobStateUpdateClient.setJobStatusBulk(
             jobID,

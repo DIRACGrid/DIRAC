@@ -105,16 +105,6 @@ class JobManagerHandlerMixin:
             return
         self.log.info("Optimize msg sent", f"for {len(jids)} jobs")
 
-    ###########################################################################
-    types_getMaxParametricJobs = []
-
-    def export_getMaxParametricJobs(self):
-        """Get the maximum number of parametric jobs
-
-        :return: S_OK()/S_ERROR()
-        """
-        return S_OK(self.maxParametricJobs)
-
     types_submitJob = [str]
 
     def export_submitJob(self, jobDesc):

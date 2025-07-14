@@ -7,21 +7,20 @@
     In case you want to further extend it you are required to follow the note on the
     initialize method and on the _getClients method.
 """
-import time
-import datetime
 import concurrent.futures
+import datetime
+import time
 
-from DIRAC import S_OK
-
+from DIRAC import S_OK, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Dictionaries import breakDictionaryIntoChunks
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.TransformationSystem.Client.FileReport import FileReport
-from DIRAC.TransformationSystem.Client.WorkflowTasks import WorkflowTasks
-from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
+from DIRAC.TransformationSystem.Client.FileReport import FileReport
+from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+from DIRAC.TransformationSystem.Client.WorkflowTasks import WorkflowTasks
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 
@@ -193,11 +192,9 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
             else:
                 # Get the transformations which should be submitted
                 self.tasksPerLoop = self.am_getOption("TasksPerLoop", self.tasksPerLoop)
-                res = self.jobManagerClient.getMaxParametricJobs()
-                if not res["OK"]:
-                    self.log.warn("Could not get the maxParametricJobs from JobManager", res["Message"])
-                else:
-                    self.maxParametricJobs = res["Value"]
+                self.maxParametricJobs = gConfig.getValue(
+                    "/Systems/WorkloadManagement/Services/JobManager/MaxParametricJobs", self.maxParametricJobs
+                )
 
                 self._addOperationForTransformations(
                     self.operationsOnTransformationDict,

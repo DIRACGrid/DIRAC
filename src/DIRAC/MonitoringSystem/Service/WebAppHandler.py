@@ -6,7 +6,6 @@ from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -333,6 +332,74 @@ class WebAppHandler(RequestHandler):
         resultDict["Site"] = siteList
 
         return S_OK(resultDict)
+
+    types_getApplicationStates = []
+
+    @classmethod
+    def export_getApplicationStates(cls, condDict=None, older=None, newer=None):
+        """Return Distinct Values of ApplicationStatus job Attribute in WMS"""
+        return cls.jobDB.getDistinctJobAttributes("ApplicationStatus", condDict, older, newer)
+
+    types_getJobTypes = []
+
+    @classmethod
+    def export_getJobTypes(cls, condDict=None, older=None, newer=None):
+        """Return Distinct Values of JobType job Attribute in WMS"""
+        return cls.jobDB.getDistinctJobAttributes("JobType", condDict, older, newer)
+
+    types_getOwners = []
+
+    @classmethod
+    def export_getOwners(cls, condDict=None, older=None, newer=None):
+        """
+        Return Distinct Values of Owner job Attribute in WMS
+        """
+        return cls.jobDB.getDistinctJobAttributes("Owner", condDict, older, newer)
+
+    types_getOwnerGroup = []
+
+    @classmethod
+    def export_getOwnerGroup(cls):
+        """
+        Return Distinct Values of OwnerGroup from the JobDB
+        """
+        return cls.jobDB.getDistinctJobAttributes("OwnerGroup")
+
+    types_getJobGroups = []
+
+    @classmethod
+    def export_getJobGroups(cls, condDict=None, older=None, cutDate=None):
+        """
+        Return Distinct Values of ProductionId job Attribute in WMS
+        """
+        return cls.jobDB.getDistinctJobAttributes("JobGroup", condDict, older, newer=cutDate)
+
+    types_getSites = []
+
+    @classmethod
+    def export_getSites(cls, condDict=None, older=None, newer=None):
+        """
+        Return Distinct Values of Site job Attribute in WMS
+        """
+        return cls.jobDB.getDistinctJobAttributes("Site", condDict, older, newer)
+
+    types_getStates = []
+
+    @classmethod
+    def export_getStates(cls, condDict=None, older=None, newer=None):
+        """
+        Return Distinct Values of Status job Attribute in WMS
+        """
+        return cls.jobDB.getDistinctJobAttributes("Status", condDict, older, newer)
+
+    types_getMinorStates = []
+
+    @classmethod
+    def export_getMinorStates(cls, condDict=None, older=None, newer=None):
+        """
+        Return Distinct Values of Minor Status job Attribute in WMS
+        """
+        return cls.jobDB.getDistinctJobAttributes("MinorStatus", condDict, older, newer)
 
     ##############################################################################
     # Transformations
