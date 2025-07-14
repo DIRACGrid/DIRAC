@@ -57,11 +57,7 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
             return numberOfProcessors
 
     # 3) looks in CS for tags
-<<<<<<< HEAD
-    gLogger.info(f"Getting tagsfor {siteName}: {gridCE}: {queue}")
-=======
     gLogger.info(f"Getting tags for {siteName}: {gridCE}: {queue}")
->>>>>>> 7dffc72d65 (fix: minor typo fixes)
     # Tags of the CE
     tags = fromChar(
         gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/CEs/{gridCE}/Tag", "")
@@ -205,3 +201,65 @@ def getJobParameters(jobIDs: list[int], parName: str | None, vo: str = "") -> di
         if jobID not in final:
             final[jobID] = parameters[jobID]
     return S_OK(final)
+
+
+def getAvailableRAM(siteName=None, gridCE=None, queue=None):
+    """Gets the available RAM on a certain CE/queue/node (what the pilot administers)
+
+    The siteName/gridCE/queue parameters are normally not necessary.
+
+    Tries to find it in this order:
+    1) from the /Resources/Computing/CEDefaults/AvailableRAM (which is what the pilot might fill up)
+    2) if not present looks in CS for "AvailableRAM" Queue or CE option
+    3) if not present but there's WholeNode tag, look what the WN provides using _getMemoryFromProc()
+    4) return 0
+    """
+
+    # 1) from /Resources/Computing/CEDefaults/MaxRAM
+    gLogger.info("Getting MaxRAM from /Resources/Computing/CEDefaults/MaxRAM")
+    availableRAM = gConfig.getValue("/Resources/Computing/CEDefaults/MaxRAM", None)
+    if availableRAM:
+        return availableRAM
+
+    # 2) looks in CS for "MaxRAM" Queue or CE or site option
+    if not siteName:
+        siteName = gConfig.getValue("/LocalSite/Site", "")
+    if not gridCE:
+        gridCE = gConfig.getValue("/LocalSite/GridCE", "")
+    if not queue:
+        queue = gConfig.getValue("/LocalSite/CEQueue", "")
+    if not (siteName and gridCE and queue):
+        gLogger.error("Could not find AvailableRAM: missing siteName or gridCE or queue. Returning 0")
+        return 0
+
+    grid = siteName.split(".")[0]
+    csPaths = [
+        f"/Resources/Sites/{grid}/{siteName}/CEs/{gridCE}/Queues/{queue}/MaxRAM",
+        f"/Resources/Sites/{grid}/{siteName}/CEs/{gridCE}/MaxRAM",
+        f"/Resources/Sites/{grid}/{siteName}/MaxRAM",
+    ]
+    for csPath in csPaths:
+        gLogger.info("Looking in", csPath)
+        availableRAM = gConfig.getValue(csPath, None)
+        if availableRAM:
+            return availableRAM
+
+    # 3) checks if 'WholeNode' is one of the used tags
+    # Tags of the CE
+    tags = fromChar(
+        gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/CEs/{gridCE}/Tag", "")
+    ) + fromChar(gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/Cloud/{gridCE}/Tag", ""))
+    # Tags of the Queue
+    tags += fromChar(
+        gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/CEs/{gridCE}/Queues/{queue}/Tag", "")
+    ) + fromChar(
+        gConfig.getValue(f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/Cloud/{gridCE}/VMTypes/{queue}/Tag", "")
+    )
+
+    if "WholeNode" in tags:
+        gLogger.info("Found WholeNode tag, using getMemoryFromProc()")
+        return getMemoryFromProc()
+
+    # 4) return 0
+    gLogger.info("AvailableRAM could not be found in CS, and WholeNode tag not found")
+    return 0

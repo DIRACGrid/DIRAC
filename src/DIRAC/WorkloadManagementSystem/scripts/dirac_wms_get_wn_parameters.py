@@ -39,11 +39,11 @@ def main():
     gLogger.info("Getting number of processors")
     numberOfProcessor = JobParameters.getNumberOfProcessors(Site, ceName, Queue)
 
-    gLogger.info("Getting memory (RAM)")
-    maxRAM = JobParameters.getMemoryFromProc()
-
     gLogger.info("Getting number of GPUs")
     numberOfGPUs = JobParameters.getNumberOfGPUs(Site, ceName, Queue)
+
+    gLogger.info("Getting maximum RAM")
+    maxRAM = JobParameters.getAvailableRAM(Site, ceName, Queue)
 
     # just communicating it back
     gLogger.notice(" ".join(str(wnPar) for wnPar in [numberOfProcessor, maxRAM, numberOfGPUs]))

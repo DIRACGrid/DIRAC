@@ -50,6 +50,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import (
     getNumberOfGPUs,
     getNumberOfProcessors,
+    getAvailableRAM,
 )
 
 INTEGER_PARAMETERS = ["CPUTime", "NumberOfProcessors", "NumberOfPayloadProcessors", "MaxRAM"]
@@ -211,12 +212,14 @@ class ComputingElement:
                 generalCEDict.update(self.ceParameters)
                 self.ceParameters = generalCEDict
 
-        # If NumberOfProcessors/GPUs is present in the description but is equal to zero
+        # If NumberOfProcessors/GPUs/RAM is present in the description but is equal to zero
         # interpret it as needing local evaluation
         if self.ceParameters.get("NumberOfProcessors", -1) == 0:
             self.ceParameters["NumberOfProcessors"] = getNumberOfProcessors()
         if self.ceParameters.get("NumberOfGPUs", -1) == 0:
             self.ceParameters["NumberOfGPUs"] = getNumberOfGPUs()
+        if self.ceParameters.get("RAM", -1) == 0:
+            self.ceParameters["RAM"] = getAvailableRAM()
 
         for key in ceOptions:
             if key in INTEGER_PARAMETERS:
