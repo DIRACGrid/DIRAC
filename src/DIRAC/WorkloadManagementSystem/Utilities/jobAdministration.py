@@ -5,7 +5,7 @@ from DIRAC.WorkloadManagementSystem.Client.JobStatus import filterJobStateTransi
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_KILL
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_KILL, RIGHT_DELETE
 
 
 def _deleteJob(jobID, force=False):
@@ -85,18 +85,12 @@ def kill_delete_jobs(right, validJobList, nonauthJobList=[], force=False):
             return filterRes
         killJobList.extend(filterRes["Value"])
 
-        if not right == RIGHT_KILL:
+        if right == RIGHT_DELETE:
             # Get the jobs allowed to transition to the Deleted state
             filterRes = filterJobStateTransition(validJobList, JobStatus.DELETED)
             if not filterRes["OK"]:
                 return filterRes
             deleteJobList.extend(filterRes["Value"])
-
-        # Look for jobs that are in the Staging state to send kill signal to the stager
-        result = JobDB().getJobsAttributes(killJobList, ["Status"])
-        if not result["OK"]:
-            return result
-        stagingJobList = [jobID for jobID, sDict in result["Value"].items() if sDict["Status"] == JobStatus.STAGING]
 
         for jobID in killJobList:
             result = _killJob(jobID, force=force)
@@ -107,6 +101,12 @@ def kill_delete_jobs(right, validJobList, nonauthJobList=[], force=False):
             result = _deleteJob(jobID, force=force)
             if not result["OK"]:
                 badIDs.append(jobID)
+
+        # Look for jobs that are in the Staging state to send kill signal to the stager
+        result = JobDB().getJobsAttributes(killJobList, ["Status"])
+        if not result["OK"]:
+            return result
+        stagingJobList = [jobID for jobID, sDict in result["Value"].items() if sDict["Status"] == JobStatus.STAGING]
 
         if stagingJobList:
             stagerDB = StorageManagementDB()
