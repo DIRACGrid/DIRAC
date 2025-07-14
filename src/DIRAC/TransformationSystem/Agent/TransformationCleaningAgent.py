@@ -16,14 +16,12 @@ from datetime import datetime, timedelta
 
 # # from DIRAC
 from DIRAC import S_ERROR, S_OK
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
@@ -36,6 +34,7 @@ from DIRAC.TransformationSystem.Client import TransformationStatus
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
+from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
 # # agent's name
 AGENT_NAME = "Transformation/TransformationCleaningAgent"
@@ -65,6 +64,8 @@ class TransformationCleaningAgent(AgentModule):
         self.reqClient = None
         # # file catalog client
         self.metadataClient = None
+        # # JobDB
+        self.jobDB = None
 
         # # transformations types
         self.transformationTypes = None
@@ -127,6 +128,8 @@ class TransformationCleaningAgent(AgentModule):
         self.metadataClient = FileCatalogClient()
         # # job monitoring client
         self.jobMonitoringClient = JobMonitoringClient()
+        # # job DB
+        self.jobDB = JobDB()
 
         return S_OK()
 
@@ -224,7 +227,7 @@ class TransformationCleaningAgent(AgentModule):
         So, we should just clean from time to time.
         What I added here is done only when the agent finalize, and it's quite light-ish operation anyway.
         """
-        res = self.jobMonitoringClient.getJobGroups(None, datetime.utcnow() - timedelta(days=365))
+        res = self.jobDB.getDistinctJobAttributes("JobGroup", None, datetime.utcnow() - timedelta(days=365))
         if not res["OK"]:
             self.log.error("Failed to get job groups", res["Message"])
             return res

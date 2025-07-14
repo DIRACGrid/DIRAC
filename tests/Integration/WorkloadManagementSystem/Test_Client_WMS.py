@@ -387,38 +387,6 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn: str) -> None:
             jobIDs.append(jobID)
 
     try:
-        res = jobMonitoringClient.getSites()
-        assert res["OK"], res["Message"]
-        assert set(res["Value"]) <= {"ANY", "DIRAC.Jenkins.ch", "Site"}
-
-        res = jobMonitoringClient.getJobTypes()
-        assert res["OK"], res["Message"]
-
-        res = jobMonitoringClient.getApplicationStates()
-        assert res["OK"], res["Message"]
-        assert "Unknown" in res["Value"]
-
-        res = jobMonitoringClient.getOwners()
-        assert res["OK"], res["Message"]
-        res = jobMonitoringClient.getOwnerGroup()
-        assert res["OK"], res["Message"]
-        res = jobMonitoringClient.getJobGroups()
-        assert res["OK"], res["Message"]
-        resJG_empty = res["Value"]
-        res = jobMonitoringClient.getJobGroups(None, datetime.datetime.utcnow())
-        assert res["OK"], res["Message"]
-        resJG_olderThanNow = res["Value"]
-        assert resJG_empty == resJG_olderThanNow
-        res = jobMonitoringClient.getJobGroups(None, datetime.datetime.utcnow() - datetime.timedelta(days=365))
-        assert res["OK"], res["Message"]
-        resJG_olderThanOneYear = res["Value"]
-        assert set(resJG_olderThanOneYear).issubset(set(resJG_olderThanNow))
-
-        res = jobMonitoringClient.getStates()
-        assert res["OK"], res["Message"]
-        res = jobMonitoringClient.getMinorStates()
-        assert res["OK"], res["Message"]
-
         res = jobMonitoringClient.getJobs()
         assert res["OK"], res["Message"]
         assert {str(x) for x in jobIDs} <= set(res["Value"])
@@ -445,7 +413,6 @@ def test_JobStateUpdateAndJobMonitoringMultiple(lfn: str) -> None:
         res = jobMonitoringClient.getJobSummary(int(jobID))
         assert res["OK"], res["Message"]
         assert res["Value"]["Status"] in (JobStatus.CHECKING, JobStatus.WAITING)
-        assert res["Value"]["MinorStatus"] == "MinorStatus"
 
         res = jobStateUpdateClient.setJobStatusBulk(
             jobID,

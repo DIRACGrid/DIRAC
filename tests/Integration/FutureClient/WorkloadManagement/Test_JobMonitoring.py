@@ -12,12 +12,6 @@ TEST_JOBS = [7470, 7471, 7469]
 TEST_JOB_IDS = [TEST_JOBS] + TEST_JOBS + [str(x) for x in TEST_JOBS]
 
 
-def test_getApplicationStates():
-    # JobMonitoringClient().getApplicationStates(condDict = None, older = None, newer = None)
-    method = JobMonitoringClient().getApplicationStates
-    pytest.skip()
-
-
 def test_getCounters():
     # JobMonitoringClient().getCounters(attrList: list, attrDict = None, cutDate = )
     method = JobMonitoringClient().getCounters
@@ -39,12 +33,6 @@ def test_getJobAttribute():
 def test_getJobAttributes():
     # JobMonitoringClient().getJobAttributes(jobID: int, attrList = None)
     method = JobMonitoringClient().getJobAttributes
-    pytest.skip()
-
-
-def test_getJobGroups():
-    # JobMonitoringClient().getJobGroups(condDict = None, older = None, cutDate = None)
-    method = JobMonitoringClient().getJobGroups
     pytest.skip()
 
 
@@ -87,12 +75,6 @@ def test_getJobParameters():
 def test_getJobSummary():
     # JobMonitoringClient().getJobSummary(jobID: int)
     method = JobMonitoringClient().getJobSummary
-    pytest.skip()
-
-
-def test_getJobTypes():
-    # JobMonitoringClient().getJobTypes(condDict = None, older = None, newer = None)
-    method = JobMonitoringClient().getJobTypes
     pytest.skip()
 
 
@@ -140,34 +122,4 @@ def test_getJobsStatus(jobIDs):
 def test_getJobsSummary():
     # JobMonitoringClient().getJobsSummary(jobIDs: list)
     method = JobMonitoringClient().getJobsSummary
-    pytest.skip()
-
-
-def test_getMinorStates():
-    # JobMonitoringClient().getMinorStates(condDict = None, older = None, newer = None)
-    method = JobMonitoringClient().getMinorStates
-    pytest.skip()
-
-
-def test_getOwnerGroup():
-    # JobMonitoringClient().getOwnerGroup()
-    method = JobMonitoringClient().getOwnerGroup
-    pytest.skip()
-
-
-def test_getOwners():
-    # JobMonitoringClient().getOwners(condDict = None, older = None, newer = None)
-    method = JobMonitoringClient().getOwners
-    pytest.skip()
-
-
-def test_getSites():
-    # JobMonitoringClient().getSites(condDict = None, older = None, newer = None)
-    method = JobMonitoringClient().getSites
-    pytest.skip()
-
-
-def test_getStates():
-    # JobMonitoringClient().getStates(condDict = None, older = None, newer = None)
-    method = JobMonitoringClient().getStates
     pytest.skip()
