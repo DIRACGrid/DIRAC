@@ -30,6 +30,8 @@ class WMSHistory(BaseType):
             "MinorStatus",
             "ApplicationStatus",
             "JobSplitType",
+            "Tier",
+            "Type",
         ]
 
         self.monitoringFields = ["Jobs", "Reschedules"]
@@ -46,6 +48,8 @@ class WMSHistory(BaseType):
                 "User": {"type": "keyword"},
                 "JobGroup": {"type": "keyword"},
                 "UserGroup": {"type": "keyword"},
+                "Tier": {"type": "keyword"},
+                "Type": {"type": "keyword"},
             }
         )
         # {'timestamp': {'type': 'date'}} will be added for all monitoring types

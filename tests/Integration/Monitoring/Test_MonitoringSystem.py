@@ -82,6 +82,8 @@ def test_listUniqueKeyValues(putAndDelete):
         "User": [],
         "JobGroup": [],
         "UserGroup": [],
+        "Tier": [],
+        "Type": [],
     }
 
 
