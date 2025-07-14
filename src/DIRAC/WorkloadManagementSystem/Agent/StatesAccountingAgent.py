@@ -9,10 +9,11 @@
 """
 import datetime
 
-from DIRAC import S_ERROR, S_OK
+from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 from DIRAC.AccountingSystem.Client.Types.WMSHistory import WMSHistory
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
@@ -77,6 +78,8 @@ class StatesAccountingAgent(AgentModule):
     def execute(self):
         """Main execution method"""
 
+        site_metadata = self._getSitesMetadata()
+
         # on the first iteration of the agent, do nothing in order to avoid double committing after a restart
         if self.am_getModuleParam("cyclesDone") == 0:
             self.log.notice("Skipping the first iteration of the agent")
@@ -131,6 +134,9 @@ class StatesAccountingAgent(AgentModule):
 
             for backend in self.datastores:
                 if backend.lower() == "monitoring":
+                    site_name = rD["Site"]
+                    rD["Tier"] = site_metadata[site_name]["Tier"]
+                    rD["Type"] = site_metadata[site_name]["Type"]
                     rD["timestamp"] = int(TimeUtilities.toEpochMilliSeconds(now))
                     self.datastores["Monitoring"].addRecord(rD)
 
@@ -154,3 +160,30 @@ class StatesAccountingAgent(AgentModule):
             self.log.verbose(f"Done committing WMSHistory to {backend} backend")
 
         return S_OK()
+
+    def _getSitesMetadata(self):
+        """Get the metadata for the sites"""
+        res = getSites()
+        if not res["OK"]:
+            return res
+        sites = res["Value"]
+        site_metadata = {}
+
+        for site in sites:
+            site_metadata[site] = {}
+
+            # Get the site metadata from the Configuration System
+            grid = site.split(".")[0]
+            res = gConfig.getOptionsDict(f"Resources/Sites/{grid}/{site}")
+            if not res["OK"]:
+                self.log.error("Failure getting options dict for site", f"{site}: {res['Message']}")
+                continue
+            siteInfoCS = res["Value"]
+
+            # The site tier is normally 1 or 2. Few VOs may define tier 3.
+            # If the tier is not defined, we assume it is 4, with 4 meaning "not pledged" (opportunistic).
+            site_metadata[site]["Tier"] = siteInfoCS.get("MoUTierLevel", "4")
+            # The site type is defined by the first part of the site name.
+            # It needs to be interpreted at the Monitoring side (e.g. in Grafana).
+            site_metadata[site]["Type"] = site.split(".")[0]
+        return site_metadata
