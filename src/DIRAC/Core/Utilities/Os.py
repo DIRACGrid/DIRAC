@@ -3,10 +3,11 @@
    by default on Error they return None
 """
 import os
+import threading
 
 import DIRAC
-from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 
 DEBUG = 0
 
@@ -128,3 +129,33 @@ def sourceEnv(timeout, cmdTuple, inputEnv=None):
     result["stderr"] = stderr
 
     return result
+
+
+def safe_listdir(directory, timeout=60):
+    """This is a "safe" list directory,
+    for lazily-loaded File Systems like CVMFS.
+    There's by default a 60 seconds timeout.
+
+    .. warning::
+        There is no distinction between an empty directory, and a non existent one.
+        It will return `[]` in both cases.
+
+    :param str directory: directory to list
+    :param int timeout: optional timeout, in seconds. Defaults to 60.
+    """
+
+    def listdir(directory):
+        try:
+            return os.listdir(directory)
+        except FileNotFoundError:
+            print(f"{directory} not found")
+            return []
+
+    contents = []
+    t = threading.Thread(target=lambda: contents.extend(listdir(directory)))
+    t.daemon = True  # don't delay program's exit
+    t.start()
+    t.join(timeout)
+    if t.is_alive():
+        return None  # timeout
+    return contents
