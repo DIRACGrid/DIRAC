@@ -38,7 +38,6 @@ from DIRAC import gLogger
 from DIRAC.tests.Utilities.utils import find_all
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 
-
 gLogger.setLevel("DEBUG")
 
 
@@ -46,18 +45,8 @@ def test_SSCChain():
     """full test of functionalities"""
     ssc = SandboxStoreClient()
 
-    jobId = 1
-
     exeScriptLocation = find_all("exe-script.py", "../..", "/DIRAC/tests/Integration")[0]
     fileList = [exeScriptLocation]
 
     res = ssc.uploadFilesAsSandbox(fileList)
-    assert res["OK"], res["Message"]
-
-    # TODO : FIXME
-    # res = ssc.downloadSandboxForJob(jobId, "Input")  # to run this we need the RSS on
-    # print(res)  # for debug...
-    # assert res["OK"], res["Message"]
-
-    res = ssc.unassignJobs([jobId])
     assert res["OK"], res["Message"]

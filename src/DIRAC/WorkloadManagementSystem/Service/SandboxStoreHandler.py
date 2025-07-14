@@ -22,7 +22,6 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize, mkDir
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.DataManagementSystem.Service.StorageElementHandler import getDiskSpace
 from DIRAC.FrameworkSystem.Utilities.diracx import TheImpersonator
 
 
@@ -139,7 +138,7 @@ class SandboxStoreHandlerMixin:
                     gLogger.debug("Sandbox already exists in storage backend", res.pfn)
 
                 assignTo = {key: [(res.pfn, assignTo[key])] for key in assignTo}
-                result = self.export_assignSandboxesToEntities(assignTo)
+                result = self.sandboxDB.assignSandboxesToEntities(assignTo, credDict["username"], credDict["group"])
                 if not result["OK"]:
                     return result
                 return S_OK(res.pfn)
@@ -153,7 +152,7 @@ class SandboxStoreHandlerMixin:
                 fileHelper.markAsTransferred()
             sbURL = f"SB:{self.__localSEName}|{sbPath}"
             assignTo = {key: [(sbURL, assignTo[key])] for key in assignTo}
-            result = self.export_assignSandboxesToEntities(assignTo)
+            result = self.sandboxDB.assignSandboxesToEntities(assignTo, credDict["username"], credDict["group"])
             if not result["OK"]:
                 return result
             return S_OK(sbURL)
@@ -210,7 +209,9 @@ class SandboxStoreHandlerMixin:
 
         sbURL = f"SB:{self.__localSEName}|{sbPath}"
         assignTo = {key: [(sbURL, assignTo[key])] for key in assignTo}
-        if not (result := self.export_assignSandboxesToEntities(assignTo))["OK"]:
+        if not (result := self.sandboxDB.assignSandboxesToEntities(assignTo, credDict["username"], credDict["group"]))[
+            "OK"
+        ]:
             return result
         return S_OK(sbURL)
 
@@ -329,33 +330,6 @@ class SandboxStoreHandlerMixin:
         return result
 
     ##################
-    # Assigning sbs to jobs
-
-    types_assignSandboxesToEntities = [dict]
-
-    def export_assignSandboxesToEntities(self, enDict, ownerName="", ownerGroup=""):
-        """
-        Assign sandboxes to jobs.
-        Expects a dict of { entityId : [ ( SB, SBType ), ... ] }
-        """
-        credDict = self.getRemoteCredentials()
-        return self.sandboxDB.assignSandboxesToEntities(
-            enDict, credDict["username"], credDict["group"], ownerName, ownerGroup
-        )
-
-    ##################
-    # Unassign sbs to jobs
-
-    types_unassignEntities = [(list, tuple)]
-
-    def export_unassignEntities(self, entitiesList):
-        """
-        Unassign a list of jobs
-        """
-        credDict = self.getRemoteCredentials()
-        return self.sandboxDB.unassignEntities(entitiesList, credDict["username"], credDict["group"])
-
-    ##################
     # Getting assigned sandboxes
 
     types_getSandboxesAssignedToEntity = [str]
@@ -375,26 +349,6 @@ class SandboxStoreHandlerMixin:
                 sbDict[SBType] = []
             sbDict[SBType].append(f"SB:{SEName}|{SEPFN}")
         return S_OK(sbDict)
-
-    ##################
-    # Disk space left management
-
-    types_getFreeDiskSpace = []
-
-    def export_getFreeDiskSpace(self):
-        """Get the free disk space of the storage element
-        If no size is specified, terabytes will be used by default.
-        """
-
-        return getDiskSpace(self.getCSOption("BasePath", "/opt/dirac/storage/sandboxes"))
-
-    types_getTotalDiskSpace = []
-
-    def export_getTotalDiskSpace(self):
-        """Get the total disk space of the storage element
-        If no size is specified, terabytes will be used by default.
-        """
-        return getDiskSpace(self.getCSOption("BasePath", "/opt/dirac/storage/sandboxes"), total=True)
 
     ##################
     # Download sandboxes
