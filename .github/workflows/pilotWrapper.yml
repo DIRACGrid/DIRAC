@@ -21,7 +21,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: cvmfs-contrib/github-action-cvmfs@v3
+    - uses: cvmfs-contrib/github-action-cvmfs@v5
 
     - name: Test CernVM-FS
       run: ls /cvmfs/dirac.egi.eu
