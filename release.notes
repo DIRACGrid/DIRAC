@@ -1,3 +1,36 @@
+[v9.0.0a62]
+
+*ConfigurationSystem
+
+FIX: (#8259) Stops VOMS2CSSynchronizer crashing on robot DNs that don't follow the CERN pattern.
+FEAT: (#8242) Cache getUsernameForDN and getVOForGroup
+
+*WorkloadManagementSystem
+
+CHANGE: (#8254) JobMonitoring: removed several unused RPC calls
+CHANGE: (#8252) removed SandboxStore RPC call unassignEntities
+CHANGE: (#8252) removed SandboxStore RPC call assignSandboxesToEntities
+CHANGE: (#8252) removed SandboxStore RPC calls getFreeDiskSpace and getTotalSpace
+CHANGE: (#8240) add site metadata for WMSHistory (Monitoring)
+
+*ResourceStatusSystem
+
+CHANGE: (#8250) Added a token expiry option to dirac-rss-set-status and dirac-admin-allow/ban-site commands.
+
+*Resources
+
+CHANGE: (#8247) add spool option to SSHCE+Condor
+FIX: (#8241) missing parenthesis in htcondor submission script
+
+*Core
+
+FIX: (#8245) dirac-apptainer-exec can bind optional paths
+
+*TransformationSystem
+
+NEW: (#8242) Cleanup unused TransformationAgent caches at the beginning of a cycle
+FEAT: (#8242) cache isSameSEInList
+
 [v9.0.0a61]
 
 *WorkloadManagementSystem
