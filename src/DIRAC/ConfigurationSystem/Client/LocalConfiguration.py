@@ -568,6 +568,9 @@ class LocalConfiguration:
             objLoader = ObjectLoader()
             objLoader.reloadRootModules()
             self.__initLogger(self.componentName, self.loggingSection, forceInit=True)
+            from DIRAC.ConfigurationSystem.Client.Helpers.Registry import reset_all_caches
+
+            reset_all_caches()
         return res
 
     def isCSEnabled(self):
