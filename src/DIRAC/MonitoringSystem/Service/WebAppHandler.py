@@ -336,25 +336,25 @@ class WebAppHandler(RequestHandler):
     types_getApplicationStates = []
 
     @classmethod
-    def export_getApplicationStates(cls, condDict=None, older=None, newer=None):
+    def export_getApplicationStates(cls):
         """Return Distinct Values of ApplicationStatus job Attribute in WMS"""
-        return cls.jobDB.getDistinctJobAttributes("ApplicationStatus", condDict, older, newer)
+        return cls.jobDB._query("SELECT DISTINCT ApplicationStatus FROM JobsHistorySummary")
 
     types_getJobTypes = []
 
     @classmethod
-    def export_getJobTypes(cls, condDict=None, older=None, newer=None):
+    def export_getJobTypes(cls):
         """Return Distinct Values of JobType job Attribute in WMS"""
-        return cls.jobDB.getDistinctJobAttributes("JobType", condDict, older, newer)
+        return cls.jobDB._query("SELECT DISTINCT JobType FROM JobsHistorySummary")
 
     types_getOwners = []
 
     @classmethod
-    def export_getOwners(cls, condDict=None, older=None, newer=None):
+    def export_getOwners(cls):
         """
         Return Distinct Values of Owner job Attribute in WMS
         """
-        return cls.jobDB.getDistinctJobAttributes("Owner", condDict, older, newer)
+        return cls.jobDB._query("SELECT DISTINCT Owner FROM JobsHistorySummary")
 
     types_getOwnerGroup = []
 
@@ -363,43 +363,43 @@ class WebAppHandler(RequestHandler):
         """
         Return Distinct Values of OwnerGroup from the JobDB
         """
-        return cls.jobDB.getDistinctJobAttributes("OwnerGroup")
+        return cls.jobDB._query("SELECT DISTINCT OwnerGroup FROM JobsHistorySummary")
 
     types_getJobGroups = []
 
     @classmethod
-    def export_getJobGroups(cls, condDict=None, older=None, cutDate=None):
+    def export_getJobGroups(cls):
         """
         Return Distinct Values of ProductionId job Attribute in WMS
         """
-        return cls.jobDB.getDistinctJobAttributes("JobGroup", condDict, older, newer=cutDate)
+        return cls.jobDB._query("SELECT DISTINCT JobGroup FROM JobsHistorySummary")
 
     types_getSites = []
 
     @classmethod
-    def export_getSites(cls, condDict=None, older=None, newer=None):
+    def export_getSites(cls):
         """
         Return Distinct Values of Site job Attribute in WMS
         """
-        return cls.jobDB.getDistinctJobAttributes("Site", condDict, older, newer)
+        return cls.jobDB._query("SELECT DISTINCT Site FROM JobsHistorySummary")
 
     types_getStates = []
 
     @classmethod
-    def export_getStates(cls, condDict=None, older=None, newer=None):
+    def export_getStates(cls):
         """
         Return Distinct Values of Status job Attribute in WMS
         """
-        return cls.jobDB.getDistinctJobAttributes("Status", condDict, older, newer)
+        return cls.jobDB._query("SELECT DISTINCT Status FROM JobsHistorySummary")
 
     types_getMinorStates = []
 
     @classmethod
-    def export_getMinorStates(cls, condDict=None, older=None, newer=None):
+    def export_getMinorStates(cls):
         """
         Return Distinct Values of Minor Status job Attribute in WMS
         """
-        return cls.jobDB.getDistinctJobAttributes("MinorStatus", condDict, older, newer)
+        return cls.jobDB._query("SELECT DISTINCT MinorStatus FROM JobsHistorySummary")
 
     ##############################################################################
     # Transformations

@@ -17,7 +17,7 @@ class PilotsHistory(BaseType):
 
         super().__init__()
 
-        self.keyFields = ["GridSite", "GridType", "Status"]
+        self.keyFields = ["GridSite", "ComputingElement", "GridType", "Status", "VO"]
 
         self.monitoringFields = ["NumOfPilots"]
 
@@ -26,8 +26,10 @@ class PilotsHistory(BaseType):
         self.addMapping(
             {
                 "GridSite": {"type": "keyword"},
+                "ComputingElement": {"type": "keyword"},
                 "GridType": {"type": "keyword"},
                 "Status": {"type": "keyword"},
+                "VO": {"type": "keyword"},
                 "NumOfPilots": {"type": "long"},
             }
         )

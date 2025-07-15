@@ -5,6 +5,8 @@
 """
 # pylint: disable=wrong-import-position
 
+import csv
+from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import DIRAC
@@ -186,3 +188,96 @@ def test_PivotedPilotSummaryTable():
     assert "Total" in columns
 
     cleanUpPilots(pilotRef)
+
+
+# Parse date strings into datetime objects
+def process_data(data):
+    converted_data = []
+
+    for row in data:
+        # date fields
+        date_indices = [10, 11]  # Positions of date fields
+        for i in date_indices:
+            if not row[i]:
+                row[i] = None
+            else:
+                try:
+                    row[i] = datetime.strptime(row[i], "%Y-%m-%d %H:%M:%S")
+                except ValueError:
+                    # Handle invalid dates
+                    row[i] = None
+        # Convert other fields to appropriate types
+        int_indices = [0, 1]  # Positions of integer fields
+        for i in int_indices:
+            if not row[i]:
+                row[i] = 0
+            else:
+                try:
+                    row[i] = int(row[i])
+                except ValueError:
+                    # Handle invalid integers
+                    row[i] = 0
+        float_indices = [9]  # Positions of float fields
+        for i in float_indices:
+            if not row[i]:
+                row[i] = 0
+            else:
+                try:
+                    row[i] = float(row[i])
+                except ValueError:
+                    # Handle invalid float
+                    row[i] = 0
+        converted_data.append(tuple(row))
+    return converted_data
+
+
+def test_summarySnapshot():
+    # first delete all pilots
+    sql = "DELETE FROM PilotAgents"
+    res = paDB._update(sql)
+    assert res["OK"], res["Message"]
+    sql = "DELETE FROM PilotsHistorySummary"
+    res = paDB._update(sql)
+    assert res["OK"], res["Message"]
+
+    # insert some predefined pilots to test the summary snapshot
+    with open("pilots.csv", newline="", encoding="utf-8") as csvfile:
+        csvreader = csv.reader(csvfile)
+        data = list(csvreader)
+        processed_data = process_data(data)
+        placeholders = ",".join(["%s"] * len(processed_data[0]))
+        sql = f"INSERT INTO PilotAgents (InitialJobID, CurrentJobID, PilotJobReference, PilotStamp, DestinationSite, Queue, GridSite, VO, GridType, BenchMark, SubmissionTime, LastUpdateTime, Status, StatusReason, AccountingSent) VALUES ({placeholders})"
+        res = paDB._updatemany(sql, processed_data)
+        assert res["OK"], res["Message"]
+    sql = "SELECT * FROM PilotsHistorySummary ORDER BY GridSite, ComputingElement, GridType, Status, VO;"
+    result = PilotAgentsDB()._query(sql)
+    assert result["OK"], result["Message"]
+    values = result["Value"][1]
+    assert len(values) == 6, "Expected 6 record in the summary"
+    # Check it corresponds to the basic "GROUP BY" query
+    sql = "SELECT GridSite, DestinationSite, GridType, Status, VO, COUNT(*) FROM PilotAgents GROUP BY GridSite, DestinationSite, GridType, Status, VO ORDER BY GridSite, DestinationSite, GridType, Status, VO;"
+    result_grouped = PilotAgentsDB()._query(sql)
+    assert result_grouped["OK"], result_grouped["Message"]
+    sql = "SELECT * FROM PilotsHistorySummary ORDER BY GridSite, ComputingElement, GridType, Status, VO;"
+    result_summary = PilotAgentsDB()._query(sql)
+    assert result_summary["OK"], result_summary["Message"]
+    assert result_grouped["Value"] == result_summary["Value"], "Summary and grouped query results differ"
+
+    # deleting now
+    with open("pilots.csv", newline="", encoding="utf-8") as csvfile:
+        csvreader = csv.reader(csvfile)
+        data = list(csvreader)
+        processed_data = process_data(data)
+        pilotStamps = [row[3] for row in processed_data]
+        pilotStampsStr = ",".join("'" + p + "'" for p in pilotStamps)
+        sql = f"DELETE FROM PilotAgents WHERE PilotStamp IN (%s)" % pilotStampsStr
+        res = paDB._update(sql)
+        assert res["OK"], res["Message"]
+    # Check it corresponds to the basic "GROUP BY" query
+    sql = "SELECT GridSite, DestinationSite, GridType, Status, VO, COUNT(*) FROM PilotAgents GROUP BY GridSite, DestinationSite, GridType, Status, VO ORDER BY GridSite, DestinationSite, GridType, Status, VO;"
+    result_grouped = PilotAgentsDB()._query(sql)
+    assert result_grouped["OK"], result_grouped["Message"]
+    sql = "select * FROM PilotsHistorySummary ORDER BY GridSite, ComputingElement, GridType, Status, VO;"
+    result_summary = PilotAgentsDB()._query(sql)
+    assert result_summary["OK"], result_summary["Message"]
+    assert result_grouped["Value"] == result_summary["Value"], "Summary and grouped query results differ"

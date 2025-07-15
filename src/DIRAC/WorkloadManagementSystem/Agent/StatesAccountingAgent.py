@@ -32,19 +32,25 @@ class StatesAccountingAgent(AgentModule):
     __summaryKeyFieldsMapping = [
         "Status",
         "Site",
-        "User",
-        "UserGroup",
+        "Owner",
+        "OwnerGroup",
         "JobGroup",
+        "VO",
         "JobType",
         "ApplicationStatus",
         "MinorStatus",
     ]
-    __summaryDefinedFields = [("ApplicationStatus", "unset"), ("MinorStatus", "unset")]
-    __summaryValueFieldsMapping = ["Jobs", "Reschedules"]
-    __renameFieldsMapping = {"JobType": "JobSplitType"}
+    __summaryValueFieldsMapping = ["JobCount", "RescheduleSum"]
+    __renameFieldsMapping = {
+        "Owner": "User",
+        "OwnerGroup": "UserGroup",
+        "JobType": "JobSplitType",
+        "JobCount": "Jobs",
+        "RescheduleSum": "Reschedules",
+    }
 
     # PilotsHistory fields
-    __pilotsMapping = ["GridSite", "GridType", "Status", "NumOfPilots"]
+    __pilotsMapping = ["GridSite", "ComputingElement", "GridType", "Status", "VO", "NumOfPilots"]
 
     def initialize(self):
         """Standard initialization"""
@@ -88,7 +94,8 @@ class StatesAccountingAgent(AgentModule):
         # PilotsHistory to Monitoring
         if "Monitoring" in self.pilotMonitoringOption:
             self.log.info("Committing PilotsHistory to Monitoring")
-            result = PilotAgentsDB().getSummarySnapshot()
+            sql = "SELECT * FROM PilotsHistorySummary ORDER BY GridSite, ComputingElement, GridType, Status, VO;"
+            result = PilotAgentsDB()._query(sql)
             now = datetime.datetime.utcnow()
             if not result["OK"]:
                 self.log.error(
@@ -96,7 +103,7 @@ class StatesAccountingAgent(AgentModule):
                     f"{result['Message']}: won't commit PilotsHistory at this cycle",
                 )
 
-            values = result["Value"][1]
+            values = result["Value"]
             for record in values:
                 rD = {}
                 for iP, _ in enumerate(self.__pilotsMapping):
@@ -112,25 +119,20 @@ class StatesAccountingAgent(AgentModule):
 
         # WMSHistory to Monitoring or Accounting
         self.log.info(f"Committing WMSHistory to {'and '.join(self.jobMonitoringOption)} backend")
-        result = JobDB().getSummarySnapshot(self.__jobDBFields)
-        now = datetime.datetime.utcnow()
+        result = JobDB()._query(
+            f"SELECT {','.join(self.__summaryKeyFieldsMapping + self.__summaryValueFieldsMapping)} FROM JobsHistorySummary ORDER BY {','.join(self.__summaryKeyFieldsMapping)}"
+        )
         if not result["OK"]:
             self.log.error("Can't get the JobDB summary", f"{result['Message']}: won't commit WMSHistory at this cycle")
             return S_ERROR()
 
-        values = result["Value"][1]
-
+        values = result["Value"]
+        now = datetime.datetime.utcnow()
         self.log.info("Start sending WMSHistory records")
         for record in values:
             rD = {}
-            for fV in self.__summaryDefinedFields:
-                rD[fV[0]] = fV[1]
-            for iP, _ in enumerate(self.__summaryKeyFieldsMapping):
-                fieldName = self.__summaryKeyFieldsMapping[iP]
+            for iP, fieldName in enumerate(self.__summaryKeyFieldsMapping + self.__summaryValueFieldsMapping):
                 rD[self.__renameFieldsMapping.get(fieldName, fieldName)] = record[iP]
-            record = record[len(self.__summaryKeyFieldsMapping) :]
-            for iP, _ in enumerate(self.__summaryValueFieldsMapping):
-                rD[self.__summaryValueFieldsMapping[iP]] = int(record[iP])
 
             for backend in self.datastores:
                 if backend.lower() == "monitoring":
@@ -141,6 +143,8 @@ class StatesAccountingAgent(AgentModule):
                     self.datastores["Monitoring"].addRecord(rD)
 
                 elif backend.lower() == "accounting":
+                    rD.pop("VO")  # Remove VO field for Accounting
+                    rD.pop("ApplicationStatus")  # Remove ApplicationStatus for Accounting
                     acWMS = WMSHistory()
                     acWMS.setStartTime(now)
                     acWMS.setEndTime(now)

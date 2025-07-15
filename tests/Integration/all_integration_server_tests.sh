@@ -46,6 +46,8 @@ pytest --no-check-dirac-environment "${THIS_DIR}/ResourceStatusSystem/Test_FullC
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** WMS TESTS ****\n"
+cp "${THIS_DIR}/WorkloadManagementSystem/examples.tgz" .
+tar -xzf examples.tgz
 pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_JobDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_JobLoggingDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_TaskQueueDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
