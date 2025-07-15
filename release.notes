@@ -1,3 +1,17 @@
+[v8.0.76]
+
+*ConfigurationSystem
+
+FIX: (#8255) Stops VOMS2CSSynchronizer crashing on robot DNs that don't follow the CERN pattern.
+
+*Resources
+
+CHANGE: (#8214) SLURM plugin now supports the WholeNode options
+
+*ResourceStatusSystem
+
+CHANGE: (#8213) Added a token expiry option to dirac-rss-set-status and dirac-admin-allow/ban-site commands.
+
 [v8.0.75]
 
 *FrameworkSystem
