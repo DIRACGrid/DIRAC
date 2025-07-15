@@ -3,11 +3,10 @@ Module containing functions interacting with the CS and useful for the RSS
 modules.
 """
 
-from DIRAC import gConfig, gLogger, S_OK
+from DIRAC import S_OK, gConfig, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues
 from DIRAC.Core.Utilities.SiteSEMapping import getSEParameters
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues, getCESiteMapping
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
-from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 
 def warmUp():
@@ -17,28 +16,6 @@ def warmUp():
     from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 
     gRefresher.refreshConfigurationIfNeeded()
-
-
-def getResources():
-    """
-    Gets all resources
-    """
-
-    resources = DMSHelpers().getStorageElements()
-
-    fts = getFTS()
-    if fts["OK"]:
-        resources = resources + fts["Value"]
-
-    fc = getFileCatalogs()
-    if fc["OK"]:
-        resources = resources + fc["Value"]
-
-    res = getCESiteMapping()
-    if res["OK"]:
-        resources = resources + list(res["Value"])
-
-    return S_OK(resources)
 
 
 def getStorageElementEndpoint(seName):
@@ -84,12 +61,6 @@ def getFTS():
     if result["OK"]:
         return result
     return S_OK([])
-
-
-def getSpaceTokenEndpoints():
-    """Get Space Token Endpoints"""
-
-    return Utils.getCSTree("Shares/Disk")
 
 
 def getFileCatalogs():
