@@ -32,7 +32,6 @@ from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.TransformationSystem.Client import TransformationStatus
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     RIGHT_DELETE,
@@ -126,8 +125,6 @@ class TransformationCleaningAgent(AgentModule):
         self.reqClient = ReqClient()
         # # file catalog client
         self.metadataClient = FileCatalogClient()
-        # # job monitoring client
-        self.jobMonitoringClient = JobMonitoringClient()
         # # job DB
         self.jobDB = JobDB()
 
@@ -271,7 +268,7 @@ class TransformationCleaningAgent(AgentModule):
 
             # Remove JobIDs that were unknown to the TransformationSystem
             jobGroupsToCheck = [str(transDict["TransformationID"]).zfill(8) for transDict in toClean + toArchive]
-            res = self.jobMonitoringClient.getJobs({"JobGroup": jobGroupsToCheck})
+            res = self.jobDB.selectJobs({"JobGroup": jobGroupsToCheck})
             if not res["OK"]:
                 return res
             jobIDsToRemove = [int(jobID) for jobID in res["Value"]]
