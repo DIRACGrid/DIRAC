@@ -417,6 +417,8 @@ def getPilotFilesCompressedEncodedDict(pilotFiles, proxy=None):
         from DIRAC.Core.Security.ProxyFile import writeChainToTemporaryFile  # pylint: disable=import-error
 
         retVal = writeChainToTemporaryFile(proxy)
+        if not retVal["OK"]:
+            raise RuntimeError("Failed to write proxy to temporary file: %s" % retVal["Message"])
         proxyLocation = Path(retVal["Value"])
         proxy_string = proxyLocation.read_text()
         proxyLocation.unlink()
