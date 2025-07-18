@@ -135,8 +135,15 @@ class StatesAccountingAgent(AgentModule):
             for backend in self.datastores:
                 if backend.lower() == "monitoring":
                     site_name = rD["Site"]
-                    rD["Tier"] = site_metadata[site_name]["Tier"]
-                    rD["Type"] = site_metadata[site_name]["Type"]
+                    if site_name not in site_metadata:
+                        self.log.warn(
+                            f"Site {site_name} not found in site metadata, using default values",
+                        )
+                        rD["Tier"] = "4"
+                        rD["Type"] = site_name.split(".")[0]
+                    else:
+                        rD["Tier"] = site_metadata[site_name]["Tier"]
+                        rD["Type"] = site_metadata[site_name]["Type"]
                     rD["timestamp"] = int(TimeUtilities.toEpochMilliSeconds(now))
                     self.datastores["Monitoring"].addRecord(rD)
 

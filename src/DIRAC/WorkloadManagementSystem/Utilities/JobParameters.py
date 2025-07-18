@@ -2,7 +2,7 @@
 
 import multiprocessing
 
-from DIRAC import gConfig, gLogger, S_OK
+from DIRAC import S_OK, gConfig, gLogger
 from DIRAC.Core.Utilities.List import fromChar
 
 
