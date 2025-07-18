@@ -71,7 +71,6 @@ def main():
 
     # Now let's construct the apptainer command
     cmd = ["apptainer", "exec"]
-    cmd.extend(["--contain"])  # use minimal /dev and empty other directories (e.g. /tmp and $HOME)
     cmd.extend(["--ipc"])  # run container in a new IPC namespace
     cmd.extend(["--pid"])  # run container in a new PID namespace
     cmd.extend(["--bind", f"{os.getcwd()}"])  # bind current directory for dirac_container.sh
