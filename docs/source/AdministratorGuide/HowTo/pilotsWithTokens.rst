@@ -28,9 +28,24 @@ Setting up an ``IdProvider``
           {
             client_id = <client_id>
             client_secret = <client_secret>
+            dirac_pilot
+            {
+              client_id = <client_id_for_dirac_VO>
+              client_secret = <client_secret_for_dirac_VO>
+            }
+            biomed_pilot
+            {
+              client_id = <client_id_for_biomed_VO>
+              client_secret = <client_secret_for_biomed_VO>
+            }
           }
         }
       }
+
+  In the case you use the same IdProvider for several VOs, you can specify different
+  OAuth2 client credentials per DIRAC user group representing the VO as in the example above.
+  For groups without this specific setting the general IdProvider client credentials
+  will be used.
 
 - Then in your global configuration, add the following section to set up an ``IdProvider`` interface:
 

@@ -70,6 +70,13 @@ class IdProviderFactory:
                 return result
             pDict = result["Value"]
 
+            # Check if the client has a special configuration for the requested group
+            if groupClient := kwargs.get("groupClient", None):
+                # Look for special client parameters for this user group
+                result = gConfig.getOptionsDict(f"/Resources/IdProviders/{name}/{groupClient}")
+                if result["OK"]:
+                    pDict.update(result["Value"])
+
         pDict.update(kwargs)
         pDict["ProviderName"] = name
 

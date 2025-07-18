@@ -23,7 +23,7 @@ def getIdProviderClient(userGroup: str, idProviderClientName: str = None):
         return S_ERROR(f"The {userGroup} group belongs to the VO that is not tied to any Identity Provider.")
 
     # Prepare the client instance of the appropriate IdP
-    return IdProviderFactory().getIdProvider(idProviderClientName)
+    return IdProviderFactory().getIdProvider(idProviderClientName, groupClient=userGroup)
 
 
 def getCachedKey(
