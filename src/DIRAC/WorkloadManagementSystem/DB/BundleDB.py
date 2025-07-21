@@ -27,6 +27,7 @@ BUNDLES_INFO_COLUMNS = [
     "TaskID",
     "Status",
     "ProxyPath",
+    "Cleaned",
 ]
 
 JOB_TO_BUNDLE_COLUMNS = [
@@ -57,6 +58,9 @@ class BundleDB(DB):
     def __init__(self, parentLogger=None):
         super().__init__("BundleDB", "WorkloadManagement/BundleDB", parentLogger=parentLogger)
         self._defaultLogger = self.log
+
+        self.BUNDLES_INFO_TABLE = "BundlesInfo"
+        self.JOB_TO_BUNDLE_TABLE = "JobToBundle"
 
     @property
     def log(self):
@@ -114,7 +118,7 @@ class BundleDB(DB):
         return S_OK({"BundleId": bundleId, "Ready": result["Value"]["Ready"]})
 
     def removeJobFromBundle(self, jobId):
-        result = self.getFields("JobToBundle", ["BundleID", "Processors"], {"JobID": jobId})
+        result = self.getFields(self.JOB_TO_BUNDLE_TABLE, ["BundleID", "Processors"], {"JobID": jobId})
 
         if not result["OK"]:
             return result
@@ -127,7 +131,7 @@ class BundleDB(DB):
         if not result["OK"]:
             return result
 
-        result = self.deleteEntries("JobToBundle", {"JobID": jobId})
+        result = self.deleteEntries(self.JOB_TO_BUNDLE_TABLE, {"JobID": jobId})
 
         # Rollback on error?? Can this Fail??
         return result
@@ -135,7 +139,7 @@ class BundleDB(DB):
     #############################################################################
 
     def getBundleIdFromJobId(self, jobId):
-        result = self.getFields("JobToBundle", ["BundleID"], {"JobID": jobId})
+        result = self.getFields(self.JOB_TO_BUNDLE_TABLE, ["BundleID"], {"JobID": jobId})
 
         if not result["OK"]:
             return result
@@ -146,7 +150,7 @@ class BundleDB(DB):
         return S_OK(result["Value"][0][0])
 
     def getBundleStatus(self, bundleId):
-        result = self.getFields("BundlesInfo", ["Status"], {"BundleID": bundleId})
+        result = self.getFields(self.BUNDLES_INFO_TABLE, ["Status"], {"BundleID": bundleId})
 
         if not result["Value"]:
             return S_ERROR("Failed to get bundle Status")
@@ -156,7 +160,7 @@ class BundleDB(DB):
     def getJobsOfBundle(self, bundleId):
         fields = ["JobID", "ExecutablePath", "Inputs", "Outputs"]
 
-        result = self.getFields("JobToBundle", fields, {"BundleID": bundleId})
+        result = self.getFields(self.JOB_TO_BUNDLE_TABLE, fields, {"BundleID": bundleId})
 
         if not result["OK"]:
             return result
@@ -172,11 +176,11 @@ class BundleDB(DB):
     #############################################################################
 
     def setTaskId(self, bundleId, taskId):
-        result = self.updateFields("BundlesInfo", ["TaskID", "Status"], [taskId, "Sent"], {"BundleID": bundleId})
+        result = self.updateFields(self.BUNDLES_INFO_TABLE, ["TaskID", "Status"], [taskId, "Sent"], {"BundleID": bundleId})
         return result
 
     def getTaskId(self, bundleId):
-        result = self.getFields("BundlesInfo", ["TaskID"], {"BundleID": bundleId})
+        result = self.getFields(self.BUNDLES_INFO_TABLE, ["TaskID"], {"BundleID": bundleId})
 
         if not result["OK"]:
             return result
@@ -193,10 +197,21 @@ class BundleDB(DB):
         result = self.__updateBundleStatus(bundleId, "Failed")
         return result
 
+    def setBundleAsCleaned(self, bundleId):
+        return self.updateFields(self.BUNDLES_INFO_TABLE, ["Cleaned"], [True], {"BundleID": bundleId})
+
+    def isBundleCleaned(self, bundleId):
+        result = self.getFields(self.BUNDLES_INFO_TABLE, ["Cleaned"], {"BundleID": bundleId})
+        
+        if not result["OK"]:
+            return result
+        
+        return S_OK(result["Value"][0][0])
+
     #############################################################################
 
     def getWholeBundle(self, bundleId):
-        result = self.getFields("BundlesInfo", [], {"BundleID": bundleId})
+        result = self.getFields(self.BUNDLES_INFO_TABLE, [], {"BundleID": bundleId})
 
         if not result["OK"]:
             return result
@@ -212,7 +227,7 @@ class BundleDB(DB):
         return S_OK(bundleDict)
 
     def getBundleCE(self, bundleId):
-        result = self.getFields("BundlesInfo", ["CEDict", "ProxyPath"], {"BundleID": bundleId})
+        result = self.getFields(self.BUNDLES_INFO_TABLE, ["CEDict", "ProxyPath"], {"BundleID": bundleId})
 
         if not result["OK"]:
             return result
@@ -244,7 +259,7 @@ class BundleDB(DB):
             "ProxyPath": proxyPath,
         }
 
-        result = self.insertFields("BundlesInfo", list(insertInfo.keys()), list(insertInfo.values()))
+        result = self.insertFields(self.BUNDLES_INFO_TABLE, list(insertInfo.keys()), list(insertInfo.values()))
 
         if not result["OK"]:
             return result
@@ -262,7 +277,7 @@ class BundleDB(DB):
             "Processors": nProcessors,
         }
 
-        result = self.insertFields("JobToBundle", list(insertInfo.keys()), list(insertInfo.values()))
+        result = self.insertFields(self.JOB_TO_BUNDLE_TABLE, list(insertInfo.keys()), list(insertInfo.values()))
 
         if not result["OK"]:
             return result
@@ -277,7 +292,7 @@ class BundleDB(DB):
             return result
 
         # Obtain the current Sum and the Max available
-        result = self.getFields("BundlesInfo", ["ProcessorSum", "MaxProcessors", "Status"], {"BundleID": bundleId})
+        result = self.getFields(self.BUNDLES_INFO_TABLE, ["ProcessorSum", "MaxProcessors", "Status"], {"BundleID": bundleId})
 
         if not result["OK"]:
             return result
@@ -307,7 +322,7 @@ class BundleDB(DB):
             Queue=ceDict["Queue"],
         )
         result = self._query(cmd)
-        # result = self.getFields("BundlesInfo", [], conditions)
+        # result = self.getFields(self.BUNDLES_INFO_TABLE, [], conditions)
 
         if not result["OK"]:
             return result

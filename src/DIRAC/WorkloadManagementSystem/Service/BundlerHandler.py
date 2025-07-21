@@ -9,7 +9,6 @@ from ast import literal_eval
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
@@ -32,12 +31,18 @@ class BundlerHandler(RequestHandler):
             cls.jobToBundle = {}
 
             cls.ceFactory = ComputingElementFactory()
-            cls.killBundleOnError = True
 
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp}")
 
         return S_OK()
+
+    def initialize(self):
+        self.killBundleOnError = self.getCSOption("KillBundleOnError", True)
+        self.bundlesBaseDir = self.getCSOption("/LocalSite/BundlesBaseDir", "/tmp/bundles") 
+
+        if not os.path.exists(self.bundlesBaseDir):
+            os.mkdir(self.bundlesBaseDir)
 
     #############################################################################
 
@@ -81,6 +86,7 @@ class BundlerHandler(RequestHandler):
             result = ce.submitJob(bundle_exe, proxy=proxy, inputs=bundle_inputs, outputs=bundle_outputs)
 
             if not result["OK"]:
+                self.bundleDB.setBundleAsFailed(bundleId)
                 self.log.error("Failed to submit job to with id ", str(jobId))
                 return result
 
@@ -90,6 +96,7 @@ class BundlerHandler(RequestHandler):
             result = self.bundleDB.setTaskId(bundleId, taskId)
 
             if not result["OK"]:
+                self.bundleDB.setBundleAsFailed(bundleId)
                 self.log.error("Failed to set task id of JobId ", str(jobId))
                 return result
 
@@ -197,6 +204,15 @@ class BundlerHandler(RequestHandler):
             return result
         bundleId = result["Value"]
 
+        result = self.bundleDB.isBundleCleaned(bundleId)
+
+        if not result["OK"]:
+            return result
+
+        # Bundle already got cleaned
+        if result["Value"]:
+            return S_OK()
+
         result = self._getTaskInfo(bundleId)
 
         if not result["OK"]:
@@ -212,27 +228,28 @@ class BundlerHandler(RequestHandler):
         if not result["OK"]:
             return result
         ce = result["Value"]
+
         try:
-            ce.cleanJob(taskId)
+            result = ce.cleanJob(taskId)
+            if result["OK"]:
+                self.bundleDB.setBundleAsCleaned(bundleId)
         except AttributeError as e:  # If the CE has no method 'cleanJob'
             return S_ERROR(e)
 
-        os.remove(f"/tmp/bundle_{bundleId}")
-
+        # Remove bundle specific files (NOT THE OUTPUTS OF THE JOBS)
+        bundlePath = os.path.join(self.bundlesBaseDir, bundleId)
+        for item in os.listdir(bundlePath):
+            itemPath = os.path.join(bundlePath, item)
+            if os.path.isfile(item):
+                os.remove(itemPath)
+        
         return S_OK()
 
     #############################################################################
 
-    types_getJobStatus = [str]
+    types_getBundleStatus = [str]
 
-    def export_getJobStatus(self, jobId):
-        result = self._getBundleIdFromJobId(jobId)
-
-        if not result["OK"]:
-            return result
-
-        bundleId = result["Value"]
-
+    def export_getBundleStatus(self, bundleId):
         result = self._getTaskInfo(bundleId)
 
         if not result["OK"]:
@@ -240,18 +257,23 @@ class BundlerHandler(RequestHandler):
 
         status = result["Value"]["Status"]
         
-        if status not in PilotStatus.PILOT_FINAL_STATES:
+        if status == PilotStatus.RUNNING:
             task = result["Value"]["TaskID"]
 
             if ":::" in task:
                 task = task.split(":::")[0]
 
-            result = self.__getJobCE(jobId)
+            result = self.__getBundleCE(bundleId)
+            
+            if not result["OK"]:
+                return result
+
+            result = self.__setupCE(result["Value"]["CEDict"], result["Value"]["ProxyPath"])
 
             if not result["OK"]:
                 return result
 
-            ce = result["Value"]
+            ce = result["Value"]["CE"]
 
             result = ce.getJobStatus(task)
 
@@ -262,7 +284,7 @@ class BundlerHandler(RequestHandler):
 
             if status == PilotStatus.DONE:
                 self.bundleDB.setBundleAsFinalized(bundleId)
-            elif status in PilotStatus.PILOT_FINAL_STATES:
+            elif status in PilotStatus.PILOT_FINAL_STATES:      # ABORTED, DELETED or FAILED
                 self.bundleDB.setBundleAsFailed(bundleId)
 
         return S_OK(status)
@@ -303,8 +325,8 @@ class BundlerHandler(RequestHandler):
         outputs = []
         jobIds = []
 
-        basedir = f"/tmp/bundle_{bundleId}"
-        os.mkdir(basedir)
+        bundlePath = os.path.join(self.bundlesBaseDir, bundleId)
+        os.mkdir(bundlePath)
 
         for job in jobs:
             jobId = job["JobID"]
@@ -312,7 +334,7 @@ class BundlerHandler(RequestHandler):
 
             # Copy the original file in a new location with the rest
             job_executable = job["ExecutablePath"]
-            job_executable_dst = os.path.join(basedir, jobId + "_" + os.path.basename(job_executable))
+            job_executable_dst = os.path.join(bundlePath, jobId + "_" + os.path.basename(job_executable))
 
             shutil.copy(job_executable, job_executable_dst)
 
@@ -320,20 +342,20 @@ class BundlerHandler(RequestHandler):
             inputs.append(job_executable_dst)
 
             for job_input in job["Inputs"]:
-                job_input_dst = os.path.join(basedir, jobId + "_" + os.path.basename(job_input))
+                job_input_dst = os.path.join(bundlePath, jobId + "_" + os.path.basename(job_input))
                 shutil.copy(job_input, job_input_dst)
                 inputs.append(job_input_dst)
 
             outputs.extend(job["Outputs"])
 
-        result = generate_template(template, executables)
+        result = generate_template(template, executables, bundleId)
 
         if not result["OK"]:
             self.log.error("Error while generating wrapper")
             return result
 
         wrappedBundle = result["Value"]
-        wrapperPath = os.path.join(basedir, "bundle_wrapper")
+        wrapperPath = os.path.join(bundlePath, "bundle_wrapper")
 
         with open(wrapperPath, "x") as f:
             f.write(wrappedBundle)
@@ -344,12 +366,7 @@ class BundlerHandler(RequestHandler):
 
         return S_OK((jobIds, wrapperPath, inputs, outputs))
 
-    def _getCE(self, jobId):
-        result = self._getBundleIdFromJobId(jobId)
-        if not result["OK"]:
-            return result
-        bundleId = result["Value"]
-
+    def __getBundleCE(self, bundleId):
         result = self.bundleDB.getBundleCE(bundleId)
         if not result["OK"]:
             return result
@@ -358,6 +375,15 @@ class BundlerHandler(RequestHandler):
         ceDict = literal_eval(result["Value"]["CEDict"])
 
         return S_OK({"CEDict": ceDict, "ProxyPath": result["Value"]["ProxyPath"]})
+
+    def _getCE(self, jobId):
+        result = self._getBundleIdFromJobId(jobId)
+        
+        if not result["OK"]:
+            return result
+        bundleId = result["Value"]
+
+        return self.__getBundleCE(bundleId)
 
     def __getJobCE(self, jobId):
         if jobId not in self.jobToCE:

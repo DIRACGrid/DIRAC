@@ -72,9 +72,12 @@ CEs
 import copy
 import inspect
 import os
+import shutil
 import uuid
 
-from DIRAC import S_ERROR, S_OK
+from filelock import FileLock, Timeout
+
+from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
@@ -85,6 +88,17 @@ class BundleTaskDict(dict):
     def __init__(self, getProperty):
         self.getProperty = getProperty
 
+    def __contains__(self, jobId):
+        if super().__contains__(jobId):
+            return True
+        
+        res = self.getProperty(jobId)
+        if res:
+            self.__setitem__(jobId, res)
+            return True
+
+        return False
+
     def __getitem__(self, jobId):
         if jobId in self:
             return super().__getitem__(jobId)
@@ -92,6 +106,7 @@ class BundleTaskDict(dict):
         res = self.getProperty(jobId)
         if res:
             super().__setitem__(jobId, res)
+        
         return res
 
 
@@ -138,6 +153,8 @@ class BundleComputingElement(ComputingElement):
         self.innerCEMethods = [
             name for name, _ in inspect.getmembers(self.innerCE, predicate=inspect.ismethod) if name[0] != "_"
         ]
+
+        self.bundlesBaseDir = gConfig.getValue("/LocalSite/BundlesBaseDir", "/tmp/bundles")
 
         return S_OK()
 
@@ -202,36 +219,47 @@ class BundleComputingElement(ComputingElement):
         if result["Value"]["Status"] not in PilotStatus.PILOT_FINAL_STATES:
             return S_ERROR("Output not ready yet")
 
-        # If the output path of all of the jobs hasn't been defined yet
         taskId = result["Value"]["TaskID"]
-
         _, innerStamp = taskId.split(":::")
 
-        result = self.innerCE.getJobOutput(taskId, workingDirectory)
+        result = self.__getOutputPath(bundleId, taskId)
 
         if not result["OK"]:
             return result
+        
+        outputsPath = result["Value"]
+        outputAbsPath = os.path.abspath(workingDirectory)
 
-        outputPath = os.path.abspath(workingDirectory)
-        self.log.notice(f"Outputs at: {outputPath}")
+        jobBaseDir = os.path.join(outputsPath, jobId)
 
-        # Change the name of the files containing the stamp of the real job to the BundleID
-        for item in os.listdir(outputPath):
-            if os.path.isfile(item):
-                if innerStamp in item:
-                    newName = item.replace(innerStamp, bundleId)
-                    os.rename(item, newName)
+        if not os.path.exists(jobBaseDir):
+            return S_ERROR("Failed to locate job output files from base output directory")
 
-        error = os.path.join(outputPath, jobId, f"{jobId}.err") 
-        output = os.path.join(outputPath, jobId, f"{jobId}.out") 
+        self.log.notice(f"Outputs at: {jobBaseDir}")
 
-        if os.path.exists("md5Checksum.txt"):
-            with open("md5Checksum.txt", "r+") as f:
-                content = f.read()
-                content = content.replace(innerStamp, bundleId)
-                f.seek(0)
-                f.write(content)
-                f.truncate()
+        # Move all items from 
+        for item in os.listdir(jobBaseDir):
+            # newName = item
+
+            # if jobId in item:
+            #     newName = item.replace(jobId, bundleId)
+
+            # move the item to the working directory
+            # os.rename(os.path.join(jobBaseDir, item), os.path.join(outputAbsPath, newName))
+            #os.rename(os.path.join(jobBaseDir, item), os.path.join(outputAbsPath, item))
+            shutil.copy2(os.path.join(jobBaseDir, item), os.path.join(outputAbsPath, item))
+        
+        # checksumFile = os.path.join(outputAbsPath, "md5Checksum.txt")
+        # if os.path.exists(checksumFile):
+        #     with open(checksumFile, "r+") as f:
+        #         content = f.read()
+        #         content = content.replace(innerStamp, bundleId)
+        #         f.seek(0)
+        #         f.write(content)
+        #         f.truncate()
+
+        error = os.path.join(workingDirectory, f"{bundleId}.err") 
+        output = os.path.join(workingDirectory, f"{bundleId}.out") 
 
         if not os.path.exists(output) or not os.path.exists(error):
             return S_ERROR("Outputs unable to be obtained")
@@ -252,15 +280,72 @@ class BundleComputingElement(ComputingElement):
 
         for job in jobIDList:
             jobId = job
+            bundleId = None
             if ":::" in job:
-                jobId, _ = job.split(":::")
+                jobId, bundleId = job.split(":::")
+            
+            if not bundleId:
+                result = self.bundler.bundleIdFromJobId(jobId)
+                if not result["OK"]:
+                    return result
+                bundleId = result["Value"]
 
-            result = self.bundler.getJobStatus(jobId)
+            self.log.debug(f"Obtaining the status of job: '{jobId}' with bundleID: '{bundleId}'")
+            result = self.bundler.getBundleStatus(bundleId)
 
             if not result["OK"]:
-                return S_ERROR("Failed to obtain the status of the job")
-            else:
-                resultDict[jobId] = result["Value"]
+                return result
+
+            # Default Value: The one from the Bundle
+            resultDict[jobId] = result["Value"]
+            self.log.debug(f"Status of bundle '{bundleId}': {result['Value']}")
+
+            # Check if the bundle has ended
+            if result["Value"] not in PilotStatus.PILOT_FINAL_STATES:
+                continue
+
+            # If the bundle Failed, we asume all of the jobs failed
+            if result["Value"] != PilotStatus.DONE:
+                resultDict[jobId] = PilotStatus.FAILED
+                continue
+            
+            # If the bundle ended properly, get the status of the independent job
+            result = self.bundler.getTaskInfo(bundleId)
+
+            if not result["OK"]:
+                return result
+            
+            taskId = result["Value"]["TaskID"]
+            self.log.debug(f"Obtaining bundle output of '{bundleId}'")
+            result = self.__getOutputPath(bundleId, taskId)
+
+            if not result["OK"]:
+                return result
+
+            outputPath = result["Value"]
+
+            # The file that contains a singular line with the following format:
+            # {JobId} {processId} {jobStatus}
+            jobStatusFile = os.path.join(outputPath, f"{jobId}.status")
+
+            # If it was not created or is empty, the job failed
+            if not os.path.exists(jobStatusFile) or os.path.getsize(jobStatusFile) == 0:
+                self.log.warn(f".status file of job '{jobId}' not found or is empty. Assuming it failed")
+                resultDict[jobId] = PilotStatus.FAILED
+                continue
+
+            # Read the exit value of the process launched
+            with open(jobStatusFile, "r") as f:
+                jobStatus = f.readline()
+                jobStatus = int(jobStatus.split()[2])
+
+                # 0 -> All ok   Any other -> Fail
+                if jobStatus == 0:
+                    resultDict[jobId] = PilotStatus.DONE
+                else:
+                    resultDict[jobId] = PilotStatus.FAILED
+
+            self.log.debug(f"Status of job '{jobId}': {resultDict[jobId]}")
 
         return S_OK(resultDict)
 
@@ -282,10 +367,13 @@ class BundleComputingElement(ComputingElement):
             self.log.error(f"Inner CE {self.innerCE.ceName} has no function called 'cleanJob'")
             return S_ERROR(f"Inner CE {self.innerCE.ceName} has no function called 'cleanJob'")
 
+        if not isinstance(jobIDList, list):
+            jobIDList = [jobIDList]
+
         for job in jobIDList:
-            
             if ":::" in job:
                 job, bundleId = job.split(":::")
+
             return self.bundler.cleanJob(job)
 
     def killJob(self, jobIDList):
@@ -303,15 +391,51 @@ class BundleComputingElement(ComputingElement):
     #############################################################################
 
     def __getTraskResult(self, jobId):
-        result = self.bundler.getJobStatus(jobId)
+        result = self.getJobStatus(jobId)
 
         if not result["OK"]:
             return result
 
-        if result["Value"] not in PilotStatus.PILOT_FINAL_STATES:
+        if ":::" in jobId:
+            jobId, _ = jobId.split(":::")
+
+        status = result["Value"][jobId]
+
+        if status not in PilotStatus.PILOT_FINAL_STATES:
             return S_OK()
 
-        if result["Value"] == PilotStatus.DONE:
+        if status == PilotStatus.DONE:
             return S_OK(0)
 
         return S_OK(1)
+
+    def __getOutputPath(self, bundleId, innerTaskId):
+        """Returns the output path of the whole bundle
+            If it hasn't been created yet, it obtains the output from the Inner CE.
+        """
+        self.log.debug(f"Obtaining the output path of bundle '{bundleId}' with task '{innerTaskId}'")
+
+        basePath = os.path.join(self.bundlesBaseDir, bundleId)
+        lock = FileLock(os.path.join(basePath, "outputs.lock"))
+
+        outputsPath = os.path.join(basePath, "outputs")
+
+        try:
+            # Always acquire the lock before checking anything
+            with lock.acquire(timeout=60):
+                self.log.debug("Acquiring outputs lock")
+                # If the output does not exist, dowload the outputs
+                if not os.path.exists(outputsPath):
+                    os.mkdir(outputsPath)
+                    self.log.debug(f"Saving inner CE outputs from task '{innerTaskId}' into '{outputsPath}'")
+                    result = self.innerCE.getJobOutput(innerTaskId, outputsPath)
+
+                    if not result["OK"]:
+                        self.log.error("Failed to obtain the outputs, removing the directory")
+                        os.rmdir(outputsPath)
+                        return result
+        
+        except TimeoutError:
+            return S_ERROR("Outputs not available yet")
+        
+        return S_OK(outputsPath)
