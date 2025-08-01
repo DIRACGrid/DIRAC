@@ -4,12 +4,10 @@ This is the interface to DIRAC PilotAgentsDB.
 import datetime
 import shutil
 
-import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import (
     getPilotCE,
     getPilotRef,
@@ -38,46 +36,7 @@ class PilotManagerHandler(RequestHandler):
         return S_OK()
 
     ##############################################################################
-    types_getCurrentPilotCounters = [dict]
 
-    @classmethod
-    def export_getCurrentPilotCounters(cls, attrDict={}):
-        """Get pilot counters per Status with attrDict selection. Final statuses are given for
-        the last day.
-        """
-
-        result = cls.pilotAgentsDB.getCounters("PilotAgents", ["Status"], attrDict, timeStamp="LastUpdateTime")
-        if not result["OK"]:
-            return result
-        last_update = datetime.datetime.utcnow() - TimeUtilities.day
-        resultDay = cls.pilotAgentsDB.getCounters(
-            "PilotAgents", ["Status"], attrDict, newer=last_update, timeStamp="LastUpdateTime"
-        )
-        if not resultDay["OK"]:
-            return resultDay
-
-        resultDict = {}
-        for statusDict, count in result["Value"]:
-            status = statusDict["Status"]
-            resultDict[status] = count
-            if status in PilotStatus.PILOT_FINAL_STATES:
-                resultDict[status] = 0
-                for statusDayDict, ccount in resultDay["Value"]:
-                    if status == statusDayDict["Status"]:
-                        resultDict[status] = ccount
-                    break
-
-        return S_OK(resultDict)
-
-    ##########################################################################################
-    types_addPilotReferences = [list, str]
-
-    @classmethod
-    def export_addPilotReferences(cls, pilotRef, VO, gridType="DIRAC", pilotStampDict={}):
-        """Add a new pilot job reference"""
-        return cls.pilotAgentsDB.addPilotReferences(pilotRef, VO, gridType, pilotStampDict)
-
-    ##############################################################################
     types_getPilotOutput = [str]
 
     def export_getPilotOutput(self, pilotReference):
@@ -206,30 +165,6 @@ class PilotManagerHandler(RequestHandler):
         return res
 
     ##############################################################################
-    types_getPilotInfo = [[list, str]]
-
-    @classmethod
-    def export_getPilotInfo(cls, pilotReference):
-        """Get the info about a given pilot job reference"""
-        return cls.pilotAgentsDB.getPilotInfo(pilotReference)
-
-    ##############################################################################
-    types_selectPilots = [dict]
-
-    @classmethod
-    def export_selectPilots(cls, condDict):
-        """Select pilots given the selection conditions"""
-        return cls.pilotAgentsDB.selectPilots(condDict)
-
-    ##############################################################################
-    types_storePilotOutput = [str, str, str]
-
-    @classmethod
-    def export_storePilotOutput(cls, pilotReference, output, error):
-        """Store the pilot output and error"""
-        return cls.pilotAgentsDB.storePilotOutput(pilotReference, output, error)
-
-    ##############################################################################
     types_getPilotLoggingInfo = [str]
 
     def export_getPilotLoggingInfo(self, pilotReference):
@@ -278,6 +213,9 @@ class PilotManagerHandler(RequestHandler):
         return cls.pilotAgentsDB.getPilotSummary(startdate, enddate)
 
     ##############################################################################
+
+    # --------------- Moved to DiracX ---------------
+
     types_getGroupedPilotSummary = [list]
 
     @classmethod
@@ -291,53 +229,15 @@ class PilotManagerHandler(RequestHandler):
         """
         return cls.pilotAgentsDB.getGroupedPilotSummary(columnList)
 
-    ##############################################################################
-    types_getPilots = [[str, int]]
+    #############################################
+    types_addPilotReferences = [list, str]
 
+    # Moved to DiracX
     @classmethod
-    def export_getPilots(cls, jobID):
-        """Get pilots executing/having executed the Job"""
-        result = cls.pilotAgentsDB.getPilotsForJobID(int(jobID))
-        if not result["OK"] or not result["Value"]:
-            return S_ERROR(f"Failed to get pilot for Job {int(jobID)}: {result.get('Message', '')}")
+    def export_addPilotReferences(cls, pilotReferences, VO, gridType="DIRAC", pilotStampDict={}):
+        """Add a new pilot job reference"""
+        return cls.pilotAgentsDB.addPilotReferences(pilotReferences, VO, gridType, pilotStampDict)
 
-        return cls.pilotAgentsDB.getPilotInfo(pilotID=result["Value"])
-
-    ##############################################################################
-    types_setJobForPilot = [[str, int], str]
-
-    @classmethod
-    def export_setJobForPilot(cls, jobID, pilotRef, destination=None):
-        """Report the DIRAC job ID which is executed by the given pilot job"""
-
-        result = cls.pilotAgentsDB.setJobForPilot(int(jobID), pilotRef)
-        if not result["OK"]:
-            return result
-        result = cls.pilotAgentsDB.setCurrentJobID(pilotRef, int(jobID))
-        if not result["OK"]:
-            return result
-        if destination:
-            result = cls.pilotAgentsDB.setPilotDestinationSite(pilotRef, destination)
-
-        return result
-
-    ##########################################################################################
-    types_setPilotBenchmark = [str, float]
-
-    @classmethod
-    def export_setPilotBenchmark(cls, pilotRef, mark):
-        """Set the pilot agent benchmark"""
-        return cls.pilotAgentsDB.setPilotBenchmark(pilotRef, mark)
-
-    ##########################################################################################
-    types_setAccountingFlag = [str]
-
-    @classmethod
-    def export_setAccountingFlag(cls, pilotRef, mark="True"):
-        """Set the pilot AccountingSent flag"""
-        return cls.pilotAgentsDB.setAccountingFlag(pilotRef, mark)
-
-    ##########################################################################################
     types_setPilotStatus = [str, str]
 
     @classmethod
@@ -348,22 +248,17 @@ class PilotManagerHandler(RequestHandler):
             pilotRef, status, destination=destination, statusReason=reason, gridSite=gridSite, queue=queue
         )
 
-    ##########################################################################################
-    types_countPilots = [dict]
-
-    @classmethod
-    def export_countPilots(cls, condDict, older=None, newer=None, timeStamp="SubmissionTime"):
-        """Set the pilot agent status"""
-
-        return cls.pilotAgentsDB.countPilots(condDict, older, newer, timeStamp)
-
-    ##########################################################################################
+    #############################################
     types_deletePilots = [[list, str, int]]
 
     @classmethod
     def export_deletePilots(cls, pilotIDs):
+        # Used by no one. We keep it for tests.
         if isinstance(pilotIDs, str):
             return cls.pilotAgentsDB.deletePilot(pilotIDs)
+
+        # And list[str]????
+        # pilot_id>>>S<<<
 
         if isinstance(pilotIDs, int):
             pilotIDs = [
@@ -376,9 +271,22 @@ class PilotManagerHandler(RequestHandler):
 
         return S_OK()
 
-    ##############################################################################
-    types_clearPilots = [int, int]
+    #############################################
+    types_getPilots = [[str, int]]
 
     @classmethod
-    def export_clearPilots(cls, interval=30, aborted_interval=7):
-        return cls.pilotAgentsDB.clearPilots(interval, aborted_interval)
+    def export_getPilots(cls, jobID):
+        """Get pilots executing/having executed the Job"""
+        result = cls.pilotAgentsDB.getPilotsForJobID(int(jobID))
+        if not result["OK"] or not result["Value"]:
+            return S_ERROR(f"Failed to get pilot for Job {int(jobID)}: {result.get('Message', '')}")
+
+        return cls.pilotAgentsDB.getPilotInfo(pilotID=result["Value"])
+
+    #############################################
+    types_getPilotInfo = [[list, str]]
+
+    @classmethod
+    def export_getPilotInfo(cls, pilotReference):
+        """Get the info about a given pilot job reference"""
+        return cls.pilotAgentsDB.getPilotInfo(pilotReference)
