@@ -57,8 +57,9 @@ echo -e "*** $(date -u)  **** WMS TESTS ****\n"
 
 pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_SandboxStoreClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 if [[ -z "${INSTALLATION_BRANCH}" ]]; then
-    pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_PilotsClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
     pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_Client_WMS.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+    dirac-proxy-init -g prod "${DEBUG}" |& tee -a clientTestOutputs.txt
+    pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_PilotsClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 fi
 
 # Make sure we have the prod role for these tests to get the VmRpcOperator permission
