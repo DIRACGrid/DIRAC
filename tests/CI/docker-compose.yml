@@ -10,6 +10,7 @@ volumes:
 
 services:
   mysql:
+    platform: linux/amd64
     image: ${MYSQL_VER}
     container_name: mysql
     environment:
@@ -24,6 +25,7 @@ services:
     pull_policy: always
 
   opensearch:
+    platform: ${ES_PLATFORM}
     image: ${ES_VER}
     container_name: opensearch
     hostname: opensearch
@@ -39,6 +41,7 @@ services:
     pull_policy: always
 
   iam-login-service:
+    platform: linux/amd64
     image: ${IAM_VER}
     container_name: iam-login-service
     hostname: iam-login-service
@@ -58,6 +61,7 @@ services:
     pull_policy: always
 
   iam-init-keystore:
+    platform: linux/amd64
     image: alpine:latest
     container_name: iam-init-keystore
     volumes:
@@ -83,6 +87,7 @@ services:
 
   # Mock of an S3 storage
   s3-direct:
+    platform: linux/amd64
     # Fix the version until https://github.com/adobe/S3Mock/issues/2321
     # is resolved
     image: adobe/s3mock:3.12.0
@@ -97,6 +102,7 @@ services:
     pull_policy: always
 
   diracx-wait-for-db:
+    platform: linux/amd64
     image: ${MYSQL_VER}
     container_name: diracx-wait-for-db
     depends_on:
@@ -105,6 +111,7 @@ services:
     command: /home/dirac/LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/CI/check_db_initialized.sh
 
   dirac-init-certificates:
+    platform: linux/amd64
     image: ghcr.io/diracgrid/management/certificates-generation:latest
     container_name: dirac-init-certificates
     volumes:
@@ -114,6 +121,7 @@ services:
     pull_policy: always
 
   dirac-server:
+    platform: linux/amd64
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
     container_name: server
     hostname: server
@@ -148,6 +156,7 @@ services:
 
 
   dirac-client:
+    platform: linux/amd64
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
     container_name: client
     hostname: client
@@ -162,6 +171,7 @@ services:
     pull_policy: always
 
   dirac-pilot:
+    platform: linux/amd64
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
     container_name: pilot
     hostname: pilot
@@ -187,6 +197,7 @@ services:
 
 
   diracx-chmod:
+    platform: linux/amd64
     image: ghcr.io/diracgrid/diracx/secret-generation:latest
     container_name: diracx-chmod
     volumes:
@@ -201,6 +212,7 @@ services:
 
 
   diracx-init-keystore:
+    platform: linux/amd64
     image: ghcr.io/diracgrid/diracx/services:dev
     container_name: diracx-init-keystore
     depends_on:
@@ -215,6 +227,7 @@ services:
     pull_policy: always
 
   diracx-init-cs:
+    platform: linux/amd64
     image: ghcr.io/diracgrid/diracx/client:dev
     container_name: diracx-init-cs
     depends_on:
@@ -233,6 +246,7 @@ services:
     pull_policy: always
 
   diracx-init-db:
+    platform: linux/amd64
     image: ghcr.io/diracgrid/diracx/services:dev
     container_name: diracx-init-db
     depends_on:
@@ -245,6 +259,7 @@ services:
     pull_policy: always
 
   diracx:
+    platform: linux/amd64
     image: ghcr.io/diracgrid/diracx/services:dev
     container_name: diracx
     environment:
@@ -254,7 +269,7 @@ services:
       - DIRACX_DB_URL_JOBLOGGINGDB=mysql+aiomysql://Dirac:Dirac@mysql/JobLoggingDB
       - DIRACX_DB_URL_SANDBOXMETADATADB=mysql+aiomysql://Dirac:Dirac@mysql/SandboxMetadataDB
       - DIRACX_DB_URL_PILOTAGENTSDB=mysql+aiomysql://Dirac:Dirac@mysql/PilotAgentsDB
-      - 'DIRACX_OS_DB_PILOTLOGSDB={"sqlalchemy_dsn": "mysql+aiomysql://Dirac:Dirac@mysql/PilotLogsDB"}'
+      - DIRACX_DB_URL_TASKQUEUEDB=mysql+aiomysql://Dirac:Dirac@mysql/TaskQueueDB
       - DIRACX_SERVICE_AUTH_TOKEN_KEYSTORE=file:///keystore/jwks.json
       - DIRACX_SERVICE_AUTH_TOKEN_ISSUER=http://diracx:8000
       - DIRACX_SERVICE_AUTH_ALLOWED_REDIRECTS=["http://diracx:8000/docs/oauth2-redirect"]
@@ -262,7 +277,15 @@ services:
       - DIRACX_SERVICE_AUTH_STATE_KEY=uSNPPtZ1EbC5np13zOwmWJ84Duix753Hejzk/u/MQE4=
       # Obtained with echo 'InsecureChangeMe' | base64 -d | openssl sha256
       - DIRACX_LEGACY_EXCHANGE_HASHED_API_KEY=07cddf6948d316ac9d186544dc3120c4c6697d8f994619665985c0a5bf76265a
-      - DIRACX_SERVICE_JOBS_ENABLED=false
+      - 'DIRACX_OS_DB_JOBPARAMETERSDB={"hosts": "elastic:changeme@opensearch:9200", "use_ssl": false, "verify_certs": false}'
+      - DIRACX_SANDBOX_STORE_BUCKET_NAME=sandboxes
+      - DIRACX_SANDBOX_STORE_AUTO_CREATE_BUCKET=true
+      - 'DIRACX_SANDBOX_STORE_S3_CLIENT_KWARGS={"endpoint_url": "http://s3-direct:9090", "aws_access_key_id": "console", "aws_secret_access_key": "console123"}'
+
+      # Currently, we use a mysql DB for pilot logs. Later in DiracX we'll use opensearch.
+      - 'DIRACX_OS_DB_PILOTLOGSDB={"sqlalchemy_dsn": "mysql+aiomysql://Dirac:Dirac@mysql/PilotLogsDB"}'
+      # - 'DIRACX_OS_DB_PILOTLOGSDB={"hosts": "elastic:changeme@opensearch:9200", "use_ssl": false, "verify_certs": false}'
+
     ports:
       - 8000:8000
     depends_on:

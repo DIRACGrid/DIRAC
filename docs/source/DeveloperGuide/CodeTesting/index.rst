@@ -309,10 +309,8 @@ Running the above might take a while. Supposing you are interested in running on
     ./integration_tests.py prepare-environment [FLAGS]
     ./integration_tests.py install-server
 
-which (in some minutes) will give you a fully dockerized server setup
-(`docker container ls` will list the created container, and you can see what's going on inside with the standard `docker exec -it server /bin/bash`.
-Now, suppose that you want to run `WorkloadManagementSystem/Test_JobDB.py`,
-the first thing to do is that you should first login in the docker container, by doing:
+which (in some minutes) will give you a fully dockerized server setup. `docker container ls` will list the created container, and you can see what's going on inside with the standard `docker exec -it server /bin/bash`.
+Now, suppose that you want to run `WorkloadManagementSystem/Test_JobDB.py`, the first thing to do is that you should first login in the docker container, by doing:
 
 .. code-block:: bash
 
@@ -326,7 +324,7 @@ Now you can run the test with:
 
     pytest --no-check-dirac-environment LocalRepo/ALTERNATIVE_MODULES/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py
 
-You can find the logs of the services in `/home/dirac/ServerInstallDIR/diracos/runit/`
+You can find the logs of the services in `/home/dirac/ServerInstallDIR/diracos/runit/`.
 
 You can also login in client and mysql with:
 
@@ -335,7 +333,45 @@ You can also login in client and mysql with:
     ./integration_tests.py exec-client
     ./integration_tests.py exec-mysql
 
+To restart a service, you can go into the server docker, and run `runsvctrl`:
 
+.. code-block:: bash
+
+    ./integration_tests.py exec-server
+    ...
+    runsvctrl t /home/dirac/ServerInstallDIR/diracos/runit/WorkloadManagement/JobMonitor/
+
+And you can also restart all services (it can take some time):
+
+.. code-block:: bash
+
+    ./integration_tests.py exec-server
+    ...
+    runsvctrl t /home/dirac/ServerInstallDIR/diracos/runit/*/*
+
+
+You can also test DiracX in integration tests. To do that, you have to provide in the `prepare-environment` command the following flag: `TEST_DIRACX=Yes`. It will run DiracX alongside DIRAC, and use the available and activated legacy adapted services.
+
+To deactivate a service from being used with DiracX, you can add it in `integration_tests.py` in the `DIRACX_DISABLED_SERVICES` list:
+
+.. code-block:: python
+
+    DIRACX_DISABLED_SERVICES = [
+      "WorkloadManagement/JobMonitoring",
+    ]
+
+By setting `TEST_DIRACX=Yes` only, it will take the last version of DiracX by default. If you want to provide your own, you have to build your DiracX project, and provide the `dist` folder path when calling `prepare-client`. This path has to be absolute.
+
+.. code-block:: bash
+
+    ./integration-tests.py prepare-client TEST_DIRACX=Yes --diracx-dist-dir my-dist-folder/
+
+It will then mount your dist folder into DIRAC and DiracX (in `/diracx_sources`) to install the right dependencies.
+
+For MacOS, there are two bugs that can be fixed.
+
+- The first one is about `docker compose` not being recognized. To fix that, you can set in your environment variables `DOCKER_COMPOSE_CMD="docker-compose"`.
+- The second one, is for macs with M1 (or more recent ones) chips which are not supported by the `opensearch` docker image. By setting the `ES_PLATFORM` flag to `linux/arm64` you will be able to start `opensearch` without issue.
 
 Validation and System tests
 ---------------------------

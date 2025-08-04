@@ -160,6 +160,56 @@ findAgents(){
 
 
 #-------------------------------------------------------------------------------
+# findServices:
+#
+#   gets all *legacy adapted* service names from *DIRAC code and writes them to a file
+#   named futureServices. Needs an input for searching
+#   Little bit different from findAgents as we allow multiple exclusions
+#
+#-------------------------------------------------------------------------------
+
+
+findFutureServices() {
+  echo '==> [findFutureServices]'
+
+  # If first argument is "exclude", take the rest as the exclusion string
+  local disabledPattern=""
+  if [[ "${1:-}" == "exclude" ]]; then
+    shift
+    # Join all remaining arguments into a single string
+    local disabledServices="$*"
+    echo "==> excluding: $disabledServices"
+
+    # Convert services into a grep-friendly pattern (fixed strings)
+    # We replace spaces with newlines to create multiple patterns
+    disabledPattern=$(printf "%s" "$disabledServices" | tr ' ' '\n')
+  fi
+
+  if ! cd "${SERVERINSTALLDIR}"; then
+    echo 'ERROR: cannot change to ' "${SERVERINSTALLDIR}" >&2
+    exit 1
+  fi
+
+  # Build the list of services
+  python -m DIRAC.Core.Utilities.Extensions findFutureServices \
+    | sed -e 's/System / /g' \
+          -e 's/Handler//g' \
+          -e 's/Client//g' \
+          -e 's/ /\//g' \
+    | grep -v "JobAgent" > futureServices
+
+  # Apply exclusion if any
+  if [[ -n "$disabledPattern" ]]; then
+    # Use grep -F for fixed strings (space-safe)
+    grep -Fv -f <(printf "%s\n" $disabledPattern) futureServices > futureServices.tmp
+    mv futureServices.tmp futureServices
+  fi
+
+  echo "found $(wc -l < futureServices)"
+}
+
+
+#-------------------------------------------------------------------------------
 # findExecutors:
 #
 #   gets all executor names from *DIRAC code and writes them to a file
@@ -255,12 +305,6 @@ installDIRAC() {
     done
   fi
 
-  echo "==> Installing main branch of diracx"
-  installDIRACX core client
-
-  echo "$DIRAC"
-  echo "$PATH"
-
   echo "==> Done installing, now configuring"
 
   if ! dirac-proxy-init --nocs --no-upload; then
@@ -285,6 +329,13 @@ installDIRAC() {
   fi
 
   echo '==> Done installDIRAC'
+
+  echo "==> Installing main branch of diracx"
+  installDIRACX core client
+
+  echo "$DIRAC"
+  echo "$PATH"
+
 }
 
 ##############################################################################
@@ -292,17 +343,20 @@ installDIRAC() {
 # Arguments: list of DiracX submodule module names to install (core, client, etc.)
 
 function installDIRACX() {
+  # If we have no dist, we get the last tag to use it
+  if [[ -z "${DIRACX_CUSTOM_SOURCE_PREFIXES:-}" ]]; then
+    # Install latest by default
+    pip install diracx
+    return 0
+  fi
+
   for wheel_name in "$@"; do
-    if [[ -n "${DIRACX_CUSTOM_SOURCE_PREFIXES:-}" ]]; then
-      wheels=( $(find "${DIRACX_CUSTOM_SOURCE_PREFIXES}" -name "diracx_${wheel_name}-*.whl") )
-      if [[ ! ${#wheels[@]} -eq 1 ]]; then
-          echo "ERROR: Multiple or no wheels found for ${wheel_name} in ${DIRACX_CUSTOM_SOURCE_PREFIXES}"
-          exit 1
-      fi
-      pip install "${wheels[0]}"
-    else
-      pip install "git+https://github.com/DIRACGrid/diracx.git@main#egg=diracx-${wheel_name}&subdirectory=diracx-${wheel_name}"
+    wheels=( $(find "${DIRACX_CUSTOM_SOURCE_PREFIXES}" -name "diracx_${wheel_name}-*.whl") )
+    if [[ ! ${#wheels[@]} -eq 1 ]]; then
+        echo "ERROR: Multiple or no wheels found for ${wheel_name} in ${DIRACX_CUSTOM_SOURCE_PREFIXES}"
+        exit 1
     fi
+    pip install "${wheels[0]}"
   done
 }
 

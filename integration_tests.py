@@ -25,6 +25,9 @@ from typer import colors as c
 DEFAULT_HOST_OS = "el9"
 DEFAULT_MYSQL_VER = "mysql:8.4.4"
 DEFAULT_ES_VER = "opensearchproject/opensearch:2.18.0"
+# In MacOSX with Arm (MX), there's an issue with opensearch
+# You *must* set the ES_PLATFORM flag to `linux/arm64` to make it work.
+DEFAULT_ES_PLATFORM = "linux/amd64"
 DEFAULT_IAM_VER = "indigoiam/iam-login-service:v1.10.2"
 FEATURE_VARIABLES = {
     "DIRACOSVER": "master",
@@ -36,8 +39,12 @@ FEATURE_VARIABLES = {
     "INSTALLATION_BRANCH": "",
     "DEBUG": "Yes",
 }
-DIRACX_OPTIONS = ()
 DEFAULT_MODULES = {"DIRAC": Path(__file__).parent.absolute()}
+# All services that have a FutureClient, but we *explicitly* deactivate
+# (for example if we did not finish to develop it)
+DIRACX_DISABLED_SERVICES = [
+    "WorkloadManagement/JobMonitoring",
+]
 
 # Static configuration
 DB_USER = "Dirac"
@@ -70,6 +77,10 @@ LOG_LEVEL_MAP = {
     "FATAL": (c.RED, c.BLACK),
 }
 LOG_PATTERN = re.compile(r"^[\d\-]{10} [\d:]{8} UTC [^\s]+ ([A-Z]+):")
+
+# In niche cases where we use MacOSX with Orbstack, some commands may not work with docker compose
+# If you're in that case, set in your environment `export DOCKER_COMPOSE_CMD="docker-compose"`
+DOCKER_COMPOSE_CMD = shlex.split(os.environ.get("DOCKER_COMPOSE_CMD", "docker compose"))
 
 
 class NaturalOrderGroup(typer.core.TyperGroup):
@@ -140,6 +151,19 @@ Command completion of typer based scripts can be enabled by running:
 After restarting your terminal you command completion is available using:
 
   typer ./integration_tests.py run ...
+
+## DiracX
+
+If you want to activate DiracX, you have to set the flag TEST_DIRACX to "Yes".
+It will search for legacy adapted services (services with a future client activated)
+and do the necessary to make DIRAC work alongside DiracX.
+
+To deactivate a legacy adapted service (to pass CI for example), you have to add it in
+the `DIRACX_DISABLED_SERVICES` list. If you don't, the program will set this service to be used
+with DiracX, and if it is badly adapted, errors will be raised.
+
+> Note that you can provide a DiracX project (repository, branch) by building it and providing
+the dist folder to the prepare-environment command.
 """,
 )
 
@@ -193,8 +217,8 @@ def destroy():
     typer.secho("Shutting down and removing containers", err=True, fg=c.GREEN)
     with _gen_docker_compose(DEFAULT_MODULES) as docker_compose_fn:
         os.execvpe(
-            "docker",
-            ["docker", "compose", "-f", docker_compose_fn, "down", "--remove-orphans", "-t", "0", "--volumes"],
+            DOCKER_COMPOSE_CMD[0],
+            [*DOCKER_COMPOSE_CMD, "-f", docker_compose_fn, "down", "--remove-orphans", "-t", "0", "--volumes"],
             _make_env({}),
         )
 
@@ -253,7 +277,7 @@ def prepare_environment(
     typer.secho("Running docker compose to create containers", fg=c.GREEN)
     with _gen_docker_compose(modules, diracx_dist_dir=diracx_dist_dir) as docker_compose_fn:
         subprocess.run(
-            ["docker", "compose", "-f", docker_compose_fn, "up", "-d", "dirac-server", "dirac-client", "dirac-pilot"]
+            [*DOCKER_COMPOSE_CMD, "-f", docker_compose_fn, "up", "-d", "dirac-server", "dirac-client", "dirac-pilot"]
             + extra_services,
             check=True,
             env=docker_compose_env,
@@ -360,7 +384,7 @@ def prepare_environment(
         subStderr = open(docker_compose_fn_final / "stderr", "w")
 
         subprocess.Popen(
-            ["docker", "compose", "-f", docker_compose_fn_final / "docker-compose.yml", "up", "-d", "diracx"],
+            [*DOCKER_COMPOSE_CMD, "-f", docker_compose_fn_final / "docker-compose.yml", "up", "-d", "diracx"],
             env=docker_compose_env,
             stdin=None,
             stdout=subStdout,
@@ -569,7 +593,7 @@ def _gen_docker_compose(modules, *, diracx_dist_dir=None):
     # Load the docker compose configuration and mount the necessary volumes
     input_fn = Path(__file__).parent / "tests/CI/docker-compose.yml"
     docker_compose = yaml.safe_load(input_fn.read_text())
-    # diracx-wait-for-db needs the volume to be able to run the witing script
+    # diracx-wait-for-db needs the volume to be able to run the waiting script
     for ctn in ("dirac-server", "dirac-client", "dirac-pilot", "diracx-wait-for-db"):
         if "volumes" not in docker_compose["services"][ctn]:
             docker_compose["services"][ctn]["volumes"] = []
@@ -619,7 +643,7 @@ def _gen_docker_compose(modules, *, diracx_dist_dir=None):
 def _check_containers_running(*, is_up=True):
     with _gen_docker_compose(DEFAULT_MODULES) as docker_compose_fn:
         running_containers = subprocess.run(
-            ["docker", "compose", "-f", docker_compose_fn, "ps", "-q", "-a"],
+            [*DOCKER_COMPOSE_CMD, "-f", docker_compose_fn, "ps", "-q", "-a"],
             stdout=subprocess.PIPE,
             env=_make_env({}),
             # docker compose ps has a non-zero exit code when no containers are running
@@ -701,6 +725,7 @@ def _make_env(flags):
     else:
         env["MYSQL_ADMIN_COMMAND"] = "mysqladmin"
     env["ES_VER"] = flags.pop("ES_VER", DEFAULT_ES_VER)
+    env["ES_PLATFORM"] = flags.pop("ES_PLATFORM", DEFAULT_ES_PLATFORM)
     env["IAM_VER"] = flags.pop("IAM_VER", DEFAULT_IAM_VER)
     if "CVMFS_DIR" not in env or not Path(env["CVMFS_DIR"]).is_dir():
         typer.secho(f"CVMFS_DIR environment value: {env.get('CVMFS_DIR', 'NOT SET')}", fg=c.YELLOW)
@@ -1163,10 +1188,16 @@ def _make_config(modules, flags, release_var, editable):
             typer.secho(f"Required feature variable {key!r} is missing", err=True, fg=c.RED)
             raise typer.Exit(code=1)
 
-    # If we test DiracX, enable all the options
+    # If we test DiracX, add specific config
     if config["TEST_DIRACX"].lower() in ("yes", "true"):
-        for key in DIRACX_OPTIONS:
-            config[key] = "Yes"
+        if DIRACX_DISABLED_SERVICES:
+            # We link all disabled services
+            # config["DIRACX_DISABLED_SERVICES"] = "Service1 Service2 Service3 ..."
+            diracx_disabled_services = " ".join(DIRACX_DISABLED_SERVICES)
+
+            typer.secho(f"The following services won't be legacy adapted: {diracx_disabled_services}", fg="yellow")
+
+            config["DIRACX_DISABLED_SERVICES"] = diracx_disabled_services
 
     config["TESTREPO"] = [f"/home/dirac/LocalRepo/TestCode/{name}" for name in modules]
     config["ALTERNATIVE_MODULES"] = [f"/home/dirac/LocalRepo/ALTERNATIVE_MODULES/{name}" for name in modules]

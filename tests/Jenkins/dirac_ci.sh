@@ -164,9 +164,22 @@ installSite() {
   diracxSetupArgs=("--credentials-dir" "$SERVERINSTALLDIR/etc/grid-security")
   if [[ "${TEST_DIRACX:-}" = "Yes" ]]; then
     diracxSetupArgs+=("--url=${DIRACX_URL}")
+
+    # Only if we have TEST_DIRACX we can have a legacy_adapted service, or it will crash
+    # "Missing mandatory /DiracX/URL configuration"
+    # Call findFutureServices and read services into an array
+    findFutureServices 'exclude' $DIRACX_DISABLED_SERVICES
+    mapfile -t futureServices < futureServices
+
+    # If there are any remaining services, add them to args
+    if [[ ${#futureServices[@]} -gt 0 ]]; then
+      diracxSetupArgs+=(--legacy-adapted-services "${futureServices[@]}")
+    fi
+
   else
     diracxSetupArgs+=("--disable-vo" "vo")
   fi
+
   if ! python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-setup-diracx.py" "${diracxSetupArgs[@]}"; then
     echo "ERROR: dirac-cfg-setup-diracx.py failed" >&2
     exit 1

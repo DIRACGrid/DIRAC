@@ -73,6 +73,15 @@ def findServices(modules):
     return findModules(modules, "Service", "*Handler")
 
 
+def findFutureServices(modules):
+    """Find the legacy adapted services for one or more DIRAC extension(s)
+
+    :param list/str/module module: One or more Python modules or Python module names
+    :returns: list of tuples of the form (SystemName, ServiceName)
+    """
+    return findModules(modules, "FutureClient")
+
+
 @iterateThenSort
 def findDatabases(module):
     """Find the DB SQL schema defintions for one or more DIRAC extension(s)
@@ -182,7 +191,7 @@ def parseArgs():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(required=True, dest="function")
     defaultExtensions = extensionsByPriority()
-    for func in [findSystems, findAgents, findExecutors, findServices, findDatabases]:
+    for func in [findSystems, findAgents, findExecutors, findServices, findDatabases, findFutureServices]:
         subparser = subparsers.add_parser(func.__name__)
         subparser.add_argument("--extensions", nargs="+", default=defaultExtensions)
         subparser.set_defaults(func=func)

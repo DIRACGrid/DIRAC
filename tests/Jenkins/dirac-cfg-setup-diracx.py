@@ -12,6 +12,7 @@ def parse_args():
     parser.add_argument("--disable-vo", nargs="+", help="Disable a VO", default=[])
     parser.add_argument("--url", help="URL of the DiracX services")
     parser.add_argument("--credentials-dir", help="Directory where hostcert.pem/hostkey.pem can be found")
+    parser.add_argument("--legacy-adapted-services", nargs="+", help="Services that have legacy adaptors.", default=[])
     args = parser.parse_args()
 
     DIRAC.initialize(
@@ -21,10 +22,10 @@ def parse_args():
         )
     )
 
-    main(args.url, args.disable_vo)
+    main(args.url, args.disable_vo, args.legacy_adapted_services)
 
 
-def main(url: str, disabled_vos: list[str]):
+def main(url: str, disabled_vos: list[str], legacy_adapted_services: list[str]):
     from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
     csAPI = CSAPI()
@@ -71,6 +72,21 @@ def main(url: str, disabled_vos: list[str]):
 
     csSyncCFG = CFG().loadFromDict(csSync)
     returnValueOrRaise(csAPI.mergeCFGUnderSection("/DiracX/", csSyncCFG))
+
+    # Add service with legacy adaptors.
+    legacy = {"LegacyClientEnabled": {}}
+    for service in legacy_adapted_services:
+        print(f"Adding legacy adaptor for service {service}")
+        # Service name such as:  system/name
+        system, name = service.split("/")
+
+        if not system in legacy["LegacyClientEnabled"]:
+            legacy["LegacyClientEnabled"][system] = {}
+
+        legacy["LegacyClientEnabled"][system][name] = "yes"
+
+    legacyCFG = CFG().loadFromDict(legacy)
+    returnValueOrRaise(csAPI.mergeCFGUnderSection("/DiracX/", legacyCFG))
 
     returnValueOrRaise(csAPI.commit())
 

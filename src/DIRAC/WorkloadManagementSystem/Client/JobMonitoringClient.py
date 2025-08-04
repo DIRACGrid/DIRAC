@@ -14,11 +14,13 @@ except ImportError:
 
 @createClient("WorkloadManagement/JobMonitoring")
 class JobMonitoringClient(Client):
+    # Set to None to raise an error if this service is set as "legacy adapted"
+    # See ClientSelector
+    diracxClient = None
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.setServer("WorkloadManagement/JobMonitoring")
-
-    diracxClient = futureJobMonitoringClient
 
     @ignoreEncodeWarning
     def getJobsStatus(self, jobIDs):

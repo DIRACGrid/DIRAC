@@ -77,11 +77,11 @@ class JobStateUpdateClient(FutureClient):
     def setJobAttribute(self, jobID: str | int, attribute: str, value: str):
         with DiracXClient() as api:
             if attribute == "Status":
-                api.jobs.set_job_statuses(
+                return api.jobs.set_job_statuses(
                     {jobID: {datetime.now(tz=timezone.utc): {"Status": value}}},
                 )
             else:
-                api.jobs.patch_metadata({jobID: {attribute: value}})
+                return api.jobs.patch_metadata({jobID: {attribute: value}})
 
     @stripValueIfOK
     @convertToReturnValue
