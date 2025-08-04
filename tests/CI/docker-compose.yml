@@ -277,11 +277,14 @@ services:
       - DIRACX_SERVICE_AUTH_STATE_KEY=uSNPPtZ1EbC5np13zOwmWJ84Duix753Hejzk/u/MQE4=
       # Obtained with echo 'InsecureChangeMe' | base64 -d | openssl sha256
       - DIRACX_LEGACY_EXCHANGE_HASHED_API_KEY=07cddf6948d316ac9d186544dc3120c4c6697d8f994619665985c0a5bf76265a
-      - 'DIRACX_OS_DB_PILOTLOGSDB={"hosts": "elastic:changeme@opensearch:9200", "use_ssl": false, "verify_certs": false}'
       - 'DIRACX_OS_DB_JOBPARAMETERSDB={"hosts": "elastic:changeme@opensearch:9200", "use_ssl": false, "verify_certs": false}'
       - DIRACX_SANDBOX_STORE_BUCKET_NAME=sandboxes
       - DIRACX_SANDBOX_STORE_AUTO_CREATE_BUCKET=true
       - 'DIRACX_SANDBOX_STORE_S3_CLIENT_KWARGS={"endpoint_url": "http://s3-direct:9090", "aws_access_key_id": "console", "aws_secret_access_key": "console123"}'
+
+      # Currently, we use a mysql DB for pilot logs. Later in DiracX we'll use opensearch.
+      - 'DIRACX_OS_DB_PILOTLOGSDB={"sqlalchemy_dsn": "mysql+aiomysql://Dirac:Dirac@mysql/PilotLogsDB"}'
+      # - 'DIRACX_OS_DB_PILOTLOGSDB={"hosts": "elastic:changeme@opensearch:9200", "use_ssl": false, "verify_certs": false}'
 
     ports:
       - 8000:8000
