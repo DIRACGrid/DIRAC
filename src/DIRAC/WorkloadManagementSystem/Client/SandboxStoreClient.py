@@ -1,13 +1,18 @@
 """ Client for the SandboxStore.
     Will connect to the WorkloadManagement/SandboxStore service.
 """
+from __future__ import annotations
 
 import hashlib
 import os
 import re
 import tarfile
 import tempfile
+from contextlib import contextmanager
 from io import BytesIO, StringIO
+from typing import Literal
+
+import zstandard
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
@@ -16,6 +21,25 @@ from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as T
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize, mkDir
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Resources.Storage.StorageElement import StorageElement
+
+
+@contextmanager
+def ZstdCompatibleTarFile(tarFileName: os.PathLike, *, mode: Literal["r"] = "r"):
+    """Context manager to extend tarfile.open to support zstd compressed files.
+
+    This is only needed for Python <=3.13.
+    """
+    with open(tarFileName, "rb") as f:
+        magic = f.read(4)
+    # Read magic bytes to determine compression format
+    if magic.startswith(b"\x28\xb5\x2f\xfd"):  # zstd magic number
+        dctx = zstandard.ZstdDecompressor()
+        with dctx.stream_reader(f) as decompressor:
+            with tarfile.open(fileobj=decompressor, mode=f"{mode}|") as tf:
+                yield tf
+    else:
+        with tarfile.open(name=tarFileName, mode=mode) as tf:
+            yield tf
 
 
 class SandboxStoreClient:
@@ -192,7 +216,7 @@ class SandboxStoreClient:
 
         try:
             sandboxSize = 0
-            with tarfile.open(name=tarFileName, mode="r") as tf:
+            with ZstdCompatibleTarFile(tarFileName, mode="r") as tf:
                 for tarinfo in tf:
                     tf.extract(tarinfo, path=destinationDir)
                     sandboxSize += tarinfo.size
