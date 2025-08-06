@@ -2,12 +2,9 @@
 This module contains constants and lists for the possible job states.
 """
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.Core.Utilities.StateMachine import State, StateMachine
-from DIRAC.Core.Utilities.Decorators import deprecated
-
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-
 
 #:
 SUBMITTING = "Submitting"
@@ -98,37 +95,6 @@ class JobsStateMachine(StateMachine):
             RECEIVED: State(1, [SCOUTING, CHECKING, STAGING, WAITING, FAILED, DELETED, KILLED], defState=RECEIVED),
             SUBMITTING: State(0, [RECEIVED, CHECKING, DELETED, KILLED], defState=SUBMITTING),  # initial state
         }
-
-
-@deprecated("Use filterJobStateTransition instead")
-def checkJobStateTransition(jobID, candidateState, currentStatus=None, jobMonitoringClient=None):
-    """Utility to check if a job state transition is allowed"""
-    if not currentStatus:
-        if not jobMonitoringClient:
-            from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-
-            jobMonitoringClient = JobMonitoringClient()
-
-        res = jobMonitoringClient.getJobsStatus(jobID)
-        if not res["OK"]:
-            return res
-        try:
-            currentStatus = res["Value"][jobID]["Status"]
-        except KeyError:
-            return S_ERROR("Job does not exist")
-
-    res = JobsStateMachine(currentStatus).getNextState(candidateState)
-    if not res["OK"]:
-        return res
-
-    # If the JobsStateMachine does not accept the candidate, return an ERROR
-    if candidateState != res["Value"]:
-        gLogger.error(
-            "Job Status Error",
-            f"{jobID} can't move from {currentStatus} to {candidateState}",
-        )
-        return S_ERROR("Job state transition not allowed")
-    return S_OK()
 
 
 def filterJobStateTransition(jobIDs, candidateState):
