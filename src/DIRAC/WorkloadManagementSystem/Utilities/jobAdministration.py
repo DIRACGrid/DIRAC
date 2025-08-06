@@ -1,11 +1,10 @@
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.StorageManagementSystem.DB.StorageManagementDB import StorageManagementDB
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Client.JobStatus import filterJobStateTransition
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
-from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_KILL, RIGHT_DELETE
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_DELETE, RIGHT_KILL
 
 
 def _deleteJob(jobID, force=False):
@@ -79,15 +78,20 @@ def kill_delete_jobs(right, validJobList, nonauthJobList=[], force=False):
     killJobList = []
     deleteJobList = []
     if validJobList:
+        result = JobDB().getJobsAttributes(killJobList, ["Status"])
+        if not result["OK"]:
+            return result
+        jobStates = result["Value"]
+
         # Get the jobs allowed to transition to the Killed state
-        filterRes = filterJobStateTransition(validJobList, JobStatus.KILLED)
+        filterRes = _filterJobStateTransition(jobStates, JobStatus.KILLED)
         if not filterRes["OK"]:
             return filterRes
         killJobList.extend(filterRes["Value"])
 
         if right == RIGHT_DELETE:
             # Get the jobs allowed to transition to the Deleted state
-            filterRes = filterJobStateTransition(validJobList, JobStatus.DELETED)
+            filterRes = _filterJobStateTransition(jobStates, JobStatus.DELETED)
             if not filterRes["OK"]:
                 return filterRes
             deleteJobList.extend(filterRes["Value"])
@@ -103,10 +107,7 @@ def kill_delete_jobs(right, validJobList, nonauthJobList=[], force=False):
                 badIDs.append(jobID)
 
         # Look for jobs that are in the Staging state to send kill signal to the stager
-        result = JobDB().getJobsAttributes(killJobList, ["Status"])
-        if not result["OK"]:
-            return result
-        stagingJobList = [jobID for jobID, sDict in result["Value"].items() if sDict["Status"] == JobStatus.STAGING]
+        stagingJobList = [jobID for jobID, sDict in jobStates.items() if sDict["Status"] == JobStatus.STAGING]
 
         if stagingJobList:
             stagerDB = StorageManagementDB()
@@ -127,3 +128,17 @@ def kill_delete_jobs(right, validJobList, nonauthJobList=[], force=False):
 
     jobsList = killJobList if right == RIGHT_KILL else deleteJobList
     return S_OK(jobsList)
+
+
+def _filterJobStateTransition(jobStates, candidateState):
+    """Given a dictionary of jobs states,
+    return a list of jobs that are allowed to transition to the given candidate state.
+    """
+    allowedJobs = []
+
+    for js in jobStates.items():
+        stateRes = JobStatus.JobsStateMachine(js[1]["Status"]).getNextState(candidateState)
+        if stateRes["OK"]:
+            if stateRes["Value"] == candidateState:
+                allowedJobs.append(js[0])
+    return S_OK(allowedJobs)
