@@ -6,7 +6,7 @@ class PilotManagerClient(FutureClient):
     def get_pilot_stamps_from_refs(self, pilot_references) -> list[str]:
         with DiracXClient() as api:
             search = [{"parameter": "PilotJobReference", "operator": "in", "values": pilot_references}]
-            pilots = api.pilots.search(parameters=["PilotStamp"], search=search, sort=[])[0]  # type: ignore
+            pilots = api.pilots.search(parameters=["PilotStamp"], search=search, sort=[])  # type: ignore
 
             return [pilot["PilotStamp"] for pilot in pilots]
 
@@ -47,7 +47,10 @@ class PilotManagerClient(FutureClient):
     def deletePilot(self, pilot_reference):
         # Translate ref to stamp (DiracX relies on stamps whereas DIRAC relies on refs)
         pilot_stamps = self.get_pilot_stamps_from_refs([pilot_reference])
-        pilot_stamp = pilot_stamps[0]  # We might raise an error. This is so that we spot the error
+        # We don't want to raise an error.
+        if not pilot_stamps:
+            return None
+        pilot_stamp = pilot_stamps[0]
 
         with DiracXClient() as api:
             pilot_stamps = [pilot_stamp]
@@ -155,12 +158,16 @@ class PilotManagerClient(FutureClient):
             search = []
             if pilot_ids:
                 # If we have defined pilot_ids, then we have to change them to pilot_stamps
-                search = [{"parameter": "PilotID", "operator": "in", "value": pilot_ids}]
+                search = [{"parameter": "PilotID", "operator": "in", "values": pilot_ids}]
             else:
                 # If we have defined pilot_ids, then we have to change them to pilot_stamps
-                search = [{"parameter": "PilotJobReference", "operator": "in", "value": pilot_references}]
+                search = [{"parameter": "PilotJobReference", "operator": "in", "values": pilot_references}]
 
             pilots = api.pilots.search(parameters=["PilotStamp"], search=search, sort=[])  # type: ignore
             pilot_stamps = [pilot["PilotStamp"] for pilot in pilots]
+
+            if not pilot_stamps:
+                # Avoid useless requests
+                return None
 
             return api.pilots.delete_pilots(pilot_stamps=pilot_stamps)  # type: ignore
