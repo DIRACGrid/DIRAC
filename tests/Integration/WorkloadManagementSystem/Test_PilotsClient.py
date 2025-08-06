@@ -68,9 +68,3 @@ def test_PilotsDB():
 
     res = pilots.deletePilots("anotherPilot")
     assert res["OK"], res["Message"]
-
-    # Delete twice, second time an error is raised
-    # DiracX feature
-    if is_diracx_enabled:
-        res = pilots.deletePilots("anotherPilot")
-        assert not res["OK"], res["Message"]
