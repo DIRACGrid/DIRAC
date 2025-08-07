@@ -85,12 +85,6 @@ class JobStateUpdateClient(FutureClient):
 
     @stripValueIfOK
     @convertToReturnValue
-    def setJobFlag(self, jobID: str | int, flag: str):
-        with DiracXClient() as api:
-            api.jobs.patch_metadata({jobID: {flag: True}})
-
-    @stripValueIfOK
-    @convertToReturnValue
     def setJobParameter(self, jobID: str | int, name: str, value: str):
         with DiracXClient() as api:
             api.jobs.patch_metadata({jobID: {name: value}})
@@ -150,12 +144,6 @@ class JobStateUpdateClient(FutureClient):
         with DiracXClient() as api:
             updates = {job_id: {k: v} for job_id, (k, v) in jobsParameterDict.items()}
             api.jobs.patch_metadata(updates)
-
-    @stripValueIfOK
-    @convertToReturnValue
-    def unsetJobFlag(self, jobID: str | int, flag: str):
-        with DiracXClient() as api:
-            api.jobs.patch_metadata({jobID: {flag: False}})
 
     @stripValueIfOK
     @convertToReturnValue

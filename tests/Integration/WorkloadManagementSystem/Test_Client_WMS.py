@@ -293,10 +293,6 @@ def test_JobStateUpdateAndJobMonitoring() -> None:
         assert res["OK"], res["Message"]
         res = jobStateUpdateClient.setJobApplicationStatus(jobID, "app status", "source")
         assert res["OK"], res["Message"]
-        # res = jobStateUpdate.setJobFlag()
-        # self.assertTrue(res['OK'], res.get('Message'))
-        # res = jobStateUpdate.unsetJobFlag()
-        # self.assertTrue(res['OK'], res.get('Message'))
         res = jobStateUpdateClient.setJobSite(jobID, "Site")
         assert res["OK"], res["Message"]
 

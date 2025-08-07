@@ -129,22 +129,6 @@ class JobStateUpdateHandlerMixin:
         return cls.jobDB.setJobAttribute(int(jobID), "Site", site)
 
     ###########################################################################
-    types_setJobFlag = [[str, int], str]
-
-    @classmethod
-    def export_setJobFlag(cls, jobID, flag):
-        """Set job flag for job with jobID"""
-        return cls.jobDB.setJobAttribute(int(jobID), flag, "True")
-
-    ###########################################################################
-    types_unsetJobFlag = [[str, int], str]
-
-    @classmethod
-    def export_unsetJobFlag(cls, jobID, flag):
-        """Unset job flag for job with jobID"""
-        return cls.jobDB.setJobAttribute(int(jobID), flag, "False")
-
-    ###########################################################################
     types_setJobApplicationStatus = [[str, int], str, str]
 
     @classmethod

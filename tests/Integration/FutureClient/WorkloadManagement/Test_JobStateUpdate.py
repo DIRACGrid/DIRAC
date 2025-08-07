@@ -142,42 +142,6 @@ def test_setJobAttribute(monkeypatch, example_jobids, args):
     assert result[example_jobids[0]] == result[example_jobids[1]]
 
 
-def test_setJobFlag(monkeypatch, example_jobids):
-    # JobStateUpdateClient().setJobFlag(jobID: str | int, flag: str)
-    assert returnValueOrRaise(JobMonitoringClient().getJobAttribute(example_jobids[0], "AccountedFlag")) == "False"
-    assert returnValueOrRaise(JobMonitoringClient().getJobAttribute(example_jobids[1], "AccountedFlag")) == "False"
-
-    method = JobStateUpdateClient().setJobFlag
-    test_func1 = partial(method, example_jobids[0], "AccountedFlag")
-    test_func2 = partial(method, example_jobids[1], "AccountedFlag")
-    compare_results2(monkeypatch, test_func1, test_func2)
-
-    assert returnValueOrRaise(JobMonitoringClient().getJobAttribute(example_jobids[0], "AccountedFlag")) == "True"
-    assert returnValueOrRaise(JobMonitoringClient().getJobAttribute(example_jobids[1], "AccountedFlag")) == "True"
-
-
-def test_unsetJobFlag(monkeypatch, example_jobids):
-    # JobStateUpdateClient().unsetJobFlag(jobID: str | int, flag: str)
-    assert returnValueOrRaise(JobMonitoringClient().getJobAttribute(example_jobids[0], "AccountedFlag")) == "False"
-    assert returnValueOrRaise(JobMonitoringClient().getJobAttribute(example_jobids[1], "AccountedFlag")) == "False"
-
-    method = JobStateUpdateClient().setJobFlag
-    test_func1 = partial(method, example_jobids[0], "AccountedFlag")
-    test_func2 = partial(method, example_jobids[1], "AccountedFlag")
-    compare_results2(monkeypatch, test_func1, test_func2)
-
-    assert returnValueOrRaise(JobMonitoringClient().getJobAttribute(example_jobids[0], "AccountedFlag")) == "True"
-    assert returnValueOrRaise(JobMonitoringClient().getJobAttribute(example_jobids[1], "AccountedFlag")) == "True"
-
-    method = JobStateUpdateClient().unsetJobFlag
-    test_func1 = partial(method, example_jobids[0], "AccountedFlag")
-    test_func2 = partial(method, example_jobids[1], "AccountedFlag")
-    compare_results2(monkeypatch, test_func1, test_func2)
-
-    assert returnValueOrRaise(JobMonitoringClient().getJobAttribute(example_jobids[0], "AccountedFlag")) == "False"
-    assert returnValueOrRaise(JobMonitoringClient().getJobAttribute(example_jobids[1], "AccountedFlag")) == "False"
-
-
 @pytest.mark.parametrize(
     "args",
     [
