@@ -62,7 +62,7 @@ jobs:
     - name: Building wheels
       run: |
         # Clone diracx
-        git clone --single-branch --branch robin-pilot-management https://github.com/Robin-Van-de-Merghel/diracx.git $GITHUB_WORKSPACE/diracx
+        git clone --single-branch --branch robin-pilot-registrations https://github.com/Robin-Van-de-Merghel/diracx.git $GITHUB_WORKSPACE/diracx
 
         # Create dist dir
         mkdir -p $GITHUB_WORKSPACE/diracx-dist
