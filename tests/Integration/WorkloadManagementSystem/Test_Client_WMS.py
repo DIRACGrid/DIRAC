@@ -289,14 +289,12 @@ def test_JobStateUpdateAndJobMonitoring() -> None:
         # forcing the update
         res = jobStateUpdateClient.setJobStatus(jobID, JobStatus.RUNNING, "running", "source", None, True)
         assert res["OK"], res["Message"]
-        res = jobStateUpdateClient.setJobParameters(jobID, [("par1", "par1Value"), ("par2", "par2Value")])
+        res = jobStateUpdateClient.setJobParameters(jobID, [("CPUNormalizationFactor", 10), ("HostName", "hlt123")])
+        assert res["OK"], res["Message"]
+        res = jobStateUpdateClient.setJobParameter(jobID, "Pilot_Reference", "https://pilot.reference.com/123456")
         assert res["OK"], res["Message"]
         res = jobStateUpdateClient.setJobApplicationStatus(jobID, "app status", "source")
         assert res["OK"], res["Message"]
-        # res = jobStateUpdate.setJobFlag()
-        # self.assertTrue(res['OK'], res.get('Message'))
-        # res = jobStateUpdate.unsetJobFlag()
-        # self.assertTrue(res['OK'], res.get('Message'))
         res = jobStateUpdateClient.setJobSite(jobID, "Site")
         assert res["OK"], res["Message"]
 
@@ -307,25 +305,25 @@ def test_JobStateUpdateAndJobMonitoring() -> None:
 
         time.sleep(3)
 
-        res = jobMonitoringClient.getJobParameters(jobID, ["par1", "par2"])
+        res = jobMonitoringClient.getJobParameters(jobID, ["CPUNormalizationFactor", "HostName"])
         assert res["OK"], res["Message"]
-        assert res["Value"] == {jobID: {"par1": "par1Value", "par2": "par2Value"}}
+        assert res["Value"] == {jobID: {"CPUNormalizationFactor": 10, "HostName": "hlt123"}}
 
-        res = jobMonitoringClient.getJobParameter(jobID, "par1")
+        res = jobMonitoringClient.getJobParameter(jobID, "Pilot_Reference")
         assert res["OK"], res["Message"]
-        assert res["Value"] == {"par1": "par1Value"}
+        assert res["Value"] == {"Pilot_Reference": "https://pilot.reference.com/123456"}
 
         res = jobMonitoringClient.getJobParameters(jobID)
         assert res["OK"], res["Message"]
         assert jobID in res["Value"]
-        assert "par1" in res["Value"][jobID]
-        assert "par2" in res["Value"][jobID]
-        assert res["Value"][jobID]["par1"] == "par1Value"
-        assert res["Value"][jobID]["par2"] == "par2Value"
+        assert "CPUNormalizationFactor" in res["Value"][jobID]
+        assert "HostName" in res["Value"][jobID]
+        assert res["Value"][jobID]["CPUNormalizationFactor"] == 10
+        assert res["Value"][jobID]["HostName"] == "hlt123"
 
-        res = jobMonitoringClient.getJobParameters(jobID, "par1")
+        res = jobMonitoringClient.getJobParameters(jobID, "Pilot_Reference")
         assert res["OK"], res["Message"]
-        assert res["Value"] == {jobID: {"par1": "par1Value"}}
+        assert res["Value"] == {jobID: {"Pilot_Reference": "https://pilot.reference.com/123456"}}
 
         res = jobMonitoringClient.getJobAttribute(jobID, "Site")
         assert res["OK"], res["Message"]
@@ -336,9 +334,12 @@ def test_JobStateUpdateAndJobMonitoring() -> None:
         assert res["Value"]["ApplicationStatus"] == "app status"
         assert res["Value"]["JobName"] == "helloWorld"
 
+        res = jobStateUpdateClient.setJobAttribute(jobID, "ApplicationStatus", "some_app_status")
+        assert res["OK"], res["Message"]
+
         res = jobMonitoringClient.getJobSummary(jobID)
         assert res["OK"], res["Message"]
-        assert res["Value"]["ApplicationStatus"] == "app status"
+        assert res["Value"]["ApplicationStatus"] == "some_app_status"
         assert res["Value"]["Status"] == JobStatus.RUNNING
 
         res = jobMonitoringClient.getJobHeartBeatData(jobID)
@@ -359,7 +360,7 @@ def test_JobStateUpdateAndJobMonitoring() -> None:
         assert res["OK"], res["Message"]
         assert res["Value"]["Status"] == JobStatus.DONE
         assert res["Value"]["MinorStatus"] == "MinorStatus"
-        assert res["Value"]["ApplicationStatus"] == "app status"
+        assert res["Value"]["ApplicationStatus"] == "some_app_status"
 
         res = jobStateUpdateClient.sendHeartBeat(jobID, {"bih": "bih"}, {"boh": "boh"})
         assert res["OK"], res["Message"]
