@@ -84,17 +84,11 @@ def kill_delete_jobs(right, validJobList, nonauthJobList=[], force=False):
         jobStates = result["Value"]
 
         # Get the jobs allowed to transition to the Killed state
-        filterRes = _filterJobStateTransition(jobStates, JobStatus.KILLED)
-        if not filterRes["OK"]:
-            return filterRes
-        killJobList.extend(filterRes["Value"])
+        killJobList.extend(_filterJobStateTransition(jobStates, JobStatus.KILLED))
 
         if right == RIGHT_DELETE:
             # Get the jobs allowed to transition to the Deleted state
-            filterRes = _filterJobStateTransition(jobStates, JobStatus.DELETED)
-            if not filterRes["OK"]:
-                return filterRes
-            deleteJobList.extend(filterRes["Value"])
+            deleteJobList.extend(_filterJobStateTransition(jobStates, JobStatus.DELETED))
 
         for jobID in killJobList:
             result = _killJob(jobID, force=force)
@@ -141,4 +135,4 @@ def _filterJobStateTransition(jobStates, candidateState):
         if stateRes["OK"]:
             if stateRes["Value"] == candidateState:
                 allowedJobs.append(js[0])
-    return S_OK(allowedJobs)
+    return allowedJobs

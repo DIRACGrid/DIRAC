@@ -46,6 +46,7 @@ from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
+from DIRAC.WorkloadManagementSystem.Utilities.jobAdministration import _filterJobStateTransition
 
 
 def parseArguments(args):
@@ -1450,10 +1451,13 @@ class Dirac(API):
         # Remove any job IDs that can't change to the Killed or Deleted states
         filteredJobs = set()
         for filterState in (JobStatus.KILLED, JobStatus.DELETED):
-            filterRes = JobStatus.filterJobStateTransition(jobIDs, filterState)
-            if not filterRes["OK"]:
-                return filterRes
-            filteredJobs.update(filterRes["Value"])
+            # get a dictionary of jobID:status
+            res = JobMonitoringClient().getJobsStatus(jobIDs)
+            if not res["OK"]:
+                return res
+            js = {k: v["Status"] for k, v in res["Value"].items()}
+            # then filter
+            filteredJobs.update(_filterJobStateTransition(js, filterState))
 
         return WMSClient(useCertificates=self.useCertificates).deleteJob(list(filteredJobs))
 
@@ -1480,11 +1484,13 @@ class Dirac(API):
             return ret
         jobIDs = ret["Value"]
 
-        # Remove any job IDs that can't change to the rescheduled state
-        filterRes = JobStatus.filterJobStateTransition(jobIDs, JobStatus.RESCHEDULED)
-        if not filterRes["OK"]:
-            return filterRes
-        jobIDsToReschedule = filterRes["Value"]
+        # get a dictionary of jobID:status
+        res = JobMonitoringClient().getJobsStatus(jobIDs)
+        if not res["OK"]:
+            return res
+        js = {k: v["Status"] for k, v in res["Value"].items()}
+        # then filter
+        jobIDsToReschedule = _filterJobStateTransition(js, JobStatus.RESCHEDULED)
 
         return WMSClient(useCertificates=self.useCertificates).rescheduleJob(jobIDsToReschedule)
 
@@ -1510,10 +1516,13 @@ class Dirac(API):
         # Remove any job IDs that can't change to the Killed or Deleted states
         filteredJobs = set()
         for filterState in (JobStatus.KILLED, JobStatus.DELETED):
-            filterRes = JobStatus.filterJobStateTransition(jobIDs, filterState)
-            if not filterRes["OK"]:
-                return filterRes
-            filteredJobs.update(filterRes["Value"])
+            # get a dictionary of jobID:status
+            res = JobMonitoringClient().getJobsStatus(jobIDs)
+            if not res["OK"]:
+                return res
+            js = {k: v["Status"] for k, v in res["Value"].items()}
+            # then filter
+            filteredJobs.update(_filterJobStateTransition(js, filterState))
 
         return WMSClient(useCertificates=self.useCertificates).killJob(list(filteredJobs))
 
