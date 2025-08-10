@@ -38,7 +38,7 @@ jobs:
           - TEST_NAME: "Backward Compatibility"
             ARGS: CLIENT_INSTALLATION_BRANCH=rel-v8r0 PILOT_INSTALLATION_BRANCH=rel-v8r0
           - TEST_NAME: "Test DiracX latest"
-            ARGS: TEST_DIRACX=Yes
+            ARGS: TEST_DIRACX=Yes --diracx-dist-dir $GITHUB_WORKSPACE/diracx-dist
 
     steps:
     - uses: actions/checkout@v4
@@ -57,7 +57,22 @@ jobs:
             packaging \
             pyyaml \
             requests \
-            typer
+            typer \
+            build
+    - name: Building wheels
+      run: |
+        # Clone diracx
+        git clone --single-branch --branch robin-pilot-legacy-logging https://github.com/Robin-Van-de-Merghel/diracx.git $GITHUB_WORKSPACE/diracx
+
+        # Create dist dir
+        mkdir -p $GITHUB_WORKSPACE/diracx-dist
+
+        # Building diracx
+        for pkg_dir in $GITHUB_WORKSPACE/diracx/diracx-* $GITHUB_WORKSPACE/diracx; do
+          echo "Building $pkg_dir"
+          python -m build --outdir "$GITHUB_WORKSPACE/diracx-dist" $pkg_dir
+        done
+
     - name: Prepare environment
       run: ./integration_tests.py prepare-environment ${{ matrix.ARGS }}
     - name: Install server
@@ -81,3 +96,8 @@ jobs:
         if [ -f client-tests-failed ]; then has_error=1; echo "Client tests failed"; fi
         if [ -f pilot-tests-failed ]; then has_error=1; echo "pilot tests failed"; fi
         if [ ${has_error} = 1 ]; then exit 1; fi
+    - name: DiracX filtered logs
+      if: ${{ always() && contains(matrix.ARGS, 'TEST_DIRACX=Yes') }}
+      run: |
+        # Used to debug, and see which requests were done.
+        docker logs diracx | grep -Fv 'GET /.well-known/openid-configuration HTTP/1.1" 200 OK'
