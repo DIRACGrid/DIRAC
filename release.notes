@@ -1,3 +1,14 @@
+[v9.0.0a63]
+
+*WorkloadManagementSystem
+
+NEW: (#8276) Add zstandard compression support for sandbox files with backward compatibility
+CHANGE: (#8244) move the logic for jobs deleting and killing in an utility
+
+*Integration Tests
+
+FIX: (#8248) Add in CI and in `integration_test.py` legacy adaptors.
+
 [v9.0.0a62]
 
 *ConfigurationSystem
