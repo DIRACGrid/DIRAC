@@ -34,7 +34,7 @@ def ZstdCompatibleTarFile(tarFileName: os.PathLike, *, mode: Literal["r"] = "r")
     # Read magic bytes to determine compression format
     if magic.startswith(b"\x28\xb5\x2f\xfd"):  # zstd magic number
         dctx = zstandard.ZstdDecompressor()
-        with dctx.stream_reader(f) as decompressor:
+        with open(tarFileName, "rb") as f, dctx.stream_reader(f) as decompressor:
             with tarfile.open(fileobj=decompressor, mode=f"{mode}|") as tf:
                 yield tf
     else:
