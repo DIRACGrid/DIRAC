@@ -1,3 +1,10 @@
+[v9.0.0a64]
+
+*WorkloadManagement
+
+FIX: (#8282) Use of closed file in ZstdCompatibleTarFile when downloading sandboxes
+NEW: (#8282) add sandbox download functionality in Dirac runLocal API
+
 [v9.0.0a63]
 
 *WorkloadManagementSystem
