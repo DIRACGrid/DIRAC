@@ -81,3 +81,18 @@ jobs:
         if [ -f client-tests-failed ]; then has_error=1; echo "Client tests failed"; fi
         if [ -f pilot-tests-failed ]; then has_error=1; echo "pilot tests failed"; fi
         if [ ${has_error} = 1 ]; then exit 1; fi
+    - name: diracx filtered requests logs
+      if: contains(matrix.ARGS, 'TEST_DIRACX=Yes')
+      run: |
+        docker logs diracx 2>/dev/null | grep '/api/' \
+          | awk -F\" '{print $2, $3}' \
+          | awk '{print $1, $2, $4}' \
+          | sort | uniq -c | sort
+
+    - name: diracx error logs
+      if: ${{ failure() && contains(matrix.ARGS, 'TEST_DIRACX=Yes') }}
+      run: |
+        mkdir -p /tmp/service-logs
+        docker logs diracx 2>&1 | tee /tmp/service-logs/diracx.log
+        cd /tmp/DIRACRepo
+        ./integration_tests.py logs --no-follow --lines 1000 2>&1 | tee /tmp/service-logs/dirac.log
