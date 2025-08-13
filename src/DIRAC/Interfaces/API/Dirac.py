@@ -422,6 +422,14 @@ class Dirac(API):
                 sandbox = [isFile.strip() for isFile in sandbox.split(",")]
             for isFile in sandbox:
                 self.log.debug(f"Resolving Input Sandbox {isFile}")
+                # If the sandbox is already in the sandbox store, download it
+                if isFile.startswith("SB:"):
+                    result = SandboxStoreClient(useCertificates=self.useCertificates).downloadSandbox(
+                        isFile, destinationDir=os.getcwd()
+                    )
+                    if not result["OK"]:
+                        return S_ERROR(f"Cannot download Input sandbox {isFile}: {result['Message']}")
+                    continue
                 if isFile.lower().startswith("lfn:"):  # isFile is an LFN
                     isFile = isFile[4:]
                 # Attempt to copy into job working directory, unless it is already there
