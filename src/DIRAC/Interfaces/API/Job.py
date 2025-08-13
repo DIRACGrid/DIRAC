@@ -1105,6 +1105,7 @@ class Job(API):
                 uniqueInputSandbox = uniqueElements(finalInputSandbox.split(";"))
                 paramsDict["InputSandbox"]["value"] = ";".join(uniqueInputSandbox)
                 self.log.verbose(f"Final unique Input Sandbox {';'.join(uniqueInputSandbox)}")
+                paramsDict["InputSandbox"]["type"] = "JDL"
             else:
                 paramsDict["InputSandbox"] = {}
                 paramsDict["InputSandbox"]["value"] = extraFiles
