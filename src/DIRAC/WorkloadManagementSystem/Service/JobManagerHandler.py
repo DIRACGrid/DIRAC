@@ -30,7 +30,7 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     RIGHT_SUBMIT,
     JobPolicy,
 )
-from DIRAC.WorkloadManagementSystem.Utilities.jobAdministration import kill_delete_jobs
+from DIRAC.WorkloadManagementSystem.DB.StatusUtils import kill_delete_jobs
 from DIRAC.WorkloadManagementSystem.Utilities.JobModel import JobDescriptionModel
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import rescheduleJobs
