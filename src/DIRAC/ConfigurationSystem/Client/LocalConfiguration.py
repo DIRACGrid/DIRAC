@@ -1,5 +1,5 @@
-""" This is the guy that parses and interprets the local configuration options.
-"""
+"""This is the guy that parses and interprets the local configuration options."""
+
 import re
 import os
 import sys
@@ -286,8 +286,10 @@ class LocalConfiguration:
             gLogger.exception()
             return S_ERROR(str(e))
 
-    def initialize(self, *, returnErrors=False):
+    def initialize(self, *, returnErrors=False, requireSuccessfulSync=False):
         """Entrypoint used by :py:class:`DIRAC.initialize`
+
+        :param requireSuccessfulSync: fails if syncing with the remote did not work
 
         TODO: This is currently a hack that returns a list of errors for so it
         can be used by ``__addUserDataToConfiguration``. This entire module
@@ -295,7 +297,7 @@ class LocalConfiguration:
         """
         errorsList = self.__loadCFGFiles()
         if gConfigurationData.getServers():
-            retVal = self.syncRemoteConfiguration()
+            retVal = self.syncRemoteConfiguration(strict=requireSuccessfulSync)
             if not retVal["OK"]:
                 return retVal
         else:
@@ -321,7 +323,7 @@ class LocalConfiguration:
             gLogger.showHeaders(True)
             gLogger.enableLogsFromExternalLibs()
 
-    def loadUserData(self):
+    def loadUserData(self, requireSuccessfulSync=False):
         """
         This is the magic method that reads the command line and processes it
         It is used by the Script Base class and the dirac-service and dirac-agent scripts
@@ -329,6 +331,7 @@ class LocalConfiguration:
         - any additional switches to be processed
         - mandatory and default configuration configuration options must be defined.
 
+        :param requireSuccessfulSync: if True, will fail if the sync with remote server failed
         """
         if self.initialized:
             return S_OK()
@@ -336,7 +339,7 @@ class LocalConfiguration:
         try:
             if not self.isParsed:
                 self.__parseCommandLine()  # Parse command line
-            retVal = self.__addUserDataToConfiguration()
+            retVal = self.__addUserDataToConfiguration(requireSuccessfulSync=requireSuccessfulSync)
 
             for optionTuple in self.optionalEntryList:
                 optionPath = self.__getAbsolutePath(optionTuple[0])
@@ -496,8 +499,8 @@ class LocalConfiguration:
 
         return errorsList
 
-    def __addUserDataToConfiguration(self):
-        retVal = self.initialize(returnErrors=True)
+    def __addUserDataToConfiguration(self, requireSuccessfulSync=False):
+        retVal = self.initialize(returnErrors=True, requireSuccessfulSync=requireSuccessfulSync)
         if not retVal["OK"]:
             return retVal
         errorsList = retVal["Value"]

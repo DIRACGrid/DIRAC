@@ -25,7 +25,7 @@ def main():
     localCfg.setConfigurationForAgent(agentName)
     localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
     localCfg.addDefaultEntry("LogColor", True)
-    resultDict = localCfg.loadUserData()
+    resultDict = localCfg.loadUserData(requireSuccessfulSync=True)
     if not resultDict["OK"]:
         gLogger.error("There were errors when loading configuration", resultDict["Message"])
         sys.exit(1)

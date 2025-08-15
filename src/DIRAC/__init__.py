@@ -1,59 +1,60 @@
 """
-   DIRAC - Distributed Infrastructure with Remote Agent Control
+DIRAC - Distributed Infrastructure with Remote Agent Control
 
-   The distributed data production and analysis system of LHCb and other VOs.
+The distributed data production and analysis system of LHCb and other VOs.
 
-   DIRAC is a software framework for distributed computing which
-   allows to integrate various computing resources in a single
-   system. At the same time it integrates all kinds of computing
-   activities like Monte Carlo simulations, data processing, or
-   final user analysis.
+DIRAC is a software framework for distributed computing which
+allows to integrate various computing resources in a single
+system. At the same time it integrates all kinds of computing
+activities like Monte Carlo simulations, data processing, or
+final user analysis.
 
-   It is build as number of cooperating systems:
-    - Accounting
-    - Configuration
-    - Core
-      - Base
-      - Security
-      - Utilities
-      - Workflow
-    - Framework
-    - RequestManagement
-    - Resources
-    - Transformation
+It is build as number of cooperating systems:
+ - Accounting
+ - Configuration
+ - Core
+   - Base
+   - Security
+   - Utilities
+   - Workflow
+ - Framework
+ - RequestManagement
+ - Resources
+ - Transformation
 
-    Which are used by other system providing functionality to
-    the end user:
-    - DataManagement
-    - Interfaces
-    - ResourceStatus
-    - StorageManagement
-    - WorkloadManagement
+ Which are used by other system providing functionality to
+ the end user:
+ - DataManagement
+ - Interfaces
+ - ResourceStatus
+ - StorageManagement
+ - WorkloadManagement
 
-    It defines the following data members:
-    - version:       DIRAC version string
+ It defines the following data members:
+ - version:       DIRAC version string
 
-    - errorMail:     mail address for important errors
-    - alarmMail:     mail address for important alarms
+ - errorMail:     mail address for important errors
+ - alarmMail:     mail address for important alarms
 
-    It loads Modules from :
-    - DIRAC.Core.Utililies
+ It loads Modules from :
+ - DIRAC.Core.Utililies
 
-    It loads:
-    - S_OK:           OK return structure
-    - S_ERROR:        ERROR return structure
-    - gLogger:        global Logger object
-    - gConfig:        global Config object
+ It loads:
+ - S_OK:           OK return structure
+ - S_ERROR:        ERROR return structure
+ - gLogger:        global Logger object
+ - gConfig:        global Config object
 
-    It defines the following functions:
-    - abort:          aborts execution
-    - exit:           finish execution using callbacks
-    - siteName:       returns DIRAC name for current site
+ It defines the following functions:
+ - abort:          aborts execution
+ - exit:           finish execution using callbacks
+ - siteName:       returns DIRAC name for current site
 
-    - getPlatform():      DIRAC platform string for current host
-    - getPlatformTuple(): DIRAC platform tuple for current host
+ - getPlatform():      DIRAC platform string for current host
+ - getPlatformTuple(): DIRAC platform tuple for current host
 
 """
+
 import importlib.metadata
 import os
 import re
@@ -237,7 +238,7 @@ def initialize(
         log_level = getattr(LogLevel, gLogger.getLevel())
         gLogger.setLevel(LogLevel.ALWAYS)
     try:
-        returnValueOrRaise(localCfg.initialize())
+        returnValueOrRaise(localCfg.initialize(requireSuccessfulSync=require_auth))
     finally:
         # Restore the pre-existing log level
         gLogger.setLevel(log_level)
