@@ -381,63 +381,6 @@ class DiracAdmin(API):
         return result
 
     #############################################################################
-    def getPilotOutput(self, gridReference, directory=""):
-        """Retrieve the pilot output  (std.out and std.err) for an existing pilot reference.
-
-          >>> gLogger.notice(dirac.getJobPilotOutput(12345))
-          {'OK': True, 'Value': {}}
-
-        :param str gridReference: pilot reference
-        :param str directory: a directory to download logs to.
-        :return: S_OK,S_ERROR
-        """
-        if not isinstance(gridReference, str):
-            return self._errorReport("Expected string for pilot reference")
-
-        if not directory:
-            directory = self.currentDir
-
-        if not os.path.exists(directory):
-            return self._errorReport(f"Directory {directory} does not exist")
-
-        result = PilotManagerClient().getPilotOutput(gridReference)
-        if not result["OK"]:
-            return result
-
-        gridReferenceSmall = gridReference.split("/")[-1]
-        if not gridReferenceSmall:
-            gridReferenceSmall = "reference"
-        outputPath = f"{directory}/pilot_{gridReferenceSmall}"
-
-        if os.path.exists(outputPath):
-            self.log.info(f"Remove {outputPath} and retry to continue")
-            return S_ERROR(f"Remove {outputPath} and retry to continue")
-
-        if not os.path.exists(outputPath):
-            self.log.verbose(f"Creating directory {outputPath}")
-            os.mkdir(outputPath)
-
-        outputs = result["Value"]
-        if "StdOut" in outputs:
-            stdout = f"{outputPath}/std.out"
-            with open(stdout, "w") as fopen:
-                fopen.write(outputs["StdOut"])
-            self.log.info(f"Standard output written to {stdout}")
-        else:
-            self.log.warn("No standard output returned")
-
-        if "StdErr" in outputs:
-            stderr = f"{outputPath}/std.err"
-            with open(stderr, "w") as fopen:
-                fopen.write(outputs["StdErr"])
-            self.log.info(f"Standard error written to {stderr}")
-        else:
-            self.log.warn("No standard error returned")
-
-        self.log.always(f"Outputs retrieved in {outputPath}")
-        return result
-
-    #############################################################################
     def getPilotInfo(self, gridReference):
         """Retrieve info relative to a pilot reference
 

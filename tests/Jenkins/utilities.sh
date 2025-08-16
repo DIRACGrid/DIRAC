@@ -729,3 +729,45 @@ stopRunsv() {
 
   echo '==> [Done stopRunsv]'
 }
+
+
+
+#.............................................................................
+#
+# setDiracXCreds
+#
+#   gets creds from x509, extract token, and put it in the right place
+#
+#.............................................................................
+setDiracXCreds() {
+    # $1 = DIRAC group
+    local group="$1"
+    local cache_dir="$HOME/.cache/diracx"
+    local creds_file="$cache_dir/credentials.json"
+    local tmpfile
+
+    if [[ -z "$group" ]]; then
+        echo "Usage: setDiracXCreds <DIRAC_GROUP>" >&2
+        return 1
+    fi
+
+    # 1. Init DIRAC proxy
+    dirac-proxy-init -g "$group"
+
+    # 2. Extract DiracX token from proxy PEM
+    tmpfile=$(mktemp)
+    python - <<'EOF' > "$tmpfile"
+from DIRAC.Core.Security.DiracX import diracxTokenFromPEM
+from DIRAC.Core.Security.Locations import getProxyLocation
+import json
+pem_location = getProxyLocation()
+token = diracxTokenFromPEM(pem_location)
+if token:
+    print(json.dumps(token))
+EOF
+
+    # 3. Move to ~/.cache/diracx/credentials.json
+    mkdir -p "$cache_dir"
+    mv "$tmpfile" "$creds_file"
+    echo "DiracX credentials updated at $creds_file"
+}

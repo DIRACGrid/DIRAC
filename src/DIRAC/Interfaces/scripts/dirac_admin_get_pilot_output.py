@@ -21,22 +21,10 @@ def main():
     _, args = Script.parseCommandLine(ignoreErrors=True)
 
     from DIRAC import exit as DIRACExit
-    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 
-    diracAdmin = DiracAdmin()
-    exitCode = 0
-    errorList = []
+    print("This command is not supported anymore with DIRAV V9.")
 
-    for gridID in args:
-        result = diracAdmin.getPilotOutput(gridID)
-        if not result["OK"]:
-            errorList.append((gridID, result["Message"]))
-            exitCode = 2
-
-    for error in errorList:
-        print("ERROR %s: %s" % error)
-
-    DIRACExit(exitCode)
+    DIRACExit(0)
 
 
 if __name__ == "__main__":

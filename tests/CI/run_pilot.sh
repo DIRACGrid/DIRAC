@@ -42,5 +42,13 @@ elif command -v python2 &> /dev/null; then
   py='python2'
 fi
 
+additional_params=""
+
+if [[ -n "$TEST_DIRACX" && "$TEST_DIRACX" == "Yes" ]]; then
+    # Read the pilot secret from file
+    secret=$(cat /ca/certs/pilot_secret.txt)
+    additional_params="--pilotSecret $secret"
+fi
+
 # shellcheck disable=SC2086
-$py ${PILOT_INSTALLATION_COMMAND}
+$py ${PILOT_INSTALLATION_COMMAND} ${additional_params}

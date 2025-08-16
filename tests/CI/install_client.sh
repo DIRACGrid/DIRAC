@@ -94,4 +94,14 @@ if [[ -z "${INSTALLATION_BRANCH}" ]]; then
     echo "    JobName = \"${GITHUB_JOB}_$(date +"%Y-%m-%d_%T" | sed 's/://g')\"" >> test_dl.jdl
     echo "]" >> test_dl.jdl
     dirac-wms-job-submit test_dl.jdl "${DEBUG}" |& tee -a clientTestOutputs.txt
+
+    #-------------------------------------------------------------------------------#
+    if [[ "${TEST_DIRACX:-}" = "Yes" ]]; then
+	    echo -e "*** $(date -u) **** Creates DiracX credentials to run commands ****\n"
+	    installDIRACX cli
+	    setDiracXCreds prod
+	    # Generate secrets
+	    secret=$(dirac pilots generate-pilot-secrets vo 1 | jq -r '.[0].pilot_secret')
+	    echo "$secret" > /ca/certs/pilot_secret.txt
+    fi
 fi

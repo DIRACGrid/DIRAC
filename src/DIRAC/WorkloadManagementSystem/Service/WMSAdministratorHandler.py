@@ -178,8 +178,6 @@ class WMSAdministratorHandlerMixin:
                         pilotReference = res["Value"][cycle]["Pilot_Reference"]
                         c = cycle
 
-        if pilotReference:
-            return self.pilotManager.getPilotOutput(pilotReference)
         return S_ERROR("No pilot job reference found")
 
 
