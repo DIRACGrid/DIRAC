@@ -1,0 +1,133 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[project]
+name = "DIRACCommon"
+description = "Stateless utilities extracted from DIRAC for use by DiracX and other projects"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "GPL-3.0-only"}
+authors = [
+    {name = "DIRAC Collaboration", email = "dirac-dev@cern.ch"},
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+    "Topic :: System :: Distributed Computing",
+]
+dependencies = [
+    "typing-extensions>=4.0.0",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+testing = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/DIRACGrid/DIRAC"
+Documentation = "https://dirac.readthedocs.io/"
+"Source Code" = "https://github.com/DIRACGrid/DIRAC"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+root = ".."
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/DIRACCommon"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = ["-v", "--cov=DIRACCommon", "--cov-report=term-missing"]
+
+[tool.coverage.run]
+source = ["src/DIRACCommon"]
+omit = ["*/tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src/DIRACCommon"]
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "B",    # flake8-bugbear
+    "I",    # isort
+    "PLE",  # pylint errors
+    "UP",   # pyupgrade
+]
+ignore = [
+    "B905",  # zip without explicit strict parameter
+    "B008",  # do not perform function calls in argument defaults
+    "B006",  # do not use mutable data structures for argument defaults
+]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+# This ensures DIRACCommon never imports from DIRAC
+"DIRAC" = {msg = "DIRACCommon must not import from DIRAC to avoid global state initialization"}
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
+
+[tool.isort]
+profile = "black"
+line_length = 120
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "linux-aarch64", "osx-arm64"]
+
+[tool.pixi.pypi-dependencies]
+DIRACCommon = { path = ".", editable = true }
+
+[tool.pixi.feature.testing.tasks.pytest]
+cmd = "pytest"
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+testing = { features = ["testing"], solve-group = "default" }
+
+[tool.pixi.tasks]

@@ -1,0 +1,51 @@
+name: DIRACCommon Tests
+
+on:
+  push:
+    branches:
+      - integration
+      - rel-*
+    paths:
+      - 'dirac-common/**'
+      - '.github/workflows/dirac-common.yml'
+  pull_request:
+    branches:
+      - integration
+      - rel-*
+    paths:
+      - 'dirac-common/**'
+      - '.github/workflows/dirac-common.yml'
+
+jobs:
+  test-dirac-common:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Need full history for setuptools_scm
+
+    - uses: prefix-dev/setup-pixi@v0.9.0
+      with:
+        run-install: false
+        post-cleanup: false
+
+    - name: Apply workarounds
+      run: |
+        # Workaround for https://github.com/prefix-dev/pixi/issues/3762
+        sed -i.bak 's@editable = true@editable = false@g' dirac-common/pyproject.toml
+        rm dirac-common/pyproject.toml.bak
+        # Show any changes
+        git diff
+
+    - uses: prefix-dev/setup-pixi@v0.9.0
+      with:
+        cache: false
+        environments: testing
+        manifest-path: dirac-common/pyproject.toml
+
+    - name: Run tests with pixi
+      run: |
+        cd dirac-common
+        pixi add --feature testing pytest-github-actions-annotate-failures
+        pixi run pytest

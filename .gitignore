@@ -86,3 +86,8 @@ docs/source/AdministratorGuide/CommandReference
 docs/source/UserGuide/CommandReference
 docs/_build
 docs/source/_build
+
+# pixi environments
+.pixi
+*.egg-info
+pixi.lock
