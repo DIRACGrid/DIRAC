@@ -144,7 +144,7 @@ class IAMService:
         result = S_OK({"Users": users, "Errors": errors})
         return result
 
-    def getUsersSub(self) -> dict[str, str]:
+    def getUsersSub(self, vo=None) -> dict[str, str]:
         """
         Return the mapping based on IAM sub:
         {nickname : sub}
@@ -152,6 +152,7 @@ class IAMService:
         iam_users_raw = self._getIamUserDump()
         diracx_user_section = {}
         for user_info in iam_users_raw:
+            userGroups = [grp["display"] for grp in user_info.get("groups", [])]
             # The nickname is available in the list of attributes
             # (if configured so)
             # in the form {'name': 'nickname', 'value': 'chaen'}
@@ -165,8 +166,8 @@ class IAMService:
             except (KeyError, IndexError):
                 nickname = user_info["userName"]
             sub = user_info["id"]
-
-            diracx_user_section[nickname] = sub
+            if not vo or vo in userGroups:
+                diracx_user_section[nickname] = sub
         # reorder it
         diracx_user_section = dict(sorted(diracx_user_section.items()))
 
