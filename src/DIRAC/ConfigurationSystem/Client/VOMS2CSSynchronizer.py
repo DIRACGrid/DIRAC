@@ -594,7 +594,7 @@ class VOMS2CSSynchronizer:
 
         # Try to fill in the DiracX section
         if self.useIAM:
-            iam_subs = self.iamSrv.getUsersSub()
+            iam_subs = self.iamSrv.getUsersSub(self.vo)
             diracx_vo_config = {"DiracX": {"CsSync": {"VOs": {self.vo: {"UserSubjects": iam_subs}}}}}
             iam_sub_cfg = CFG()
             iam_sub_cfg.loadFromDict(diracx_vo_config)
