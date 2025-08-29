@@ -39,7 +39,7 @@ from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_DELETE
-from DIRAC.WorkloadManagementSystem.Utilities.jobAdministration import kill_delete_jobs
+from DIRAC.WorkloadManagementSystem.DB.StatusUtils import kill_delete_jobs
 from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getJobParameters
 
 

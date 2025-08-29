@@ -37,7 +37,7 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     RIGHT_DELETE,
     RIGHT_KILL,
 )
-from DIRAC.WorkloadManagementSystem.Utilities.jobAdministration import kill_delete_jobs
+from DIRAC.WorkloadManagementSystem.DB.StatusUtils import kill_delete_jobs
 
 # # agent's name
 AGENT_NAME = "Transformation/TransformationCleaningAgent"
