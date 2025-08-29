@@ -169,6 +169,7 @@ The locally cloned source code can be installed inside your ``conda`` or ``DIRAC
 .. code-block:: bash
     :linenos:
 
+    pip install -e ./dirac-common  # Install DIRACCommon first
     pip install -e .[testing]
 
 This creates an *editable* installation meaning any changes you make will be automatically discovered whenever you next ``import DIRAC``. Additionally the ``testing`` extra causes ``pip`` to install useful dependencies such as ``pytest`` and ``pycodestyle``.

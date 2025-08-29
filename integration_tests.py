@@ -39,7 +39,9 @@ FEATURE_VARIABLES = {
     "INSTALLATION_BRANCH": "",
     "DEBUG": "Yes",
 }
-DEFAULT_MODULES = {"DIRAC": Path(__file__).parent.absolute()}
+DEFAULT_MODULES = {
+    "DIRAC": Path(__file__).parent.absolute(),
+}
 # All services that have a FutureClient, but we *explicitly* deactivate
 # (for example if we did not finish to develop it)
 DIRACX_DISABLED_SERVICES = [

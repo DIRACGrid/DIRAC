@@ -84,6 +84,8 @@ jobs:
     - name: Run tests
       run: |
         # FIXME: The unit tests currently only work with editable installs
+        # Install DIRACCommon first to ensure dependencies are resolved correctly
+        pip install -e ./dirac-common[testing]
         pip install -e .[server,testing]
         ${{ matrix.command }}
       env:
@@ -135,9 +137,10 @@ jobs:
           sed -i.bak 's@editable = true@editable = false@g' pixi.toml
           rm pixi.toml.bak
           # Add annotations to github actions
-          pixi add --no-install --pypi --feature diracx-core pytest-github-actions-annotate-failures
+          pixi add --pypi --feature diracx-core pytest-github-actions-annotate-failures
           # Add the current DIRAC clone to the pixi.toml
-          pixi add --no-install --pypi --feature diracx-core 'DIRAC @ file://'$PWD'/../DIRAC'
+          pixi add --pypi --feature diracx-core 'DIRACCommon @ file://'$PWD'/../DIRAC/dirac-common'
+          pixi add --pypi --feature diracx-core 'DIRAC @ file://'$PWD'/../DIRAC'
           # Show any changes
           git diff
       - uses: prefix-dev/setup-pixi@v0.8.11

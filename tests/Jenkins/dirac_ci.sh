@@ -135,7 +135,14 @@ installSite() {
   ln -s "${SERVERINSTALLDIR}/diracos/etc" "${SERVERINSTALLDIR}/etc"
   source diracos/diracosrc
   for module_path in "${ALTERNATIVE_MODULES[@]}"; do
-    pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}[server]"
+    # Special handling for DIRAC with DIRACCommon subdirectory
+    if [[ -d "${module_path}/dirac-common" ]]; then
+      # Install DIRACCommon first from within the DIRAC repo context to preserve git versioning
+      pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}/dirac-common"
+      pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}[server]"
+    else
+      pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}[server]"
+    fi
   done
   cd -
 

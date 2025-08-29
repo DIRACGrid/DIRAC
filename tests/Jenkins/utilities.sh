@@ -301,7 +301,14 @@ installDIRAC() {
     pip install "git+https://github.com/DIRACGrid/DIRAC.git@${INSTALLATION_BRANCH}#egg=DIRAC[client]"
   else
     for module_path in "${ALTERNATIVE_MODULES[@]}"; do
-      pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}"
+      # Special handling for DIRAC with DIRACCommon subdirectory
+      if [[ -d "${module_path}/dirac-common" ]]; then
+        # Install DIRACCommon first from within the DIRAC repo context to preserve git versioning
+        pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}/dirac-common"
+        pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}"
+      else
+        pip install ${PIP_INSTALL_EXTRA_ARGS:-} "${module_path}"
+      fi
     done
   fi
 

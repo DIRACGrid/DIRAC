@@ -108,5 +108,6 @@ dependencies:
     # It should eventually be part of DIRACGrid
     - git+https://github.com/DIRACGrid/tornado_m2crypto
     - -e .[server]
+    - -e ./dirac-common/
     # Add diracdoctools
     - -e docs/
