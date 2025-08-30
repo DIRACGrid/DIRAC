@@ -106,8 +106,6 @@ jobs:
                 git show
                 # Create the tag
                 git tag "$NEW_VERSION"
-                # Revert the pin so that future development can continue
-                git revert HEAD --no-edit
                 # Output to later steps
                 echo "create-release=true" >> $GITHUB_OUTPUT
                 echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
@@ -127,6 +125,8 @@ jobs:
         if: steps.check-tag.outputs.create-release == 'true'
         run: |
           set -e
+          # Revert the pin on DIRACCommon so that future development can continue
+          git revert HEAD --no-edit
           export NEW_VERSION=${{ steps.check-tag.outputs.new-version }}
           echo "Pushing tagged release notes to ${GITHUB_REF#refs/heads/}"
           git push "origin" "${GITHUB_REF#refs/heads/}"
