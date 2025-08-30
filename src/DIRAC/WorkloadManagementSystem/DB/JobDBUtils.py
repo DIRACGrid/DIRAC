@@ -10,27 +10,12 @@ from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK, returnValueOrRaise
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 
+# Import stateless functions from DIRACCommon for backward compatibility
+from DIRACCommon.Utils.JobDBUtils import compressJDL, extractJDL, fixJDL
+
 getDIRACPlatform = returnValueOrRaise(
     ObjectLoader().loadObject("ConfigurationSystem.Client.Helpers.Resources", "getDIRACPlatform")
 )
-
-
-def compressJDL(jdl):
-    """Return compressed JDL string."""
-    return base64.b64encode(zlib.compress(jdl.encode(), -1)).decode()
-
-
-def extractJDL(compressedJDL):
-    """Return decompressed JDL string."""
-    # the starting bracket is guaranteeed by JobManager.submitJob
-    # we need the check to be backward compatible
-    if isinstance(compressedJDL, bytes):
-        if compressedJDL.startswith(b"["):
-            return compressedJDL.decode()
-    else:
-        if compressedJDL.startswith("["):
-            return compressedJDL
-    return zlib.decompress(base64.b64decode(compressedJDL)).decode()
 
 
 def checkAndAddOwner(jdl: str, owner: str, ownerGroup: str) -> JobManifest:
@@ -47,12 +32,6 @@ def checkAndAddOwner(jdl: str, owner: str, ownerGroup: str) -> JobManifest:
     return S_OK(jobManifest)
 
 
-def fixJDL(jdl: str) -> str:
-    # 1.- insert original JDL on DB and get new JobID
-    # Fix the possible lack of the brackets in the JDL
-    if jdl.strip()[0].find("[") != 0:
-        jdl = "[" + jdl + "]"
-    return jdl
 
 
 def checkAndPrepareJob(jobID, classAdJob, classAdReq, owner, ownerGroup, jobAttrs, vo):
