@@ -1,3 +1,23 @@
+[v9.0.0a65]
+
+*Core
+
+NEW: (#8287) DIRACCommon package containing stateless utilities extracted from DIRAC. This allows external projects like DiracX to use DIRAC's S_OK/S_ERROR return values and error codes without importing DIRAC and triggering global state initialization. The package maintains full backward compatibility - all existing imports continue to work unchanged.
+
+*ConfigurationSystem
+
+CHANGE: (#8284) force successful sync of remote CS for agents
+
+*WorkloadManagementSystem
+
+FIX: (#8283) Do not import DB at the top of the utility module
+
+Please follow the template:
+
+*Integration Tests
+
+NEW: (#8281) Add diracx logs into DIRAC CI
+
 [v9.0.0a64]
 
 *WorkloadManagement
