@@ -99,8 +99,16 @@ jobs:
                 git add release.notes
                 git commit -m "docs: Add release notes for $NEW_VERSION"
                 git show
+                # If we're making a release, pin DIRACCommon to exact version
+                python .github/workflows/pin_diraccommon_version.py "$DIRACCOMMON_VERSION"
+                git add pyproject.toml
+                git commit -m "chore: Pin DIRACCommon to $DIRACCOMMON_VERSION"
+                git show
                 # Create the tag
                 git tag "$NEW_VERSION"
+                # Revert the pin so that future development can continue
+                git revert HEAD --no-edit
+                # Output to later steps
                 echo "create-release=true" >> $GITHUB_OUTPUT
                 echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
               fi
@@ -112,13 +120,8 @@ jobs:
           cd dirac-common
           python -m build
           cd ..
-      - name: Pin DIRACCommon version and build DIRAC distribution
+      - name: Build DIRAC distribution
         run: |
-          # If we're making a release, pin DIRACCommon to exact version
-          if [[ "${{ steps.check-tag.outputs.create-release }}" == "true" ]]; then
-            DIRACCOMMON_VERSION=$(cd dirac-common && python -m setuptools_scm | sed 's@Guessed Version @@g' | sed -E 's@(\.dev|\+g).+@@g')
-            python .github/workflows/pin_diraccommon_version.py "$DIRACCOMMON_VERSION"
-          fi
           python -m build
       - name: Make release on GitHub
         if: steps.check-tag.outputs.create-release == 'true'
