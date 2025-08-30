@@ -100,9 +100,9 @@ jobs:
                 git commit -m "docs: Add release notes for $NEW_VERSION"
                 git show
                 # If we're making a release, pin DIRACCommon to exact version
-                python .github/workflows/pin_diraccommon_version.py "$DIRACCOMMON_VERSION"
+                python .github/workflows/pin_diraccommon_version.py "$NEW_VERSION"
                 git add pyproject.toml
-                git commit -m "chore: Pin DIRACCommon to $DIRACCOMMON_VERSION"
+                git commit -m "chore: Pin DIRACCommon to $NEW_VERSION"
                 git show
                 # Create the tag
                 git tag "$NEW_VERSION"
