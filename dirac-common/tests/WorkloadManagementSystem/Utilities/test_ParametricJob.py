@@ -4,8 +4,11 @@
 
 import pytest
 
-from DIRACCommon.Utils.ParametricJob import generateParametricJobs, getParameterVectorLength
-from DIRACCommon.Utils.ClassAd.ClassAdLight import ClassAd
+from DIRACCommon.WorkloadManagementSystem.Utilities.ParametricJob import (
+    generateParametricJobs,
+    getParameterVectorLength,
+)
+from DIRACCommon.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 
 TEST_JDL_NO_PARAMETERS = """
 [

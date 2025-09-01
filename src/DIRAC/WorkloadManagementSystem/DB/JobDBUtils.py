@@ -11,7 +11,7 @@ from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 
 # Import stateless functions from DIRACCommon for backward compatibility
-from DIRACCommon.Utils.JobDBUtils import compressJDL, extractJDL, fixJDL
+from DIRACCommon.WorkloadManagementSystem.DB.JobDBUtils import compressJDL, extractJDL, fixJDL
 
 getDIRACPlatform = returnValueOrRaise(
     ObjectLoader().loadObject("ConfigurationSystem.Client.Helpers.Resources", "getDIRACPlatform")
@@ -30,8 +30,6 @@ def checkAndAddOwner(jdl: str, owner: str, ownerGroup: str) -> JobManifest:
         return res
 
     return S_OK(jobManifest)
-
-
 
 
 def checkAndPrepareJob(jobID, classAdJob, classAdReq, owner, ownerGroup, jobAttrs, vo):

@@ -6,7 +6,7 @@
 """
 
 # Import from DIRACCommon for backward compatibility
-from DIRACCommon.Utils.ParametricJob import (
+from DIRACCommon.WorkloadManagementSystem.Utilities.ParametricJob import (
     getParameterVectorLength,
     generateParametricJobs,
 )

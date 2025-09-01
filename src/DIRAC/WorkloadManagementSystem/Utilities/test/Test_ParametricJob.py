@@ -19,12 +19,12 @@ def test_backward_compatibility_import():
         Parameters = { "a", "b", "c" }
     ]
     """
-    
+
     # Act - Test that we can import and use the functions from DIRAC
     jobDescription = ClassAd(jdl)
     vector_result = getParameterVectorLength(jobDescription)
     generate_result = generateParametricJobs(jobDescription)
-    
+
     # Assert - Verify functions work correctly
     assert vector_result["OK"]
     assert vector_result["Value"] == 3
@@ -35,21 +35,21 @@ def test_backward_compatibility_import():
 # Import and run the comprehensive tests from DIRACCommon to avoid duplication
 # This ensures the DIRAC re-exports work with the full test suite
 try:
-    from DIRACCommon.tests.Utils.test_ParametricJob import (
+    from DIRACCommon.tests.WorkloadManagementSystem.Utilities.test_ParametricJob import (
         test_getParameterVectorLength_successful,
-        test_getParameterVectorLength_unsuccessful, 
+        test_getParameterVectorLength_unsuccessful,
         test_generateParametricJobs,
     )
-    
+
     # Re-export the DIRACCommon tests so they run as part of DIRAC test suite
     # This validates that the backward compatibility imports work correctly
     __all__ = [
-        'test_backward_compatibility_import',
-        'test_getParameterVectorLength_successful',
-        'test_getParameterVectorLength_unsuccessful',
-        'test_generateParametricJobs',
+        "test_backward_compatibility_import",
+        "test_getParameterVectorLength_successful",
+        "test_getParameterVectorLength_unsuccessful",
+        "test_generateParametricJobs",
     ]
-    
+
 except ImportError:
     # If DIRACCommon tests can't be imported, just run the backward compatibility test
-    __all__ = ['test_backward_compatibility_import']
+    __all__ = ["test_backward_compatibility_import"]

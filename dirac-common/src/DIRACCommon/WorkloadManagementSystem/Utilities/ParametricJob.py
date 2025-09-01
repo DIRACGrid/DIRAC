@@ -6,9 +6,9 @@
 """
 import re
 
-from DIRACCommon.Utils.ClassAd.ClassAdLight import ClassAd
-from DIRACCommon.Utils.ReturnValues import S_OK, S_ERROR
-from DIRACCommon.Utils.DErrno import EWMSJDL
+from DIRACCommon.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRACCommon.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRACCommon.Core.Utilities.DErrno import EWMSJDL
 
 
 def __getParameterSequence(nPar, parList=[], parStart=1, parStep=0, parFactor=1):

@@ -41,7 +41,7 @@ import importlib
 import sys
 
 # Import all the stateless parts from DIRACCommon
-from DIRACCommon.Utils.DErrno import *  # noqa: F401, F403
+from DIRACCommon.Core.Utilities.DErrno import *  # noqa: F401, F403
 
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 

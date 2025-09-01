@@ -1,1 +1,0 @@
-"""DIRACCommon Utils tests"""

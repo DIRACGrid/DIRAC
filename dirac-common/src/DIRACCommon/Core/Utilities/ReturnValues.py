@@ -14,7 +14,7 @@ from types import TracebackType
 from typing import Any, Callable, cast, Generic, Literal, overload, Type, TypeVar, Union
 from typing_extensions import TypedDict, ParamSpec, NotRequired
 
-from DIRACCommon.Utils.DErrno import strerror
+from DIRACCommon.Core.Utilities.DErrno import strerror
 
 
 T = TypeVar("T")

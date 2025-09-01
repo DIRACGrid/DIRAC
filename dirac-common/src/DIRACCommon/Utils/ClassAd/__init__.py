@@ -1,1 +1,0 @@
-"""ClassAd utilities for DIRACCommon"""
