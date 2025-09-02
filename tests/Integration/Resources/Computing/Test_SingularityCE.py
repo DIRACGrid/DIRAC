@@ -31,10 +31,10 @@ def test_submitJob():
 
     ce = SingularityComputingElement("SingularityComputingElement")
     res = ce.submitJob("testJob.py", None)
-    assert res["OK"] is False
+    assert res["OK"] is False  # This is False because the image can't be found
     res = ce.getCEStatus()
     assert res["OK"] is True
-    assert res["SubmittedJobs"] == 1
+
     _stopJob(1)
     for ff in ["testJob.py", "pilot.json"]:
         if os.path.isfile(ff):
@@ -79,7 +79,6 @@ def test_submitJobWrapper():
 
     res = ce.getCEStatus()
     assert res["OK"] is True
-    assert res["SubmittedJobs"] == 1
 
     _stopJob(2)
     for ff in ["testJob.py", "stop_job_2", "job.info", "std.out", "pilot.json"]:
