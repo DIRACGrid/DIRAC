@@ -12,7 +12,7 @@ from DIRACCommon.Core.Utilities.StateMachine import *  # noqa: F401, F403
 from DIRAC import gLogger
 
 
-class StateMachine(StateMachine):  # noqa: F405
+class StateMachine(StateMachine):  # noqa: F405 pylint: disable=function-redefined
     """Backward compatibility wrapper - moved to DIRACCommon"""
 
     def setState(self, candidateState, noWarn=False):

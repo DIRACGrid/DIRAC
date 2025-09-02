@@ -19,9 +19,6 @@ def jdl_monkey_business(monkeypatch):
     monkeypatch.setattr("DIRAC.Core.Base.API.getSites", lambda: S_OK(["LCG.IN2P3.fr"]))
     monkeypatch.setattr("DIRAC.WorkloadManagementSystem.Utilities.JobModel.getSites", lambda: S_OK(["LCG.IN2P3.fr"]))
     monkeypatch.setattr("DIRAC.Interfaces.API.Job.getDIRACPlatforms", lambda: S_OK("x86_64-slc6-gcc49-opt"))
-    monkeypatch.setattr(
-        "DIRAC.WorkloadManagementSystem.Utilities.JobModel.getDIRACPlatforms", lambda: S_OK("x86_64-slc6-gcc49-opt")
-    )
     yield
 
 

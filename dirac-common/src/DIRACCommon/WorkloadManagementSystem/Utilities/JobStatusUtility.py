@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from DIRACCommon.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRACCommon.Core.Utilities.ReturnValues import S_OK
 from DIRACCommon.Core.Utilities.TimeUtilities import toEpoch, fromString
 from DIRACCommon.WorkloadManagementSystem.Client.JobStatus import RUNNING, JOB_FINAL_STATES, JobsStateMachine
 

@@ -43,7 +43,7 @@ def timeThis(method, *, logger_info=None):
             return result
         te = time.time()
 
-        pre = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC ")
+        pre = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S UTC ")
 
         try:
             pre += args[0].log.getName() + "/" + args[0].log.getSubName() + "   TIME: " + args[0].transString
