@@ -1,6 +1,12 @@
 import pytest
 
-from DIRACCommon.Utils.ReturnValues import S_OK, S_ERROR, SErrorException, convertToReturnValue, returnValueOrRaise
+from DIRACCommon.Core.Utilities.ReturnValues import (
+    S_OK,
+    S_ERROR,
+    SErrorException,
+    convertToReturnValue,
+    returnValueOrRaise,
+)
 
 
 def test_Ok():

@@ -8,8 +8,11 @@ This package solves the circular dependency issue where DiracX needs DIRAC utili
 
 ## Contents
 
-- `DIRACCommon.Utils.ReturnValues`: DIRAC's S_OK/S_ERROR return value system
-- `DIRACCommon.Utils.DErrno`: DIRAC error codes and utilities
+- `DIRACCommon.Core.Utilities.ReturnValues`: DIRAC's S_OK/S_ERROR return value system
+- `DIRACCommon.Core.Utilities.DErrno`: DIRAC error codes and utilities
+- `DIRACCommon.Core.Utilities.ClassAd.ClassAdLight`: JDL parsing utilities
+- `DIRACCommon.WorkloadManagementSystem.DB.JobDBUtils`: Job database utilities
+- `DIRACCommon.WorkloadManagementSystem.Utilities.ParametricJob`: Parametric job utilities
 
 ## Installation
 
@@ -20,7 +23,7 @@ pip install DIRACCommon
 ## Usage
 
 ```python
-from DIRACCommon.Utils.ReturnValues import S_OK, S_ERROR
+from DIRACCommon.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 def my_function():
     if success:

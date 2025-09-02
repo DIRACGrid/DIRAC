@@ -1,7 +1,7 @@
 """Tests for DErrno module"""
 
 import pytest
-from DIRACCommon.Utils import DErrno
+from DIRACCommon.Core.Utilities import DErrno
 
 
 def test_strerror():
