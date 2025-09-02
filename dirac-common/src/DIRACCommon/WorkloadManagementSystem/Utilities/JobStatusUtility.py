@@ -6,6 +6,8 @@ from datetime import datetime
 from typing import Any
 
 from DIRACCommon.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRACCommon.Core.Utilities.TimeUtilities import toEpoch, fromString
+from DIRACCommon.WorkloadManagementSystem.Client.JobStatus import RUNNING, JOB_FINAL_STATES, JobsStateMachine
 
 
 def getStartAndEndTime(startTime, endTime, updateTimes, timeStamps, statusDict):
@@ -19,7 +21,7 @@ def getStartAndEndTime(startTime, endTime, updateTimes, timeStamps, statusDict):
     :return: tuple of (newStartTime, newEndTime)
     """
     newStat = ""
-    firstUpdate = TimeUtilities.toEpoch(TimeUtilities.fromString(updateTimes[0]))
+    firstUpdate = toEpoch(fromString(updateTimes[0]))
     for ts, st in timeStamps:
         if firstUpdate >= ts:
             newStat = st
@@ -28,10 +30,10 @@ def getStartAndEndTime(startTime, endTime, updateTimes, timeStamps, statusDict):
         sDict = statusDict[updTime]
         newStat = sDict.get("Status", newStat)
 
-        if not startTime and newStat == JobStatus.RUNNING:
+        if not startTime and newStat == RUNNING:
             # Pick up the start date when the job starts running if not existing
             startTime = updTime
-        elif not endTime and newStat in JobStatus.JOB_FINAL_STATES:
+        elif not endTime and newStat in JOB_FINAL_STATES:
             # Pick up the end time when the job is in a final status
             endTime = updTime
 
@@ -68,7 +70,7 @@ def getNewStatus(
         status = sDict.get("Status", currentStatus)
         # evaluate the state machine if the status is changing
         if not force and status != currentStatus:
-            res = JobStatus.JobsStateMachine(currentStatus).getNextState(status)
+            res = JobsStateMachine(currentStatus).getNextState(status)
             if not res["OK"]:
                 return res
             newStat = res["Value"]
