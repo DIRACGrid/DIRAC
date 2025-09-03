@@ -25,7 +25,7 @@ while True:
   if os.path.isfile(stopFile):
     os.remove(stopFile)
     break
-  if (time.time() - start) > 30:
+  if (time.time() - start) > 5:
     break
 print("End job", jobNumber, time.time())
 """
