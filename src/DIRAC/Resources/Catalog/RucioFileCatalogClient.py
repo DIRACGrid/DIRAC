@@ -151,7 +151,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
             self.authHost = options.get("AuthHost", None)
             self.caCertPath = Locations.getCAsLocation()
             try:
-                sLog.info(f"Logging in with a proxy located at: {self.proxyPath}")
+                sLog.debug(f"Logging in with a proxy located at: {self.proxyPath}")
                 sLog.debug("account: ", self.username)
                 sLog.debug("rucio host: ", self.rucioHost)
                 sLog.debug("auth  host: ", self.authHost)
