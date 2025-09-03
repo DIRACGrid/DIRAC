@@ -178,6 +178,7 @@ def jobID():
     shutil.rmtree(jobID)
 
 
+@pytest.mark.slow
 def test_submitJobWrapper(mocker, jobID):
     """Test JobAgent._submitJobWrapper()"""
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")

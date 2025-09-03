@@ -262,6 +262,7 @@ def test_executeJob_wholeNode8(createAndDelete):
             assert "Not enough processors" in submissionResult["Message"]
 
 
+@pytest.mark.slow
 def test_executeJob_submitAndStop(createAndDelete):
     time.sleep(0.5)
 

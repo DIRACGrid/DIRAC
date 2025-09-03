@@ -72,6 +72,7 @@ def extraOptions():
     os.remove(extraOptions)
 
 
+@pytest.mark.slow
 def test_createAndExecuteJobWrapperTemplate_success(extraOptions):
     """Test the creation of a classical job wrapper and its execution:
     There is an extra option cfg file to be passed to the job wrapper.
@@ -144,6 +145,7 @@ def test_createAndExecuteJobWrapperTemplate_success(extraOptions):
     shutil.rmtree(os.path.join(os.getcwd(), "job"))
 
 
+@pytest.mark.slow
 def test_createAndExecuteJobWrapperTemplate_missingExtraOptions():
     """Test the creation of a classical job wrapper and its execution:
     There is no extra options to be passed to the job wrapper.
@@ -205,6 +207,7 @@ def test_createAndExecuteJobWrapperTemplate_missingExtraOptions():
     shutil.rmtree(os.path.join(os.getcwd(), "job"))
 
 
+@pytest.mark.slow
 def test_createAndExecuteRelocatedJobWrapperTemplate_success(extraOptions):
     """Test the creation of a relocated job wrapper and its execution:
     This is generally used when containers are involved (SingularityCE).
@@ -325,6 +328,7 @@ def test_createAndExecuteRelocatedJobWrapperTemplate_success(extraOptions):
     shutil.rmtree(wrapperPath)
 
 
+@pytest.mark.slow
 def test_createAndExecuteJobWrapperOfflineTemplate_success(extraOptions):
     """Test the creation of an offline job wrapper and its execution:
     This is generally used when pre/post processing operations are executed locally,

@@ -5,6 +5,8 @@ import os
 import copy
 import shutil
 
+import pytest
+
 from unittest.mock import MagicMock as Mock
 
 from DIRAC import gLogger
@@ -742,6 +744,7 @@ class FailoverRequestSuccess(ModulesTestCase):
 class ScriptSuccess(ModulesTestCase):
     #################################################
 
+    @pytest.mark.slow
     def test_execute(self):
         self.script.jobType = "merge"
         self.script.stepInputData = ["foo", "bar"]
@@ -770,6 +773,7 @@ class ScriptSuccess(ModulesTestCase):
 class ScriptUnicode(ModulesTestCase):
     #################################################
 
+    @pytest.mark.slow
     def test_execute(self):
         self.script.jobType = "merge"
         self.script.stepInputData = ["foo", "bar"]
@@ -799,6 +803,7 @@ class ScriptUnicode(ModulesTestCase):
 class ScriptFailure(ModulesTestCase):
     #################################################
 
+    @pytest.mark.slow
     def test_execute(self):
         self.script.jobType = "merge"
         self.script.stepInputData = ["foo", "bar"]

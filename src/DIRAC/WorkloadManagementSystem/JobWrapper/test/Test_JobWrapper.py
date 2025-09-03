@@ -343,6 +343,7 @@ def test_processQuickExecutionNoWatchdog(mocker):
     assert not result["Value"]["watchdogStats"]
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("expect_failure", [True, False])
 def test_processSubprocessFailureNoPid(mocker, monkeypatch, expect_failure):
     """Test the process method of the JobWrapper class: the subprocess fails and no PID is returned.

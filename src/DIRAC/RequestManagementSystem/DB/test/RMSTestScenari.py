@@ -6,6 +6,7 @@ integration tests (Test_ReqDB.py)
 # pylint: disable=invalid-name,wrong-import-position
 import time
 
+import pytest
 
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -42,6 +43,7 @@ def test_stress(reqDB):
         assert delete["OK"], delete
 
 
+@pytest.mark.slow
 def test_stressBulk(reqDB):
     """stress test bulk"""
 
