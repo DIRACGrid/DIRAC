@@ -260,6 +260,7 @@ def test__checkMatcherInfo(mocker, matcherInfo, matcherParams, expectedResult):
 #############################################################################
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "mockGCReply, mockPMReply, expected",
     [
@@ -308,6 +309,7 @@ def test__setupProxy(mocker, mockGCReply, mockPMReply, expected):
         assert result["Message"] == expected["Message"]
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     "mockGCReply, mockPMReply, expected",
     [

@@ -25,7 +25,7 @@ while True:
   if os.path.isfile(stopFile):
     os.remove(stopFile)
     break
-  if (time.time() - start) > 30:
+  if (time.time() - start) > 5:
     break
 print("End job", jobNumber, time.time())
 """
@@ -262,6 +262,7 @@ def test_executeJob_wholeNode8(createAndDelete):
             assert "Not enough processors" in submissionResult["Message"]
 
 
+@pytest.mark.slow
 def test_executeJob_submitAndStop(createAndDelete):
     time.sleep(0.5)
 
