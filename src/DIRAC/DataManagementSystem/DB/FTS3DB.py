@@ -16,6 +16,7 @@ from sqlalchemy import (
     Enum,
     Float,
     ForeignKey,
+    Index,
     Integer,
     MetaData,
     SmallInteger,
@@ -85,6 +86,7 @@ fts3JobTable = Table(
     Column("error", String(2048)),
     Column("status", Enum(*FTS3Job.ALL_STATES), server_default=FTS3Job.INIT_STATE, index=True),
     Column("assignment", String(255), server_default=None),
+    Index("idx_jobs_lastupdate_assignment", "lastUpdate", "assignment"),
     mysql_engine="InnoDB",
 )
 
@@ -110,6 +112,7 @@ fts3OperationTable = Table(
     Column("error", String(1024)),
     Column("type", String(255)),
     Column("assignment", String(255), server_default=None),
+    Index("idx_operations_lastupdate_assignment", "lastUpdate", "assignment"),
     mysql_engine="InnoDB",
 )
 
