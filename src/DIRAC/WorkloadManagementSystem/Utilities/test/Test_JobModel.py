@@ -175,11 +175,7 @@ def test_logLevelValidator_invalid():
 
 def test_platformValidator_valid():
     """Test the platform validator with valid input."""
-    with patch(
-        "DIRAC.WorkloadManagementSystem.Utilities.JobModel.getDIRACPlatforms",
-        return_value=S_OK(["x86_64-slc6-gcc62-opt"]),
-    ):
-        job = BaseJobDescriptionModel(executable=EXECUTABLE, platform="x86_64-slc6-gcc62-opt")
+    job = BaseJobDescriptionModel(executable=EXECUTABLE, platform="x86_64-slc6-gcc62-opt")
     assert job.platform == "x86_64-slc6-gcc62-opt"
 
 

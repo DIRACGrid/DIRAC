@@ -9,6 +9,7 @@ from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRACCommon.WorkloadManagementSystem.Utilities.JobStatusUtility import getStartAndEndTime, getNewStatus
 
 if TYPE_CHECKING:
     from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -180,66 +181,3 @@ class JobStatusUtility:
                 return result
 
         return S_OK((attrNames, attrValues))
-
-
-def getStartAndEndTime(startTime, endTime, updateTimes, timeStamps, statusDict):
-    newStat = ""
-    firstUpdate = TimeUtilities.toEpoch(TimeUtilities.fromString(updateTimes[0]))
-    for ts, st in timeStamps:
-        if firstUpdate >= ts:
-            newStat = st
-    # Pick up start and end times from all updates
-    for updTime in updateTimes:
-        sDict = statusDict[updTime]
-        newStat = sDict.get("Status", newStat)
-
-        if not startTime and newStat == JobStatus.RUNNING:
-            # Pick up the start date when the job starts running if not existing
-            startTime = updTime
-        elif not endTime and newStat in JobStatus.JOB_FINAL_STATES:
-            # Pick up the end time when the job is in a final status
-            endTime = updTime
-
-    return startTime, endTime
-
-
-def getNewStatus(
-    jobID: int,
-    updateTimes: list[datetime],
-    lastTime: datetime,
-    statusDict: dict[datetime, Any],
-    currentStatus,
-    force: bool,
-    log,
-):
-    status = ""
-    minor = ""
-    application = ""
-    # Get the last status values looping on the most recent upupdateTimes in chronological order
-    for updTime in [dt for dt in updateTimes if dt >= lastTime]:
-        sDict = statusDict[updTime]
-        log.debug(f"\tTime {updTime} - Statuses {str(sDict)}")
-        status = sDict.get("Status", currentStatus)
-        # evaluate the state machine if the status is changing
-        if not force and status != currentStatus:
-            res = JobStatus.JobsStateMachine(currentStatus).getNextState(status)
-            if not res["OK"]:
-                return res
-            newStat = res["Value"]
-            # If the JobsStateMachine does not accept the candidate, don't update
-            if newStat != status:
-                # keeping the same status
-                log.error(
-                    f"Job Status Error: {jobID} can't move from {currentStatus} to {status}: using {newStat}",
-                )
-                status = newStat
-                sDict["Status"] = newStat
-                # Change the source to indicate this is not what was requested
-                source = sDict.get("Source", "")
-                sDict["Source"] = source + "(SM)"
-            # at this stage status == newStat. Set currentStatus to this new status
-            currentStatus = newStat
-
-        minor = sDict.get("MinorStatus", minor)
-        application = sDict.get("ApplicationStatus", application)
-    return S_OK((status, minor, application))

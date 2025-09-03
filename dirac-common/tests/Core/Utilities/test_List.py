@@ -5,19 +5,19 @@
 
 """.. module:: ListTestCase
 
-Test cases for DIRAC.Core.Utilities.List module.
+Test cases for DIRACCommon.Core.Utilities.List module.
 
 """
 import unittest
 
 # sut
-from DIRAC.Core.Utilities import List
+from DIRACCommon.Core.Utilities import List
 
 
 ########################################################################
 class ListTestCase(unittest.TestCase):
     """py:class ListTestCase
-    Test case for DIRAC.Core.Utilities.List module.
+    Test case for DIRACCommon.Core.Utilities.List module.
     """
 
     def testUniqueElements(self):

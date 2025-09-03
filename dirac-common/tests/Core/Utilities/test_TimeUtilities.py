@@ -1,10 +1,9 @@
-""" Test class for plugins
-"""
+"""Test class for TimeUtilities"""
 # imports
 import unittest
 
 # sut
-from DIRAC.Core.Utilities.TimeUtilities import timeThis
+from DIRACCommon.Core.Utilities.TimeUtilities import timeThis
 
 
 class logClass:
@@ -48,7 +47,7 @@ class myEvenBetterClass:
 
 
 class TimeTestCase(unittest.TestCase):
-    """Base class for the Agents test cases"""
+    """Base class for the TimeUtilities test cases"""
 
     def setUp(self):
         pass

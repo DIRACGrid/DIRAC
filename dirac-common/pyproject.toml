@@ -21,6 +21,8 @@ classifiers = [
 ]
 dependencies = [
     "typing-extensions>=4.0.0",
+    "diraccfg",
+    "pydantic>=2.0.0",
 ]
 dynamic = ["version"]
 
