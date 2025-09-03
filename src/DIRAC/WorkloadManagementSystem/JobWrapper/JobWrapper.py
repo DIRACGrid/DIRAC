@@ -55,6 +55,8 @@ from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateU
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
 
+CHILD_PID_POLL_INTERVALS = list(range(5, 40, 5))
+
 
 class JobWrapper:
     """The only user of the JobWrapper is the JobWrapperTemplate"""
@@ -430,14 +432,14 @@ class JobWrapper:
             )
             exeThread.start()
             payloadPID = None
-            for seconds in range(5, 40, 5):
+            for seconds in CHILD_PID_POLL_INTERVALS:
                 time.sleep(seconds)
                 payloadPID = spObject.getChildPID()
                 if payloadPID:
                     self.__setJobParam("PayloadPID", payloadPID)
                     break
             if not payloadPID:
-                return S_ERROR("Payload process could not start after 140 seconds")
+                return S_ERROR(f"Payload process could not start after {sum(CHILD_PID_POLL_INTERVALS)} seconds")
 
             watchdog = Watchdog(
                 pid=self.currentPID,

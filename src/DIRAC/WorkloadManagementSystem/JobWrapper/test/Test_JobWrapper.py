@@ -343,25 +343,40 @@ def test_processQuickExecutionNoWatchdog(mocker):
     assert not result["Value"]["watchdogStats"]
 
 
-@pytest.mark.slow
-def test_processSubprocessFailureNoPid(mocker):
-    """Test the process method of the JobWrapper class: the subprocess fails and no PID is returned."""
+@pytest.mark.parametrize("expect_failure", [True, False])
+def test_processSubprocessFailureNoPid(mocker, monkeypatch, expect_failure):
+    """Test the process method of the JobWrapper class: the subprocess fails and no PID is returned.
+
+    expect_failure is used to ensure that the JobWrapper is functioning correctly even with the other patching
+    that is applied in the test (e.g. CHILD_PID_POLL_INTERVALS).
+    """
     # Test failure in starting the payload process
     jw = JobWrapper()
     jw.jobArgs = {}
 
     mocker.patch.object(jw, "_JobWrapper__report")
     mocker.patch.object(jw, "_JobWrapper__setJobParam")
+    monkeypatch.setattr(
+        "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.CHILD_PID_POLL_INTERVALS", [0.1, 0.2, 0.3, 0.4, 0.5]
+    )
+
     mock_exeThread = mocker.Mock()
     mock_exeThread.start.side_effect = lambda: time.sleep(0.1)
-    mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.ExecutionThread", return_value=mock_exeThread)
+    if expect_failure:
+        mocker.patch(
+            "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.ExecutionThread", return_value=mock_exeThread
+        )
 
     with tempfile.NamedTemporaryFile(delete=True) as std_out, tempfile.NamedTemporaryFile(delete=True) as std_err:
         jw.outputFile = std_out.name
         jw.errorFile = std_err.name
         result = jw.process(command="mock_command", env={})
-    assert not result["OK"]
-    assert "Payload process could not start after 140 seconds" in result["Message"]
+
+    if expect_failure:
+        assert not result["OK"]
+        assert "Payload process could not start after 1.5 seconds" in result["Message"]
+    else:
+        assert result["OK"]
 
 
 # -------------------------------------------------------------------------------------------------
