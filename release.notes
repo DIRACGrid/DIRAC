@@ -1,3 +1,46 @@
+[v9.0.0a67]
+
+*DataManagementSystem
+
+NEW: (#8293) Add composite indices on (lastUpdate, assignment) for both Jobs and Operations tables in FTS3DB
+
+*Test
+
+CHANGE: (#8292) Speed up CI/pytest runtime
+
+*Core
+
+CHANGE: (#8290) Move TimeUtilities to DIRACCommon
+CHANGE: (#8290) Move StateMachine to DIRACCommon
+CHANGE: (#8290) Move JDL utilities to DIRACCommon
+CHANGE: (#8290) Move List utilities to DIRACCommon
+CHANGE: (#8289) Move ClassAdLight to DIRACCommon
+
+*WorkloadManagement
+
+CHANGE: (#8290) Move JobStatus to DIRACCommon
+CHANGE: (#8290) Move JobsStateMachine to DIRACCommon
+CHANGE: (#8290) Move JobStatusUtility to DIRACCommon
+CHANGE: (#8290) Move JobManifest to DIRACCommon
+CHANGE: (#8290) Move JobDBUtils to DIRACCommon
+FIX: (#8290) Correctly update JDL defaults when CS changes
+
+*Workload Management
+
+CHANGE: (#8289) Move JobDBUtilsto DIRACCommon
+CHANGE: (#8289) Move ParametricJob to DIRACCommon
+
+*Configuration/Core
+
+NEW: (#8288) Included a VO (using top level groups as VO) option when getting user subjects from IAM. Behaviour with single VO IAM should be unchanged.
+
+Address GHSA-mm38-q5fj-99j4
+
+*RucioFileCatalogClient
+
+FIX
+Remove some potentially Sensitive Information (DN, account)
+
 [v9.0.0a66]
 [v9.0.0a65]
 
