@@ -125,8 +125,6 @@ jobs:
         if: steps.check-tag.outputs.create-release == 'true'
         run: |
           set -e
-          # Revert the pin on DIRACCommon so that future development can continue
-          git revert HEAD --no-edit
           export NEW_VERSION=${{ steps.check-tag.outputs.new-version }}
           echo "Pushing tagged release notes to ${GITHUB_REF#refs/heads/}"
           git push "origin" "${GITHUB_REF#refs/heads/}"
@@ -137,6 +135,9 @@ jobs:
             --version="${NEW_VERSION}" \
             --rev="$(git rev-parse HEAD)" \
             --release-notes-fn="release.notes.new"
+          # Revert the pin on DIRACCommon so that future development can continue
+          git revert HEAD --no-edit
+          git push
       - name: Publish DIRACCommon to PyPI
         if: steps.check-tag.outputs.create-release == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
