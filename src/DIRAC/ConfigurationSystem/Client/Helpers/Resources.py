@@ -1,11 +1,14 @@
 """ Helper for the CS Resources section
 """
-import re
 from urllib import parse
 
 from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.Core.Utilities.List import fromChar, uniqueElements
+from DIRACCommon.ConfigurationSystem.Client.Helpers.Resources import (
+    getDIRACPlatform as _getDIRACPlatform,
+    _platformSortKey,
+)
 
 gBaseResourcesSection = "/Resources"
 
@@ -328,8 +331,8 @@ def getCompatiblePlatforms(originalPlatforms):
     if not (result["OK"] and result["Value"]):
         return S_ERROR("OS compatibility info not found")
 
-    platformsDict = {k: v.replace(" ", "").split(",") for k, v in result["Value"].items()}  # can be an iterator
-    for k, v in platformsDict.items():  # can be an iterator
+    platformsDict = {k: v.replace(" ", "").split(",") for k, v in result["Value"].items()}
+    for k, v in platformsDict.items():
         if k not in v:
             v.append(k)
 
@@ -355,7 +358,6 @@ def getDIRACPlatform(OSList):
     :param list OSList: list of platforms defined by resource providers
     :return: a list of DIRAC platforms that can be specified in job descriptions
     """
-
     # For backward compatibility allow a single string argument
     osList = OSList
     if isinstance(OSList, str):
@@ -365,31 +367,12 @@ def getDIRACPlatform(OSList):
     if not (result["OK"] and result["Value"]):
         return S_ERROR("OS compatibility info not found")
 
-    platformsDict = {k: v.replace(" ", "").split(",") for k, v in result["Value"].items()}  # can be an iterator
-    for k, v in platformsDict.items():  # can be an iterator
+    platformsDict = {k: set(v.replace(" ", "").split(",")) for k, v in result["Value"].items()}
+    for k, v in platformsDict.items():
         if k not in v:
-            v.append(k)
+            v.add(k)
 
-    # making an OS -> platforms dict
-    os2PlatformDict = dict()
-    for platform, osItems in platformsDict.items():  # can be an iterator
-        for osItem in osItems:
-            if os2PlatformDict.get(osItem):
-                os2PlatformDict[osItem].append(platform)
-            else:
-                os2PlatformDict[osItem] = [platform]
-
-    platforms = []
-    for os in osList:
-        if os in os2PlatformDict:
-            platforms += os2PlatformDict[os]
-
-    if not platforms:
-        return S_ERROR(f"No compatible DIRAC platform found for {','.join(OSList)}")
-
-    platforms.sort(key=_platformSortKey, reverse=True)
-
-    return S_OK(platforms)
+    return _getDIRACPlatform(osList, platformsDict)
 
 
 def getDIRACPlatforms():
@@ -451,7 +434,7 @@ def getInfoAboutProviders(of=None, providerName=None, option="", section=""):
             result = gConfig.getConfigurationTree(relPath)
             if not result["OK"]:
                 return result
-            for key, value in result["Value"].items():  # can be an iterator
+            for key, value in result["Value"].items():
                 if value:
                     resDict[key.replace(relPath, "")] = value
             return S_OK(resDict)
@@ -459,18 +442,3 @@ def getInfoAboutProviders(of=None, providerName=None, option="", section=""):
             return gConfig.getSections(f"{gBaseResourcesSection}/{of}Providers/{providerName}/{section}/")
     else:
         return S_OK(gConfig.getValue(f"{gBaseResourcesSection}/{of}Providers/{providerName}/{section}/{option}"))
-
-
-def _platformSortKey(version: str) -> list[str]:
-    # Loosely based on distutils.version.LooseVersion
-    parts = []
-    for part in re.split(r"(\d+|[a-z]+|\.| -)", version.lower()):
-        if not part or part == ".":
-            continue
-        if part[:1] in "0123456789":
-            part = part.zfill(8)
-        else:
-            while parts and parts[-1] == "00000000":
-                parts.pop()
-        parts.append(part)
-    return parts

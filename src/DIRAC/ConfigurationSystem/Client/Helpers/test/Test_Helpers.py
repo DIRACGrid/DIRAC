@@ -9,7 +9,6 @@ from DIRAC.ConfigurationSystem.Client import ConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import (
     getDIRACPlatform,
     getCompatiblePlatforms,
-    _platformSortKey,
     getQueue,
 )
 
@@ -75,21 +74,6 @@ def test_getDIRACPlatform(mocker, mockGCReplyInput, requested, expectedRes, expe
     assert res["OK"] is expectedRes, res
     if expectedRes:
         assert set(res["Value"]) == set(expectedValue), res["Value"]
-
-
-@pytest.mark.parametrize(
-    "string,expected",
-    [
-        ("Darwin_arm64_12.4", ["darwin", "_", "arm", "64", "_", "12", "4"]),
-        ("Linux_x86_64_glibc-2.17", ["linux", "_", "x", "86", "_", "64", "_", "glibc", "-", "2", "17"]),
-        ("Linux_aarch64_glibc-2.28", ["linux", "_", "aarch", "64", "_", "glibc", "-", "2", "28"]),
-    ],
-)
-def test_platformSortKey(string, expected):
-    actual = _platformSortKey(string)
-    for a, e in zip_longest(actual, expected):
-        # Numbers are padded with zeros so string comparison works
-        assert a.lstrip("0") == e
 
 
 @pytest.mark.parametrize(
