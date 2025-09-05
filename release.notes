@@ -1,3 +1,9 @@
+[v9.0.0a68]
+
+*ConfigurationSystem
+
+CHANGE: (#8295) Move getDIRACPlatform to DIRACCommon
+
 [v9.0.0a67]
 
 *DataManagementSystem
