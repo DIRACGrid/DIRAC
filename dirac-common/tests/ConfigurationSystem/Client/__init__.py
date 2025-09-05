@@ -1,0 +1,3 @@
+"""
+DIRACCommon.ConfigurationSystem.Client tests
+"""
