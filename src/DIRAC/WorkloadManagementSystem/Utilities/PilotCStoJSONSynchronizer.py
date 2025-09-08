@@ -56,6 +56,8 @@ def exclude_master_cs_aliases(urls: list[str], master_cs_url: str) -> list[str]:
         - The comparison is based on IP addresses, not hostnames.
     """
     master_cs_hostname = urlparse(master_cs_url).hostname
+    if not master_cs_hostname:
+        return urls
 
     # Resolve IP addresses for the MasterCS hostname
     try:
