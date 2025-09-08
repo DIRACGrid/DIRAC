@@ -1,4 +1,4 @@
-""" This agent syncs CS and pilot files to a web server of your choice
+"""This agent syncs CS and pilot files to a web server of your choice
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN PilotSyncAgent
@@ -7,6 +7,7 @@
   :caption: PilotsSyncAgent options
 
 """
+
 import os
 import json
 import shutil
@@ -38,8 +39,8 @@ class PilotSyncAgent(AgentModule):
         self.workingDirectory = self.am_getOption("WorkDirectory")
         self.saveDir = self.am_getOption("SaveDirectory", self.saveDir)
         self.uploadLocations = self.am_getOption("UploadLocations", self.uploadLocations)
-        includeMasterCS = self.am_getOption("IncludeMasterCS", self.includeMasterCS)
-        if isinstance(includeMasterCS, str) and includeMasterCS.lower() in ["n", "no", "false"]:
+        self.includeMasterCS = self.am_getOption("IncludeMasterCS", self.includeMasterCS)
+        if isinstance(self.includeMasterCS, str) and self.includeMasterCS.lower() in ["n", "no", "false"]:
             self.includeMasterCS = False
 
         self.certAndKeyLocation = getHostCertificateAndKeyLocation()

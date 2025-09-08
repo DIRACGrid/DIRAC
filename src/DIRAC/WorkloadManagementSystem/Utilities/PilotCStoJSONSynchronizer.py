@@ -1,9 +1,10 @@
-""" CStoJSONSynchronizer
-  Module that keeps the pilot parameters file synchronized with the information
-  in the Operations/Pilot section of the CS. If there are additions in the CS,
-  these are incorporated to the file.
-  The module uploads to a web server the latest version of the pilot scripts.
+"""CStoJSONSynchronizer
+Module that keeps the pilot parameters file synchronized with the information
+in the Operations/Pilot section of the CS. If there are additions in the CS,
+these are incorporated to the file.
+The module uploads to a web server the latest version of the pilot scripts.
 """
+
 import datetime
 import glob
 import os
@@ -18,6 +19,67 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.Core.Utilities.ReturnValues import DOKReturnType, DReturnType
+
+import socket
+from urllib.parse import urlparse
+
+
+def exclude_master_cs_aliases(urls: list[str], master_cs_url: str) -> list[str]:
+    """
+    Excludes URLs that are DNS aliases of the given MasterCS server URL.
+
+    This function resolves the IP addresses of the MasterCS server and each URL in the input list.
+    It returns a new list containing only those URLs whose hostnames do not resolve to any of the
+    MasterCS server's IP addresses, effectively excluding all DNS aliases of the MasterCS server.
+
+    Args:
+        urls (list[str]): A list of URLs to filter. Each URL should be a string in a valid URL format.
+        master_cs_url (str): The reference URL (e.g., MasterCS server URL) whose DNS aliases are to be excluded.
+
+    Returns:
+        list[str]: A new list of URLs with all aliases of the MasterCS server removed.
+                  If the MasterCS hostname cannot be resolved, the original list is returned unchanged.
+
+    Example:
+        >>> urls = [
+        ...     'dips://lbvobox303.cern.ch:9135/Configuration/Server',
+        ...     'dips://ccwlcglhcb02.in2p3.fr:9135/Configuration/Server',
+        ...     'dips://lbvobox302.cern.ch:9135/Configuration/Server',
+        ... ]
+        >>> master_cs_url = "dips://mastercs.cern.ch:9135/Configuration/Server"
+        >>> exclude_master_cs_aliases(urls, master_cs_url)
+        ['dips://ccwlcglhcb02.in2p3.fr:9135/Configuration/Server']
+
+    Notes:
+        - If the MasterCS hostname cannot be resolved, the function returns the original list.
+        - If a hostname in the input list cannot be resolved, it is included in the result.
+        - The comparison is based on IP addresses, not hostnames.
+    """
+    master_cs_hostname = urlparse(master_cs_url).hostname
+    if not master_cs_hostname:
+        return urls
+
+    # Resolve IP addresses for the MasterCS hostname
+    try:
+        master_cs_ips = set(socket.gethostbyname_ex(master_cs_hostname)[2])
+    except socket.gaierror:
+        return urls
+
+    # Function to get IPs for a hostname
+    def get_ips(hostname):
+        try:
+            return set(socket.gethostbyname_ex(hostname)[2])
+        except socket.gaierror:
+            return set()
+
+    filtered_urls = []
+    for url in urls:
+        hostname = urlparse(url).hostname
+        ips = get_ips(hostname)
+        if not ips & master_cs_ips:
+            filtered_urls.append(url)
+
+    return filtered_urls
 
 
 class PilotCStoJSONSynchronizer:
@@ -151,7 +213,8 @@ class PilotCStoJSONSynchronizer:
         configurationServers = gConfig.getServersList()
         if not includeMasterCS:
             masterCS = gConfigurationData.getMasterServer()
-            configurationServers = list(set(configurationServers) - {masterCS})
+            configurationServers = exclude_master_cs_aliases(configurationServers, masterCS)
+
         pilotDict["ConfigurationServers"] = configurationServers
 
         self.log.debug("Got pilotDict", str(pilotDict))
