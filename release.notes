@@ -1,3 +1,10 @@
+[v9.0.0a69]
+
+*WorkloadManagementSystem
+
+CHANGE: (#8297) Remove the master CS aliases from the list of servers when generating the pilot.json
+FIX: (#8296) removed MatcherServiceTime JobParameters
+
 [v9.0.0a68]
 
 *ConfigurationSystem
