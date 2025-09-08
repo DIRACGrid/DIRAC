@@ -236,7 +236,6 @@ class JobAgent(AgentModule):
         jobGroup = matcherInfo["Group"]
         owner = matcherInfo["Owner"]
         ceDict = matcherInfo["CEDict"]
-        matchTime = matcherInfo["matchTime"]
 
         optimizerParams = {}
         for key in matcherInfo:
@@ -263,9 +262,6 @@ class JobAgent(AgentModule):
         self.log.verbose("Job request successful: \n", jobRequest["Value"])
         self.log.info("Received", f"JobID={jobID}, JobType={jobType}, Owner={owner}, JobGroup={jobGroup}")
         self.jobCount += 1
-        self.jobs[jobID]["JobReport"].setJobParameter(
-            par_name="MatcherServiceTime", par_value=str(matchTime), sendFlag=False
-        )
 
         self.jobs[jobID]["JobReport"].setJobStatus(minorStatus="Job Received by Agent", sendFlag=False)
         result_setupProxy = self._setupProxy(owner, jobGroup)
@@ -547,7 +543,7 @@ class JobAgent(AgentModule):
             jobRequest = MatcherClient().requestJob(ceDict)
             matchTime = time.time() - start
 
-            self.log.info("MatcherTime", f"= {matchTime:.2f} (s)")
+            self.log.verbose("MatcherTime", f"= {matchTime:.2f} (s)")
             if jobRequest["OK"]:
                 jobRequest["Value"]["matchTime"] = matchTime
                 jobRequest["Value"]["CEDict"] = ceDict

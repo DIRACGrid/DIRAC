@@ -285,7 +285,6 @@ class PushJobAgent(JobAgent):
                 jobGroup = matcherInfo["Group"]
                 owner = matcherInfo["Owner"]
                 ceDict = matcherInfo["CEDict"]
-                matchTime = matcherInfo["matchTime"]
 
                 optimizerParams = {}
                 for key in matcherInfo:
@@ -313,9 +312,6 @@ class PushJobAgent(JobAgent):
                 self.log.verbose("Job request successful: \n", jobRequest["Value"])
                 self.log.info("Received", f"JobID={jobID}, JobType={jobType}, Owner={owner}, JobGroup={jobGroup}")
 
-                self.jobs[jobID]["JobReport"].setJobParameter(
-                    par_name="MatcherServiceTime", par_value=str(matchTime), sendFlag=False
-                )
                 self.jobs[jobID]["JobReport"].setJobStatus(
                     status=JobStatus.MATCHED, minorStatus="Job Received by Agent", sendFlag=False
                 )

@@ -17,7 +17,6 @@ Example:
    'LocalAccount': 'prod006',
    'LocalBatchID': '',
    'LocalJobID': '277821.ce.labmc.inf.utfsm.cl',
-   'MatcherServiceTime': '2.27646398544',
    'Memory(kB)': '858540kB',
    'ModelName': 'Intel(R)Xeon(R)CPU5110@1.60GHz',
    'NormCPUTime(s)': '1.02',
