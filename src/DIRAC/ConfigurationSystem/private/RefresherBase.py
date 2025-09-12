@@ -1,7 +1,7 @@
 import time
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.ConfigurationSystem.Client.PathFinder import getGatewayURLs
+from DIRAC.ConfigurationSystem.Client.PathFinder import getGatewayURLs, groupURLsByPriority
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.EventDispatcher import gEventDispatcher
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
@@ -138,7 +138,9 @@ class RefresherBase:
         if not initialServerList:
             return S_OK()
 
-        randomServerList = List.randomize(initialServerList)
+        randomServerList = []
+        for urlGroup in groupURLsByPriority(initialServerList):
+            randomServerList.extend(List.randomize(urlGroup))
         gLogger.debug(f"Randomized server list is {', '.join(randomServerList)}")
 
         for sServer in randomServerList:
