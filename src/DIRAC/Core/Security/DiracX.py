@@ -40,7 +40,7 @@ from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueO
 
 PEM_BEGIN = "-----BEGIN DIRACX-----"
 PEM_END = "-----END DIRACX-----"
-RE_DIRACX_PEM = re.compile(rf"{PEM_BEGIN}\n(.*)\n{PEM_END}", re.MULTILINE | re.DOTALL)
+RE_DIRACX_PEM = re.compile(rf"{PEM_BEGIN}\n(.*?)\n{PEM_END}",re.DOTALL)
 
 
 @convertToReturnValue
