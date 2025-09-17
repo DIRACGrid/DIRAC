@@ -38,9 +38,17 @@ CREATE TABLE `JobToBundle` (
     `JobID`             VARCHAR(255) NOT NULL,
     `BundleID`          VARCHAR(32) NOT NULL,
     `ExecutablePath`    VARCHAR(255) NOT NULL,
-    `Inputs`            VARCHAR(255) NOT NULL,
     `Outputs`           VARCHAR(255) NOT NULL,
     `Processors`        INT(5) UNSIGNED NOT NULL DEFAULT 1,
     PRIMARY KEY (`JobID`),
     FOREIGN KEY (`BundleID`) REFERENCES `BundlesInfo`(`BundleID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ------------------------------------------------------------------------------
+CREATE TABLE `JobInputs` (
+    `InputID`           INTEGER NOT NULL AUTO_INCREMENT,
+    `JobID`             VARCHAR(255) NOT NULL,
+    `InputPath`         VARCHAR(255) NOT NULL,
+    PRIMARY KEY (`InputID`),
+    FOREIGN KEY (`JobID`) REFERENCES `JobToBundle`(`JobID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

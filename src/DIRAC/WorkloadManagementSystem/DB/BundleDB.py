@@ -1,5 +1,5 @@
-""" BundleDB class is a front-end to the bundle db
-"""
+"""BundleDB class is a front-end to the bundle db"""
+
 import uuid
 from ast import literal_eval
 
@@ -34,9 +34,14 @@ JOB_TO_BUNDLE_COLUMNS = [
     "JobID",
     "BundleID",
     "ExecutablePath",
-    "Inputs",
     "Outputs",
     "Processors",
+]
+
+JOB_INPUTS_COLUMNS = [
+    "InputID",
+    "JobID",
+    "InputPath",
 ]
 
 
@@ -61,6 +66,7 @@ class BundleDB(DB):
 
         self.BUNDLES_INFO_TABLE = "BundlesInfo"
         self.JOB_TO_BUNDLE_TABLE = "JobToBundle"
+        self.JOB_INPUTS_TABLE = "JobInputs"
 
     @property
     def log(self):
@@ -158,25 +164,64 @@ class BundleDB(DB):
         return S_OK(STATUS_MAP[result["Value"][0][0]])
 
     def getJobsOfBundle(self, bundleId):
-        fields = ["JobID", "ExecutablePath", "Inputs", "Outputs"]
+        cmd = f"""\
+        SELECT JobToBundle.JobID, ExecutablePath, Outputs, InputPath
+        FROM JobToBundle 
+        LEFT JOIN JobInputs 
+        ON JobToBundle.JobID = JobInputs.JobID 
+        WHERE BundleID = "{bundleId}";"""
 
-        result = self.getFields(self.JOB_TO_BUNDLE_TABLE, fields, {"BundleID": bundleId})
+        result = self._query(cmd)
 
         if not result["OK"]:
             return result
 
-        retVal = formatSelectOutput(result["Value"], fields)
+        rows = list(result["Value"])
+        retVal = {}
 
-        for i in range(len(retVal)):
-            retVal[i]["Inputs"] = literal_eval(retVal[i]["Inputs"])
-            retVal[i]["Outputs"] = literal_eval(retVal[i]["Outputs"])
+        # For each row (JobID, ExecutablePath, Outputs, [InputPath | Empty])
+        for row in rows:
+            # The job has no input
+            if len(row) == 3:
+                jobID, jobExecutablePath, jobOutputs = row
+                jobInputPath = ""
+            else:
+                jobID, jobExecutablePath, jobOutputs, jobInputPath = row
+
+            if jobID not in retVal:
+                retVal[jobID] = {
+                    "ExecutablePath": jobExecutablePath,
+                    "Inputs": [],
+                    "Outputs": [],
+                }
+
+            retVal[jobID]["Outputs"].extend(literal_eval(jobOutputs))
+
+            if jobInputPath:
+                retVal[jobID]["Inputs"].append(jobInputPath)
+
+        # for i in range(len(retVal)):
+        #     result = self.getFields(self.JOB_INPUTS_TABLE, "InputPath", {"JobID": retVal[i]["JobID"]})
+        #     if not result["OK"]:
+        #         return result
+
+        #     inputs = list(result["Value"])
+
+        #     # Go through every input path
+        #     for idx, item in inputs:
+        #         inputs[idx] = item[0]  # Just the input path
+
+        #     retVal[i]["Inputs"] = inputs
+        #     retVal[i]["Outputs"] = literal_eval(retVal[i]["Outputs"])
 
         return S_OK(retVal)
 
     #############################################################################
 
     def setTaskId(self, bundleId, taskId):
-        result = self.updateFields(self.BUNDLES_INFO_TABLE, ["TaskID", "Status"], [taskId, "Sent"], {"BundleID": bundleId})
+        result = self.updateFields(
+            self.BUNDLES_INFO_TABLE, ["TaskID", "Status"], [taskId, "Sent"], {"BundleID": bundleId}
+        )
         return result
 
     def getTaskId(self, bundleId):
@@ -202,10 +247,10 @@ class BundleDB(DB):
 
     def isBundleCleaned(self, bundleId):
         result = self.getFields(self.BUNDLES_INFO_TABLE, ["Cleaned"], {"BundleID": bundleId})
-        
+
         if not result["OK"]:
             return result
-        
+
         return S_OK(result["Value"][0][0])
 
     #############################################################################
@@ -272,7 +317,6 @@ class BundleDB(DB):
             "JobID": jobId,
             "BundleID": bundleId,
             "ExecutablePath": executable,
-            "Inputs": str(inputs),
             "Outputs": str(outputs),
             "Processors": nProcessors,
         }
@@ -281,6 +325,18 @@ class BundleDB(DB):
 
         if not result["OK"]:
             return result
+
+        # Insert the Inputs
+        for _input in inputs:
+            insertInfo = {
+                "JobID": jobId,
+                "InputPath": _input,
+            }
+
+            result = self.insertFields(self.JOB_INPUTS_TABLE, list(insertInfo.keys()), list(insertInfo.values()))
+
+            if not result["OK"]:
+                return result
 
         # Modify the number of processors that will be used by the bundle
         cmd = 'UPDATE BundlesInfo SET ProcessorSum = ProcessorSum + {} WHERE BundleID = "{}";'.format(
@@ -292,7 +348,9 @@ class BundleDB(DB):
             return result
 
         # Obtain the current Sum and the Max available
-        result = self.getFields(self.BUNDLES_INFO_TABLE, ["ProcessorSum", "MaxProcessors", "Status"], {"BundleID": bundleId})
+        result = self.getFields(
+            self.BUNDLES_INFO_TABLE, ["ProcessorSum", "MaxProcessors", "Status"], {"BundleID": bundleId}
+        )
 
         if not result["OK"]:
             return result
