@@ -1,7 +1,8 @@
-""" The Bundler service provides an interface for bundling jobs into a a big job
+"""The Bundler service provides an interface for bundling jobs into a a big job
 
-    It connects to a BundleDB to store and retrive bundles.
+It connects to a BundleDB to store and retrive bundles.
 """
+
 import os
 import shutil
 from ast import literal_eval
@@ -39,7 +40,7 @@ class BundlerHandler(RequestHandler):
 
     def initialize(self):
         self.killBundleOnError = self.getCSOption("KillBundleOnError", True)
-        self.bundlesBaseDir = self.getCSOption("/LocalSite/BundlesBaseDir", "/tmp/bundles") 
+        self.bundlesBaseDir = self.getCSOption("/LocalSite/BundlesBaseDir", "/tmp/bundles")
 
         if not os.path.exists(self.bundlesBaseDir):
             os.mkdir(self.bundlesBaseDir)
@@ -242,7 +243,7 @@ class BundlerHandler(RequestHandler):
             itemPath = os.path.join(bundlePath, item)
             if os.path.isfile(item):
                 os.remove(itemPath)
-        
+
         return S_OK()
 
     #############################################################################
@@ -256,7 +257,7 @@ class BundlerHandler(RequestHandler):
             return result
 
         status = result["Value"]["Status"]
-        
+
         if status == PilotStatus.RUNNING:
             task = result["Value"]["TaskID"]
 
@@ -264,7 +265,7 @@ class BundlerHandler(RequestHandler):
                 task = task.split(":::")[0]
 
             result = self.__getBundleCE(bundleId)
-            
+
             if not result["OK"]:
                 return result
 
@@ -284,7 +285,7 @@ class BundlerHandler(RequestHandler):
 
             if status == PilotStatus.DONE:
                 self.bundleDB.setBundleAsFinalized(bundleId)
-            elif status in PilotStatus.PILOT_FINAL_STATES:      # ABORTED, DELETED or FAILED
+            elif status in PilotStatus.PILOT_FINAL_STATES:  # ABORTED, DELETED or FAILED
                 self.bundleDB.setBundleAsFailed(bundleId)
 
         return S_OK(status)
@@ -317,7 +318,7 @@ class BundlerHandler(RequestHandler):
             self.log.error("Failed to obtain bundled job while wrapping. BundleID=", str(bundleId))
             return result
 
-        jobs = result["Value"]
+        jobs: dict = result["Value"]
 
         template = bundle["ExecTemplate"]
         executables = []
@@ -328,12 +329,11 @@ class BundlerHandler(RequestHandler):
         bundlePath = os.path.join(self.bundlesBaseDir, bundleId)
         os.mkdir(bundlePath)
 
-        for job in jobs:
-            jobId = job["JobID"]
+        for jobId, jobInfo in jobs.items():
             jobIds.append(jobId)
 
             # Copy the original file in a new location with the rest
-            job_executable = job["ExecutablePath"]
+            job_executable = jobInfo["ExecutablePath"]
             job_executable_dst = os.path.join(bundlePath, jobId + "_" + os.path.basename(job_executable))
 
             shutil.copy(job_executable, job_executable_dst)
@@ -341,12 +341,12 @@ class BundlerHandler(RequestHandler):
             executables.append(os.path.basename(job_executable_dst))
             inputs.append(job_executable_dst)
 
-            for job_input in job["Inputs"]:
+            for job_input in jobInfo["Inputs"]:
                 job_input_dst = os.path.join(bundlePath, jobId + "_" + os.path.basename(job_input))
                 shutil.copy(job_input, job_input_dst)
                 inputs.append(job_input_dst)
 
-            outputs.extend(job["Outputs"])
+            outputs.extend(list(set(jobInfo["Outputs"])))  # Remove duplicated entries
 
         result = generate_template(template, executables, bundleId)
 
@@ -378,7 +378,7 @@ class BundlerHandler(RequestHandler):
 
     def _getCE(self, jobId):
         result = self._getBundleIdFromJobId(jobId)
-        
+
         if not result["OK"]:
             return result
         bundleId = result["Value"]
@@ -412,13 +412,6 @@ class BundlerHandler(RequestHandler):
 
         proxy = result["Value"]["chain"]
 
-        result = proxy.getRemainingSecs()
-        if not result["OK"]:
-            self.log.error("Failed to obtain remaining seconds of proxy")
-            return result
-
-        valid = result["Value"]
-
         # Setup CE
         result = self.ceFactory.getCE(ceType=ceDict["CEType"], ceName=ceDict["GridCE"], ceParametersDict=ceDict)
 
@@ -428,6 +421,6 @@ class BundlerHandler(RequestHandler):
 
         ce = result["Value"]
 
-        ce.setProxy(proxy, valid)
+        ce.setProxy(proxy)
 
         return S_OK({"CE": ce, "Proxy": proxy})
