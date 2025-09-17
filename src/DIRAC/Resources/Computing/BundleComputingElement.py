@@ -91,7 +91,7 @@ class BundleTaskDict(dict):
     def __contains__(self, jobId):
         if super().__contains__(jobId):
             return True
-        
+
         res = self.getProperty(jobId)
         if res:
             self.__setitem__(jobId, res)
@@ -106,7 +106,7 @@ class BundleTaskDict(dict):
         res = self.getProperty(jobId)
         if res:
             super().__setitem__(jobId, res)
-        
+
         return res
 
 
@@ -128,6 +128,8 @@ class BundleComputingElement(ComputingElement):
     #############################################################################
 
     def _reset(self):
+        self.taskResults = BundleTaskDict(self.__getTraskResult)
+
         # Force the CE to make the job submissions asynchronous
         self.ceParameters["AsyncSubmission"] = True
 
@@ -160,7 +162,7 @@ class BundleComputingElement(ComputingElement):
 
     #############################################################################
 
-    def submitJob(self, executableFiles, proxy=None, numberOfProcessors=1, inputs=[], outputs=[]):
+    def submitJob(self, executableFile, proxy=None, numberOfProcessors=1, inputs=[], outputs=[]):
         jobId = str(uuid.uuid4().hex)
 
         proxy = self.proxy if self.proxy else proxy
@@ -182,11 +184,11 @@ class BundleComputingElement(ComputingElement):
         proxyPath = result["Value"]
 
         result = self.bundler.storeInBundle(
-            jobId, executableFiles, inputs, outputs, proxyPath, numberOfProcessors, self.innerCEParams
+            jobId, executableFile, inputs, outputs, proxyPath, numberOfProcessors, self.innerCEParams
         )
 
         if not result["OK"]:
-            self.log.error("Failure while storing in the Bundle")
+            self.log.error(f"Failure while storing in the Bundle: {result}")
             return result
 
         bundleId = result["Value"]["BundleID"]
@@ -226,18 +228,18 @@ class BundleComputingElement(ComputingElement):
 
         if not result["OK"]:
             return result
-        
+
         outputsPath = result["Value"]
         outputAbsPath = os.path.abspath(workingDirectory)
 
-        jobBaseDir = os.path.join(outputsPath, jobId)
+        jobBaseDir = os.path.join(outputsPath, f"{jobId}")
 
         if not os.path.exists(jobBaseDir):
             return S_ERROR("Failed to locate job output files from base output directory")
 
         self.log.notice(f"Outputs at: {jobBaseDir}")
 
-        # Move all items from 
+        # Move all items from
         for item in os.listdir(jobBaseDir):
             # newName = item
 
@@ -246,9 +248,9 @@ class BundleComputingElement(ComputingElement):
 
             # move the item to the working directory
             # os.rename(os.path.join(jobBaseDir, item), os.path.join(outputAbsPath, newName))
-            #os.rename(os.path.join(jobBaseDir, item), os.path.join(outputAbsPath, item))
+            # os.rename(os.path.join(jobBaseDir, item), os.path.join(outputAbsPath, item))
             shutil.copy2(os.path.join(jobBaseDir, item), os.path.join(outputAbsPath, item))
-        
+
         # checksumFile = os.path.join(outputAbsPath, "md5Checksum.txt")
         # if os.path.exists(checksumFile):
         #     with open(checksumFile, "r+") as f:
@@ -258,15 +260,15 @@ class BundleComputingElement(ComputingElement):
         #         f.write(content)
         #         f.truncate()
 
-        error = os.path.join(workingDirectory, f"{bundleId}.err") 
-        output = os.path.join(workingDirectory, f"{bundleId}.out") 
+        error = os.path.join(workingDirectory, f"{bundleId}.err")
+        output = os.path.join(workingDirectory, f"{bundleId}.out")
 
         if not os.path.exists(output) or not os.path.exists(error):
             return S_ERROR("Outputs unable to be obtained")
 
         with open(output, "r") as f:
             output = f.read()
-        
+
         with open(error, "r") as f:
             error = f.read()
 
@@ -283,7 +285,7 @@ class BundleComputingElement(ComputingElement):
             bundleId = None
             if ":::" in job:
                 jobId, bundleId = job.split(":::")
-            
+
             if not bundleId:
                 result = self.bundler.bundleIdFromJobId(jobId)
                 if not result["OK"]:
@@ -308,13 +310,13 @@ class BundleComputingElement(ComputingElement):
             if result["Value"] != PilotStatus.DONE:
                 resultDict[jobId] = PilotStatus.FAILED
                 continue
-            
+
             # If the bundle ended properly, get the status of the independent job
             result = self.bundler.getTaskInfo(bundleId)
 
             if not result["OK"]:
                 return result
-            
+
             taskId = result["Value"]["TaskID"]
             self.log.debug(f"Obtaining bundle output of '{bundleId}'")
             result = self.__getOutputPath(bundleId, taskId)
@@ -325,7 +327,6 @@ class BundleComputingElement(ComputingElement):
             outputPath = result["Value"]
 
             # The file that contains a singular line with the following format:
-            # {JobId} {processId} {jobStatus}
             jobStatusFile = os.path.join(outputPath, f"{jobId}.status")
 
             # If it was not created or is empty, the job failed
@@ -335,9 +336,9 @@ class BundleComputingElement(ComputingElement):
                 continue
 
             # Read the exit value of the process launched
+            #  - The file contains a singular line with just the status
             with open(jobStatusFile, "r") as f:
-                jobStatus = f.readline()
-                jobStatus = int(jobStatus.split()[2])
+                jobStatus = int(f.readline())
 
                 # 0 -> All ok   Any other -> Fail
                 if jobStatus == 0:
@@ -354,9 +355,9 @@ class BundleComputingElement(ComputingElement):
     def getCEStatus(self):
         return self.innerCE.getCEStatus()
 
-    def setProxy(self, proxy, valid=0):
-        super().setProxy(proxy, valid)
-        self.innerCE.setProxy(proxy, valid)
+    def setProxy(self, proxy):
+        super().setProxy(proxy)
+        self.innerCE.setProxy(proxy)
 
     def setToken(self, token, valid=0):
         super().setToken(token, valid)
@@ -391,6 +392,8 @@ class BundleComputingElement(ComputingElement):
     #############################################################################
 
     def __getTraskResult(self, jobId):
+        self.log.debug(f"Obtaining the task results of {jobId}")
+
         result = self.getJobStatus(jobId)
 
         if not result["OK"]:
@@ -411,7 +414,7 @@ class BundleComputingElement(ComputingElement):
 
     def __getOutputPath(self, bundleId, innerTaskId):
         """Returns the output path of the whole bundle
-            If it hasn't been created yet, it obtains the output from the Inner CE.
+        If it hasn't been created yet, it obtains the output from the Inner CE.
         """
         self.log.debug(f"Obtaining the output path of bundle '{bundleId}' with task '{innerTaskId}'")
 
@@ -434,8 +437,8 @@ class BundleComputingElement(ComputingElement):
                         self.log.error("Failed to obtain the outputs, removing the directory")
                         os.rmdir(outputsPath)
                         return result
-        
+
         except TimeoutError:
             return S_ERROR("Outputs not available yet")
-        
+
         return S_OK(outputsPath)
