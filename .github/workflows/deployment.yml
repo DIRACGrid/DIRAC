@@ -83,7 +83,8 @@ jobs:
                 python -c $'from packaging.version import Version; v = Version('"'$NEW_VERSION'"$')\nif v.is_devrelease:\n    raise ValueError(v)'
                 if [[ "${{ github.event.ref }}" =~ ^refs/heads/integration$ ]]; then
                   # If we're releasing from integration it must be a pre-release
-                  python -c $'from packaging.version import Version; v = Version('"'$NEW_VERSION'"$')\nif not v.is_prerelease:\n    raise ValueError("integration should only be used for pre-releases")'
+                  # This is currently not a requirement
+                  # python -c $'from packaging.version import Version; v = Version('"'$NEW_VERSION'"$')\nif not v.is_prerelease:\n    raise ValueError("integration should only be used for pre-releases")'
                 elif [[ "${{ github.event.ref }}" != "$(python -c $'from packaging.version import Version; v = Version('"'$NEW_VERSION'"$')\nprint(f"refs/heads/rel-v{v.major}r{v.minor}")')" ]]; then
                   # If we're not releasing from integration the version should match the rel-vXrY branch name
                   echo "$NEW_VERSION is an invalid version for ${{ github.event.ref }}"
