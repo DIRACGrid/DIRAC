@@ -6,8 +6,26 @@ BASEDIR=${{PWD}}
 INPUT={inputs}
 BUNDLE_ID={bundleId}
 
+monitor_job() {{
+    local job_pid=$1
+
+    #First time with headers
+    ps -p "$job_pid" -o pid,psr,%cpu,%mem,time,wchan,class,vsz,drs,rss,uss,size,rops,wops,wbytes
+
+    while : ; do
+        sleep 5
+
+        # If the job finished, kill the monitoring        
+        if ! kill -0 "$job_pid" 2>/dev/null; then
+            break  
+        fi
+
+        ps -p -h "$job_pid" -o pid,psr,%cpu,%mem,time,wchan,class,vsz,drs,rss,uss,size,rops,wops,wbytes
+    done
+}}
+
 get_id() {{
-    basename ${{1}} _workloadExec.sh
+    echo $1 | cut -d '_' -f 1
 }}
 
 run_task() {{
@@ -21,24 +39,21 @@ run_task() {{
     # 'set -e' inside the job execution to obtain the real exit status in case of failure
     bash -e ${{input}} \\
         1> >(tee ${{BUNDLE_ID}}.out) \\
-        2> >(tee ${{BUNDLE_ID}}.err 1>&2) &
+        2> >(tee ${{BUNDLE_ID}}.err 1>&2)
 
-    local task_pid=$!
-
-    echo "[${{task_id}}] Waiting for pid ${{task_pid}}..."
-
-    wait ${{task_pid}}
     local task_status=$?
 
-    # Report status
-    echo "[${{task_id}}] ${{task_pid}} ${{task_status}}" | tee ${{BASEDIR}}/${{task_id}}.status
+    # Report job ending and status
+    echo "[${{task_id}}] Task Finished"
+    echo "${{task_status}}" 1>${{BASEDIR}}/${{task_id}}.status
+    echo "[${{task_id}}] Process final status: ${{task_status}}"
 }}
 
 # execute tasks
 for input in ${{INPUT[@]}}; do
     [ -f "$input" ] || break
 
-    jobId=$(get_id ${{input}})
+    local jobId=$(get_id ${{input}})
     mkdir ${{jobId}}
     
     for filename in ${{jobId}}*; do
@@ -49,10 +64,14 @@ for input in ${{INPUT[@]}}; do
     done
 
     run_task ${{input}} &
+    pid=$!
+    pids+=($pid)
+
+    monitor_job "$pid" > ${{jobId}}/monitoring.stats &
 done
 
 # wait for all tasks
-wait
+wait "${{pids[@]}}"
 
 # Checksum of all files in the root and the job subdirectories
 find -H ! -type d ! -name md5Checksum.txt -exec md5sum {{}} + >md5Checksum.txt
@@ -74,6 +93,7 @@ def generate_template(template: str, inputs: list, bundleId: str):
     formatMap["bundleId"] = bundleId
 
     return S_OK(template.format(**formatMap))
+
 
 def _generate_bash(inputs: list):
     formatted_inputs = "(" + " ".join(inputs) + ")"
