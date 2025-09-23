@@ -40,7 +40,7 @@ from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueO
 
 PEM_BEGIN = "-----BEGIN DIRACX-----"
 PEM_END = "-----END DIRACX-----"
-RE_DIRACX_PEM = re.compile(rf"{PEM_BEGIN}\n(.*)\n{PEM_END}", re.MULTILINE | re.DOTALL)
+RE_DIRACX_PEM = re.compile(rf"{PEM_BEGIN}\n(.*?)\n{PEM_END}", re.DOTALL)
 
 
 @convertToReturnValue
@@ -62,21 +62,26 @@ def addTokenToPEM(pemPath, group):
             token_type=token_content.get("token_type"),
             refresh_token=token_content.get("refresh_token"),
         )
-
         token_pem = f"{PEM_BEGIN}\n"
         data = base64.b64encode(serialize_credentials(token).encode("utf-8")).decode()
         token_pem += textwrap.fill(data, width=64)
         token_pem += f"\n{PEM_END}\n"
 
-        with open(pemPath, "a") as f:
-            f.write(token_pem)
+        pem = Path(pemPath).read_text()
+        # Remove any existing DiracX token there would be
+        new_pem = re.sub(RE_DIRACX_PEM, "", pem)
+        new_pem += token_pem
+
+        Path(pemPath).write_text(new_pem)
 
 
 def diracxTokenFromPEM(pemPath) -> dict[str, Any] | None:
     """Extract the DiracX token from the proxy PEM file"""
     pem = Path(pemPath).read_text()
-    if match := RE_DIRACX_PEM.search(pem):
-        match = match.group(1)
+    if match := RE_DIRACX_PEM.findall(pem):
+        if len(match) > 1:
+            raise ValueError("Found multiple DiracX tokens, this should never happen")
+        match = match[0]
         return json.loads(base64.b64decode(match).decode("utf-8"))
 
 
