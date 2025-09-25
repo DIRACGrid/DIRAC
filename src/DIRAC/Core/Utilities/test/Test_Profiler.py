@@ -29,50 +29,50 @@ def test_base():
     time.sleep(1)
     p = Profiler(mainProcess.pid)
     res = p.pid()
-    assert res["OK"] is True
+    assert res["OK"] is True, res
     res = p.status()
-    assert res["OK"] is True
+    assert res["OK"] is True, res
     res = p.runningTime()
-    assert res["OK"] is True
+    assert res["OK"] is True, res
     assert res["Value"] > 0
 
     res = p.memoryUsage()
-    assert res["OK"] is True
+    assert res["OK"] is True, res
     assert res["Value"] > 0
     resWC = p.memoryUsage(withChildren=True)
-    assert resWC["OK"] is True
+    assert resWC["OK"] is True, res
     assert resWC["Value"] > 0
     assert resWC["Value"] >= res["Value"]
 
     res = p.vSizeUsage()
-    assert res["OK"] is True
+    assert res["OK"] is True, res
     assert res["Value"] > 0
     resWC = p.vSizeUsage(withChildren=True)
-    assert resWC["OK"] is True
+    assert resWC["OK"] is True, res
     assert resWC["Value"] > 0
     assert resWC["Value"] >= res["Value"]
 
     res = p.vSizeUsage()
-    assert res["OK"] is True
+    assert res["OK"] is True, res
     assert res["Value"] > 0
     resWC = p.vSizeUsage(withChildren=True)
-    assert resWC["OK"] is True
+    assert resWC["OK"] is True, res
     assert resWC["Value"] > 0
     assert resWC["Value"] >= res["Value"]
 
     res = p.numThreads()
-    assert res["OK"] is True
+    assert res["OK"] is True, res
     assert res["Value"] > 0
     resWC = p.numThreads(withChildren=True)
-    assert resWC["OK"] is True
+    assert resWC["OK"] is True, res
     assert resWC["Value"] > 0
     assert resWC["Value"] >= res["Value"]
 
     res = p.cpuPercentage()
-    assert res["OK"] is True
+    assert res["OK"] is True, res
     assert res["Value"] >= 0
     resWC = p.cpuPercentage(withChildren=True)
-    assert resWC["OK"] is True
+    assert resWC["OK"] is True, res
     assert resWC["Value"] >= 0
     assert resWC["Value"] >= res["Value"]
 
@@ -88,13 +88,13 @@ def test_cpuUsage():
     time.sleep(2)
     p = Profiler(mainProcess.pid)
     res = p.pid()
-    assert res["OK"] is True
+    assert res["OK"] is True, res
     res = p.status()
-    assert res["OK"] is True
+    assert res["OK"] is True, res
 
     # user
     res = p.cpuUsageUser()
-    assert res["OK"] is True
+    assert res["OK"] is True, res
     assert res["Value"] > 0
     resC = p.cpuUsageUser(withChildren=True)
     assert resC["OK"] is True
@@ -102,7 +102,7 @@ def test_cpuUsage():
     assert resC["Value"] >= res["Value"]
 
     res = p.cpuUsageUser()
-    assert res["OK"] is True
+    assert res["OK"] is True, res
     assert res["Value"] > 0
     resC = p.cpuUsageUser(withChildren=True)
     assert resC["OK"] is True
@@ -121,15 +121,15 @@ def test_cpuUsage():
 
     # system
     res = p.cpuUsageSystem()
-    assert res["OK"] is True
+    assert res["OK"] is True, res
     assert res["Value"] >= 0
     resWC = p.cpuUsageSystem(withChildren=True)
-    assert resWC["OK"] is True
+    assert resWC["OK"] is True, res
     assert resWC["Value"] >= 0
     assert resWC["Value"] >= res["Value"]
 
     res = p.cpuUsageSystem()
-    assert res["OK"] is True
+    assert res["OK"] is True, res
     assert res["Value"] > 0
     resC = p.cpuUsageSystem(withChildren=True)
     assert resC["OK"] is True
