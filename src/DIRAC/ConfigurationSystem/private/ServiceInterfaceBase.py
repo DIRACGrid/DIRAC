@@ -83,15 +83,6 @@ class ServiceInterfaceBase:
 
         if not gConfigurationData.isMaster():
             return S_ERROR("Configuration modification is not allowed in this server")
-        gLogger.info(f"Pinging Worker {sWorkerURL}")
-        rpcClient = ConfigurationClient(url=sWorkerURL, timeout=10, useCertificates=True)
-        retVal = rpcClient.ping()
-        if not retVal["OK"]:
-            gLogger.info(f"Worker {sWorkerURL} didn't reply")
-            return
-        if retVal["Value"]["name"] != "Configuration/Server":
-            gLogger.info(f"Worker {sWorkerURL} is not a CS serveR")
-            return
         bNewWorker = False
         if sWorkerURL not in self.dAliveWorkerServers:
             bNewWorker = True
