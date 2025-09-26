@@ -12,7 +12,7 @@ class DatasetManager:
     _tables["FC_MetaDatasets"] = {
         "Fields": {
             "DatasetID": "INT AUTO_INCREMENT",
-            "DatasetName": "VARCHAR(128) CHARACTER SET utfmb4 COLLATE utf8mb4_bin NOT NULL",
+            "DatasetName": "VARCHAR(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL",
             "MetaQuery": "VARCHAR(512)",
             "DirID": "INT NOT NULL DEFAULT 0",
             "TotalSize": "BIGINT UNSIGNED NOT NULL",
