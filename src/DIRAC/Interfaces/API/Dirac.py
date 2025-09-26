@@ -1463,9 +1463,8 @@ class Dirac(API):
             res = JobMonitoringClient().getJobsStatus(jobIDs)
             if not res["OK"]:
                 return res
-            js = {k: v["Status"] for k, v in res["Value"].items()}
             # then filter
-            filteredJobs.update(_filterJobStateTransition(js, filterState))
+            filteredJobs.update(_filterJobStateTransition(res["Value"], filterState))
 
         return WMSClient(useCertificates=self.useCertificates).deleteJob(list(filteredJobs))
 
@@ -1496,9 +1495,8 @@ class Dirac(API):
         res = JobMonitoringClient().getJobsStatus(jobIDs)
         if not res["OK"]:
             return res
-        js = {k: v["Status"] for k, v in res["Value"].items()}
         # then filter
-        jobIDsToReschedule = _filterJobStateTransition(js, JobStatus.RESCHEDULED)
+        jobIDsToReschedule = _filterJobStateTransition(res["Value"], JobStatus.RESCHEDULED)
 
         return WMSClient(useCertificates=self.useCertificates).rescheduleJob(jobIDsToReschedule)
 
@@ -1528,9 +1526,8 @@ class Dirac(API):
             res = JobMonitoringClient().getJobsStatus(jobIDs)
             if not res["OK"]:
                 return res
-            js = {k: v["Status"] for k, v in res["Value"].items()}
             # then filter
-            filteredJobs.update(_filterJobStateTransition(js, filterState))
+            filteredJobs.update(_filterJobStateTransition(res["Value"], filterState))
 
         return WMSClient(useCertificates=self.useCertificates).killJob(list(filteredJobs))
 
