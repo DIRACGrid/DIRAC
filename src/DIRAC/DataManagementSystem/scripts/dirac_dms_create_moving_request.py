@@ -41,6 +41,7 @@ class CreateMovingRequest:
         self.flags = [
             ("C", "CheckMigration", "Ensure the LFNs are migrated to tape before removing any replicas"),
             ("X", "Execute", "Put Requests, else dryrun"),
+            ("", "SourceOnly", "Only treat files that are already at the Source-SE"),
         ]
         self.registerSwitchesAndParseCommandLine()
         self.getLFNList()
@@ -208,6 +209,7 @@ class CreateMovingRequest:
 
         replicate = Operation()
         replicate.Type = "ReplicateAndRegister"
+        replicate.SourceSE = ",".join(self.switches.get("SourceSE", []))
         replicate.TargetSE = self.switches.get("TargetSE")
         self.addLFNs(replicate, lfnChunk, addPFN=True)
         request.addOperation(replicate)
