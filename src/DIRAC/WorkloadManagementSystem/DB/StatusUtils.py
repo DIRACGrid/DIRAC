@@ -79,7 +79,7 @@ def kill_delete_jobs(right, validJobList, nonauthJobList=[], force=False):
     killJobList = []
     deleteJobList = []
     if validJobList:
-        result = JobDB().getJobsAttributes(killJobList, ["Status"])
+        result = JobDB().getJobsAttributes(validJobList, ["Status"])
         if not result["OK"]:
             return result
         jobStates = result["Value"]
