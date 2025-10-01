@@ -48,13 +48,13 @@ from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 # # agent name
 AGENT_NAME = "RequestManagement/RequestExecutingAgent"
 # # requests/cycle
-REQUESTSPERCYCLE = 100
+REQUESTSPERCYCLE = 300
 # # minimal nb of subprocess running
-MINPROCESS = 20
+MINPROCESS = 50
 # # maximal nb of subprocess executed same time
-MAXPROCESS = 20
+MAXPROCESS = 50
 # # ProcessPool queue size
-QUEUESIZE = 20
+QUEUESIZE = 100
 # # file timeout
 FILETIMEOUT = 300
 # # operation timeout
@@ -62,7 +62,9 @@ OPERATIONTIMEOUT = 300
 # # ProcessPool finalization timeout
 POOLTIMEOUT = 900
 # # ProcessPool sleep time
-POOLSLEEP = 5
+POOLSLEEP = 1
+# # Fetch multiple requests at once from the DB. Otherwise, one by one
+BULKREQUEST = 300
 
 
 class AgentConfigError(Exception):
@@ -108,7 +110,7 @@ class RequestExecutingAgent(AgentModule):
         self.__poolSleep = POOLSLEEP
         self.__requestClient = None
         # Size of the bulk if use of getRequests. If 0, use getRequest
-        self.__bulkRequest = 0
+        self.__bulkRequest = BULKREQUEST
         self.__rmsMonitoring = False
 
     def processPool(self):
