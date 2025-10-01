@@ -664,6 +664,7 @@ def jobIDPath():
     # Output data files
     (p / "00232454_00000244_1.sim").touch()
     (p / "1720442808testFileUpload.txt").touch()
+    (p / "testFileUploadFullLFN.txt").touch()
 
     with open(p / "pool_xml_catalog.xml", "w") as f:
         f.write(
@@ -863,7 +864,11 @@ def test_processJobOutputs_output_data_upload(mocker, setup_another_job_wrapper)
     # BTW, isn't the concept of pool_xml_catalog.xml from lhcbdirac?
     jw.jobArgs = {
         "OutputSandbox": [],
-        "OutputData": ["1720442808testFileUpload.txt", "LFN:00232454_00000244_1.sim"],
+        "OutputData": [
+            "1720442808testFileUpload.txt",
+            "LFN:00232454_00000244_1.sim",
+            "LFN:/dirac/user/u/unknown/testFileUploadFullLFN.txt",
+        ],
         "Owner": "Jane Doe",
     }
 
@@ -879,10 +884,15 @@ def test_processJobOutputs_output_data_upload(mocker, setup_another_job_wrapper)
     assert jw.jobReport.jobStatusInfo[1][:-1] == ("", JobMinorStatus.UPLOADING_OUTPUT_DATA)
     assert jw.jobReport.jobStatusInfo[2][:-1] == (JobStatus.COMPLETING, JobMinorStatus.OUTPUT_DATA_UPLOADED)
     assert len(jw.jobReport.jobParameters) == 1
-    assert jw.jobReport.jobParameters[0] == (
-        "UploadedOutputData",
-        "00232454_00000244_1.sim, /dirac/user/u/unknown/0/123/1720442808testFileUpload.txt",
-    )
+
+    expected_files = {
+        "00232454_00000244_1.sim",
+        "/dirac/user/u/unknown/0/123/1720442808testFileUpload.txt",
+        "/dirac/user/u/unknown/testFileUploadFullLFN.txt",
+    }
+    assert jw.jobReport.jobParameters[0][0] == "UploadedOutputData"
+    uploaded_files = set(jw.jobReport.jobParameters[0][1].split(", "))
+    assert uploaded_files == expected_files
 
 
 # -------------------------------------------------------------------------------------------------
