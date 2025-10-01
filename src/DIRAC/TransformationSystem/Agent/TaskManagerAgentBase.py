@@ -22,7 +22,6 @@ from DIRAC.TransformationSystem.Client.FileReport import FileReport
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.TransformationSystem.Client.WorkflowTasks import WorkflowTasks
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
-from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 
 AGENT_NAME = "Transformation/TaskManagerAgentBase"
 
@@ -39,7 +38,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         TransformationAgentsUtilities.__init__(self)
 
         self.transClient = None
-        self.jobManagerClient = None
         self.transType = []
 
         self.tasksPerLoop = 50
@@ -68,7 +66,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
 
         # Default clients
         self.transClient = TransformationClient()
-        self.jobManagerClient = JobManagerClient()
 
         # Bulk submission flag
         self.bulkSubmissionFlag = self.am_getOption("BulkSubmission", self.bulkSubmissionFlag)
