@@ -1215,8 +1215,8 @@ class JobWrapper:
             lfn = str(basePath / outputPath / os.path.basename(localfile))
         else:
             # if LFN is given, take it as it is
-            localfile = str(self.jobIDPath / outputFile.replace("LFN:", ""))
             lfn = outputFile.replace("LFN:", "")
+            localfile = str(self.jobIDPath / os.path.basename(lfn))
 
         return (lfn, localfile)
 
