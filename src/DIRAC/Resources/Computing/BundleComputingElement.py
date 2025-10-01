@@ -229,36 +229,24 @@ class BundleComputingElement(ComputingElement):
         if not result["OK"]:
             return result
 
-        outputsPath = result["Value"]
+        # The output obtation Timed Out, we need to wait a little longer
+        if not result["Value"]["Available"]:
+            return S_ERROR("Outputs not yet available")
+
+        outputsPath = result["Value"]["Path"]
         outputAbsPath = os.path.abspath(workingDirectory)
 
-        jobBaseDir = os.path.join(outputsPath, f"{jobId}")
+        jobOutputDir = os.path.join(outputsPath, f"{jobId}")
 
-        if not os.path.exists(jobBaseDir):
+        if not os.path.exists(jobOutputDir):
             return S_ERROR("Failed to locate job output files from base output directory")
 
-        self.log.notice(f"Outputs at: {jobBaseDir}")
+        self.log.notice(f"Outputs at: {jobOutputDir}")
 
-        # Move all items from
-        for item in os.listdir(jobBaseDir):
-            # newName = item
-
-            # if jobId in item:
-            #     newName = item.replace(jobId, bundleId)
-
-            # move the item to the working directory
-            # os.rename(os.path.join(jobBaseDir, item), os.path.join(outputAbsPath, newName))
-            # os.rename(os.path.join(jobBaseDir, item), os.path.join(outputAbsPath, item))
-            shutil.copy2(os.path.join(jobBaseDir, item), os.path.join(outputAbsPath, item))
-
-        # checksumFile = os.path.join(outputAbsPath, "md5Checksum.txt")
-        # if os.path.exists(checksumFile):
-        #     with open(checksumFile, "r+") as f:
-        #         content = f.read()
-        #         content = content.replace(innerStamp, bundleId)
-        #         f.seek(0)
-        #         f.write(content)
-        #         f.truncate()
+        # Move all outputs from the temporary directory, to where they should belong
+        for item in os.listdir(jobOutputDir):
+            # shutil.move(os.path.join(jobBaseDir, item), os.path.join(outputAbsPath, item))
+            shutil.copy2(os.path.join(jobOutputDir, item), os.path.join(outputAbsPath, item))
 
         error = os.path.join(workingDirectory, f"{bundleId}.err")
         output = os.path.join(workingDirectory, f"{bundleId}.out")
@@ -304,17 +292,20 @@ class BundleComputingElement(ComputingElement):
 
             # Check if the bundle has ended
             if result["Value"] not in PilotStatus.PILOT_FINAL_STATES:
+                self.log.debug("Bundle still running")
                 continue
 
             # If the bundle Failed, we asume all of the jobs failed
             if result["Value"] != PilotStatus.DONE:
                 resultDict[jobId] = PilotStatus.FAILED
+                self.log.error("Bundle FAILED")
                 continue
 
             # If the bundle ended properly, get the status of the independent job
             result = self.bundler.getTaskInfo(bundleId)
 
             if not result["OK"]:
+                self.log.error("Couldn't get the TaskID of the Bundle")
                 return result
 
             taskId = result["Value"]["TaskID"]
@@ -324,7 +315,13 @@ class BundleComputingElement(ComputingElement):
             if not result["OK"]:
                 return result
 
-            outputPath = result["Value"]
+            # The output obtation Timed Out, we need to wait a little longer
+            if not result["Value"]["Available"]:
+                self.log.debug("Outputs not yet available")
+                resultDict[jobId] = PilotStatus.RUNNING
+                continue 
+
+            outputPath = result["Value"]["Path"]
 
             # The file that contains a singular line with the following format:
             jobStatusFile = os.path.join(outputPath, f"{jobId}.status")
@@ -439,6 +436,6 @@ class BundleComputingElement(ComputingElement):
                         return result
 
         except TimeoutError:
-            return S_ERROR("Outputs not available yet")
+            return S_OK({"Available": False})
 
-        return S_OK(outputsPath)
+        return S_OK({"Available": True, "Path": outputsPath})
