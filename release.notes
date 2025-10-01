@@ -1,3 +1,22 @@
+[v9.0.1]
+
+*WorkloadManagementSystem
+
+FIX: (#8321) Restore uploading local outputfiles from the job's directory to a specific LFN.
+FIX: (#8317) use correct interface to _filterJobStateTransition from DIRAC APIs
+
+*WorkloadManagement
+
+FIX: (#8318) Killing jobs
+
+*FileCatalog
+
+FIX: (#8316) Fix non-existent charset in mysql schema definition
+
+*RequestManagementSystem
+
+CHANGE: (#8303) REA defaults changed for higher perfs
+
 [v9.0.0]
 
 *ConfigurationSystem
