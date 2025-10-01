@@ -2,6 +2,7 @@
 
 import uuid
 from ast import literal_eval
+from datetime import datetime, timedelta, timezone
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.DB import DB
@@ -28,6 +29,8 @@ BUNDLES_INFO_COLUMNS = [
     "Status",
     "ProxyPath",
     "Cleaned",
+    "FirstTimestamp",
+    "LastTimestamp"
 ]
 
 JOB_TO_BUNDLE_COLUMNS = [
@@ -43,6 +46,8 @@ JOB_INPUTS_COLUMNS = [
     "JobID",
     "InputPath",
 ]
+
+MYSQL_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
 def formatSelectOutput(listOfResults, keys):
@@ -67,6 +72,8 @@ class BundleDB(DB):
         self.BUNDLES_INFO_TABLE = "BundlesInfo"
         self.JOB_TO_BUNDLE_TABLE = "JobToBundle"
         self.JOB_INPUTS_TABLE = "JobInputs"
+
+        self.maxMinsInBundle = self.getCSOption("MaxMinutesInBundle", 60)
 
     @property
     def log(self):
@@ -113,8 +120,6 @@ class BundleDB(DB):
 
             bundleId = result["Value"]
 
-        # TODO: CHECK IF THE JOB IS ALREADY IN THE BUNDLE
-
         # Insert it and obtain if it is ready to be submitted
         result = self.__insertJobInBundle(jobId, bundleId, executable, inputs, outputs, processors, proxyPath)
 
@@ -142,6 +147,24 @@ class BundleDB(DB):
         # Rollback on error?? Can this Fail??
         return result
 
+    #############################################################################
+
+    def getFinishedBundles(self):
+        result = self.getFields(self.BUNDLES_INFO_TABLE, ["BundleID"], {"Status": "FINISHED"})
+
+        if not result["OK"]:
+            return result
+
+        return S_OK([entry[0] for entry in result["Value"]])
+
+    def getWaitingBundles(self):
+        result = self.getFields(self.BUNDLES_INFO_TABLE, ["BundleID"], {"Status": "WAITING"})
+
+        if not result["OK"]:
+            return result
+
+        return S_OK([entry[0] for entry in result["Value"]])
+    
     #############################################################################
 
     def getBundleIdFromJobId(self, jobId):
@@ -215,6 +238,17 @@ class BundleDB(DB):
         #     retVal[i]["Outputs"] = literal_eval(retVal[i]["Outputs"])
 
         return S_OK(retVal)
+
+    def getJobIDsOfBundle(self, bundleId):
+        result = self.getFields(self.JOB_TO_BUNDLE_TABLE, ["JobID"], {"BundleID": bundleId})
+
+        if not result["OK"]:
+            return result
+
+        return S_OK([entry[0] for entry in result["Value"]])
+
+    def removeJobInputs(self, jobId):
+        return self.deleteEntries(self.JOB_INPUTS_TABLE, {"JobID": jobId})
 
     #############################################################################
 
@@ -291,6 +325,8 @@ class BundleDB(DB):
         if "ExecTemplate" not in ceDict:
             return S_ERROR("CE must have a properly formatted ExecTemplate")
 
+        timestamp = datetime.now(tz=timezone.utc).strftime(MYSQL_DATETIME_FORMAT)
+        
         bundleId = uuid.uuid4().hex
         insertInfo = {
             "BundleID": bundleId,
@@ -302,6 +338,8 @@ class BundleDB(DB):
             "Queue": ceDict["Queue"],
             "CEDict": str(ceDict),
             "ProxyPath": proxyPath,
+            "FirstTimestamp": timestamp,
+            "LastTimestamp": timestamp,
         }
 
         result = self.insertFields(self.BUNDLES_INFO_TABLE, list(insertInfo.keys()), list(insertInfo.values()))
@@ -312,6 +350,8 @@ class BundleDB(DB):
         return S_OK(bundleId)
 
     def __insertJobInBundle(self, jobId, bundleId, executable, inputs, outputs, nProcessors, proxyPath):
+        timestamp = datetime.now(tz=timezone.utc).strftime(MYSQL_DATETIME_FORMAT)
+
         # Insert the job into the bundle
         insertInfo = {
             "JobID": jobId,
@@ -339,48 +379,53 @@ class BundleDB(DB):
                 return result
 
         # Modify the number of processors that will be used by the bundle
-        cmd = 'UPDATE BundlesInfo SET ProcessorSum = ProcessorSum + {} WHERE BundleID = "{}";'.format(
-            nProcessors, bundleId
+        cmd = 'UPDATE BundlesInfo SET ProcessorSum = ProcessorSum + {}, LastTimestamp = "{}" WHERE BundleID = "{}";'.format(
+            nProcessors, timestamp, bundleId
         )
         result = self._query(cmd)
 
         if not result["OK"]:
             return result
-
-        # Obtain the current Sum and the Max available
+            
+        # Obtain the info to be returned to the Service
         result = self.getFields(
-            self.BUNDLES_INFO_TABLE, ["ProcessorSum", "MaxProcessors", "Status"], {"BundleID": bundleId}
+            self.BUNDLES_INFO_TABLE, 
+            ["ProcessorSum", "MaxProcessors", "Status", "FirstTimestamp", "LastTimestamp"], 
+            {"BundleID": bundleId}
         )
 
         if not result["OK"]:
             return result
 
-        retVal = formatSelectOutput(result["Value"], ["ProcessorSum", "MaxProcessors", "Status"])
-        selection = retVal[0]
-        selection["Ready"] = selection["ProcessorSum"] == selection["MaxProcessors"]
+        selection = formatSelectOutput(
+            result["Value"], 
+            ["ProcessorSum", "MaxProcessors", "Status", "FirstTimestamp", "LastTimestamp"]
+        )
+        selection = selection[0]
+        
+        ready = self.__getBundleRediness(selection)
 
-        selection.pop("ProcessorSum")
-        selection.pop("MaxProcessors")
+        return S_OK({"BundleId": bundleId, "Ready": ready})
 
-        selection["Status"] = STATUS_MAP[selection["Status"]]
+    def __getBundleRediness(self, bundleInfo):
+        elapsedTime : timedelta = bundleInfo["LastTimestamp"] - bundleInfo["FirstTimestamp"]
+        elapsedMinutes = elapsedTime.total_seconds() // 60
 
-        # TODO: Change this to a strategy based selection and remove self.__selectBestBundle(...)
-        return S_OK(selection)
+        if elapsedMinutes > self.maxMinsInBundle:
+            return True
+
+        if bundleInfo["ProcessorSum"] == bundleInfo["MaxProcessors"]:
+            return True
+
+        return False        
 
     def __getBundlesFromCEDict(self, ceDict):
-        # conditions = {
-        #     "Site": ceDict["Site"],
-        #     "CE": ceDict["GridCE"],
-        #     "Queue": ceDict["Queue"],
-        # }
-
         cmd = 'SELECT * FROM BundlesInfo WHERE Site = "{Site}" AND CE = "{CE}" AND Queue = "{Queue}";'.format(
             Site=ceDict["Site"],
             CE=ceDict["GridCE"],
             Queue=ceDict["Queue"],
         )
         result = self._query(cmd)
-        # result = self.getFields(self.BUNDLES_INFO_TABLE, [], conditions)
 
         if not result["OK"]:
             return result

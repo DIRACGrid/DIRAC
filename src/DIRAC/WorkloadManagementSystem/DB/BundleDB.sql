@@ -14,23 +14,29 @@
 USE BundleDB;
 
 -- ------------------------------------------------------------------------------
+DROP TABLE IF EXISTS `JobInputs`;
 DROP TABLE IF EXISTS `JobToBundle`;
 DROP TABLE IF EXISTS `BundlesInfo`;
 
 CREATE TABLE `BundlesInfo` (
-    `BundleID`      VARCHAR(32) NOT NULL,
-    `ProcessorSum`  INT(5) UNSIGNED NOT NULL DEFAULT 0,
-    `MaxProcessors` INT(5) UNSIGNED NOT NULL,
-    `Site`          VARCHAR(128) NOT NULL,
-    `CE`            VARCHAR(128) NOT NULL,
-    `Queue`         VARCHAR(128) NOT NULL,
-    `CEDict`        TEXT NOT NULL,
-    `ExecTemplate`  VARCHAR(25) NOT NULL,
-    `TaskID`        VARCHAR(255),
-    `Status`        ENUM('Storing', 'Sent', 'Finalized', 'Failed') NOT NULL DEFAULT 'Storing',
-    `ProxyPath`     VARCHAR(255),
-    `Cleaned`       BOOLEAN DEFAULT FALSE,
-    PRIMARY KEY (BundleID)
+    `BundleID`          VARCHAR(32) NOT NULL,
+    `ProcessorSum`      INT(5) UNSIGNED NOT NULL DEFAULT 0,
+    `MaxProcessors`     INT(5) UNSIGNED NOT NULL,
+    `Site`              VARCHAR(128) NOT NULL,
+    `CE`                VARCHAR(128) NOT NULL,
+    `Queue`             VARCHAR(128) NOT NULL,
+    `CEDict`            TEXT NOT NULL,
+    `ExecTemplate`      VARCHAR(25) NOT NULL,
+    `TaskID`            VARCHAR(255),
+    `Status`            ENUM('Storing', 'Sent', 'Finalized', 'Failed') NOT NULL DEFAULT 'Storing',
+    `ProxyPath`         VARCHAR(255),
+    `Cleaned`           BOOLEAN DEFAULT FALSE,
+    `FirstTimestamp`    DATETIME,
+    `LastTimestamp`     DATETIME,
+    PRIMARY KEY (`BundleID`),
+    INDEX (`Site`,`CE`,`Queue`),
+    INDEX (`Status`),
+    INDEX (`Cleaned`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------------------------
