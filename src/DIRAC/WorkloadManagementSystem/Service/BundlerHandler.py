@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.DB.BundleDB import BundleDB
-from DIRAC.WorkloadManagementSystem.Utilities.BundlerTemplates import generate_template
+from DIRAC.WorkloadManagementSystem.Utilities.BundlerTemplates import BASH_RUN_TASK, generate_template
 
 
 class BundlerHandler(RequestHandler):
@@ -342,7 +342,8 @@ class BundlerHandler(RequestHandler):
             inputs.append(job_executable_dst)
 
             for job_input in jobInfo["Inputs"]:
-                job_input_dst = os.path.join(bundlePath, jobId + "_" + os.path.basename(job_input))
+                inputBasename = os.path.basename(job_input)
+                job_input_dst = os.path.join(bundlePath, jobId + "_" + inputBasename)
                 shutil.copy(job_input, job_input_dst)
                 inputs.append(job_input_dst)
 
@@ -356,13 +357,15 @@ class BundlerHandler(RequestHandler):
 
         wrappedBundle = result["Value"]
         wrapperPath = os.path.join(bundlePath, "bundle_wrapper")
+        runnerPath = os.path.join(bundlePath, "run_task.sh")
 
         with open(wrapperPath, "x") as f:
             f.write(wrappedBundle)
 
-        # outputs = list(set(outputs))
-        # if "/" in outputs:
-        #     outputs = outputs.remove("/")
+        with open(runnerPath, "x") as f:
+            f.write(BASH_RUN_TASK)
+
+        inputs.append(runnerPath)
 
         return S_OK((jobIds, wrapperPath, inputs, outputs))
 

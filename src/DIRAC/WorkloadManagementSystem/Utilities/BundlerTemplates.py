@@ -6,21 +6,90 @@ BASEDIR=${{PWD}}
 INPUT={inputs}
 BUNDLE_ID={bundleId}
 
+PROC_MONITOR_VARS=(Pid Name State Threads Cpus_allowed_list)
+
+OLD_IFS=$IFS
+
+# cpu management
+bundler_pid=$$
+allowed_cpus=$(grep -w Cpus_allowed_list /proc/"$bundler_pid"/status | awk '{{print $2}}')
+IFS=',' read -a cpu_ranges <<< "$allowed_cpus"
+
+IFS=$OLD_IFS
+
+first_allowed_cpu=$(cut -d "-" -f 1 - <<<"${{cpu_ranges[0]}}")
+last_allowed_cpu=$(cut -d "-" -f 2 - <<<"${{cpu_ranges[-1]}}")
+cpu_offset=0
+total_allowed_cpus=0
+
+calc_total_cpus() {{
+    for range in "${{cpu_ranges[@]}}"; do
+        local min=$(cut -d "-" -f 1 - <<<"$range")
+        local max=$(cut -d "-" -f 2 - <<<"$range")
+        total_allowed_cpus=$(($total_allowed_cpus+$max-$min+1))
+    done
+
+    # Hypercharged cores check
+    local inputs_len=${{#INPUT[@]}}
+    if (( ($inputs_len * 2) == $total_allowed_cpus )); then
+        cpu_offset=$inputs_len
+    fi
+}}
+
+next_allowed_cpu() {{
+    echo $allowed_cpus
+    return 0
+     
+    local desired_cpu=$(( ($1 + $cpu_offset) % $total_allowed_cpus ))
+    local cpu=$first_allowed_cpu
+
+    for range in "${{cpu_ranges[@]}}"; do
+        local min=$(cut -d "-" -f 1 - <<<"$range")
+        local max=$(cut -d "-" -f 2 - <<<"$range")
+        local real_cpu=$(($min+$desired_cpu))
+        
+        if (( $real_cpu <= $max )); then
+            cpu=$real_cpu
+            break
+        fi
+    
+        # Check next range
+        local cpus_on_range=$(($max-$min+1))
+        local desired_cpu=$(($desired_cpu-$cpus_on_range))
+    done
+
+    # Return cpu
+    echo $cpu
+}}
+
+calc_total_cpus
+
+echo This machine has "$total_allowed_cpus" valid cores
+echo Ranges: "${{cpu_ranges[@]}}"
+
 monitor_job() {{
     local job_pid=$1
+    local job_id=$2
+    local log_file=$3
 
-    #First time with headers
-    ps -p "$job_pid" -o pid,psr,%cpu,%mem,time,wchan,class,vsz,drs,rss,uss,size,rops,wops,wbytes
-
+    echo ID Timestamp CPU ${{PROC_MONITOR_VARS[*]}} | sed 's/ /\\t/g' > $log_file
+    
     while : ; do
-        sleep 5
-
-        # If the job finished, kill the monitoring        
+        # If the job finished, finish the monitoring        
         if ! kill -0 "$job_pid" 2>/dev/null; then
             break  
         fi
 
-        ps -p -h "$job_pid" -o pid,psr,%cpu,%mem,time,wchan,class,vsz,drs,rss,uss,size,rops,wops,wbytes
+        local cpu=$(ps -h -p "$job_pid" -o psr)
+        local timestamp=$(date "+%Y-%m-%d_%H:%M:%S")
+        local vars=()
+
+        for var in ${{PROC_MONITOR_VARS[@]}}; do
+            vars+=($(grep -w "$var" /proc/"$pid"/status | awk '{{print $2}}'))
+        done
+
+        echo $timestamp $job_id $cpu ${{vars[*]}} | sed 's/ /\\t/g' >> $log_file
+        sleep 5
     done
 }}
 
@@ -28,32 +97,13 @@ get_id() {{
     echo $1 | cut -d '_' -f 1
 }}
 
-run_task() {{
-    local task_id=$(get_id $1)
-    local input=${{1#${{task_id}}_*}}
-
-    cd "$task_id"
-
-    echo "[${{task_id}}] Executing task"
-
-    # 'set -e' inside the job execution to obtain the real exit status in case of failure
-    bash -e ${{input}} \\
-        1> >(tee ${{BUNDLE_ID}}.out) \\
-        2> >(tee ${{BUNDLE_ID}}.err 1>&2)
-
-    local task_status=$?
-
-    # Report job ending and status
-    echo "[${{task_id}}] Task Finished"
-    echo "${{task_status}}" 1>${{BASEDIR}}/${{task_id}}.status
-    echo "[${{task_id}}] Process final status: ${{task_status}}"
-}}
+job_number=0
 
 # execute tasks
 for input in ${{INPUT[@]}}; do
     [ -f "$input" ] || break
 
-    local jobId=$(get_id ${{input}})
+    jobId=$(get_id ${{input}})
     mkdir ${{jobId}}
     
     for filename in ${{jobId}}*; do
@@ -63,20 +113,53 @@ for input in ${{INPUT[@]}}; do
         mv $filename ${{jobId}}/${{filename#${{jobId}}_*}}
     done
 
-    run_task ${{input}} &
+    # run_task ${{input}} &
+    # pid=$!
+    # pids+=($pid)
+
+    cpu=$(next_allowed_cpu $job_number)
+
+    chmod u+x run_task.sh
+    taskset -c $cpu ${{BASEDIR}}/run_task.sh ${{jobId}} ${{input}} ${{BUNDLE_ID}} ${{BASEDIR}} &
     pid=$!
     pids+=($pid)
 
-    monitor_job "$pid" > ${{jobId}}/monitoring.stats &
+    taskset -cp $cpu $pid
+    job_number=$(($job_number+1))
+
+    monitor_job "$pid" "$jobId" "$jobId/monitoring.stats" &
+    pid=$!
+    monitor_pids+=($pid)
 done
 
 # wait for all tasks
 wait "${{pids[@]}}"
-
-# Checksum of all files in the root and the job subdirectories
-find -H ! -type d ! -name md5Checksum.txt -exec md5sum {{}} + >md5Checksum.txt
+wait "${{monitor_pids[@]}}"
 """
 
+BASH_RUN_TASK = """\
+#!/bin/bash
+task_id=$1
+input=${2#${task_id}_*}
+bundle_id=$3
+base_dir=$4
+
+cd "$task_id"
+
+echo "[${task_id}] Executing task"
+
+# 'set -e' inside the job execution to obtain the real exit status in case of failure
+bash -e ${input} \\
+        1> ${bundle_id}.out \\
+        2> ${bundle_id}.err
+
+task_status=$?
+
+# Report job ending and status
+echo "[${task_id}] Task Finished"
+echo "${task_status}" 1>${base_dir}/${task_id}.status
+echo "[${task_id}] Process final status: ${task_status}"
+"""
 
 def generate_template(template: str, inputs: list, bundleId: str):
     template = template.lower().replace("-", "_")
