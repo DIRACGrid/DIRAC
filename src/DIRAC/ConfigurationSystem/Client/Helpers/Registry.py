@@ -3,18 +3,14 @@
 import errno
 import inspect
 import sys
-
-from threading import Lock
 from collections.abc import Iterable
+from threading import Lock
+from typing import Optional
 
 from cachetools import TTLCache, cached
 from cachetools.keys import hashkey
 
-
-from typing import Optional
-from collections.abc import Iterable
-
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 

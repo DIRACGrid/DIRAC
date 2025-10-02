@@ -38,8 +38,8 @@ Script.disableCS()
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     findDefaultGroupForDN,
     getGroupOption,
-    getVOMSAttributeForGroup,
     getVOForGroup,
+    getVOMSAttributeForGroup,
 )
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
