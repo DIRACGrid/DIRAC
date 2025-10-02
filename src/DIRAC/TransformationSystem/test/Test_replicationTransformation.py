@@ -8,7 +8,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.TransformationSystem.Utilities.ReplicationTransformation import createDataTransformation
 from DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters import Params
 
-GET_VOMS = "DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters.getVOMSVOForGroup"
+GET_VOMS = "DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters.getVOForGroup"
 GET_PROXY = "DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters.getProxyInfo"
 
 

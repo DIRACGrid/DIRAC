@@ -488,28 +488,6 @@ def getVOMSAttributeForGroup(group):
     return gConfig.getValue(f"{gBaseRegistrySection}/Groups/{group}/VOMSRole", getDefaultVOMSAttribute())
 
 
-def getDefaultVOMSVO():
-    """Get default VOMS VO
-
-    :return: str
-    """
-    return gConfig.getValue(f"{gBaseRegistrySection}/DefaultVOMSVO", "") or getVO()
-
-
-def getVOMSVOForGroup(group):
-    """Search VOMS VO for group
-
-    :param str group: group name
-
-    :return: str
-    """
-    vomsVO = gConfig.getValue(f"{gBaseRegistrySection}/Groups/{group}/VOMSVO", getDefaultVOMSVO())
-    if not vomsVO:
-        vo = getVOForGroup(group)
-        vomsVO = getVOOption(vo, "VOMSName", "")
-    return vomsVO
-
-
 def getGroupsWithVOMSAttribute(vomsAttr):
     """Search groups with VOMS attribute
 

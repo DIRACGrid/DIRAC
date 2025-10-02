@@ -96,7 +96,7 @@ class ProxyInit:
             )
 
         resultVomsAttributes = VOMS.VOMS().setVOMSAttributes(
-            self.__proxyGenerated, attribute=vomsAttr, vo=Registry.getVOMSVOForGroup(self.__piParams.diracGroup)
+            self.__proxyGenerated, attribute=vomsAttr, vo=Registry.getVOForGroup(self.__piParams.diracGroup)
         )
         if not resultVomsAttributes["OK"]:
             return S_ERROR(

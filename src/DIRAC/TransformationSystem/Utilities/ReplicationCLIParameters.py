@@ -4,7 +4,7 @@ Command Line Parameters for creating the Replication transformations Script
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.Properties import SecurityProperty
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSVOForGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
 
 class Params:
@@ -144,7 +144,7 @@ class Params:
             return False
         proxyValues = proxyInfo.get("Value", {})
         group = proxyValues.get("group", "")
-        vomsvo = getVOMSVOForGroup(group)
+        vomsvo = getVOForGroup(group)
         if not vomsvo:
             self.errorMessages.append("ERROR: ProxyGroup not associated to VOMS VO, get a different proxy")
             return False

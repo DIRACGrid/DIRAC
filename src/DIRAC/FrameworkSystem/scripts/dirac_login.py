@@ -39,7 +39,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     findDefaultGroupForDN,
     getGroupOption,
     getVOMSAttributeForGroup,
-    getVOMSVOForGroup,
+    getVOForGroup,
 )
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import (
@@ -285,7 +285,7 @@ class Params:
                 if not (vomsAttr := getVOMSAttributeForGroup(self.group)):
                     print(HTML(f"<yellow>No VOMS attribute foud for {self.group}</yellow>"))
                 else:
-                    vo = getVOMSVOForGroup(self.group)
+                    vo = getVOForGroup(self.group)
                     if not (result := VOMS().setVOMSAttributes(self.outputFile, attribute=vomsAttr, vo=vo))["OK"]:
                         return S_ERROR(f"Failed adding VOMS attribute: {result['Message']}")
                     chain = result["Value"]
