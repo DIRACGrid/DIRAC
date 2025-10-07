@@ -736,7 +736,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
             except Exception as err:
                 return S_ERROR(str(err))
             try:
-                for met in self.client.get_metadata_bulk(dids=dids, inherit=True):
+                for met in self.client.get_metadata_bulk(dids=dids, inherit=True, plugin="ALL"):
                     lfn = met["name"]
                     resDict["Successful"][lfn] = met
                 for lfn in lfnList:
