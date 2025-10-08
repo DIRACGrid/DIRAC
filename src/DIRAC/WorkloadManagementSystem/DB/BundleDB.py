@@ -480,16 +480,17 @@ class BundleDB(DB):
             bundleId = bundle["BundleID"]
             procs = bundle["ProcessorSum"]
             maxProcs = bundle["MaxProcessors"]
+            status = bundle["Status"]
 
             newProcSum = procs + nProcessors
+
+            if status != "Storing":
+                continue
 
             if newProcSum == maxProcs:
                 return bundleId
 
-            elif newProcSum > maxProcs:
-                continue
-
-            elif newProcSum > currentBestProcs:
+            if newProcSum > currentBestProcs:
                 currentBestProcs = newProcSum
                 bestBundleId = bundleId
 
