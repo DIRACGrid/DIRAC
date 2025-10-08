@@ -108,14 +108,9 @@ for input in ${{INPUT[@]}}; do
     
     for filename in ${{jobId}}*; do
         [ -f ${{filename}} ] || continue
-        touch ${{jobId}}.status
         # Move the job specific files to its directory, removing the jobId from its name
         mv $filename ${{jobId}}/${{filename#${{jobId}}_*}}
     done
-
-    # run_task ${{input}} &
-    # pid=$!
-    # pids+=($pid)
 
     cpu=$(next_allowed_cpu $job_number)
 
@@ -157,7 +152,6 @@ task_status=$?
 
 # Report job ending and status
 echo "[${task_id}] Task Finished"
-echo "${task_status}" 1>${base_dir}/${task_id}.status
 echo "[${task_id}] Process final status: ${task_status}"
 """
 

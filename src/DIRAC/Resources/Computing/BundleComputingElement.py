@@ -290,61 +290,6 @@ class BundleComputingElement(ComputingElement):
             resultDict[jobId] = result["Value"]
             self.log.debug(f"Status of bundle '{bundleId}': {result['Value']}")
 
-            # Check if the bundle has ended
-            if result["Value"] not in PilotStatus.PILOT_FINAL_STATES:
-                self.log.debug("Bundle still running")
-                continue
-
-            # If the bundle Failed, we asume all of the jobs failed
-            if result["Value"] != PilotStatus.DONE:
-                resultDict[jobId] = PilotStatus.FAILED
-                self.log.error("Bundle FAILED")
-                continue
-
-            # If the bundle ended properly, get the status of the independent job
-            result = self.bundler.getTaskInfo(bundleId)
-
-            if not result["OK"]:
-                self.log.error("Couldn't get the TaskID of the Bundle")
-                return result
-
-            taskId = result["Value"]["TaskID"]
-            self.log.debug(f"Obtaining bundle output of '{bundleId}'")
-            result = self.__getOutputPath(bundleId, taskId)
-
-            if not result["OK"]:
-                return result
-
-            # The output obtation Timed Out, we need to wait a little longer
-            if not result["Value"]["Available"]:
-                self.log.debug("Outputs not yet available")
-                resultDict[jobId] = PilotStatus.RUNNING
-                continue 
-
-            outputPath = result["Value"]["Path"]
-
-            # The file that contains a singular line with the following format:
-            jobStatusFile = os.path.join(outputPath, f"{jobId}.status")
-
-            # If it was not created or is empty, the job failed
-            if not os.path.exists(jobStatusFile) or os.path.getsize(jobStatusFile) == 0:
-                self.log.warn(f".status file of job '{jobId}' not found or is empty. Assuming it failed")
-                resultDict[jobId] = PilotStatus.FAILED
-                continue
-
-            # Read the exit value of the process launched
-            #  - The file contains a singular line with just the status
-            with open(jobStatusFile, "r") as f:
-                jobStatus = int(f.readline())
-
-                # 0 -> All ok   Any other -> Fail
-                if jobStatus == 0:
-                    resultDict[jobId] = PilotStatus.DONE
-                else:
-                    resultDict[jobId] = PilotStatus.FAILED
-
-            self.log.debug(f"Status of job '{jobId}': {resultDict[jobId]}")
-
         return S_OK(resultDict)
 
     #############################################################################
