@@ -1,9 +1,11 @@
-""" FTS3Job module containing only the FTS3Job class """
+"""FTS3Job module containing only the FTS3Job class"""
 
 import datetime
 import errno
+import os
 from packaging.version import Version
 
+from cachetools import cachedmethod, LRUCache
 
 # Requires at least version 3.3.3
 from fts3 import __version__ as fts3_version
@@ -26,8 +28,9 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
+from DIRAC.FrameworkSystem.Utilities.TokenManagementUtilities import getIdProviderClient
 
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnValueOrRaise
 from DIRAC.Core.Utilities.DErrno import cmpError
 
 from DIRAC.Core.Utilities.JEncode import JSerializable
@@ -35,6 +38,10 @@ from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 
 # 3 days in seconds
 BRING_ONLINE_TIMEOUT = 259200
+
+# Number of IdP to keep in cache. Should correspond roughly
+# to the number of groups performing transfers
+IDP_CACHE_SIZE = 8
 
 
 class FTS3Job(JSerializable):
@@ -78,6 +85,8 @@ class FTS3Job(JSerializable):
         "userGroup",
     ]
 
+    _idp_cache = LRUCache(maxsize=IDP_CACHE_SIZE)
+
     def __init__(self):
         self.submitTime = None
         self.lastUpdate = None
@@ -112,6 +121,11 @@ class FTS3Job(JSerializable):
         # it is set by the monitor method
         # when a job is in a final state
         self.accountingDict = None
+
+    @classmethod
+    @cachedmethod(lambda cls: cls._idp_cache)
+    def _getIdpClient(cls, group_name: str):
+        return returnValueOrRaise(getIdProviderClient(group_name, None, client_name_prefix="fts"))
 
     def monitor(self, context=None, ftsServer=None, ucert=None):
         """Queries the fts server to monitor the job.
@@ -509,11 +523,10 @@ class FTS3Job(JSerializable):
                     if not res["OK"]:
                         return res
                     srcTokenPath = res["Value"]
-                    res = gTokenManager.getToken(
-                        userGroup=self.userGroup,
-                        requiredTimeLeft=3600,
+                    res = self._getIdpClient(self.userGroup).fetchToken(
+                        grant_type="client_credentials",
                         scope=[f"storage.read:/{srcTokenPath}", "offline_access"],
-                        useCache=False,
+                        # TODO: add a specific audience
                     )
                     if not res["OK"]:
                         return res
@@ -528,11 +541,17 @@ class FTS3Job(JSerializable):
                     if not res["OK"]:
                         return res
                     dstTokenPath = res["Value"]
-                    res = gTokenManager.getToken(
-                        userGroup=self.userGroup,
-                        requiredTimeLeft=3600,
-                        scope=[f"storage.modify:/{dstTokenPath}", f"storage.read:/{dstTokenPath}", "offline_access"],
-                        useCache=False,
+                    res = self._getIdpClient(self.userGroup).fetchToken(
+                        grant_type="client_credentials",
+                        scope=[
+                            f"storage.modify:/{dstTokenPath}",
+                            f"storage.read:/{dstTokenPath}",
+                            # Needed because CNAF
+                            # https://ggus.eu/index.php?mode=ticket_info&ticket_id=165048
+                            f"storage.read:/{os.path.dirname(dstTokenPath)}",
+                            "offline_access",
+                        ],
+                        # TODO: add a specific audience
                     )
                     if not res["OK"]:
                         return res
@@ -728,6 +747,7 @@ class FTS3Job(JSerializable):
             retry=3,
             metadata=job_metadata,
             priority=self.priority,
+            unmanaged_tokens=True,
             **dest_spacetoken,
         )
 
