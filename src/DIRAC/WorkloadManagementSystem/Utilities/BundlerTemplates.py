@@ -28,12 +28,6 @@ calc_total_cpus() {{
         local max=$(cut -d "-" -f 2 - <<<"$range")
         total_allowed_cpus=$(($total_allowed_cpus+$max-$min+1))
     done
-
-    # Hypercharged cores check
-    local inputs_len=${{#INPUT[@]}}
-    if (( ($inputs_len * 2) == $total_allowed_cpus )); then
-        cpu_offset=$inputs_len
-    fi
 }}
 
 next_allowed_cpu() {{
