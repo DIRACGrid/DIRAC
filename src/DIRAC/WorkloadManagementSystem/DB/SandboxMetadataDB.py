@@ -64,7 +64,7 @@ class SandboxMetadataDB(DB):
                 "Type": "VARCHAR(64) NOT NULL",
             },
             "Indexes": {"Entity": ["EntityId"], "SBIndex": ["SBId"]},
-            "UniqueIndexes": {"Mapping": ["SBId", "EntityId", "Type"]},
+            "PrimaryKey": ["SBId", "EntityId", "Type"],
         }
 
         for tableName in self.__tablesDesc:
