@@ -32,6 +32,9 @@ class CERNLDAPSyncPlugin:
         else:
             userDict["PrimaryCERNAccount"] = self._findOwnerAccountName(username, attributes)
 
+        if cernAccountType in ["Primary", "Secondary"]:
+            userDict["CERNPersonId"] = attributes.get("employeeId", [None])[0]
+
     def _findOwnerAccountName(self, username, attributes):
         """Find the owner account from a CERN LDAP entry.
 
@@ -64,7 +67,7 @@ class CERNLDAPSyncPlugin:
         status, result, response, _ = self._connection.search(
             "OU=Users,OU=Organic Units,DC=cern,DC=ch",
             f"(CN={commonName})",
-            attributes=["cernAccountOwner", "cernAccountType"],
+            attributes=["cernAccountOwner", "cernAccountType", "employeeId"],
         )
         if not status:
             raise ValueError(f"Bad status from LDAP search: {result}")
