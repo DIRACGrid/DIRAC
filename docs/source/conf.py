@@ -108,7 +108,18 @@ extensions = [
 ]
 
 
+def skip_inherited_members(app, what, name, obj, skip, options):
+    removals_list = [
+        "model_json_schema",  # for pydantic.main.BaseModel.model_json_schema
+        "send_error",
+    ]  # for http.server.BaseHTTPRequestHandler.send_error
+    if name in removals_list:
+        return True
+    return skip
+
+
 def setup(app):
+    app.connect("autodoc-skip-member", skip_inherited_members)
     app.add_config_value(
         "recommonmark_config",
         {
@@ -300,7 +311,6 @@ latex_documents = [
 
 # packages that cannot be installed in RTD
 autodoc_mock_imports = DIRAC_DOC_MOCK_LIST
-
 
 # link with the python standard library docs
 intersphinx_mapping = {
