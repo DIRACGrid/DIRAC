@@ -26,3 +26,16 @@ class CheckInIdProvider(OAuth2IdProvider):
 
             idPScope = f"eduperson_entitlement?value=urn:mace:egi.eu:group:{vo}:role={groupElements[1]}#aai.egi.eu"
         return scope_to_list(idPScope)
+
+    def fetchToken(self, **kwargs):
+        """Fetch token
+
+        :param kwargs:
+        :return: dict
+        """
+
+        if "audience" in kwargs:
+            kwargs["resource"] = kwargs["audience"]
+            kwargs.pop("audience")
+
+        return super().fetchToken(**kwargs)
