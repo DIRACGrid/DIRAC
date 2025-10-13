@@ -73,7 +73,7 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
     :py:class:`BaseRequestHandler <DIRAC.Core.Tornado.Server.private.BaseRequestHandler.BaseRequestHandler>` for more details.
 
     In order to pass information around and keep some states, we use instance attributes.
-    These are initialized in the :py:meth:`.initialize` method.
+    These are initialized in the ``initialize`` methods.
 
     The handler only define the ``post`` verb. Please refer to :py:meth:`.post` for the details.
 
