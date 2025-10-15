@@ -1,40 +1,40 @@
-"""  The Computing Element class is a base class for all the various
-     types CEs. It serves several purposes:
+"""The Computing Element class is a base class for all the various
+types CEs. It serves several purposes:
 
-      - collects general CE related parameters to generate CE description
-        for the job matching
-      - provides logic for evaluation of the number of available CPU slots
-      - provides logic for the proxy renewal while executing jobs
+ - collects general CE related parameters to generate CE description
+   for the job matching
+ - provides logic for evaluation of the number of available CPU slots
+ - provides logic for the proxy renewal while executing jobs
 
-     The CE parameters are collected from the following sources, in hierarchy
-     descending order:
+The CE parameters are collected from the following sources, in hierarchy
+descending order:
 
-      - parameters provided through setParameters() method of the class
-      - parameters in /LocalSite configuration section
-      - parameters in /LocalSite/<ceName>/ResourceDict configuration section
-      - parameters in /LocalSite/ResourceDict configuration section
-      - parameters in /LocalSite/<ceName> configuration section
-      - parameters in /Resources/Computing/<ceName> configuration section
-      - parameters in /Resources/Computing/CEDefaults configuration section
+ - parameters provided through setParameters() method of the class
+ - parameters in /LocalSite configuration section
+ - parameters in /LocalSite/<ceName>/ResourceDict configuration section
+ - parameters in /LocalSite/ResourceDict configuration section
+ - parameters in /LocalSite/<ceName> configuration section
+ - parameters in /Resources/Computing/<ceName> configuration section
+ - parameters in /Resources/Computing/CEDefaults configuration section
 
-     The ComputingElement objects are usually instantiated with the help of
-     ComputingElementFactory.
+The ComputingElement objects are usually instantiated with the help of
+ComputingElementFactory.
 
-     The ComputingElement class can be considered abstract. 3 kinds of abstract ComputingElements
-     can be distinguished from it:
+The ComputingElement class can be considered abstract. 3 kinds of abstract ComputingElements
+can be distinguished from it:
 
-      - Remote ComputingElement: includes methods to interact with a remote ComputingElement
-        (e.g. HtCondorCEComputingElement, AREXComputingElement).
-      - Inner ComputingElement: includes methods to locally interact with an underlying worker node.
-        It is worth noting that an Inner ComputingElement provides synchronous submission
-        (the submission of a job is blocking the execution until its completion). It deals with one job at a time.
-      - Inner Pool ComputingElement: includes methods to locally interact with Inner ComputingElements asynchronously.
-        It can manage a pool of jobs running simultaneously.
+ - Remote ComputingElement: includes methods to interact with a remote ComputingElement
+   (e.g. HtCondorCEComputingElement, AREXComputingElement).
+ - Inner ComputingElement: includes methods to locally interact with an underlying worker node.
+   It is worth noting that an Inner ComputingElement provides synchronous submission
+   (the submission of a job is blocking the execution until its completion). It deals with one job at a time.
+ - Inner Pool ComputingElement: includes methods to locally interact with Inner ComputingElements asynchronously.
+   It can manage a pool of jobs running simultaneously.
 
-     To configure the use of Tokens for CEs:
+To configure the use of Tokens for CEs:
 
-     * the CE is able to receive any token. Validation: 'Tag = Token' should be included in the CE parameters.
-     * the CE is able to receive VO-specifc tokens. Validation: 'Tag = Token:<VO>' should be included in the CE parameters.
+* the CE is able to receive any token. Validation: 'Tag = Token' should be included in the CE parameters.
+* the CE is able to receive VO-specifc tokens. Validation: 'Tag = Token:<VO>' should be included in the CE parameters.
 
 """
 
