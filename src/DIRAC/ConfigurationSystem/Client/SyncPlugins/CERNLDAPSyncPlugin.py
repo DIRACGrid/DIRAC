@@ -32,7 +32,7 @@ class CERNLDAPSyncPlugin:
         else:
             userDict["PrimaryCERNAccount"] = self._findOwnerAccountName(username, attributes)
 
-        if cernAccountType in ["Primary", "Secondary"]:
+        if userDict["CERNAccountType"] in ["Primary", "Secondary"]:
             userDict["CERNPersonId"] = attributes.get("employeeId", [None])[0]
 
     def _findOwnerAccountName(self, username, attributes):
