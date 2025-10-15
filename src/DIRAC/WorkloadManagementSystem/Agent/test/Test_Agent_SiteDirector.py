@@ -169,10 +169,16 @@ def sd(mocker, config):
         gConfig.getSections("Resources/Sites/LCG")["Value"] + gConfig.getSections("Resources/Sites/DIRAC")["Value"]
     )
     mocker.patch(
-        "DIRAC.WorkloadManagementSystem.Agent.SiteDirector.SiteStatus.getUsableSites", return_values=usableSites
+        "DIRAC.WorkloadManagementSystem.Agent.SiteDirector.SiteStatus.getUsableSites", return_value=S_OK(usableSites)
     )
+
+    # Mock getElementStatus to return a properly formatted dictionary
+    def mock_getElementStatus(ceNamesList, *args, **kwargs):
+        return S_OK({ceName: {"all": "Active"} for ceName in ceNamesList})
+
     mocker.patch(
-        "DIRAC.WorkloadManagementSystem.Agent.SiteDirector.ResourceStatus.getElementStatus", return_values=usableSites
+        "DIRAC.WorkloadManagementSystem.Agent.SiteDirector.ResourceStatus.getElementStatus",
+        side_effect=mock_getElementStatus,
     )
     mocker.patch(
         "DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gProxyManager.downloadProxy", side_effect=mockPMProxyReply
