@@ -229,12 +229,8 @@ class SiteDirector(AgentModule):
             site = self.queueDict[queueName]["Site"]
             ce = self.queueDict[queueName]["CEName"]
 
-            # Check the status of the Site
-            if site in siteMaskList:
-                continue
-
-            # Check the status of the CE (only for RSS=Active)
-            if ce not in ceMaskList:
+            # Check the status of the Site and CE
+            if site in siteMaskList and ce in ceMaskList:
                 continue
 
             self.log.warn("Queue not considered because not usable:", queueName)
