@@ -33,7 +33,6 @@ import time
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
@@ -48,7 +47,7 @@ class MonitoringDB(ElasticDB):
 
         try:
             section = getDatabaseSection("Monitoring/MonitoringDB")
-            indexPrefix = gConfig.getValue(f"{section}/IndexPrefix", CSGlobals.getSetup()).lower()
+            indexPrefix = gConfig.getValue(f"{section}/IndexPrefix").lower()
             # Connecting to the ES cluster
             super().__init__(fullName=name, indexPrefix=indexPrefix)
         except RuntimeError as ex:

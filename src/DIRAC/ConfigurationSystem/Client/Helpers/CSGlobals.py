@@ -4,15 +4,6 @@ Some Helper functions to retrieve common location from the CS
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 
 
-def getSetup() -> str:
-    """
-    Return setup name
-    """
-    from DIRAC import gConfig
-
-    return gConfig.getValue("/DIRAC/Setup", "")
-
-
 def getVO(defaultVO: str = "") -> str:
     """
     Return VO from configuration
