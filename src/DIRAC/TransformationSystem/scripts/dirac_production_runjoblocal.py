@@ -16,7 +16,7 @@ from urllib.request import urlopen
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Base.Script import Script
-from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO, getSetup
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 
@@ -79,14 +79,12 @@ def __configurePilot(basepath, vo):
     This method was created specifically for LHCb pilots, more info
     about othe VOs is needed to make it more general.
     """
-    currentSetup = getSetup()
     masterCS = gConfigurationData.getMasterServer()
 
     os.system(
         "python "
         + basepath
-        + "dirac-pilot.py -S %s -l %s -C %s -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch -dd"
-        % (currentSetup, vo, masterCS)
+        + f"dirac-pilot.py -l {vo} -C {masterCS} -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch -dd"
     )
 
     diracdir = os.path.expanduser("~") + os.path.sep

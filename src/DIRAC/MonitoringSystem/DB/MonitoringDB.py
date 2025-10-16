@@ -5,8 +5,7 @@ Wrapper on top of ElasticDB. It is used to manage the DIRAC monitoring types.
 
 The following option can be set in `Systems/Monitoring/Databases/MonitoringDB`
 
-* *IndexPrefix*:  Prefix used to prepend to indexes created in the ES instance. If this
-                  is not present in the CS, the indexes are prefixed with the setup name.
+* *IndexPrefix*:  Prefix used to prepend to indexes created in the ES instance.
 
 For each monitoring types managed, the Period (how often a new index is created)
 can be defined with::
@@ -33,7 +32,6 @@ import time
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
@@ -48,7 +46,7 @@ class MonitoringDB(ElasticDB):
 
         try:
             section = getDatabaseSection("Monitoring/MonitoringDB")
-            indexPrefix = gConfig.getValue(f"{section}/IndexPrefix", CSGlobals.getSetup()).lower()
+            indexPrefix = gConfig.getValue(f"{section}/IndexPrefix", "").lower()
             # Connecting to the ES cluster
             super().__init__(fullName=name, indexPrefix=indexPrefix)
         except RuntimeError as ex:
@@ -192,7 +190,10 @@ class MonitoringDB(ElasticDB):
         # and now we group with bucket aggregation
         groupingAggregation = self._A("terms", field=grouping, size=self.RESULT_SIZE)
         groupingAggregation.bucket(
-            "end_data", "date_histogram", field="timestamp", interval=interval  # name  # type
+            "end_data",
+            "date_histogram",
+            field="timestamp",
+            interval=interval,  # name  # type
         ).metric("timeAggregation", timeAggregation).pipeline(
             "timeAggregation_avg_bucket", "avg_bucket", buckets_path="timeAggregation>total", gap_policy="insert_zeros"
         )
