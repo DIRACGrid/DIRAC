@@ -2,52 +2,12 @@
 
 import uuid
 from ast import literal_eval
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.DB import DB
 from DIRAC.FrameworkSystem.Client.Logger import contextLogger
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
-
-STATUS_MAP = {
-    "Storing": PilotStatus.WAITING,
-    "Sent": PilotStatus.RUNNING,
-    "Finalized": PilotStatus.DONE,
-    "Failed": PilotStatus.FAILED,
-}
-
-BUNDLES_INFO_COLUMNS = [
-    "BundleID",
-    "ProcessorSum",
-    "MaxProcessors",
-    "Site",
-    "CE",
-    "Queue",
-    "CEDict",
-    "ExecTemplate",
-    "TaskID",
-    "Status",
-    "ProxyPath",
-    "Cleaned",
-    "FirstTimestamp",
-    "LastTimestamp"
-]
-
-JOB_TO_BUNDLE_COLUMNS = [
-    "JobID",
-    "BundleID",
-    "ExecutablePath",
-    "Outputs",
-    "Processors",
-]
-
-JOB_INPUTS_COLUMNS = [
-    "InputID",
-    "JobID",
-    "InputPath",
-]
-
-MYSQL_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
 def formatSelectOutput(listOfResults, keys):
@@ -73,7 +33,52 @@ class BundleDB(DB):
         self.JOB_TO_BUNDLE_TABLE = "JobToBundle"
         self.JOB_INPUTS_TABLE = "JobInputs"
 
-        self.maxMinsInBundle = self.getCSOption("MaxMinutesInBundle", 60)
+        self.BUNDLES_INFO_COLUMNS = [
+            "BundleID",
+            "ProcessorSum",
+            "MaxProcessors",
+            "Site",
+            "CE",
+            "Queue",
+            "CEDict",
+            "ExecTemplate",
+            "TaskID",
+            "Status",
+            "ProxyPath",
+            "Flags",
+            "FirstTimestamp",
+            "LastTimestamp"
+        ]
+
+        self.JOB_TO_BUNDLE_COLUMNS = [
+            "JobID",
+            "BundleID",
+            "DiracID",
+            "ExecutablePath",
+            "Outputs",
+            "Processors",
+        ]
+
+        self.JOB_INPUTS_COLUMNS = [
+            "InputID",
+            "JobID",
+            "InputPath",
+        ]
+
+        self.STATUS_MAP = {
+            "Storing": PilotStatus.WAITING,
+            "Sent": PilotStatus.RUNNING,
+            "Finalized": PilotStatus.DONE,
+            "Failed": PilotStatus.FAILED,
+        }
+
+        self.MYSQL_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
+        self.BUNDLE_FLAGS = {
+            "Cleaned":  1,
+            "Purged":   1 << 1,
+        }
+
 
     @property
     def log(self):
@@ -85,8 +90,8 @@ class BundleDB(DB):
 
     #############################################################################
 
-    def insertJobToBundle(self, jobId, executable, inputs, outputs, processors, ceDict, proxyPath):
-        result = self.__getBundlesFromCEDict(ceDict)
+    def insertJobToBundle(self, jobId, executable, inputs, outputs, processors, ceDict, proxyPath, diracId):
+        result = self._getBundlesFromCEDict(ceDict)
 
         if not result["OK"]:
             return result
@@ -95,13 +100,13 @@ class BundleDB(DB):
 
         # No bundles matching ceDict, so create a new one
         if not bundles:
-            result = self.__createNewBundle(ceDict, proxyPath)
+            result = self._createNewBundle(ceDict, proxyPath)
 
             if not result["OK"]:
                 return result
 
             bundleId = result["Value"]
-            result = self.__insertJobInBundle(jobId, bundleId, executable, inputs, outputs, processors, proxyPath)
+            result = self._insertJobInBundle(jobId, bundleId, executable, inputs, outputs, processors, proxyPath, diracId)
 
             if not result["OK"]:
                 return result
@@ -113,7 +118,7 @@ class BundleDB(DB):
 
         # If it does not fit in an already created bundle, create a new one
         if not bundleId:
-            result = self.__createNewBundle(ceDict, proxyPath)
+            result = self._createNewBundle(ceDict, proxyPath)
 
             if not result["OK"]:
                 return result
@@ -121,36 +126,39 @@ class BundleDB(DB):
             bundleId = result["Value"]
 
         # Insert it and obtain if it is ready to be submitted
-        result = self.__insertJobInBundle(jobId, bundleId, executable, inputs, outputs, processors, proxyPath)
+        result = self._insertJobInBundle(jobId, bundleId, executable, inputs, outputs, processors, proxyPath, diracId)
 
         if not result["OK"]:
             return result
 
         return S_OK({"BundleId": bundleId, "Ready": result["Value"]["Ready"]})
 
-    def removeJobFromBundle(self, jobId):
-        result = self.getFields(self.JOB_TO_BUNDLE_TABLE, ["BundleID", "Processors"], {"JobID": jobId})
+    def removeJobsFromBundle(self, jobIds):
+        for jobId in jobIds:
+            result = self.getFields(self.JOB_TO_BUNDLE_TABLE, ["BundleID", "Processors"], {"JobID": jobId})
 
-        if not result["OK"]:
-            return result
+            if not result["OK"]:
+                return result
 
-        jobInfo = result["Value"][0]
-        bundleId, procs = jobInfo[0], jobInfo[1]
+            jobInfo = result["Value"][0]
+            bundleId, procs = jobInfo[0], jobInfo[1]
 
-        result = self.__reduceProcessorSum(bundleId, procs)
+            result = self._reduceProcessorSum(bundleId, procs)
 
-        if not result["OK"]:
-            return result
+            if not result["OK"]:
+                return result
 
-        result = self.deleteEntries(self.JOB_TO_BUNDLE_TABLE, {"JobID": jobId})
-
-        # Rollback on error?? Can this Fail??
-        return result
+        result = self.deleteEntries(self.JOB_TO_BUNDLE_TABLE, {"JobID": jobIds})
+        return S_OK(result)
 
     #############################################################################
 
-    def getFinishedBundles(self):
-        result = self.getFields(self.BUNDLES_INFO_TABLE, ["BundleID"], {"Status": "FINISHED"})
+    def getUnpurgedBundles(self):
+        cmd = 'SELECT BundleID FROM BundlesInfo WHERE Status = "Finalized" AND Flags & {flag} != {flag};'.format(
+            flag=self.BUNDLE_FLAGS["Purged"]
+        )
+
+        result = self._query(cmd)
 
         if not result["OK"]:
             return result
@@ -158,12 +166,13 @@ class BundleDB(DB):
         return S_OK([entry[0] for entry in result["Value"]])
 
     def getWaitingBundles(self):
-        result = self.getFields(self.BUNDLES_INFO_TABLE, ["BundleID"], {"Status": "WAITING"})
+        result = self.getFields(self.BUNDLES_INFO_TABLE, self.BUNDLES_INFO_COLUMNS, {"Status": "Storing"})
 
         if not result["OK"]:
             return result
 
-        return S_OK([entry[0] for entry in result["Value"]])
+        bundlesDict = formatSelectOutput(result["Value"], self.BUNDLES_INFO_COLUMNS)
+        return S_OK(bundlesDict)
     
     #############################################################################
 
@@ -184,15 +193,17 @@ class BundleDB(DB):
         if not result["Value"]:
             return S_ERROR("Failed to get bundle Status")
 
-        return S_OK(STATUS_MAP[result["Value"][0][0]])
+        return S_OK(self.STATUS_MAP[result["Value"][0][0]])
 
     def getJobsOfBundle(self, bundleId):
-        cmd = f"""\
-        SELECT JobToBundle.JobID, ExecutablePath, Outputs, InputPath
+        cmd = """\
+        SELECT JobToBundle.JobID, DiracID, ExecutablePath, Outputs, InputPath
         FROM JobToBundle 
         LEFT JOIN JobInputs 
         ON JobToBundle.JobID = JobInputs.JobID 
-        WHERE BundleID = "{bundleId}";"""
+        WHERE BundleID = "{bundleId}";""".format(
+            bundleId=bundleId
+        )
 
         result = self._query(cmd)
 
@@ -202,18 +213,19 @@ class BundleDB(DB):
         rows = list(result["Value"])
         retVal = {}
 
-        # For each row (JobID, ExecutablePath, Outputs, [InputPath | Empty])
+        # For each row (JobID, ExecutablePath, Outputs, [InputPath])
         for row in rows:
             # The job has no input
-            if len(row) == 3:
-                jobID, jobExecutablePath, jobOutputs = row
+            if len(row) == 4:
+                jobID, diracId, jobExecutablePath, jobOutputs = row
                 jobInputPath = ""
             else:
-                jobID, jobExecutablePath, jobOutputs, jobInputPath = row
+                jobID, diracId, jobExecutablePath, jobOutputs, jobInputPath = row
 
             if jobID not in retVal:
                 retVal[jobID] = {
                     "ExecutablePath": jobExecutablePath,
+                    "DiracID": diracId,
                     "Inputs": [],
                     "Outputs": [],
                 }
@@ -222,20 +234,6 @@ class BundleDB(DB):
 
             if jobInputPath:
                 retVal[jobID]["Inputs"].append(jobInputPath)
-
-        # for i in range(len(retVal)):
-        #     result = self.getFields(self.JOB_INPUTS_TABLE, "InputPath", {"JobID": retVal[i]["JobID"]})
-        #     if not result["OK"]:
-        #         return result
-
-        #     inputs = list(result["Value"])
-
-        #     # Go through every input path
-        #     for idx, item in inputs:
-        #         inputs[idx] = item[0]  # Just the input path
-
-        #     retVal[i]["Inputs"] = inputs
-        #     retVal[i]["Outputs"] = literal_eval(retVal[i]["Outputs"])
 
         return S_OK(retVal)
 
@@ -247,8 +245,11 @@ class BundleDB(DB):
 
         return S_OK([entry[0] for entry in result["Value"]])
 
-    def removeJobInputs(self, jobId):
-        return self.deleteEntries(self.JOB_INPUTS_TABLE, {"JobID": jobId})
+    def removeJobInputs(self, jobIds):
+        if not isinstance(jobIds, list):
+            jobIds = [jobIds]
+        
+        return self.deleteEntries(self.JOB_INPUTS_TABLE, {"JobID": jobIds})
 
     #############################################################################
 
@@ -269,23 +270,40 @@ class BundleDB(DB):
     #############################################################################
 
     def setBundleAsFinalized(self, bundleId):
-        result = self.__updateBundleStatus(bundleId, "Finalized")
+        result = self._updateBundleStatus(bundleId, "Finalized")
         return result
 
     def setBundleAsFailed(self, bundleId):
-        result = self.__updateBundleStatus(bundleId, "Failed")
+        result = self._updateBundleStatus(bundleId, "Failed")
         return result
 
+    def setBundleAsPurged(self, bundleId):
+        cmd = 'UPDATE BundlesInfo SET Flags = Flags | {flag} WHERE BundleID = "{bundleId}";'.format(
+            bundleId=bundleId, flag=self.BUNDLE_FLAGS["Purged"] 
+        )
+
+        return self._query(cmd)
+
     def setBundleAsCleaned(self, bundleId):
-        return self.updateFields(self.BUNDLES_INFO_TABLE, ["Cleaned"], [True], {"BundleID": bundleId})
+        cmd = 'UPDATE BundlesInfo SET Flags = Flags | {flag} WHERE BundleID = "{bundleId}";'.format(
+            bundleId=bundleId, flag=self.BUNDLE_FLAGS["Cleaned"] 
+        )
+
+        return self._query(cmd)
 
     def isBundleCleaned(self, bundleId):
-        result = self.getFields(self.BUNDLES_INFO_TABLE, ["Cleaned"], {"BundleID": bundleId})
+        cmd = 'SELECT BundleID FROM BundlesInfo WHERE BundleID = "{bundleId}" AND Flags & {flag} = {flag};'.format(
+            bundleId=bundleId, flag=self.BUNDLE_FLAGS["Cleaned"] 
+        )
+
+        result = self._query(cmd)
 
         if not result["OK"]:
             return result
+        
+        cleaned = result["Value"] != []
 
-        return S_OK(result["Value"][0][0])
+        return S_OK(cleaned) 
 
     #############################################################################
 
@@ -298,8 +316,8 @@ class BundleDB(DB):
         if not result["Value"]:
             return S_ERROR(f"No bundle with id {bundleId}")
 
-        bundleDict = formatSelectOutput(result["Value"], BUNDLES_INFO_COLUMNS)[0]
-        bundleDict["Status"] = STATUS_MAP[bundleDict["Status"]]
+        bundleDict = formatSelectOutput(result["Value"], self.BUNDLES_INFO_COLUMNS)[0]
+        bundleDict["Status"] = self.STATUS_MAP[bundleDict["Status"]]
 
         self.log.debug(f"Look at this cool bundle: {bundleDict}")
 
@@ -315,17 +333,17 @@ class BundleDB(DB):
 
     #############################################################################
 
-    def __reduceProcessorSum(self, bundleId, nProcessors):
-        cmd = 'UPDATE BundlesInfo SET ProcessorSum = ProcessorSum - {} WHERE BundleID = "{}";'.format(
-            nProcessors, bundleId
+    def _reduceProcessorSum(self, bundleId, nProcessors):
+        cmd = 'UPDATE BundlesInfo SET ProcessorSum = ProcessorSum - {nProcs} WHERE BundleID = "{bundleId}";'.format(
+            bundleId=bundleId, nProcs=nProcessors
         )
         return self._query(cmd)
 
-    def __createNewBundle(self, ceDict, proxyPath):
+    def _createNewBundle(self, ceDict, proxyPath):
         if "ExecTemplate" not in ceDict:
             return S_ERROR("CE must have a properly formatted ExecTemplate")
 
-        timestamp = datetime.now(tz=timezone.utc).strftime(MYSQL_DATETIME_FORMAT)
+        timestamp = datetime.now(tz=timezone.utc).strftime(self.MYSQL_DATETIME_FORMAT)
         
         bundleId = uuid.uuid4().hex
         insertInfo = {
@@ -349,8 +367,8 @@ class BundleDB(DB):
 
         return S_OK(bundleId)
 
-    def __insertJobInBundle(self, jobId, bundleId, executable, inputs, outputs, nProcessors, proxyPath):
-        timestamp = datetime.now(tz=timezone.utc).strftime(MYSQL_DATETIME_FORMAT)
+    def _insertJobInBundle(self, jobId, bundleId, executable, inputs, outputs, nProcessors, proxyPath, diracId):
+        timestamp = datetime.now(tz=timezone.utc).strftime(self.MYSQL_DATETIME_FORMAT)
 
         # Insert the job into the bundle
         insertInfo = {
@@ -360,6 +378,9 @@ class BundleDB(DB):
             "Outputs": str(outputs),
             "Processors": nProcessors,
         }
+
+        if diracId:
+            insertInfo["DiracID"] = diracId
 
         result = self.insertFields(self.JOB_TO_BUNDLE_TABLE, list(insertInfo.keys()), list(insertInfo.values()))
 
@@ -379,8 +400,12 @@ class BundleDB(DB):
                 return result
 
         # Modify the number of processors that will be used by the bundle
-        cmd = 'UPDATE BundlesInfo SET ProcessorSum = ProcessorSum + {}, LastTimestamp = "{}" WHERE BundleID = "{}";'.format(
-            nProcessors, timestamp, bundleId
+        cmd = """\
+        UPDATE BundlesInfo 
+        SET ProcessorSum = ProcessorSum + {nProcs}, LastTimestamp = "{timestamp}" 
+        WHERE BundleID = "{bundleId}";
+        """.format(
+            bundleId=bundleId, nProcs=nProcessors, timestamp=timestamp
         )
         result = self._query(cmd)
 
@@ -403,23 +428,11 @@ class BundleDB(DB):
         )
         selection = selection[0]
         
-        ready = self.__getBundleRediness(selection)
+        ready = selection["ProcessorSum"] == selection["MaxProcessors"]
 
         return S_OK({"BundleId": bundleId, "Ready": ready})
 
-    def __getBundleRediness(self, bundleInfo):
-        elapsedTime : timedelta = bundleInfo["LastTimestamp"] - bundleInfo["FirstTimestamp"]
-        elapsedMinutes = elapsedTime.total_seconds() // 60
-
-        if elapsedMinutes > self.maxMinsInBundle:
-            return True
-
-        if bundleInfo["ProcessorSum"] == bundleInfo["MaxProcessors"]:
-            return True
-
-        return False        
-
-    def __getBundlesFromCEDict(self, ceDict):
+    def _getBundlesFromCEDict(self, ceDict):
         cmd = 'SELECT * FROM BundlesInfo WHERE Site = "{Site}" AND CE = "{CE}" AND Queue = "{Queue}";'.format(
             Site=ceDict["Site"],
             CE=ceDict["GridCE"],
@@ -435,16 +448,18 @@ class BundleDB(DB):
 
         retVal = formatSelectOutput(
             result["Value"],
-            BUNDLES_INFO_COLUMNS,
+            self.BUNDLES_INFO_COLUMNS,
         )
         return S_OK(retVal)
 
-    def __updateBundleStatus(self, bundleId, newStatus):
-        if newStatus not in STATUS_MAP.keys():
+    def _updateBundleStatus(self, bundleId, newStatus):
+        if newStatus not in self.STATUS_MAP.keys():
             msg = f"The new status '{newStatus}' does not correspond with the possible statuses:"
-            return S_ERROR(msg, STATUS_MAP.keys())
+            return S_ERROR(msg, self.STATUS_MAP.keys())
 
-        cmd = f'UPDATE BundlesInfo SET Status = "{newStatus}" WHERE BundleID = "{bundleId}";'
+        cmd = 'UPDATE BundlesInfo SET Status = "{status}" WHERE BundleID = "{bundleId}";'.format(
+            bundleId=bundleId, status=newStatus
+        )
         result = self._query(cmd)
 
         if not result["OK"]:

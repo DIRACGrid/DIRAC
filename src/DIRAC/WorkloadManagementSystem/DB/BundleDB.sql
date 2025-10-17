@@ -30,24 +30,25 @@ CREATE TABLE `BundlesInfo` (
     `TaskID`            VARCHAR(255),
     `Status`            ENUM('Storing', 'Sent', 'Finalized', 'Failed') NOT NULL DEFAULT 'Storing',
     `ProxyPath`         VARCHAR(255),
-    `Cleaned`           BOOLEAN DEFAULT FALSE,
+    `Flags`             SET('Cleaned', 'Purged') NOT NULL DEFAULT '',
     `FirstTimestamp`    DATETIME,
     `LastTimestamp`     DATETIME,
     PRIMARY KEY (`BundleID`),
     INDEX (`Site`,`CE`,`Queue`),
-    INDEX (`Status`),
-    INDEX (`Cleaned`)
+    INDEX (`Status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------------------------
 CREATE TABLE `JobToBundle` (
     `JobID`             VARCHAR(255) NOT NULL,
     `BundleID`          VARCHAR(32) NOT NULL,
+    `DiracID`           INTEGER,
     `ExecutablePath`    VARCHAR(255) NOT NULL,
     `Outputs`           VARCHAR(255) NOT NULL,
     `Processors`        INT(5) UNSIGNED NOT NULL DEFAULT 1,
     PRIMARY KEY (`JobID`),
-    FOREIGN KEY (`BundleID`) REFERENCES `BundlesInfo`(`BundleID`)
+    FOREIGN KEY (`BundleID`) REFERENCES `BundlesInfo`(`BundleID`),
+    INDEX (`DiracID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------------------------
