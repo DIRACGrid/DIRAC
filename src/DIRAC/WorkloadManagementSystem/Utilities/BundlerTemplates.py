@@ -1,12 +1,11 @@
 from DIRAC import S_ERROR, S_OK
 
-BASH_TEMPLATE = """\
+# DEPRECATED
+BASH_TESTING_TEMPLATE = """\
 #!/bin/bash
 BASEDIR=${{PWD}}
 INPUT={inputs}
 BUNDLE_ID={bundleId}
-
-PROC_MONITOR_VARS=(Pid Name State Threads Cpus_allowed_list)
 
 OLD_IFS=$IFS
 
@@ -61,37 +60,12 @@ calc_total_cpus
 echo This machine has "$total_allowed_cpus" valid cores
 echo Ranges: "${{cpu_ranges[@]}}"
 
-monitor_job() {{
-    local job_pid=$1
-    local job_id=$2
-    local log_file=$3
-
-    echo ID Timestamp CPU ${{PROC_MONITOR_VARS[*]}} | sed 's/ /\\t/g' > $log_file
-    
-    while : ; do
-        # If the job finished, finish the monitoring        
-        if ! kill -0 "$job_pid" 2>/dev/null; then
-            break  
-        fi
-
-        local cpu=$(ps -h -p "$job_pid" -o psr)
-        local timestamp=$(date "+%Y-%m-%d_%H:%M:%S")
-        local vars=()
-
-        for var in ${{PROC_MONITOR_VARS[@]}}; do
-            vars+=($(grep -w "$var" /proc/"$pid"/status | awk '{{print $2}}'))
-        done
-
-        echo $timestamp $job_id $cpu ${{vars[*]}} | sed 's/ /\\t/g' >> $log_file
-        sleep 5
-    done
-}}
-
 get_id() {{
     echo $1 | cut -d '_' -f 1
 }}
 
 job_number=0
+chmod u+x run_task.sh
 
 # execute tasks
 for input in ${{INPUT[@]}}; do
@@ -107,23 +81,48 @@ for input in ${{INPUT[@]}}; do
     done
 
     cpu=$(next_allowed_cpu $job_number)
-
-    chmod u+x run_task.sh
     taskset -c $cpu ${{BASEDIR}}/run_task.sh ${{jobId}} ${{input}} ${{BUNDLE_ID}} ${{BASEDIR}} &
     pid=$!
+
     pids+=($pid)
-
-    taskset -cp $cpu $pid
     job_number=$(($job_number+1))
-
-    monitor_job "$pid" "$jobId" "$jobId/monitoring.stats" &
-    pid=$!
-    monitor_pids+=($pid)
 done
 
 # wait for all tasks
 wait "${{pids[@]}}"
-wait "${{monitor_pids[@]}}"
+"""
+
+BASH_TEMPLATE = """\
+#!/bin/bash
+BASEDIR=${{PWD}}
+INPUT={inputs}
+BUNDLE_ID={bundleId}
+
+get_id() {{
+    echo $1 | cut -d '_' -f 1
+}}
+
+job_number=0
+chmod u+x run_task.sh
+
+# execute tasks
+for input in ${{INPUT[@]}}; do
+    [ -f "$input" ] || break
+
+    jobId=$(get_id ${{input}})
+    mkdir ${{jobId}}
+    
+    for filename in ${{jobId}}*; do
+        [ -f ${{filename}} ] || continue
+        # Move the job specific files to its directory, removing the jobId from its name
+        mv $filename ${{jobId}}/${{filename#${{jobId}}_*}}
+    done
+
+    ${{BASEDIR}}/run_task.sh ${{jobId}} ${{input}} ${{BUNDLE_ID}} ${{BASEDIR}} &
+done
+
+# wait for all tasks
+wait
 """
 
 BASH_RUN_TASK = """\
