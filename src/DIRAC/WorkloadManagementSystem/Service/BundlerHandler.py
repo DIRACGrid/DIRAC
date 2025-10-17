@@ -47,21 +47,18 @@ class BundlerHandler(RequestHandler):
 
     #############################################################################
 
-    types_storeInBundle = [str, str, list, list, str, int, dict]
+    types_storeInBundle = [str, str, list, list, str, int, dict, [int, type(None)]]
 
-    def export_storeInBundle(self, jobId, executable, inputs, outputs, proxyPath, processors, ceDict):
-        result = self.__setupCE(ceDict, proxyPath)
+    def export_storeInBundle(self, jobId, executable, inputs, outputs, proxyPath, processors, ceDict, diracId):
+        result = self._setupCE(ceDict, proxyPath)
 
         if not result["OK"]:
             return result
 
-        ce = result["Value"]["CE"]
-        proxy = result["Value"]["Proxy"]
-
-        self.jobToCE[jobId] = ce
-
         # Insert the Job into the DB
-        result = self.bundleDB.insertJobToBundle(jobId, executable, inputs, outputs, processors, ceDict, proxyPath)
+        result = self.bundleDB.insertJobToBundle(
+            jobId, executable, inputs, outputs, processors, ceDict, proxyPath, diracId
+        )
         if not result["OK"]:
             self.log.error("Failed to insert into a bundle the job with id ", str(jobId))
             return result
@@ -69,37 +66,10 @@ class BundlerHandler(RequestHandler):
         bundleId = result["Value"]["BundleId"]
         readyForSubmission = result["Value"]["Ready"]
 
-        self.bundleToCE[bundleId] = ce
-
         self.log.info("Job inserted in bundle successfully")
 
         if readyForSubmission:
-            self.log.info(f"Submitting bundle '{bundleId}' to CE '{ce.ceName}'")
-
-            result = self._wrapBundle(bundleId)
-            if not result["OK"]:
-                return result
-
-            jobIds, bundle_exe, bundle_inputs, bundle_outputs = result["Value"]
-            extra_outputs = [item for job_id in jobIds for item in [f"{job_id}.out", f"{job_id}.status"]]
-            bundle_outputs.extend(extra_outputs)
-
-            result = ce.submitJob(bundle_exe, proxy=proxy, inputs=bundle_inputs, outputs=bundle_outputs)
-
-            if not result["OK"]:
-                self.bundleDB.setBundleAsFailed(bundleId)
-                self.log.error("Failed to submit job to with id ", str(jobId))
-                return result
-
-            innerJobId = result["Value"][0]
-            taskId = innerJobId + ":::" + result["PilotStampDict"][innerJobId]
-
-            result = self.bundleDB.setTaskId(bundleId, taskId)
-
-            if not result["OK"]:
-                self.bundleDB.setBundleAsFailed(bundleId)
-                self.log.error("Failed to set task id of JobId ", str(jobId))
-                return result
+            self._submitBundle(bundleId)
 
         return S_OK({"BundleID": bundleId, "Executing": readyForSubmission})
 
@@ -167,10 +137,10 @@ class BundlerHandler(RequestHandler):
             return S_ERROR(message="KillBundleOnError is off, won't kill the bundle")
 
     def _killBundleOfJob(self, jobId):
-        result = self.__getJobCE(jobId)
+        result = self._getJobCE(jobId)
         if not result["OK"]:
             return result
-        ce = result["Value"]
+        ce = result["Value"]["CE"]
         result = self._getBundleIdFromJobId(jobId)
 
         if not result["OK"]:
@@ -225,10 +195,10 @@ class BundlerHandler(RequestHandler):
 
         taskId = result["Value"]["TaskID"]
 
-        result = self.__getJobCE(jobId)
+        result = self._getJobCE(jobId)
         if not result["OK"]:
             return result
-        ce = result["Value"]
+        ce = result["Value"]["CE"]
 
         try:
             result = ce.cleanJob(taskId)
@@ -264,12 +234,7 @@ class BundlerHandler(RequestHandler):
             if ":::" in task:
                 task = task.split(":::")[0]
 
-            result = self.__getBundleCE(bundleId)
-
-            if not result["OK"]:
-                return result
-
-            result = self.__setupCE(result["Value"]["CEDict"], result["Value"]["ProxyPath"])
+            result = self._getBundleCE(bundleId)
 
             if not result["OK"]:
                 return result
@@ -289,6 +254,58 @@ class BundlerHandler(RequestHandler):
                 self.bundleDB.setBundleAsFailed(bundleId)
 
         return S_OK(status)
+
+    #############################################################################
+
+    types_forceSubmitBundles = [list]
+
+    def export_forceSubmitBundles(self, bundleIds):
+        resultDict = {}
+
+        if not isinstance(bundleIds, list):
+            bundleIds = [bundleIds]
+
+        for bundleId in bundleIds:
+            result = self._submitBundle(bundleId)
+            resultDict[bundleId] = result
+
+        return S_OK(resultDict)
+
+    def _submitBundle(self, bundleId):
+        result = self._getBundleCE(bundleId)
+
+        if not result["OK"]:
+            return result
+
+        ce = result["Value"]["CE"]
+        proxy = result["Value"]["Proxy"]
+
+        result = self._wrapBundle(bundleId)
+        if not result["OK"]:
+            return result
+
+        jobIds, bundle_exe, bundle_inputs, bundle_outputs = result["Value"]
+        extra_outputs = [item for job_id in jobIds for item in [f"{job_id}.out", f"{job_id}.status"]]
+        bundle_outputs.extend(extra_outputs)
+
+        self.log.info(f"Submitting bundle '{bundleId}' to CE '{ce.ceName}'")
+
+        ce.ceParameters["NumberOfProcessors"] = len(jobIds)
+        result = ce.submitJob(bundle_exe, proxy=proxy, inputs=bundle_inputs, outputs=bundle_outputs)
+
+        if not result["OK"]:
+            self.bundleDB.setBundleAsFailed(bundleId)
+            return result
+
+        innerJobId = result["Value"][0]
+        taskId = innerJobId + ":::" + result["PilotStampDict"][innerJobId]
+
+        result = self.bundleDB.setTaskId(bundleId, taskId)
+
+        if not result["OK"]:
+            return S_ERROR("Failed to set the task id of the Bundle")
+
+        return S_OK()
 
     #############################################################################
 
@@ -369,7 +386,7 @@ class BundlerHandler(RequestHandler):
 
         return S_OK((jobIds, wrapperPath, inputs, outputs))
 
-    def __getBundleCE(self, bundleId):
+    def _getBundleCEDict(self, bundleId):
         result = self.bundleDB.getBundleCE(bundleId)
         if not result["OK"]:
             return result
@@ -379,34 +396,7 @@ class BundlerHandler(RequestHandler):
 
         return S_OK({"CEDict": ceDict, "ProxyPath": result["Value"]["ProxyPath"]})
 
-    def _getCE(self, jobId):
-        result = self._getBundleIdFromJobId(jobId)
-
-        if not result["OK"]:
-            return result
-        bundleId = result["Value"]
-
-        return self.__getBundleCE(bundleId)
-
-    def __getJobCE(self, jobId):
-        if jobId not in self.jobToCE:
-            # Look for it in the DB
-            result = self._getCE(jobId)
-
-            if not result["OK"]:
-                self.log.error("Failed to obtain CE Dict of Bundle with JobId ", str(jobId))
-                return result
-
-            result = self.__setupCE(result["Value"]["CEDict"], result["Value"]["ProxyPath"])
-
-            if not result["OK"]:
-                return result
-
-            self.jobToCE[jobId] = result["Value"]["CE"]
-
-        return S_OK(self.jobToCE[jobId])
-
-    def __setupCE(self, ceDict, proxyPath):
+    def _setupCE(self, ceDict, proxyPath):
         result = getProxyInfo(proxy=proxyPath)
 
         if not result["OK"]:
@@ -427,3 +417,38 @@ class BundlerHandler(RequestHandler):
         ce.setProxy(proxy)
 
         return S_OK({"CE": ce, "Proxy": proxy})
+
+    def _getBundleCE(self, bundleId):
+        if bundleId not in self.bundleToCE:
+            result = self._getBundleCEDict(bundleId)
+
+            if not result["OK"]:
+                return result
+
+            result = self._setupCE(result["Value"]["CEDict"], result["Value"]["ProxyPath"])
+
+            if not result["OK"]:
+                return result
+
+            self.bundleToCE[bundleId] = result["Value"]  # CE + Proxy
+
+        return S_OK(self.bundleToCE[bundleId])
+
+    def _getJobCE(self, jobId):
+        if jobId not in self.jobToCE:
+            result = self._getBundleIdFromJobId(jobId)
+
+            if not result["OK"]:
+                self.log.error("Failed to obtain BundleId with JobId ", str(jobId))
+                return result
+
+            bundleId = result["Value"]
+
+            result = self._getBundleCE(bundleId)
+
+            if not result["OK"]:
+                return result
+
+            self.jobToCE[jobId] = result["Value"]
+
+        return S_OK(self.jobToCE[jobId])

@@ -113,6 +113,9 @@ class BundleTaskDict(dict):
 class BundleComputingElement(ComputingElement):
     def __init__(self, ceUniqueID):
         """Standard constructor."""
+        if not ceUniqueID.startswith("bundled-"):
+            ceUniqueID = f"bundled-{ceUniqueID}"
+
         super().__init__(ceUniqueID)
 
         self.mandatoryParameters = ["ExecTemplate", "InnerCEType"]
@@ -138,7 +141,8 @@ class BundleComputingElement(ComputingElement):
         innerCEType = innerCEParams.pop("InnerCEType")
         innerCEParams["CEType"] = innerCEType
 
-        innerCeName = self.ceParameters["GridCE"].split("bundled-")[1]
+        innerCeName = self.ceParameters["GridCE"][len("bundled-") :]
+
         innerCEParams["GridCE"] = innerCeName
 
         # Building of the InnerCE
@@ -162,7 +166,7 @@ class BundleComputingElement(ComputingElement):
 
     #############################################################################
 
-    def submitJob(self, executableFile, proxy=None, numberOfProcessors=1, inputs=[], outputs=[]):
+    def submitJob(self, executableFile, proxy=None, numberOfProcessors=1, inputs=[], outputs=[], **kwargs):
         jobId = str(uuid.uuid4().hex)
 
         proxy = self.proxy if self.proxy else proxy
@@ -183,8 +187,12 @@ class BundleComputingElement(ComputingElement):
 
         proxyPath = result["Value"]
 
+        diracId = kwargs.get("jobDesc", {}).get("jobID", None)
+        if diracId:
+            diracId = int(diracId)
+
         result = self.bundler.storeInBundle(
-            jobId, executableFile, inputs, outputs, proxyPath, numberOfProcessors, self.innerCEParams
+            jobId, executableFile, inputs, outputs, proxyPath, numberOfProcessors, self.innerCEParams, diracId
         )
 
         if not result["OK"]:
@@ -254,10 +262,10 @@ class BundleComputingElement(ComputingElement):
         if not os.path.exists(output) or not os.path.exists(error):
             return S_ERROR("Outputs unable to be obtained")
 
-        with open(output, "r") as f:
+        with open(output) as f:
             output = f.read()
 
-        with open(error, "r") as f:
+        with open(error) as f:
             error = f.read()
 
         return S_OK((output, error))

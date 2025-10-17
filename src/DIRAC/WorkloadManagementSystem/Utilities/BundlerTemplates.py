@@ -32,7 +32,7 @@ calc_total_cpus() {{
 next_allowed_cpu() {{
     echo $allowed_cpus
     return 0
-     
+
     local desired_cpu=$(( ($1 + $cpu_offset) % $total_allowed_cpus ))
     local cpu=$first_allowed_cpu
 
@@ -40,12 +40,12 @@ next_allowed_cpu() {{
         local min=$(cut -d "-" -f 1 - <<<"$range")
         local max=$(cut -d "-" -f 2 - <<<"$range")
         local real_cpu=$(($min+$desired_cpu))
-        
+
         if (( $real_cpu <= $max )); then
             cpu=$real_cpu
             break
         fi
-    
+
         # Check next range
         local cpus_on_range=$(($max-$min+1))
         local desired_cpu=$(($desired_cpu-$cpus_on_range))
@@ -73,7 +73,7 @@ for input in ${{INPUT[@]}}; do
 
     jobId=$(get_id ${{input}})
     mkdir ${{jobId}}
-    
+
     for filename in ${{jobId}}*; do
         [ -f ${{filename}} ] || continue
         # Move the job specific files to its directory, removing the jobId from its name
@@ -111,7 +111,7 @@ for input in ${{INPUT[@]}}; do
 
     jobId=$(get_id ${{input}})
     mkdir ${{jobId}}
-    
+
     for filename in ${{jobId}}*; do
         [ -f ${{filename}} ] || continue
         # Move the job specific files to its directory, removing the jobId from its name
@@ -147,6 +147,7 @@ task_status=$?
 echo "[${task_id}] Task Finished"
 echo "[${task_id}] Process final status: ${task_status}"
 """
+
 
 def generate_template(template: str, inputs: list, bundleId: str):
     template = template.lower().replace("-", "_")

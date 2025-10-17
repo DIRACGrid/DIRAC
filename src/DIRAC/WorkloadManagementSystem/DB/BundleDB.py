@@ -47,7 +47,7 @@ class BundleDB(DB):
             "ProxyPath",
             "Flags",
             "FirstTimestamp",
-            "LastTimestamp"
+            "LastTimestamp",
         ]
 
         self.JOB_TO_BUNDLE_COLUMNS = [
@@ -72,13 +72,12 @@ class BundleDB(DB):
             "Failed": PilotStatus.FAILED,
         }
 
-        self.MYSQL_DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+        self.MYSQL_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
         self.BUNDLE_FLAGS = {
-            "Cleaned":  1,
-            "Purged":   1 << 1,
+            "Cleaned": 1,
+            "Purged": 1 << 1,
         }
-
 
     @property
     def log(self):
@@ -106,7 +105,9 @@ class BundleDB(DB):
                 return result
 
             bundleId = result["Value"]
-            result = self._insertJobInBundle(jobId, bundleId, executable, inputs, outputs, processors, proxyPath, diracId)
+            result = self._insertJobInBundle(
+                jobId, bundleId, executable, inputs, outputs, processors, proxyPath, diracId
+            )
 
             if not result["OK"]:
                 return result
@@ -173,7 +174,7 @@ class BundleDB(DB):
 
         bundlesDict = formatSelectOutput(result["Value"], self.BUNDLES_INFO_COLUMNS)
         return S_OK(bundlesDict)
-    
+
     #############################################################################
 
     def getBundleIdFromJobId(self, jobId):
@@ -198,9 +199,9 @@ class BundleDB(DB):
     def getJobsOfBundle(self, bundleId):
         cmd = """\
         SELECT JobToBundle.JobID, DiracID, ExecutablePath, Outputs, InputPath
-        FROM JobToBundle 
-        LEFT JOIN JobInputs 
-        ON JobToBundle.JobID = JobInputs.JobID 
+        FROM JobToBundle
+        LEFT JOIN JobInputs
+        ON JobToBundle.JobID = JobInputs.JobID
         WHERE BundleID = "{bundleId}";""".format(
             bundleId=bundleId
         )
@@ -248,7 +249,7 @@ class BundleDB(DB):
     def removeJobInputs(self, jobIds):
         if not isinstance(jobIds, list):
             jobIds = [jobIds]
-        
+
         return self.deleteEntries(self.JOB_INPUTS_TABLE, {"JobID": jobIds})
 
     #############################################################################
@@ -279,31 +280,31 @@ class BundleDB(DB):
 
     def setBundleAsPurged(self, bundleId):
         cmd = 'UPDATE BundlesInfo SET Flags = Flags | {flag} WHERE BundleID = "{bundleId}";'.format(
-            bundleId=bundleId, flag=self.BUNDLE_FLAGS["Purged"] 
+            bundleId=bundleId, flag=self.BUNDLE_FLAGS["Purged"]
         )
 
         return self._query(cmd)
 
     def setBundleAsCleaned(self, bundleId):
         cmd = 'UPDATE BundlesInfo SET Flags = Flags | {flag} WHERE BundleID = "{bundleId}";'.format(
-            bundleId=bundleId, flag=self.BUNDLE_FLAGS["Cleaned"] 
+            bundleId=bundleId, flag=self.BUNDLE_FLAGS["Cleaned"]
         )
 
         return self._query(cmd)
 
     def isBundleCleaned(self, bundleId):
         cmd = 'SELECT BundleID FROM BundlesInfo WHERE BundleID = "{bundleId}" AND Flags & {flag} = {flag};'.format(
-            bundleId=bundleId, flag=self.BUNDLE_FLAGS["Cleaned"] 
+            bundleId=bundleId, flag=self.BUNDLE_FLAGS["Cleaned"]
         )
 
         result = self._query(cmd)
 
         if not result["OK"]:
             return result
-        
+
         cleaned = result["Value"] != []
 
-        return S_OK(cleaned) 
+        return S_OK(cleaned)
 
     #############################################################################
 
@@ -344,7 +345,7 @@ class BundleDB(DB):
             return S_ERROR("CE must have a properly formatted ExecTemplate")
 
         timestamp = datetime.now(tz=timezone.utc).strftime(self.MYSQL_DATETIME_FORMAT)
-        
+
         bundleId = uuid.uuid4().hex
         insertInfo = {
             "BundleID": bundleId,
@@ -401,8 +402,8 @@ class BundleDB(DB):
 
         # Modify the number of processors that will be used by the bundle
         cmd = """\
-        UPDATE BundlesInfo 
-        SET ProcessorSum = ProcessorSum + {nProcs}, LastTimestamp = "{timestamp}" 
+        UPDATE BundlesInfo
+        SET ProcessorSum = ProcessorSum + {nProcs}, LastTimestamp = "{timestamp}"
         WHERE BundleID = "{bundleId}";
         """.format(
             bundleId=bundleId, nProcs=nProcessors, timestamp=timestamp
@@ -411,23 +412,22 @@ class BundleDB(DB):
 
         if not result["OK"]:
             return result
-            
+
         # Obtain the info to be returned to the Service
         result = self.getFields(
-            self.BUNDLES_INFO_TABLE, 
-            ["ProcessorSum", "MaxProcessors", "Status", "FirstTimestamp", "LastTimestamp"], 
-            {"BundleID": bundleId}
+            self.BUNDLES_INFO_TABLE,
+            ["ProcessorSum", "MaxProcessors", "Status", "FirstTimestamp", "LastTimestamp"],
+            {"BundleID": bundleId},
         )
 
         if not result["OK"]:
             return result
 
         selection = formatSelectOutput(
-            result["Value"], 
-            ["ProcessorSum", "MaxProcessors", "Status", "FirstTimestamp", "LastTimestamp"]
+            result["Value"], ["ProcessorSum", "MaxProcessors", "Status", "FirstTimestamp", "LastTimestamp"]
         )
         selection = selection[0]
-        
+
         ready = selection["ProcessorSum"] == selection["MaxProcessors"]
 
         return S_OK({"BundleId": bundleId, "Ready": ready})

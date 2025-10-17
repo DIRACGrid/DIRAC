@@ -21,10 +21,10 @@ class AREXEnhancedComputingElement(AREXComputingElement):
         :param str path: remote path
         :return list: names of the available outputs
         """
-        query = self._urlJoin(os.path.join("jobs", arcJobID, "session", path or ''))
+        query = self._urlJoin(os.path.join("jobs", arcJobID, "session", path or ""))
 
         # Submit the GET request to retrieve the names of the outputs
-        #self.log.debug(f"Retrieving the names of the outputs for {jobID}")
+        # self.log.debug(f"Retrieving the names of the outputs for {jobID}")
         self.log.debug(f"Retrieving the names of the outputs with {query}")
         result = self._request("get", query)
         if not result["OK"]:
@@ -35,9 +35,9 @@ class AREXEnhancedComputingElement(AREXComputingElement):
         if not response.text:
             return S_ERROR(f"There is no output for job {jobID}")
 
-        #return S_OK(response.json()["file"])
+        # return S_OK(response.json()["file"])
         return S_OK(response.json())
-    
+
     def getJobOutput(self, jobID, workingDirectory=None, path=None):
         """Get the outputs of the given job reference.
 
@@ -68,11 +68,11 @@ class AREXEnhancedComputingElement(AREXComputingElement):
         self.log.debug("Outputs to get are", remoteOutputs)
 
         remoteOutputsFiles = []
-        if 'file' in remoteOutputs:
+        if "file" in remoteOutputs:
             remoteOutputsFiles = remoteOutputs["file"]
 
-        remoteOutputsDirs  = [] 
-        if 'dir' in remoteOutputs:
+        remoteOutputsDirs = []
+        if "dir" in remoteOutputs:
             remoteOutputsDirs = remoteOutputs["dir"]
 
         if not workingDirectory:
@@ -81,23 +81,25 @@ class AREXEnhancedComputingElement(AREXComputingElement):
                 workingDirectory = os.path.join(self.ceParameters["WorkingDirectory"], arcJob)
             else:
                 workingDirectory = arcJob
-        
+
         if not os.path.exists(workingDirectory):
             os.mkdir(workingDirectory)
-            
+
         # Directories
         for remoteOutput in remoteOutputsDirs:
-            self.getJobOutput(jobID, 
-                    workingDirectory=os.path.join(workingDirectory, remoteOutput),
-                    path=os.path.join(path or '',  remoteOutput))
+            self.getJobOutput(
+                jobID,
+                workingDirectory=os.path.join(workingDirectory, remoteOutput),
+                path=os.path.join(path or "", remoteOutput),
+            )
 
         # Files
         stdout = None
         stderr = None
         for remoteOutput in remoteOutputsFiles:
             # Prepare the command
-            #query = self._urlJoin(os.path.join("jobs", arcJob, "session", remoteOutput))
-            query = self._urlJoin(os.path.join("jobs", arcJob, "session", path or '', remoteOutput))
+            # query = self._urlJoin(os.path.join("jobs", arcJob, "session", remoteOutput))
+            query = self._urlJoin(os.path.join("jobs", arcJob, "session", path or "", remoteOutput))
 
             # Submit the GET request to retrieve outputs
             result = self._request("get", query, stream=True)
@@ -116,6 +118,5 @@ class AREXEnhancedComputingElement(AREXComputingElement):
             if remoteOutput == f"{stamp}.err":
                 with open(localOutput) as f:
                     stderr = f.read()
-
 
         return S_OK((stdout, stderr))
