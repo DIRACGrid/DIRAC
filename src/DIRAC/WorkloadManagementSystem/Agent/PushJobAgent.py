@@ -366,6 +366,9 @@ class PushJobAgent(JobAgent):
                         resourceParams=ceDict,
                         optimizerParams=optimizerParams,
                         processors=submissionParams["processors"],
+                        wholeNode=submissionParams["wholeNode"],
+                        maxNumberOfProcessors=submissionParams["maxNumberOfProcessors"],
+                        mpTag=submissionParams["mpTag"],
                     )
                     if not result["OK"]:
                         self.failedQueues[queueName] += 1
@@ -521,6 +524,9 @@ class PushJobAgent(JobAgent):
         resourceParams: dict,
         optimizerParams: dict,
         processors: int,
+        wholeNode: bool,
+        maxNumberOfProcessors: int,
+        mpTag: bool,
     ):
         """Submit a JobWrapper to the remote site
 
@@ -618,6 +624,13 @@ class PushJobAgent(JobAgent):
             proxy=None,
             inputs=inputs,
             outputs=outputs,
+            numberOfProcessors=processors,
+            maxNumberOfProcessors=maxNumberOfProcessors,
+            wholeNode=wholeNode,
+            mpTag=mpTag,
+            jobDesc=jobDesc,
+            log=self.log,
+            logLevel=self.logLevel,
         )
         if not result["OK"]:
             rescheduleResult = rescheduleFailedJob(
