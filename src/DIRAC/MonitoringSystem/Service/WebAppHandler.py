@@ -37,8 +37,9 @@ class WebAppHandler(RequestHandler):
 
             result = ObjectLoader().loadObject("TransformationSystem.DB.TransformationDB", "TransformationDB")
             if not result["OK"]:
-                return result
-            cls.transformationDB = result["Value"](parentLogger=cls.log)
+                cls.log.warn("Could not connect to TransformationDB")
+            else:
+                cls.transformationDB = result["Value"](parentLogger=cls.log)
 
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp}")
