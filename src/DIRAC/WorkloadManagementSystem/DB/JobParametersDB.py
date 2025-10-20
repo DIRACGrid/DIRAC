@@ -1,10 +1,10 @@
-""" Module containing a front-end to the OpenSearch-based JobParametersDB.
-    This is a drop-in replacement for MySQL-based table JobDB.JobParameters.
+"""Module containing a front-end to the OpenSearch-based JobParametersDB.
+This is a drop-in replacement for MySQL-based table JobDB.JobParameters.
 
-    The following class methods are provided for public usage
-      - getJobParameters()
-      - setJobParameter()
-      - deleteJobParameters()
+The following class methods are provided for public usage
+  - getJobParameters()
+  - setJobParameter()
+  - deleteJobParameters()
 """
 
 from DIRAC import S_ERROR, S_OK
@@ -37,11 +37,11 @@ class JobParametersDB(ElasticDB):
     def __init__(self, parentLogger=None):
         """Standard Constructor"""
 
-        self.fullname = "WorkloadManagement/ElasticJobParametersDB"
+        self.fullname = "WorkloadManagement/JobParametersDB"
         self.index_name = self.getCSOption("index_name", "job_parameters")
 
         try:
-            # Connecting to the ES cluster
+            # Connecting to the OpenSearch cluster
             super().__init__(self.fullname, self.index_name, parentLogger=parentLogger)
         except Exception:
             RuntimeError("Can't connect to JobParameters index")

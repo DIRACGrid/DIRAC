@@ -5,7 +5,7 @@ Wrapper on top of ElasticDB. It is used to manage the DIRAC monitoring types.
 
 The following option can be set in `Systems/Monitoring/Databases/MonitoringDB`
 
-* *IndexPrefix*:  Prefix used to prepend to indexes created in the ES instance.
+* *IndexPrefix*:  Prefix used to prepend to indexes created in the OpenSearch instance.
 
 For each monitoring types managed, the Period (how often a new index is created)
 can be defined with::
@@ -193,7 +193,7 @@ class MonitoringDB(ElasticDB):
             "end_data",
             "date_histogram",
             field="timestamp",
-            interval=interval,  # name  # type
+            interval=interval,
         ).metric("timeAggregation", timeAggregation).pipeline(
             "timeAggregation_avg_bucket", "avg_bucket", buckets_path="timeAggregation>total", gap_policy="insert_zeros"
         )
