@@ -28,20 +28,29 @@ class WebAppHandler(RequestHandler):
             result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotAgentsDB", "PilotAgentsDB")
             if not result["OK"]:
                 return result
-            cls.pilotAgentsDB = result["Value"](parentLogger=cls.log)
+            try:
+                cls.pilotAgentsDB = result["Value"](parentLogger=cls.log)
+            except RuntimeError:
+                cls.log.warn("Could not connect to PilotAgentsDB")
 
             result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobDB", "JobDB")
             if not result["OK"]:
                 return result
-            cls.jobDB = result["Value"](parentLogger=cls.log)
+            try:
+                cls.jobDB = result["Value"](parentLogger=cls.log)
+            except RuntimeError:
+                cls.log.warn("Could not connect to JobDB")
 
             result = ObjectLoader().loadObject("TransformationSystem.DB.TransformationDB", "TransformationDB")
             if not result["OK"]:
-                cls.log.warn("Could not connect to TransformationDB")
-            else:
+                return result
+            try:
                 cls.transformationDB = result["Value"](parentLogger=cls.log)
+            except RuntimeError:
+                cls.log.warn("Could not connect to TransformationDB")
 
         except RuntimeError as excp:
+            cls.log.exception()
             return S_ERROR(f"Can't connect to DB: {excp}")
 
         return S_OK()

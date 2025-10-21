@@ -5,7 +5,6 @@ import hashlib
 import re
 
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceSection
 from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter as myBasePlotter
 from DIRAC.Core.Utilities.ObjectLoader import loadObjects
@@ -56,7 +55,6 @@ class MainReporter:
         :param str setup: DIRAC setup
         """
         self.__db = db
-        self.__setup = CSGlobals.getSetup().lower()
         self.__csSection = getServiceSection("Monitoring/Monitoring")
         self.__plotterList = PlottersList()
 
@@ -75,7 +73,6 @@ class MainReporter:
             requestToHash[key] = epoch - epoch % granularity
         md5Hash = hashlib.md5()
         md5Hash.update(repr(requestToHash).encode())
-        md5Hash.update(self.__setup.encode())
         return md5Hash.hexdigest()
 
     def generate(self, reportRequest):
