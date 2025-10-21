@@ -1,3 +1,29 @@
+[v9.0.2]
+
+*MonitoringSystem
+
+FIX: (#8343) remove Setup remnants
+
+*CERNLDAPSyncPlugin
+
+FIX: (#8341) cernAccountType is a list -- ensure CERNPersonId filled correctly
+NEW: (#8334) sync CCID / CERN Person ID to CS
+
+*WorkloadManagement
+
+FIX: (#8340) Site Director stops trying to leverage banned CEs
+FIX: (#8338) TokenManager - pass audience parameter as resource to fetchToken() to satisfy Check-In
+
+*General
+
+Remove setuptools from runtime dependencies, no longer required.
+
+*Core
+
+CHANGE: (#8323) Agressively close connections when serivces are overloaded
+For examples look into release.notes
+CHANGE: (#8312) allow one and only one diracx token in the proxy file
+
 [v9.0.1]
 
 *WorkloadManagementSystem
