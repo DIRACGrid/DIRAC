@@ -1,3 +1,14 @@
+[v9.0.3]
+
+*DiracX
+
+NEW: (#8347) Depend on released versions of DiracX
+NEW: (#8347) Depend on diracx-cli to ease management of DiracX CS conversion
+
+*FrameworkSystem
+
+CHANGE: (#8324) Remove Registry/group option VOMSVO (simply use "VO")
+
 [v9.0.2]
 
 *MonitoringSystem
