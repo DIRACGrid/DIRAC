@@ -75,6 +75,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - name: Fail-fast for outdated pipelines
       run: .github/workflows/fail-fast.sh
     - uses: conda-incubator/setup-miniconda@v3
