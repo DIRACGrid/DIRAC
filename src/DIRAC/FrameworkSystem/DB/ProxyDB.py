@@ -601,13 +601,13 @@ class ProxyDB(DB):
         :return: S_OK(dict)/S_ERROR() -- dict contain attribute and VOMS VO
         """
         if requiredVOMSAttribute:
-            return S_OK({"attribute": requiredVOMSAttribute, "VOMSVO": Registry.getVOMSVOForGroup(userGroup)})
+            return S_OK({"attribute": requiredVOMSAttribute, "VO": Registry.getVOForGroup(userGroup)})
 
         csVOMSMapping = Registry.getVOMSAttributeForGroup(userGroup)
         if not csVOMSMapping:
             return S_ERROR(f"No mapping defined for group {userGroup} in the CS")
 
-        return S_OK({"attribute": csVOMSMapping, "VOMSVO": Registry.getVOMSVOForGroup(userGroup)})
+        return S_OK({"attribute": csVOMSMapping, "VO": Registry.getVOForGroup(userGroup)})
 
     def getVOMSProxy(self, userDN, userGroup, requiredLifeTime=None, requestedVOMSAttr=None):
         """Get proxy string from the Proxy Repository for use with userDN
@@ -624,7 +624,7 @@ class ProxyDB(DB):
         if not retVal["OK"]:
             return retVal
         vomsAttr = retVal["Value"]["attribute"]
-        vomsVO = retVal["Value"]["VOMSVO"]
+        vomsVO = retVal["Value"]["VO"]
 
         # Look in the cache
         retVal = self.__getPemAndTimeLeft(userDN, userGroup, vomsAttr)

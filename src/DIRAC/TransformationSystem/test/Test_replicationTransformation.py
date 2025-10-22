@@ -1,14 +1,13 @@
 """Test the dirac-transformation-replication script and helper"""
 import unittest
+from unittest.mock import MagicMock as Mock
+from unittest.mock import patch
 
-from unittest.mock import MagicMock as Mock, patch
-
-from DIRAC import S_OK, S_ERROR
-
-from DIRAC.TransformationSystem.Utilities.ReplicationTransformation import createDataTransformation
+from DIRAC import S_ERROR, S_OK
 from DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters import Params
+from DIRAC.TransformationSystem.Utilities.ReplicationTransformation import createDataTransformation
 
-GET_VOMS = "DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters.getVOMSVOForGroup"
+GET_VOMS = "DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters.getVOForGroup"
 GET_PROXY = "DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters.getProxyInfo"
 
 

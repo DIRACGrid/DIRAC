@@ -107,7 +107,6 @@ Here define the users part of the "superb_user" group, its DIRAC properties, and
          Users = bsanteramo, anotherUser
          Properties = NormalUser
          VOMSRole = /superbvo.org
-         VOMSVO = superbvo.org
          VO = superbvo.org
          AutoAddVOMS = True
          AutoUploadProxy = True
@@ -274,7 +273,6 @@ Add pamela_user
          Users = bsanteramo
          Properties = NormalUser
          VOMSRole = /pamela
-         VOMSVO = pamela
          VO = pamela
          AutoAddVOMS = True
          AutoUploadProxy = True
