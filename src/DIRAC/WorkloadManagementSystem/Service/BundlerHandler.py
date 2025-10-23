@@ -13,6 +13,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
+from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.DB.BundleDB import BundleDB
 from DIRAC.WorkloadManagementSystem.Utilities.BundlerTemplates import BASH_RUN_TASK, generate_template
 
@@ -32,6 +33,8 @@ class BundlerHandler(RequestHandler):
             cls.jobToBundle = {}
 
             cls.ceFactory = ComputingElementFactory()
+
+            cls.jobReports: dict[int, JobReport] = {}
 
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp}")
@@ -67,6 +70,11 @@ class BundlerHandler(RequestHandler):
         readyForSubmission = result["Value"]["Ready"]
 
         self.log.info("Job inserted in bundle successfully")
+
+        if diracId:
+            self.jobReports[jobId] = JobReport(diracId, self.__class__.__name__)
+
+        self.__reportJob(jobId, PilotStatus.RUNNING, "Job Stored in a bundle")
 
         if readyForSubmission:
             self._submitBundle(bundleId)
@@ -249,7 +257,7 @@ class BundlerHandler(RequestHandler):
             status = result["Value"][task]
 
             if status == PilotStatus.DONE:
-                self.bundleDB.setBundleAsFinalized(bundleId)
+                self.bundleDB.setBundleAsDone(bundleId)
             elif status in PilotStatus.PILOT_FINAL_STATES:  # ABORTED, DELETED or FAILED
                 self.bundleDB.setBundleAsFailed(bundleId)
 
@@ -304,6 +312,9 @@ class BundlerHandler(RequestHandler):
 
         if not result["OK"]:
             return S_ERROR("Failed to set the task id of the Bundle")
+
+        for jobId in jobIds:
+            self.__reportJob(jobId, PilotStatus.RUNNING, "Bundle of Job submitted to CE")
 
         return S_OK()
 
@@ -364,7 +375,7 @@ class BundlerHandler(RequestHandler):
                 shutil.copy(job_input, job_input_dst)
                 inputs.append(job_input_dst)
 
-            outputs.extend(list(set(jobInfo["Outputs"])))  # Remove duplicated entries
+            outputs.extend(jobInfo["Outputs"])
 
         result = generate_template(template, executables, bundleId)
 
@@ -384,7 +395,7 @@ class BundlerHandler(RequestHandler):
 
         inputs.append(runnerPath)
 
-        return S_OK((jobIds, wrapperPath, inputs, outputs))
+        return S_OK((jobIds, wrapperPath, inputs, list(set(outputs))))
 
     def _getBundleCEDict(self, bundleId):
         result = self.bundleDB.getBundleCE(bundleId)
@@ -452,3 +463,10 @@ class BundlerHandler(RequestHandler):
             self.jobToCE[jobId] = result["Value"]
 
         return S_OK(self.jobToCE[jobId])
+
+    def __reportJob(self, jobId: int, status: PilotStatus, info: str):
+        if jobId not in self.jobReports:
+            return
+
+        self.jobReports[jobId].setJobStatus(status=status, minorStatus=info)
+        self.jobReports[jobId].commit()
