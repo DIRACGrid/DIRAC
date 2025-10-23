@@ -1,16 +1,17 @@
-""" Module holding function(s) creating the pilot wrapper.
+"""Module holding function(s) creating the pilot wrapper.
 
-    This is a DIRAC-free module, so it could possibly be used also outside of DIRAC installations.
+This is a DIRAC-free module, so it could possibly be used also outside of DIRAC installations.
 
-    The main client of this module is the SiteDirector, that invokes the functions here more or less like this::
+The main client of this module is the SiteDirector, that invokes the functions here more or less like this::
 
-        pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict(pilotFiles)
-        localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict,
-                                        pilotOptions,
-                                        pilotExecDir)
-       _writePilotWrapperFile(localPilot=localPilot)
+    pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict(pilotFiles)
+    localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict,
+                                    pilotOptions,
+                                    pilotExecDir)
+   _writePilotWrapperFile(localPilot=localPilot)
 
 """
+
 from __future__ import absolute_import, division, print_function
 
 import base64
@@ -312,7 +313,10 @@ if os.path.exists('checksums.sha512'):
     localPilot += (
         """
 # now finally launching the pilot script (which should be called dirac-pilot.py)
-cmd = "$py dirac-pilot.py %s"
+pilot_dir = os.path.basename(os.getcwd())
+os.chdir(os.path.dirname(os.getcwd()))
+shutil.copy("%%s/pilot.json" %% pilot_dir, os.getcwd())
+cmd = "$py -m %%s.dirac-pilot %s" %% pilot_dir
 logger.info('Executing: %%s' %% cmd)
 sys.stdout.flush()
 ret = os.system(cmd)

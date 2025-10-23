@@ -4,6 +4,7 @@ Module created to run failed jobs locally on a CVMFS-configured machine.
 It creates the necessary environment, downloads the necessary files, modifies the necessary
 files and runs the job
 """
+
 import os
 import shutil
 import ssl
@@ -82,9 +83,9 @@ def __configurePilot(basepath, vo):
     masterCS = gConfigurationData.getMasterServer()
 
     os.system(
-        "python "
+        "python -m"
         + basepath
-        + "dirac-pilot.py -S %s -l %s -C %s -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch -dd"
+        + "dirac-pilot -S %s -l %s -C %s -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch -dd"
         % (currentSetup, vo, masterCS)
     )
 

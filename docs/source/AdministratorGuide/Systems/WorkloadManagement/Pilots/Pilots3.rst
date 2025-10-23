@@ -77,7 +77,7 @@ To install non-released code from within the pilot, the dirac-pilot command can 
 
 For example::
 
-   dirac-pilot.py --modules=https://github.com/chaen/DIRAC.git:::DIRAC:::rel-v7r3_FEAT_proxyStrength
+   python -m Pilot.dirac-pilot --modules=https://github.com/chaen/DIRAC.git:::DIRAC:::rel-v7r3_FEAT_proxyStrength
 
 would end up installing a specific branch (``rel-v7r3_FEAT_proxyStrength``) pushed to github by user `chaen`.
 

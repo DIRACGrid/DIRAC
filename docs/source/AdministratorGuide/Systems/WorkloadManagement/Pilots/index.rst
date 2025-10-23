@@ -250,13 +250,14 @@ A simple example using the LHCbPilot extension follows::
 
   #
   ##get the necessary scripts
-  wget --no-check-certificate -O dirac-pilot.py $DIRAC_PILOT
-  wget --no-check-certificate -O pilotTools.py $DIRAC_PILOT_TOOLS
-  wget --no-check-certificate -O pilotCommands.py $DIRAC_PILOT_COMMANDS
-  wget --no-check-certificate -O LHCbPilotCommands.py $LHCbDIRAC_PILOT_COMMANDS
+  mkdir Pilot
+  wget --no-check-certificate -O Pilot/dirac-pilot.py $DIRAC_PILOT
+  wget --no-check-certificate -O Pilot/pilotTools.py $DIRAC_PILOT_TOOLS
+  wget --no-check-certificate -O Pilot/pilotCommands.py $DIRAC_PILOT_COMMANDS
+  wget --no-check-certificate -O Pilot/LHCbPilotCommands.py $LHCbDIRAC_PILOT_COMMANDS
 
   #run the dirac-pilot script
-  python dirac-pilot.py \
+  python -m Pilot.dirac-pilot \
    --setup $LHCBDIRAC_SETUP \
    --project LHCb \
    --Name "$CE_NAME" \

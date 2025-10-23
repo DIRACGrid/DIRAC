@@ -1,5 +1,4 @@
-""" This is a test of the creation of the pilot wrapper
-"""
+"""This is a test of the creation of the pilot wrapper"""
 
 import base64
 import bz2
@@ -12,7 +11,7 @@ def test_scriptEmpty():
     """test script creation"""
     res = pilotWrapperScript()
 
-    assert 'cmd = "$py dirac-pilot.py "' in res
+    assert 'cmd = "dirac-pilot "' in res
     assert 'os.environ["someName"]="someValue"' not in res
 
 
