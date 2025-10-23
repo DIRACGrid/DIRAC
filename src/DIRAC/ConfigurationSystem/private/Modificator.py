@@ -244,7 +244,7 @@ class Modificator:
     def commit(self):
         resVerif = diracxVerifyConfig(self.cfgData)
         if not resVerif["OK"]:
-            gLogger.warn(resVerif["Value"])
+            gLogger.warn(resVerif["Message"])
         compressedData = zlib.compress(str(self.cfgData).encode(), 9)
         return self.rpcClient.commitNewData(compressedData)
 
