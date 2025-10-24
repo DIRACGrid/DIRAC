@@ -11,7 +11,6 @@ import os
 import shutil
 import tarfile
 from typing import Any
-
 from git import Repo
 
 from DIRAC import S_OK, gConfig, gLogger
@@ -216,6 +215,10 @@ class PilotCStoJSONSynchronizer:
             configurationServers = exclude_master_cs_aliases(configurationServers, masterCS)
 
         pilotDict["ConfigurationServers"] = configurationServers
+
+        preferredURLPatterns = gConfigurationData.extractOptionFromCFG("/DIRAC/PreferredURLPatterns")
+        if preferredURLPatterns:
+            pilotDict["PreferredURLPatterns"] = preferredURLPatterns
 
         self.log.debug("Got pilotDict", str(pilotDict))
 
