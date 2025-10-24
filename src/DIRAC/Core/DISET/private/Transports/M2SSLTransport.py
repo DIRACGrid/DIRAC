@@ -110,7 +110,7 @@ class SSLTransport(BaseTransport):
         if self.serverMode():
             raise RuntimeError("SSLTransport is in server mode.")
 
-        error = None
+        errors = []
         host, port = self.stServerAddress
 
         # The following piece of code was inspired by the python socket documentation
@@ -151,12 +151,12 @@ class SSLTransport(BaseTransport):
             # They should be propagated upwards and caught by the BaseClient
             # not to enter the retry loop
             except OSError as e:
-                error = f"{e}:{repr(e)}"
+                errors.append(f"{socketAddress} {e}:{repr(e)}")
 
                 if self.oSocket is not None:
                     self.close()
 
-        return S_ERROR(error)
+        return S_ERROR("; ".join(errors))
 
     def initAsServer(self):
         """Prepare this server socket for use."""
