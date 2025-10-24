@@ -1,20 +1,20 @@
-import requests
-
-from cachetools import TTLCache, LRUCache, cached
-from cachetools.keys import hashkey
+from collections.abc import Generator
+from contextlib import contextmanager
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any
-from collections.abc import Generator
-from DIRAC import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from contextlib import contextmanager
 
-from diracx.core.preferences import DiracxPreferences
-
-from diracx.core.utils import write_credentials
-
+import requests
+from cachetools import LRUCache, TTLCache, cached
+from cachetools.keys import hashkey
+from diracx.core.config.schema import Config as DiracxConfig
 from diracx.core.models import TokenResponse
+from diracx.core.preferences import DiracxPreferences
+from diracx.core.utils import write_credentials
+from pydantic import ValidationError
+
+from DIRAC import S_ERROR, S_OK, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 try:
     from diracx.client.sync import SyncDiracClient
@@ -104,3 +104,20 @@ def TheImpersonator(credDict: dict[str, Any], *, source: str = "") -> Generator[
         client.__enter__()
         diracx_client_cache[token_location] = client
     yield client
+
+
+def diracxVerifyConfig(cfgData):
+    """Verify CS config using DiracX config validation
+
+    Args:
+        cfgData: CFG data
+
+    Returns:
+        S_OK | S_ERROR: Value: diracx Config validation
+    """
+    cfg = cfgData.getAsDict()
+    try:
+        validation = DiracxConfig.model_validate(cfg)
+    except ValidationError as exc:
+        return S_ERROR(exc)
+    return S_OK(validation)

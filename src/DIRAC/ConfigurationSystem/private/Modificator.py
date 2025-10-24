@@ -8,9 +8,9 @@ from diraccfg import CFG
 
 from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.ConfigurationSystem.private.DiracX import diracxVerifyConfig
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities import List
+from DIRAC.FrameworkSystem.Utilities.diracx import diracxVerifyConfig
 
 
 class Modificator:
