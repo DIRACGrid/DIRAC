@@ -116,13 +116,12 @@ class SSLTransport(BaseTransport):
         # The following piece of code was inspired by the python socket documentation
         # as well as the implementation of M2Crypto.httpslib.HTTPSConnection
 
-        # We ignore the returned sockaddr because SSL.Connection.connect needs
-        # a host name.
+        # Get all available addresses (IPv6 and IPv4) and try them in order
         try:
             addrInfoList = socket.getaddrinfo(host, port, socket.AF_UNSPEC, socket.SOCK_STREAM)
         except OSError as e:
             return S_ERROR(f"DNS lookup failed {e!r}")
-        for family, _socketType, _proto, _canonname, _socketAddress in addrInfoList:
+        for family, _socketType, _proto, _canonname, socketAddress in addrInfoList:
             try:
                 self.oSocket = SSL.Connection(self.__ctx, family=family)
 
@@ -138,7 +137,10 @@ class SSLTransport(BaseTransport):
                 # set SNI server name since we know it at this point
                 self.oSocket.set_tlsext_host_name(host)
 
-                self.oSocket.connect((host, port))
+                # tell the connection which host we are connecting to so we can
+                # use the address we obtained from DNS
+                self.oSocket.set1_host(host)
+                self.oSocket.connect(socketAddress)
 
                 # Once the connection is established, we can use the timeout
                 # asked for RPC
