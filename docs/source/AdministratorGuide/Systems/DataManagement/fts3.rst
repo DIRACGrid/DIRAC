@@ -198,16 +198,40 @@ Token support
 .. versionadded:: v8.0.51
 
 .. warning::
-   Very experimental feature
+   Experimental feature
 
 
-The current state is the one in which LHCb ran the DC24 challenge. It only worked for dCache site, as there is still not a uniform way for storages to understand permissions...
+Currently used in production by LHCb for all disk to disk transfers.
+
 A transfer will happen with token if:
 
    * ``UseTokens`` is true in the FTSAgent configuration
    * ``WLCGTokenBasePath`` is set for both the source and the destination
+   * ``TokenSupport`` is true for both the source and the destination
 
-The tokens use specific file path, and not generic wildcard permissions.
+The token issued are file specific, long lived, and unmanaged (i.e. FTS will not refresh them).
+
+You will need to define a specific client in IAM with the following scopes:
+
+   * fts
+   * storage.modify:/
+   * storage.read:/
+
+Obviously, you can adapt the ``/`` if needed. This client then needs to be added to your DIRAC IAM IdP configuration as: ``fts_client_id`` and ``fts_client_secret``. For example
+
+    .. code-block:: guess
+
+      Resources
+      {
+        IdProviders
+        {
+          <IdProvider name>
+          {
+            fts_client_id = <client_id>
+            fts_client_secret = <client_secret>
+          }
+        }
+      }
 
 .. warning::
    Token support is as experimental as can be in any layer of the stack (DIRAC, storage, FTS... even the model is experimental)

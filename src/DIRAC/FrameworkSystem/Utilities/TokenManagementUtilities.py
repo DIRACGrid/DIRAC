@@ -10,11 +10,12 @@ DEFAULT_RT_EXPIRATION_TIME = 24 * 3600
 DEFAULT_AT_EXPIRATION_TIME = 1200
 
 
-def getIdProviderClient(userGroup: str, idProviderClientName: str = None):
+def getIdProviderClient(userGroup: str, idProviderClientName: str = None, client_name_prefix: str = ""):
     """Get an IdProvider client
 
     :param userGroup: group name
     :param idProviderClientName: name of an identity provider in the DIRAC CS
+    :param client_name_prefix: prefix of the client in the CS options
     """
     # Get IdProvider credentials from CS
     if not idProviderClientName and userGroup:
@@ -23,7 +24,7 @@ def getIdProviderClient(userGroup: str, idProviderClientName: str = None):
         return S_ERROR(f"The {userGroup} group belongs to the VO that is not tied to any Identity Provider.")
 
     # Prepare the client instance of the appropriate IdP
-    return IdProviderFactory().getIdProvider(idProviderClientName)
+    return IdProviderFactory().getIdProvider(idProviderClientName, client_name_prefix=client_name_prefix)
 
 
 def getCachedKey(

@@ -1,6 +1,7 @@
-"""  The Identity Provider Factory instantiates IdProvider objects
-     according to their configuration
+"""The Identity Provider Factory instantiates IdProvider objects
+according to their configuration
 """
+
 import jwt
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
@@ -40,11 +41,12 @@ class IdProviderFactory:
             return result
         return self.getIdProvider(result["Value"])
 
-    def getIdProvider(self, name, **kwargs):
+    def getIdProvider(self, name, client_name_prefix="", **kwargs):
         """This method returns a IdProvider instance corresponding to the supplied
         name.
 
         :param str name: the name of the Identity Provider client
+        :param str client_name_prefix: name of the client of the IdP
 
         :return: S_OK(IdProvider)/S_ERROR()
         """
@@ -68,7 +70,13 @@ class IdProviderFactory:
             if not result["OK"]:
                 self.log.error("Failed to read configuration", f"{name}: {result['Message']}")
                 return result
+
             pDict = result["Value"]
+
+            if client_name_prefix:
+                client_name_prefix = client_name_prefix + "_"
+            pDict["client_id"] = pDict[f"{client_name_prefix}client_id"]
+            pDict["client_secret"] = pDict[f"{client_name_prefix}client_secret"]
 
         pDict.update(kwargs)
         pDict["ProviderName"] = name
