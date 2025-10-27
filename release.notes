@@ -1,3 +1,9 @@
+[v9.0.5]
+
+*Subsystem
+
+CHANGE: (#8353) add PreferredURLPatterns to pilot.json
+
 [v9.0.4]
 [v9.0.3]
 
