@@ -1,3 +1,13 @@
+[v9.0.6]
+
+*FrameworkSystem
+
+NEW: (#8328) allow for multiple client per provider
+
+*DataManagementSystem
+
+NEW: (#8328) FTS3 gets tokens directly
+
 [v9.0.5]
 
 *Subsystem
