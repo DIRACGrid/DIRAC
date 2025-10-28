@@ -121,7 +121,9 @@ class FreeDiskSpaceCommand(Command):
             "Site": siteRes["Value"] if siteRes["Value"] else "unassigned",
         }
 
-        results["Used"] = results["Total"] - results["Free"]
+        # There are sometimes small discrepencies which can lead to negative
+        # used values.
+        results["Used"] = max(0, results["Total"] - results["Free"])
 
         for sType in ["Total", "Free", "Used"]:
             spaceTokenAccounting = StorageOccupancy()
