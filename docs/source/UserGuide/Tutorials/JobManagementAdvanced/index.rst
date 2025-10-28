@@ -335,15 +335,14 @@ Jobs that can (or should) run using more than 1 processor should be described as
 using the "setNumberOfProcessors" method of the API::
 
       j = Job()
-      j.setCPUTime(500)
-      j.setExecutable('echo',arguments='hello')
-      j.setExecutable('ls',arguments='-l')
-      j.setExecutable('echo', arguments='hello again')
-      j.setName('MP test')
+      ...
       j.setNumberOfProcessors(16)
 
 Calling ``Job().setNumberOfProcessors()``, with a value bigger than 1,
 will translate into adding also the "MultiProcessor" tag to the job description.
+
+``Job().setNumberOfProcessors()`` takes at most 3 arguments, in this order:
+``numberOfProcessors`` is the exact number of requested processors, ``minNumberOfProcessors`` is the minimum allowed, ``maxNumberOfProcessors`` the maximum.
 
 Users can specify in the job descriptions NumberOfProcessors and WholeNode parameters, e.g.::
 
@@ -354,6 +353,20 @@ This will be translated internally into 16Processors and WholeNode tags.
 "MultiProcessor" tag is added automatically to the job description if more than 1 processor is specified.
 
 This would allow resources (WN's) to put flexibly requirements on jobs to be taken, for example, avoiding single-core jobs on a multi-core nodes.
+
+
+Setting memory limits
+@@@@@@@@@@@@@@@@@@@@@
+
+Jobs can (and probably should) set RAM limits.
+using the "setRAMRequirements" method of the API::
+
+      j = Job()
+      ...
+      j.setRAMRequirements(2, 4)
+
+Calling ``Job().setRAMRequirements()`` takes 2 values, where the first is the minimum required amount of RAM (in GB) that the job requests.
+The second value instead specifies the limit that should not be surpassed.
 
 
 Submitting jobs with specifc requirements (e.g. GPU)

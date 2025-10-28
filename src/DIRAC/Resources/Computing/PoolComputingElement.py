@@ -29,8 +29,8 @@ from DIRAC.Resources.Computing.InProcessComputingElement import InProcessComputi
 from DIRAC.Resources.Computing.SingularityComputingElement import SingularityComputingElement
 
 
-def executeJob(executableFile, proxy, taskID, inputs, **kwargs):
-    """wrapper around ce.submitJob: decides which CE to use (InProcess or Singularity)
+def executeJob(executableFile, proxy, taskID, inputs, innerCEParameters, **kwargs):
+    """wrapper around ce.submitJob: decides which inner CE to use (InProcess or Singularity)
 
     :param str executableFile: location of the executable file
     :param str proxy: proxy file location to be used for job submission
@@ -46,6 +46,9 @@ def executeJob(executableFile, proxy, taskID, inputs, **kwargs):
     else:
         ce = InProcessComputingElement("Task-" + str(taskID))
 
+    # adding the number of processors to use and the RAM
+    ce.ceParameters["NumberOfProcessors"] = innerCEParameters["NumberOfProcessors"]
+    ce.ceParameters["MaxRAM"] = innerCEParameters["MaxRAM"]
     return ce.submitJob(executableFile, proxy, inputs=inputs, **kwargs)
 
 
@@ -60,8 +63,9 @@ class PoolComputingElement(ComputingElement):
         self.pPool = None
         self.taskID = 0
         self.processorsPerTask = {}
-        self.userNumberPerTask = {}
-        self.ram = 1024  # Default RAM in GB (this is an arbitrary large value in case of no limit)
+        self.ram = (
+            1024  # Available RAM for the node, in GB. The default value is an arbitrary large value in case of no limit
+        )
         self.ramPerTask = {}
 
         # This CE will effectively submit to another "Inner"CE
@@ -76,10 +80,8 @@ class PoolComputingElement(ComputingElement):
 
         self.processors = int(self.ceParameters.get("NumberOfProcessors", self.processors))
         self.ceParameters["MaxTotalJobs"] = self.processors
-        max_ram = int(self.ceParameters.get("MaxRAM", 0))
-        if max_ram > 0:
-            self.ram = max_ram // 1024  # Convert from MB to GB
-        self.ceParameters["MaxRAM"] = self.ram
+        if self.ceParameters.get("MaxRAM", 0):
+            self.ram = int(self.ceParameters["MaxRAM"])
         # Indicates that the submission is done asynchronously
         # The result is not immediately available
         self.ceParameters["AsyncSubmission"] = True
@@ -128,12 +130,19 @@ class PoolComputingElement(ComputingElement):
             if not res["OK"]:
                 self.log.error("Could not dump cfg to pilot.cfg", res["Message"])
 
+        # Define the innerCEParameters
+        innerCEParameters = {}
+        innerCEParameters["NumberOfProcessors"] = processorsForJob
+        innerCEParameters["MaxRAM"] = memoryForJob
+
         # Here we define task kwargs: adding complex objects like thread.Lock can trigger errors in the task
         taskKwargs = {"InnerCESubmissionType": self.innerCESubmissionType}
         taskKwargs["jobDesc"] = kwargs.get("jobDesc", {})
 
         # Submission
-        future = self.pPool.submit(executeJob, executableFile, proxy, self.taskID, inputs, **taskKwargs)
+        future = self.pPool.submit(
+            executeJob, executableFile, proxy, self.taskID, inputs, innerCEParameters, **taskKwargs
+        )
         self.processorsPerTask[future] = processorsForJob
         self.ramPerTask[future] = memoryForJob
         future.add_done_callback(functools.partial(self.finalizeJob, self.taskID))
@@ -190,13 +199,21 @@ class PoolComputingElement(ComputingElement):
         """
 
         # # job requirements
-        requestedMemory = kwargs.get("MaxRAM", 0)
+        requestedMemory = kwargs.get("MinRAM", 0)
 
         # # now check what the slot can provide
         # Do we have enough memory?
         availableMemory = self.ram - sum(self.ramPerTask.values())
         if availableMemory < requestedMemory:
             return None
+
+        # if there's a MaxRAM requested, we allocate it all (if it fits),
+        # and if it doesn't, we stop here instead of using MinRAM
+        if kwargs.get("MaxRAM", 0):
+            if availableMemory >= kwargs.get("MaxRAM"):
+                requestedMemory = kwargs.get("MaxRAM")
+            else:
+                return None
 
         return requestedMemory
 
@@ -206,23 +223,26 @@ class PoolComputingElement(ComputingElement):
         :param future: evaluating the future result
         """
         nProc = self.processorsPerTask.pop(future)
+        ram = self.ramPerTask.pop(future, None)
 
         result = future.result()  # This would be the result of the e.g. InProcess.submitJob()
         if result["OK"]:
-            self.log.info("Task finished successfully:", f"{taskID}; {nProc} processor(s) freed")
+            self.log.info("Task finished successfully:", f"{taskID}; {nProc} processor(s) and {ram}GB freed")
         else:
             self.log.error("Task failed submission:", f"{taskID}; message: {result['Message']}")
         self.taskResults[taskID] = result
 
     def getCEStatus(self):
         """Method to return information on running and waiting jobs,
-            as well as the number of processors (used, and available).
+        as well as the number of processors (used, and available),
+        and the RAM (used, and available)
 
         :return: dictionary of numbers of jobs per status and processors (used, and available)
         """
 
         result = S_OK()
         nJobs = 0
+
         for _j, value in self.processorsPerTask.items():
             if value > 0:
                 nJobs += 1
@@ -234,6 +254,10 @@ class PoolComputingElement(ComputingElement):
         processorsInUse = sum(self.processorsPerTask.values())
         result["UsedProcessors"] = processorsInUse
         result["AvailableProcessors"] = self.processors - processorsInUse
+        # dealing with RAM
+        result["UsedRAM"] = sum(self.ramPerTask.values())
+        result["AvailableRAM"] = self.ram - sum(self.ramPerTask.values())
+
         return result
 
     def getDescription(self):

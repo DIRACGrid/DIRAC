@@ -1,4 +1,4 @@
-""" RemoteRunner
+"""RemoteRunner
 
 RemoteRunner has been designed to send scripts/applications and input files on remote worker nodes having
 no outbound connectivity (e.g. supercomputers)
@@ -6,6 +6,7 @@ no outbound connectivity (e.g. supercomputers)
 Mostly called by workflow modules, RemoteRunner is generally the last component to get through before
 the script/application execution on a remote machine.
 """
+
 import hashlib
 import os
 import shlex
@@ -189,6 +190,7 @@ class RemoteRunner:
             return result
         ceType = result["Value"]["CEType"]
         ceParams = result["Value"]
+        print(ceParams)
 
         # Build CE
         ceFactory = ComputingElementFactory()
@@ -198,6 +200,7 @@ class RemoteRunner:
         workloadCE = result["Value"]
 
         # Set the number of processors available according to the need of the payload
+        print(workloadCE.ceParameters)
         numberOfProcessorsCE = workloadCE.ceParameters.get("NumberOfProcessors", 1)
         if numberOfProcessorsCE < 1 or numberOfProcessorsPayload < 1:
             self.log.warn(

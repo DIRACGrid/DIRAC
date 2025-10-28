@@ -354,7 +354,8 @@ def memory_4GB():
 
     J.setExecutable("mpTest.py")
     J.setNumberOfProcessors(numberOfProcessors=2)
-    J.setTag("4GB")
+    J.setRAMRequirements(ramRequired=2, maxRAM=4)
+
     return endOfAllJobs(J)
 
 
@@ -372,7 +373,7 @@ def memory_2_to4GB():
 
     J.setExecutable("mpTest.py")
     J.setNumberOfProcessors(numberOfProcessors=2)
-    J.setTag(["2GB", "4GB_MAX"])
+    J.setRAMRequirements(ramRequired=4, maxRAM=4)
     return endOfAllJobs(J)
 
 

@@ -212,14 +212,14 @@ class ComputingElement:
                 generalCEDict.update(self.ceParameters)
                 self.ceParameters = generalCEDict
 
-        # If NumberOfProcessors/GPUs/RAM is present in the description but is equal to zero
+        # If NumberOfProcessors/GPUs/MaxRAM is present in the description but is equal to zero
         # interpret it as needing local evaluation
-        if self.ceParameters.get("NumberOfProcessors", -1) == 0:
+        if int(self.ceParameters.get("NumberOfProcessors", -1)) == 0:
             self.ceParameters["NumberOfProcessors"] = getNumberOfProcessors()
-        if self.ceParameters.get("NumberOfGPUs", -1) == 0:
+        if int(self.ceParameters.get("NumberOfGPUs", -1)) == 0:
             self.ceParameters["NumberOfGPUs"] = getNumberOfGPUs()
-        if self.ceParameters.get("RAM", -1) == 0:
-            self.ceParameters["RAM"] = getAvailableRAM()
+        if int(self.ceParameters.get("MaxRAM", 0)) == 0:
+            self.ceParameters["MaxRAM"] = getAvailableRAM()
 
         for key in ceOptions:
             if key in INTEGER_PARAMETERS:
@@ -255,6 +255,7 @@ class ComputingElement:
         runningJobs = result["RunningJobs"]
         waitingJobs = result["WaitingJobs"]
         availableProcessors = result.get("AvailableProcessors")
+
         ceInfoDict = dict(result)
 
         maxTotalJobs = int(self.ceParameters.get("MaxTotalJobs", 0))
@@ -407,6 +408,7 @@ class ComputingElement:
         result = self.getCEStatus()
         if result["OK"]:
             ceDict["NumberOfProcessors"] = result.get("AvailableProcessors", result.get("NumberOfProcessors", 1))
+            ceDict["MaxRAM"] = result.get("AvailableRAM", result.get("MaxRAM", 1))
         else:
             self.log.error(
                 "Failure getting CE status", "(we keep going without the number of waiting and running pilots/jobs)"

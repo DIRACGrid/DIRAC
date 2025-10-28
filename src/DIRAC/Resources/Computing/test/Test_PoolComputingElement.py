@@ -50,7 +50,7 @@ def _stopJob(nJob):
 
 @pytest.fixture
 def createAndDelete():
-    for i in range(6):
+    for i in range(9):
         with open(f"testPoolCEJob_{i}.py", "w") as execFile:
             execFile.write(jobScript % i)
         os.chmod(f"testPoolCEJob_{i}.py", 0o755)
@@ -66,17 +66,21 @@ def createAndDelete():
     time.sleep(0.5)
 
     # stopping the jobs
-    for i in range(6):
+    for i in range(9):
         _stopJob(i)
 
     # removing testPoolCEJob files
     # this will also stop the futures unless they are already stopped!
-    for i in range(6):
+    for i in range(9):
         try:
             os.remove(f"testPoolCEJob_{i}.py")
-            os.remove("testBadPoolCEJob.py")
         except OSError:
             pass
+
+    try:
+        os.remove("testBadPoolCEJob.py")
+    except OSError:
+        pass
 
 
 @pytest.mark.slow
@@ -145,7 +149,7 @@ def test_executeJob_wholeNode4(createAndDelete):
     time.sleep(0.5)
     taskIDs = {}
 
-    ceParameters = {"WholeNode": True, "NumberOfProcessors": 4}
+    ceParameters = {"WholeNode": True, "NumberOfProcessors": 4, "MaxRAM": 16}
     ce = PoolComputingElement("TestPoolCE")
     ce.setParameters(ceParameters)
 
@@ -159,9 +163,11 @@ def test_executeJob_wholeNode4(createAndDelete):
     result = ce.getCEStatus()
     assert result["UsedProcessors"] == 1
     assert result["AvailableProcessors"] == 3
+    assert result["UsedRAM"] == 0
+    assert result["AvailableRAM"] == 16
     assert result["RunningJobs"] == 1
 
-    jobParams = {"mpTag": True, "numberOfProcessors": 2}
+    jobParams = {"mpTag": True, "numberOfProcessors": 2, "MaxRAM": 4}
     result = ce.submitJob("testPoolCEJob_1.py", None, **jobParams)
     assert result["OK"] is True
     taskID = result["Value"]
@@ -171,6 +177,9 @@ def test_executeJob_wholeNode4(createAndDelete):
     result = ce.getCEStatus()
     assert result["UsedProcessors"] == 3
     assert result["AvailableProcessors"] == 1
+    assert result["UsedRAM"] == 4
+    assert result["AvailableRAM"] == 12
+
     assert result["RunningJobs"] == 2
 
     # now trying again would fail
@@ -194,7 +203,7 @@ def test_executeJob_wholeNode8(createAndDelete):
     time.sleep(0.5)
     taskIDs = {}
 
-    ceParameters = {"WholeNode": True, "NumberOfProcessors": 8}
+    ceParameters = {"WholeNode": True, "NumberOfProcessors": 8, "MaxRAM": 32}
     ce = PoolComputingElement("TestPoolCE")
     ce.setParameters(ceParameters)
 
@@ -217,8 +226,10 @@ def test_executeJob_wholeNode8(createAndDelete):
 
     result = ce.getCEStatus()
     assert result["UsedProcessors"] == 5
+    assert result["UsedRAM"] == 0
+    assert result["AvailableRAM"] == 32
 
-    jobParams = {"numberOfProcessors": 2}  # This is same as asking for SP
+    jobParams = {"numberOfProcessors": 2, "MinRAM": 4, "MaxRAM": 8}  # This is same as asking for SP
     result = ce.submitJob("testPoolCEJob_4.py", None, **jobParams)
     assert result["OK"] is True
     taskID = result["Value"]
@@ -227,39 +238,65 @@ def test_executeJob_wholeNode8(createAndDelete):
 
     result = ce.getCEStatus()
     assert result["UsedProcessors"] == 6
+    assert result["UsedRAM"] == 8
+    assert result["AvailableRAM"] == 24
 
-    # now trying again would fail
-    jobParams = {"mpTag": True, "numberOfProcessors": 3}
+    jobParams = {"MinRAM": 8, "MaxRAM": 8}  # This is same as asking for SP
     result = ce.submitJob("testPoolCEJob_5.py", None, **jobParams)
     assert result["OK"] is True
     taskID = result["Value"]
     assert taskID == 3
+    taskIDs[taskID] = True
+
+    result = ce.getCEStatus()
+    assert result["UsedProcessors"] == 7
+    assert result["UsedRAM"] == 16
+    assert result["AvailableRAM"] == 16
+
+    jobParams = {"MaxRAM": 24}  # This will fail
+    result = ce.submitJob("testPoolCEJob_6.py", None, **jobParams)
+    assert result["OK"] is True
+    taskID = result["Value"]
+    assert taskID == 4
+    taskIDs[taskID] = False
+
+    result = ce.getCEStatus()
+    assert result["UsedProcessors"] == 7
+    assert result["UsedRAM"] == 16
+    assert result["AvailableRAM"] == 16
+
+    # now trying again would fail
+    jobParams = {"mpTag": True, "numberOfProcessors": 3}
+    result = ce.submitJob("testPoolCEJob_7.py", None, **jobParams)
+    assert result["OK"] is True
+    taskID = result["Value"]
+    assert taskID == 5
     taskIDs[taskID] = False
 
     # waiting and submit again
     while len(ce.taskResults) < 2:
         time.sleep(0.1)
 
-    jobParams = {"mpTag": True, "numberOfProcessors": 3}
-    result = ce.submitJob("testPoolCEJob_5.py", None, **jobParams)
+    jobParams = {"mpTag": True, "numberOfProcessors": 1}
+    result = ce.submitJob("testPoolCEJob_8.py", None, **jobParams)
     assert result["OK"] is True
     taskID = result["Value"]
-    assert taskID == 4
+    assert taskID == 6
     taskIDs[taskID] = True
 
     result = ce.shutdown()
     assert result["OK"] is True
     assert isinstance(result["Value"], dict)
-    assert len(result["Value"]) == 5
+    assert len(result["Value"]) == 7
 
-    while len(ce.taskResults) < 5:
+    while len(ce.taskResults) < 7:
         time.sleep(0.1)
 
     for taskID, expectedResult in taskIDs.items():
         submissionResult = ce.taskResults[taskID]
         assert submissionResult["OK"] is expectedResult
         if not submissionResult["OK"]:
-            assert "Not enough processors" in submissionResult["Message"]
+            assert submissionResult["Message"] in ["Not enough processors for the job", "Not enough memory for the job"]
 
 
 @pytest.mark.slow
@@ -379,14 +416,18 @@ def test_executeJob_WholeNodeJobs(createAndDelete):
         (None, None, {"mpTag": True, "MaxRAM": 8}, 1, 8),
         (None, None, {"mpTag": True, "wholeNode": True}, 16, 0),
         (None, None, {"mpTag": True, "wholeNode": False}, 1, 0),
+        (None, None, {"mpTag": True, "numberOfProcessors": 4, "MinRAM": 2}, 4, 2),
         (None, None, {"mpTag": True, "numberOfProcessors": 4, "MaxRAM": 4}, 4, 4),
+        (None, None, {"mpTag": True, "numberOfProcessors": 4, "MaxRAM": 36}, 4, None),
+        (None, None, {"mpTag": True, "numberOfProcessors": 4, "MinRAM": 2, "MaxRAM": 4}, 4, 4),
         (None, None, {"mpTag": True, "numberOfProcessors": 4, "maxNumberOfProcessors": 8}, 8, 0),
         (None, None, {"mpTag": True, "numberOfProcessors": 4, "maxNumberOfProcessors": 32}, 16, 0),
         ({1: 4}, {1: 4}, {"mpTag": True, "wholeNode": True}, 0, 0),
         ({1: 4}, {1: 4}, {"mpTag": True, "wholeNode": False}, 1, 0),
-        ({1: 4}, {1: 4}, {"mpTag": True, "numberOfProcessors": 2, "MaxRAM": 8}, 2, 8),
-        ({1: 4}, {1: 4}, {"mpTag": True, "numberOfProcessors": 16, "MaxRAM": 12}, 0, 12),
+        ({1: 4}, {1: 4}, {"mpTag": True, "numberOfProcessors": 2, "MinRAM": 8}, 2, 8),
+        ({1: 4}, {1: 4}, {"mpTag": True, "numberOfProcessors": 16, "MinRAM": 8, "MaxRAM": 12}, 0, 12),
         ({1: 4}, {1: 4}, {"mpTag": True, "maxNumberOfProcessors": 2, "MaxRAM": 16}, 2, 16),
+        ({1: 4}, {1: 4}, {"mpTag": True, "numberOfProcessors": 2, "MaxRAM": 8}, 2, 8),
         ({1: 4}, {1: 4}, {"mpTag": True, "maxNumberOfProcessors": 16, "MaxRAM": 32}, 12, None),
         ({1: 4, 2: 8}, {1: 4}, {"mpTag": True, "numberOfProcessors": 2}, 2, 0),
         ({1: 4, 2: 8}, {1: 4}, {"mpTag": True, "numberOfProcessors": 4}, 4, 0),

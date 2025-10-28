@@ -517,17 +517,48 @@ class Job(API):
         return S_OK()
 
     #############################################################################
-    def setRAMRequirements(self, ramRequired: int = 0):
+    def setRAMRequirements(self, ramRequired: int = 0, maxRAM: int = 0):
         """Helper function.
-        Specify the RAM requirements for the job in GB. 0 (default) means no specific requirements.
+        Specify the RAM requirements for the job. 0 (default) means no specific requirements.
+
+        Example usage:
+
+        >>> job = Job()
+        >>> job.setRAMRequirements(ramRequired=2)
+        means that the job needs at least 2 GBs of RAM to work. This is taken into consideration at job's matching time.
+        The job definition does not specify an upper limit.
+        From a user's point of view this is fine (normally, not for admins).
+
+        >>> job.setRAMRequirements(ramRequired=2, maxRAM=4)
+        means that the job needs 2 GBs of RAM to work. 4 GBs will then be the upper limit for CG2 limits.
+
+        >>> job.setRAMRequirements(ramRequired=4, maxRAM=4)
+        means that we should match this job if there is at least 4 available GBs of run. At the same time, CG2 will not allow to use more than that.
+
+        >>> job.setRAMRequirements(maxRAM=4)
+        means that the job does not set a min amount of RAM (so can match--run "everywhere"), but the 4 GBs will then be the upper limit for CG2 limits.
+
+        >>> job.setRAMRequirements(ramRequired=8, maxRAM=4)
+        Makes no sense, an error will be raised
         """
+        if ramRequired and maxRAM and ramRequired > maxRAM:
+            return self._reportError("Invalid settings, ramRequired is higher than maxRAM")
+
         if ramRequired:
+            self._addParameter(
+                self.workflow,
+                "MinRAM",
+                "JDL",
+                ramRequired,
+                "GBs of RAM requested",
+            )
+        if maxRAM:
             self._addParameter(
                 self.workflow,
                 "MaxRAM",
                 "JDL",
-                ramRequired,
-                "GBs of RAM requested",
+                maxRAM,
+                "Max GBs of RAM to be used",
             )
 
     def setNumberOfProcessors(self, numberOfProcessors=None, minNumberOfProcessors=None, maxNumberOfProcessors=None):

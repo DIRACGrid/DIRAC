@@ -115,6 +115,7 @@ class SingularityComputingElement(ComputingElement):
             self.__installDIRACInContainer = False
 
         self.processors = int(self.ceParameters.get("NumberOfProcessors", 1))
+        self.maxRAM = int(self.ceParameters.get("MaxRAM", 0))
 
     @staticmethod
     def __findInstallBaseDir():
@@ -415,6 +416,12 @@ class SingularityComputingElement(ComputingElement):
 
         self.log.debug(f"Execute singularity command: {cmd}")
         self.log.debug(f"Execute singularity env: {self.__getEnv()}")
+        # systemCall below uses ceParameters["MemoryLimitMB"] as CG2 upper memory limit
+        # if there's a max RAM available to the job, use that
+        if self.maxRAM:
+            self.ceParameters["MemoryLimitMB"] = min(
+                self.maxRAM * 1024, self.ceParameters.get("MemoryLimitMB", 1024 * 1024)
+            )  # 1024 * 1024 is an arbitrary large number
         result = CG2Manager().systemCall(
             0, cmd, callbackFunction=self.sendOutput, env=self.__getEnv(), ceParameters=self.ceParameters
         )
@@ -451,4 +458,6 @@ class SingularityComputingElement(ComputingElement):
         result["WaitingJobs"] = 0
         # processors
         result["AvailableProcessors"] = self.processors
+        # RAM
+        result["AvailableRAM"] = self.maxRAM
         return result
