@@ -1,4 +1,4 @@
-""" AREX Computing Element (ARC REST interface)
+"""AREX Computing Element (ARC REST interface)
 
 Allows interacting with ARC AREX services via a REST interface.
 
@@ -807,7 +807,23 @@ class AREXComputingElement(ComputingElement):
             return S_ERROR(f"Failed decoding the status of the CE")
 
         # Look only in the relevant section out of the headache
-        queueInfo = ceData["Domains"]["AdminDomain"]["Services"]["ComputingService"]["ComputingShare"]
+        # This "safe_get" function allows to go down the dictionary
+        # even if some elements are lists instead of dictionaries
+        # and returns None if any element is not found
+        # FIXME: this is a temporary measure to be removed after https://github.com/DIRACGrid/DIRAC/issues/8354
+        def safe_get(d, *keys):
+            for k in keys:
+                if isinstance(d, list):
+                    d = d[0]  # assume first element
+                d = d.get(k) if isinstance(d, dict) else None
+                if d is None:
+                    break
+            return d
+
+        queueInfo = safe_get(ceData, "Domains", "AdminDomain", "Services", "ComputingService", "ComputingShare")
+        if queueInfo is None:
+            self.log.error("Failed to extract queue info")
+
         if not isinstance(queueInfo, list):
             queueInfo = [queueInfo]
 
