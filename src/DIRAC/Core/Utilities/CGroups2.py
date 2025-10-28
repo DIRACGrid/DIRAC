@@ -300,6 +300,7 @@ class CG2Manager(metaclass=DIRACSingleton):
             if "ceParameters" in kwargs:
                 if cpuLimit := kwargs["ceParameters"].get("CPULimit", None):
                     cores = float(cpuLimit)
+                # MemoryLimitMB should be the job upper limit
                 if memoryMB := int(kwargs["ceParameters"].get("MemoryLimitMB", 0)):
                     memory = memoryMB * 1024 * 1024
                 if kwargs["ceParameters"].get("MemoryNoSwap", "no").lower() in ("yes", "true"):

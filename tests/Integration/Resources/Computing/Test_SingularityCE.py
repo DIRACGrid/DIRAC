@@ -64,6 +64,8 @@ def test_submitJobWrapper():
         maxNumberOfProcessors=8,
         wholeNode=False,
         mpTag=True,
+        MinRAM=2,
+        MaxRAM=4,
         jobDesc={"jobParams": jobParams, "resourceParams": resourceParams, "optimizerParams": optimizerParams},
     )
 

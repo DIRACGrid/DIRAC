@@ -213,8 +213,8 @@ def getAvailableRAM(siteName=None, gridCE=None, queue=None):
     The siteName/gridCE/queue parameters are normally not necessary.
 
     Tries to find it in this order:
-    1) from the /Resources/Computing/CEDefaults/AvailableRAM (which is what the pilot might fill up)
-    2) if not present looks in CS for "AvailableRAM" Queue or CE option
+    1) from the /Resources/Computing/CEDefaults/MaxRAM (which is what the pilot might fill up)
+    2) if not present looks in CS for "MemoryLimitMB" Queue or CE or site option
     3) if not present but there's WholeNode tag, look what the WN provides using _getMemoryFromProc()
     4) return 0
     """
@@ -238,9 +238,9 @@ def getAvailableRAM(siteName=None, gridCE=None, queue=None):
 
     grid = siteName.split(".")[0]
     csPaths = [
-        f"/Resources/Sites/{grid}/{siteName}/CEs/{gridCE}/Queues/{queue}/MaxRAM",
-        f"/Resources/Sites/{grid}/{siteName}/CEs/{gridCE}/MaxRAM",
-        f"/Resources/Sites/{grid}/{siteName}/MaxRAM",
+        f"/Resources/Sites/{grid}/{siteName}/CEs/{gridCE}/Queues/{queue}/MemoryLimitMB",
+        f"/Resources/Sites/{grid}/{siteName}/CEs/{gridCE}/MemoryLimitMB",
+        f"/Resources/Sites/{grid}/{siteName}/MemoryLimitMB",
     ]
     for csPath in csPaths:
         gLogger.info("Looking in", csPath)
@@ -265,5 +265,22 @@ def getAvailableRAM(siteName=None, gridCE=None, queue=None):
         return _getMemoryFromProc()
 
     # 4) return 0
-    gLogger.info("AvailableRAM could not be found in CS, and WholeNode tag not found")
+    gLogger.info("RAM limits could not be found in CS, and WholeNode tag not found")
     return 0
+
+
+def getRAMForJob(jobID):
+    """Gets the RAM allowed for the job.
+    This can be used to communicate to your job payload the RAM it's allowed to use,
+    so this function should be called from your extension.
+
+    If the JobAgent is using "InProcess" CE (which is the default),
+    then what's returned will basically be the same of what's returned by the getAvailableRAM() function above
+    """
+
+    # from /Resources/Computing/JobLimits/jobID/MaxRAM (set by PoolComputingElement)
+    ram = gConfig.getValue(f"Resources/Computing/JobLimits/{jobID}/MaxRAM")
+    if ram:
+        return ram
+
+    return getAvailableRAM()
