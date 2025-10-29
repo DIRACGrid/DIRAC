@@ -1,16 +1,17 @@
-"""  The Watchdog class is used by the Job Wrapper to resolve and monitor
-     the system resource consumption.  The Watchdog can determine if
-     a running job is stalled and indicate this to the Job Wrapper.
-     Furthermore, the Watchdog will identify when the Job CPU limit has been
-     exceeded and fail jobs meaningfully.
+"""The Watchdog class is used by the Job Wrapper to resolve and monitor
+the system resource consumption.  The Watchdog can determine if
+a running job is stalled and indicate this to the Job Wrapper.
+Furthermore, the Watchdog will identify when the Job CPU limit has been
+exceeded and fail jobs meaningfully.
 
-     Information is returned to the WMS via the heart-beat mechanism.  This
-     also interprets control signals from the WMS e.g. to kill a running
-     job.
+Information is returned to the WMS via the heart-beat mechanism.  This
+also interprets control signals from the WMS e.g. to kill a running
+job.
 
-     - Still to implement:
-          - CPU normalization for correct comparison with job limit
+- Still to implement:
+     - CPU normalization for correct comparison with job limit
 """
+
 import datetime
 import errno
 import getpass
@@ -212,7 +213,7 @@ class Watchdog:
             if self.littleTimeLeftCount == 0 and self.__timeLeft() == -1:
                 self.checkError = JobMinorStatus.JOB_EXCEEDED_CPU
                 self.log.error(self.checkError, self.timeLeft)
-                self.__killRunningThread()
+                self.spObject.killChild()
                 return S_OK()
 
             self.littleTimeLeftCount -= 1
@@ -321,7 +322,7 @@ class Watchdog:
 
                     self.log.info("=================END=================")
 
-            self.__killRunningThread()
+            self.spObject.killChild()
             return S_OK()
 
         recentStdOut = "None"
@@ -408,7 +409,7 @@ class Watchdog:
             if "Kill" in signalDict:
                 self.log.info("Received Kill signal, stopping job via control signal")
                 self.checkError = JobMinorStatus.RECEIVED_KILL_SIGNAL
-                self.__killRunningThread()
+                self.spObject.killChild()
             else:
                 self.log.info("The following control signal was sent but not understood by the watchdog:")
                 self.log.info(signalDict)
@@ -861,13 +862,6 @@ class Watchdog:
             result["Value"] = 0.0
 
         return result
-
-    #############################################################################
-    def __killRunningThread(self):
-        """Will kill the running thread process and any child processes."""
-        self.log.info("Sending kill signal to application PID", self.spObject.getChildPID())
-        self.spObject.killChild()
-        return S_OK("Thread killed")
 
     #############################################################################
     def __sendSignOfLife(self, jobID, heartBeatDict, staticParamDict):
