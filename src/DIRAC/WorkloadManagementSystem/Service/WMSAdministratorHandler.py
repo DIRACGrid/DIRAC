@@ -150,37 +150,24 @@ class WMSAdministratorHandlerMixin:
         :param str jobID: job ID
         :return: S_OK(dict)/S_ERROR()
         """
-        pilotReference = ""
-        # Get the pilot grid reference first from the job parameters
+        result = self.pilotManager.getPilots(jobID)
 
-        credDict = self.getRemoteCredentials()
-        vo = credDict.get("VO", Registry.getVOForGroup(credDict["group"]))
-        res = self.elasticJobParametersDB.getJobParameters(int(jobID), vo=vo, paramList=["Pilot_Reference"])
-        if not res["OK"]:
-            return res
-        if res["Value"].get(int(jobID)):
-            pilotReference = res["Value"][int(jobID)]["Pilot_Reference"]
+        if not result["OK"]:
+            return result
+        pilotJobReferences = result["Value"].keys()
 
-        if not pilotReference:
-            res = self.jobDB.getJobParameter(int(jobID), "Pilot_Reference")
-            if not res["OK"]:
-                return res
-            pilotReference = res["Value"]
+        outputs = {"StdOut": "", "StdErr": ""}
+        for pilotRef in pilotJobReferences:
+            result = self.pilotManager.getPilotOutput(pilotRef)
+            if not result["OK"]:
+                stdout = f"Could not retrieve output: {result['Message']}"
+                error = f"Could not retrieve error: {result['Message']}"
+            else:
+                stdout, error = result["Value"]["StdOut"], result["Value"]["StdErr"]
+            outputs["StdOut"] += f"# PilotJobReference: {pilotRef}\n\n{stdout}\n"
+            outputs["StdErr"] += f"# PilotJobReference: {pilotRef}\n\n{error}\n"
 
-        if not pilotReference:
-            # Failed to get the pilot reference, try to look in the attic parameters
-            res = self.jobDB.getAtticJobParameters(int(jobID), ["Pilot_Reference"])
-            if res["OK"]:
-                c = -1
-                # Get the pilot reference for the last rescheduling cycle
-                for cycle in res["Value"]:
-                    if cycle > c:
-                        pilotReference = res["Value"][cycle]["Pilot_Reference"]
-                        c = cycle
-
-        if pilotReference:
-            return self.pilotManager.getPilotOutput(pilotReference)
-        return S_ERROR("No pilot job reference found")
+        return S_OK(outputs)
 
 
 class WMSAdministratorHandler(WMSAdministratorHandlerMixin, RequestHandler):
