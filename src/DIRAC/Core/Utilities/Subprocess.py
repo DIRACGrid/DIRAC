@@ -162,7 +162,6 @@ class Subprocess:
 
         self.child = None
         self.childPID = 0
-        self.childKilled = False
         self.callback = None
         self.bufferList = []
         self.cmdSeq = []
@@ -251,20 +250,25 @@ class Subprocess:
             return ([], [])
         return psutil.wait_procs([process], timeout=60)
 
-    def __poll(self, pid):
-        """return pid status"""
+    def __poll(self, process):
+        """Non-blocking check of whether process `pid` is still alive.
+        Returns:
+        - (0, 0) if process is still running  (like os.waitpid(pid, os.WNOHANG))
+        - (pid, exitcode) if process has terminated
+        - None if process info cannot be retrieved
+        """
         try:
-            p = psutil.Process(pid)
-            exitcode = p.wait(timeout=0)
-            return (pid, exitcode)  # exited
+            exitcode = process.wait(timeout=0)
+            return (process.pid, exitcode)  # exited
         except psutil.TimeoutExpired:
             return (0, 0)  # still running
         except psutil.NoSuchProcess:
             return None
 
     def killChild(self, recursive=True):
-        """Kills a process tree (including children) with signal SIGTERM.
-        if that fails, escalate to SIGKILL"""
+        """Kills a process tree (including children) with signal SIGTERM. If that fails, escalate to SIGKILL
+        returns (gone, alive) tuple.
+        """
 
         self.log.info(f"Killing childPID {self.childPID}")
 
@@ -276,6 +280,7 @@ class Subprocess:
             return (gone, alive)
 
         if recursive:
+            # grandchildren
             children = child_process.children(recursive=True)
             self.log.info(f"Sending kill signal to {len(children)} children PIDs")
             for p in children:
@@ -292,12 +297,15 @@ class Subprocess:
         gone.extend(g)
         alive.extend(a)
 
+        # if there's something still alive, use SIGKILL
         if alive:
             for p in alive:
                 try:
                     p.kill()
                 except psutil.NoSuchProcess:
                     pass
+
+        return psutil.wait_procs(alive, timeout=60)
 
     def pythonCall(self, function, *stArgs, **stKeyArgs):
         """call python function :function: with :stArgs: and :stKeyArgs:"""
@@ -449,6 +457,7 @@ class Subprocess:
                 start_new_session=start_new_session,
             )
             self.childPID = self.child.pid
+            child_process = psutil.Process(self.childPID)
         except OSError as v:
             retDict = S_ERROR(repr(v))
             retDict["Value"] = (-1, "", str(v))
@@ -467,7 +476,7 @@ class Subprocess:
             self.bufferList = [["", 0], ["", 0]]
             initialTime = time.time()
 
-            exitStatus = self.__poll(self.child.pid)
+            exitStatus = self.__poll(child_process)
 
             while (0, 0) == exitStatus:  # This means that the process is still alive
                 retDict = self.__readFromCommand()
@@ -481,7 +490,7 @@ class Subprocess:
                         1, "Timeout (%d seconds) for '%s' call" % (self.timeout, cmdSeq)
                     )
                 time.sleep(0.01)
-                exitStatus = self.__poll(self.child.pid)
+                exitStatus = self.__poll(child_process)
 
             self.__readFromCommand()
 
