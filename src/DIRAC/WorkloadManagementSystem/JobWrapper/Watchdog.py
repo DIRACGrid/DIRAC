@@ -17,7 +17,6 @@ import errno
 import getpass
 import math
 import os
-import signal
 import socket
 import time
 from pathlib import Path
@@ -31,28 +30,6 @@ from DIRAC.Core.Utilities.Profiler import Profiler
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
-
-
-def kill_proc_tree(pid, sig=signal.SIGTERM, includeParent=True):
-    """Kill a process tree (including grandchildren) with signal
-    "sig" and return a (gone, still_alive) tuple.
-    called as soon as a child terminates.
-
-    Taken from https://psutil.readthedocs.io/en/latest/index.html#kill-process-tree
-    """
-    assert pid != os.getpid(), "won't kill myself"
-    parent = psutil.Process(pid)
-    children = parent.children(recursive=True)
-    if includeParent:
-        children.append(parent)
-    for p in children:
-        try:
-            p.send_signal(sig)
-        except psutil.NoSuchProcess:
-            pass
-    _gone, alive = psutil.wait_procs(children, timeout=10)
-    for p in alive:
-        p.kill()
 
 
 class Watchdog:
