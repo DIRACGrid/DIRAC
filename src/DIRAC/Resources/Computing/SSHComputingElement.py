@@ -67,9 +67,10 @@ import json
 import os
 import shutil
 import stat
+import tempfile
 import uuid
 from shlex import quote as shlex_quote
-from urllib.parse import quote, unquote, urlparse
+from urllib.parse import urlparse
 
 import pexpect
 
@@ -484,47 +485,69 @@ class SSHComputingElement(ComputingElement):
         options["User"] = self.user
         options["Queue"] = self.queue
 
-        options = json.dumps(options)
-        options = quote(options)
+        localOptionsFile = None
+        remoteOptionsFile = None
+        localResultFile = None
+        remoteResultFile = None
+        try:
+            # Write options to a local temporary file
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+                json.dump(options, f)
+                localOptionsFile = f.name
 
-        cmd = (
-            "bash --login -c 'python3 %s/execute_batch %s || python %s/execute_batch %s || python2 %s/execute_batch %s'"
-            % (self.sharedArea, options, self.sharedArea, options, self.sharedArea, options)
-        )
+            # Upload the options file to the remote host
+            remoteOptionsFile = f"{self.sharedArea}/batch_options_{uuid.uuid4().hex}.json"
+            result = ssh.scpCall(30, localOptionsFile, remoteOptionsFile)
+            if not result["OK"]:
+                return result
 
-        self.log.verbose(f"CE submission command: {cmd}")
+            # Execute the batch command with the options file path
+            cmd = (
+                f"bash --login -c 'python3 {self.sharedArea}/execute_batch {remoteOptionsFile} || "
+                f"python {self.sharedArea}/execute_batch {remoteOptionsFile} || "
+                f"python2 {self.sharedArea}/execute_batch {remoteOptionsFile}'"
+            )
 
-        result = ssh.sshCall(120, cmd)
-        if not result["OK"]:
-            self.log.error(f"{self.ceType} CE job submission failed", result["Message"])
-            return result
+            self.log.verbose(f"CE submission command: {cmd}")
 
-        sshStatus = result["Value"][0]
-        sshStdout = result["Value"][1]
-        sshStderr = result["Value"][2]
+            result = ssh.sshCall(120, cmd)
+            if not result["OK"]:
+                self.log.error(f"{self.ceType} CE job submission failed", result["Message"])
+                return result
 
-        # Examine results of the job submission
-        if sshStatus == 0:
-            output = sshStdout.strip().replace("\r", "").strip()
-            if not output:
-                return S_ERROR("No output from remote command")
+            sshStatus = result["Value"][0]
+            if sshStatus != 0:
+                sshStdout = result["Value"][1]
+                sshStderr = result["Value"][2]
+                return S_ERROR(f"CE job submission command failed with status {sshStatus}: {sshStdout} {sshStderr}")
 
-            try:
-                index = output.index("============= Start output ===============")
-                output = output[index + 42 :]
-            except ValueError:
-                return S_ERROR(f"Invalid output from remote command: {output}")
+            # The result should be written to a JSON file by execute_batch
+            # Compute the expected result file path
+            remoteResultFile = remoteOptionsFile.replace(".json", "_result.json")
 
-            try:
-                output = unquote(output)
-                result = json.loads(output)
-                if isinstance(result, str) and result.startswith("Exception:"):
-                    return S_ERROR(result)
-                return S_OK(result)
-            except Exception:
-                return S_ERROR("Invalid return structure from job submission")
-        else:
-            return S_ERROR("\n".join([sshStdout, sshStderr]))
+            # Try to download the result file
+            with tempfile.NamedTemporaryFile(mode="r", suffix=".json", delete=False) as f:
+                localResultFile = f.name
+
+            result = ssh.scpCall(30, localResultFile, remoteResultFile, upload=False)
+            if not result["OK"]:
+                return result
+
+            # Read the result from the downloaded file
+            with open(localResultFile) as f:
+                result = json.load(f)
+            return S_OK(result)
+        finally:
+            # Clean up local temporary file
+            if localOptionsFile and os.path.exists(localOptionsFile):
+                os.remove(localOptionsFile)
+            if localResultFile and os.path.exists(localResultFile):
+                os.remove(localResultFile)
+            # Clean up remote temporary files
+            if remoteOptionsFile:
+                ssh.sshCall(30, f"rm -f {remoteOptionsFile}")
+            if remoteResultFile:
+                ssh.sshCall(30, f"rm -f {remoteResultFile}")
 
     def submitJob(self, executableFile, proxy, numberOfJobs=1):
         #    self.log.verbose( "Executable file path: %s" % executableFile )

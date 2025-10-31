@@ -35,8 +35,10 @@ if __name__ == "__main__":
       from urllib.parse import unquote as urlunquote
 
 
-  arguments = sys.argv[1]
-  inputDict = json.loads(urlunquote(arguments))
+  # Read options from JSON file
+  optionsFilePath = sys.argv[1]
+  with open(optionsFilePath, 'r') as f:
+    inputDict = json.load(f)
 
   method = inputDict.pop('Method')
   batchSystem = inputDict.pop('BatchSystem')
@@ -45,9 +47,15 @@ if __name__ == "__main__":
   try:
     result = getattr(batch, method)(**inputDict)
   except Exception:
-    result = traceback.format_exc()
+    # Wrap the traceback in a proper error structure
+    result = {
+      'Status': -1,
+      'Message': 'Exception during batch method execution',
+      'Traceback': traceback.format_exc()
+    }
 
-  resultJson = urlquote(json.dumps(result))
-  print("============= Start output ===============")
-  print(resultJson)
+  # Write result to JSON file
+  resultFilePath = optionsFilePath.replace('.json', '_result.json')
+  with open(resultFilePath, 'w') as f:
+    json.dump(result, f)
 """
