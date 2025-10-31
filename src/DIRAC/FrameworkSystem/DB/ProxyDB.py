@@ -11,7 +11,7 @@
 import textwrap
 from threading import Lock
 
-from cachetools import TTLCache, cached
+from cachetools import TTLCache, cachedmethod
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -24,6 +24,10 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
 DEFAULT_MAIL_FROM = "proxymanager@diracgrid.org"
+
+# Module-level cache for getProxyStrength method (shared across ProxyDB instances)
+_get_proxy_strength_cache = TTLCache(maxsize=1000, ttl=600)
+_get_proxy_strength_lock = Lock()
 
 
 class ProxyDB(DB):
@@ -398,7 +402,7 @@ class ProxyDB(DB):
             return S_ERROR(", ".join(errMsgs))
         return result
 
-    @cached(TTLCache(maxsize=1000, ttl=600), lock=Lock())
+    @cachedmethod(lambda self: _get_proxy_strength_cache, lock=lambda self: _get_proxy_strength_lock)
     def getProxyStrength(self, userDN, userGroup=None, vomsAttr=None):
         """Load the proxy in cache corresponding to the criteria, and check its strength
 
