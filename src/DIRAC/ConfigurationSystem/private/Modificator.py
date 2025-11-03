@@ -6,7 +6,7 @@ import zlib
 
 from diraccfg import CFG
 
-from DIRAC import gLogger
+from DIRAC import S_ERROR
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities import List
@@ -244,7 +244,7 @@ class Modificator:
     def commit(self):
         resVerif = diracxVerifyConfig(self.cfgData)
         if not resVerif["OK"]:
-            gLogger.warn(resVerif["Message"])
+            return S_ERROR(resVerif["Message"])
         compressedData = zlib.compress(str(self.cfgData).encode(), 9)
         return self.rpcClient.commitNewData(compressedData)
 
