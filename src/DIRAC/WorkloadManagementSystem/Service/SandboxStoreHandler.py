@@ -126,7 +126,8 @@ class SandboxStoreHandlerMixin:
                     gLogger.debug("Uploading sandbox for", res.pfn)
                     files = {"file": ("file", tar_fh)}
 
-                    response = requests.post(res.url, data=res.fields, files=files, timeout=300)
+                    verify = os.environ.get("DIRACX_CA_PATH", True)
+                    response = requests.post(res.url, data=res.fields, files=files, timeout=300, verify=verify)
 
                     gLogger.debug("Sandbox uploaded", f"for {res.pfn} with status code {response.status_code}")
                     # TODO: Handle this error better

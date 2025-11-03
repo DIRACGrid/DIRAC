@@ -27,6 +27,8 @@ DEFAULT_TOKEN_CACHE_TTL = 5 * 60
 DEFAULT_TOKEN_CACHE_SIZE = 1024
 
 legacy_exchange_session = requests.Session()
+diracxUrl = gConfig.getValue("/DiracX/URL")
+legacy_exchange_session.verify = DiracxPreferences(url=diracxUrl).ca_path or True
 
 
 def get_token(
