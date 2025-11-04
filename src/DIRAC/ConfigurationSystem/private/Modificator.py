@@ -242,9 +242,13 @@ class Modificator:
         return str(self.cfgData)
 
     def commit(self):
-        resVerif = diracxVerifyConfig(self.cfgData)
-        if not resVerif["OK"]:
-            return S_ERROR(resVerif["Message"])
+        retOpt = gConfigurationData.extractOptionFromCFG(
+            "/Systems/Configuration/Services/Server/VerifyDiracXSyncOnCommit"
+        )
+        if retOpt == "True":
+            resVerif = diracxVerifyConfig(self.cfgData)
+            if not resVerif["OK"]:
+                return S_ERROR(resVerif["Message"])
         compressedData = zlib.compress(str(self.cfgData).encode(), 9)
         return self.rpcClient.commitNewData(compressedData)
 
