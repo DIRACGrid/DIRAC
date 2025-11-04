@@ -242,9 +242,7 @@ class Modificator:
         return str(self.cfgData)
 
     def commit(self):
-        retOpt = gConfigurationData.extractOptionFromCFG(
-            "/Systems/Configuration/Services/Server/VerifyDiracXSyncOnCommit"
-        )
+        retOpt = self.getValue("/Systems/Configuration/Services/Server/VerifyDiracXSyncOnCommit")
         if retOpt == "True":
             resVerif = diracxVerifyConfig(self.cfgData)
             if not resVerif["OK"]:
