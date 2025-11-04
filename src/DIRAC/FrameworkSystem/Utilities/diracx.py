@@ -134,3 +134,4 @@ def diracxVerifyConfig(cfgData):
         match = re.search(r"(ValidationError:.*)", err, flags=re.DOTALL)
         if match:
             return S_ERROR(match.group(1))
+        return S_ERROR(err)
