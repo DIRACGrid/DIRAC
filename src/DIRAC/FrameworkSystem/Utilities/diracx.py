@@ -123,8 +123,8 @@ def diracxVerifyConfig(cfgData):
     os.environ["DIRAC_COMPAT_ENABLE_CS_CONVERSION"] = "true"
     with tempfile.NamedTemporaryFile() as temp_cfg:
         with tempfile.NamedTemporaryFile() as temp_diracx_cfg:
-            cfgData.writeToFile(temp_cfg)
-            cmd = ["dirac", "internal", "legacy", "cs-sync", temp_cfg, temp_diracx_cfg]
+            cfgData.writeToFile(temp_cfg.name)
+            cmd = ["dirac", "internal", "legacy", "cs-sync", temp_cfg.name, temp_diracx_cfg.name]
             res = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
     os.environ.pop("DIRAC_COMPAT_ENABLE_CS_CONVERSION")
     if res.returncode == 0:
