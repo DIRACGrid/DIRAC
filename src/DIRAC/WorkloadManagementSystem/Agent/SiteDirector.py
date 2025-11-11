@@ -1,4 +1,4 @@
-"""  The Site Director is an agent performing pilot job submission to particular sites/Computing Elements.
+"""The Site Director is an agent performing pilot job submission to particular sites/Computing Elements.
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN SiteDirector
@@ -7,6 +7,7 @@
   :caption: SiteDirector options
 
 """
+
 import datetime
 import os
 from collections import defaultdict
@@ -147,10 +148,10 @@ class SiteDirector(AgentModule):
             self.sendSubmissionAccounting = True
 
         # Get the site description dictionary
-        siteNames = self.am_getOption("Site", [])
-        ceTypes = self.am_getOption("CETypes", [])
-        ces = self.am_getOption("CEs", [])
-        tags = self.am_getOption("Tags", [])
+        siteNames = self.am_getOption("Site")
+        ceTypes = self.am_getOption("CETypes")
+        ces = self.am_getOption("CEs")
+        tags = self.am_getOption("Tags")
 
         # Display options used
         self.log.always("VO:", self.vo)
