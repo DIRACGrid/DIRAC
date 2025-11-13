@@ -1,3 +1,17 @@
+[v8.0.77]
+
+*WorkloadManagement
+
+FIX: (#8326) TokenManager - pass audience parameter as resource to fetchToken() to satisfy Check-In
+
+*Resources
+
+FIX: (#8325) AREX CE: fix for understanding slightly different formats
+
+*Configuration/Core
+
+NEW: (#8256) Included a VO (using top level groups as VO) option when getting user subjects from IAM. Behaviour with single VO IAM should be unchanged.
+
 [v8.0.76]
 
 *ConfigurationSystem
