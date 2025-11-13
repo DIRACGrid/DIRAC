@@ -1,7 +1,7 @@
 #!/bin/env python
 
-""" This integration test is for "Inner" Computing Element SingularityComputingElement
-    This test is here and not in the unit tests because it requires singularity to be installed.
+"""This integration test is for "Inner" Computing Element SingularityComputingElement
+This test is here and not in the unit tests because it requires singularity to be installed.
 """
 
 import os
@@ -70,8 +70,8 @@ def test_submitJobWrapper():
         maxNumberOfProcessors=8,
         wholeNode=False,
         mpTag=True,
-        MinRAM=2,
-        MaxRAM=4,
+        MinRAM=2500,
+        MaxRAM=4000,
         jobDesc={"jobParams": jobParams, "resourceParams": resourceParams, "optimizerParams": optimizerParams},
     )
 

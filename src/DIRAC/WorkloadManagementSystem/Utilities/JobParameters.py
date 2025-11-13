@@ -10,7 +10,7 @@ def getMemoryFromProc():
     meminfo = {i.split()[0].rstrip(":"): int(i.split()[1]) for i in open("/proc/meminfo").readlines()}
     maxRAM = meminfo["MemTotal"]
     if maxRAM:
-        return int(maxRAM / 1024)
+        return int(maxRAM / 1024)  # from KB to MB
 
 
 def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):

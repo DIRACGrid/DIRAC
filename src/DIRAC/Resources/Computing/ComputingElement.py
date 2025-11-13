@@ -408,7 +408,7 @@ class ComputingElement:
         result = self.getCEStatus()
         if result["OK"]:
             ceDict["NumberOfProcessors"] = result.get("AvailableProcessors", result.get("NumberOfProcessors", 1))
-            ceDict["MaxRAM"] = result.get("AvailableRAM", result.get("MaxRAM", 1))
+            ceDict["MaxRAM"] = result.get("AvailableRAM", result.get("MaxRAM", 1024))
         else:
             self.log.error(
                 "Failure getting CE status", "(we keep going without the number of waiting and running pilots/jobs)"

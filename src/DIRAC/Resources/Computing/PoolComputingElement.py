@@ -1,4 +1,4 @@
-""" The Pool Computing Element is an "inner" CE (meaning it's used by a jobAgent inside a pilot)
+"""The Pool Computing Element is an "inner" CE (meaning it's used by a jobAgent inside a pilot)
 
 It's used running several jobs simultaneously in separate processes, managed by a ProcessPool.
 
@@ -19,6 +19,7 @@ NumberOfProcessors:
 
 **Code Documentation**
 """
+
 import concurrent.futures
 import functools
 
@@ -64,7 +65,8 @@ class PoolComputingElement(ComputingElement):
         self.taskID = 0
         self.processorsPerTask = {}
         self.ram = (
-            1024  # Available RAM for the node, in GB. The default value is an arbitrary large value in case of no limit
+            1024
+            * 1024  # Available RAM for the node, in MB. The default value is an arbitrary large value in case of no limit
         )
         self.ramPerTask = {}
 
@@ -195,7 +197,7 @@ class PoolComputingElement(ComputingElement):
         """helper function to get the memory that will be allocated for the job
 
         :param kwargs: job parameters
-        :return: memory in GB or None if not enough memory
+        :return: memory in MB or None if not enough memory
         """
 
         # # job requirements
@@ -227,7 +229,7 @@ class PoolComputingElement(ComputingElement):
 
         result = future.result()  # This would be the result of the e.g. InProcess.submitJob()
         if result["OK"]:
-            self.log.info("Task finished successfully:", f"{taskID}; {nProc} processor(s) and {ram}GB freed")
+            self.log.info("Task finished successfully:", f"{taskID}; {nProc} processor(s) and {ram}MB freed")
         else:
             self.log.error("Task failed submission:", f"{taskID}; message: {result['Message']}")
         self.taskResults[taskID] = result

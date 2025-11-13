@@ -1,5 +1,5 @@
-""" pytest(s) for Executors
-"""
+"""pytest(s) for Executors"""
+
 # pylint: disable=protected-access, missing-docstring
 
 from unittest.mock import MagicMock
@@ -54,9 +54,9 @@ def test__applySiteFilter(sites, banned, expected):
         ({}, []),
         ({"Tag": "bof"}, ["bof"]),
         ({"Tags": "bof, bif"}, ["bof", "bif"]),
-        ({"MaxRAM": 2}, ["2GB"]),
-        ({"Tags": "bof, bif", "MaxRAM": 2}, ["bof", "bif", "2GB"]),
-        ({"WholeNode": "yes", "MaxRAM": 2}, ["WholeNode", "MultiProcessor", "2GB"]),
+        ({"MaxRAM": 2500}, ["2500MB"]),
+        ({"Tags": "bof, bif", "MaxRAM": 2048}, ["bof", "bif", "2500MB"]),
+        ({"WholeNode": "yes", "MaxRAM": 2048}, ["WholeNode", "MultiProcessor", "2500MB"]),
         ({"NumberOfProcessors": 1}, []),
         ({"NumberOfProcessors": 4}, ["MultiProcessor", "4Processors"]),
         ({"NumberOfProcessors": 4, "MinNumberOfProcessors": 2}, ["MultiProcessor", "4Processors"]),

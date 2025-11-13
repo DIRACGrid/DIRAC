@@ -1,5 +1,4 @@
-""" Collection of user jobs for testing purposes
-"""
+"""Collection of user jobs for testing purposes"""
 
 # pylint: disable=invalid-name
 
@@ -354,7 +353,7 @@ def memory_4GB():
 
     J.setExecutable("mpTest.py")
     J.setNumberOfProcessors(numberOfProcessors=2)
-    J.setRAMRequirements(ramRequired=2, maxRAM=4)
+    J.setRAMRequirements(ramRequired=2500, maxRAM=4000)
 
     return endOfAllJobs(J)
 
@@ -373,7 +372,7 @@ def memory_2_to4GB():
 
     J.setExecutable("mpTest.py")
     J.setNumberOfProcessors(numberOfProcessors=2)
-    J.setRAMRequirements(ramRequired=4, maxRAM=4)
+    J.setRAMRequirements(ramRequired=4000, maxRAM=4000)
     return endOfAllJobs(J)
 
 

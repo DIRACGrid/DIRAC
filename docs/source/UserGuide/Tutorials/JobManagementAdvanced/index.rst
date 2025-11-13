@@ -363,9 +363,9 @@ using the "setRAMRequirements" method of the API::
 
       j = Job()
       ...
-      j.setRAMRequirements(2, 4)
+      j.setRAMRequirements(2500, 4000)
 
-Calling ``Job().setRAMRequirements()`` takes 2 values, where the first is the minimum required amount of RAM (in GB) that the job requests.
+Calling ``Job().setRAMRequirements()`` takes 2 values, where the first is the minimum required amount of RAM (in MB) that the job requests.
 The second value instead specifies the limit that should not be surpassed.
 
 

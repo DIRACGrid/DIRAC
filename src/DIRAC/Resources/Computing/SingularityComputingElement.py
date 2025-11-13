@@ -1,16 +1,17 @@
-""" SingularityCE is a type of "inner" CEs
-    (meaning it's used by a jobAgent inside a pilot).
-    A computing element class using singularity containers,
-    where Singularity is supposed to be found on the WN.
+"""SingularityCE is a type of "inner" CEs
+(meaning it's used by a jobAgent inside a pilot).
+A computing element class using singularity containers,
+where Singularity is supposed to be found on the WN.
 
-    The goal of this CE is to start the job in the container set by
-    the "ContainerRoot" config option.
+The goal of this CE is to start the job in the container set by
+the "ContainerRoot" config option.
 
-    DIRAC can be re-installed within the container.
+DIRAC can be re-installed within the container.
 
-    See the Configuration/Resources/Computing documention for details on
-    where to set the option parameters.
+See the Configuration/Resources/Computing documention for details on
+where to set the option parameters.
 """
+
 import json
 import os
 import re
@@ -420,7 +421,7 @@ class SingularityComputingElement(ComputingElement):
         # if there's a max RAM available to the job, use that
         if self.maxRAM:
             self.ceParameters["MemoryLimitMB"] = min(
-                self.maxRAM * 1024, self.ceParameters.get("MemoryLimitMB", 1024 * 1024)
+                self.maxRAM, self.ceParameters.get("MemoryLimitMB", 1024 * 1024)
             )  # 1024 * 1024 is an arbitrary large number
         result = CG2Manager().systemCall(
             0, cmd, callbackFunction=self.sendOutput, env=self.__getEnv(), ceParameters=self.ceParameters

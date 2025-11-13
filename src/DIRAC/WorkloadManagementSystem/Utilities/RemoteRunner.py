@@ -190,7 +190,6 @@ class RemoteRunner:
             return result
         ceType = result["Value"]["CEType"]
         ceParams = result["Value"]
-        print(ceParams)
 
         # Build CE
         ceFactory = ComputingElementFactory()
@@ -200,7 +199,6 @@ class RemoteRunner:
         workloadCE = result["Value"]
 
         # Set the number of processors available according to the need of the payload
-        print(workloadCE.ceParameters)
         numberOfProcessorsCE = workloadCE.ceParameters.get("NumberOfProcessors", 1)
         if numberOfProcessorsCE < 1 or numberOfProcessorsPayload < 1:
             self.log.warn(
