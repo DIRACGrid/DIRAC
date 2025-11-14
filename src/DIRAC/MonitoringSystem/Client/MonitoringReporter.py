@@ -151,6 +151,7 @@ class MonitoringReporter:
                         # if we managed to publish the records we can delete from the list
                         recordSent += len(recordsToSend)
                         del documents[: self.__maxRecordsInABundle]
+                        try_count = 0
                     else:
                         gLogger.warn("Failed to insert the records:", retVal["Message"])
                         try_count += 1
