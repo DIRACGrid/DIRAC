@@ -120,7 +120,7 @@ class FTS3Job(JSerializable):
         # temporary used only for accounting
         # it is set by the monitor method
         # when a job is in a final state
-        self.accountingDict = None
+        self.accountingDicts = None
 
     @classmethod
     @cachedmethod(lambda cls: cls._idp_cache)
@@ -157,7 +157,6 @@ class FTS3Job(JSerializable):
 
         if not self.ftsGUID:
             return S_ERROR("FTSGUID not set, FTS job not submitted?")
-
         if not context:
             if not ftsServer:
                 ftsServer = self.ftsServer
@@ -184,13 +183,14 @@ class FTS3Job(JSerializable):
             self.error = jobStatusDict["reason"]
 
         if newStatus in self.FINAL_STATES:
-            self._fillAccountingDict(jobStatusDict)
+            self._fillAccountingDicts(jobStatusDict)
 
         filesInfoList = jobStatusDict["files"]
         filesStatus = {}
         statusSummary = {}
 
         # Make a copy, since we are potentially
+
         # deleting objects
         for fileDict in list(filesInfoList):
             file_state = fileDict["file_state"].capitalize()
@@ -245,7 +245,7 @@ class FTS3Job(JSerializable):
         # so we put this back into the monitoring data such that the accounting is done properly
         jobStatusDict["files"] = filesInfoList
         if newStatus in self.FINAL_STATES:
-            self._fillAccountingDict(jobStatusDict)
+            self._fillAccountingDicts(jobStatusDict)
 
         total = len(filesInfoList)
         completed = sum(statusSummary.get(state, 0) for state in FTS3File.FTS_FINAL_STATES)
@@ -902,9 +902,9 @@ class FTS3Job(JSerializable):
             gLogger.exception("Error generating context", repr(e))
             return S_ERROR(repr(e))
 
-    def _fillAccountingDict(self, jobStatusDict):
-        """This methods generates the necessary information to create a DataOperation
-        accounting record, and stores them as a instance attribute.
+    def _fillAccountingDicts(self, jobStatusDict):
+        """This methods generates the necessary information to create DataOperation
+        accounting records, and stores them as a instance attribute.
 
         For it to be relevant, it should be called only when the job is in a final state.
 
@@ -913,6 +913,7 @@ class FTS3Job(JSerializable):
         :returns: None
         """
 
+        accountingDicts = []
         accountingDict = dict()
         sourceSE = None
         targetSE = None
@@ -923,16 +924,24 @@ class FTS3Job(JSerializable):
         accountingDict["Protocol"] = "FTS3"
         accountingDict["ExecutionSite"] = self.ftsServer
 
+        # Registration values must be set anyway
+        accountingDict["RegistrationTime"] = 0.0
+        accountingDict["RegistrationOK"] = 0
+        accountingDict["RegistrationTotal"] = 0
+
         # We cannot rely on all the transient attributes (like self.filesToSubmit)
         # because it is probably not filed by the time we monitor !
 
         filesInfoList = jobStatusDict["files"]
         successfulFiles = []
+        failedFiles = []
 
         for fileDict in filesInfoList:
             file_state = fileDict["file_state"].capitalize()
             if file_state in FTS3File.FTS_SUCCESS_STATES:
                 successfulFiles.append(fileDict)
+            else:
+                failedFiles.append(fileDict)
 
         job_metadata = jobStatusDict["job_metadata"]
         # previous version of the code did not have dictionary as
@@ -941,23 +950,31 @@ class FTS3Job(JSerializable):
             sourceSE = job_metadata.get("sourceSE")
             targetSE = job_metadata.get("targetSE")
 
-        accountingDict["TransferOK"] = len(successfulFiles)
-        accountingDict["TransferTotal"] = len(filesInfoList)
-        # We need this if in the list comprehension because staging only jobs have `None` as filesize
-        accountingDict["TransferSize"] = sum(
-            fileDict["filesize"] for fileDict in successfulFiles if fileDict["filesize"]
-        )
-        accountingDict["FinalStatus"] = self.status
         accountingDict["Source"] = sourceSE
         accountingDict["Destination"] = targetSE
-        # We need this if in the list comprehension because staging only jobs have `None` as tx_duration
-        accountingDict["TransferTime"] = sum(
-            int(fileDict["tx_duration"]) for fileDict in successfulFiles if fileDict["tx_duration"]
-        )
 
-        # Registration values must be set anyway
-        accountingDict["RegistrationTime"] = 0.0
-        accountingDict["RegistrationOK"] = 0
-        accountingDict["RegistrationTotal"] = 0
+        if successfulFiles:
+            successfulDict = accountingDict.copy()
+            successfulDict["TransferOK"] = len(successfulFiles)
+            successfulDict["TransferTotal"] = len(successfulFiles)
+            # We need this if in the list comprehension because staging only jobs have `None` as filesize
+            successfulDict["TransferSize"] = sum(
+                fileDict["filesize"] for fileDict in successfulFiles if fileDict["filesize"]
+            )
+            successfulDict["FinalStatus"] = "Finished"
 
-        self.accountingDict = accountingDict
+            # We need this if in the list comprehension because staging only jobs have `None` as tx_duration
+            successfulDict["TransferTime"] = sum(
+                int(fileDict["tx_duration"]) for fileDict in successfulFiles if fileDict["tx_duration"]
+            )
+            accountingDicts.append(successfulDict)
+        if failedFiles:
+            failedDict = accountingDict.copy()
+            failedDict["TransferOK"] = 0
+            failedDict["TransferTotal"] = len(failedFiles)
+            failedDict["TransferSize"] = 0
+            failedDict["FinalStatus"] = "Failed"
+            failedDict["TransferTime"] = 0
+            accountingDicts.append(failedDict)
+
+        self.accountingDicts = accountingDicts
