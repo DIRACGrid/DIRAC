@@ -196,7 +196,7 @@ class Matcher:
         maxRAM = resourceDescription.get("MaxRAM")
         if maxRAM:
             try:
-                maxRAM = int(maxRAM / 1000)
+                maxRAM = int(maxRAM)
             except ValueError:
                 maxRAM = None
         nProcessors = resourceDescription.get("NumberOfProcessors")
