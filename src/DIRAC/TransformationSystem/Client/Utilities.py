@@ -9,7 +9,7 @@ Utilities for Transformation system
 import ast
 import random
 
-from cachetools import LRUCache, cached
+from cachetools import LRUCache, cachedmethod
 from cachetools.keys import hashkey
 from DIRAC import S_OK, S_ERROR, gLogger
 
@@ -23,6 +23,9 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+
+# Module-level cache for isSameSEInList method (shared across PluginUtilities instances)
+_is_same_se_in_list_cache = LRUCache(maxsize=1024)
 
 
 class PluginUtilities:
@@ -402,8 +405,8 @@ class PluginUtilities:
 
         return StorageElement(se1).isSameSE(StorageElement(se2))
 
-    @cached(
-        LRUCache(maxsize=1024),
+    @cachedmethod(
+        lambda self: _is_same_se_in_list_cache,
         key=lambda _, a, b: hashkey(a, *sorted(b)),
     )
     def isSameSEInList(self, se1, seList):
