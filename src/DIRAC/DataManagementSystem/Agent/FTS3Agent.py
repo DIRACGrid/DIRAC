@@ -719,10 +719,11 @@ class FTS3Agent(AgentModule):
         return self.dataOpSender.concludeSending()
 
     def __sendAccounting(self, ftsJob):
-        self.dataOpSender.sendData(
-            ftsJob.accountingDict,
-            commitFlag=True,
-            delayedCommit=True,
-            startTime=fromString(ftsJob.submitTime),
-            endTime=fromString(ftsJob.lastUpdate),
-        )
+        for accountingDict in ftsJob.accountingDicts:
+            self.dataOpSender.sendData(
+                accountingDict,
+                commitFlag=True,
+                delayedCommit=True,
+                startTime=fromString(ftsJob.submitTime),
+                endTime=fromString(ftsJob.lastUpdate),
+            )
