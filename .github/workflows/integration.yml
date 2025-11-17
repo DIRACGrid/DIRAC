@@ -31,8 +31,8 @@ jobs:
       matrix:
         # TEST_NAME is a dummy variable used to make it easier to read the web interface
         include:
-          - TEST_NAME: "MariaDB 11.4"
-            ARGS: MYSQL_VER=mariadb:11.4.3
+          - TEST_NAME: "MariaDB 11.4 OS 3.2.0 "
+            ARGS: MYSQL_VER=mariadb:11.4.3 ES_VER=opensearchproject/opensearch:3.2.0
           - TEST_NAME: "Force DEncode and MySQL8"
             ARGS: DIRAC_USE_JSON_ENCODE=NO MYSQL_VER=mysql:8.0.40
           - TEST_NAME: "Backward Compatibility"
