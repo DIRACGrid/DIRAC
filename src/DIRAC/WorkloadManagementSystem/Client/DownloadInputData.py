@@ -1,6 +1,7 @@
-""" The Download Input Data module wraps around the Replica Management
-    components to provide access to datasets by downloading locally
+"""The Download Input Data module wraps around the Replica Management
+components to provide access to datasets by downloading locally
 """
+
 import os
 import random
 import tempfile
@@ -226,7 +227,7 @@ class DownloadInputData:
         diskSpace = getDiskSpace(self.__getDownloadDir(False))  # MB
         availableBytes = diskSpace * 1024 * 1024  # bytes
         bufferGBs = gConfig.getValue(
-            os.path.join("/Systems/WorkloadManagement/JobWrapper", "JobWrapper", "MinOutputDataBufferGB"), 5.0
+            os.path.join("/Systems/WorkloadManagement/JobWrapper", "MinOutputDataBufferGB"), 5.0
         )
         data = bufferGBs * 1024 * 1024 * 1024  # bufferGBs in bytes
         if (data + totalSize) < availableBytes:
