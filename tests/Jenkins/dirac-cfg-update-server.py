@@ -1,12 +1,11 @@
 #!/usr/bin/env python
-""" update local cfg
-"""
+"""update local cfg"""
 import os
 import sys
 
 from DIRAC.Core.Base.Script import Script
 
-Script.setUsageMessage("\n".join([__doc__.split("\n")[1], "Usage:", f"  {Script.scriptName} [options] ... DB ..."]))
+Script.setUsageMessage("\n".join([__doc__.split("\n")[0], "Usage:", f"  {Script.scriptName} [options] ... DB ..."]))
 
 Script.parseCommandLine()
 
@@ -553,8 +552,8 @@ csAPI.setOption(
 # to avoid having to wait while testing rescheduling
 csAPI.setOption("Systems/WorkloadManagement/Executors/Optimizers/JobScheduling/RescheduleDelays", "0")
 
-csAPI.createSection("Systems/WorkloadManagement/Production/JobWrapper/")
-csAPI.setOption("Systems/WorkloadManagement/Production/JobWrapper/MinOutputDataBufferGB", 1)
+csAPI.createSection("Systems/WorkloadManagement/JobWrapper/")
+csAPI.setOption("Systems/WorkloadManagement/JobWrapper/MinOutputDataBufferGB", 1)
 
 # Final action: commit in CS
 res = csAPI.commit()
