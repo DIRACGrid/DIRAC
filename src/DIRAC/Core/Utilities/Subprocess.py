@@ -320,8 +320,6 @@ class Subprocess:
         if pid == 0:
             os.close(readFD)
             self.__executePythonFunction(function, writeFD, *stArgs, **stKeyArgs)
-            # FIXME: the close it is done at __executePythonFunction, do we need it here?
-            os.close(writeFD)
         else:
             os.close(writeFD)
             readSeq = self.__selectFD([readFD])
@@ -330,14 +328,13 @@ class Subprocess:
             try:
                 if len(readSeq) == 0:
                     self.log.debug("Timeout limit reached for pythonCall", function.__name__)
-                    self.__terminateProcess(psutil.Process(pid))
-
-                    # HACK to avoid python bug
-                    # self.wait()
-                    retries = 10000
-                    while os.waitpid(pid, 0) == -1 and retries > 0:
-                        time.sleep(0.001)
-                        retries -= 1
+                    gone, alive = self.__terminateProcess(psutil.Process(pid))
+                    if alive:
+                        for p in alive:
+                            try:
+                                p.kill()
+                            except psutil.NoSuchProcess:
+                                continue
 
                     return S_ERROR('%d seconds timeout for "%s" call' % (self.timeout, function.__name__))
                 elif readSeq[0] == readFD:
