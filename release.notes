@@ -1,3 +1,38 @@
+[v9.0.7]
+
+*DataManagementSystem
+
+FIX: (#8367) FTS reports correct accounting for failed transfers
+
+*WorkloadManagementSystem
+
+FIX: (#8365) SiteDirector: siteNames, ceTypes, ces and tags are None by default
+
+*FrameworkSystem
+
+FIX: (#8361) use cachedmethod instead of cached in ProxyDB
+
+*TransformationSystem
+
+FIX: (#8361) use cachedmethod instead of cached in Utilities
+
+*WorkloadManagement
+
+CHANGE: (#8360) use PilotManager to get the pilot output(s) from a job ID in WMSAdministrator service
+
+*ResourceStatusSystem
+
+FIX: (#8357) Avoid negative values in the Space Accounting
+
+*Resources
+
+FIX: (#8355) AREX CE: fix for understanding slightly different formats
+
+*Core
+
+NEW: (#8352) Report errors for every failed attempt in M2SSLTransport initAsClient
+FIX: (#8352) Use resolved socket address for SSL connections in M2SSLTransport
+
 [v9.0.6]
 
 *FrameworkSystem
