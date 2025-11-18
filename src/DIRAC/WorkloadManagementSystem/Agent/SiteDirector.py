@@ -148,10 +148,10 @@ class SiteDirector(AgentModule):
             self.sendSubmissionAccounting = True
 
         # Get the site description dictionary
-        siteNames = self.am_getOption("Site")
-        ceTypes = self.am_getOption("CETypes")
-        ces = self.am_getOption("CEs")
-        tags = self.am_getOption("Tags")
+        siteNames = self.am_getOption("Site", []) or None
+        ceTypes = self.am_getOption("CETypes", []) or None
+        ces = self.am_getOption("CEs", []) or None
+        tags = self.am_getOption("Tags", []) or None
 
         # Display options used
         self.log.always("VO:", self.vo)
