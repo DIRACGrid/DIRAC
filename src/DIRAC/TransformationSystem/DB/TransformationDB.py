@@ -711,21 +711,38 @@ class TransformationDB(DB):
         countDict["Total"] = sum(countDict.values())
         return S_OK(countDict)
 
+    @convertToReturnValue
     def __addFilesToTransformation(self, transID, fileIDs, connection=False):
-        req = "SELECT FileID from TransformationFiles"
-        req = req + " WHERE TransformationID = %d AND FileID IN (%s);" % (transID, intListToString(fileIDs))
-        res = self._query(req, conn=connection)
-        if not res["OK"]:
-            return res
-        for tupleIn in res["Value"]:
-            fileIDs.remove(tupleIn[0])
-        if not fileIDs:
-            return S_OK([])
-        values = [(transID, fileID) for fileID in fileIDs]
-        req = "INSERT INTO TransformationFiles (TransformationID,FileID,LastUpdate,InsertedTime) VALUES (%s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP())"
-        if not (res := self._updatemany(req, values, conn=connection))["OK"]:
-            return res
-        return S_OK(fileIDs)
+        # Create temporary table for FileIDs
+        sqlCmd = "CREATE TEMPORARY TABLE to_query_FileIDs (FileID INT(11) UNSIGNED NOT NULL, PRIMARY KEY (FileID)) ENGINE=MEMORY;"
+        returnValueOrRaise(self._update(sqlCmd, conn=connection))
+
+        try:
+            # Insert FileIDs into temporary table
+            sqlCmd = "INSERT INTO to_query_FileIDs (FileID) VALUES ( %s )"
+            returnValueOrRaise(self._updatemany(sqlCmd, [(fileID,) for fileID in fileIDs], conn=connection))
+
+            # Query existing files using JOIN
+            req = (
+                "SELECT tf.FileID FROM TransformationFiles tf JOIN to_query_FileIDs t ON tf.FileID = t.FileID WHERE tf.TransformationID = %d;"
+                % transID
+            )
+            res = returnValueOrRaise(self._query(req, conn=connection))
+
+            # Remove already existing fileIDs using set difference for efficiency
+            existingFileIDs = {tupleIn[0] for tupleIn in res}
+            fileIDs = list(set(fileIDs) - existingFileIDs)
+            if not fileIDs:
+                return []
+
+            values = [(transID, fileID) for fileID in fileIDs]
+            req = "INSERT INTO TransformationFiles (TransformationID,FileID,LastUpdate,InsertedTime) VALUES (%s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP())"
+            returnValueOrRaise(self._updatemany(req, values, conn=connection))
+            return fileIDs
+        finally:
+            # Clean up temporary table
+            sqlCmd = "DROP TEMPORARY TABLE to_query_FileIDs"
+            returnValueOrRaise(self._update(sqlCmd, conn=connection))
 
     def __insertExistingTransformationFiles(self, transID, fileTuplesList, connection=False):
         """Inserting already transformation files in TransformationFiles table (e.g. for deriving transformations)"""
