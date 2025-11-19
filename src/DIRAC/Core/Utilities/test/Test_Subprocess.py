@@ -3,23 +3,25 @@
 # Date: 2012/12/11 18:04:25
 ########################################################################
 
-""" :mod: SubprocessTests
-    =======================
+""":mod: SubprocessTests
+=======================
 
-    .. module: SubprocessTests
-    :synopsis: unittest for Subprocess module
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: SubprocessTests
+:synopsis: unittest for Subprocess module
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    unittest for Subprocess module
+unittest for Subprocess module
 """
-import time
+
 import platform
+import time
 from os.path import dirname, join
 from subprocess import Popen
 
+import psutil
 import pytest
 
-from DIRAC.Core.Utilities.Subprocess import systemCall, shellCall, pythonCall, getChildrenPIDs, Subprocess
+from DIRAC.Core.Utilities.Subprocess import Subprocess, getChildrenPIDs, pythonCall, shellCall, systemCall
 
 # Mark this entire module as slow
 pytestmark = pytest.mark.slow
@@ -72,3 +74,51 @@ def test_decodingCommandOutput():
     retVal = sp.systemCall(r"""python -c 'import os; os.fdopen(2, "wb").write(b"\xdf")'""", shell=True)
     assert retVal["OK"]
     assert retVal["Value"] == (0, "", "\ufffd")
+
+
+@pytest.fixture
+def subprocess_instance():
+    """Provides a Subprocess instance for testing."""
+    subp = Subprocess()
+    return subp
+
+
+@pytest.fixture
+def dummy_child():
+    """Spawn a dummy process tree: parent -> child."""
+    # Start a shell that sleeps, with a subprocess child
+    parent = Popen(["bash", "-c", "sleep 10 & wait"])
+    time.sleep(0.2)  # give it a moment to start
+    yield parent
+    # Ensure cleanup
+    try:
+        parent.terminate()
+        parent.wait(timeout=1)
+    except Exception:
+        pass
+
+
+def test_kill_child_process_tree(subprocess_instance, dummy_child):
+    """Test that killChild kills both parent and its children."""
+    subprocess_instance.childPID = dummy_child.pid
+    parent_proc = psutil.Process(subprocess_instance.childPID)
+
+    # Sanity check: parent should exist
+    assert parent_proc.is_running()
+
+    # It should have at least one sleeping child
+    children = parent_proc.children(recursive=True)
+    assert children, "Expected dummy process to have at least one child"
+
+    # Kill the tree
+    gone, alive = subprocess_instance.killChild(recursive=True)
+
+    # Verify the parent and children are terminated
+    for p in gone:
+        assert not p.is_running(), f"Process {p.pid} still alive"
+    for p in alive:
+        assert not p.is_running(), f"Process {p.pid} still alive"
+
+    # Verify parent is gone
+    with pytest.raises(psutil.NoSuchProcess):
+        psutil.Process(subprocess_instance.childPID)

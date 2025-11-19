@@ -1,7 +1,7 @@
 """
 DIRAC Wrapper to execute python and system commands with a wrapper, that might
 set a timeout.
-3 FUNCTIONS are provided:
+3 functions are provided:
 
      - shellCall( iTimeOut, cmdSeq, callbackFunction = None, env = None ):
        it uses subprocess.Popen class with "shell = True".
@@ -26,6 +26,7 @@ set a timeout.
        should be used to wrap third party python functions
 
 """
+
 import os
 import selectors
 import signal
@@ -161,7 +162,6 @@ class Subprocess:
 
         self.child = None
         self.childPID = 0
-        self.childKilled = False
         self.callback = None
         self.bufferList = []
         self.cmdSeq = []
@@ -193,7 +193,7 @@ class Subprocess:
                     f"First and last data in buffer: \n{dataString[:100]} \n....\n {dataString[-100:]} ",
                 )
                 retDict = S_ERROR(
-                    "Reached maximum allowed length (%d bytes) " "for called function return value" % self.bufferLimit
+                    "Reached maximum allowed length (%d bytes) for called function return value" % self.bufferLimit
                 )
                 retDict["Value"] = dataString
                 return retDict
@@ -241,60 +241,71 @@ class Subprocess:
         events = sel.select(timeout=timeout or self.timeout or None)
         return [key.fileobj for key, event in events if event & selectors.EVENT_READ]
 
-    def __killPid(self, pid, sig=9):
-        """send signal :sig: to process :pid:
+    def __terminateProcess(self, process):
+        """Tries to terminate a process with SIGTERM. Returns a (gone, alive) tuple"""
+        self.log.verbose(f"Sending SIGTERM signal to PID {process.pid}")
+        try:
+            process.terminate()
+        except psutil.NoSuchProcess:
+            return ([], [])
+        return psutil.wait_procs([process], timeout=60)
 
-        :param int pid: process id
-        :param int sig: signal to send, default 9 (SIGKILL)
+    def __poll(self, process):
+        """Non-blocking check of whether process `pid` is still alive.
+        Returns:
+        - (0, 0) if process is still running  (like os.waitpid(pid, os.WNOHANG))
+        - (pid, exitcode) if process has terminated
+        - None if process info cannot be retrieved
         """
         try:
-            os.kill(pid, sig)
-        except Exception as x:
-            if str(x) != "[Errno 3] No such process":
-                self.log.exception("Exception while killing timed out process")
-                raise x
-
-    def __poll(self, pid):
-        """wait for :pid:"""
-        try:
-            return os.waitpid(pid, os.WNOHANG)
-        except os.error:
-            if self.childKilled:
-                return False
+            exitcode = process.wait(timeout=0)
+            return (process.pid, exitcode)  # exited
+        except psutil.TimeoutExpired:
+            return (0, 0)  # still running
+        except psutil.NoSuchProcess:
             return None
 
     def killChild(self, recursive=True):
-        """kill child process
-
-        :param boolean recursive: flag to kill all descendants
+        """Kills a process tree (including children) with signal SIGTERM. If that fails, escalate to SIGKILL
+        returns (gone, alive) tuple.
         """
-        pgid = os.getpgid(self.childPID)
-        if pgid != os.getpgrp():
-            try:
-                # Child is in its own group: kill the group
-                os.killpg(pgid, signal.SIGTERM)
-            except OSError:
-                # Process is already dead
-                pass
-        else:
-            # No separate group: walk the tree
-            parent = psutil.Process(self.childPID)
-            procs = parent.children(recursive=recursive)
-            procs.append(parent)
-            for p in procs:
+
+        self.log.info(f"Killing childPID {self.childPID}")
+
+        gone, alive = [], []
+        try:
+            child_process = psutil.Process(self.childPID)
+        except psutil.NoSuchProcess:
+            self.log.warn(f"Child PID {self.childPID} no longer exists")
+            return (gone, alive)
+
+        if recursive:
+            # grandchildren
+            children = child_process.children(recursive=True)
+            self.log.info(f"Sending kill signal to {len(children)} children PIDs")
+            for p in children:
                 try:
                     p.terminate()
                 except psutil.NoSuchProcess:
-                    pass
-            _gone, alive = psutil.wait_procs(procs, timeout=10)
-            # Escalate any survivors
+                    continue
+            g, a = psutil.wait_procs(children, timeout=60)
+            gone.extend(g)
+            alive.extend(a)
+
+        # now killing the child_process
+        g, a = self.__terminateProcess(child_process)
+        gone.extend(g)
+        alive.extend(a)
+
+        # if there's something still alive, use SIGKILL
+        if alive:
             for p in alive:
                 try:
                     p.kill()
                 except psutil.NoSuchProcess:
                     pass
 
-        self.childKilled = True
+        return psutil.wait_procs(alive, timeout=60)
 
     def pythonCall(self, function, *stArgs, **stKeyArgs):
         """call python function :function: with :stArgs: and :stKeyArgs:"""
@@ -309,8 +320,6 @@ class Subprocess:
         if pid == 0:
             os.close(readFD)
             self.__executePythonFunction(function, writeFD, *stArgs, **stKeyArgs)
-            # FIXME: the close it is done at __executePythonFunction, do we need it here?
-            os.close(writeFD)
         else:
             os.close(writeFD)
             readSeq = self.__selectFD([readFD])
@@ -319,14 +328,13 @@ class Subprocess:
             try:
                 if len(readSeq) == 0:
                     self.log.debug("Timeout limit reached for pythonCall", function.__name__)
-                    self.__killPid(pid)
-
-                    # HACK to avoid python bug
-                    # self.wait()
-                    retries = 10000
-                    while os.waitpid(pid, 0) == -1 and retries > 0:
-                        time.sleep(0.001)
-                        retries -= 1
+                    gone, alive = self.__terminateProcess(psutil.Process(pid))
+                    if alive:
+                        for p in alive:
+                            try:
+                                p.kill()
+                            except psutil.NoSuchProcess:
+                                continue
 
                     return S_ERROR('%d seconds timeout for "%s" call' % (self.timeout, function.__name__))
                 elif readSeq[0] == readFD:
@@ -400,7 +408,7 @@ class Subprocess:
         if len(dataString) + baseLength > self.bufferLimit:
             self.log.error("Maximum output buffer length reached")
             retDict = S_ERROR(
-                "Reached maximum allowed length (%d bytes) for called " "function return value" % self.bufferLimit
+                "Reached maximum allowed length (%d bytes) for called function return value" % self.bufferLimit
             )
             retDict["Value"] = dataString
             return retDict
@@ -446,6 +454,7 @@ class Subprocess:
                 start_new_session=start_new_session,
             )
             self.childPID = self.child.pid
+            child_process = psutil.Process(self.childPID)
         except OSError as v:
             retDict = S_ERROR(repr(v))
             retDict["Value"] = (-1, "", str(v))
@@ -464,9 +473,9 @@ class Subprocess:
             self.bufferList = [["", 0], ["", 0]]
             initialTime = time.time()
 
-            exitStatus = self.__poll(self.child.pid)
+            exitStatus = self.__poll(child_process)
 
-            while (0, 0) == exitStatus or exitStatus is None:
+            while (0, 0) == exitStatus:  # This means that the process is still alive
                 retDict = self.__readFromCommand()
                 if not retDict["OK"]:
                     return retDict
@@ -478,14 +487,14 @@ class Subprocess:
                         1, "Timeout (%d seconds) for '%s' call" % (self.timeout, cmdSeq)
                     )
                 time.sleep(0.01)
-                exitStatus = self.__poll(self.child.pid)
+                exitStatus = self.__poll(child_process)
 
             self.__readFromCommand()
 
             if exitStatus:
                 exitStatus = exitStatus[1]
 
-            if exitStatus >= 256:
+            if exitStatus and exitStatus >= 256:
                 exitStatus = int(exitStatus / 256)
             return S_OK((exitStatus, self.bufferList[0][0], self.bufferList[1][0]))
         finally:

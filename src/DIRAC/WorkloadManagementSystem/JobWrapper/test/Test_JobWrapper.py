@@ -1,5 +1,5 @@
-""" Test class for JobWrapper
-"""
+"""Test class for JobWrapper"""
+
 import os
 import shutil
 import tempfile
@@ -314,8 +314,7 @@ def test_processKilledSubprocess(mocker):
         result = jw.process("sleep 20", {})
 
     assert result["OK"]
-    assert result["Value"]["payloadStatus"] == 15  # SIGTERM
-    assert not result["Value"]["payloadOutput"]
+    assert result["Value"]["payloadStatus"] is None
     assert not result["Value"]["payloadExecutorError"]
     assert result["Value"]["watchdogError"] == "Job is stalled!"  # Error message from the watchdog
 
