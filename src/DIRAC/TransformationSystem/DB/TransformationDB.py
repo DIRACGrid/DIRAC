@@ -6,6 +6,9 @@ This class is typically used as a base class for more specific data processing
 databases
 """
 
+# Disable it because pylint does not understand decorator (convertToReturnValue)
+
+# pylint: disable=invalid-sequence-index
 import re
 import time
 import threading
