@@ -1318,6 +1318,9 @@ class TransformationDB(DB):
         """Get file IDs for the given list of lfns
         warning: if the file is not present, we'll see no errors
         """
+
+        if not lfns:
+            return ({}, {})
         # Create temporary table for LFNs
         sqlCmd = "CREATE TEMPORARY TABLE to_query_LFNs (LFN VARCHAR(255) NOT NULL, PRIMARY KEY (LFN)) ENGINE=MEMORY;"
         returnValueOrRaise(self._update(sqlCmd, conn=connection))
