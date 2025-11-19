@@ -218,7 +218,7 @@ class PilotCStoJSONSynchronizer:
 
         preferredURLPatterns = gConfigurationData.extractOptionFromCFG("/DIRAC/PreferredURLPatterns")
         if preferredURLPatterns:
-            pilotDict["PreferredURLPatterns"] = preferredURLPatterns
+            pilotDict["PreferredURLPatterns"] = preferredURLPatterns.replace(" ", "").split(",")
 
         self.log.debug("Got pilotDict", str(pilotDict))
 
