@@ -3,9 +3,13 @@
 import datetime
 import errno
 import os
+import requests
 from packaging.version import Version
 
-from cachetools import cachedmethod, LRUCache
+from cachetools import cachedmethod, LRUCache, TTLCache, cached
+from threading import Lock
+from typing import Optional
+
 
 # Requires at least version 3.3.3
 from fts3 import __version__ as fts3_version
@@ -42,6 +46,50 @@ BRING_ONLINE_TIMEOUT = 259200
 # Number of IdP to keep in cache. Should correspond roughly
 # to the number of groups performing transfers
 IDP_CACHE_SIZE = 8
+
+
+_scitag_cache = TTLCache(maxsize=10, ttl=3600)
+_scitag_lock = Lock()
+_scitag_json_cache = TTLCache(maxsize=1, ttl=86400)
+_scitag_json_lock = Lock()
+
+
+@cached(_scitag_cache, lock=_scitag_lock)
+def get_scitag(vo: str, activity: Optional[str] = None) -> int:
+    """
+    Get the scitag based on the VO and activity.
+    If the VO is not found in the scitag.json, it defaults to 1.
+    If no specific activity is provided, it defaults to the "default" activityName.
+
+    :param vo: The VO for which to get the scitag
+    :param activity: The activity for which to get the scitag
+    :return: The scitag value
+    """
+
+    @cached(_scitag_json_cache, lock=_scitag_json_lock)
+    def get_remote_json():
+        gLogger.verbose("Fetching https://scitags.org/api.json from the network")
+        response = requests.get("https://scitags.org/api.json")
+        response.raise_for_status()
+        return response.json()
+
+    vo_id = 1  # Default VO ID
+    activity_id = 1  # Default activity ID
+
+    try:
+        # Load the JSON data from the cache or network
+        sj = get_remote_json()
+
+        for experiment in sj.get("experiments", []):
+            if experiment.get("expName") == vo.lower():
+                vo_id = experiment.get("expId")
+                for act in experiment.get("activities", []):
+                    if act.get("activityName") == activity:
+                        activity_id = act.get("activityId")
+    except Exception as e:
+        gLogger.error(f"Error fetching or parsing scitag.json. Using default scitag values.", repr(e))
+    # Logic to determine the scitag based on vo and activity (this is what FTS wants)
+    return vo_id << 6 | activity_id  # Example logic, replace with actual implementation
 
 
 class FTS3Job(JSerializable):
@@ -470,6 +518,9 @@ class FTS3Job(JSerializable):
 
                 ftsFileID = getattr(ftsFile, "fileID")
 
+                # scitag 65 is 1 << 6 | 1 (default experiment, default activity)
+                scitag = get_scitag(vo=self.vo, activity=self.activity)
+
                 # Under normal circumstances, we simply submit an fts transfer as such:
                 # * srcProto://myFile -> destProto://myFile
                 #
@@ -499,6 +550,7 @@ class FTS3Job(JSerializable):
                         filesize=ftsFile.size,
                         metadata=stageTrans_metadata,
                         activity=self.activity,
+                        scitag=scitag,
                     )
                     transfers.append(stageTrans)
 
@@ -572,6 +624,7 @@ class FTS3Job(JSerializable):
                     activity=self.activity,
                     source_token=srcToken,
                     destination_token=dstToken,
+                    scitag=scitag,
                 )
 
                 transfers.append(trans)
