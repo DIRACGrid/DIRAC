@@ -204,6 +204,7 @@ def generateFTS3Job(sourceSE, targetSE, lfns, multiHopSE=None):
     newJob.sourceSE = sourceSE
     newJob.targetSE = targetSE
     newJob.multiHopSE = multiHopSE
+    newJob.vo = "lhcb"
     filesToSubmit = []
 
     for i, lfn in enumerate(lfns, start=1):
