@@ -26,6 +26,7 @@ from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery
 
 MAX_ERROR_COUNT = 10
 
+TMP_TABLE_JOIN_LIMIT = 100
 #############################################################################
 
 
@@ -271,6 +272,7 @@ class TransformationDB(DB):
         self.__updateTransformationLogging(transID, message, author, connection=connection)
         return S_OK(transID)
 
+    @convertToReturnValue
     def getTransformations(
         self,
         condDict=None,
@@ -290,32 +292,54 @@ class TransformationDB(DB):
             columns = self.TRANSPARAMS
         else:
             columns = [c for c in columns if c in self.TRANSPARAMS]
-        req = "SELECT {} FROM Transformations {}".format(
-            intListToString(columns),
-            self.buildCondition(condDict, older, newer, timeStamp, orderAttribute, limit, offset=offset),
-        )
-        res = self._query(req, conn=connection)
-        if not res["OK"]:
-            return res
-        if condDict is None:
-            condDict = {}
-        webList = []
+
+        join_query = ""
+
+        try:
+            # If we request multiple TransformationIDs, and they are more than TMP_TABLE_JOIN_LIMIT,
+            # we create a temporary table to speed up the query
+            if (
+                "TransformationID" in condDict
+                and isinstance(condDict["TransformationID"], list)
+                and len(condDict["TransformationID"]) > TMP_TABLE_JOIN_LIMIT
+            ):
+                # Create temporary table for TransformationIDs
+                transIDs = condDict.pop("TransformationID")
+                sqlCmd = "CREATE TEMPORARY TABLE to_query_TransformationIDs (TransID INTEGER NOT NULL, PRIMARY KEY (TransID)) ENGINE=MEMORY;"
+                returnValueOrRaise(self._update(sqlCmd, conn=connection))
+                join_query = " JOIN to_query_TransformationIDs t ON TransformationID = t.TransID"
+
+                # Insert TransformationIDs into temporary table
+                sqlCmd = "INSERT INTO to_query_TransformationIDs (TransID) VALUES ( %s )"
+                returnValueOrRaise(self._updatemany(sqlCmd, [(transID,) for transID in transIDs], conn=connection))
+
+            req = "SELECT {} FROM Transformations {} {}".format(
+                intListToString(columns),
+                join_query,
+                self.buildCondition(condDict, older, newer, timeStamp, orderAttribute, limit, offset=offset),
+            )
+            matching_transformations = returnValueOrRaise(self._query(req, conn=connection))
+
+        finally:
+            # Clean up temporary table
+            if join_query:
+                sqlCmd = "DROP TEMPORARY TABLE to_query_TransformationIDs"
+                self._update(sqlCmd, conn=connection)
+
+        # TODO: optimize by getting all the extra params at once
         resultList = []
-        for row in res["Value"]:
+        for row in matching_transformations:
             # Prepare the structure for the web
-            rList = [str(item) if not isinstance(item, int) else item for item in row]
             transDict = dict(zip(columns, row))
-            webList.append(rList)
             if extraParams:
-                res = self.__getAdditionalParameters(transDict["TransformationID"], connection=connection)
-                if not res["OK"]:
-                    return res
-                transDict.update(res["Value"])
+                trans_extra_param = returnValueOrRaise(
+                    self.__getAdditionalParameters(transDict["TransformationID"], connection=connection)
+                )
+
+                transDict.update(trans_extra_param)
             resultList.append(transDict)
-        result = S_OK(resultList)
-        result["Records"] = webList
-        result["ParameterNames"] = columns
-        return result
+
+        return resultList
 
     def getTransformation(self, transName, extraParams=False, connection=False):
         """Get Transformation definition and parameters of Transformation identified by TransformationID"""
