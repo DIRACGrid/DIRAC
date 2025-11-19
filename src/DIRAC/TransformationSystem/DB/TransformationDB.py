@@ -15,6 +15,7 @@ from errno import ENOENT
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.DErrno import cmpError
+from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueOrRaise
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import stringListToString, intListToString, breakListIntoChunks
@@ -1271,18 +1272,32 @@ class TransformationDB(DB):
     # These methods manipulate the DataFiles table
     #
 
+    @convertToReturnValue
     def __getFileIDsForLfns(self, lfns, connection=False):
         """Get file IDs for the given list of lfns
         warning: if the file is not present, we'll see no errors
         """
-        req = f"SELECT LFN,FileID FROM DataFiles WHERE LFN in ({stringListToString(lfns)});"
-        res = self._query(req, conn=connection)
-        if not res["OK"]:
-            return res
-        lfns = dict(res["Value"])
-        # Reverse dictionary
-        fids = {fileID: lfn for lfn, fileID in lfns.items()}
-        return S_OK((fids, lfns))
+        # Create temporary table for LFNs
+        sqlCmd = "CREATE TEMPORARY TABLE to_query_LFNs (LFN VARCHAR(255) NOT NULL, PRIMARY KEY (LFN)) ENGINE=MEMORY;"
+        returnValueOrRaise(self._update(sqlCmd, conn=connection))
+
+        try:
+            # Insert LFNs into temporary table
+            sqlCmd = "INSERT INTO to_query_LFNs (LFN) VALUES ( %s )"
+            returnValueOrRaise(self._updatemany(sqlCmd, [(lfn,) for lfn in lfns], conn=connection))
+
+            # Query using JOIN with temporary table
+            req = "SELECT df.LFN, df.FileID FROM DataFiles df JOIN to_query_LFNs t ON df.LFN = t.LFN;"
+            res = returnValueOrRaise(self._query(req, conn=connection))
+
+            lfns = dict(res)
+            # Reverse dictionary
+            fids = {fileID: lfn for lfn, fileID in lfns.items()}
+            return (fids, lfns)
+        finally:
+            # Clean up temporary table
+            sqlCmd = "DROP TEMPORARY TABLE to_query_LFNs"
+            self._update(sqlCmd, conn=connection)
 
     def __getLfnsForFileIDs(self, fileIDs, connection=False):
         """Get lfns for the given list of fileIDs"""
