@@ -10,11 +10,11 @@ This module consists of DataManager and related classes.
 """
 
 # # imports
-from datetime import datetime, timedelta
+import errno
 import fnmatch
 import os
 import time
-import errno
+from datetime import datetime, timedelta
 
 # # from DIRAC
 import DIRAC
@@ -25,13 +25,13 @@ from DIRAC.Core.Utilities.File import makeGuid, getSize
 from DIRAC.Core.Utilities.List import randomize, breakListIntoChunks
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.DataManagementSystem.Client import MAX_FILENAME_LENGTH
-from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 
 # # RSCID
@@ -89,7 +89,7 @@ class DataManager:
         :param vo: the VO for which the DataManager is created, get VO from the current proxy if not specified
         """
         self.log = gLogger.getSubLogger(self.__class__.__name__)
-        self.voName = vo
+        self.voName = vo if vo else getVOfromProxyGroup().get("Value", None)
 
         if catalogs is None:
             catalogs = []
@@ -97,10 +97,9 @@ class DataManager:
 
         self.fileCatalog = FileCatalog(catalogs=catalogsToUse, vo=self.voName)
         self.accountingClient = None
-        self.resourceStatus = ResourceStatus()
         self.ignoreMissingInFC = Operations(vo=self.voName).getValue("DataManagement/IgnoreMissingInFC", False)
         self.useCatalogPFN = Operations(vo=self.voName).getValue("DataManagement/UseCatalogPFN", True)
-        self.dmsHelper = DMSHelpers(vo=vo)
+        self.dmsHelper = DMSHelpers(vo=self.voName)
         self.registrationProtocol = self.dmsHelper.getRegistrationProtocols()
         self.thirdPartyProtocols = self.dmsHelper.getThirdPartyProtocols()
         self.dataOpSender = DataOperationSender()
