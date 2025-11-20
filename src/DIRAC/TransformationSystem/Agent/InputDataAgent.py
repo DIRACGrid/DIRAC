@@ -74,7 +74,10 @@ class InputDataAgent(AgentModule):
         """Main execution method"""
 
         # Get all the transformations
-        result = self.transClient.getTransformations({"Status": "Active", "Type": self.transformationTypes})
+        result = self.transClient.getTransformations(
+            {"Status": "Active", "Type": self.transformationTypes},
+            columns=["TransformationID", "AuthorDN", "AuthorGroup"],
+        )
         if not result["OK"]:
             self.log.error("InputDataAgent.execute: Failed to get transformations.", result["Message"])
             return S_OK()
