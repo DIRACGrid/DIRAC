@@ -82,7 +82,6 @@ def generateDocs(data, withTimeStamp=True):
 
 
 class ElasticSearchDB:
-
     """
     .. class:: ElasticSearchDB
 
@@ -506,7 +505,7 @@ class ElasticSearchDB:
             indexName = self.generateFullIndexName(indexPrefix, period)
         else:
             indexName = indexPrefix
-        sLog.debug(f"Bulk indexing into {indexName} of {data}")
+        sLog.debug(f"Bulk indexing into {indexName} of {len(data)}")
 
         res = self.existingIndex(indexName)
         if not res["OK"]:
