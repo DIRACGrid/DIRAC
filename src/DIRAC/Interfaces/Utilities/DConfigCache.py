@@ -9,6 +9,7 @@ from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Utilities.File import secureOpenForWrite
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import reset_all_caches
 
 
 class ConfigCache:
@@ -69,5 +70,6 @@ class ConfigCache:
             try:
                 with open(self.configCacheName, "rb") as fh:
                     gConfigurationData.mergedCFG = pickle.load(fh)
+                    reset_all_caches()
             except:
                 gLogger.error("Cache corrupt or unreadable")
