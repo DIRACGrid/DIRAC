@@ -1,3 +1,17 @@
+[v9.0.10]
+
+*DataManagementSystem
+
+FIX: (#8381) make sure the DataManager knows the VO
+
+*Interfaces
+
+FIX: (#8380) DConfigCache - reset Registry caches after loading the configuration from the local disk cache
+
+*TransformationSystem
+
+CHANGE: (#8373) This contains various speed of for the TS, mostly by using temporary tables for the queries, only requesting what's needed in the DB, and bulking things more efficiently
+
 [v9.0.9]
 
 CHANGE: (#8359) Subprocess: use psutil for killing processes
