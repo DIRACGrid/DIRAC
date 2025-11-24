@@ -344,6 +344,73 @@ class TransformationDB(DB):
 
         return resultList
 
+    def getCounters(
+        self,
+        table,
+        attrList,
+        condDict,
+        older=None,
+        newer=None,
+        timeStamp=None,
+        connection=False,
+        greater=None,
+        smaller=None,
+    ):
+        """Optimized getCounters override.
+
+        For large lists of TransformationID values (length > TMP_TABLE_JOIN_LIMIT), we
+        create an in-memory temporary table and JOIN on it instead of relying on a
+        potentially very large IN (...) clause. This mirrors the optimization used in
+        getTransformations.
+
+        Parameters mirror parent MySQL.getCounters except we build an internal
+        inner_join clause transparently.
+        """
+        # Ensure we have a connection object
+        connection = self.__getConnection(connection)
+
+        # Work on a copy so we do not mutate caller's dictionary
+        localCondDict = dict(condDict) if condDict else {}
+        join_query = ""
+        try:
+            if (
+                "TransformationID" in localCondDict
+                and isinstance(localCondDict["TransformationID"], list)
+                and len(localCondDict["TransformationID"]) > TMP_TABLE_JOIN_LIMIT
+            ):
+                transIDs = localCondDict.pop("TransformationID")
+                # Create temporary table
+                sqlCmd = "CREATE TEMPORARY TABLE to_query_TransformationIDs (TransID INTEGER NOT NULL, PRIMARY KEY (TransID)) ENGINE=MEMORY;"
+                res = self._update(sqlCmd, conn=connection)
+                if not res["OK"]:
+                    return res
+                join_query = " JOIN to_query_TransformationIDs t ON TransformationID = t.TransID"
+                # Bulk insert IDs
+                sqlCmd = "INSERT INTO to_query_TransformationIDs (TransID) VALUES ( %s )"
+                res = self._updatemany(sqlCmd, [(tid,) for tid in transIDs], conn=connection)
+                if not res["OK"]:
+                    return res
+
+            # Delegate to parent with inner_join parameter
+            res = super().getCounters(
+                table,
+                attrList,
+                localCondDict,
+                older=older,
+                newer=newer,
+                timeStamp=timeStamp,
+                connection=connection,
+                greater=greater,
+                smaller=smaller,
+                inner_join=join_query,
+            )
+        finally:
+            if join_query:
+                # Drop temp table
+                self._update("DROP TEMPORARY TABLE to_query_TransformationIDs", conn=connection)
+
+        return res
+
     def getTransformation(self, transName, extraParams=False, connection=False):
         """Get Transformation definition and parameters of Transformation identified by TransformationID"""
         res = self._getConnectionTransID(connection, transName)

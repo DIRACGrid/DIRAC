@@ -138,6 +138,15 @@ getCounters( self, table, attrList, condDict = None, older = None,
   Count the number of records on each distinct combination of AttrList, selected
   with condition defined by condDict and time stamps
 
+getCounters( self, table, attrList, condDict = None, older = None,
+                         newer = None, timeStamp = None, connection = False,
+                         greater = None, smaller = None, inner_join = "" ):
+
+    Count the number of records on each distinct combination of AttrList, selected
+    with condition defined by condDict and time stamps. Optional greater/smaller
+    allow for inequality filters and inner_join lets callers inject a JOIN on a
+    temporary or auxiliary table (e.g. large ID sets) for performance.
+
 
 getDistinctAttributeValues( self, table, attribute, condDict = None, older = None,
                             newer = None, timeStamp = None, connection = False ):
@@ -1148,6 +1157,7 @@ class MySQL:
         connection=False,
         greater=None,
         smaller=None,
+        inner_join="",
     ):
         """
         Count the number of records on each distinct combination of AttrList, selected
@@ -1172,7 +1182,10 @@ class MySQL:
         except Exception as x:
             return S_ERROR(DErrno.EMYSQL, x)
 
-        cmd = f"SELECT {attrNames}, COUNT(*) FROM {table} {cond} GROUP BY {attrNames} ORDER BY {attrNames}"
+        # inner_join can be provided by higher level DB helpers to speed up large IN lists
+        # by joining on a temporary in-memory table. It should either be an empty string
+        # or start with a space and contain a complete JOIN clause.
+        cmd = f"SELECT {attrNames}, COUNT(*) FROM {table}{inner_join} {cond} GROUP BY {attrNames} ORDER BY {attrNames}"
         res = self._query(cmd, conn=connection)
         if not res["OK"]:
             return res
