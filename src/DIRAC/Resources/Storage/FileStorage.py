@@ -1,15 +1,128 @@
 """
- This is the File StorageClass, only meant to be used localy
- """
+This is the File StorageClass, only meant to be used localy
+"""
+
 import os
 import shutil
 import errno
 import stat
+import struct
+import time
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 from DIRAC.Core.Utilities.Adler import fileAdler
+
+
+def set_xattr_adler32(path, checksum):
+    """
+    Set the adler32 checksum extended attribute on a file.
+
+    This is needed for case where you write the data on a locally mounted
+    file system, but then want to access it from outside via xroot (like the HLT farm)
+
+    Hopefully, this whole function will be part of xroot at some point
+    https://github.com/xrootd/xrootd/pull/2650
+
+
+    This function replicates the exact behavior of the C++ function fSetXattrAdler32
+
+    It writes the checksum in XrdCksData binary format with the following structure:
+        - Name[16]:    Algorithm name ("adler32"), null-padded
+        - fmTime (8):  File modification time (network byte order, int64)
+        - csTime (4):  Time delta from mtime (network byte order, int32)
+        - Rsvd1 (2):   Reserved (int16)
+        - Rsvd2 (1):   Reserved (uint8)
+        - Length (1):  Checksum length in bytes (uint8)
+        - Value[64]:   Binary checksum value (4 bytes for adler32)
+
+    Total structure size: 96 bytes
+
+    Parameters
+    ----------
+    path : str
+        Path to the file (must be a regular file on local filesystem)
+    checksum : str
+        8-character hexadecimal adler32 checksum (e.g., "deadbeef")
+
+
+    Notes
+    -----
+    - The attribute is stored as "user.XrdCks.adler32"
+
+    """
+    # Validate checksum format
+    if not isinstance(checksum, str) or len(checksum) != 8:
+        raise ValueError("Checksum must be exactly 8 characters")
+
+    # Validate it's valid hex
+    try:
+        int(checksum, 16)
+    except ValueError:
+        raise ValueError(f"Checksum must be valid hexadecimal: {checksum}")
+
+    # Check file exists and is regular
+
+    st = os.stat(path)
+
+    # Import xattr module
+    try:
+        import xattr
+    except ImportError:
+        raise ImportError("The 'xattr' module is required. Install it with: pip install xattr")
+
+    # Build XrdCksData structure (96 bytes total)
+    # Reference: src/XrdCks/XrdCksData.hh
+
+    # 1. Name[16] - Algorithm name, null-padded
+    name = b"adler32"
+    name_field = name.ljust(16, b"\x00")
+
+    # 2. fmTime (8 bytes) - File modification time (network byte order = big-endian)
+    fm_time = int(st.st_mtime)
+    fm_time_field = struct.pack(">q", fm_time)  # signed 64-bit big-endian
+
+    # 3. csTime (4 bytes) - Delta from mtime to now (network byte order)
+    cs_time = int(time.time()) - fm_time
+    cs_time_field = struct.pack(">i", cs_time)  # signed 32-bit big-endian
+
+    # 4. Rsvd1 (2 bytes) - Reserved, set to 0
+    rsvd1_field = struct.pack(">h", 0)  # signed 16-bit big-endian
+
+    # 5. Rsvd2 (1 byte) - Reserved, set to 0
+    rsvd2_field = struct.pack("B", 0)  # unsigned 8-bit
+
+    # 6. Length (1 byte) - Checksum length in bytes
+    # Adler32 is 4 bytes (8 hex chars / 2)
+    length_field = struct.pack("B", 4)  # unsigned 8-bit
+
+    # 7. Value[64] - Binary checksum value
+    # Convert hex string to 4 bytes, pad rest with zeros
+    checksum_bytes = bytes.fromhex(checksum)
+    value_field = checksum_bytes + b"\x00" * (64 - len(checksum_bytes))
+
+    # Assemble complete structure
+    xrd_cks_data = (
+        name_field  # 16 bytes
+        + fm_time_field  #  8 bytes
+        + cs_time_field  #  4 bytes
+        + rsvd1_field  #  2 bytes
+        + rsvd2_field  #  1 byte
+        + length_field  #  1 byte
+        + value_field  # 64 bytes
+    )  # Total: 96 bytes
+
+    assert len(xrd_cks_data) == 96, f"Structure size mismatch: {len(xrd_cks_data)}"
+
+    # Set the extended attribute
+    # XRootD uses "XrdCks.adler32" which becomes "user.XrdCks.adler32" on Linux
+    attr_name = "user.XrdCks.adler32"
+
+    try:
+        xattr.setxattr(path, attr_name, xrd_cks_data)
+    except OSError as e:
+        raise OSError(f"Failed to set extended attribute on {path}: {e}") from e
 
 
 class FileStorage(StorageBase):
@@ -165,6 +278,12 @@ class FileStorage(StorageBase):
                     os.makedirs(dirname)
                 shutil.copy2(src_file, dest_url)
                 fileSize = os.path.getsize(dest_url)
+                try:
+                    src_cks = fileAdler(src_file)
+                    set_xattr_adler32(dest_url, src_cks)
+                except Exception as e:
+                    gLogger.warn("Could not set checksum", f"{e!r}")
+
                 if sourceSize and (sourceSize != fileSize):
                     try:
                         os.unlink(dest_url)
