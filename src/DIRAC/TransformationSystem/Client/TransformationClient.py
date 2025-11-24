@@ -114,12 +114,20 @@ class TransformationClient(Client):
         newer=None,
         timeStamp=None,
         orderAttribute=None,
-        limit=100,
+        limit=None,
         extraParams=False,
         columns=None,
     ):
         """gets all the transformations in the system, incrementally. "limit" here is just used to determine the offset."""
         rpcClient = self._getRPC()
+
+        # If the body is requested (or is served by default)
+        # we take smaller chunk, not to take too much memory
+        # on the server
+        if columns and "Body" not in columns:
+            limit = 100_000
+        else:
+            limit = 1_000
 
         transformations = []
         if condDict is None:

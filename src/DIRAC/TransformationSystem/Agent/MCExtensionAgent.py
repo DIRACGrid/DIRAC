@@ -1,4 +1,4 @@
-""" Agent to extend the number of tasks given the Transformation definition
+"""Agent to extend the number of tasks given the Transformation definition
 
 The following options can be set for the MCExtensionAgent.
 
@@ -8,6 +8,7 @@ The following options can be set for the MCExtensionAgent.
   :dedent: 2
   :caption: MCExtensionAgent options
 """
+
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -54,7 +55,9 @@ class MCExtensionAgent(AgentModule):
             return S_OK("Disabled via CS flag")
 
         # Obtain the transformations in Cleaning status and remove any mention of the jobs/files
-        res = self.transClient.getTransformations({"Status": "Active", "Type": self.transformationTypes})
+        res = self.transClient.getTransformations(
+            {"Status": "Active", "Type": self.transformationTypes}, columns=["TransformationID", "MaxNumberOfTasks"]
+        )
         if res["OK"]:
             for transDict in res["Value"]:
                 transID = transDict["TransformationID"]

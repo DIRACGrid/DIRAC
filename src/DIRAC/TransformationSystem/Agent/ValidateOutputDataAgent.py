@@ -76,7 +76,9 @@ class ValidateOutputDataAgent(AgentModule):
         self.updateWaitingIntegrity()
         gLogger.info("-" * 40)
 
-        res = self.transClient.getTransformations({"Status": "ValidatingOutput", "Type": self.transformationTypes})
+        res = self.transClient.getTransformations(
+            {"Status": "ValidatingOutput", "Type": self.transformationTypes}, columns=["TransformationID"]
+        )
         if not res["OK"]:
             gLogger.error("Failed to get ValidatingOutput transformations", res["Message"])
             return res
@@ -98,7 +100,7 @@ class ValidateOutputDataAgent(AgentModule):
     def updateWaitingIntegrity(self):
         """Get 'WaitingIntegrity' transformations, update to 'ValidatedOutput'"""
         gLogger.info("Looking for transformations in the WaitingIntegrity status to update")
-        res = self.transClient.getTransformations({"Status": "WaitingIntegrity"})
+        res = self.transClient.getTransformations({"Status": "WaitingIntegrity"}, columns=["TransformationID"])
         if not res["OK"]:
             gLogger.error("Failed to get WaitingIntegrity transformations", res["Message"])
             return res

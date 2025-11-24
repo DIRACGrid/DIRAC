@@ -144,7 +144,8 @@ class TransformationCleaningAgent(AgentModule):
 
         # Obtain the transformations in Cleaning status and remove any mention of the jobs/files
         res = self.transClient.getTransformations(
-            {"Status": TransformationStatus.CLEANING, "Type": self.transformationTypes}
+            {"Status": TransformationStatus.CLEANING, "Type": self.transformationTypes},
+            columns=["TransformationID", "Author", "AuthorGroup", "Type"],
         )
         if res["OK"]:
             for transDict in res["Value"]:
@@ -161,7 +162,10 @@ class TransformationCleaningAgent(AgentModule):
             self.log.error("Failed to get transformations", res["Message"])
 
         # Obtain the transformations in RemovingFiles status and removes the output files
-        res = self.transClient.getTransformations({"Status": "RemovingFiles", "Type": self.transformationTypes})
+        res = self.transClient.getTransformations(
+            {"Status": "RemovingFiles", "Type": self.transformationTypes},
+            columns=["TransformationID", "Author", "AuthorGroup"],
+        )
         if res["OK"]:
             for transDict in res["Value"]:
                 if self.shifterProxy:
@@ -183,6 +187,7 @@ class TransformationCleaningAgent(AgentModule):
             {"Status": TransformationStatus.COMPLETED, "Type": self.transformationTypes},
             older=olderThanTime,
             timeStamp="LastUpdate",
+            columns=["TransformationID", "Author", "AuthorGroup"],
         )
         if res["OK"]:
             for transDict in res["Value"]:
@@ -230,7 +235,10 @@ class TransformationCleaningAgent(AgentModule):
             return res
         transformationIDs = res["Value"]
         if transformationIDs:
-            res = self.transClient.getTransformations({"TransformationID": transformationIDs})
+            res = self.transClient.getTransformations(
+                {"TransformationID": transformationIDs},
+                columns=["TransformationID", "Status", "Author", "AuthorGroup", "Type"],
+            )
             if not res["OK"]:
                 self.log.error("Failed to get transformations", res["Message"])
                 return res

@@ -231,7 +231,9 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
             selectCond["Type"] = transType
         if agentType:
             selectCond["AgentType"] = agentType
-        res = self.transClient.getTransformations(condDict=selectCond)
+        res = self.transClient.getTransformations(
+            condDict=selectCond, columns=["TransformationID", "Body", "Author", "AuthorGroup"]
+        )
         if not res["OK"]:
             self.log.error("Failed to get transformations:", res["Message"])
         elif not res["Value"]:
