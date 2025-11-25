@@ -30,6 +30,7 @@ def monitorInstallation(componentType, system, component, module=None, cpu=None,
 
     if not hostname:
         hostname = socket.getfqdn()
+        hostname = hostname[0:64]
     instance = component[0:32]
 
     result = monitoringClient.installationExists(
