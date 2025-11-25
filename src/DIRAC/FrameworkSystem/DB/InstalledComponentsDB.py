@@ -90,7 +90,7 @@ class Host(componentsBase):
     __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
     hostID = Column("HostID", Integer, primary_key=True)
-    hostName = Column("HostName", String(32), nullable=False)
+    hostName = Column("HostName", String(64), nullable=False)
     cpu = Column("CPU", String(64), nullable=False)
     installationList = relationship("InstalledComponent", backref="installationHost")
 
