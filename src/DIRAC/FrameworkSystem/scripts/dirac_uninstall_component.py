@@ -2,6 +2,7 @@
 """
 Uninstallation of a DIRAC component
 """
+
 import socket
 
 from DIRAC import exit as DIRACexit

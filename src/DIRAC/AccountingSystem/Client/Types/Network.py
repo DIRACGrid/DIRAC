@@ -1,6 +1,6 @@
-""" Accounting class to stores network metrics gathered by perfSONARs.
+"""Accounting class to stores network metrics gathered by perfSONARs.
 
-    Filled by "Accounting/Network" agent
+Filled by "Accounting/Network" agent
 """
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
@@ -16,12 +16,12 @@ class Network(BaseAccountingType):
 
         # IPv6 address has up to 45 chars
         self.definitionKeyFields = [
-            ("SourceIP", "VARCHAR(50)"),
-            ("DestinationIP", "VARCHAR(50)"),
-            ("SourceHostName", "VARCHAR(50)"),
-            ("DestinationHostName", "VARCHAR(50)"),
-            ("Source", "VARCHAR(50)"),
-            ("Destination", "VARCHAR(50)"),
+            ("SourceIP", "VARCHAR(39)"),
+            ("DestinationIP", "VARCHAR(39)"),
+            ("SourceHostName", "VARCHAR(255)"),
+            ("DestinationHostName", "VARCHAR(255)"),
+            ("Source", "VARCHAR(255)"),
+            ("Destination", "VARCHAR(255)"),
         ]
 
         self.definitionAccountingFields = [

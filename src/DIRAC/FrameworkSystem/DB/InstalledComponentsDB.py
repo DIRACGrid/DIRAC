@@ -1,6 +1,7 @@
 """
 Classes and functions for easier management of the InstalledComponents database
 """
+
 import re
 import datetime
 
@@ -90,7 +91,7 @@ class Host(componentsBase):
     __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
     hostID = Column("HostID", Integer, primary_key=True)
-    hostName = Column("HostName", String(64), nullable=False)
+    hostName = Column("HostName", String(255), nullable=False)
     cpu = Column("CPU", String(64), nullable=False)
     installationList = relationship("InstalledComponent", backref="installationHost")
 
@@ -219,7 +220,7 @@ class HostLogging(componentsBase):
     __tablename__ = "HostLogging"
     __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
-    hostName = Column("HostName", String(32), nullable=False, primary_key=True)
+    hostName = Column("HostName", String(255), nullable=False, primary_key=True)
     # status
     DIRAC = Column("DIRACVersion", String(64))
     Extension = Column("Extension", String(512))
