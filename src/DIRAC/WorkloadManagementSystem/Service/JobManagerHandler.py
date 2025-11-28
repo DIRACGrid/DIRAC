@@ -65,6 +65,11 @@ class JobManagerHandlerMixin:
                 return result
             cls.pilotAgentsDB = result["Value"](parentLogger=cls.log)
 
+            result = ObjectLoader().loadObject("StorageManagementSystem.DB.StorageManagementDB", "StorageManagementDB")
+            if not result["OK"]:
+                return result
+            cls.storageManagementDB = result["Value"](parentLogger=cls.log)
+
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp!r}")
 
@@ -449,7 +454,16 @@ class JobManagerHandlerMixin:
             jobList, RIGHT_DELETE
         )
 
-        result = kill_delete_jobs(RIGHT_DELETE, validJobList, nonauthJobList, force=force)
+        result = kill_delete_jobs(
+            RIGHT_DELETE,
+            validJobList,
+            nonauthJobList,
+            force=force,
+            jobdb=self.jobDB,
+            taskqueuedb=self.taskQueueDB,
+            pilotagentsdb=self.pilotAgentsDB,
+            storagemanagementdb=self.storageManagementDB,
+        )
 
         result["requireProxyUpload"] = len(ownerJobList) > 0 and self.__checkIfProxyUploadIsRequired()
 
@@ -478,7 +492,16 @@ class JobManagerHandlerMixin:
             jobList, RIGHT_KILL
         )
 
-        result = kill_delete_jobs(RIGHT_KILL, validJobList, nonauthJobList, force=force)
+        result = kill_delete_jobs(
+            RIGHT_KILL,
+            validJobList,
+            nonauthJobList,
+            force=force,
+            jobdb=self.jobDB,
+            taskqueuedb=self.taskQueueDB,
+            pilotagentsdb=self.pilotAgentsDB,
+            storagemanagementdb=self.storageManagementDB,
+        )
 
         result["requireProxyUpload"] = len(ownerJobList) > 0 and self.__checkIfProxyUploadIsRequired()
 

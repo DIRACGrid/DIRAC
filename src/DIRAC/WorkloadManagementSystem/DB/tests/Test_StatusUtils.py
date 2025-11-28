@@ -19,10 +19,25 @@ from DIRAC.WorkloadManagementSystem.DB.StatusUtils import kill_delete_jobs
     ],
 )
 def test___kill_delete_jobs(mocker, jobIDs_list, right):
-    mocker.patch("DIRAC.WorkloadManagementSystem.DB.StatusUtils.JobDB", MagicMock())
-    mocker.patch("DIRAC.WorkloadManagementSystem.DB.StatusUtils.TaskQueueDB", MagicMock())
-    mocker.patch("DIRAC.WorkloadManagementSystem.DB.StatusUtils.PilotAgentsDB", MagicMock())
-    mocker.patch("DIRAC.WorkloadManagementSystem.DB.StatusUtils.StorageManagementDB", MagicMock())
+    # Mock ObjectLoader to return mock DB instances
+    mockJobDB = MagicMock()
+    mockTaskQueueDB = MagicMock()
+    mockPilotAgentsDB = MagicMock()
+    mockStorageManagementDB = MagicMock()
+
+    def mock_load_object(module_path, class_name):
+        mocks = {
+            "JobDB": mockJobDB,
+            "TaskQueueDB": mockTaskQueueDB,
+            "PilotAgentsDB": mockPilotAgentsDB,
+            "StorageManagementDB": mockStorageManagementDB,
+        }
+        return {"OK": True, "Value": lambda: mocks[class_name]}
+
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.DB.StatusUtils.ObjectLoader.loadObject",
+        side_effect=mock_load_object,
+    )
 
     res = kill_delete_jobs(right, jobIDs_list)
     assert res["OK"]

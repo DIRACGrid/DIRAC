@@ -20,6 +20,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.RequestManagementSystem.Client.File import File
@@ -32,7 +33,6 @@ from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.TransformationSystem.Client import TransformationStatus
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     RIGHT_DELETE,
     RIGHT_KILL,
@@ -65,8 +65,11 @@ class TransformationCleaningAgent(AgentModule):
         self.reqClient = None
         # # file catalog client
         self.metadataClient = None
-        # # JobDB
+        # # databases
         self.jobDB = None
+        self.pilotAgentsDB = None
+        self.taskQueueDB = None
+        self.storageManagementDB = None
 
         # # transformations types
         self.transformationTypes = None
@@ -125,8 +128,26 @@ class TransformationCleaningAgent(AgentModule):
         self.reqClient = ReqClient()
         # # file catalog client
         self.metadataClient = FileCatalogClient()
-        # # job DB
-        self.jobDB = JobDB()
+        # # databases
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobDB", "JobDB")
+        if not result["OK"]:
+            return result
+        self.jobDB = result["Value"]()
+
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotAgentsDB", "PilotAgentsDB")
+        if not result["OK"]:
+            return result
+        self.pilotAgentsDB = result["Value"]()
+
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.TaskQueueDB", "TaskQueueDB")
+        if not result["OK"]:
+            return result
+        self.taskQueueDB = result["Value"]()
+
+        result = ObjectLoader().loadObject("StorageManagementSystem.DB.StorageManagementDB", "StorageManagementDB")
+        if not result["OK"]:
+            return result
+        self.storageManagementDB = result["Value"]()
 
         return S_OK()
 
@@ -615,11 +636,17 @@ class TransformationCleaningAgent(AgentModule):
         :param self: self reference
         :param list trasnJobIDs: job IDs
         """
+        db_kwargs = dict(
+            jobdb=self.jobDB,
+            taskqueuedb=self.taskQueueDB,
+            pilotagentsdb=self.pilotAgentsDB,
+            storagemanagementdb=self.storageManagementDB,
+        )
         # Prevent 0 job IDs
         jobIDs = [int(j) for j in transJobIDs if int(j)]
         allRemove = True
         for jobList in breakListIntoChunks(jobIDs, 1000):
-            res = kill_delete_jobs(RIGHT_KILL, jobList, force=True)
+            res = kill_delete_jobs(RIGHT_KILL, jobList, force=True, **db_kwargs)
             if res["OK"]:
                 self.log.info(f"Successfully killed {len(jobList)} jobs from WMS")
             elif ("InvalidJobIDs" in res) and ("NonauthorizedJobIDs" not in res) and ("FailedJobIDs" not in res):
@@ -631,7 +658,7 @@ class TransformationCleaningAgent(AgentModule):
                 self.log.error("Failed to kill jobs", f"(n={len(res['FailedJobIDs'])})")
                 allRemove = False
 
-            res = kill_delete_jobs(RIGHT_DELETE, jobList, force=True)
+            res = kill_delete_jobs(RIGHT_DELETE, jobList, force=True, **db_kwargs)
             if res["OK"]:
                 self.log.info("Successfully deleted jobs from WMS", f"(n={len(jobList)})")
             elif ("InvalidJobIDs" in res) and ("NonauthorizedJobIDs" not in res) and ("FailedJobIDs" not in res):
