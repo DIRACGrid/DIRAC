@@ -203,9 +203,6 @@ class Condor(object):
             resultDict["Jobs"] = []
             for i in range(submittedJobs):
                 resultDict["Jobs"].append(".".join([cluster, str(i)]))
-            # Executable is transferred afterward
-            # Inform the caller that Condor cannot delete it before the end of the execution
-            resultDict["ExecutableToKeep"] = executable
         else:
             resultDict["Status"] = status
             resultDict["Message"] = error
