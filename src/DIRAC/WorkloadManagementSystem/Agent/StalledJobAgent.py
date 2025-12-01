@@ -17,11 +17,9 @@ from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.TimeUtilities import fromString, second, toEpoch
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_KILL
 from DIRAC.WorkloadManagementSystem.DB.StatusUtils import kill_delete_jobs
 from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getJobParameters
@@ -40,6 +38,9 @@ class StalledJobAgent(AgentModule):
 
         self.jobDB = None
         self.logDB = None
+        self.taskQueueDB = None
+        self.pilotAgentsDB = None
+        self.storageManagementDB = None
         self.matchedTime = 7200
         self.rescheduledTime = 600
         self.submittingTime = 300
@@ -51,8 +52,30 @@ class StalledJobAgent(AgentModule):
     #############################################################################
     def initialize(self):
         """Sets default parameters."""
-        self.jobDB = JobDB()
-        self.logDB = JobLoggingDB()
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobDB", "JobDB")
+        if not result["OK"]:
+            return result
+        self.jobDB = result["Value"]()
+
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobLoggingDB", "JobLoggingDB")
+        if not result["OK"]:
+            return result
+        self.logDB = result["Value"]()
+
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.TaskQueueDB", "TaskQueueDB")
+        if not result["OK"]:
+            return result
+        self.taskQueueDB = result["Value"]()
+
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotAgentsDB", "PilotAgentsDB")
+        if not result["OK"]:
+            return result
+        self.pilotAgentsDB = result["Value"]()
+
+        result = ObjectLoader().loadObject("StorageManagementSystem.DB.StorageManagementDB", "StorageManagementDB")
+        if not result["OK"]:
+            return result
+        self.storageManagementDB = result["Value"]()
 
         # getting parameters
 
@@ -235,7 +258,16 @@ class StalledJobAgent(AgentModule):
         # Set the jobs Failed, send them a kill signal in case they are not really dead
         # and send accounting info
         if setFailed:
-            res = kill_delete_jobs(RIGHT_KILL, [jobID], nonauthJobList=[], force=True)
+            res = kill_delete_jobs(
+                RIGHT_KILL,
+                [jobID],
+                nonauthJobList=[],
+                force=True,
+                jobdb=self.jobDB,
+                taskqueuedb=self.taskQueueDB,
+                pilotagentsdb=self.pilotAgentsDB,
+                storagemanagementdb=self.storageManagementDB,
+            )
             if not res["OK"]:
                 self.log.error("Failed to kill job", jobID)
 
@@ -262,7 +294,7 @@ class StalledJobAgent(AgentModule):
             # There is no pilot reference, hence its status is unknown
             return S_OK("NoPilot")
 
-        result = PilotAgentsDB().getPilotInfo(pilotReference)
+        result = self.pilotAgentsDB.getPilotInfo(pilotReference)
         if not result["OK"]:
             if DErrno.cmpError(result, DErrno.EWMSNOPILOT):
                 self.log.warn("No pilot found", f"for job {jobID}: {result['Message']}")

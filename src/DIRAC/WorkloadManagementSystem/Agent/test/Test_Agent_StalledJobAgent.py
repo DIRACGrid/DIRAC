@@ -23,10 +23,31 @@ def sja(mocker):
         side_effect=lambda x, y=None: y,
         create=True,
     )
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobDB")
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobLoggingDB")
+
+    # Mock ObjectLoader to return mock DB instances
+    mockJobDB = MagicMock()
+    mockJobDB.log = gLogger
+    mockJobLoggingDB = MagicMock()
+    mockTaskQueueDB = MagicMock()
+    mockPilotAgentsDB = MagicMock()
+    mockStorageManagementDB = MagicMock()
+
+    def mock_load_object(module_path, class_name):
+        mocks = {
+            "JobDB": mockJobDB,
+            "JobLoggingDB": mockJobLoggingDB,
+            "TaskQueueDB": mockTaskQueueDB,
+            "PilotAgentsDB": mockPilotAgentsDB,
+            "StorageManagementDB": mockStorageManagementDB,
+        }
+        return {"OK": True, "Value": lambda: mocks[class_name]}
+
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.ObjectLoader.loadObject",
+        side_effect=mock_load_object,
+    )
+
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.rescheduleJobs", return_value=MagicMock())
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.PilotAgentsDB", return_value=MagicMock())
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.getJobParameters", return_value=MagicMock())
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.kill_delete_jobs", return_value=MagicMock())
 
@@ -34,7 +55,6 @@ def sja(mocker):
     stalledJobAgent._AgentModule__configDefaults = mockAM
     stalledJobAgent.log = gLogger
     stalledJobAgent.initialize()
-    stalledJobAgent.jobDB.log = gLogger
     stalledJobAgent.log.setLevel("DEBUG")
     stalledJobAgent.stalledTime = 120
 
