@@ -16,8 +16,8 @@ class Network(BaseAccountingType):
 
         # IPv6 address has up to 45 chars
         self.definitionKeyFields = [
-            ("SourceIP", "VARCHAR(39)"),
-            ("DestinationIP", "VARCHAR(39)"),
+            ("SourceIP", "VARCHAR(64)"),
+            ("DestinationIP", "VARCHAR(64)"),
             ("SourceHostName", "VARCHAR(255)"),
             ("DestinationHostName", "VARCHAR(255)"),
             ("Source", "VARCHAR(255)"),
