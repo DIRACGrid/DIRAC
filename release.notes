@@ -1,3 +1,14 @@
+[v9.0.11]
+
+*WorkloadManagement
+
+FIX: (#8389) Use ObjectLoader for DB instantiation in WMS components
+FIX: (#8389) Reuse DB objects when killing/deleting jobs
+
+*Resources
+
+CHANGE: (#8362) SSHCE export inputs/import outputs as a JSON file instead of using the stdout/stderr
+
 [v9.0.10]
 
 *DataManagementSystem
