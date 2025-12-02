@@ -35,6 +35,12 @@ def putAndDelete():
     with open(fj) as fp:
         data = json.load(fp)
 
+    # Capture the date when inserting data to ensure cleanup uses the same date
+    # even if midnight passes during test execution.
+    # IMPORTANT: Must use UTC to match the server-side index naming in ElasticSearchDB.generateFullIndexName()
+    # which explicitly uses datetime.utcnow() to avoid timezone issues.
+    insertion_date = datetime.utcnow().strftime("%Y-%m-%d")
+
     # put
     res = client.addRecords("wmshistory_index", "WMSHistory", data)
     assert res["OK"]
@@ -45,9 +51,8 @@ def putAndDelete():
 
     # from here on is teardown
 
-    # delete the index
-    today = datetime.today().strftime("%Y-%m-%d")
-    result = f"wmshistory_index-{today}"
+    # delete the index using the same date as when we inserted the data
+    result = f"wmshistory_index-{insertion_date}"
     client.deleteIndex(result)
 
 
