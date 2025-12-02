@@ -1,6 +1,6 @@
-""" Accounting Type for Pilot Submission
+"""Accounting Type for Pilot Submission
 
-    Filled by the "WorkloadManagement/SiteDirector" agent(s)
+Filled by the "WorkloadManagement/SiteDirector" agent(s)
 """
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
@@ -13,7 +13,7 @@ class PilotSubmission(BaseAccountingType):
         super().__init__()
 
         self.definitionKeyFields = [
-            ("HostName", "VARCHAR(100)"),
+            ("HostName", "VARCHAR(255)"),
             ("SiteDirector", "VARCHAR(100)"),
             ("Site", "VARCHAR(100)"),
             ("CE", "VARCHAR(100)"),
