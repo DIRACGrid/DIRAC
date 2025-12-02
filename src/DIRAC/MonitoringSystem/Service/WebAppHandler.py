@@ -2,6 +2,7 @@
 The WebAppHandler module provides a class to handle web requests from the DIRAC WebApp.
 It is not indented to be used in diracx
 """
+
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
@@ -527,13 +528,21 @@ class WebAppHandler(RequestHandler):
         ops = Operations()
         # Prepare the standard structure now within the resultDict dictionary
         resultDict = {}
-        trList = res["Records"]
+        # Reconstruct just the values list
+        trList = [
+            [str(item) if not isinstance(item, int) else item for item in trans_dict.values()]
+            for trans_dict in res["Value"]
+        ]
+
         # Create the total records entry
         nTrans = len(trList)
         resultDict["TotalRecords"] = nTrans
         # Create the ParameterNames entry
-        # As this list is a reference to the list in the DB, we cannot extend it, therefore copy it
-        resultDict["ParameterNames"] = list(res["ParameterNames"])
+        try:
+            resultDict["ParameterNames"] = list(res["Value"][0].keys())
+        except IndexError:
+            # As this list is a reference to the list in the DB, we cannot extend it, therefore copy it
+            resultDict["ParameterNames"] = list(cls.transformationDB.TRANSPARAMS)
         # Add the job states to the ParameterNames entry
         taskStateNames = TASKS_STATE_NAMES + ops.getValue("Transformations/AdditionalTaskStates", [])
         resultDict["ParameterNames"] += ["Jobs_" + x for x in taskStateNames]
