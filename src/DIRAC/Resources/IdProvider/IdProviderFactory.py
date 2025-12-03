@@ -75,8 +75,10 @@ class IdProviderFactory:
 
             if client_name_prefix:
                 client_name_prefix = client_name_prefix + "_"
-            pDict["client_id"] = pDict[f"{client_name_prefix}client_id"]
-            pDict["client_secret"] = pDict[f"{client_name_prefix}client_secret"]
+            if f"{client_name_prefix}client_id" in pDict:
+                pDict["client_id"] = pDict[f"{client_name_prefix}client_id"]
+            if f"{client_name_prefix}client_secret" in pDict:
+                pDict["client_secret"] = pDict[f"{client_name_prefix}client_secret"]
 
         pDict.update(kwargs)
         pDict["ProviderName"] = name

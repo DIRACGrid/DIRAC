@@ -63,6 +63,12 @@ Resources
       client_secret = IdP_client_secret
       scope = openid+profile+offline_access+eduperson_entitlement
     }
+    SomeIdP3.partial
+    {
+      ProviderType = OAuth2
+      issuer = https://and-another-idp.url/
+      scope = openid+profile+offline_access+eduperson_entitlement
+    }
   }
 }
 """
@@ -77,6 +83,7 @@ idps = IdProviderFactory()
         ("SomeIdP1.2", {"OK": True}, "https://idp.url/", "IdP_client_id2", "IdP_client_secret"),
         ("SomeIdP2", {"OK": True}, "https://another-idp.url/", "IdP_client_id1", "IdP_client_secret"),
         ("SomeIdP3", {"OK": True}, "https://and-another-idp.url/", "IdP_client_id3", "IdP_client_secret"),
+        ("SomeIdP3.partial", {"OK": True}, "https://and-another-idp.url/", None, None),
         # Try to get an unknown DIRAC client
         ("DIRACUnknown", {"OK": False, "Message": "DIRACUnknown does not exist"}, None, None, None),
     ],
