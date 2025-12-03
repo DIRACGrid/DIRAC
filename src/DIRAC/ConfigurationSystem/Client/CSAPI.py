@@ -456,12 +456,22 @@ class CSAPI:
             gLogger.error("User is not registered: ", repr(username))
             return S_OK(False)
         for prop in properties:
-            if prop == "Groups":
+            if prop in ["Groups", "AffiliationEnds"]:
                 continue
             prevVal = self.__csMod.getValue(f"{self.__baseSecurity}/Users/{username}/{prop}")
             if not prevVal or prevVal != properties[prop]:
                 gLogger.info(f"Setting {prop} property for user {username} to {properties[prop]}")
                 self.__csMod.setOptionValue(f"{self.__baseSecurity}/Users/{username}/{prop}", properties[prop])
+                modifiedUser = True
+        if properties.get("AffiliationEnds", None):
+            user_affiliationends_section = f"{self.__baseSecurity}/Users/{username}/AffiliationEnds"
+            # add the section for AffiliationEnds
+            res = gConfig.getSections(user_affiliationends_section)
+            if not res["OK"]:
+                self.__csMod.createSection(user_affiliationends_section)
+            # now set value VO = end date
+            for vo, end_date in properties["AffiliationEnds"].items():
+                self.__csMod.setOptionValue(f"{user_affiliationends_section}/{vo}", end_date)
                 modifiedUser = True
         if "Groups" in properties:
             result = self.listGroups()
