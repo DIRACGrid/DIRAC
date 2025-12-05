@@ -1357,6 +1357,7 @@ class JobWrapper:
                 )
 
         self.__cleanUp()
+        self.jobReport.commit()
         return 1 if self.failedFlag else 0
 
     #############################################################################
