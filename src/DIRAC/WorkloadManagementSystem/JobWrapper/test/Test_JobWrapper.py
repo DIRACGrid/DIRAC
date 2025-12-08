@@ -565,7 +565,7 @@ def test_postProcess_executor_failed_status_defined(setup_job_wrapper, mocker, m
     assert result["OK"]
     assert report_args[-1]["status"] == JobStatus.COMPLETING
     assert report_args[-1]["minorStatus"] == JobMinorStatus.APP_ERRORS
-    assert set_param_args[-3][0][1] == 126
+    assert set_param_args[-3][0][1] == "126"
 
 
 def test_postProcess_subprocess_not_complete(setup_job_wrapper, mocker, mock_report_and_set_param):
