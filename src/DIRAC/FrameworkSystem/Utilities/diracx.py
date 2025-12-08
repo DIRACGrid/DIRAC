@@ -1,20 +1,25 @@
-import requests
-
-from cachetools import TTLCache, LRUCache, cached
-from cachetools.keys import hashkey
+import os
+import re
+import subprocess
+from collections.abc import Generator
+from contextlib import contextmanager
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+import tempfile
 from typing import Any
-from collections.abc import Generator
-from DIRAC import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from contextlib import contextmanager
 
-from diracx.core.preferences import DiracxPreferences
-
-from diracx.core.utils import write_credentials
-
+import requests
+from cachetools import LRUCache, TTLCache, cached
+from cachetools.keys import hashkey
+from diracx.cli.internal.legacy import _apply_fixes
+from diracx.core.config.schema import Config as DiracxConfig
 from diracx.core.models import TokenResponse
+from diracx.core.preferences import DiracxPreferences
+from diracx.core.utils import write_credentials
+from pydantic import ValidationError
+
+from DIRAC import S_ERROR, S_OK, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 try:
     from diracx.client.sync import SyncDiracClient
@@ -104,3 +109,29 @@ def TheImpersonator(credDict: dict[str, Any], *, source: str = "") -> Generator[
         client.__enter__()
         diracx_client_cache[token_location] = client
     yield client
+
+
+def diracxVerifyConfig(cfgData):
+    """Verify CS config using DiracX config validation
+
+    Args:
+        cfgData: CFG data
+
+    Returns:
+        S_OK | S_ERROR: Value: diracx Config validation
+    """
+    os.environ["DIRAC_COMPAT_ENABLE_CS_CONVERSION"] = "true"
+    with tempfile.NamedTemporaryFile() as temp_cfg:
+        with tempfile.NamedTemporaryFile() as temp_diracx_cfg:
+            cfgData.writeToFile(temp_cfg.name)
+            cmd = ["dirac", "internal", "legacy", "cs-sync", temp_cfg.name, temp_diracx_cfg.name]
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+    os.environ.pop("DIRAC_COMPAT_ENABLE_CS_CONVERSION")
+    if res.returncode == 0:
+        return S_OK(res.stdout)
+    else:
+        err = res.stderr.strip()
+        match = re.search(r"(ValidationError:.*)", err, flags=re.DOTALL)
+        if match:
+            return S_ERROR(match.group(1))
+        return S_ERROR(err)

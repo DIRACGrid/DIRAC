@@ -1,13 +1,16 @@
 """ This is the guy that actually modifies the content of the CS
 """
-import zlib
-import difflib
 import datetime
+import difflib
+import zlib
 
 from diraccfg import CFG
-from DIRAC.Core.Utilities import List
+
+from DIRAC import S_ERROR
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities import List
+from DIRAC.FrameworkSystem.Utilities.diracx import diracxVerifyConfig
 
 
 class Modificator:
@@ -239,6 +242,11 @@ class Modificator:
         return str(self.cfgData)
 
     def commit(self):
+        retOpt = self.getValue("/Systems/Configuration/Services/Server/VerifyDiracXSyncOnCommit")
+        if retOpt == "True":
+            resVerif = diracxVerifyConfig(self.cfgData)
+            if not resVerif["OK"]:
+                return S_ERROR(resVerif["Message"])
         compressedData = zlib.compress(str(self.cfgData).encode(), 9)
         return self.rpcClient.commitNewData(compressedData)
 
