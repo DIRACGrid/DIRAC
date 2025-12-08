@@ -16,7 +16,6 @@ import datetime
 import glob
 import json
 import os
-from pathlib import Path
 import re
 import shutil
 import stat
@@ -24,12 +23,12 @@ import sys
 import tarfile
 import threading
 import time
+from pathlib import Path
 from urllib.parse import unquote
 
 import DIRAC
 from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
-
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Utilities import DEncode, DErrno, List
@@ -1021,7 +1020,7 @@ class JobWrapper:
 
         for i in outputSandbox:
             if i not in okFiles:
-                if not f"{i}.tar" in okFiles:
+                if f"{i}.tar" not in okFiles:
                     if not re.search(r"\*", i):
                         if i not in missing:
                             missing.append(i)
