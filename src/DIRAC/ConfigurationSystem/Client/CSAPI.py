@@ -309,9 +309,7 @@ class CSAPI:
         if "AffiliationEnds" in user_sections:
             affiliation_ends_opts = self.__csMod.getOptions(f"{csSection}/AffiliationEnds")
             for vo_ in affiliation_ends_opts:
-                affiliation_ends_current[vo_] = self.__csMod.getValue(
-                    f"{csSection}/AffiliationEnds/{vo_}"
-                )
+                affiliation_ends_current[vo_] = self.__csMod.getValue(f"{csSection}/AffiliationEnds/{vo_}")
         return affiliation_ends_current
 
     def listGroups(self):
