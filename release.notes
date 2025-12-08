@@ -1,3 +1,13 @@
+[v9.0.13]
+
+*DataManagementSystem
+
+FIX: (#8396) submit unmanaged token for FTS3 replication
+
+*Resources
+
+NEW: (#8382) Attempt to set the xrd checksum attribute when copying files localy
+
 [v9.0.12]
 
 *Resources
