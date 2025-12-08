@@ -660,6 +660,7 @@ class FTS3Job(JSerializable):
             multihop=isMultiHop,
             metadata=job_metadata,
             priority=self.priority,
+            unmanaged_tokens=True,
             archive_timeout=archive_timeout,
             **dest_spacetoken,
         )
