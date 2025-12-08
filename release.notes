@@ -1,3 +1,17 @@
+[v9.0.12]
+
+*Resources
+
+FIX: (#8393) make client_id and secret optional to avoid KeyError exceptions.
+
+*ConfigurationSystem
+
+NEW: (#8392) handle adding user AffiliationEnds section in the CS when modifying the user from CSAPI
+
+*MonitoringSystem
+
+FIX: (#8391) Addapt webApp to new getTransformations API
+
 [v9.0.11]
 
 *WorkloadManagement
