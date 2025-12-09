@@ -22,7 +22,7 @@ from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.Adler import fileAdler, compareAdler
 from DIRAC.Core.Utilities.File import makeGuid, getSize
-from DIRAC.Core.Utilities.List import randomize, breakListIntoChunks
+from DIRAC.Core.Utilities.List import randomize
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
@@ -1677,18 +1677,15 @@ class DataManager:
         """get replicas from catalogue and filter if requested
         Warning: all filters are independent, hence active and preferDisk should be set if using forJobs
         """
-        catalogReplicas = {}
-        failed = {}
+
         if not protocol:
             protocol = self.registrationProtocol
 
-        for lfnChunk in breakListIntoChunks(lfns, 1000):
-            res = self.fileCatalog.getReplicas(lfnChunk, allStatus=allStatus)
-            if res["OK"]:
-                catalogReplicas.update(res["Value"]["Successful"])
-                failed.update(res["Value"]["Failed"])
-            else:
-                return res
+        res = self.fileCatalog.getReplicas(lfns, allStatus=allStatus)
+        if not res["OK"]:
+            return res
+        catalogReplicas = res["Value"]["Successful"]
+        failed = res["Value"]["Failed"]
         if not getUrl:
             for lfn in catalogReplicas:
                 catalogReplicas[lfn] = dict.fromkeys(catalogReplicas[lfn], True)

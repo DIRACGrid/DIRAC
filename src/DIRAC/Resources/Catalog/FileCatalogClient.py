@@ -1,14 +1,17 @@
-""" The FileCatalogClient is a class representing the client of the DIRAC File Catalog
-"""
+"""The FileCatalogClient is a class representing the client of the DIRAC File Catalog"""
+
 import json
 import os
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
 from DIRAC.Resources.Catalog.Utilities import checkCatalogArguments
 from DIRAC.Resources.Catalog.FileCatalogClientBase import FileCatalogClientBase
+
+GET_REPLICAS_CHUNK_SIZE = 10_000
 
 
 class FileCatalogClient(FileCatalogClientBase):
@@ -135,14 +138,20 @@ class FileCatalogClient(FileCatalogClientBase):
     @checkCatalogArguments
     def getReplicas(self, lfns, allStatus=False, timeout=120):
         """Get the replicas of the given files"""
-        rpcClient = self._getRPC(timeout=timeout)
-        result = rpcClient.getReplicas(lfns, allStatus)
+        successful = {}
+        failed = {}
 
-        if not result["OK"]:
-            return result
+        for chunk in breakListIntoChunks(lfns, GET_REPLICAS_CHUNK_SIZE):
+            rpcClient = self._getRPC(timeout=timeout)
+            result = rpcClient.getReplicas(chunk, allStatus)
+
+            if not result["OK"]:
+                return result
+            successful.update(result["Value"]["Successful"])
+            failed.update(result["Value"]["Failed"])
 
         # If there is no PFN returned, just set the LFN instead
-        lfnDict = result["Value"]
+        lfnDict = {"Successful": successful, "Failed": failed}
         for lfn in lfnDict["Successful"]:
             for se in lfnDict["Successful"][lfn]:
                 if not lfnDict["Successful"][lfn][se]:
