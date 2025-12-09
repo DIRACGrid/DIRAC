@@ -6,9 +6,9 @@ It is executed in environment where external connections are not allowed.
 We assume this script is executed in a specific environment where DIRAC is available.
 """
 import hashlib
-import sys
 import json
 import os
+import sys
 
 sitePython = os.path.realpath("@SITEPYTHON@")
 if sitePython:

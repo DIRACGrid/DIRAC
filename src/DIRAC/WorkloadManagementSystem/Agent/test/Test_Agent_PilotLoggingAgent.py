@@ -1,16 +1,16 @@
 """ Test class for PilotLoggingAgent Agent
 """
 import os
-import time
 import tempfile
+import time
+from unittest.mock import MagicMock, patch
 
 import pytest
-from unittest.mock import MagicMock, patch
 
 # DIRAC Components
 import DIRAC.WorkloadManagementSystem.Agent.PilotLoggingAgent as plaModule
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.WorkloadManagementSystem.Agent.PilotLoggingAgent import PilotLoggingAgent
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 
 gLogger.setLevel("DEBUG")
 

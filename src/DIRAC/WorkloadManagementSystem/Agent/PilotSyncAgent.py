@@ -8,15 +8,16 @@
 
 """
 
-import os
-import json
-import shutil
 import hashlib
+import json
+import os
+import shutil
+
 import requests
 
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation, getCAsLocation
+from DIRAC.Core.Security.Locations import getCAsLocation, getHostCertificateAndKeyLocation
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
 

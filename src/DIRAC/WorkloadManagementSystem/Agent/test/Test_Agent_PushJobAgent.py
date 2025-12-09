@@ -3,18 +3,19 @@
 
 # imports
 import os
-from pathlib import Path
 import shutil
-from unittest.mock import Mock
-import pytest
 from collections import defaultdict
+from pathlib import Path
+from unittest.mock import Mock
+
+import pytest
+
+from DIRAC import S_ERROR, S_OK, gLogger
 
 # DIRAC Components
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Agent.PushJobAgent import PushJobAgent
 from DIRAC.WorkloadManagementSystem.Agent.test.Test_Agent_SiteDirector import config
-
-from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 

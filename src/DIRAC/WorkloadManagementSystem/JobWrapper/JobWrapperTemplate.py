@@ -11,9 +11,9 @@
     - the resolution of the inpt data failed
     - the JobWrapper ended with the status DErrno.EWMSRESC
 """
-import sys
 import json
 import os
+import sys
 
 sitePython = os.path.realpath("@SITEPYTHON@")
 if sitePython:
@@ -34,7 +34,6 @@ from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapperUtilities import (
     resolveInputData,
     transferInputSandbox,
 )
-
 
 os.umask(0o22)
 
