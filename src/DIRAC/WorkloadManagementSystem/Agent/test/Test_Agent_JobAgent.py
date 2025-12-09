@@ -2,14 +2,15 @@
 """
 import multiprocessing
 import os
-from pathlib import Path
-import pytest
 import time
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
+from pathlib import Path
 
-from DIRAC import gLogger, S_OK, S_ERROR
+import pytest
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
+
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.Resources.Computing.test.Test_PoolComputingElement import badJobScript, jobScript

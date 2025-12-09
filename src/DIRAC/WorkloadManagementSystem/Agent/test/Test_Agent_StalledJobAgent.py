@@ -1,11 +1,13 @@
 """ Test class for Stalled Job Agent
 """
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
+from DIRAC import gLogger
 
 # DIRAC Components
 from DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent import StalledJobAgent
-from DIRAC import gLogger
 
 # Mock Objects
 mockAM = MagicMock()

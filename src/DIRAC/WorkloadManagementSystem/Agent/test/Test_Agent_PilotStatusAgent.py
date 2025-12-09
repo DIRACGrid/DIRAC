@@ -1,11 +1,13 @@
 """ Test class for Pilot Status Agent
 """
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
+from DIRAC import S_OK, gLogger
 
 # DIRAC Components
 from DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent import PilotStatusAgent
-from DIRAC import gLogger, S_OK
 
 # Mock objects
 mockReply = MagicMock()
