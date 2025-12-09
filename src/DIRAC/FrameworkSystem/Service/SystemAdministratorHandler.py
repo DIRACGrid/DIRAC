@@ -1,5 +1,5 @@
-""" SystemAdministrator service is a tool to control and monitor the DIRAC services and agents
-"""
+"""SystemAdministrator service is a tool to control and monitor the DIRAC services and agents"""
+
 import socket
 import os
 import re
@@ -254,17 +254,38 @@ class SystemAdministratorHandler(RequestHandler):
     types_updateSoftware = [str]
 
     def export_updateSoftware(self, version):
+        """Update DIRAC, or its extension, to a version. Use extension_name==version for the DIRAC extension.
+
+        A version can be:
+        - a PEP440 valid version of DIRAC.
+        - a PEP440 valid version of a DIRAC extension.
+        - "integration" or "devel" or "master" or "main" would all be interpreted as git+https://github.com/DIRACGrid/DIRAC.git@integration#egg=DIRAC[server]
+        - a git tag/branch like git+https://github.com/fstagni/DIRAC.git@test_branch#egg=DIRAC[server]
+        """
         # Validate and normalise the requested version
         primaryExtension = None
         if "==" in version:
             primaryExtension, version = version.split("==")
-        try:
-            version = Version(version)
-        except InvalidVersion:
-            self.log.exception("Invalid version passed", version)
-            return S_ERROR(f"Invalid version passed {version!r}")
-        isPrerelease = version.is_prerelease
-        version = f"v{version}"
+
+        released_version = True
+        isPrerelease = False
+
+        # Special cases (e.g. installing the integration/main branch)
+        if version.lower() in ["integration", "devel", "master", "main"]:
+            released_version = False
+            version = "git+https://github.com/DIRACGrid/DIRAC.git@integration#egg=DIRAC[server]"
+
+        if released_version:
+            try:
+                version = Version(version)
+                isPrerelease = version.is_prerelease
+                version = f"v{version}"
+            except InvalidVersion:
+                if "https://" in version:
+                    released_version = False
+                else:
+                    self.log.exception("Invalid version passed", version)
+                    return S_ERROR(f"Invalid version passed {version!r}")
 
         # Find what to install
         otherExtensions = []
@@ -290,10 +311,11 @@ class SystemAdministratorHandler(RequestHandler):
             installer.flush()
             self.log.info("Downloaded DIRACOS installer to", installer.name)
 
+            directory = version if released_version else version.split("@")[1].split("#")[0]
             newProPrefix = os.path.join(
                 rootPath,
                 "versions",
-                f"{version}-{datetime.utcnow().strftime('%s')}",
+                f"{directory}-{datetime.utcnow().strftime('%s')}",
             )
             installPrefix = os.path.join(newProPrefix, f"{platform.system()}-{platform.machine()}")
             self.log.info("Running DIRACOS installer for prefix", installPrefix)
@@ -313,7 +335,15 @@ class SystemAdministratorHandler(RequestHandler):
         cmd = [f"{installPrefix}/bin/pip", "install", "--no-color", "-v"]
         if isPrerelease:
             cmd += ["--pre"]
-        cmd += [f"{primaryExtension}[server]=={version}"]
+        if released_version:
+            cmd += [f"{primaryExtension}[server]=={version}"]
+        else:
+            # from here on we assume a version like git+https://github.com/DIRACGrid/DIRAC.git@integration#egg=DIRAC[server]
+            # is specified, for the primaryExtension
+            if not version.startswith("git+"):
+                version = f"git+{version}"
+            cmd += [version]
+
         cmd += [f"{e}[server]" for e in otherExtensions]
         r = subprocess.run(
             cmd,
