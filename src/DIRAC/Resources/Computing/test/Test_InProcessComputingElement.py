@@ -54,6 +54,8 @@ def test_submitJob():
         maxNumberOfProcessors=8,
         wholeNode=False,
         mpTag=True,
+        MinRAM=2500,
+        MaxRAM=4000,
         jobDesc={"jobParams": jobParams, "resourceParams": resourceParams, "optimizerParams": optimizerParams},
     )
     assert res["OK"] is True

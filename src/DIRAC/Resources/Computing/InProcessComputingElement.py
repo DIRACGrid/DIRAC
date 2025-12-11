@@ -22,6 +22,7 @@ class InProcessComputingElement(ComputingElement):
         self.runningJobs = 0
 
         self.processors = int(self.ceParameters.get("NumberOfProcessors", 1))
+        self.maxRAM = int(self.ceParameters.get("MaxRAM", 0))
         self.ceParameters["MaxTotalJobs"] = 1
 
     def submitJob(self, executableFile, proxy=None, inputs=None, **kwargs):
@@ -118,4 +119,6 @@ class InProcessComputingElement(ComputingElement):
         result["WaitingJobs"] = 0
         # processors
         result["AvailableProcessors"] = self.processors
+        # RAM
+        result["AvailableRAM"] = self.maxRAM
         return result

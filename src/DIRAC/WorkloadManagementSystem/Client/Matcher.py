@@ -1,7 +1,8 @@
-""" Encapsulate here the logic for matching jobs
+"""Encapsulate here the logic for matching jobs
 
-    Utilities and classes here are used by MatcherHandler
+Utilities and classes here are used by MatcherHandler
 """
+
 import time
 
 from DIRAC import convertToPy3VersionNumber, gLogger
@@ -75,7 +76,7 @@ class Matcher:
             toPrintDict["Tag"] = []
             if "Tag" in resourceDict:
                 for tag in resourceDict["Tag"]:
-                    if not tag.endswith("GB") and not tag.endswith("Processors"):
+                    if not tag.endswith("MB") and not tag.endswith("Processors"):
                         toPrintDict["Tag"].append(tag)
             if not toPrintDict["Tag"]:
                 toPrintDict.pop("Tag")
@@ -195,7 +196,7 @@ class Matcher:
         maxRAM = resourceDescription.get("MaxRAM")
         if maxRAM:
             try:
-                maxRAM = int(maxRAM / 1000)
+                maxRAM = int(maxRAM)
             except ValueError:
                 maxRAM = None
         nProcessors = resourceDescription.get("NumberOfProcessors")
@@ -204,9 +205,9 @@ class Matcher:
                 nProcessors = int(nProcessors)
             except ValueError:
                 nProcessors = None
-        for param, key in [(maxRAM, "GB"), (nProcessors, "Processors")]:
-            if param and param <= 1024:
-                paramList = list(range(2, param + 1))
+        for param, key, limit, increment in [(maxRAM, "MB", 1024 * 1024, 256), (nProcessors, "Processors", 1024, 1)]:
+            if param and param <= limit:
+                paramList = list(range(increment, param + increment, increment))
                 paramTags = ["%d%s" % (par, key) for par in paramList]
                 if paramTags:
                     resourceDict.setdefault("Tag", []).extend(paramTags)

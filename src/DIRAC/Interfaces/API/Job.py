@@ -1,27 +1,28 @@
 """
-   Job Base Class
+Job Base Class
 
-   This class provides generic job definition functionality suitable for any VO.
+This class provides generic job definition functionality suitable for any VO.
 
-   Helper functions are documented with example usage for the DIRAC API.  An example
-   script (for a simple executable) would be::
+Helper functions are documented with example usage for the DIRAC API.  An example
+script (for a simple executable) would be::
 
-     from DIRAC.Interfaces.API.Dirac import Dirac
-     from DIRAC.Interfaces.API.Job import Job
+  from DIRAC.Interfaces.API.Dirac import Dirac
+  from DIRAC.Interfaces.API.Job import Job
 
-     j = Job()
-     j.setCPUTime(500)
-     j.setExecutable('/bin/echo hello')
-     j.setExecutable('yourPythonScript.py')
-     j.setExecutable('/bin/echo hello again')
-     j.setName('MyJobName')
+  j = Job()
+  j.setCPUTime(500)
+  j.setExecutable('/bin/echo hello')
+  j.setExecutable('yourPythonScript.py')
+  j.setExecutable('/bin/echo hello again')
+  j.setName('MyJobName')
 
-     dirac = Dirac()
-     jobID = dirac.submitJob(j)
-     print 'Submission Result: ',jobID
+  dirac = Dirac()
+  jobID = dirac.submitJob(j)
+  print 'Submission Result: ',jobID
 
-   Note that several executables can be provided and wil be executed sequentially.
+Note that several executables can be provided and wil be executed sequentially.
 """
+
 import os
 import re
 import shlex
@@ -517,6 +518,50 @@ class Job(API):
         return S_OK()
 
     #############################################################################
+    def setRAMRequirements(self, ramRequired: int = 0, maxRAM: int = 0):
+        """Helper function.
+        Specify the RAM requirements for the job, in MB. 0 (default) means no specific requirements.
+
+        Example usage:
+
+        >>> job = Job()
+        >>> job.setRAMRequirements(ramRequired=2000)
+        means that the job needs at least 2 GBs of RAM to work. This is taken into consideration at job's matching time.
+        The job definition does not specify an upper limit.
+        From a user's point of view this is fine (normally, not for admins).
+
+        >>> job.setRAMRequirements(ramRequired=500, maxRAM=3800)
+        means that the job needs 500 MBs of RAM to work. 3.8 GBs will then be the upper limit for CG2 limits.
+
+        >>> job.setRAMRequirements(ramRequired=3200, maxRAM=3200)
+        means that we should match this job if there is at least 3.2 available GBs of run. At the same time, CG2 will not allow to use more than that.
+
+        >>> job.setRAMRequirements(maxRAM=4000)
+        means that the job does not set a min amount of RAM (so can match--run "everywhere"), but the 4 GBs will then be the upper limit for CG2 limits.
+
+        >>> job.setRAMRequirements(ramRequired=8000, maxRAM=4000)
+        Makes no sense, an error will be raised
+        """
+        if ramRequired and maxRAM and ramRequired > maxRAM:
+            return self._reportError("Invalid settings, ramRequired is higher than maxRAM")
+
+        if ramRequired:
+            self._addParameter(
+                self.workflow,
+                "MinRAM",
+                "JDL",
+                ramRequired,
+                "MBs of RAM requested",
+            )
+        if maxRAM:
+            self._addParameter(
+                self.workflow,
+                "MaxRAM",
+                "JDL",
+                maxRAM,
+                "Max MBs of RAM to be used",
+            )
+
     def setNumberOfProcessors(self, numberOfProcessors=None, minNumberOfProcessors=None, maxNumberOfProcessors=None):
         """Helper function to set the number of processors required by the job.
 
@@ -709,7 +754,7 @@ class Job(API):
         Example usage:
 
         >>> job = Job()
-        >>> job.setTag( ['WholeNode','8GBMemory'] )
+        >>> job.setTag( ['WholeNode'] )
 
         :param tags: single tag string or a list of tags
         :type tags: str or python:list

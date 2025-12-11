@@ -1,5 +1,4 @@
-""" Collection of user jobs for testing purposes
-"""
+"""Collection of user jobs for testing purposes"""
 
 # pylint: disable=invalid-name
 
@@ -290,9 +289,9 @@ def mpJob():
 
 
 def mp3Job():
-    """simple hello world job, with 2 to 4 processors"""
+    """simple hello world job, with 3 processors"""
 
-    J = baseToAllJobs("min2max4Job")
+    J = baseToAllJobs("min3Job")
     try:
         J.setInputSandbox([find_all("mpTest.py", rootPath, "DIRAC/tests/Utilities")[0]])
     except IndexError:
@@ -337,6 +336,43 @@ def wholeNodeJob():
 
     J.setExecutable("mpTest.py")
     J.setTag(["WholeNode", "MultiProcessor"])
+    return endOfAllJobs(J)
+
+
+def memory_4GB():
+    """simple hello world job, with a memory requirement of 4 GB and MultiProcessor tags"""
+
+    J = baseToAllJobs("memory_4GB")
+    try:
+        J.setInputSandbox([find_all("mpTest.py", rootPath, "DIRAC/tests/Utilities")[0]])
+    except IndexError:
+        try:
+            J.setInputSandbox([find_all("mpTest.py", ".", "DIRAC/tests/Utilities")[0]])
+        except IndexError:  # we are in Jenkins
+            J.setInputSandbox([find_all("mpTest.py", os.environ["WORKSPACE"], "DIRAC/tests/Utilities")[0]])
+
+    J.setExecutable("mpTest.py")
+    J.setNumberOfProcessors(numberOfProcessors=2)
+    J.setRAMRequirements(ramRequired=2500, maxRAM=4000)
+
+    return endOfAllJobs(J)
+
+
+def memory_2_to4GB():
+    """simple hello world job, with a memory requirement of 2 to 4 GB and MultiProcessor tags"""
+
+    J = baseToAllJobs("memory_2_to_4GB")
+    try:
+        J.setInputSandbox([find_all("mpTest.py", rootPath, "DIRAC/tests/Utilities")[0]])
+    except IndexError:
+        try:
+            J.setInputSandbox([find_all("mpTest.py", ".", "DIRAC/tests/Utilities")[0]])
+        except IndexError:  # we are in Jenkins
+            J.setInputSandbox([find_all("mpTest.py", os.environ["WORKSPACE"], "DIRAC/tests/Utilities")[0]])
+
+    J.setExecutable("mpTest.py")
+    J.setNumberOfProcessors(numberOfProcessors=2)
+    J.setRAMRequirements(ramRequired=4000, maxRAM=4000)
     return endOfAllJobs(J)
 
 

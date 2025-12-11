@@ -1,10 +1,10 @@
-""" Testing the API and a bit more.
-    It will submit a number of test jobs locally (via runLocal), using the python unittest to assess the results.
-    Can be automatized.
+"""Testing the API and a bit more.
+It will submit a number of test jobs locally (via runLocal), using the python unittest to assess the results.
+Can be automatized.
 """
+
 # pylint: disable=protected-access, wrong-import-position, invalid-name, missing-docstring
 import multiprocessing
-import os
 import sys
 import unittest
 

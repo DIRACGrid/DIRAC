@@ -1,12 +1,12 @@
-"""   The Job Scheduling Executor takes the information gained from all previous
-      optimizers and makes a scheduling decision for the jobs.
+"""The Job Scheduling Executor takes the information gained from all previous
+optimizers and makes a scheduling decision for the jobs.
 
-      Subsequent to this jobs are added into a Task Queue and pilot agents can be submitted.
+Subsequent to this jobs are added into a Task Queue and pilot agents can be submitted.
 
-      All issues preventing the successful resolution of a site candidate are discovered
-      here where all information is available.
+All issues preventing the successful resolution of a site candidate are discovered
+here where all information is available.
 
-      This Executor will fail affected jobs meaningfully.
+This Executor will fail affected jobs meaningfully.
 """
 
 import random
@@ -355,7 +355,7 @@ class JobScheduling(OptimizerExecutor):
         if "MaxRAM" in jobManifest:
             maxRAM = jobManifest.getOption("MaxRAM", 0)
             if maxRAM:
-                tagList.append("%dGB" % maxRAM)
+                tagList.append(f"{maxRAM}MB")
 
         # other tags? Just add them
         if "Tags" in jobManifest:

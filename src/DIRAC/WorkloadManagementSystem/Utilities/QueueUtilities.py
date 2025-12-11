@@ -1,5 +1,5 @@
-"""Utilities to help Computing Element Queues manipulation
-"""
+"""Utilities to help Computing Element Queues manipulation"""
+
 import hashlib
 
 from DIRAC import S_OK, S_ERROR
@@ -222,10 +222,10 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
             return S_OK({"Match": False, "Reason": noMatchReasons[0]})
 
     # 5. RAM
-    ram = job.getAttributeInt("RAM")
+    ram = job.getAttributeInt("MaxRAM")
     # If MaxRAM is not specified in the queue description, assume 2GB
-    if ram and ram > int(queueDict.get("MaxRAM", 2048) / 1024):
-        noMatchReasons.append("Job RAM %d requirement not satisfied" % ram)
+    if ram and ram > int(queueDict.get("MaxRAM", 2048)):
+        noMatchReasons.append(f"Job RAM {ram} requirement not satisfied")
         if not fullMatch:
             return S_OK({"Match": False, "Reason": noMatchReasons[0]})
 

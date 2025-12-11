@@ -1,15 +1,16 @@
-""" This integration test only need the TaskQueueDB
-    (which should of course be properly defined also in the configuration),
-    and connects directly to it
+"""This integration test only need the TaskQueueDB
+(which should of course be properly defined also in the configuration),
+and connects directly to it
 
 
-    Run this test with::
-        "python -m pytest tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py"
+Run this test with::
+    "python -m pytest tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py"
 
 
-    Suggestion: for local testing, run this with::
-        python -m pytest -c ../pytest.ini  -vv tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py
+Suggestion: for local testing, run this with::
+    python -m pytest -c ../pytest.ini  -vv tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py
 """
+
 import DIRAC
 from DIRAC import gLogger
 
@@ -685,10 +686,6 @@ def test_chainWithTags():
     # This is translated to "#Processors" by the SiteDirector
     result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "Tag": "4Processors"}, numQueuesToGet=4)
     assert result["OK"]
-    # FIXME: this is not interpreted in any different way --- is it correct?
-    # I believe it should be instead interpreted in a way similar to CPUTime
-    # FIXME: the MaxRam parameter has a similar fate, and becomes "#GB",
-    # and then there's no specific matching about it.
 
     for jobId in range(1, 8):
         result = tqDB.deleteJob(jobId)

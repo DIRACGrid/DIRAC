@@ -1,4 +1,4 @@
-""" RemoteRunner
+"""RemoteRunner
 
 RemoteRunner has been designed to send scripts/applications and input files on remote worker nodes having
 no outbound connectivity (e.g. supercomputers)
@@ -6,6 +6,7 @@ no outbound connectivity (e.g. supercomputers)
 Mostly called by workflow modules, RemoteRunner is generally the last component to get through before
 the script/application execution on a remote machine.
 """
+
 import hashlib
 import os
 import shlex
