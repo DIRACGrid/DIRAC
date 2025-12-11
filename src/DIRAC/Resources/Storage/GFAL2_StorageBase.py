@@ -53,6 +53,9 @@ except AttributeError:
 MAX_SINGLE_STREAM_SIZE = 1024 * 1024 * 10  # 10MB
 MIN_BANDWIDTH = 0.5 * (1024 * 1024)  # 0.5 MB/s
 
+# Default timeout for any stat like call
+DEFAULT_OPERATION_TIMEOUT = 10
+
 
 @contextmanager
 def setGfalSetting(
@@ -168,6 +171,12 @@ class GFAL2_StorageBase(StorageBase):
         # Disable retrieving the bearer token for every operations.
         # It is only useful for TPC
         self.ctx.set_opt_boolean("HTTP PLUGIN", "RETRIEVE_BEARER_TOKEN", False)
+
+        # Set a global timeout for the operations
+        self.ctx.set_opt_integer("CORE", "NAMESPACE_TIMEOUT", DEFAULT_OPERATION_TIMEOUT)
+        # Because HTTP Plugin does not read the CORE:NAMESPACE_TIMEOUT as it should
+        # I also specify it here
+        self.ctx.set_opt_integer("HTTP PLUGIN", "OPERATION_TIMEOUT", DEFAULT_OPERATION_TIMEOUT)
 
         # spaceToken used for copying from and to the storage element
         self.spaceToken = parameters.get("SpaceToken", "")
