@@ -1,5 +1,5 @@
-""" DIRAC FileCatalog client utilities
-"""
+"""DIRAC FileCatalog client utilities"""
+
 import os
 import errno
 import functools
@@ -16,7 +16,7 @@ def checkArgumentFormat(path, generateMap=False):
         """Check and process format of the arguments to FileCatalog methods"""
         if isinstance(path, str):
             urls = {path: True}
-        elif isinstance(path, list):
+        elif isinstance(path, (list, set)):
             urls = {}
             for url in path:
                 urls[url] = True
