@@ -139,7 +139,7 @@ def _computeRootPath(rootPath):
     if versionsPath.parent.name != "versions":
         return str(rootPath)
     # VERSION-INSTALL_TIME
-    pattern1 = re.compile(r"v(\d+\.\d+\.\d+[^\-]*)\-(\d+)")
+    pattern1 = re.compile(r"(v\d+\.\d+\.\d+[^\-]*|[^-]+)-(\d+)")
     # $(uname -s)-$(uname -m)
     pattern2 = re.compile(r"([^\-]+)-([^\-]+)")
     if pattern1.fullmatch(versionsPath.name) and pattern2.fullmatch(rootPath.name):
