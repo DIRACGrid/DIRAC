@@ -141,7 +141,9 @@ class FileCatalogClient(FileCatalogClientBase):
         successful = {}
         failed = {}
 
-        for chunk in breakListIntoChunks(lfns, GET_REPLICAS_CHUNK_SIZE):
+        # We want to sort the lfns because of the way the server groups the db queries by
+        # directory. So if we sort them, the grouping is more efficient.
+        for chunk in breakListIntoChunks(sorted(lfns), GET_REPLICAS_CHUNK_SIZE):
             rpcClient = self._getRPC(timeout=timeout)
             result = rpcClient.getReplicas(chunk, allStatus)
 
