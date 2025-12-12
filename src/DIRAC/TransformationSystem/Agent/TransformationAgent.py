@@ -500,19 +500,18 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
             startTime = time.time()
             self._logInfo(f"Getting replicas for {len(newLFNs)} files from catalog", method=method, transID=transID)
             newReplicas = {}
-            for chunk in breakListIntoChunks(newLFNs, 10000):
-                res = self._getDataReplicasDM(transID, chunk, clients, forJobs=forJobs)
-                if res["OK"]:
-                    reps = {lfn: ses for lfn, ses in res["Value"].items() if ses}
-                    newReplicas.update(reps)
-                    self.__updateCache(transID, reps)
-                else:
-                    self._logWarn(
-                        f"Failed to get replicas for {len(chunk)} files",
-                        res["Message"],
-                        method=method,
-                        transID=transID,
-                    )
+            res = self._getDataReplicasDM(transID, newLFNs, clients, forJobs=forJobs)
+            if res["OK"]:
+                newReplicas = {lfn: ses for lfn, ses in res["Value"].items() if ses}
+
+                self.__updateCache(transID, newReplicas)
+            else:
+                self._logWarn(
+                    f"Failed to get replicas for {len(newLFNs)} files",
+                    res["Message"],
+                    method=method,
+                    transID=transID,
+                )
 
             self._logInfo(
                 f"Obtained {len(newReplicas)} replicas from catalog in {time.time() - startTime:.1f} seconds",
