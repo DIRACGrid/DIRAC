@@ -1,15 +1,15 @@
-""" The simplest of the "inner" CEs (meaning it's used by a jobAgent inside a pilot)
+"""The simplest of the "inner" CEs (meaning it's used by a jobAgent inside a pilot)
 
-    A "InProcess" CE instance submits jobs in the current process.
-    This is the standard "inner CE" invoked from the JobAgent, main alternative being the PoolCE
+A "InProcess" CE instance submits jobs in the current process.
+This is the standard "inner CE" invoked from the JobAgent, main alternative being the PoolCE
 """
+
 import os
 import stat
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Utilities.CGroups2 import CG2Manager
-
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
 
@@ -21,8 +21,8 @@ class InProcessComputingElement(ComputingElement):
         self.submittedJobs = 0
         self.runningJobs = 0
 
-        self.processors = int(self.ceParameters.get("NumberOfProcessors", 1))
-        self.maxRAM = int(self.ceParameters.get("MaxRAM", 0))
+        self.processors = 1
+        self.maxRAM = 0
         self.ceParameters["MaxTotalJobs"] = 1
 
     def submitJob(self, executableFile, proxy=None, inputs=None, **kwargs):
@@ -34,6 +34,16 @@ class InProcessComputingElement(ComputingElement):
         :param list inputs: dependencies of executableFile
         :return: S_OK(payload exit code) / S_ERROR() if submission issue
         """
+        self.processors = int(self.ceParameters.get("NumberOfProcessors", self.processors))
+        self.maxRAM = int(self.ceParameters.get("MaxRAM", self.maxRAM))
+
+        if "numberOfProcessors" in kwargs:
+            if self.processors < int(kwargs["numberOfProcessors"]):
+                return S_ERROR("Requesting processors not available")
+        if "MaxRAM" in kwargs:
+            if self.maxRAM < int(kwargs["MaxRAM"]):
+                return S_ERROR("Requesting RAM not available")
+
         payloadEnv = dict(os.environ)
         payloadProxy = ""
         renewTask = None
