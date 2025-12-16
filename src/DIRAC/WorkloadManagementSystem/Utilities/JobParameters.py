@@ -229,7 +229,7 @@ def getAvailableRAM(siteName=None, gridCE=None, queue=None):
     if not queue:
         queue = gConfig.getValue("/LocalSite/CEQueue", "")
     if not (siteName and gridCE and queue):
-        gLogger.error("Could not find AvailableRAM: missing siteName or gridCE or queue. Returning 0")
+        gLogger.warn("Could not find AvailableRAM: missing siteName or gridCE or queue. Returning 0")
         return 0
 
     grid = siteName.split(".")[0]

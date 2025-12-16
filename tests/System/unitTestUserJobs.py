@@ -1,5 +1,5 @@
-""" Collection of user jobs for testing purposes
-"""
+"""Collection of user jobs for testing purposes"""
+
 # pylint: disable=wrong-import-position, invalid-name
 import sys
 import time
@@ -102,10 +102,6 @@ class submitSuccess(GridSubmissionTestCase):
         self.assertTrue(res["OK"])
         jobsSubmittedList.append(res["Value"])
 
-        res = helloWorldARM()
-        self.assertTrue(res["OK"])
-        jobsSubmittedList.append(res["Value"])
-
         res = mpJob()
         self.assertTrue(res["OK"])
         jobsSubmittedList.append(res["Value"])
@@ -127,6 +123,10 @@ class submitSuccess(GridSubmissionTestCase):
         jobsSubmittedList.append(res["Value"])
 
         res = memory_2_to4GB()
+        self.assertTrue(res["OK"])
+        jobsSubmittedList.append(res["Value"])
+
+        res = memory_2_to4GB_MP()
         self.assertTrue(res["OK"])
         jobsSubmittedList.append(res["Value"])
 

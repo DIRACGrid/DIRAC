@@ -4,7 +4,7 @@
 # type: docs, feat, fix, refactor, style or test
 # scope (optional): any extra info, (like DMS or whatever)
 
-name: 'Commit Message Check'
+name: "Commit Message Check"
 on: pull_request
 
 jobs:
@@ -15,19 +15,19 @@ jobs:
       - name: Check Commit Format
         uses: gsactions/commit-message-checker@v2
         with:
-          pattern: '^((docs|feat|fix|refactor|style|test|sweep)( ?\(.*\))?: .+|Revert ".+")$'
-          excludeDescription: 'true' # optional: this excludes the description body of a pull request
-          excludeTitle: 'true' # optional: this excludes the title of a pull request
-          checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
+          pattern: '^((docs|feat|fix|chore|refactor|style|test|sweep)( ?\(.*\))?: .+|Revert ".+")$'
+          excludeDescription: "true" # optional: this excludes the description body of a pull request
+          excludeTitle: "true" # optional: this excludes the title of a pull request
+          checkAllCommitMessages: "true" # optional: this checks all commits associated with a pull request
           accessToken: ${{ secrets.GITHUB_TOKEN }} # github access token is only required if checkAllCommitMessages is true
-          flags: 'gim'
+          flags: "gim"
           error: 'Your commit has to follow the format "<type>(<scope>): <subject>"".'
       - name: Check Commit Length
         uses: gsactions/commit-message-checker@v2
         with:
-          pattern: '^.{20,150}$'
-          error: 'Commit messages should be between 20 and 150 chars'
-          excludeDescription: 'true' # optional: this excludes the description body of a pull request
-          excludeTitle: 'true' # optional: this excludes the title of a pull request
-          checkAllCommitMessages: 'true' # optional: this checks all commits associated with a pull request
+          pattern: "^.{20,150}$"
+          error: "Commit messages should be between 20 and 150 chars"
+          excludeDescription: "true" # optional: this excludes the description body of a pull request
+          excludeTitle: "true" # optional: this excludes the title of a pull request
+          checkAllCommitMessages: "true" # optional: this checks all commits associated with a pull request
           accessToken: ${{ secrets.GITHUB_TOKEN }} # github access token is only required if checkAllCommitMessages is true
