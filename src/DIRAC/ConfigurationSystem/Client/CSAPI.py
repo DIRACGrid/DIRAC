@@ -299,7 +299,18 @@ class CSAPI:
                     if "Users" in groupsDict[group] and entity in groupsDict[group]["Users"]:
                         entitiesDict[entity]["Groups"].append(group)
                 entitiesDict[entity]["Groups"].sort()
+                entitiesDict[entity]["AffiliationEnds"] = self.getUserAffiliationEnds(entity)
         return S_OK(entitiesDict)
+
+    def getUserAffiliationEnds(self, nick):
+        affiliation_ends_current = {}
+        csSection = f"{self.__baseSecurity}/Users/{nick}/"
+        user_sections = self.__csMod.getSections(csSection)
+        if "AffiliationEnds" in user_sections:
+            affiliation_ends_opts = self.__csMod.getOptions(f"{csSection}/AffiliationEnds")
+            for vo_ in affiliation_ends_opts:
+                affiliation_ends_current[vo_] = self.__csMod.getValue(f"{csSection}/AffiliationEnds/{vo_}")
+        return affiliation_ends_current
 
     def listGroups(self):
         """
