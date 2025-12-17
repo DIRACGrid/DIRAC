@@ -208,7 +208,9 @@ class Dirac(API):
         return S_OK("Nothing to do")
 
     #############################################################################
-    def getInputDataCatalog(self, lfns, siteName="", fileName="pool_xml_catalog.xml", ignoreMissing=False):
+    def getInputDataCatalog(
+        self, lfns, siteName="", fileName="pool_xml_catalog.xml", ignoreMissing=False, inputDataPolicy=None
+    ):
         """This utility will create a pool xml catalogue slice for the specified LFNs using
         the full input data resolution policy plugins for the VO.
 
@@ -228,6 +230,10 @@ class Dirac(API):
         :type siteName: string
         :param fileName: Catalogue name (can include path)
         :type fileName: string
+        :param ignoreMissing: Flag to ignore missing files
+        :type ignoreMissing: bool
+        :param inputDataPolicy: Input data policy module to use
+        :type inputDataPolicy: string or None
         :returns: S_OK,S_ERROR
 
         """
@@ -248,9 +254,10 @@ class Dirac(API):
 
         self.log.verbose(localSEList)
 
-        inputDataPolicy = Operations().getValue("InputDataPolicy/InputDataModule")
         if not inputDataPolicy:
-            return self._errorReport("Could not retrieve /DIRAC/Operations/InputDataPolicy/InputDataModule for VO")
+            inputDataPolicy = Operations().getValue("InputDataPolicy/InputDataModule")
+            if not inputDataPolicy:
+                return self._errorReport("Could not retrieve /DIRAC/Operations/InputDataPolicy/InputDataModule for VO")
 
         self.log.info(f"Attempting to resolve data for {siteName}")
         self.log.verbose("%s" % ("\n".join(lfns)))
