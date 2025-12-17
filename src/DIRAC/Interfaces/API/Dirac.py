@@ -254,10 +254,9 @@ class Dirac(API):
 
         self.log.verbose(localSEList)
 
-        if not inputDataPolicy:
-            inputDataPolicy = Operations().getValue("InputDataPolicy/InputDataModule")
-            if not inputDataPolicy:
-                return self._errorReport("Could not retrieve /DIRAC/Operations/InputDataPolicy/InputDataModule for VO")
+        inputDataModule = Operations().getValue("InputDataPolicy/InputDataModule")
+        if not inputDataModule:
+            return self._errorReport("Could not retrieve /DIRAC/Operations/InputDataPolicy/InputDataModule for VO")
 
         self.log.info(f"Attempting to resolve data for {siteName}")
         self.log.verbose("%s" % ("\n".join(lfns)))
@@ -286,11 +285,13 @@ class Dirac(API):
 
         self.log.verbose(configDict)
         argumentsDict = {"FileCatalog": resolvedData, "Configuration": configDict, "InputData": lfns}
+        if inputDataPolicy:
+            argumentsDict["Job"] = {"InputDataPolicy": inputDataPolicy}
         if ignoreMissing:
             argumentsDict["IgnoreMissing"] = True
         self.log.verbose(argumentsDict)
 
-        result = self.objectLoader.loadObject(inputDataPolicy)
+        result = self.objectLoader.loadObject(inputDataModule)
         if not result["OK"]:
             return result
         module = result["Value"](argumentsDict)
