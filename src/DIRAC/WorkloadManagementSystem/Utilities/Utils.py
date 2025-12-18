@@ -78,43 +78,10 @@ def createJobWrapper(
         log.debug("Real python path after resolving links is: ", pythonPath)
 
     if "Executable" in jobParams and jobParams["Executable"] == "dirac-cwl-exec":
-        # Get the new JobWrapper
-        protoPath = Path(wrapperPath) / f"proto{jobID}"
-        protoPath.unlink(missing_ok=True)
-        log.info("Cloning JobWrapper from repository https://github.com/aldbr/dirac-cwl-proto.git into", protoPath)
-        try:
-            subprocess.run(["git", "clone", "https://github.com/aldbr/dirac-cwl-proto.git", str(protoPath)], check=True)
-        except subprocess.CalledProcessError:
-            return S_ERROR("Failed to clone the JobWrapper repository")
-
-        jobWrapperFile = os.path.join(str(protoPath), "src", "dirac_cwl_proto", "job", "job_wrapper_template.py")
-        if not Path(jobWrapperFile).is_file():
-            return S_ERROR("Could not find the JobWrapper in the cloned repository")
-
-        # Get the job.json file
-        tmp = Path(wrapperPath) / f"tmp{jobID}"
-        tmp.unlink(missing_ok=True)
-        tmp.mkdir()
-        log.info("Downloading the input sandbox to get the JobWrapper json file")
-        ret = SandboxStoreClient().downloadSandboxForJob(jobId=jobID, sbType="Input", destinationPath=str(tmp))
+        ret = __createCWLJobWrapper(jobID, wrapperPath, log)
         if not ret["OK"]:
-            tmp.unlink(missing_ok=True)
             return ret
-        jobWrapperJsonFile = tmp / "job.json"
-        if not jobWrapperJsonFile.is_file():
-            tmp.unlink(missing_ok=True)
-            return S_ERROR("job.json file not found")
-        jobWrapperJsonFile = str(jobWrapperJsonFile.replace(Path(wrapperPath) / f"Wrapper_{jobID}.json"))
-        tmp.unlink()
-
-        # Create the executable file
-        jobExeFile = os.path.join(wrapperPath, f"Job{jobID}")
-        jobFileContents = f"""#!/bin/bash
-# Install pixi
-curl -fsSL https://pixi.sh/install.sh | bash
-# Run JobWrapper
-pixi run --manifest-path {str(protoPath)} python {jobWrapperFile} {jobWrapperJsonFile}
-"""
+        jobWrapperFile, jobWrapperJsonFile, jobExeFile, jobFileContents = ret["Value"]
     else:
         with open(os.path.join(diracRoot, defaultWrapperLocation)) as fd:
             wrapperTemplate = fd.read()
@@ -159,6 +126,47 @@ pixi run --manifest-path {str(protoPath)} python {jobWrapperFile} {jobWrapperJso
     if rootLocation != wrapperPath:
         generatedFiles["JobExecutableRelocatedPath"] = os.path.join(rootLocation, os.path.basename(jobExeFile))
     return S_OK(generatedFiles)
+
+
+def __createCWLJobWrapper(jobID, wrapperPath, log):
+    # Get the new JobWrapper
+    protoPath = Path(wrapperPath) / f"proto{jobID}"
+    protoPath.unlink(missing_ok=True)
+    log.info("Cloning JobWrapper from repository https://github.com/aldbr/dirac-cwl-proto.git into", protoPath)
+    try:
+        subprocess.run(["git", "clone", "https://github.com/aldbr/dirac-cwl-proto.git", str(protoPath)], check=True)
+    except subprocess.CalledProcessError:
+        return S_ERROR("Failed to clone the JobWrapper repository")
+
+    jobWrapperFile = os.path.join(str(protoPath), "src", "dirac_cwl_proto", "job", "job_wrapper_template.py")
+    if not Path(jobWrapperFile).is_file():
+        return S_ERROR("Could not find the JobWrapper in the cloned repository")
+
+    # Get the job.json file
+    tmp = Path(wrapperPath) / f"tmp{jobID}"
+    tmp.unlink(missing_ok=True)
+    tmp.mkdir()
+    log.info("Downloading the input sandbox to get the JobWrapper json file")
+    ret = SandboxStoreClient().downloadSandboxForJob(jobId=jobID, sbType="Input", destinationPath=str(tmp))
+    if not ret["OK"]:
+        tmp.unlink(missing_ok=True)
+        return ret
+    jobWrapperJsonFile = tmp / "job.json"
+    if not jobWrapperJsonFile.is_file():
+        tmp.unlink(missing_ok=True)
+        return S_ERROR("job.json file not found")
+    jobWrapperJsonFile = str(jobWrapperJsonFile.replace(Path(wrapperPath) / f"Wrapper_{jobID}.json"))
+    tmp.unlink()
+
+    # Create the executable file
+    jobExeFile = os.path.join(wrapperPath, f"Job{jobID}")
+    jobFileContents = f"""#!/bin/bash
+# Install pixi
+curl -fsSL https://pixi.sh/install.sh | bash
+# Run JobWrapper
+pixi run --manifest-path {str(protoPath)} python {jobWrapperFile} {jobWrapperJsonFile}
+"""
+    return S_OK((jobWrapperFile, jobWrapperJsonFile, jobExeFile, jobFileContents))
 
 
 def rescheduleJobs(
