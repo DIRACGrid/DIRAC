@@ -92,7 +92,7 @@ def createJobWrapper(
             return S_ERROR("Could not find the JobWrapper in the cloned repository")
 
         # Get the job.json file
-        tmp = Path(wrapperPath) / "tmp"
+        tmp = Path(wrapperPath) / f"tmp{jobID}"
         tmp.unlink(missing_ok=True)
         tmp.mkdir()
         log.info("Downloading the input sandbox to get the JobWrapper json file")
