@@ -1,12 +1,15 @@
 """ Utilities for WMS
 """
 import os
+from pathlib import Path
+import subprocess
 import sys
 import json
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging
+from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
@@ -63,8 +66,6 @@ def createJobWrapper(
     if os.path.exists(jobWrapperFile):
         log.verbose("Removing existing Job Wrapper for", jobID)
         os.remove(jobWrapperFile)
-    with open(os.path.join(diracRoot, defaultWrapperLocation)) as fd:
-        wrapperTemplate = fd.read()
 
     if "LogLevel" in jobParams:
         logLevel = jobParams["LogLevel"]
@@ -76,34 +77,76 @@ def createJobWrapper(
         pythonPath = os.path.realpath(sys.executable)
         log.debug("Real python path after resolving links is: ", pythonPath)
 
-    # Making real substitutions
-    sitePython = os.getcwd()
-    if rootLocation:
-        sitePython = rootLocation
-    wrapperTemplate = wrapperTemplate.replace("@SITEPYTHON@", sitePython)
+    if "Executable" in jobParams and jobParams["Executable"] == "dirac-cwl-exec":
+        # Get the new JobWrapper
+        protoPath = Path(wrapperPath) / f"proto{jobID}"
+        protoPath.unlink(missing_ok=True)
+        log.info("Cloning JobWrapper from repository https://github.com/aldbr/dirac-cwl-proto.git into", protoPath)
+        try:
+            subprocess.run(["git", "clone", "https://github.com/aldbr/dirac-cwl-proto.git", str(protoPath)], check=True)
+        except subprocess.CalledProcessError:
+            return S_ERROR("Failed to clone the JobWrapper repository")
 
-    jobWrapperJsonFile = jobWrapperFile + ".json"
-    with open(jobWrapperJsonFile, "w", encoding="utf8") as jsonFile:
-        json.dump(arguments, jsonFile, ensure_ascii=False)
+        jobWrapperFile = os.path.join(str(protoPath), "src", "dirac_cwl_proto", "job", "job_wrapper_template.py")
+        if not Path(jobWrapperFile).is_file():
+            return S_ERROR("Could not find the JobWrapper in the cloned repository")
 
-    with open(jobWrapperFile, "w") as wrapper:
-        wrapper.write(wrapperTemplate)
+        # Get the job.json file
+        tmp = Path(wrapperPath) / "tmp"
+        tmp.unlink(missing_ok=True)
+        tmp.mkdir()
+        log.info("Downloading the input sandbox to get the JobWrapper json file")
+        ret = SandboxStoreClient().downloadSandboxForJob(jobId=jobID, sbType="Input", destinationPath=str(tmp))
+        if not ret["OK"]:
+            tmp.unlink(missing_ok=True)
+            return ret
+        jobWrapperJsonFile = tmp / "job.json"
+        if not jobWrapperJsonFile.is_file():
+            tmp.unlink(missing_ok=True)
+            return S_ERROR("job.json file not found")
+        jobWrapperJsonFile = str(jobWrapperJsonFile.replace(Path(wrapperPath) / f"Wrapper_{jobID}.json"))
+        tmp.unlink()
 
-    if not rootLocation:
-        rootLocation = wrapperPath
+        # Create the executable file
+        jobExeFile = os.path.join(wrapperPath, f"Job{jobID}")
+        jobFileContents = f"""#!/bin/bash
+# Install pixi
+curl -fsSL https://pixi.sh/install.sh | bash
+# Run JobWrapper
+pixi run --manifest-path {str(protoPath)} python {jobWrapperFile} {jobWrapperJsonFile}
+"""
+    else:
+        with open(os.path.join(diracRoot, defaultWrapperLocation)) as fd:
+            wrapperTemplate = fd.read()
 
-    # The "real" location of the jobwrapper after it is started
-    jobWrapperDirect = os.path.join(rootLocation, f"Wrapper_{jobID}")
-    jobExeFile = os.path.join(wrapperPath, f"Job{jobID}")
-    jobFileContents = """#!/bin/sh
-{} {} {} -o LogLevel={} -o /DIRAC/Security/UseServerCertificate=no {}
-""".format(
-        pythonPath,
-        jobWrapperDirect,
-        extraOptions if extraOptions else "",
-        logLevel,
-        cfgPath if cfgPath else "",
-    )
+        # Making real substitutions
+        sitePython = os.getcwd()
+        if rootLocation:
+            sitePython = rootLocation
+        wrapperTemplate = wrapperTemplate.replace("@SITEPYTHON@", sitePython)
+
+        jobWrapperJsonFile = jobWrapperFile + ".json"
+        with open(jobWrapperJsonFile, "w", encoding="utf8") as jsonFile:
+            json.dump(arguments, jsonFile, ensure_ascii=False)
+
+        with open(jobWrapperFile, "w") as wrapper:
+            wrapper.write(wrapperTemplate)
+
+        if not rootLocation:
+            rootLocation = wrapperPath
+
+        # The "real" location of the jobwrapper after it is started
+        jobWrapperDirect = os.path.join(rootLocation, f"Wrapper_{jobID}")
+        jobExeFile = os.path.join(wrapperPath, f"Job{jobID}")
+        jobFileContents = """#!/bin/sh
+    {} {} {} -o LogLevel={} -o /DIRAC/Security/UseServerCertificate=no {}
+    """.format(
+            pythonPath,
+            jobWrapperDirect,
+            extraOptions if extraOptions else "",
+            logLevel,
+            cfgPath if cfgPath else "",
+        )
 
     with open(jobExeFile, "w") as jobFile:
         jobFile.write(jobFileContents)
