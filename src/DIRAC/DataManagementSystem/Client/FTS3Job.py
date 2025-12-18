@@ -411,6 +411,15 @@ class FTS3Job(JSerializable):
                 log.debug(f"Multihop job has {len(allLFNs)} files while only 1 allowed")
                 return S_ERROR(errno.E2BIG, "Trying multihop job with more than one file !")
             allHops = [(self.sourceSE, self.multiHopSE), (self.multiHopSE, self.targetSE)]
+            if tokensEnabled:
+                tokensEnabled = all(
+                    [
+                        self.__seTokenSupport(StorageElement(seName))
+                        for seName in (self.sourceSE, self.multiHopSE, self.targetSE)
+                    ]
+                )
+                if not tokensEnabled:
+                    log.warn("Not using token because not all hop supports it")
             isMultiHop = True
         else:
             allHops = [(self.sourceSE, self.targetSE)]
