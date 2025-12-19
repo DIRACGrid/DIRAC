@@ -64,11 +64,8 @@ class PoolComputingElement(ComputingElement):
         self.pPool = None
         self.taskID = 0
         self.processorsPerTask = {}
-        self.ram = (
-            1024
-            * 1024  # Available RAM for the node, in MB. The default value is an arbitrary large value in case of no limit
-        )
         self.ramPerTask = {}
+        self.ram = 0  # effectively this means "no limits"
 
         # This CE will effectively submit to another "Inner"CE
         # (by default to the InProcess CE)
@@ -82,7 +79,7 @@ class PoolComputingElement(ComputingElement):
 
         self.processors = int(self.ceParameters.get("NumberOfProcessors", self.processors))
         self.ceParameters["MaxTotalJobs"] = self.processors
-        if self.ceParameters.get("MaxRAM", 0):
+        if self.ceParameters.get("MaxRAM", 0):  # if there's a limit, we set it
             self.ram = int(self.ceParameters["MaxRAM"])
         # Indicates that the submission is done asynchronously
         # The result is not immediately available
@@ -113,6 +110,7 @@ class PoolComputingElement(ComputingElement):
             return S_OK(taskID)
 
         memoryForJob = self._getMemoryForJobs(kwargs)
+
         if memoryForJob is None:
             self.taskResults[self.taskID] = S_ERROR("Not enough memory for the job")
             taskID = self.taskID
@@ -201,7 +199,10 @@ class PoolComputingElement(ComputingElement):
         """
 
         # # job requirements
-        requestedMemory = kwargs.get("MinRAM", 0)
+        requestedMemory = kwargs.get("MinRAM", kwargs.get("MaxRAM", 0))
+        # if there's no limit, we just let it match the maximum
+        if not self.ram:
+            return max(requestedMemory, kwargs.get("MaxRAM", 0))
 
         # # now check what the slot can provide
         # Do we have enough memory?
@@ -258,7 +259,10 @@ class PoolComputingElement(ComputingElement):
         result["AvailableProcessors"] = self.processors - processorsInUse
         # dealing with RAM
         result["UsedRAM"] = sum(self.ramPerTask.values())
-        result["AvailableRAM"] = self.ram - sum(self.ramPerTask.values())
+        if self.ram:
+            result["AvailableRAM"] = self.ram - sum(self.ramPerTask.values())
+        else:
+            result["AvailableRAM"] = 0
 
         return result
 
