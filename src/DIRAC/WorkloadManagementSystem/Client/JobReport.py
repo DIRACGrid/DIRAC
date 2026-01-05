@@ -115,16 +115,20 @@ class JobReport:
 
     def commit(self):
         """Send all the accumulated information"""
+        messages = []
 
-        success = True
         result = self.sendStoredStatusInfo()
-        success &= result["OK"]
+        if not result["OK"]:
+            messages.append(result["Message"])
         result = self.sendStoredJobParameters()
-        success &= result["OK"]
+        if not result["OK"]:
+            messages.append(result["Message"])
 
-        if success:
-            return S_OK()
-        return S_ERROR("Information upload to JobStateUpdate service failed")
+        if messages:
+            gLogger.warn("Some information could not be uploaded to JobStateUpdate service:", "; ".join(messages))
+            return S_ERROR("Information upload to JobStateUpdate service failed")
+
+        return S_OK()
 
     def dump(self):
         """Print out the contents of the internal cached information"""

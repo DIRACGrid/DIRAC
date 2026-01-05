@@ -53,7 +53,7 @@ from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import (
     getAvailableRAM,
 )
 
-INTEGER_PARAMETERS = ["CPUTime", "NumberOfProcessors", "NumberOfPayloadProcessors", "MaxRAM"]
+INTEGER_PARAMETERS = ["CPUTime", "CPUNormalizationFactor", "NumberOfProcessors", "NumberOfPayloadProcessors", "MaxRAM"]
 FLOAT_PARAMETERS = ["WaitingToRunningRatio"]
 LIST_PARAMETERS = ["Tag", "RequiredTag"]
 WAITING_TO_RUNNING_RATIO = 0.5
@@ -455,7 +455,7 @@ def getCEConfigDict(section: str) -> dict:
     ceOptions = result["Value"]
     for key in ceOptions:
         if key in INTEGER_PARAMETERS:
-            ceOptions[key] = int(ceOptions[key])
+            ceOptions[key] = int(float(ceOptions[key]))
         if key in FLOAT_PARAMETERS:
             ceOptions[key] = float(ceOptions[key])
         if key in LIST_PARAMETERS:

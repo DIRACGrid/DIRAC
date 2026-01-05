@@ -546,7 +546,7 @@ class JobWrapper:
             self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_THREAD_FAILED, sendFlag=True)
             applicationErrorStatus = "None reported"
             if payloadStatus:
-                applicationErrorStatus = payloadStatus
+                applicationErrorStatus = str(payloadStatus)
             self.__setJobParam("ApplicationError", applicationErrorStatus, sendFlag=True)
 
         # This might happen if process() and postProcess() are called on different machines
@@ -1544,7 +1544,7 @@ class JobWrapper:
     #############################################################################
     def __setJobParam(self, name, value, sendFlag=False):
         """Wraps around setJobParameter of JobReport client"""
-        jobParam = self.jobReport.setJobParameter(str(name), str(value), sendFlag)
+        jobParam = self.jobReport.setJobParameter(str(name), value, sendFlag)
         if not jobParam["OK"]:
             self.log.warn("Failed setting job parameter", jobParam["Message"])
         if self.jobID:
