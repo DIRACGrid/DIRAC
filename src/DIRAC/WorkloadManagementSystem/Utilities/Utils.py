@@ -2,6 +2,7 @@
 """
 import os
 from pathlib import Path
+from shutil import rmtree
 import subprocess
 import sys
 import json
@@ -144,19 +145,19 @@ def __createCWLJobWrapper(jobID, wrapperPath, log):
 
     # Get the job.json file
     tmp = Path(wrapperPath) / f"tmp{jobID}"
-    tmp.unlink(missing_ok=True)
+    rmtree(str(tmp), ignore_errors=True)
     tmp.mkdir()
     log.info("Downloading the input sandbox to get the JobWrapper json file")
     ret = SandboxStoreClient().downloadSandboxForJob(jobId=jobID, sbType="Input", destinationPath=str(tmp))
     if not ret["OK"]:
-        tmp.unlink(missing_ok=True)
+        rmtree(str(tmp), ignore_errors=True)
         return ret
     jobWrapperJsonFile = tmp / "job.json"
     if not jobWrapperJsonFile.is_file():
-        tmp.unlink(missing_ok=True)
+        rmtree(str(tmp), ignore_errors=True)
         return S_ERROR("job.json file not found")
     jobWrapperJsonFile = str(jobWrapperJsonFile.replace(Path(wrapperPath) / f"Wrapper_{jobID}.json"))
-    tmp.unlink()
+    rmtree(str(tmp), ignore_errors=True)
 
     # Create the executable file
     jobExeFile = os.path.join(wrapperPath, f"Job{jobID}")
