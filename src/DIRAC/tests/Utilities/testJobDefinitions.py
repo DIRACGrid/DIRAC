@@ -91,6 +91,7 @@ def helloWorld_input():
         except IndexError:  # we are in Jenkins
             J.setInputSandbox([find_all("exe-script-with-input.py", "/home/dirac", "DIRAC/tests/Workflow")[0]])
     J.setExecutable("exe-script-with-input.py", "", "helloWorld.log")
+    J.setInputData(["/dteam/user/f/fstagni/test/testInputFile.txt"])
     return endOfAllJobs(J)
 
 
@@ -108,6 +109,7 @@ def helloWorld_input_single():
                 [find_all("exe-script-with-input-single-location.py", "/home/dirac", "DIRAC/tests/Workflow")[0]]
             )
     J.setExecutable("exe-script-with-input-single-location.py", "", "helloWorld.log")
+    J.setInputData(["/dteam/user/f/fstagni/test/testInputFileSingleLocation.txt"])
     return endOfAllJobs(J)
 
 
