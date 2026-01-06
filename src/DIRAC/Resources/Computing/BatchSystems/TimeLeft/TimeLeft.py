@@ -75,7 +75,9 @@ class TimeLeft:
 
         resourceDict = self.batchPlugin.getResourceUsage()
         if not resourceDict["OK"]:
-            self.log.warn(f"Could not determine timeleft for batch system at site {DIRAC.siteName()}")
+            self.log.warn(
+                f"Could not determine timeleft for batch system at site {DIRAC.siteName()}: {resourceDict['Message']}"
+            )
             return resourceDict
 
         resources = resourceDict["Value"]
