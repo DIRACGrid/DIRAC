@@ -577,7 +577,7 @@ def test_chainWithTags():
 
     # Matching
 
-    # Matching Everything with Tag = "ANY"
+    # Matching Everything with Tag = ""
     result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "Tag": "ANY"}, numQueuesToGet=6)
     assert result["OK"]
     # this should match whatever
@@ -682,8 +682,7 @@ def test_chainWithTags():
     res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job6}
 
-    # NumberOfProcessors and MaxRAM
-    # This is translated to "#Processors" by the SiteDirector
+    # This is translated to "#Processors" by the Matcher
     result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "Tag": "4Processors"}, numQueuesToGet=4)
     assert result["OK"]
 
