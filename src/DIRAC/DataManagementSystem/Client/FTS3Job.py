@@ -272,7 +272,7 @@ class FTS3Job(JSerializable):
 
                 # If the file is failed, check if it is recoverable
                 if file_state in FTS3File.FTS_FAILED_STATES:
-                    if not fileDict.get("Recoverable", True):
+                    if not fileDict.get("recoverable", True):
                         filesStatus[file_id]["status"] = "Defunct"
 
             # If the file is not in a final state, but the job is, we return an error
@@ -400,7 +400,7 @@ class FTS3Job(JSerializable):
         :return: S_OK( (job object, list of ftsFileIDs in the job))
         """
 
-        log = gLogger.getSubLogger(f"constructTransferJob/{self.operationID}/{self.sourceSE}_{self.targetSE}")
+        log = gLogger.getLocalSubLogger(f"constructTransferJob/{self.operationID}/{self.sourceSE}_{self.targetSE}")
 
         isMultiHop = False
         useTokens = False
@@ -745,7 +745,7 @@ class FTS3Job(JSerializable):
         :return: S_OK( (job object, list of ftsFileIDs in the job))
         """
 
-        log = gLogger.getSubLogger(f"constructStagingJob/{self.operationID}/{self.targetSE}")
+        log = gLogger.getLocalSubLogger(f"constructStagingJob/{self.operationID}/{self.targetSE}")
 
         transfers = []
         fileIDsInTheJob = set()
