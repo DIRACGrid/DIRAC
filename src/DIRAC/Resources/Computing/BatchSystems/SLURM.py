@@ -300,7 +300,7 @@ srun -l -k %(wrapper)s
 
         waitingJobs = 0
         runningJobs = 0
-        lines = output.split("\n")
+        lines = output.strip().split("\n")
         for line in lines[1:]:
             _jid, status = line.split()
             if status in ["PENDING", "SUSPENDED", "CONFIGURING"]:
