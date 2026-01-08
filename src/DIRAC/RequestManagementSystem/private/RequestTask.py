@@ -106,7 +106,8 @@ class RequestTask:
                     userDN, userGroup, requiredTimeLeft=1200, cacheTime=4 * 43200
                 )
             if not getProxy["OK"]:
-                return S_ERROR(f"unable to setup shifter proxy for {shifter}: {getProxy['Message']}")
+                self.log.error("unable to setup shifter proxy", f"{shifter}: {getProxy['Message']}")
+                continue
             chain = getProxy["chain"]
             fileName = getProxy["Value"]
             self.log.debug(f"got {shifter}: {userName} {userGroup}")
