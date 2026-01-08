@@ -1,5 +1,5 @@
-""" TaskQueueDB class is a front-end to the task queues db
-"""
+"""TaskQueueDB class is a front-end to the task queues db"""
+
 import random
 import string
 from collections import defaultdict
@@ -22,12 +22,13 @@ TQ_MIN_SHARE = 0.001
 # For checks at insertion time, and not only
 singleValueDefFields = ("Owner", "OwnerGroup", "CPUTime")
 multiValueDefFields = ("Sites", "GridCEs", "BannedSites", "Platforms", "JobTypes", "Tags")
+rangeValueDefFields = ("MinRAM", "MaxRAM")
 
 # Used for matching
 multiValueMatchFields = ("GridCE", "Site", "Platform", "JobType", "Tag")
 bannedJobMatchFields = ("Site",)
 mandatoryMatchFields = ("CPUTime",)
-priorityIgnoredFields = ("Sites", "BannedSites")
+priorityIgnoredFields = ("Sites", "BannedSites", "MinRAM", "MaxRAM")
 
 
 def _lowerAndRemovePunctuation(s):
@@ -129,6 +130,16 @@ class TaskQueueDB(DB):
             "ForeignKeys": {"TQId": "tq_TaskQueues.TQId"},
         }
 
+        self.__tablesDesc["tq_RAM_requirements"] = {
+            "Fields": {
+                "TQId": "INTEGER(11) UNSIGNED NOT NULL",
+                "MinRAM": "INTEGER UNSIGNED NOT NULL DEFAULT 0",
+                "MaxRAM": "INTEGER UNSIGNED NOT NULL DEFAULT 0",
+            },
+            "PrimaryKey": "TQId",
+            "ForeignKeys": {"TQId": "tq_TaskQueues.TQId"},
+        }
+
         for multiField in multiValueDefFields:
             tableName = f"tq_TQTo{multiField}"
             self.__tablesDesc[tableName] = {
@@ -206,6 +217,20 @@ class TaskQueueDB(DB):
                 return result
             tqDefDict[field] = result["Value"]
 
+        # Check range value fields (RAM requirements)
+        for field in rangeValueDefFields:
+            if field not in tqDefDict:
+                continue
+            if not isinstance(tqDefDict[field], int):
+                return S_ERROR(f"Range value field {field} value type is not valid: {type(tqDefDict[field])}")
+            if tqDefDict[field] < 0:
+                return S_ERROR(f"Range value field {field} must be non-negative: {tqDefDict[field]}")
+
+        # Validate that MinRAM <= MaxRAM if both are specified
+        if "MinRAM" in tqDefDict and "MaxRAM" in tqDefDict:
+            if tqDefDict["MaxRAM"] > 0 and tqDefDict["MinRAM"] > tqDefDict["MaxRAM"]:
+                return S_ERROR(f"MinRAM ({tqDefDict['MinRAM']}) cannot be greater than MaxRAM ({tqDefDict['MaxRAM']})")
+
         return S_OK(tqDefDict)
 
     def _checkMatchDefinition(self, tqMatchDict):
@@ -250,6 +275,13 @@ class TaskQueueDB(DB):
                     if not result["OK"]:
                         return S_ERROR(f"Match definition field {field} failed : {result['Message']}")
                     tqMatchDict[field] = result["Value"]
+
+        # Check range value fields (RAM requirements for matching)
+        if "RAM" in tqMatchDict:
+            result = travelAndCheckType(tqMatchDict["RAM"], int, escapeValues=False)
+            if not result["OK"]:
+                return S_ERROR(f"Match definition field RAM failed : {result['Message']}")
+            tqMatchDict["RAM"] = result["Value"]
 
         return S_OK(tqMatchDict)
 
@@ -303,6 +335,20 @@ class TaskQueueDB(DB):
                 self.log.error("Failed to insert condition", f"{field} : {result['Message']}")
                 self.cleanOrphanedTaskQueues(connObj=connObj)
                 return S_ERROR(f"Can't insert values {values} for field {field}: {result['Message']}")
+
+        # Insert RAM requirements if specified and not both zero
+        if "MinRAM" in tqDefDict or "MaxRAM" in tqDefDict:
+            minRAM = tqDefDict.get("MinRAM", 0)
+            maxRAM = tqDefDict.get("MaxRAM", 0)
+            # Only insert if at least one value is non-zero (optimization: avoid unnecessary rows)
+            if minRAM > 0 or maxRAM > 0:
+                cmd = f"INSERT INTO `tq_RAM_requirements` (TQId, MinRAM, MaxRAM) VALUES ({tqId}, {minRAM}, {maxRAM})"
+                result = self._update(cmd, conn=connObj)
+                if not result["OK"]:
+                    self.log.error("Failed to insert RAM requirements", result["Message"])
+                    self.cleanOrphanedTaskQueues(connObj=connObj)
+                    return S_ERROR(f"Can't insert RAM requirements: {result['Message']}")
+
         self.log.info("Created TQ", tqId)
         return S_OK(tqId)
 
@@ -326,6 +372,13 @@ class TaskQueueDB(DB):
             )
             if not result["OK"]:
                 return result
+
+        # Delete RAM requirements for orphaned TQs
+        result = self._update(
+            f"DELETE FROM `tq_RAM_requirements` WHERE TQId in ( {','.join(orphanedTQs)} )", conn=connObj
+        )
+        if not result["OK"]:
+            return result
 
         result = self._update(f"DELETE FROM `tq_TaskQueues` WHERE TQId in ( {','.join(orphanedTQs)} )", conn=connObj)
         if not result["OK"]:
@@ -473,6 +526,26 @@ class TaskQueueDB(DB):
                 sqlCondList.append(f"{numValues} = ({secondQuery} {grouping})")
             else:
                 sqlCondList.append(f"`tq_TaskQueues`.TQId not in ( SELECT DISTINCT {tableName}.TQId from {tableName} )")
+
+        # Handle RAM requirements matching
+        hasRAMRequirements = "MinRAM" in tqDefDict or "MaxRAM" in tqDefDict
+        if hasRAMRequirements:
+            minRAM = tqDefDict.get("MinRAM", 0)
+            maxRAM = tqDefDict.get("MaxRAM", 0)
+            # Only match TQs with the same RAM requirements if at least one is non-zero
+            if minRAM > 0 or maxRAM > 0:
+                # Match TQs that have the exact same RAM requirements
+                sqlCondList.append(
+                    f"`tq_TaskQueues`.TQId IN ( SELECT TQId FROM `tq_RAM_requirements` "
+                    f"WHERE MinRAM = {minRAM} AND MaxRAM = {maxRAM} )"
+                )
+            else:
+                # Both are 0, so match TQs with no RAM requirements row
+                sqlCondList.append("`tq_TaskQueues`.TQId NOT IN ( SELECT DISTINCT TQId FROM `tq_RAM_requirements` )")
+        else:
+            # Match TQs that have no RAM requirements
+            sqlCondList.append("`tq_TaskQueues`.TQId NOT IN ( SELECT DISTINCT TQId FROM `tq_RAM_requirements` )")
+
         # END MAGIC: That was easy ;)
         return S_OK(" AND ".join(sqlCondList))
 
@@ -722,6 +795,19 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         if "CPUTime" in tqMatchDict:
             sqlCondList.append(self.__generateSQLSubCond("tq.%s <= %%s" % "CPUTime", tqMatchDict["CPUTime"]))
 
+        # RAM matching logic
+        if "RAM" in tqMatchDict:
+            ram = tqMatchDict["RAM"]
+            # Join with tq_RAM_requirements table
+            sqlTables["tq_RAM_requirements"] = "ram_req"
+            # Match if:
+            # 1. No RAM requirement exists for this TQ (LEFT JOIN will give NULL)
+            # 2. OR the resource has at least MinRAM
+            # Note: MinRAM is used for matching, MaxRAM is informational for post-match scheduling
+            #       A job requiring MinRAM=2GB can run on any machine with 2GB or more
+            ramCond = f"( ram_req.TQId IS NULL OR {ram} >= ram_req.MinRAM )"
+            sqlCondList.append(ramCond)
+
         tag_fv = []
 
         # Match multi value fields
@@ -844,10 +930,14 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         if negativeCond:
             sqlCondList.append(self.__generateNotSQL(negativeCond))
 
-        # Generate the final query string
-        tqSqlCmd = "SELECT tq.TQId, tq.Owner, tq.OwnerGroup FROM `tq_TaskQueues` tq WHERE %s" % (
-            " AND ".join(sqlCondList)
-        )
+        # Generate the final query string with proper JOINs
+        fromClause = "`tq_TaskQueues` tq"
+
+        # Add LEFT JOIN for RAM requirements if needed
+        if "tq_RAM_requirements" in sqlTables:
+            fromClause += " LEFT JOIN `tq_RAM_requirements` ram_req ON tq.TQId = ram_req.TQId"
+
+        tqSqlCmd = "SELECT tq.TQId, tq.Owner, tq.OwnerGroup FROM %s WHERE %s" % (fromClause, " AND ".join(sqlCondList))
 
         # Apply priorities
         tqSqlCmd = f"{tqSqlCmd} ORDER BY RAND() / tq.Priority ASC"
@@ -994,6 +1084,12 @@ WHERE j.JobId = %s AND t.TQId = j.TQId"
                 retVal = self._update(f"DELETE FROM `tq_TQTo{mvField}` WHERE TQId = {tqId}", conn=connObj)
                 if not retVal["OK"]:
                     return retVal
+
+            # Delete RAM requirements if they exist
+            retVal = self._update(f"DELETE FROM `tq_RAM_requirements` WHERE TQId = {tqId}", conn=connObj)
+            if not retVal["OK"]:
+                return retVal
+
             retVal = self._update(f"DELETE FROM `tq_TaskQueues` WHERE TQId = {tqId}", conn=connObj)
             if not retVal["OK"]:
                 return retVal
@@ -1065,6 +1161,40 @@ WHERE j.JobId = %s AND t.TQId = j.TQId"
                     if field not in tqData[tqId]:
                         tqData[tqId][field] = []
                     tqData[tqId][field].append(value)
+
+        # Retrieve RAM requirements (if table exists)
+        # Note: The table should be auto-created by __initializeDB, but we check for safety
+        sqlCmd = "SELECT TQId, MinRAM, MaxRAM FROM `tq_RAM_requirements`"
+        if tqIdList is not None:
+            if tqIdList:
+                # Only retrieve RAM requirements for specific TQIds
+                sqlCmd += f" WHERE TQId IN ( {', '.join([str(id_) for id_ in tqIdList])} )"
+            # else: empty list was already handled earlier with fast-track return
+        retVal = self._query(sqlCmd)
+        if not retVal["OK"]:
+            # If table doesn't exist (e.g., old installation), log a warning but continue
+            # This provides backward compatibility
+            if "doesn't exist" in retVal["Message"] or "Table" in retVal["Message"]:
+                self.log.warn("RAM requirements table not found, skipping RAM data retrieval", retVal["Message"])
+            else:
+                self.log.error("Can't retrieve RAM requirements", retVal["Message"])
+                return retVal
+        else:
+            for record in retVal["Value"]:
+                tqId = record[0]
+                minRAM = record[1]
+                maxRAM = record[2]
+                if tqId not in tqData:
+                    if tqIdList is None or tqId in tqIdList:
+                        self.log.verbose(
+                            "Task Queue has RAM requirements but does not exist: triggering a cleaning",
+                            f"TQID: {tqId}",
+                        )
+                        tqNeedCleaning = True
+                else:
+                    tqData[tqId]["MinRAM"] = minRAM
+                    tqData[tqId]["MaxRAM"] = maxRAM
+
         if tqNeedCleaning:
             self.cleanOrphanedTaskQueues()
         return S_OK(tqData)

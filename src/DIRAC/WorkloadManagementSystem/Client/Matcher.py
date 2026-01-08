@@ -17,7 +17,11 @@ from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, multiValueMatchFields, singleValueDefFields
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import (
+    TaskQueueDB,
+    multiValueMatchFields,
+    singleValueDefFields,
+)
 
 
 class PilotVersionError(Exception):
@@ -69,8 +73,8 @@ class Matcher:
 
             # Make a nice print of the resource matching parameters
             toPrintDict = dict(resourceDict)
-            if "MaxRAM" in resourceDescription:
-                toPrintDict["MaxRAM"] = resourceDescription["MaxRAM"]
+            if "RAM" in resourceDict:
+                toPrintDict["RAM"] = resourceDict["RAM"]
             if "NumberOfProcessors" in resourceDescription:
                 toPrintDict["NumberOfProcessors"] = resourceDescription["NumberOfProcessors"]
             toPrintDict["Tag"] = []
@@ -167,11 +171,7 @@ class Matcher:
         """
 
         resourceDict = {}
-        for name in singleValueDefFields:
-            if name in resourceDescription:
-                resourceDict[name] = resourceDescription[name]
-
-        for name in multiValueMatchFields:
+        for name in singleValueDefFields + multiValueMatchFields + ["RAM"]:
             if name in resourceDescription:
                 resourceDict[name] = resourceDescription[name]
 
@@ -192,25 +192,18 @@ class Matcher:
         if "JobID" in resourceDescription:
             resourceDict["JobID"] = resourceDescription["JobID"]
 
-        # Convert MaxRAM and NumberOfProcessors parameters into a list of tags
-        maxRAM = resourceDescription.get("MaxRAM")
-        if maxRAM:
-            try:
-                maxRAM = int(maxRAM)
-            except ValueError:
-                maxRAM = None
+        # Convert NumberOfProcessors parameters into a list of tags
         nProcessors = resourceDescription.get("NumberOfProcessors")
         if nProcessors:
             try:
                 nProcessors = int(nProcessors)
             except ValueError:
                 nProcessors = None
-        for param, key, limit, increment in [(maxRAM, "MB", 1024 * 1024, 256), (nProcessors, "Processors", 1024, 1)]:
-            if param and param <= limit:
-                paramList = list(range(increment, param + increment, increment))
-                paramTags = ["%d%s" % (par, key) for par in paramList]
-                if paramTags:
-                    resourceDict.setdefault("Tag", []).extend(paramTags)
+        if nProcessors and nProcessors <= 1024:
+            paramList = list(range(1, nProcessors + 1, 1))
+            paramTags = ["%d%s" % (par, "Processors") for par in paramList]
+            if paramTags:
+                resourceDict.setdefault("Tag", []).extend(paramTags)
 
         # Add 'MultiProcessor' to the list of tags
         if nProcessors and nProcessors > 1:

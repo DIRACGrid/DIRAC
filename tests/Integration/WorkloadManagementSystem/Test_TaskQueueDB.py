@@ -1089,6 +1089,136 @@ def test_ComplexMatching():
         assert result["OK"]
 
 
+def test_chainWithRAM():
+    """put - remove with parameters including RAM requirements
+
+    Note: MinRAM is the minimum RAM required for matching (resource must have at least this)
+          MaxRAM is informational only, used after matching for scheduling/allocation decisions
+    """
+
+    # Job 1: MinRAM=2048, MaxRAM=8192 (requires at least 2GB for matching, may use up to 8GB)
+    tqDefDict = {
+        "Owner": "userName",
+        "OwnerGroup": "myGroup",
+        "CPUTime": 5000,
+        "MinRAM": 2048,
+        "MaxRAM": 8192,
+    }
+    result = tqDB.insertJob(301, tqDefDict, 10)
+    assert result["OK"]
+    result = tqDB.getTaskQueueForJob(301)
+    tq_job1 = result["Value"]
+    assert tq_job1 > 0
+
+    # Job 2: MinRAM=4096, MaxRAM=0 (requires at least 4GB, MaxRAM unknown/unspecified)
+    tqDefDict = {
+        "Owner": "userName",
+        "OwnerGroup": "myGroup",
+        "CPUTime": 5000,
+        "MinRAM": 4096,
+        "MaxRAM": 0,
+    }
+    result = tqDB.insertJob(302, tqDefDict, 10)
+    assert result["OK"]
+    result = tqDB.getTaskQueueForJob(302)
+    tq_job2 = result["Value"]
+    assert tq_job2 > tq_job1
+
+    # Job 3: No RAM requirements (can run on any RAM)
+    tqDefDict = {
+        "Owner": "userName",
+        "OwnerGroup": "myGroup",
+        "CPUTime": 5000,
+    }
+    result = tqDB.insertJob(303, tqDefDict, 10)
+    assert result["OK"]
+    result = tqDB.getTaskQueueForJob(303)
+    tq_job3 = result["Value"]
+    assert tq_job3 > tq_job2
+
+    # Job 4: MinRAM=1024, MaxRAM=2048 (requires at least 1GB, may use up to 2GB)
+    tqDefDict = {
+        "Owner": "userName",
+        "OwnerGroup": "myGroup",
+        "CPUTime": 5000,
+        "MinRAM": 1024,
+        "MaxRAM": 2048,
+    }
+    result = tqDB.insertJob(304, tqDefDict, 10)
+    assert result["OK"]
+    result = tqDB.getTaskQueueForJob(304)
+    tq_job4 = result["Value"]
+    assert tq_job4 > tq_job3
+
+    # Verify RAM requirements are stored correctly
+    result = tqDB.retrieveTaskQueues([tq_job1, tq_job2, tq_job3, tq_job4])
+    assert result["OK"]
+    tqData = result["Value"]
+    assert tqData[tq_job1]["MinRAM"] == 2048
+    assert tqData[tq_job1]["MaxRAM"] == 8192
+    assert tqData[tq_job2]["MinRAM"] == 4096
+    assert tqData[tq_job2]["MaxRAM"] == 0
+    assert "MinRAM" not in tqData[tq_job3]  # No RAM requirements
+    assert "MaxRAM" not in tqData[tq_job3]
+    assert tqData[tq_job4]["MinRAM"] == 1024
+    assert tqData[tq_job4]["MaxRAM"] == 2048
+
+    # Matching tests
+    # Remember: Matching is based on MinRAM only (resource_RAM >= MinRAM)
+
+    # Resource with 1536 MB RAM (1.5 GB)
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "RAM": 1536}, numQueuesToGet=5)
+    assert result["OK"]
+    res = {int(x[0]) for x in result["Value"]}
+    # Should match: tq_job3 (no requirement), tq_job4 (MinRAM=1024, 1536 >= 1024)
+    assert res == {tq_job3, tq_job4}
+
+    # Resource with 3072 MB RAM (3 GB)
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "RAM": 3072}, numQueuesToGet=5)
+    assert result["OK"]
+    res = {int(x[0]) for x in result["Value"]}
+    # Should match: tq_job1 (MinRAM=2048), tq_job3 (no requirement), tq_job4 (MinRAM=1024)
+    # tq_job2 has MinRAM=4096, so 3072 is not enough
+    assert res == {tq_job1, tq_job3, tq_job4}
+
+    # Resource with 6144 MB RAM (6 GB)
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "RAM": 6144}, numQueuesToGet=5)
+    assert result["OK"]
+    res = {int(x[0]) for x in result["Value"]}
+    # Should match: all jobs (6144 >= all MinRAM values: 2048, 4096, 0, 1024)
+    assert res == {tq_job1, tq_job2, tq_job3, tq_job4}
+
+    # Resource with 10240 MB RAM (10 GB)
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "RAM": 10240}, numQueuesToGet=5)
+    assert result["OK"]
+    res = {int(x[0]) for x in result["Value"]}
+    # Should match: all jobs (10GB is enough for all MinRAM requirements)
+    assert res == {tq_job1, tq_job2, tq_job3, tq_job4}
+
+    # Resource with 512 MB RAM
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "RAM": 512}, numQueuesToGet=5)
+    assert result["OK"]
+    res = {int(x[0]) for x in result["Value"]}
+    # Should only match: tq_job3 (no requirement) - 512MB is below all other MinRAM values
+    assert res == {tq_job3}
+
+    # No RAM specified in match (should match all)
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000}, numQueuesToGet=5)
+    assert result["OK"]
+    res = {int(x[0]) for x in result["Value"]}
+    # Should only match: tq_job3 (no requirement)
+    assert res == {tq_job1, tq_job2, tq_job3, tq_job4}
+
+    # Clean up
+    for jobID in [301, 302, 303, 304]:
+        result = tqDB.deleteJob(jobID)
+        assert result["OK"]
+
+    for tqID in [tq_job1, tq_job2, tq_job3, tq_job4]:
+        result = tqDB.deleteTaskQueueIfEmpty(tqID)
+        assert result["OK"]
+
+
 def test_TQ():
     """test of various functions"""
     tqDefDict = {"Owner": "userName", "OwnerGroup": "myGroup", "CPUTime": 50000}
