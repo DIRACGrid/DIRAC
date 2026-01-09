@@ -171,7 +171,7 @@ class Matcher:
         """
 
         resourceDict = {}
-        for name in singleValueDefFields + multiValueMatchFields + ["MaxRAM"]:
+        for name in singleValueDefFields + multiValueMatchFields + ("MaxRAM",):
             if name in resourceDescription:
                 resourceDict[name] = resourceDescription[name]
 
