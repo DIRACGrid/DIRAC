@@ -10,7 +10,6 @@ import json
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging
-from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
@@ -124,7 +123,7 @@ def createJobWrapper(
         "JobWrapperConfigPath": jobWrapperJsonFile,
         "JobWrapperPath": jobWrapperFile,
     }
-    if rootLocation != wrapperPath:
+    if rootLocation and rootLocation != wrapperPath:
         generatedFiles["JobExecutableRelocatedPath"] = os.path.join(rootLocation, os.path.basename(jobExeFile))
     return S_OK(generatedFiles)
 
@@ -143,27 +142,15 @@ def __createCWLJobWrapper(jobID, wrapperPath, log):
     if not Path(jobWrapperFile).is_file():
         return S_ERROR("Could not find the JobWrapper in the cloned repository")
 
-    # Get the job.json file
-    tmp = Path(wrapperPath) / f"tmp{jobID}"
-    rmtree(str(tmp), ignore_errors=True)
-    tmp.mkdir()
-    log.info("Downloading the input sandbox to get the JobWrapper json file")
-    ret = SandboxStoreClient().downloadSandboxForJob(jobId=jobID, sbType="Input", destinationPath=str(tmp))
-    if not ret["OK"]:
-        rmtree(str(tmp), ignore_errors=True)
-        return ret
-    jobWrapperJsonFile = tmp / "job.json"
-    if not jobWrapperJsonFile.is_file():
-        rmtree(str(tmp), ignore_errors=True)
-        return S_ERROR("job.json file not found")
-    jobWrapperJsonFile = str(jobWrapperJsonFile.replace(Path(wrapperPath) / f"Wrapper_{jobID}.json"))
-    rmtree(str(tmp), ignore_errors=True)
-
+    jobWrapperJsonFile = Path(wrapperPath) / f"InputSandbox{jobID}" / "job.json"
     # Create the executable file
     jobExeFile = os.path.join(wrapperPath, f"Job{jobID}")
     jobFileContents = f"""#!/bin/bash
 # Install pixi
 curl -fsSL https://pixi.sh/install.sh | bash
+pixi install --manifest-path {str(protoPath)}
+# Get json
+dirac-wms-job-get-input {jobID} -D {wrapperPath}
 # Run JobWrapper
 pixi run --manifest-path {str(protoPath)} python {jobWrapperFile} {jobWrapperJsonFile}
 """
