@@ -621,7 +621,7 @@ class ElasticSearchDB:
         if period.lower() == "day":
             suffix = todayUTC.strftime("%Y-%m-%d")
         elif period.lower() == "week":
-            suffix = todayUTC.isocalendar()[1]
+            suffix = f"{todayUTC.strftime('%Y')}-{todayUTC.isocalendar()[1]}"
         elif period.lower() == "month":
             suffix = todayUTC.strftime("%Y-%m")
         elif period.lower() == "year":
