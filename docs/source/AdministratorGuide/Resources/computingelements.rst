@@ -205,3 +205,12 @@ These can be specified in the CEDefaults section to apply a standardised slot si
       }
     }
   }
+
+Debugging Computing Element Issues
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+When troubleshooting Computing Element connectivity or job submission problems, you can use the
+`ce_test.py <../../../../tests/System/ce_test.py>`_ script to systematically test CE interactions.
+
+This script validates CE functionality by testing status retrieval, job submission, monitoring, and output collection.
+For detailed usage instructions, prerequisites, and examples, refer to the script's docstring.
