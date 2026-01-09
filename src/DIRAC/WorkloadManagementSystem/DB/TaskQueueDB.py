@@ -277,11 +277,11 @@ class TaskQueueDB(DB):
                     tqMatchDict[field] = result["Value"]
 
         # Check range value fields (RAM requirements for matching)
-        if "RAM" in tqMatchDict:
-            result = travelAndCheckType(tqMatchDict["RAM"], int, escapeValues=False)
+        if "MaxRAM" in tqMatchDict:
+            result = travelAndCheckType(tqMatchDict["MaxRAM"], int, escapeValues=False)
             if not result["OK"]:
                 return S_ERROR(f"Match definition field RAM failed : {result['Message']}")
-            tqMatchDict["RAM"] = result["Value"]
+            tqMatchDict["MaxRAM"] = result["Value"]
 
         return S_OK(tqMatchDict)
 
@@ -796,8 +796,8 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
             sqlCondList.append(self.__generateSQLSubCond("tq.%s <= %%s" % "CPUTime", tqMatchDict["CPUTime"]))
 
         # RAM matching logic
-        if "RAM" in tqMatchDict:
-            ram = tqMatchDict["RAM"]
+        if "MaxRAM" in tqMatchDict:
+            ram = tqMatchDict["MaxRAM"]
             # Join with tq_RAM_requirements table
             sqlTables["tq_RAM_requirements"] = "ram_req"
             # Match if:
@@ -937,7 +937,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         if "tq_RAM_requirements" in sqlTables:
             fromClause += " LEFT JOIN `tq_RAM_requirements` ram_req ON tq.TQId = ram_req.TQId"
 
-        tqSqlCmd = "SELECT tq.TQId, tq.Owner, tq.OwnerGroup FROM %s WHERE %s" % (fromClause, " AND ".join(sqlCondList))
+        tqSqlCmd = f"SELECT tq.TQId, tq.Owner, tq.OwnerGroup FROM {fromClause} WHERE {' AND '.join(sqlCondList)}"
 
         # Apply priorities
         tqSqlCmd = f"{tqSqlCmd} ORDER BY RAND() / tq.Priority ASC"

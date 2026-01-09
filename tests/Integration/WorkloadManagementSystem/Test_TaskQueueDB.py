@@ -1167,14 +1167,14 @@ def test_chainWithRAM():
     # Remember: Matching is based on MinRAM only (resource_RAM >= MinRAM)
 
     # Resource with 1536 MB RAM (1.5 GB)
-    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "RAM": 1536}, numQueuesToGet=5)
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "MaxRAM": 1536}, numQueuesToGet=5)
     assert result["OK"]
     res = {int(x[0]) for x in result["Value"]}
     # Should match: tq_job3 (no requirement), tq_job4 (MinRAM=1024, 1536 >= 1024)
     assert res == {tq_job3, tq_job4}
 
     # Resource with 3072 MB RAM (3 GB)
-    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "RAM": 3072}, numQueuesToGet=5)
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "MaxRAM": 3072}, numQueuesToGet=5)
     assert result["OK"]
     res = {int(x[0]) for x in result["Value"]}
     # Should match: tq_job1 (MinRAM=2048), tq_job3 (no requirement), tq_job4 (MinRAM=1024)
@@ -1182,21 +1182,21 @@ def test_chainWithRAM():
     assert res == {tq_job1, tq_job3, tq_job4}
 
     # Resource with 6144 MB RAM (6 GB)
-    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "RAM": 6144}, numQueuesToGet=5)
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "MaxRAM": 6144}, numQueuesToGet=5)
     assert result["OK"]
     res = {int(x[0]) for x in result["Value"]}
     # Should match: all jobs (6144 >= all MinRAM values: 2048, 4096, 0, 1024)
     assert res == {tq_job1, tq_job2, tq_job3, tq_job4}
 
     # Resource with 10240 MB RAM (10 GB)
-    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "RAM": 10240}, numQueuesToGet=5)
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "MaxRAM": 10240}, numQueuesToGet=5)
     assert result["OK"]
     res = {int(x[0]) for x in result["Value"]}
     # Should match: all jobs (10GB is enough for all MinRAM requirements)
     assert res == {tq_job1, tq_job2, tq_job3, tq_job4}
 
     # Resource with 512 MB RAM
-    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "RAM": 512}, numQueuesToGet=5)
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "MaxRAM": 512}, numQueuesToGet=5)
     assert result["OK"]
     res = {int(x[0]) for x in result["Value"]}
     # Should only match: tq_job3 (no requirement) - 512MB is below all other MinRAM values

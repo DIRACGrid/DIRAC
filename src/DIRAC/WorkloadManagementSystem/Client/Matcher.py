@@ -73,8 +73,8 @@ class Matcher:
 
             # Make a nice print of the resource matching parameters
             toPrintDict = dict(resourceDict)
-            if "RAM" in resourceDict:
-                toPrintDict["RAM"] = resourceDict["RAM"]
+            if "MaxRAM" in resourceDict:
+                toPrintDict["MaxRAM"] = resourceDict["MaxRAM"]
             if "NumberOfProcessors" in resourceDescription:
                 toPrintDict["NumberOfProcessors"] = resourceDescription["NumberOfProcessors"]
             toPrintDict["Tag"] = []
@@ -171,7 +171,7 @@ class Matcher:
         """
 
         resourceDict = {}
-        for name in singleValueDefFields + multiValueMatchFields + ["RAM"]:
+        for name in singleValueDefFields + multiValueMatchFields + ["MaxRAM"]:
             if name in resourceDescription:
                 resourceDict[name] = resourceDescription[name]
 
