@@ -1,11 +1,16 @@
-""" This object is a wrapper for setting and getting jobs states
-"""
+"""This object is a wrapper for setting and getting jobs states"""
+
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, multiValueDefFields, singleValueDefFields
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import (
+    TaskQueueDB,
+    multiValueDefFields,
+    singleValueDefFields,
+    rangeValueDefFields,
+)
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     RIGHT_CHANGE_STATUS,
     RIGHT_GET_INFO,
@@ -350,6 +355,10 @@ class JobState:
         for name in multiValueDefFields:
             if name in reqCfg:
                 jobReqDict[name] = reqCfg.getOption(name, [])
+
+        for name in rangeValueDefFields:
+            if name in reqCfg:
+                jobReqDict[name] = int(reqCfg[name])
 
         jobPriority = reqCfg.getOption("UserPriority", 1)
 

@@ -249,7 +249,7 @@ class JobScheduling(OptimizerExecutor):
 
         # Get stageSites[0] because it has already been randomized and it's as good as any in stageSites
         stageSite = stageSites[0]
-        self.jobLog.verbose(" Staging site will be", stageSite)
+        self.jobLog.verbose("Staging site will be", stageSite)
         stageData = idSites[stageSite]
         # Set as if everything has already been staged
         stageData["disk"] += stageData["tape"]
@@ -351,12 +351,6 @@ class JobScheduling(OptimizerExecutor):
                 tagList.append("WholeNode")
                 tagList.append("MultiProcessor")
 
-        # sorting out the RAM (this should be probably coded ~same as number of processors)
-        if "MaxRAM" in jobManifest:
-            maxRAM = jobManifest.getOption("MaxRAM", 0)
-            if maxRAM:
-                tagList.append(f"{maxRAM}MB")
-
         # other tags? Just add them
         if "Tags" in jobManifest:
             tagList.extend(jobManifest.getOption("Tags", []))
@@ -391,7 +385,7 @@ class JobScheduling(OptimizerExecutor):
 
         # Job multivalue requirement keys are specified as singles in the job descriptions
         # but for backward compatibility can be also plurals
-        for key in ("JobType", "GridRequiredCEs", "GridCE", "Tags"):
+        for key in ("JobType", "GridRequiredCEs", "GridCE", "MinRAM", "MaxRAM", "Tags"):
             reqKey = key
             if key == "JobType":
                 reqKey = "JobTypes"
