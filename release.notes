@@ -1,3 +1,61 @@
+[v9.0.15]
+
+*DIRAC
+
+FIX: (#8421) Fix default InputDataModule path in dirac.cfg
+
+*Core
+
+CHANGE: (#8419) the weekly index for OpenSearch uses also the year as a prefix
+FIX: (#8405) rootPath for server installation can be a random string, followed by a timestamp
+
+*RequestManagementSystem
+
+CHANGE: (#8418) just ignore a shifter if we cannot get a matching proxy
+
+*Resources
+
+FIX: (#8417) SLURM getCEStatus last empty line
+FIX: (#8412) add further details when time left cannot be obtained
+FIX: (#8408) PoolComputingElement: fix: do not set a fictional ram limit, use 0 for no-limit
+FIX: (#8406) adding basic RAM capabilities to InProcessCE
+CHANGE: (#8404) improve getReplicas performances by sorting LFNs
+CHANGE: (#8332) set default time for gfal operations
+
+*WorkloadManagementSystem
+
+NEW: (#8414) added a new table to TaskQueueDB for RAM requirements and matching
+NEW: (#8366) InProcessComputingElement takes RAM requirements into consideration for jobs' matching
+NEW: (#8366) PoolComputingElement takes RAM requirements into consideration when subdividing the pool
+NEW: (#8366) SingularityComputingElement can enforce CG2 RAM limits
+
+*DataManagementSystem
+
+FIX: (#8413) check properly if an FTS error is recoverable
+FIX: (#8410) Only submit FTS job with tokens if all hop support tokens
+CHANGE: (#8402) batch getReplicas at the FileCatalogClient level instead of at the DM level for speedup
+
+*Interfaces
+
+FIX: (#8409) inputDataPolicy should not change the inputDataModule but set a parameter inside the arguments.
+CHANGE: (#8407) Dirac().getInputDataCatalog - allow changing the inputDataPolicy
+
+*TransformationSystem
+
+CHANGE: (#8404) TransformationAgent does not bulk calls to dm.getReplicas
+
+*FrameworkSystem
+
+CHANGE: (#8403) (SystemAdministrator): add the possibility to install non-released software versions
+
+*WorkloadManagement
+
+NEW: (#8399) ability to adjust job wrapper log level
+
+*CSAPI
+
+FIX: (#8398) Have CSAPI return AffiliationEnds if existing
+
 [v9.0.14]
 
 
