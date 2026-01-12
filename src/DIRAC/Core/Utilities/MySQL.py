@@ -903,6 +903,21 @@ class MySQL:
                     return createView
         return S_OK()
 
+    def _parseForeignKeyReference(self, auxTable, defaultKey):
+        """
+        Parse foreign key reference in format 'Table' or 'Table.key'
+
+        :param str auxTable: Foreign key reference (e.g., 'MyTable' or 'MyTable.id')
+        :param str defaultKey: Default key name if not specified in auxTable
+        :return: tuple (table_name, key_name)
+        """
+        if "." in auxTable:
+            parts = auxTable.split(".", 1)
+            if len(parts) != 2:
+                raise ValueError(f"Invalid foreign key reference format: {auxTable}")
+            return parts[0], parts[1]
+        return auxTable, defaultKey
+
     def _createTables(self, tableDict, force=False):
         """
         tableDict:
@@ -957,30 +972,37 @@ class MySQL:
             if "Fields" not in thisTable:
                 return S_ERROR(DErrno.EMYSQL, f"Missing `Fields` key in `{table}` table dictionary")
 
-        tableCreationList = [[]]
-
+        # Build dependency-ordered list of tables to create
+        # Tables with foreign keys must be created after their referenced tables
+        tableCreationList = []
         auxiliaryTableList = []
 
-        i = 0
+        # Get list of existing tables in the database to handle migrations
+        existingTablesResult = self._query("SHOW TABLES")
+        if not existingTablesResult["OK"]:
+            return existingTablesResult
+        existingTables = [t[0] for t in existingTablesResult["Value"]]
+
         extracted = True
         while tableList and extracted:
             # iterate extracting tables from list if they only depend on
             # already extracted tables.
             extracted = False
-            auxiliaryTableList += tableCreationList[i]
-            i += 1
-            tableCreationList.append([])
+            currentLevelTables = []
+
             for table in list(tableList):
                 toBeExtracted = True
                 thisTable = tableDict[table]
                 if "ForeignKeys" in thisTable:
                     thisKeys = thisTable["ForeignKeys"]
                     for key, auxTable in thisKeys.items():
-                        forTable = auxTable.split(".")[0]
-                        forKey = key
-                        if forTable != auxTable:
-                            forKey = auxTable.split(".")[1]
-                        if forTable not in auxiliaryTableList:
+                        try:
+                            forTable, forKey = self._parseForeignKeyReference(auxTable, key)
+                        except ValueError as e:
+                            return S_ERROR(DErrno.EMYSQL, str(e))
+
+                        # Check if the referenced table is either being created or already exists
+                        if forTable not in auxiliaryTableList and forTable not in existingTables:
                             toBeExtracted = False
                             break
                         if key not in thisTable["Fields"]:
@@ -988,24 +1010,29 @@ class MySQL:
                                 DErrno.EMYSQL,
                                 f"ForeignKey `{key}` -> `{forKey}` not defined in Primary table `{table}`.",
                             )
-                        if forKey not in tableDict[forTable]["Fields"]:
+                        # Only validate field existence if the referenced table is in tableDict
+                        if forTable in tableDict and forKey not in tableDict[forTable]["Fields"]:
                             return S_ERROR(
                                 DErrno.EMYSQL,
-                                "ForeignKey `%s` -> `%s` not defined in Auxiliary table `%s`."
-                                % (key, forKey, forTable),
+                                f"ForeignKey `{key}` -> `{forKey}` not defined in Auxiliary table `{forTable}`.",
                             )
 
                 if toBeExtracted:
                     # self.log.debug('Table %s ready to be created' % table)
                     extracted = True
                     tableList.remove(table)
-                    tableCreationList[i].append(table)
+                    currentLevelTables.append(table)
+
+            if currentLevelTables:
+                tableCreationList.append(currentLevelTables)
+                auxiliaryTableList.extend(currentLevelTables)
 
         if tableList:
             return S_ERROR(DErrno.EMYSQL, f"Recursive Foreign Keys in {', '.join(tableList)}")
 
-        for tableList in tableCreationList:
-            for table in tableList:
+        # Create tables level by level
+        for levelTables in tableCreationList:
+            for table in levelTables:
                 # Check if Table exist
                 retDict = self.__checkTable(table, force=force)
                 if not retDict["OK"]:
@@ -1035,18 +1062,17 @@ class MySQL:
                     for index in indexDict:
                         indexedFields = "`, `".join(indexDict[index])
                         cmdList.append(f"UNIQUE INDEX `{index}` ( `{indexedFields}` )")
+
                 if "ForeignKeys" in thisTable:
                     thisKeys = thisTable["ForeignKeys"]
                     for key, auxTable in thisKeys.items():
-                        forTable = auxTable.split(".")[0]
-                        forKey = key
-                        if forTable != auxTable:
-                            forKey = auxTable.split(".")[1]
+                        try:
+                            forTable, forKey = self._parseForeignKeyReference(auxTable, key)
+                        except ValueError as e:
+                            return S_ERROR(DErrno.EMYSQL, str(e))
 
-                        # cmdList.append( '`%s` %s' % ( forTable, tableDict[forTable]['Fields'][forKey] )
                         cmdList.append(
-                            "FOREIGN KEY ( `%s` ) REFERENCES `%s` ( `%s` )"
-                            " ON DELETE RESTRICT" % (key, forTable, forKey)
+                            f"FOREIGN KEY ( `{key}` ) REFERENCES `{forTable}` ( `{forKey}` ) ON DELETE RESTRICT"
                         )
 
                 engine = thisTable.get("Engine", "InnoDB")
@@ -1058,7 +1084,7 @@ class MySQL:
                     engine,
                     charset,
                 )
-                retDict = self._transaction([cmd])
+                retDict = self._update(cmd)
                 if not retDict["OK"]:
                     return retDict
                 # self.log.debug('Table %s created' % table)
