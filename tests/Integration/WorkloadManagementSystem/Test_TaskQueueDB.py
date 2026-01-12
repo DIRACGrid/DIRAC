@@ -23,14 +23,67 @@ gLogger.setLevel("DEBUG")
 tqDB = TaskQueueDB()
 
 
-def test_basiChain():
+import pytest
+
+
+@pytest.fixture
+def tq_cleanup():
+    """
+    Fixture to track and cleanup task queues and jobs after test completion.
+
+    Returns:
+        tuple: (jobs_to_delete: list, tqs_to_delete: list)
+        Tests should append job IDs and TQ IDs to these lists as they create them.
+
+    Example:
+        def test_something(tq_cleanup):
+            jobs, tqs = tq_cleanup
+
+            result = tqDB.insertJob(123, tqDefDict, 10)
+            jobs.append(123)
+
+            result = tqDB.getTaskQueueForJob(123)
+            tq = result["Value"]
+            tqs.append(tq)
+
+            # Test assertions...
+            # Cleanup happens automatically even if assertions fail
+    """
+    jobs_to_delete = []
+    tqs_to_delete = []
+
+    yield (jobs_to_delete, tqs_to_delete)
+
+    # Cleanup phase - runs even if test fails
+    gLogger.debug(f"Cleaning up {len(jobs_to_delete)} jobs and {len(set(tqs_to_delete))} task queues")
+
+    # Delete jobs first
+    for job_id in jobs_to_delete:
+        result = tqDB.deleteJob(job_id)
+        if not result["OK"]:
+            gLogger.error(f"Failed to cleanup job {job_id}: {result.get('Message', 'Unknown error')}")
+
+    # Delete task queues (use set to avoid duplicates)
+    for tq_id in set(tqs_to_delete):
+        result = tqDB.deleteTaskQueueIfEmpty(tq_id)
+        if not result["OK"]:
+            gLogger.error(f"Failed to cleanup task queue {tq_id}: {result.get('Message', 'Unknown error')}")
+
+
+def test_basiChain(tq_cleanup):
     """a basic put - remove"""
+    jobs, tqs = tq_cleanup
+
     tqDefDict = {"Owner": "userName", "OwnerGroup": "myGroup", "CPUTime": 50000}
     result = tqDB.insertJob(123, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(123)
+
     result = tqDB.getTaskQueueForJob(123)
     assert result["OK"]
     tq = result["Value"]
+    tqs.append(tq)
+
     result = tqDB.deleteJob(123)
     assert result["OK"]
     result = tqDB.cleanOrphanedTaskQueues()
@@ -39,16 +92,21 @@ def test_basiChain():
     assert result["OK"]
 
 
-def test_chainWithParameter():
+def test_chainWithParameter(tq_cleanup):
     """put - remove with parameters"""
+    jobs, tqs = tq_cleanup
+
     tqDefDict = {"Owner": "userName", "OwnerGroup": "myGroup", "CPUTime": 50000}
 
     # first job
     result = tqDB.insertJob(123, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(123)
+
     result = tqDB.getTaskQueueForJob(123)
     assert result["OK"]
     tq = result["Value"]
+    tqs.append(tq)
 
     result = tqDB.cleanOrphanedTaskQueues()
     assert result["OK"]
@@ -58,8 +116,12 @@ def test_chainWithParameter():
     # second job
     result = tqDB.insertJob(125, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(125)
+
     result = tqDB.getTaskQueueForJob(125)
     tq = result["Value"]
+    tqs.append(tq)
+
     result = tqDB.deleteTaskQueueIfEmpty(tq)  # this won't delete anything, as both 123 and 125 are in
     assert result["OK"]  # but still it won't fail
     assert result["Value"] is False
@@ -77,8 +139,10 @@ def test_chainWithParameter():
     assert result["OK"]
 
 
-def test_chainWithSites():
+def test_chainWithSites(tq_cleanup):
     """put - remove with parameters including sites"""
+    jobs, tqs = tq_cleanup
+
     tqDefDict = {
         "Owner": "userName",
         "OwnerGroup": "myGroup",
@@ -87,13 +151,19 @@ def test_chainWithSites():
     }
     result = tqDB.insertJob(201, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(201)
+
     result = tqDB.getTaskQueueForJob(201)
     tq_job1 = result["Value"]
+    tqs.append(tq_job1)
 
     result = tqDB.insertJob(2011, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(2011)
+
     result = tqDB.getTaskQueueForJob(2011)
     tq_job11 = result["Value"]
+    tqs.append(tq_job11)
 
     tqDefDict = {
         "Owner": "userName",
@@ -103,8 +173,11 @@ def test_chainWithSites():
     }
     result = tqDB.insertJob(203, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(203)
+
     result = tqDB.getTaskQueueForJob(203)
     tq_job2 = result["Value"]
+    tqs.append(tq_job2)
 
     tqDefDict = {
         "Owner": "userName",
@@ -114,8 +187,10 @@ def test_chainWithSites():
     }
     result = tqDB.insertJob(203, tqDefDict, 10)
     assert result["OK"]
+
     result = tqDB.getTaskQueueForJob(203)
     tq_job3 = result["Value"]
+    tqs.append(tq_job3)
 
     # matching
     # this should match everything
@@ -151,8 +226,10 @@ def test_chainWithSites():
         assert result["OK"]
 
 
-def test_chainWithBannedSites():
+def test_chainWithBannedSites(tq_cleanup):
     """put - remove with parameters including Banned sites"""
+    jobs, tqs = tq_cleanup
+
     tqDefDict = {
         "Owner": "userName",
         "OwnerGroup": "myGroup",
@@ -161,8 +238,11 @@ def test_chainWithBannedSites():
     }
     result = tqDB.insertJob(127, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(127)
+
     result = tqDB.getTaskQueueForJob(127)
     tq_job1 = result["Value"]
+    tqs.append(tq_job1)
 
     tqDefDict = {
         "Owner": "userName",
@@ -172,8 +252,11 @@ def test_chainWithBannedSites():
     }
     result = tqDB.insertJob(128, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(128)
+
     result = tqDB.getTaskQueueForJob(128)
     tq_job2 = result["Value"]
+    tqs.append(tq_job2)
 
     # matching
     # this should match everything
@@ -225,8 +308,9 @@ def test_chainWithBannedSites():
     assert tqId not in result["Value"]
 
 
-def test_chainWithPlatforms():
+def test_chainWithPlatforms(tq_cleanup):
     """put - remove with parameters including a platform"""
+    jobs, tqs = tq_cleanup
 
     # We'll try the following case
     #
@@ -244,14 +328,20 @@ def test_chainWithPlatforms():
     }
     result = tqDB.insertJob(1, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(1)
+
     result = tqDB.getTaskQueueForJob(1)
     tq_job1 = result["Value"]
+    tqs.append(tq_job1)
     assert tq_job1 > 0
 
     result = tqDB.insertJob(2, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(2)
+
     result = tqDB.getTaskQueueForJob(2)
     tq_job2 = result["Value"]
+    tqs.append(tq_job2)
     assert tq_job1 == tq_job2
 
     tqDefDict = {
@@ -262,8 +352,11 @@ def test_chainWithPlatforms():
     }
     result = tqDB.insertJob(3, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(3)
+
     result = tqDB.getTaskQueueForJob(3)
     tq_job3 = result["Value"]
+    tqs.append(tq_job3)
     assert tq_job3 == tq_job1 + 1
 
     tqDefDict = {
@@ -274,8 +367,11 @@ def test_chainWithPlatforms():
     }
     result = tqDB.insertJob(4, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(4)
+
     result = tqDB.getTaskQueueForJob(4)
     tq_job4 = result["Value"]
+    tqs.append(tq_job4)
     assert tq_job4 == tq_job3 + 1
 
     tqDefDict = {
@@ -286,8 +382,11 @@ def test_chainWithPlatforms():
     }
     result = tqDB.insertJob(5, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(5)
+
     result = tqDB.getTaskQueueForJob(5)
     tq_job5 = result["Value"]
+    tqs.append(tq_job5)
     assert tq_job5 == tq_job4 + 1
 
     # We should be in this situation (TQIds are obviously invented):
@@ -358,8 +457,11 @@ def test_chainWithPlatforms():
     tqDefDict = {"Owner": "userName", "OwnerGroup": "myGroup", "CPUTime": 5000}
     result = tqDB.insertJob(6, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(6)
+
     result = tqDB.getTaskQueueForJob(6)
     tq_job6 = result["Value"]
+    tqs.append(tq_job6)
     assert tq_job6 == tq_job5 + 1
 
     # matching for this one
@@ -414,8 +516,11 @@ def test_chainWithPlatforms():
     tqDefDict = {"Owner": "userName", "OwnerGroup": "myGroup", "CPUTime": 5000, "Platform": "ANY"}
     result = tqDB.insertJob(7, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(7)
+
     result = tqDB.getTaskQueueForJob(7)
     tq_job7 = result["Value"]
+    tqs.append(tq_job7)
     assert tq_job7 == tq_job6  # would be inserted in the same TQ
 
     # matching for this one
@@ -456,17 +561,10 @@ def test_chainWithPlatforms():
     # but here it returns only 1 (those for ANY), by construction
     # so, this should be in theory improved
 
-    for jobId in range(1, 8):
-        result = tqDB.deleteJob(jobId)
-        assert result["OK"]
 
-    for tqId in [tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6, tq_job7]:
-        result = tqDB.deleteTaskQueueIfEmpty(tqId)
-        assert result["OK"]
-
-
-def test_chainWithTags():
+def test_chainWithTags(tq_cleanup):
     """put - remove with parameters including one or more Tag(s) and/or RequiredTag(s)"""
+    jobs, tqs = tq_cleanup
 
     # We'll try the following case
     #
@@ -488,8 +586,11 @@ def test_chainWithTags():
     }
     result = tqDB.insertJob(1, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(1)
+
     result = tqDB.getTaskQueueForJob(1)
     tq_job1 = result["Value"]
+    tqs.append(tq_job1)
     assert tq_job1 > 0
 
     tqDefDict = {
@@ -500,8 +601,11 @@ def test_chainWithTags():
     }
     result = tqDB.insertJob(2, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(2)
+
     result = tqDB.getTaskQueueForJob(2)
     tq_job2 = result["Value"]
+    tqs.append(tq_job2)
     assert tq_job2 > tq_job1
 
     tqDefDict = {
@@ -512,8 +616,11 @@ def test_chainWithTags():
     }
     result = tqDB.insertJob(3, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(3)
+
     result = tqDB.getTaskQueueForJob(3)
     tq_job3 = result["Value"]
+    tqs.append(tq_job3)
     assert tq_job3 > tq_job2
 
     tqDefDict = {
@@ -524,15 +631,21 @@ def test_chainWithTags():
     }
     result = tqDB.insertJob(4, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(4)
+
     result = tqDB.getTaskQueueForJob(4)
     tq_job4 = result["Value"]
+    tqs.append(tq_job4)
     assert tq_job4 > tq_job3
 
     tqDefDict = {"Owner": "userName", "OwnerGroup": "myGroup", "CPUTime": 5000}
     result = tqDB.insertJob(5, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(5)
+
     result = tqDB.getTaskQueueForJob(5)
     tq_job5 = result["Value"]
+    tqs.append(tq_job5)
     assert tq_job5 > tq_job4
 
     tqDefDict = {
@@ -543,8 +656,11 @@ def test_chainWithTags():
     }
     result = tqDB.insertJob(6, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(6)
+
     result = tqDB.getTaskQueueForJob(6)
     tq_job6 = result["Value"]
+    tqs.append(tq_job6)
     assert tq_job6 > tq_job5
 
     # We should be in this situation (TQIds are obviously invented):
@@ -577,7 +693,7 @@ def test_chainWithTags():
 
     # Matching
 
-    # Matching Everything with Tag = "ANY"
+    # Matching Everything with Tag = ""
     result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "Tag": "ANY"}, numQueuesToGet=6)
     assert result["OK"]
     # this should match whatever
@@ -682,22 +798,14 @@ def test_chainWithTags():
     res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job6}
 
-    # NumberOfProcessors and MaxRAM
-    # This is translated to "#Processors" by the SiteDirector
+    # This is translated to "#Processors" by the Matcher
     result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "Tag": "4Processors"}, numQueuesToGet=4)
     assert result["OK"]
 
-    for jobId in range(1, 8):
-        result = tqDB.deleteJob(jobId)
-        assert result["OK"]
 
-    for tqId in [tq_job1, tq_job2, tq_job3, tq_job4, tq_job5, tq_job6]:
-        result = tqDB.deleteTaskQueueIfEmpty(tqId)
-        assert result["OK"]
-
-
-def test_chainWithTagsAndPlatforms():
+def test_chainWithTagsAndPlatforms(tq_cleanup):
     """put - remove with parameters including one or more Tag(s) and platforms"""
+    jobs, tqs = tq_cleanup
 
     # platform only
     tqDefDict = {
@@ -708,8 +816,11 @@ def test_chainWithTagsAndPlatforms():
     }
     result = tqDB.insertJob(1, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(1)
+
     result = tqDB.getTaskQueueForJob(1)
     tq_job1 = result["Value"]
+    tqs.append(tq_job1)
     assert tq_job1 > 0
 
     # Tag only
@@ -721,8 +832,11 @@ def test_chainWithTagsAndPlatforms():
     }
     result = tqDB.insertJob(2, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(2)
+
     result = tqDB.getTaskQueueForJob(2)
     tq_job2 = result["Value"]
+    tqs.append(tq_job2)
     assert tq_job2 > tq_job1
 
     # Platforms and Tag
@@ -735,8 +849,11 @@ def test_chainWithTagsAndPlatforms():
     }
     result = tqDB.insertJob(3, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(3)
+
     result = tqDB.getTaskQueueForJob(3)
     tq_job3 = result["Value"]
+    tqs.append(tq_job3)
     assert tq_job3 > tq_job2
 
     # Tag and another platform
@@ -749,8 +866,11 @@ def test_chainWithTagsAndPlatforms():
     }
     result = tqDB.insertJob(4, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(4)
+
     result = tqDB.getTaskQueueForJob(4)
     tq_job4 = result["Value"]
+    tqs.append(tq_job4)
     assert tq_job4 > tq_job3
 
     # We should be in this situation (TQIds are obviously invented):
@@ -813,16 +933,8 @@ def test_chainWithTagsAndPlatforms():
     res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job1, tq_job2, tq_job3}
 
-    for jobId in range(1, 8):
-        result = tqDB.deleteJob(jobId)
-        assert result["OK"]
 
-    for tqId in [tq_job1, tq_job2, tq_job3, tq_job4]:
-        result = tqDB.deleteTaskQueueIfEmpty(tqId)
-        assert result["OK"]
-
-
-def test_ComplexMatching():
+def test_ComplexMatching(tq_cleanup):
     """test of a complex (realistic) matching. Something like:
 
     {'NumberOfProcessors': 1,
@@ -834,6 +946,7 @@ def test_ComplexMatching():
     'Tag': [],
     'CPUTime': 9999999}
     """
+    jobs, tqs = tq_cleanup
 
     # Let's first insert few jobs (no tags, for now, and always a platform)
 
@@ -846,8 +959,11 @@ def test_ComplexMatching():
     }
     result = tqDB.insertJob(1, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(1)
+
     result = tqDB.getTaskQueueForJob(1)
     tq_job1 = result["Value"]
+    tqs.append(tq_job1)
 
     tqDefDict = {
         "Owner": "userName",
@@ -858,8 +974,11 @@ def test_ComplexMatching():
     }
     result = tqDB.insertJob(2, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(2)
+
     result = tqDB.getTaskQueueForJob(2)
     tq_job2 = result["Value"]
+    tqs.append(tq_job2)
 
     tqDefDict = {
         "Owner": "userName",
@@ -870,8 +989,11 @@ def test_ComplexMatching():
     }
     result = tqDB.insertJob(3, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(3)
+
     result = tqDB.getTaskQueueForJob(3)
     tq_job3 = result["Value"]
+    tqs.append(tq_job3)
 
     tqDefDict = {
         "Owner": "userName",
@@ -882,8 +1004,11 @@ def test_ComplexMatching():
     }
     result = tqDB.insertJob(4, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(4)
+
     result = tqDB.getTaskQueueForJob(4)
     tq_job4 = result["Value"]
+    tqs.append(tq_job4)
 
     # now let's try some matching
 
@@ -1010,8 +1135,11 @@ def test_ComplexMatching():
     }
     result = tqDB.insertJob(5, tqDefDict, 10)
     assert result["OK"]
+    jobs.append(5)
+
     result = tqDB.getTaskQueueForJob(5)
     tq_job5 = result["Value"]
+    tqs.append(tq_job5)
 
     result = tqDB.matchAndGetTaskQueue(
         {
@@ -1081,19 +1209,148 @@ def test_ComplexMatching():
     res = {int(x[0]) for x in result["Value"]}
     assert res == {tq_job4, tq_job5}
 
-    for jobId in range(1, 8):
-        result = tqDB.deleteJob(jobId)
-        assert result["OK"]
 
-    for tqId in [tq_job1, tq_job2, tq_job3, tq_job4, tq_job5]:
-        result = tqDB.deleteTaskQueueIfEmpty(tqId)
-        assert result["OK"]
+def test_chainWithRAM(tq_cleanup):
+    """put - remove with parameters including RAM requirements
+
+    Note: MinRAM is the minimum RAM required for matching (resource must have at least this)
+          MaxRAM is informational only, used after matching for scheduling/allocation decisions
+    """
+    jobs, tqs = tq_cleanup
+
+    # Job 1: MinRAM=2048, MaxRAM=8192 (requires at least 2GB for matching, may use up to 8GB)
+    tqDefDict = {
+        "Owner": "userName",
+        "OwnerGroup": "myGroup",
+        "CPUTime": 5000,
+        "MinRAM": 2048,
+        "MaxRAM": 8192,
+    }
+    result = tqDB.insertJob(301, tqDefDict, 10)
+    assert result["OK"]
+    jobs.append(301)
+
+    result = tqDB.getTaskQueueForJob(301)
+    tq_job1 = result["Value"]
+    tqs.append(tq_job1)
+    assert tq_job1 > 0
+
+    # Job 2: MinRAM=4096, MaxRAM=0 (requires at least 4GB, MaxRAM unknown/unspecified)
+    tqDefDict = {
+        "Owner": "userName",
+        "OwnerGroup": "myGroup",
+        "CPUTime": 5000,
+        "MinRAM": 4096,
+        "MaxRAM": 0,
+    }
+    result = tqDB.insertJob(302, tqDefDict, 10)
+    assert result["OK"]
+    jobs.append(302)
+
+    result = tqDB.getTaskQueueForJob(302)
+    tq_job2 = result["Value"]
+    tqs.append(tq_job2)
+    assert tq_job2 > tq_job1
+
+    # Job 3: No RAM requirements (can run on any RAM)
+    tqDefDict = {
+        "Owner": "userName",
+        "OwnerGroup": "myGroup",
+        "CPUTime": 5000,
+    }
+    result = tqDB.insertJob(303, tqDefDict, 10)
+    assert result["OK"]
+    jobs.append(303)
+
+    result = tqDB.getTaskQueueForJob(303)
+    tq_job3 = result["Value"]
+    tqs.append(tq_job3)
+    assert tq_job3 > tq_job2
+
+    # Job 4: MinRAM=1024, MaxRAM=2048 (requires at least 1GB, may use up to 2GB)
+    tqDefDict = {
+        "Owner": "userName",
+        "OwnerGroup": "myGroup",
+        "CPUTime": 5000,
+        "MinRAM": 1024,
+        "MaxRAM": 2048,
+    }
+    result = tqDB.insertJob(304, tqDefDict, 10)
+    assert result["OK"]
+    jobs.append(304)
+
+    result = tqDB.getTaskQueueForJob(304)
+    tq_job4 = result["Value"]
+    tqs.append(tq_job4)
+    assert tq_job4 > tq_job3
+
+    # Verify RAM requirements are stored correctly
+    result = tqDB.retrieveTaskQueues([tq_job1, tq_job2, tq_job3, tq_job4])
+    assert result["OK"]
+    tqData = result["Value"]
+    assert tqData[tq_job1]["MinRAM"] == 2048
+    assert tqData[tq_job1]["MaxRAM"] == 8192
+    assert tqData[tq_job2]["MinRAM"] == 4096
+    assert tqData[tq_job2]["MaxRAM"] == 0
+    assert "MinRAM" not in tqData[tq_job3]  # No RAM requirements
+    assert "MaxRAM" not in tqData[tq_job3]
+    assert tqData[tq_job4]["MinRAM"] == 1024
+    assert tqData[tq_job4]["MaxRAM"] == 2048
+
+    # Matching tests
+    # Remember: Matching is based on MinRAM only (resource_RAM >= MinRAM)
+
+    # Resource with 1536 MB RAM (1.5 GB)
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "MaxRAM": 1536}, numQueuesToGet=5)
+    assert result["OK"]
+    res = {int(x[0]) for x in result["Value"]}
+    # Should match: tq_job3 (no requirement), tq_job4 (MinRAM=1024, 1536 >= 1024)
+    assert res == {tq_job3, tq_job4}
+
+    # Resource with 3072 MB RAM (3 GB)
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "MaxRAM": 3072}, numQueuesToGet=5)
+    assert result["OK"]
+    res = {int(x[0]) for x in result["Value"]}
+    # Should match: tq_job1 (MinRAM=2048), tq_job3 (no requirement), tq_job4 (MinRAM=1024)
+    # tq_job2 has MinRAM=4096, so 3072 is not enough
+    assert res == {tq_job1, tq_job3, tq_job4}
+
+    # Resource with 6144 MB RAM (6 GB)
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "MaxRAM": 6144}, numQueuesToGet=5)
+    assert result["OK"]
+    res = {int(x[0]) for x in result["Value"]}
+    # Should match: all jobs (6144 >= all MinRAM values: 2048, 4096, 0, 1024)
+    assert res == {tq_job1, tq_job2, tq_job3, tq_job4}
+
+    # Resource with 10240 MB RAM (10 GB)
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "MaxRAM": 10240}, numQueuesToGet=5)
+    assert result["OK"]
+    res = {int(x[0]) for x in result["Value"]}
+    # Should match: all jobs (10GB is enough for all MinRAM requirements)
+    assert res == {tq_job1, tq_job2, tq_job3, tq_job4}
+
+    # Resource with 512 MB RAM
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000, "MaxRAM": 512}, numQueuesToGet=5)
+    assert result["OK"]
+    res = {int(x[0]) for x in result["Value"]}
+    # Should only match: tq_job3 (no requirement) - 512MB is below all other MinRAM values
+    assert res == {tq_job3}
+
+    # No RAM specified in match (should match all)
+    result = tqDB.matchAndGetTaskQueue({"CPUTime": 50000}, numQueuesToGet=5)
+    assert result["OK"]
+    res = {int(x[0]) for x in result["Value"]}
+    # Should only match: tq_job3 (no requirement)
+    assert res == {tq_job1, tq_job2, tq_job3, tq_job4}
 
 
-def test_TQ():
+def test_TQ(tq_cleanup):
     """test of various functions"""
+    jobs, tqs = tq_cleanup
+
     tqDefDict = {"Owner": "userName", "OwnerGroup": "myGroup", "CPUTime": 50000}
     tqDB.insertJob(123, tqDefDict, 10)
+    jobs.append(123)
 
     result = tqDB.retrieveTaskQueues()
     assert result["OK"]
@@ -1115,6 +1372,7 @@ def test_TQ():
     assert result["Value"]["matchFound"] is True
     assert result["Value"]["jobId"] in [123, 125]
     tq = result["Value"]["taskQueueId"]
+    tqs.append(tq)
 
     result = tqDB.deleteTaskQueueIfEmpty(tq)
     assert result["OK"]
