@@ -2,7 +2,7 @@
 """
 import os
 from pathlib import Path
-from shutil import rmtree
+from glob import glob
 import subprocess
 import sys
 import json
@@ -137,10 +137,10 @@ def __createCWLJobWrapper(jobID, wrapperPath, log):
         subprocess.run(["git", "clone", "https://github.com/aldbr/dirac-cwl-proto.git", str(protoPath)], check=True)
     except subprocess.CalledProcessError:
         return S_ERROR("Failed to clone the JobWrapper repository")
-
-    jobWrapperFile = os.path.join(str(protoPath), "src", "dirac_cwl_proto", "job", "job_wrapper_template.py")
-    if not Path(jobWrapperFile).is_file():
+    wrapperFound = glob(os.path.join(str(protoPath), "**", "job_wrapper_template.py"), recursive=True)
+    if len(wrapperFound) < 1 or not Path(wrapperFound[0]).is_file():
         return S_ERROR("Could not find the JobWrapper in the cloned repository")
+    jobWrapperFile = wrapperFound[0]
 
     jobWrapperJsonFile = Path(wrapperPath) / f"InputSandbox{jobID}" / "job.json"
     # Create the executable file
