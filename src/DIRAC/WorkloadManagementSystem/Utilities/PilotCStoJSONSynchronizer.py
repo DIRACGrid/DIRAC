@@ -208,12 +208,13 @@ class PilotCStoJSONSynchronizer:
         if defaultSetup:
             pilotDict["DefaultSetup"] = defaultSetup
 
-        self.log.debug("From DIRAC/Configuration")
-        configurationServers = gConfig.getServersList()
-        if not includeMasterCS:
-            masterCS = gConfigurationData.getMasterServer()
-            configurationServers = exclude_master_cs_aliases(configurationServers, masterCS)
-
+        configurationServers = Operations().getValue("Pilot/OverrideConfigurationServers", [])
+        if not configurationServers:
+            self.log.debug("From DIRAC/Configuration")
+            configurationServers = gConfig.getServersList()
+            if not includeMasterCS:
+                masterCS = gConfigurationData.getMasterServer()
+                configurationServers = exclude_master_cs_aliases(configurationServers, masterCS)
         pilotDict["ConfigurationServers"] = configurationServers
 
         preferredURLPatterns = gConfigurationData.extractOptionFromCFG("/DIRAC/PreferredURLPatterns")
