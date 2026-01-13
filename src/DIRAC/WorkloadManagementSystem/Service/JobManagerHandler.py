@@ -354,7 +354,13 @@ class JobManagerHandlerMixin:
         validJobList, invalidJobList, nonauthJobList, ownerJobList = self.jobPolicy.evaluateJobRights(
             jobList, RIGHT_RESCHEDULE
         )
-        res = rescheduleJobs(validJobList, source="JobManager")
+        res = rescheduleJobs(
+            validJobList,
+            source="JobManager",
+            jobDB=self.jobDB,
+            taskQueueDB=self.taskQueueDB,
+            jobLoggingDB=self.jobLoggingDB,
+        )
         if not res["OK"]:
             self.log.error(res["Message"])
 

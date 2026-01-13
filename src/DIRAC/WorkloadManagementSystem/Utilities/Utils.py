@@ -118,12 +118,21 @@ def createJobWrapper(
     return S_OK(generatedFiles)
 
 
-def rescheduleJobs(jobIDs: list[int], source: str = "") -> dict:
+def rescheduleJobs(
+    jobIDs: list[int],
+    source: str = "",
+    jobDB: JobDB | None = None,
+    taskQueueDB: TaskQueueDB | None = None,
+    jobLoggingDB: JobLoggingDB | None = None,
+) -> dict:
     """Utility to reschedule jobs (not atomic, nor bulk)
     Requires direct access to the JobDB and TaskQueueDB
 
     :param jobIDs: list of jobIDs
     :param source: source of the reschedule
+    :param jobDB: optional JobDB instance to reuse (creates new if not provided)
+    :param taskQueueDB: optional TaskQueueDB instance to reuse (creates new if not provided)
+    :param jobLoggingDB: optional JobLoggingDB instance to reuse (creates new if not provided)
     :return: S_OK/S_ERROR
     :rtype: dict
 
@@ -131,13 +140,21 @@ def rescheduleJobs(jobIDs: list[int], source: str = "") -> dict:
 
     failedJobs = []
 
+    # Reuse provided DB instances or create new ones
+    if jobDB is None:
+        jobDB = JobDB()
+    if taskQueueDB is None:
+        taskQueueDB = TaskQueueDB()
+    if jobLoggingDB is None:
+        jobLoggingDB = JobLoggingDB()
+
     for jobID in jobIDs:
-        result = JobDB().rescheduleJob(jobID)
+        result = jobDB.rescheduleJob(jobID)
         if not result["OK"]:
             failedJobs.append(jobID)
             continue
-        TaskQueueDB().deleteJob(jobID)
-        JobLoggingDB().addLoggingRecord(
+        taskQueueDB.deleteJob(jobID)
+        jobLoggingDB.addLoggingRecord(
             result["JobID"],
             status=result["Status"],
             minorStatus=result["MinorStatus"],
