@@ -421,7 +421,7 @@ class SingularityComputingElement(ComputingElement):
         # if there's a max RAM available to the job, use that
         if self.maxRAM:
             self.ceParameters["MemoryLimitMB"] = min(
-                self.maxRAM, self.ceParameters.get("MemoryLimitMB", 1024 * 1024)
+                self.maxRAM, int(self.ceParameters.get("MemoryLimitMB", 1024 * 1024))
             )  # 1024 * 1024 is an arbitrary large number
         result = CG2Manager().systemCall(
             0, cmd, callbackFunction=self.sendOutput, env=self.__getEnv(), ceParameters=self.ceParameters
