@@ -599,7 +599,7 @@ class TornadoBaseClient:
             if url not in self.__bannedUrls:
                 self.__bannedUrls += [url]
             if retry < self.__nbOfUrls - 1:
-                self._request(retry=retry + 1, outputFile=outputFile, **kwargs)
+                return self._request(retry=retry + 1, outputFile=outputFile, **kwargs)
 
             errStr = f"{str(e)}: {rawText}"
             return S_ERROR(errStr)
