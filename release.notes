@@ -1,3 +1,21 @@
+[v9.0.16]
+
+*Tornado
+
+FIX: (#8426) return when retrying another Tornado service
+
+*Resources
+
+FIX: (#8424) SingularityComputingElement: convert MemoryLimitMB to int before comparison with maxRAM
+
+*WorkloadManagementSystem
+
+CHANGE: (#8423) rescheduleJobs: allow reusing existing JobDB, TaskQueueDB, jobLoggingDB instances
+
+*WorkloadManagement
+
+NEW: (#8422) Support overriding configuration servers ins pilot JSON
+
 [v9.0.15]
 
 *DIRAC
