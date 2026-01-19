@@ -242,7 +242,7 @@ def getAvailableRAM(siteName=None, gridCE=None, queue=None):
         gLogger.info("Looking in", csPath)
         availableRAM = gConfig.getValue(csPath, None)
         if availableRAM:
-            return availableRAM
+            return int(availableRAM)
 
     # 3) checks if 'WholeNode' is one of the used tags
     # Tags of the CE
@@ -277,6 +277,6 @@ def getRAMForJob(jobID):
     # from /Resources/Computing/JobLimits/jobID/MaxRAM (set by PoolComputingElement)
     ram = gConfig.getValue(f"Resources/Computing/JobLimits/{jobID}/MaxRAM")
     if ram:
-        return ram
+        return int(ram)
 
     return getAvailableRAM()
