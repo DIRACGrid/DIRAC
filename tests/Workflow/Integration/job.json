@@ -1,0 +1,36 @@
+{
+    "task": {
+        "id": ".",
+        "class": "CommandLineTool",
+        "inputs": [],
+        "outputs": [
+            {
+                "id": "output1",
+                "type": "File",
+                "outputBinding": {
+                    "glob": "test-output"
+                }
+            }
+        ],
+        "requirements": [],
+        "hints": [
+            {
+                "class": "dirac:ExecutionHooks",
+                "hook_plugin": "QueryBasedPlugin"
+            }
+        ],
+        "cwlVersion": "v1.2",
+        "baseCommand": [
+            "echo",
+            "test file content"
+        ],
+        "stdout": "test-output",
+        "$namespaces": {
+            "dirac": "schemas/dirac-metadata.json#/$defs/"
+        },
+        "$schemas": [
+            "schemas/dirac-metadata.json"
+        ]
+    },
+    "input": null
+}

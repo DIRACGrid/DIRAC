@@ -416,6 +416,22 @@ def parametricJobInputData():
     return endOfAllJobs(J)
 
 
+def cwlTest():
+    """Testing the CWL executable"""
+
+    J = baseToAllJobs("CWL_Test")
+    J.executable = "dirac-cwl-exec"
+    try:
+        J.setInputSandbox([find_all("job.json", rootPath, "DIRAC/tests/Workflow")[0]])
+    except IndexError:
+        try:
+            J.setInputSandbox([find_all("job.json", ".", "DIRAC/tests/Workflow")[0]])
+        except IndexError:  # we are in Jenkins
+            J.setInputSandbox([find_all("job.json", "/home/dirac", "DIRAC/tests/Workflow")[0]])
+
+    return endOfAllJobs(J)
+
+
 def jobWithOutput():
     """Creates a job that uploads an output.
     The output SE is not set here, so it would use the default /Resources/StorageElementGroups/SE-USER

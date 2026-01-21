@@ -146,6 +146,10 @@ class submitSuccess(GridSubmissionTestCase):
         self.assertTrue(res["OK"])
         jobsSubmittedList.append(res["Value"])
 
+        res = cwlTest()
+        self.assertTrue(res["OK"])
+        jobsSubmittedList.append(res["Value"])
+
         print(f"submitted {len(jobsSubmittedList)} jobs: {','.join(str(js) for js in jobsSubmittedList)}")
 
 
