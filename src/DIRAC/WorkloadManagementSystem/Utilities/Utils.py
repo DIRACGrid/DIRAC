@@ -78,7 +78,7 @@ def createJobWrapper(
         log.debug("Real python path after resolving links is: ", pythonPath)
 
     if "Executable" in jobParams and jobParams["Executable"] == "dirac-cwl-exec":
-        ret = __createCWLJobWrapper(jobID, wrapperPath, log)
+        ret = __createCWLJobWrapper(jobID, wrapperPath, log, rootLocation)
         if not ret["OK"]:
             return ret
         jobWrapperFile, jobWrapperJsonFile, jobExeFile, jobFileContents = ret["Value"]
@@ -128,8 +128,10 @@ def createJobWrapper(
     return S_OK(generatedFiles)
 
 
-def __createCWLJobWrapper(jobID, wrapperPath, log):
+def __createCWLJobWrapper(jobID, wrapperPath, log, rootLocation):
     # Get the new JobWrapper
+    if not rootLocation:
+        rootLocation = wrapperPath
     protoPath = Path(wrapperPath) / f"proto{jobID}"
     protoPath.unlink(missing_ok=True)
     log.info("Cloning JobWrapper from repository https://github.com/DIRACGrid/dirac-cwl.git into", protoPath)
@@ -141,18 +143,25 @@ def __createCWLJobWrapper(jobID, wrapperPath, log):
     if len(wrapperFound) < 1 or not Path(wrapperFound[0]).is_file():
         return S_ERROR("Could not find the JobWrapper in the cloned repository")
     jobWrapperFile = wrapperFound[0]
+    directJobWrapperFile = str(Path(rootLocation) / Path(wrapperFound[0]).relative_to(wrapperPath))
 
     jobWrapperJsonFile = Path(wrapperPath) / f"InputSandbox{jobID}" / "job.json"
+    directJobWrapperJsonFile = Path(rootLocation) / f"InputSandbox{jobID}" / "job.json"
     # Create the executable file
     jobExeFile = os.path.join(wrapperPath, f"Job{jobID}")
+    protoPath = str(Path(rootLocation) / Path(protoPath).relative_to(wrapperPath))
+    pixiPath = str(Path(rootLocation) / ".pixi")
     jobFileContents = f"""#!/bin/bash
 # Install pixi
+export PIXI_NO_PATH_UPDATE=1
+export PIXI_HOME={pixiPath}
 curl -fsSL https://pixi.sh/install.sh | bash
-pixi install --manifest-path {str(protoPath)}
+export PATH="{pixiPath}/bin:$PATH"
+pixi install --manifest-path {protoPath}
 # Get json
-dirac-wms-job-get-input {jobID} -D {wrapperPath}
+dirac-wms-job-get-input {jobID} -D {rootLocation}
 # Run JobWrapper
-pixi run --manifest-path {str(protoPath)} python {jobWrapperFile} {jobWrapperJsonFile}
+pixi run --manifest-path {protoPath} python {directJobWrapperFile} {directJobWrapperJsonFile}
 """
     return S_OK((jobWrapperFile, jobWrapperJsonFile, jobExeFile, jobFileContents))
 
