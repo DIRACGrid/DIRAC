@@ -136,7 +136,10 @@ class JobWrapper:
         # Define a new process group for the job wrapper
         self.parentPGID = os.getpgid(self.currentPID)
         self.log.verbose(f"Job Wrapper parent process group ID: {self.parentPGID}")
-        os.setpgid(self.currentPID, self.currentPID)
+        # Only set process group if not already a group leader
+        # (setpgid fails on process group leaders in Python 3.14+)
+        if self.currentPID != self.parentPGID:
+            os.setpgid(self.currentPID, self.currentPID)
         self.currentPGID = os.getpgid(self.currentPID)
         self.log.verbose(f"Job Wrapper process group ID: {self.currentPGID}")
         self.log.verbose("==========================================================================")

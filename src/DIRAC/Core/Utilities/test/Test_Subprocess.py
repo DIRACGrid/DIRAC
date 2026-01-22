@@ -50,8 +50,11 @@ def test_getChildrenPIDs():
     mainProcess = Popen(["python", join(dirname(__file__), "ProcessesCreator.py")])
     time.sleep(1)
     res = getChildrenPIDs(mainProcess.pid)
-    # Depends on the start method, 'fork' produces 3 processes, 'spawn' produces 4
-    assert len(res) in [3, 4]
+    # Depends on the start method:
+    # - 'fork' produces 3 processes
+    # - 'spawn' produces 4 processes
+    # - 'forkserver' (default in Python 3.14+) produces 5 processes (includes forkserver process)
+    assert len(res) in [3, 4, 5]
     for p in res:
         assert isinstance(p, int)
 
