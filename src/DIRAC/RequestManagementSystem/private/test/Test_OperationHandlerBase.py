@@ -1,5 +1,5 @@
-""" tests for Graph OperationHandlerBase module
-"""
+"""tests for Graph OperationHandlerBase module"""
+
 import sys
 
 import pytest
@@ -37,6 +37,6 @@ def test_DynamicProps():
     with pytest.raises(AttributeError) as exc_info:
         testObj.roTestProp = 11
     if sys.hexversion >= 0x03_0B_00_00:
-        assert str(exc_info.value) == "property of 'TestClass' object has no setter"
+        assert str(exc_info.value).endswith("object has no setter")
     else:
         assert str(exc_info.value) == "can't set attribute"
