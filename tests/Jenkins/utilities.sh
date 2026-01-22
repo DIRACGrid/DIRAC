@@ -338,7 +338,7 @@ installDIRAC() {
   echo '==> Done installDIRAC'
 
   echo "==> Installing main branch of diracx"
-  installDIRACX core client
+  installDIRACX core client cli
 
   echo "$DIRAC"
   echo "$PATH"
