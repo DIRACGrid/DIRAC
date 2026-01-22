@@ -26,7 +26,7 @@ try:
 except ImportError:
     # TODO: Remove this once diracx is tagged
     from diracx.client import DiracClient as SyncDiracClient
-from diracx.core.models import TokenResponse
+from diracx.core.models.auth import TokenResponse
 from diracx.core.preferences import DiracxPreferences
 from diracx.core.utils import serialize_credentials
 

@@ -13,7 +13,7 @@ from cachetools import LRUCache, TTLCache, cached
 from cachetools.keys import hashkey
 from diracx.cli.internal.legacy import _apply_fixes
 from diracx.core.config.schema import Config as DiracxConfig
-from diracx.core.models import TokenResponse
+from diracx.core.models.auth import TokenResponse
 from diracx.core.preferences import DiracxPreferences
 from diracx.core.utils import write_credentials
 from pydantic import ValidationError
