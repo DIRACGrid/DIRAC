@@ -47,6 +47,7 @@ If a Controller Configuration Server is being installed the following Options ca
   /LocalInstallation/VirtualOrganization: Name of the main Virtual Organization (default: None)
 
 """
+
 import glob
 import importlib
 import inspect
@@ -1016,8 +1017,8 @@ class ComponentInstaller:
 
         for extension in extensions:
             for system, agent in findAgents(extension):
-                loader = pkgutil.get_loader(".".join([extension, system, "Agent", agent]))
-                with open(loader.get_filename()) as fp:
+                loader = importlib.util.find_spec(".".join([extension, system, "Agent", agent]))
+                with open(loader.origin) as fp:
                     body = fp.read()
                 if "AgentModule" in body or "OptimizerModule" in body:
                     agents[system.replace("System", "")].append(agent)
@@ -1028,8 +1029,8 @@ class ComponentInstaller:
                 services[system.replace("System", "")].append(service.replace("Handler", ""))
 
             for system, executor in findExecutors(extension):
-                loader = pkgutil.get_loader(".".join([extension, system, "Executor", executor]))
-                with open(loader.get_filename()) as fp:
+                loader = importlib.util.find_spec(".".join([extension, system, "Executor", executor]))
+                with open(loader.origin) as fp:
                     body = fp.read()
                 if "OptimizerExecutor" in body:
                     executors[system.replace("System", "")].append(executor)
@@ -1943,7 +1944,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
                     fd.write(
                         f"""#!/bin/bash
 
-rcfile={os.path.join(self.instancePath, 'bashrc')}
+rcfile={os.path.join(self.instancePath, "bashrc")}
 [[ -e $rcfile ]] && source $rcfile
 #
 exec 2>&1
@@ -2358,7 +2359,7 @@ exec dirac-webapp-run -p < /dev/null
             with open(runFile, "w") as fd:
                 fd.write(
                     f"""#!/bin/bash
-rcfile={os.path.join(self.instancePath, 'bashrc')}
+rcfile={os.path.join(self.instancePath, "bashrc")}
 [ -e $rcfile ] && source $rcfile
 #
 export DIRAC_USE_TORNADO_IOLOOP=Yes

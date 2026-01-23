@@ -81,9 +81,12 @@ class ModuleDefinition(AttributeCollection):
             # A.T.  Use vars() function to inspect local objects instead of playing with
             #       fake modules. We assume that after the body execution there will be
             #       a class with name "self.getType()" defined in the local scope.
-            exec(self.getBody())
-            if self.getType() in vars():
-                self.main_class_obj = vars()[self.getType()]  # save class object
+            # Python 3.14+: exec() doesn't populate the calling scope when used inside a function
+            # without explicit locals dict, so we need to capture the locals
+            local_vars = {}
+            exec(self.getBody(), globals(), local_vars)
+            if self.getType() in local_vars:
+                self.main_class_obj = local_vars[self.getType()]  # save class object
             else:
                 # it is possible to have this class in another module, we have to check for this
                 # but it is advisible to use 'from module import class' operator
