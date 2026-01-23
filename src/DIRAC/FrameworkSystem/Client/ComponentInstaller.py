@@ -47,6 +47,7 @@ If a Controller Configuration Server is being installed the following Options ca
 """
 import glob
 import importlib
+import importlib.util
 import inspect
 import os
 import pkgutil
@@ -939,8 +940,8 @@ class ComponentInstaller:
 
         for extension in extensions:
             for system, agent in findAgents(extension):
-                loader = pkgutil.get_loader(".".join([extension, system, "Agent", agent]))
-                with open(loader.get_filename()) as fp:
+                loader = importlib.util.find_spec(".".join([extension, system, "Agent", agent]))
+                with open(loader.origin) as fp:
                     body = fp.read()
                 if "AgentModule" in body or "OptimizerModule" in body:
                     agents[system.replace("System", "")].append(agent)
@@ -951,8 +952,8 @@ class ComponentInstaller:
                 services[system.replace("System", "")].append(service.replace("Handler", ""))
 
             for system, executor in findExecutors(extension):
-                loader = pkgutil.get_loader(".".join([extension, system, "Executor", executor]))
-                with open(loader.get_filename()) as fp:
+                loader = importlib.util.find_spec(".".join([extension, system, "Executor", executor]))
+                with open(loader.origin) as fp:
                     body = fp.read()
                 if "OptimizerExecutor" in body:
                     executors[system.replace("System", "")].append(executor)
