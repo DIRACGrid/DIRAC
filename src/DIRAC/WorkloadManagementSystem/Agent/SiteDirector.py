@@ -1044,7 +1044,7 @@ class SiteDirector(AgentModule):
         # Preinstalled environment or list of CVMFS locations defined ?
         preinstalledEnv = opsHelper.getValue("Pilot/PreinstalledEnv", "")
         preinstalledEnvPrefix = opsHelper.getValue("Pilot/PreinstalledEnvPrefix", "")
-        CVMFS_locations = opsHelper.getValue("Pilot/CVMFS_locations", "")
+        CVMFS_locations = ",".join(opsHelper.getValue("Pilot/CVMFS_locations", []))
         if preinstalledEnv:
             pilotOptions.append(f"--preinstalledEnv={preinstalledEnv}")
         elif preinstalledEnvPrefix:
