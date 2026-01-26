@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 """Script to run Executable application"""
-import sys
-import subprocess
+
 import shlex
+import subprocess
+import sys
 
 # Main
 if __name__ == "__main__":
