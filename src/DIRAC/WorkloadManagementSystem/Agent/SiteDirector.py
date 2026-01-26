@@ -346,6 +346,16 @@ class SiteDirector(AgentModule):
 
         return S_OK()
 
+    def _getSortedQueues(self):
+        """
+        Sorts the queues randomly. Can be overriden in derived classes for other ways of shuffling
+
+        :return: list of sorted queue dictionaries
+        """
+        queueDictItems = list(self.queueDict.items())
+        random.shuffle(queueDictItems)
+        return queueDictItems
+
     def submitPilots(self):
         """Go through defined computing elements and submit pilots if necessary and possible
 
@@ -365,8 +375,7 @@ class SiteDirector(AgentModule):
 
         self.totalSubmittedPilots = 0
 
-        queueDictItems = list(self.queueDict.items())
-        random.shuffle(queueDictItems)
+        queueDictItems = self._getSortedQueues()
 
         for queueName, queueDictionary in queueDictItems:
             # now submitting to the single queues
