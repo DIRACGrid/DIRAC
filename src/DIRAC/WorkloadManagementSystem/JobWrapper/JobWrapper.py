@@ -56,6 +56,14 @@ from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
 
 CHILD_PID_POLL_INTERVALS = list(range(5, 40, 5))
 
+SUBMISSION_FAILED = -1
+SUBMISSION_REPORT_FAILED = -2
+JOBWRAPPER_EXCEPTION = -3
+INITIALIZATION_FAILED = 1
+PAYLOAD_FAILED = 2
+FINALIZATION_FAILED = 3
+RESCHEDULED = 4
+
 
 class JobWrapper:
     """The only user of the JobWrapper is the JobWrapperTemplate"""

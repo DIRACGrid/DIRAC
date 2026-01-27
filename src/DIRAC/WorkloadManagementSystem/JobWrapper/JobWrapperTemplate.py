@@ -1,16 +1,16 @@
 #!/usr/bin/env python
-""" This template will become the job wrapper that's actually executed.
+"""This template will become the job wrapper that's actually executed.
 
-    The JobWrapperTemplate is completed and invoked by the jobAgent and uses functionalities from JobWrapper module.
-    It has to be an executable.
+The JobWrapperTemplate is completed and invoked by the jobAgent and uses functionalities from JobWrapper module.
+It has to be an executable.
 
-    The JobWrapperTemplate will reschedule the job according to certain criteria:
-    - the working directory could not be created
-    - the jobWrapper initialization phase failed
-    - the inputSandbox download failed
-    - the resolution of the inpt data failed
-    - the JobWrapper ended with the status DErrno.EWMSRESC
+The JobWrapperTemplate will reschedule the job according to certain criteria:
+- the working directory could not be created
+- the jobWrapper initialization phase failed
+- the inputSandbox download failed
+- the resolution of the inpt data failed
 """
+
 import json
 import os
 import sys
@@ -24,6 +24,8 @@ from DIRAC.Core.Base.Script import Script
 Script.parseCommandLine()
 
 from DIRAC import gLogger
+
+from DIRAC.WorkloadManagementSystem.JobWrapper import JobWrapper as JW
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapperUtilities import (
     createAndEnterWorkingDirectory,
@@ -52,7 +54,7 @@ def execute(jobID: int, arguments: dict, jobReport: JobReport):
     if "InputSandbox" in arguments["Job"]:
         jobReport.commit()
         if not transferInputSandbox(job, arguments["Job"]["InputSandbox"]):
-            return 1
+            return JW.INITIALIZATION_FAILED
     else:
         gLogger.verbose("Job has no InputSandbox requirement")
 
@@ -61,7 +63,7 @@ def execute(jobID: int, arguments: dict, jobReport: JobReport):
     if "InputData" in arguments["Job"]:
         if arguments["Job"]["InputData"]:
             if not resolveInputData(job):
-                return 1
+                return JW.INITIALIZATION_FAILED
         else:
             gLogger.verbose("Job has a null InputData requirement:")
             gLogger.verbose(arguments)
@@ -71,7 +73,7 @@ def execute(jobID: int, arguments: dict, jobReport: JobReport):
     jobReport.commit()
 
     if not executePayload(job):
-        return 1
+        return JW.INITIALIZATION_FAILED
 
     if "OutputSandbox" in arguments["Job"] or "OutputData" in arguments["Job"]:
         if not processJobOutputs(job):
@@ -85,7 +87,7 @@ def execute(jobID: int, arguments: dict, jobReport: JobReport):
 ##########################################################
 
 
-ret = -3
+ret = JW.JOBWRAPPER_EXCEPTION
 try:
     jsonFileName = os.path.realpath(__file__) + ".json"
     with open(jsonFileName) as f:
@@ -105,9 +107,9 @@ except Exception:  # pylint: disable=broad-except
     gLogger.exception("JobWrapperTemplate exception")
     try:
         jobReport.commit()
-        ret = -1
+        ret = JW.SUBMISSION_FAILED
     except Exception:  # pylint: disable=broad-except
         gLogger.exception("Could not commit the job report")
-        ret = -2
+        ret = JW.SUBMISSION_REPORT_FAILED
 
 sys.exit(ret)
