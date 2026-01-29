@@ -230,8 +230,10 @@ class GFAL2_StorageBase(StorageBase):
         for url in urls:
             try:
                 successful[url] = self.__singleExists(url)
+            except gfal2.GError as e:
+                failed[url] = {"error": repr(e), "errno": e.code}
             except Exception as e:
-                failed[url] = repr(e)
+                failed[url] = {"error": repr(e), "errno": None}
 
         resDict = {"Failed": failed, "Successful": successful}
         return resDict
@@ -636,9 +638,10 @@ class GFAL2_StorageBase(StorageBase):
         for url in urls:
             try:
                 successful[url] = self._getSingleFileMetadata(url)
-
+            except gfal2.GError as e:
+                failed[url] = {"error": repr(e), "errno": e.code}
             except Exception as e:
-                failed[url] = repr(e)
+                failed[url] = {"error": repr(e), "errno": None}
 
         return {"Failed": failed, "Successful": successful}
 
