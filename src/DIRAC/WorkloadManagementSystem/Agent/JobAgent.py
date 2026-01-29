@@ -1,9 +1,10 @@
 """
-  The Job Agent class instantiates a CE that acts as a client to a
-  compute resource and also to the WMS.
-  The Job Agent constructs a classAd based on the local resource description in the CS
-  and the current resource status that is used for matching.
+The Job Agent class instantiates a CE that acts as a client to a
+compute resource and also to the WMS.
+The Job Agent constructs a classAd based on the local resource description in the CS
+and the current resource status that is used for matching.
 """
+
 import os
 import re
 import sys
@@ -34,6 +35,7 @@ from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitor
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
+from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import RESCHEDULED
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 
 
@@ -712,9 +714,9 @@ class JobAgent(AgentModule):
                 self._rescheduleFailedJob(jobID, result["Message"])
                 self.hostFailureCount += 1
 
-            # The payload failed (if result["Value"] is not 0)
-            elif result["Value"]:
-                # In order to avoid overriding perfectly valid states, the status is updated iff the job was running
+            # The payload failed (if result["Value"] is not 0 and the job was not rescheduled)
+            elif result["Value"] and result["Value"] != RESCHEDULED:
+                # In order to avoid overriding perfectly valid states, the status is updated if the job was running
                 res = JobMonitoringClient().getJobsStatus(jobID)
                 if not res["OK"]:
                     return res
