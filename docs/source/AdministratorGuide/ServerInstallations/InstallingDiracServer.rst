@@ -151,7 +151,8 @@ As *dirac* user, create ``/opt/dirac/sbin directory`` and create the file ``/opt
 
 This section must be executed as *root*
 
-Install the `RPM <http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el7.cern.x86_64.rpm>`__.
+Install the (el9) `RPM <http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el9.cern.x86_64.rpm>`__.
+For older versions of the RPM, check this `link <https://diracproject.web.cern.ch/diracproject/rpm/>`__.
 
 Edit the file ``/usr/lib/systemd/system/runsvdir-start.service`` to the following::
 
