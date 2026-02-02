@@ -1,3 +1,25 @@
+[v9.0.17]
+
+*WorkloadManagement
+
+FIX: (#8441) JobAgent - do not fail already rescheduled job
+
+*DataManagementSystem
+
+FIX: (#8440) revert gfal2 error propagation until better solution
+
+*Core
+
+CHANGE: (#8435) Support Python 3.14
+
+*Tests
+
+FIX: (#8434) diracx-cli not being installed from wheel built from PR branch in integration test
+
+*WorkloadManagementSystem
+
+NEW: (#8425) Experimental job wrapper for cwl workflows
+
 [v9.0.16]
 
 *Tornado
