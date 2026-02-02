@@ -4,6 +4,7 @@ Script that facilitates the modification of a element through the command line.
 However, the usage of this script will set the element token to the command
 issuer with a duration of 1 day.
 """
+
 from datetime import datetime, timedelta
 
 from DIRAC import S_OK, gLogger
@@ -22,7 +23,7 @@ def registerSwitches():
     """
 
     switches = (
-        ("element=", "Element family to be Synchronized ( Site, Resource or Node )"),
+        ("element=", "Element family to be Synchronized (Site, Resource)"),
         ("name=", "Name (or comma-separeted list of names) of the element where the change applies"),
         ("statusType=", "StatusType (or comma-separeted list of names), if none applies to all possible statusTypes"),
         ("status=", "Status to be changed"),
@@ -59,14 +60,14 @@ def parseSwitches():
             gLogger.error("Please, check documentation below")
             Script.showHelp(exitCode=1)
 
-    if not switches["element"] in ("Site", "Resource", "Node"):
+    if switches["element"] not in ("Site", "Resource"):
         gLogger.error(f"Found {switches['element']} as element switch")
         gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
     statuses = StateMachine.RSSMachine(None).getStates()
 
-    if not switches["status"] in statuses:
+    if switches["status"] not in statuses:
         gLogger.error(f"Found {switches['element']} as element switch")
         gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)

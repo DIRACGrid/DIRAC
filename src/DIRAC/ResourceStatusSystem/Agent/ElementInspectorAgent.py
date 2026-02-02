@@ -1,6 +1,6 @@
-""" ElementInspectorAgent
+"""ElementInspectorAgent
 
-  This agent inspect Resources (or maybe Nodes), and evaluates policies that apply.
+  This agent inspect Resources and evaluates policies that apply.
 
 
 The following options can be set for the ElementInspectorAgent.
@@ -11,6 +11,7 @@ The following options can be set for the ElementInspectorAgent.
   :dedent: 2
   :caption: ElementInspectorAgent options
 """
+
 import datetime
 import concurrent.futures
 
@@ -42,7 +43,7 @@ class ElementInspectorAgent(AgentModule):
 
         AgentModule.__init__(self, *args, **kwargs)
 
-        # ElementType, to be defined among Resource or Node
+        # ElementType, to be defined among Resource
         self.elementType = "Resource"
         self.rsClient = None
         self.clients = {}

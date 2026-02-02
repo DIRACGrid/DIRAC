@@ -6,6 +6,7 @@ reason to `Synchronized`. However, it can copy over the status on the CS to
 the RSS. Important: If the StatusType is not defined on the CS, it will set
 it to Active !
 """
+
 from DIRAC import S_OK
 from DIRAC import exit as DIRACExit
 from DIRAC import gLogger
@@ -24,7 +25,7 @@ def registerSwitches():
     Script.registerSwitch(
         "", "init", "Initialize the element to the status in the CS ( applicable for StorageElements )"
     )
-    Script.registerSwitch("", "element=", "Element family to be Synchronized ( Site, Resource or Node ) or `all`")
+    Script.registerSwitch("", "element=", "Element family to be Synchronized ( Site or Resource ) or `all`")
     Script.registerSwitch("", "defaultStatus=", "Default element status if not given in the CS")
 
 
@@ -45,7 +46,7 @@ def parseSwitches():
     # Default values
     switches.setdefault("element", None)
     switches.setdefault("defaultStatus", "Active")
-    if not switches["element"] in ("all", "Site", "Resource", "Node", None):
+    if not switches["element"] in ("all", "Site", "Resource", None):
         gLogger.error(f"Found {switches['element']} as element switch")
         gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
@@ -76,12 +77,6 @@ def synchronize():
     if switchDict["element"] in ("Resource", "all"):
         gLogger.info("Synchronizing Resource")
         res = synchronizer._syncResources()
-        if not res["OK"]:
-            return res
-
-    if switchDict["element"] in ("Node", "all"):
-        gLogger.info("Synchronizing Nodes")
-        res = synchronizer._syncNodes()
         if not res["OK"]:
             return res
 

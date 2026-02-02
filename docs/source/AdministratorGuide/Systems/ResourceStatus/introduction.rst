@@ -42,12 +42,11 @@ Element
 
 An *Element* in the RSS world represents a Grid Element as described on the `RFC5`_. It can be any of the following:
 
-* Node
 * Resource
 * Site
 
 Elements are the information unit used on RSS. Everything is an Element, and all are treated equally, simplifying the design
-and reducing the complexity of the system. If all are treated equally, the reader may be wondering why three flavors instead
+and reducing the complexity of the system. If all are treated equally, the reader may be wondering why two flavors instead
 of just an Element type. The answer for that question is simply to keep them separated. On the RSS they are treated equally,
 but in Real they have very different significance. Marking as unusable a Site or a CE on the RSS requires the same single and
 unique operation. However, the consequences of marking as unusable a Site instead of one if its CEs by mistake are not negligible.
@@ -82,27 +81,6 @@ Resources Element, we have the following Element Types:
 * ComputingElement
 * StorageElement
 * ...
-
-And if we take a look to the ComputingElement Resources, we can see the pattern happening again.
-
-::
-
-    .../Computing/some.htcondor.ce
-                         /CEType = HTCondorCE
-                         /Host = some.htcondor.ce
-                         /Queues
-                                 /condor-long
-                                           /Communities = VO1, VO2
-                                           /Domains = Grid1, Grid2
-                                           /MaxCPUTime =
-                                           /SI00 =
-                                           /MaxWaitingJobs =
-                                           /MaxTotalJobs =
-                                           /OutputURL =
-                                 ...
-                         ...
-
-Each CE Resource has any number of Nodes, in this case of the ElementType Queue.
 
 The list of ElementTypes per Element may vary depending on the CS/Resources section !
 
@@ -176,10 +154,10 @@ Resources() Helper
 Database schema
 ---------------
 
-The database used for the basic operations is *ResourceStatusDB* and consists on three sets of identical tables,
-one for *Site*, another for *Resource* and the last one for *Node* Elements ( as explained on `Element`_ ).
+The database used for the basic operations is *ResourceStatusDB* and consists on two sets of identical tables,
+one for *Site* and another for *Resource* Elements ( as explained on `Element`_ ).
 
-On each set there is a main table, called <element>Status ( replace <element> with Site, Resource or Node ), which
+On each set there is a main table, called <element>Status ( replace <element> with Site or Resource ), which
 contains all status information regarding that Elements family. The Status tables are enough to start running the RSS.
 However, if we need to keep track of the History of our Elements, the next two tables come into scene: <element>Log
 and <element>History.

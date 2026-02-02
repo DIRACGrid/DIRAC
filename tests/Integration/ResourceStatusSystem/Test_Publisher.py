@@ -1,6 +1,6 @@
-""" This is a test of the PublisherHandler
+"""This is a test of the PublisherHandler
 
-    It supposes that the RSS DBs are present, and that the service is running
+It supposes that the RSS DBs are present, and that the service is running
 """
 # pylint: disable=wrong-import-position
 
@@ -29,9 +29,6 @@ def test_Get():
     assert res["OK"] is True, res["Message"]
 
     res = publisher.getElementPolicies("Site", None, None)
-    assert res["OK"] is True, res["Message"]
-
-    res = publisher.getNodeStatuses()
     assert res["OK"] is True, res["Message"]
 
     res = publisher.getTree("", "")

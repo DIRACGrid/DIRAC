@@ -4,6 +4,7 @@ PublisherHandler
 This service has been built to provide the RSS web views with all the information
 they need. NO OTHER COMPONENT THAN Web controllers should make use of it.
 """
+
 #  pylint: disable=no-self-use
 from datetime import datetime, timedelta
 
@@ -156,12 +157,6 @@ class PublisherHandlerMixin:
         return cls.rmClient.selectPolicyResult(
             element=element, name=name, statusType=statusType, meta={"columns": columns}
         )
-
-    types_getNodeStatuses = []
-
-    @classmethod
-    def export_getNodeStatuses(cls):
-        return cls.rsClient.selectStatusElement("Node", "Status")
 
     types_getTree = [str, str]
 

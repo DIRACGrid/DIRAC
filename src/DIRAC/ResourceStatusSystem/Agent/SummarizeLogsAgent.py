@@ -1,9 +1,8 @@
-""" SummarizeLogsAgent module
+"""SummarizeLogsAgent module
 
-  This agents scans all the log tables (SiteLog, ResourceLog and NodeLog) on the
+  This agents scans all the log tables (SiteLog and ResourceLog) on the
   ResourceStatusDB and summarizes them. The results are stored on the History
-  tables (SiteHistory, ResourceHistory and NodeHistory) and the Log tables
-  cleared.
+  tables (SiteHistory and ResourceHistory) and the Log tables cleared.
 
   In order to summarize the logs, all entries with no changes on the Status or
   TokenOwner column for a given (Name, StatusType) tuple are discarded.
@@ -18,6 +17,7 @@
   :dedent: 2
   :caption: SummarizeLogsAgent options
 """
+
 from datetime import datetime, timedelta
 
 from DIRAC import S_OK
@@ -52,8 +52,8 @@ class SummarizeLogsAgent(AgentModule):
     def execute(self):
         """execute (main method)
 
-        The execute method runs over the three families of tables (Site, Resource and
-        Node) performing identical operations. First, selects all logs for a given
+        The execute method runs over the two families of tables (Site and Resource)
+        performing identical operations. First, selects all logs for a given
         family (and keeps track of which one is the last row ID). It summarizes the
         logs and finally, deletes the logs from the database.
 
@@ -63,7 +63,7 @@ class SummarizeLogsAgent(AgentModule):
         """
 
         # loop over the tables
-        for element in ("Site", "Resource", "Node"):
+        for element in ("Site", "Resource"):
             self.log.info(f"Summarizing {element}")
 
             # get all logs to be summarized
@@ -97,7 +97,7 @@ class SummarizeLogsAgent(AgentModule):
     def _summarizeLogs(self, element):
         """given an element, selects all logs in table <element>Log.
 
-        :param str element: name of the table family (either Site, Resource or Node)
+        :param str element: name of the table family (either Site or Resource)
         :return: S_OK(lastID, listOfLogs) / S_ERROR
         """
 
@@ -143,7 +143,7 @@ class SummarizeLogsAgent(AgentModule):
         the <element>History table. If it is, it is not inserted.
 
 
-        :param str element: name of the table family (either Site, Resource or Node)
+        :param str element: name of the table family (either Site, Resource)
         :param tuple key: tuple with the name of the element and the statusType
         :param list logs: list of dictionaries containing the logs
         :return: S_OK(lastID, listOfLogs) / S_ERROR
@@ -204,7 +204,7 @@ class SummarizeLogsAgent(AgentModule):
         """Given an element and a dictionary with all the arguments, this method
         inserts a new entry on the <element>History table
 
-        :param str element: name of the table family (either Site, Resource or Node)
+        :param str element: name of the table family (either Site, Resource)
         :param dict elementDict: dictionary returned from the DB to be inserted on the History table
 
         :return: S_OK / S_ERROR
@@ -240,7 +240,7 @@ class SummarizeLogsAgent(AgentModule):
     def _removeOldHistoryEntries(self, element, months):
         """Delete entries older than period
 
-        :param str element: name of the table family (either Site, Resource or Node)
+        :param str element: name of the table family (either Site, Resource)
         :param int months: number of months
 
         :return: S_OK / S_ERROR

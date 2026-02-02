@@ -1,7 +1,8 @@
-""" ResourceManagementClient
+"""ResourceManagementClient
 
-  Client to interact with the ResourceManagement service and from it with the DB.
+Client to interact with the ResourceManagement service and from it with the DB.
 """
+
 from DIRAC.Core.Base.Client import Client, createClient
 
 
@@ -187,7 +188,7 @@ class ResourceManagementClient(Client):
 
         :param downtimeID: unique id for the downtime
         :type downtimeID: string, list
-        :param element: valid element in the topology (Site, Resource, Node)
+        :param element: valid element in the topology (Site, Resource)
         :type element: string, list
         :param name: name of the element(s) where the downtime applies
         :type name: string, list
@@ -261,7 +262,7 @@ class ResourceManagementClient(Client):
 
         :param downtimeID: unique id for the downtime
         :type downtimeID: string, list
-        :param element: valid element in the topology ( Site, Resource, Node )
+        :param element: valid element in the topology (Site, Resource)
         :type element: string, list
         :param name: name of the element where the downtime applies
         :type name: string, list
@@ -330,7 +331,7 @@ class ResourceManagementClient(Client):
         the database, decides whether to insert or update the table.
 
         :param str downtimeID: unique id for the downtime
-        :param str element: valid element in the topology ( Site, Resource, Node )
+        :param str element: valid element in the topology (Site, Resource)
         :param str name: name of the element where the downtime applies
         :param datetime startDate: starting time for the downtime
         :param datetime endDate: ending time for the downtime

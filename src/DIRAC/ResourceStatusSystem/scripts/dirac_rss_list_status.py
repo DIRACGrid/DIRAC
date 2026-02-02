@@ -3,6 +3,7 @@
 Script that dumps the DB information for the elements into the standard output.
 If returns information concerning the StatusType and Status attributes.
 """
+
 from DIRAC import exit as DIRACExit
 from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
@@ -19,7 +20,7 @@ def registerSwitches():
     """
 
     switches = (
-        ("element=", "Element family to be Synchronized ( Site, Resource or Node )"),
+        ("element=", "Element family to be Synchronized (Site, Resource)"),
         ("elementType=", "ElementType narrows the search; None if default"),
         ("name=", "ElementName; None if default"),
         ("tokenOwner=", "Owner of the token; None if default"),
@@ -58,7 +59,7 @@ def parseSwitches():
         gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)
 
-    if not switches["element"] in ("Site", "Resource", "Node"):
+    if not switches["element"] in ("Site", "Resource"):
         gLogger.error(f"Found {switches['element']} as element switch")
         gLogger.error("Please, check documentation below")
         Script.showHelp(exitCode=1)

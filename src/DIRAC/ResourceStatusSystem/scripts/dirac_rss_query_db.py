@@ -3,6 +3,7 @@
 Script that dumps the DB information for the elements into the standard output.
 If returns information concerning the StatusType and Status attributes.
 """
+
 import datetime
 
 from DIRAC import S_OK
@@ -23,7 +24,7 @@ def registerSwitches():
     """
 
     switches = (
-        ("element=", "Element family to be Synchronized ( Site, Resource, Node )"),
+        ("element=", "Element family to be Synchronized (Site, Resource"),
         ("tableType=", "A valid table type (Status, Log, History)"),
         ("name=", "ElementName (comma separated list allowed); None if default"),
         (
@@ -54,7 +55,7 @@ def parseSwitches():
         error("Missing all mandatory 'query', 'element', 'tableType' arguments")
     elif args[0].lower() not in ("select", "add", "modify", "delete"):
         error("Incorrect 'query' argument")
-    elif args[1].lower() not in ("site", "resource", "component", "node"):
+    elif args[1].lower() not in ("site", "resource"):
         error("Incorrect 'element' argument")
     elif args[2].lower() not in ("status", "log", "history"):
         error("Incorrect 'tableType' argument")

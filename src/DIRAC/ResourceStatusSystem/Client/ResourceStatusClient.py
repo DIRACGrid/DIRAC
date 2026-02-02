@@ -1,6 +1,6 @@
-""" ResourceStatusClient
+"""ResourceStatusClient
 
-  Client to interact with the ResourceStatus service and from it with the DB.
+Client to interact with the ResourceStatus service and from it with the DB.
 """
 
 # pylint: disable=unused-argument
@@ -92,8 +92,7 @@ class ResourceStatusClient(Client):
 
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` | `Resource`
       **tableType** - `string`
         it has to be a valid tableType [ 'Status', 'Log', 'History' ]
       **name** - `string`
@@ -167,8 +166,7 @@ class ResourceStatusClient(Client):
 
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` | `Resource`
       **tableType** - `string`
         it has to be a valid tableType [ 'Status', 'Log', 'History' ]
       **name** - `[, string, list]`
@@ -247,8 +245,7 @@ class ResourceStatusClient(Client):
 
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` | `Resource`
       **tableType** - `string`
         it has to be a valid tableType [ 'Status', 'Log', 'History' ]
       **name** - `[, string, list]`
@@ -326,8 +323,7 @@ class ResourceStatusClient(Client):
 
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` | `Resource`
       **tableType** - `string`
         it has to be a valid tableType [ 'Status', 'Log', 'History' ]
       **name** - `string`
@@ -400,8 +396,7 @@ class ResourceStatusClient(Client):
 
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` | `Resource`
       **tableType** - `string`
         it has to be a valid tableType [ 'Status', 'Log', 'History' ]
       **name** - `string`
@@ -475,8 +470,7 @@ class ResourceStatusClient(Client):
 
     :Parameters:
       **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Resource` | `Node`
+        it has to be a valid element ( ValidElement ), any of the defaults: `Site` | `Resource`
       **tableType** - `string`
         it has to be a valid tableType [ 'Status', 'Log', 'History' ]
       **name** - `string`
@@ -541,23 +535,22 @@ class ResourceStatusClient(Client):
 
     def _extermineStatusElement(self, element, name, keepLogs=True):
         """
-    Deletes from <element>Status,
-                 <element>History
-                 <element>Log
-     all rows with `elementName`. It removes all the entries, logs, etc..
-    Use with common sense !
+        Deletes from <element>Status,
+                     <element>History
+                     <element>Log
+         all rows with `elementName`. It removes all the entries, logs, etc..
+        Use with common sense !
 
-    :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElements ), any of the defaults: \
-          `Site` | `Resource` | `Node`
-      **name** - `[, string, list]`
-        name of the individual of class element
-      **keepLogs** - `bool`
-        if active, logs are kept in the database
+        :Parameters:
+          **element** - `string`
+            it has to be a valid element ( ValidElements ), any of the defaults: `Site` | `Resource`
+          **name** - `[, string, list]`
+            name of the individual of class element
+          **keepLogs** - `bool`
+            if active, logs are kept in the database
 
-    :return: S_OK() || S_ERROR()
-    """
+        :return: S_OK() || S_ERROR()
+        """
         return self.__extermineStatusElement(element, name, keepLogs)
 
     def __extermineStatusElement(self, element, name, keepLogs):

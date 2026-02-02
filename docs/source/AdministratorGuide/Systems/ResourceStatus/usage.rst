@@ -37,7 +37,7 @@ This is a quick reference of the basic usage of RSS from the python interactive 
 There are two main components that can be used to extract information :
 
 * the client : ResourceStatusSystem
-* the helper : SiteStatus, ResourceStatus, NodeStatus
+* the helper : SiteStatus, ResourceStatus
 
 The second is a simplification of the client with an internal cache. Unless you
 want to access not-only status information, please use the second. Nevertheless,

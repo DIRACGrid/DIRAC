@@ -25,7 +25,7 @@ it as Active.
 Element Inspector Agents
 ------------------------
 
-There is one InspectorAgent per family of elements: Site, Resource and Node. They run frequently
+There is one InspectorAgent per family of elements: Site and Resource. They run frequently
 and get from the DB the elements that have not been checked recently. With other words, they
 take elements following:
 
