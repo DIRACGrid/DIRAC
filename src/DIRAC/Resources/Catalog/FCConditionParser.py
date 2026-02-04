@@ -191,7 +191,7 @@ class FCConditionParser:
         """
 
         # Whenever we parse text matching the __pluginOperand grammar, create a PluginOperand object
-        self.__pluginOperand.setParseAction(lambda tokens: self.PluginOperand(tokens))
+        self.__pluginOperand.set_parse_action(lambda tokens: self.PluginOperand(tokens))
 
         self.opHelper = Operations(vo=vo)
 
