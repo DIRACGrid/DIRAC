@@ -49,6 +49,9 @@ include = [
     "/tests",
 ]
 
+[tool.hatch.build.targets.sdist.force-include]
+"../LICENSE" = "LICENSE"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/DIRACCommon"]
 
