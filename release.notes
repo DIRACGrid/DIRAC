@@ -1,3 +1,18 @@
+[v8.0.78]
+
+*Core
+
+CHANGE: (#8432) Support Python 3.14
+
+*WorkloadManagementSubsystem
+
+FIX: (#8429) SiteDirector - fix pilot option CVMFS_locations string value
+FIX: (#8428) SiteDirector - shuffle queues in a dedicated function
+
+*WorkloadManagement
+
+FIX: (#8427) JobAgent - do not fail already rescheduled job
+
 [v8.0.77]
 
 *WorkloadManagement
