@@ -15,6 +15,7 @@ class JobSanity(OptimizerExecutor):
     @classmethod
     def initializeOptimizer(cls):
         """Initialize specific parameters for JobSanityAgent."""
+        cls.sandboxDB = SandboxMetadataDB()
         return S_OK()
 
     def optimizeJob(self, jid, jobState):
@@ -57,7 +58,7 @@ class JobSanity(OptimizerExecutor):
             return S_OK(0)
         self.jobLog.info("Assigning sandboxes", f"({numSBsToAssign} on behalf of {ownerName}@{ownerGroup}@{vo})")
         eId = f"Job:{jobState.jid}"
-        result = SandboxMetadataDB().assignSandboxesToEntities({eId: sbsToAssign}, ownerName, ownerGroup)
+        result = self.sandboxDB.assignSandboxesToEntities({eId: sbsToAssign}, ownerName, ownerGroup)
         if not result["OK"]:
             self.jobLog.error("Could not assign sandboxes in the SandboxStore")
             return result
