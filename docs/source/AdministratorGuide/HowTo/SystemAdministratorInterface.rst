@@ -254,6 +254,7 @@ Updating the DIRAC installation
 
 The SAC allows to update DIRAC, or its extension, to a version. Use extension_name==version for the DIRAC extension.
 A version can be:
+
 * a PEP440 valid version of DIRAC.
 * a PEP440 valid version of a DIRAC extension.
 * "integration" or "devel" or "master" or "main" would all be interpreted as git+https://github.com/DIRACGrid/DIRAC.git@integration#egg=DIRAC[server]
