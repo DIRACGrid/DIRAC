@@ -1,3 +1,17 @@
+[v9.0.19]
+
+*TransformationSystem
+
+FIX: (#8452) Bulk TransformationDB.getFileIDsForLFN to avoid full in memory table
+
+*Tests
+
+NEW: (#8420) script to debug and test CEs and the DIRAC interfaces to interact with them
+
+*RucioFileCatalog
+
+fix: add missing option in RucioFileCatalog.getUserMetadataBulk
+
 [v9.0.18]
 
 *Core
