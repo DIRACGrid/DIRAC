@@ -98,6 +98,14 @@ Further details:
 - When the *CheckVersion* option is "True", the version checking done at the Matcher level will be strict, which means that pilots running different versions from those listed in the *Versions* option will refuse to match any job. There is anyway the possibility to list more than one version in *Versions*; in this case, all of them will be accepted by the Matcher.
 - DIRAC versions are pre-installed on CVMFS in the following location: `/cvmfs/dirac.egi.eu`. From there `/cvmfs/dirac.egi.eu/dirac` contains DIRAC installations, like `/cvmfs/dirac.egi.eu/dirac/v8.0.32`, which can be sourced with `. /cvmfs/dirac.egi.eu/dirac/v8.0.32/Linux-x86_64/diracosrc`
 
+Version override
+================
+
+If you want to override, for development or debugging purposes, the version of DIRAC being installed by the pilot, you can set the option `/Resources/Computing/CEDefaultsModules` to `https://github.com/$DIRAC_test_repo/DIRAC.git:::DIRAC:::$DIRAC_test_branch`.
+This trick allows, for example, to install at runtme a specific branch of DIRAC. For example `https://github.com/DIRACGrid/DIRAC.git:::DIRAC:::integration` would install the `integration` branch,
+but similarly a non-released in-development branch can be set.
+
+DIRAC extensions can be added on the same line after a comma, e.g. `/Resources/Computing/CEDefaultsModules=https://github.com/$DIRAC_test_repo/DIRAC.git:::DIRAC:::$DIRAC_test_branch,https://gitlab.cern.ch/$LHCBDIRAC_repo/LHCbDIRAC.git:::LHCbDIRAC:::$LHCbDIRAC_branch,https://gitlab.cern.ch/$LHCBDIRAC_repo/LHCbDIRAC.git:::LHCbDIRAC:::$LHCbDIRAC_branch`.
 
 Pilot Commands
 ==============

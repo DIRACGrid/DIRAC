@@ -178,17 +178,9 @@ Using SAC the installation of DIRAC components (DBs, Services, Agents) and MySQL
 
 Usage::
 
-    install mysql
     install db <database>
     install service <system> <service>
     install agent <system> <agent>
-
-To install MySQL server::
-
-    mardirac1.in2p3.fr >install mysql
-    Installing MySQL database, this can take a while ...
-    MySQL Dirac password:
-    MySQL: Already installed
 
 Installation of Databases for services can be added::
 
@@ -260,7 +252,12 @@ Stop a specific service or agent::
 Updating the DIRAC installation
 ---------------------------------
 
-The SAC allows to update the software on the target host to a given version.
+The SAC allows to update DIRAC, or its extension, to a version. Use extension_name==version for the DIRAC extension.
+A version can be:
+* a PEP440 valid version of DIRAC.
+* a PEP440 valid version of a DIRAC extension.
+* "integration" or "devel" or "master" or "main" would all be interpreted as git+https://github.com/DIRACGrid/DIRAC.git@integration#egg=DIRAC[server]
+* a git tag/branch like git+https://github.com/fstagni/DIRAC.git@test_branch#egg=DIRAC[server]
 
 Usage::
 
@@ -268,14 +265,6 @@ Usage::
 
 For example::
 
-    $ dirac-admin-sysadmin-cli --host mardirac1.in2p3.fr
-    DIRAC Root Path = /home/vanessa/DIRAC-v5r12
-    mardirac1.in2p3.fr >update v5r12p7
-    Software update can take a while, please wait ...
-    Software successfully updated.
-    You should restart the services to use the new software version.
-    mardirac1.in2p3.fr >restart *
-    All systems are restarted, connection to SystemAdministrator is lost
-    mardirac1.in2p3.fr >quit
-
-If the administrator needs to continue working with SAC, it must be started again.
+    update 9.0.18
+    update integration
+    update git+https://github.com/fstagni/DIRAC.git@test_branch#egg=DIRAC[server]
