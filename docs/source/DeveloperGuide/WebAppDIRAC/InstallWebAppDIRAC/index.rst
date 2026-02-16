@@ -4,4 +4,4 @@
 Install WebAppDIRAC
 ===================
 
-TO-DO
+Specific versions can be installed by simply using `pip install`.
