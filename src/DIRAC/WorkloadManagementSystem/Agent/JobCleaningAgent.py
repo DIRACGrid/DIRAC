@@ -54,6 +54,7 @@ class JobCleaningAgent(AgentModule):
 
         # clients
         self.jobDB = None
+        self.sandboxDB = None
 
         self.maxJobsAtOnce = 500
         self.prodTypes = []
@@ -66,6 +67,7 @@ class JobCleaningAgent(AgentModule):
         """Sets defaults"""
 
         self.jobDB = JobDB()
+        self.sandboxDB = SandboxMetadataDB()
 
         agentTSTypes = self.am_getOption("ProductionTypes", [])
         if agentTSTypes:
@@ -156,7 +158,7 @@ class JobCleaningAgent(AgentModule):
         self.log.info("Unassigning sandboxes from soon to be deleted jobs", f"({len(jobList)})")
 
         entitiesList = [f"Job:{jobId}" for jobId in jobList]
-        if not (result := SandboxMetadataDB().unassignEntities(entitiesList))["OK"]:
+        if not (result := self.sandboxDB.unassignEntities(entitiesList))["OK"]:
             self.log.error("Cannot unassign jobs to sandboxes", result["Message"])
             return result
 
