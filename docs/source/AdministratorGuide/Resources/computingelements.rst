@@ -205,3 +205,12 @@ These can be specified in the CEDefaults section to apply a standardised slot si
       }
     }
   }
+
+Debugging Computing Element Issues
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+When troubleshooting Computing Element connectivity or job submission problems, you can use the
+:py:mod:`~DIRAC.WorkloadManagementSystem.scripts.dirac_admin_debug_ce` command to systematically test CE interactions.
+
+This command validates CE functionality by testing status retrieval, job submission, monitoring, and output collection.
+For detailed usage instructions, prerequisites, and examples, run ``dirac-admin-debug-ce --help``.
