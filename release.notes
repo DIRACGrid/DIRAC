@@ -1,3 +1,9 @@
+[v9.0.20]
+
+*WorkloadManagement
+
+FIX: (#8457) cache SandboxMetadataDB instance in JobSanity and JobCleaningAgent to avoid unnecessary DB overhead per job
+
 [v9.0.19]
 
 *TransformationSystem
