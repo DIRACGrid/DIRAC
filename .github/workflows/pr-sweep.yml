@@ -18,3 +18,4 @@ jobs:
       with:
         github-pat: ${{ secrets.PAT }}
         pr-project-name: DiracGridBot/DIRAC
+        since: '10 days ago'
