@@ -56,7 +56,7 @@ Requirements
   configured by the DIRAC administrator)::
 
    $ iptables -I INPUT -p tcp --dport 9130:9200 -j ACCEPT
-   $ service iptables save
+   $ iptables-save
 
 - DIRAC extensions that need specific services which are not an extension of DIRAC used
   should better use ports 9201-9300 in order to avoid confusion. If this happens,
@@ -120,11 +120,22 @@ the steps below. This procedure must be followed for the primary server and for 
      $ openssl pkcs12 -in host.p12 -nocerts -nodes -out hostkey.pem
 
   Make sure the permissions are set right correctly, such that the hostkey.pem is only readable by the ``dirac`` user.
+
 - As *dirac* user, create a directory or a link pointing to the CA certificates directory, for example::
 
      $ ln -s /etc/grid-security/certificates  /opt/dirac/etc/grid-security/certificates
 
   (this is only mandatory in one of the servers. Others can be synchronized from this one using DIRAC tools.)
+
+  Generate the hash link file required by openSSL to index CA certificates::
+
+    $ caHash=$(openssl x509 -in "/opt/dirac/etc/grid-security/certificates/ca.cert.pem" -noout -hash)
+
+  We make a relative symlink on purpose (i.e. not the full path to ca.cert.pem)
+  because otherwise the BundleDeliveryClient will send the full path, which  will be wrong on the client::
+
+    $ ln -s "ca.cert.pem" "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/$caHash.0"
+
 
 - As *dirac* user download the ``install_site.sh`` script::
 
@@ -139,7 +150,7 @@ Installing runit
 
 In order to make the DIRAC components running we use the *runit* mechanism (http://smarden.org/runit/).
 
-As *dirac* user, create ``/opt/dirac/sbin directory`` and create the file ``/opt/dirac/sbin/runsvdir-start`` with the following content, and make it executable::
+As *dirac* user, create ``/opt/dirac/sbin`` directory and create the file ``/opt/dirac/sbin/runsvdir-start`` with the following content, and make it executable::
 
   #!/bin/bash
   cd /opt/dirac
@@ -151,7 +162,7 @@ As *dirac* user, create ``/opt/dirac/sbin directory`` and create the file ``/opt
 
 This section must be executed as *root*
 
-Install the (el9) `RPM <http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el9.cern.x86_64.rpm>`__.
+Install the (el9) `RPM <https://diracproject.web.cern.ch/diracproject/rpm/9/runit-2.1.2-2.el9.x86_64.rpm>`__.
 For older versions of the RPM, check this `link <https://diracproject.web.cern.ch/diracproject/rpm/>`__.
 
 Edit the file ``/usr/lib/systemd/system/runsvdir-start.service`` to the following::
@@ -318,9 +329,9 @@ be taken based on the Python version you wish to install.
         # Host = dirac.cern.ch
         #  List of Services to be installed (what's here is a list for a basic installation)
         Services  = Configuration/Server
-        Services += Framework/TornadoComponentMonitoring
+        Services += Framework/ComponentMonitoring
         Services += Framework/SystemAdministrator
-        Services += ResourceStatus/TornadoResourceStatus
+        Services += ResourceStatus/ResourceStatus
         #  Flag determining whether the Web Portal will be installed
         WebPortal = yes
         #
