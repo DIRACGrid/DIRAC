@@ -1,7 +1,13 @@
 name: PR sweep
 
 on:
-- push
+  push:
+  workflow_dispatch:
+    inputs:
+      since:
+        description: 'Override the "since" parameter (e.g. "30 days ago")'
+        required: false
+        default: '10 days ago'
 
 jobs:
   pr-sweep:
@@ -10,12 +16,12 @@ jobs:
     timeout-minutes: 30
     if: github.repository == 'DIRACGrid/DIRAC'
     steps:
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-        token: ${{ secrets.PAT }}
-    - uses: DIRACGrid/pr-sweeper@main
-      with:
-        github-pat: ${{ secrets.PAT }}
-        pr-project-name: DiracGridBot/DIRAC
-        since: '10 days ago'
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT }}
+      - uses: DIRACGrid/pr-sweeper@main
+        with:
+          github-pat: ${{ secrets.PAT }}
+          pr-project-name: DiracGridBot/DIRAC
+          since: ${{ inputs.since || '10 days ago' }}
