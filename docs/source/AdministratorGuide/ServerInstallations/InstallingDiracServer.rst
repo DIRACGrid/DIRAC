@@ -333,9 +333,10 @@ be taken based on the Python version you wish to install.
           Password = XXXX
           #  Password for root DB user. Must be set for SystemAdministrator Service to work
           RootPwd = YYYY
-          #  location of DB server. Must be set for SystemAdministrator Service to work
-          Host = localhost # default, otherwise a FQDN
-          Port = 3306 # default, otherwise the port
+          #  location of DB server. Must be set for SystemAdministrator Service to work. Default is localhost, otherwise a FQDN
+          Host = localhost
+          #  default Port is 3306
+          Port = 3306
         }
       }
 
