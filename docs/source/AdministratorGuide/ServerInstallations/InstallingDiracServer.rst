@@ -195,6 +195,12 @@ Couple notes:
 * SAN in your certificates: if you are contacting a machine using its aliases, make sure that all the aliases are in the SubjectAlternativeName (SAN) field of the certificates
 * FQDN in the configuration: SAN normally contains only FQDN, so make sure you use the FQDN in the CS as well (e.g. ``mymachine.cern.ch`` and not ``mymachine``)
 
+
+User (admin) certificate
+------------------------
+
+The user installing the server should have their own certificate: it will be used for administration.
+
 .. _using_own_CA:
 
 -----------------
@@ -266,41 +272,31 @@ be taken based on the Python version you wish to install.
         #  it can be used to cover more than one VO in the grid sense.
         #  If you are going to setup DIRAC as a multi-VO instance, remove the VirtualOrganization parameter.
         VirtualOrganization = Name of your VO
-        #  Site name
+        #  Server name
         SiteName = DIRAC.HostName.ch
 
         #  Flag to skip download of CAs, on the first Server of your installation you need to get CAs
-        #  installed by some external means
+        #  installed by some external means, so do not change this flag.
         SkipCADownload = yes
-        #  Flag to use the server certificates
+        #  Flag to use the server certificates. Do not change this flag.
         UseServerCertificate = yes
-        #  Configuration Server URL (This should point to the URL of at least one valid Configuration
-        #  Service in your installation, for the primary server it should not used )
-        #  ConfigurationServer = dips://myprimaryserver.name:9135/Configuration/Server
-        #  Configuration Name
-        ConfigurationName = MyConfiguration
-        #
-        #   These options define the DIRAC components to be installed on "this" DIRAC server.
-        #
-        #
-        #  The next options should only be set for the primary server,
-        #  they properly initialize the configuration data
-        #
-        #  Name of the Admin user (default: None )
-        AdminUserName = adminusername
-        #  DN of the Admin user certificate (default: None )
+        #  Name of the Admin user (default: None)
+        #  This should be the nickname as appears in your identity provider (normally: first letter of your name followed by surname)
+        AdminUserName =
+        #  DN of the Admin user certificate (default: None)
         #  In order the find out the DN that needs to be included in the Configuration for a given
         #  host or user certificate the following command can be used::
         #
         #          openssl x509 -noout -subject -enddate -in <certfile.pem>
         #
-        AdminUserDN = /DC=ch/aminDN
-        #  Email of the Admin user (default: None )
-        AdminUserEmail = adminmail@provider
-        #  Name of the Admin group (default: dirac_admin )
-        AdminGroupName = dirac_admin
-        #  DN of the host certificate (*) (default: None )
-        HostDN = /DC=ch/DC=country/OU=computers/CN=computer.dn
+        AdminUserDN =
+        #  Email of the Admin user (default: None)
+        AdminUserEmail =
+        #  DN of the host certificate (*) (default: None)
+        HostDN =
+        #
+        #   These options define the DIRAC components to be installed on "this" DIRAC server (do not change).
+        #
         # Define the Configuration Server as Master for your installations
         ConfigurationMaster = yes
         # List of Systems to be installed - by default all services are added
@@ -351,14 +347,13 @@ be taken based on the Python version you wish to install.
         }
       }
 
-  or You can download the full server installation from::
+  or you can download the full server installation from::
 
     $ curl -L https://github.com/DIRACGrid/DIRAC/raw/integration/src/DIRAC/Core/scripts/install_full.cfg -o install.cfg
 
 - Run ``install_site.sh`` giving the edited configuration file as the argument. The configuration file must have
-  .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch
-  (pick the most recent one, see `here<https://pypi.org/project/DIRAC/#history>`).
-  In the same way, extensions have to be added with the '-e' switch (the name of the extension should be complete). Finally,
+  .cfg extension (CFG file).
+  Extensions can be added with the '-e' switch (the name of the extension should be complete). Finally,
   further pip packages (e.g. WebAppDIRAC) can follow with the '-p' switch, which can be repeated multiple times::
 
     $ ./install_site.sh -i /opt/dirac [-v <x.y.z>] [-e <extension>] [-p <extra-pip-install>] /home/dirac/DIRAC/install.cfg
@@ -376,11 +371,13 @@ of the status of running DIRAC services, e.g.::
                                 Name : Runit    Uptime    PID
                 Configuration_Server : Run          41    30268
        Framework_SystemAdministrator : Run          21    30339
+       Framework_ComponentMonitoring : Run          21    30341
+       ResourceStatus_ResourceStatus : Run          21    30349
                      Tornado_Tornado : Run          11    30340
 
 
-Now the basic services - Configuration, SystemAdministrator, TornadoComponentMonitoring and TornadoResourceStatus - are installed,
-or at least their DBs should be installed, and their services up and running.
+Now the basic services - Configuration, SystemAdministrator, ComponentMonitoring and ResourceStatus - are installed,
+or at least their DBs should be installed, and the services connecting to them up and running.
 
 There are anyway a couple more steps that should be done to fully activate the ComponentMonitoring and the ResourceStatus.
 These steps can be found in the respective administration sessions of this documentation:
@@ -390,8 +387,7 @@ These steps can be found in the respective administration sessions of this docum
 
 but, no hurry: you can do it later.
 
-The rest of the installation can proceed using the DIRAC Administrator interface,
-either command line (System Administrator Console) or using Web Portal (eventually, not available yet).
+The rest of the installation can proceed using the DIRAC Administrator interface CLI.
 
 It is also possible to include any number of additional systems, services, agents and databases to be installed by ``install_site.sh``.
 
@@ -407,10 +403,21 @@ It is also possible to include any number of additional systems, services, agent
       killall runsv svlogd
       killall runsvdir
 
+
+Now it is time to add the necessary services for a minimal installation. In order to do so:
+
+- install a client as described in the users' guide. Remember to use the same user certificate that you defined as "AdminUser".
+- get a proxy using `dirac-proxy-init -g dirac_admin --no-upload`
+- start the `dirac-admin-sysadmin-cli --host=$your_server_host` and inside install the services "Framework/BundleDelivery", "Framework/ProxyManager" (see instructions on the use of this CLI below)
+- exit the CLI, and simply run `dirac-proxy-init`
+
+
 .. _install_additional_server:
 
 Additional server installation
 ------------------------------
+
+Additional servers can be installed for redundacy purposes. This operation can always be done later, so for now the suggestion is to skip to the next session.
 
 To add a new server to an already existing DIRAC Installation the procedure is similar to the one above.
 You should perform all the preliminary steps to prepare the host for the installation. One additional
@@ -444,8 +451,6 @@ operation is the registration of the new host in the already functional Configur
         #  Service in your installation, for the primary server it should not used)
         ConfigurationServer = https://myprimaryserver.name:9135/Configuration/Server
         ConfigurationServer += https://localhost:8443/Tornado/Tornado
-        #  Configuration Name
-        ConfigurationName = MyConfiguration
 
         #
         #   These options define the DIRAC components being installed on "this" DIRAC server.

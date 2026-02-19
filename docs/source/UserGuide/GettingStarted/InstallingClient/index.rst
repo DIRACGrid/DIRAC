@@ -55,7 +55,7 @@ At this point you need a proxy, so you should issue the command::
    $ dirac-proxy-init
 
 This command will also embed a token in the proxy, in order to talk to DiracX.
-You can see which file is your proxy certificate using the `dirac-proxy-info` command. 
+You can see which file is your proxy certificate using the `dirac-proxy-info` command.
 
 Updating client
 ===============
