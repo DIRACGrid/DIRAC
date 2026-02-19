@@ -65,7 +65,8 @@ CREATE TABLE `Jobs` (
   KEY `MinorStatus` (`MinorStatus`),
   KEY `ApplicationStatus` (`ApplicationStatus`),
   KEY `StatusSite` (`Status`,`Site`),
-  KEY `LastUpdateTime` (`LastUpdateTime`)
+  KEY `LastUpdateTime` (`LastUpdateTime`),
+  KEY `JobName` (`JobName`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------------------------
