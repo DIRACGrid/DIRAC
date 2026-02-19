@@ -45,7 +45,8 @@ CREATE TABLE `PilotAgents` (
   PRIMARY KEY (`PilotID`),
   KEY `PilotJobReference` (`PilotJobReference`),
   KEY `Status` (`Status`),
-  KEY `Statuskey` (`GridSite`,`DestinationSite`,`Status`)
+  KEY `Statuskey` (`GridSite`,`DestinationSite`,`Status`),
+  KEY `idx_dest_queue_status` (`DestinationSite`,`Queue`,`Status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
