@@ -145,7 +145,7 @@ class TaskQueueDB(DB):
             self.__tablesDesc[tableName] = {
                 "Fields": {"TQId": "INTEGER(11) UNSIGNED NOT NULL", "Value": "VARCHAR(64) NOT NULL"},
                 "PrimaryKey": ["TQId", "Value"],
-                "Indexes": {"TaskIndex": ["TQId"], f"{multiField}Index": ["Value"]},
+                "Indexes": {"TaskIndex": ["TQId", "Value"], f"{multiField}Index": ["Value"]},
                 "ForeignKeys": {"TQId": "tq_TaskQueues.TQId"},
             }
 
