@@ -751,7 +751,9 @@ class RucioFileCatalogClient(FileCatalogClientBase):
         """Add metadata for the given paths"""
         resDict = {"Successful": {}, "Failed": {}}
         dids = []
+        paths = []
         for path, metadataDict in pathMetadataDict.items():
+            paths.append(path)
             try:
                 did = self.__getDidsFromLfn(path)
                 did["meta"] = metadataDict
@@ -760,8 +762,10 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                 return S_ERROR(str(err))
         try:
             self.client.set_dids_metadata_bulk(dids=dids, recursive=False)
+            resDict["Successful"] = {path: True for path in paths}
         except Exception as err:
-            return S_ERROR(str(err))
+            resDict["Failed"] = {path: str(err) for path in paths}
+            return S_ERROR(resDict)
         return S_OK(resDict)
 
     @checkCatalogArguments
