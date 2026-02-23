@@ -661,6 +661,7 @@ class FTS3Job(JSerializable):
         job = fts3.new_job(
             transfers=transfers,
             overwrite=True,
+            disable_cleanup=True,
             source_spacetoken=source_spacetoken,
             bring_online=bring_online,
             copy_pin_lifetime=copy_pin_lifetime,
@@ -804,6 +805,7 @@ class FTS3Job(JSerializable):
         job = fts3.new_job(
             transfers=transfers,
             overwrite=True,
+            disable_cleanup=True,
             source_spacetoken=target_spacetoken,
             bring_online=bring_online,
             copy_pin_lifetime=copy_pin_lifetime,
