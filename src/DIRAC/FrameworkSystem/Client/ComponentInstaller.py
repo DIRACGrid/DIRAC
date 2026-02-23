@@ -36,7 +36,7 @@ The setupSite method (used by the dirac-setup-site command) will use the followi
 
 If a Controller Configuration Server is being installed the following Options can be used::
 
-  /LocalInstallation/ConfigurationName: Name of the Configuration (default: Setup )
+  /LocalInstallation/ConfigurationName: Name of the Configuration (default: central_config )
   /LocalInstallation/AdminUserName:  Name of the Admin user (default: None )
   /LocalInstallation/AdminUserDN:    DN of the Admin user certificate (default: None )
   /LocalInstallation/AdminUserEmail: Email of the Admin user (default: None )
@@ -45,6 +45,7 @@ If a Controller Configuration Server is being installed the following Options ca
   /LocalInstallation/VirtualOrganization: Name of the main Virtual Organization (default: None)
 
 """
+
 import glob
 import importlib
 import importlib.util
@@ -1302,7 +1303,7 @@ class ComponentInstaller:
         setupWeb = self.localCfg.getOption(cfgInstallPath("WebPortal"), False)
         setupConfigurationController = self.localCfg.getOption(cfgInstallPath("ConfigurationMaster"), False)
         setupPrivateConfiguration = self.localCfg.getOption(cfgInstallPath("PrivateConfiguration"), False)
-        setupConfigurationName = self.localCfg.getOption(cfgInstallPath("ConfigurationName"), "DIRAC-Prod")
+        setupConfigurationName = self.localCfg.getOption(cfgInstallPath("ConfigurationName"), "central_config")
         setupAddConfiguration = self.localCfg.getOption(cfgInstallPath("AddConfiguration"), True)
 
         for serviceTuple in setupServices:
@@ -1673,7 +1674,7 @@ class ComponentInstaller:
                         textwrap.dedent(
                             f"""#!/bin/bash
 
-                            rcfile={os.path.join(self.instancePath, 'bashrc')}
+                            rcfile={os.path.join(self.instancePath, "bashrc")}
                             [[ -e ${{rcfile}} ]] && source ${{rcfile}}
                             #
                             export DIRAC_USE_TORNADO_IOLOOP=Yes
@@ -1883,7 +1884,7 @@ class ComponentInstaller:
                         textwrap.dedent(
                             f"""#!/bin/bash
 
-                            rcfile={os.path.join(self.instancePath, 'bashrc')}
+                            rcfile={os.path.join(self.instancePath, "bashrc")}
                             [[ -e $rcfile ]] && source $rcfile
                             #
                             exec 2>&1
@@ -2299,7 +2300,7 @@ class ComponentInstaller:
                     textwrap.dedent(
                         f"""#!/bin/bash
 
-                        rcfile={os.path.join(self.instancePath, 'bashrc')}
+                        rcfile={os.path.join(self.instancePath, "bashrc")}
                         [ -e $rcfile ] && source $rcfile
                         #
                         export DIRAC_USE_TORNADO_IOLOOP=Yes

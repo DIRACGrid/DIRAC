@@ -66,8 +66,6 @@ INSTALL_CFG_FILE="${TESTCODE}/DIRAC/tests/Jenkins/install.cfg"
 # shellcheck source=tests/Jenkins/utilities.sh
 source "${TESTCODE}/DIRAC/tests/Jenkins/utilities.sh"
 
-
-
 #...............................................................................
 #
 # installSite:
@@ -107,11 +105,11 @@ installSite() {
     else
       DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh"
     fi
-    curl -L "${DIRACOS2_URL}" > "installer.sh"
+    curl -L "${DIRACOS2_URL}" >"installer.sh"
   fi
   bash "installer.sh"
   rm "installer.sh"
-  echo "source \"$PWD/diracos/diracosrc\"" > "$PWD/bashrc"
+  echo "source \"$PWD/diracos/diracosrc\"" >"$PWD/bashrc"
 
   mkdir -p "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/"
 
@@ -176,7 +174,7 @@ installSite() {
     # "Missing mandatory /DiracX/URL configuration"
     # Call findFutureServices and read services into an array
     findFutureServices 'exclude' $DIRACX_DISABLED_SERVICES
-    mapfile -t futureServices < futureServices
+    mapfile -t futureServices <futureServices
 
     # If there are any remaining services, add them to args
     if [[ ${#futureServices[@]} -gt 0 ]]; then
@@ -195,7 +193,6 @@ installSite() {
   echo "==> Completed installation"
 
 }
-
 
 #...............................................................................
 #
@@ -226,12 +223,12 @@ fullInstallDIRAC() {
     cat "${SERVERINSTALLDIR}/diracos/etc/dirac.cfg"
   fi
 
-  echo 'Content of etc/Production.cfg (just after installSite):'
-  if [[ -e "${SERVERINSTALLDIR}/etc/Production.cfg" ]]; then
-    cat "${SERVERINSTALLDIR}/etc/Production.cfg"
+  echo 'Content of etc/central_config.cfg (just after installSite):'
+  if [[ -e "${SERVERINSTALLDIR}/etc/central_config.cfg" ]]; then
+    cat "${SERVERINSTALLDIR}/etc/central_config.cfg"
   fi
-  if [[ -e "${SERVERINSTALLDIR}/diracos/etc/Production.cfg" ]]; then
-    cat "${SERVERINSTALLDIR}/diracos/etc/Production.cfg"
+  if [[ -e "${SERVERINSTALLDIR}/diracos/etc/central_config.cfg" ]]; then
+    cat "${SERVERINSTALLDIR}/diracos/etc/central_config.cfg"
   fi
 
   #just add a site
@@ -251,16 +248,15 @@ fullInstallDIRAC() {
     exit 1
   fi
 
-
   findServices 'FrameworkSystem'
-  grep -v 'Tornado' services > disetServices
+  grep -v 'Tornado' services >disetServices
   if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
     mv disetServices services
   else
     # construct the list with a mix of Tornado and DISET services
-    grep 'Tornado' services > tornadoServices
-    more tornadoServices | sed s/Tornado//g > tornadoServicesWithoutTornado
-    comm -1 -3 <(sort tornadoServicesWithoutTornado) <(sort disetServices) >> tornadoServices
+    grep 'Tornado' services >tornadoServices
+    more tornadoServices | sed s/Tornado//g >tornadoServicesWithoutTornado
+    comm -1 -3 <(sort tornadoServicesWithoutTornado) <(sort disetServices) >>tornadoServices
     mv tornadoServices services
   fi
   #
@@ -281,8 +277,8 @@ fullInstallDIRAC() {
     exit 1
   fi
 
-  echo 'Content of etc/Production.cfg:'
-  cat "${SERVERINSTALLDIR}/etc/Production.cfg"
+  echo 'Content of etc/central_config.cfg:'
+  cat "${SERVERINSTALLDIR}/etc/central_config.cfg"
 
   echo "==> Restarting Framework services"
   dirac-restart-component Framework '*' -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
@@ -313,14 +309,14 @@ fullInstallDIRAC() {
   # services (not looking for FrameworkSystem already installed)
   findServices 'exclude' 'FrameworkSystem'
 
-  grep -v 'Tornado' services > disetServices
+  grep -v 'Tornado' services >disetServices
   if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
     mv disetServices services
   else
     # construct the list with a mix of Tornado and DISET services
-    grep 'Tornado' services > tornadoServices
-    more tornadoServices | sed s/Tornado//g > tornadoServicesWithoutTornado
-    comm -1 -3 <(sort tornadoServicesWithoutTornado) <(sort disetServices) >> tornadoServices
+    grep 'Tornado' services >tornadoServices
+    more tornadoServices | sed s/Tornado//g >tornadoServicesWithoutTornado
+    comm -1 -3 <(sort tornadoServicesWithoutTornado) <(sort disetServices) >>tornadoServices
     mv tornadoServices services
   fi
 
@@ -333,14 +329,14 @@ fullInstallDIRAC() {
   if [[ "${TEST_HTTPS:-Yes}" = "No" ]]; then
     echo "==> calling dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}"
     if ! dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
-        echo 'ERROR: dirac-install-component failed' >&2
-        exit 1
+      echo 'ERROR: dirac-install-component failed' >&2
+      exit 1
     fi
   else
     echo "==> calling dirac-install-component DataManagement TornadoMultiVOFileCatalog -m TornadoFileCatalog -p Port=9198 -p Protocol=https -p Database=MultiVOFileCatalogDB -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}"
     if ! dirac-install-component DataManagement TornadoMultiVOFileCatalog -m TornadoFileCatalog -p Port=9198 -p Protocol=https -p Database=MultiVOFileCatalogDB -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
-        echo 'ERROR: dirac-install-component failed' >&2
-        exit 1
+      echo 'ERROR: dirac-install-component failed' >&2
+      exit 1
     fi
     echo "==> Restarting Tornado Tornado"
     dirac-restart-component Tornado Tornado ${DEBUG}
@@ -409,17 +405,16 @@ fullInstallDIRAC() {
   else
     echo "==> Restarting Tornado Tornado"
     dirac-restart-component Tornado Tornado -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
-    fi
+  fi
 
-  echo 'Content of etc/Production.cfg:'
-  cat "${SERVERINSTALLDIR}/etc/Production.cfg"
+  echo 'Content of etc/central_config.cfg:'
+  cat "${SERVERINSTALLDIR}/etc/central_config.cfg"
 
   echo "==> Restarting Configuration Server"
   dirac-restart-component Configuration Server -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}
 }
 
-
-clean(){
+clean() {
 
   echo "==> [clean]"
 
