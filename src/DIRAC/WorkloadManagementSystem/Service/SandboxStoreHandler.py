@@ -46,7 +46,10 @@ class SandboxStoreHandlerMixin:
     def initializeRequest(self):
         self.__localSEName = self.getCSOption("LocalSE", "SandboxSE")
         self._useDiracXBackend = self.getCSOption("UseDiracXBackend", False)
+        self._useDiracXBackendOnly = self.getCSOption("UseDiracXBackendOnly", False)
         self._maxUploadBytes = self.getCSOption("MaxSandboxSizeMiB", 10) * 1048576
+        if self._useDiracXBackendOnly:
+            return
         # Execute the purge once every 1000 calls
         SandboxStoreHandler.__purgeCount += 1
         if SandboxStoreHandler.__purgeCount > 1000:
@@ -97,7 +100,7 @@ class SandboxStoreHandlerMixin:
         vo = credDict.get("VO", Registry.getVOForGroup(credDict["group"]))
 
         disabledVOs = gConfig.getValue("/DiracX/DisabledVOs", [])
-        if self._useDiracXBackend and vo not in disabledVOs:
+        if self._useDiracXBackendOnly or (self._useDiracXBackend and vo not in disabledVOs):
             gLogger.info("Forwarding to DiracX")
             with tempfile.TemporaryFile(mode="w+b") as tar_fh:
                 result = fileHelper.networkToDataSink(tar_fh, maxFileSize=self._maxUploadBytes)
