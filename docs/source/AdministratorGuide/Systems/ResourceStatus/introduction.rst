@@ -172,6 +172,10 @@ tuple ( ElementName, StatusType ) has not changed.
 
 .. note :: There are no Foreign Keys on the ResourceStatusDB tables.
 
+.. seealso::
+
+   Complete database schema with all field descriptions: :doc:`../../../DeveloperGuide/Systems/ResourceStatus/index`
+
 ------------
 Synchronizer
 ------------

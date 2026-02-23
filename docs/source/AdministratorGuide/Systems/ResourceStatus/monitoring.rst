@@ -217,6 +217,10 @@ dictionary and returns it to the PEP.
 Info Getter
 ===========
 
+.. seealso::
+
+   For detailed implementation examples, database schemas, and code templates for extending the policy system, see :doc:`../../../DeveloperGuide/Systems/ResourceStatus/index`.
+
 Info getter is the piece of code that decides which policies and actions match. It reads from the CS ( /Operation/ResourceStatus/Policies ) and
 gets a dictionary per policy defined there. The matching algorithm works as follows:
 
