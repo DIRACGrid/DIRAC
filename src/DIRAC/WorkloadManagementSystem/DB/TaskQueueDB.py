@@ -145,7 +145,7 @@ class TaskQueueDB(DB):
             self.__tablesDesc[tableName] = {
                 "Fields": {"TQId": "INTEGER(11) UNSIGNED NOT NULL", "Value": "VARCHAR(64) NOT NULL"},
                 "PrimaryKey": ["TQId", "Value"],
-                "Indexes": {"TaskIndex": ["TQId"], f"{multiField}Index": ["Value"]},
+                "Indexes": {"TaskIndex": ["TQId", "Value"], f"{multiField}Index": ["Value"]},
                 "ForeignKeys": {"TQId": "tq_TaskQueues.TQId"},
             }
 
@@ -508,24 +508,21 @@ class TaskQueueDB(DB):
         for field in multiValueDefFields:
             tableName = f"`tq_TQTo{field}`"
             if field in tqDefDict and tqDefDict[field]:
-                firstQuery = (
-                    "SELECT COUNT(%s.Value) \
-                      FROM %s \
-                      WHERE %s.TQId = `tq_TaskQueues`.TQId"
-                    % (tableName, tableName, tableName)
-                )
-                grouping = f"GROUP BY {tableName}.TQId"
                 valuesList = List.uniqueElements([value.strip() for value in tqDefDict[field] if value.strip()])
                 numValues = len(valuesList)
-                secondQuery = "{} AND {}.Value in ({})".format(
-                    firstQuery,
-                    tableName,
-                    ",".join(["%s" % str(value) for value in valuesList]),
+                valuesStr = ",".join([f"{str(value)}" for value in valuesList])
+                # Exact count match: TQ must have exactly numValues entries
+                sqlCondList.append(
+                    f"( SELECT COUNT({tableName}.Value) FROM {tableName} WHERE {tableName}.TQId = `tq_TaskQueues`.TQId ) = {numValues}"
                 )
-                sqlCondList.append(f"{numValues} = ({firstQuery} {grouping})")
-                sqlCondList.append(f"{numValues} = ({secondQuery} {grouping})")
+                # All values must be in the TQ
+                sqlCondList.append(
+                    f"NOT EXISTS ( SELECT 1 FROM {tableName} WHERE {tableName}.TQId = `tq_TaskQueues`.TQId AND {tableName}.Value NOT IN ({valuesStr}) )"
+                )
             else:
-                sqlCondList.append(f"`tq_TaskQueues`.TQId not in ( SELECT DISTINCT {tableName}.TQId from {tableName} )")
+                sqlCondList.append(
+                    f"NOT EXISTS ( SELECT 1 FROM {tableName} WHERE {tableName}.TQId = `tq_TaskQueues`.TQId )"
+                )
 
         # Handle RAM requirements matching
         hasRAMRequirements = "MinRAM" in tqDefDict or "MaxRAM" in tqDefDict
@@ -859,14 +856,11 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
                     # that the GridCE matches explicitly so the COUNT can not be 0. In this case we skip this
                     # condition
                     sqlMultiCondList.append(
-                        "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0"
-                        % (fullTableN, fullTableN, fullTableN)
+                        f"NOT EXISTS ( SELECT 1 FROM {fullTableN} WHERE {fullTableN}.TQId = tq.TQId )"
                     )
                     sqlMultiCondList.append(
                         self.__generateSQLSubCond(
-                            "%%s IN ( SELECT %s.Value \
-                                                            FROM %s \
-                                                            WHERE %s.TQId = tq.TQId )"
+                            "EXISTS ( SELECT 1 FROM %s WHERE %s.TQId = tq.TQId AND %s.Value = %%s )"
                             % (fullTableN, fullTableN, fullTableN),
                             tqMatchDict.get(field),
                         )
@@ -878,9 +872,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
                 if field in bannedJobMatchFields:
                     fullTableN = f"`tq_TQToBanned{field}s`"
                     csql = self.__generateSQLSubCond(
-                        "%%s not in ( SELECT %s.Value \
-                                                          FROM %s \
-                                                          WHERE %s.TQId = tq.TQId )"
+                        "NOT EXISTS ( SELECT 1 FROM %s WHERE %s.TQId = tq.TQId AND %s.Value = %%s )"
                         % (fullTableN, fullTableN, fullTableN),
                         tqMatchDict[field],
                         boolOp="OR",
@@ -920,7 +912,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
 
             sqlCondList.append(
                 self.__generateSQLSubCond(
-                    f"%%s not in ( SELECT {fullTableN}.Value FROM {fullTableN} WHERE {fullTableN}.TQId = tq.TQId )",
+                    f"NOT EXISTS ( SELECT 1 FROM {fullTableN} WHERE {fullTableN}.TQId = tq.TQId AND {fullTableN}.Value = %%s )",
                     b_fv,
                     boolOp="OR",
                 )
@@ -952,15 +944,14 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         """Generate SQL condition where ALL the specified multiValue requirements must be
         present in the matching resource list
         """
-        sql1 = f"SELECT COUNT({tableName}.Value) FROM {tableName} WHERE {tableName}.TQId=tq.TQId"
         if not tagMatchList:
-            sql2 = sql1 + f" AND {tableName}.Value=''"
+            sql = f"NOT EXISTS ( SELECT 1 FROM {tableName} WHERE {tableName}.TQId=tq.TQId AND {tableName}.Value != '' )"
         else:
             if isinstance(tagMatchList, (list, tuple)):
-                sql2 = sql1 + f" AND {tableName}.Value in ( {','.join([('%s' % v) for v in tagMatchList])} )"
+                valuesStr = ",".join([f"{v}" for v in tagMatchList])
             else:
-                sql2 = sql1 + f" AND {tableName}.Value={tagMatchList}"
-        sql = "( " + sql1 + " ) = (" + sql2 + " )"
+                valuesStr = tagMatchList
+            sql = f"NOT EXISTS ( SELECT 1 FROM {tableName} WHERE {tableName}.TQId=tq.TQId AND {tableName}.Value NOT IN ( {valuesStr} ) )"
         return sql
 
     @staticmethod
