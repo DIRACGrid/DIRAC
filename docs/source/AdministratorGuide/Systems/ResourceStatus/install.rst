@@ -75,7 +75,6 @@ Let's do it one by one to make it easier::
 
     $ dirac-rss-sync --element Site -o LogLevel=VERBOSE
     $ dirac-rss-sync --element Resource -o LogLevel=VERBOSE
-    $ dirac-rss-sync --element Node -o LogLevel=VERBOSE
 
 ---------------------------------------
 Initialize Statuses for StorageElements

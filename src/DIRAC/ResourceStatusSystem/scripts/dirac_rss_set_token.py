@@ -7,6 +7,7 @@ If the releaseToken switch is used, no matter what was the previous token, it wi
 If not set, the token will be set to whatever username is defined on the proxy loaded while issuing
 this command. In the second case, the token lasts one day.
 """
+
 from datetime import datetime, timedelta
 
 # DIRAC
@@ -27,7 +28,7 @@ def registerSwitches():
     """
 
     switches = (
-        ("element=", "Element family to be Synchronized ( Site, Resource or Node )"),
+        ("element=", "Element family to be Synchronized (Site, Resource)"),
         ("name=", "Name, name of the element where the change applies"),
         ("statusType=", "StatusType, if none applies to all possible statusTypes"),
         ("reason=", "Reason to set the Status"),
@@ -67,7 +68,7 @@ def parseSwitches():
             gLogger.error("Please, check documentation above")
             Script.showHelp(exitCode=1)
 
-    if not switches["element"] in ("Site", "Resource", "Node"):
+    if switches["element"] not in ("Site", "Resource"):
         gLogger.error(f"Found {switches['element']} as element switch")
         gLogger.error("Please, check documentation above")
         Script.showHelp(exitCode=1)

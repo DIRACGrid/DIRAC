@@ -1,20 +1,21 @@
-""" ResourceStatusDB:
-    This module provides definition of the DB tables, and methods to access them.
+"""ResourceStatusDB:
+This module provides definition of the DB tables, and methods to access them.
 
-    Written using sqlalchemy declarative_base
+Written using sqlalchemy declarative_base
 
 
-    For extending the ResourceStatusDB tables:
+For extending the ResourceStatusDB tables:
 
-    1) In the extended module, call:
+1) In the extended module, call:
 
-    from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import rmsBase, TABLESLIST, TABLESLISTWITHID
-    TABLESLIST = TABLESLIST + [list of new table names]
-    TABLESLISTWITHID = TABLESLISTWITHID + [list of new table names]
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import rmsBase, TABLESLIST, TABLESLISTWITHID
+TABLESLIST = TABLESLIST + [list of new table names]
+TABLESLISTWITHID = TABLESLISTWITHID + [list of new table names]
 
-    2) provide a declarative_base definition of the tables (new or extended) in the extension module
+2) provide a declarative_base definition of the tables (new or extended) in the extension module
 
 """
+
 import datetime
 from sqlalchemy.orm import class_mapper
 from sqlalchemy.orm.query import Query
@@ -26,7 +27,7 @@ from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 
-TABLESLIST = ["SiteStatus", "ResourceStatus", "NodeStatus"]
+TABLESLIST = ["SiteStatus", "ResourceStatus"]
 
 TABLESLISTWITHID = [
     "ResourceStatusCache",
@@ -34,8 +35,6 @@ TABLESLISTWITHID = [
     "SiteHistory",
     "ResourceLog",
     "ResourceHistory",
-    "NodeLog",
-    "NodeHistory",
 ]
 
 
@@ -238,12 +237,6 @@ class ResourceStatus(ElementStatusBase, rssBase):
     __tablename__ = "ResourceStatus"
 
 
-class NodeStatus(ElementStatusBase, rssBase):
-    """NodeStatus table"""
-
-    __tablename__ = "NodeStatus"
-
-
 # tables with schema defined in ElementStatusBaseWithID
 
 
@@ -269,18 +262,6 @@ class ResourceHistory(ElementStatusBaseWithID, rssBase):
     """ResourceHistory table"""
 
     __tablename__ = "ResourceHistory"
-
-
-class NodeLog(ElementStatusBaseWithID, rssBase):
-    """NodeLog table"""
-
-    __tablename__ = "NodeLog"
-
-
-class NodeHistory(ElementStatusBaseWithID, rssBase):
-    """NodeHistory table"""
-
-    __tablename__ = "NodeHistory"
 
 
 # Interaction with the DB

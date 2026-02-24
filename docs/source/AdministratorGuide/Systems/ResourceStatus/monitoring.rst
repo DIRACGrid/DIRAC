@@ -25,7 +25,7 @@ it as Active.
 Element Inspector Agents
 ------------------------
 
-There is one InspectorAgent per family of elements: Site, Resource and Node. They run frequently
+There is one InspectorAgent per family of elements: Site and Resource. They run frequently
 and get from the DB the elements that have not been checked recently. With other words, they
 take elements following:
 
@@ -216,6 +216,10 @@ dictionary and returns it to the PEP.
 
 Info Getter
 ===========
+
+.. seealso::
+
+   For detailed implementation examples, database schemas, and code templates for extending the policy system, see :doc:`../../../DeveloperGuide/Systems/ResourceStatus/index`.
 
 Info getter is the piece of code that decides which policies and actions match. It reads from the CS ( /Operation/ResourceStatus/Policies ) and
 gets a dictionary per policy defined there. The matching algorithm works as follows:

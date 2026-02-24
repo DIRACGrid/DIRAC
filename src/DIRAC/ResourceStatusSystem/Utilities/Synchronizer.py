@@ -1,12 +1,13 @@
-""" Synchronizer
+"""Synchronizer
 
-  Module that keeps the database synchronized with the CS
-  Module that updates the RSS database ( ResourceStatusDB ) with the information
-  in the Resources section. If there are additions in the CS, those are incorporated
-  to the DB. If there are deletions, entries in RSS tables for those elements are
-  deleted ( except the Logs table ).
+Module that keeps the database synchronized with the CS
+Module that updates the RSS database ( ResourceStatusDB ) with the information
+in the Resources section. If there are additions in the CS, those are incorporated
+to the DB. If there are deletions, entries in RSS tables for those elements are
+deleted ( except the Logs table ).
 
 """
+
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -53,8 +54,8 @@ class Synchronizer:
 
     def sync(self, _eventName, _params):
         """
-        Main synchronizer method. It synchronizes the three types of elements: Sites,
-        Resources and Nodes. Each _syncX method returns a dictionary with the additions
+        Main synchronizer method. It synchronizes the two types of elements: Sites
+        and Resources. Each _syncX method returns a dictionary with the additions
         and deletions.
 
         examples:
@@ -77,10 +78,6 @@ class Synchronizer:
         syncResources = self._syncResources()
         if not syncResources["OK"]:
             gLogger.error(syncResources["Message"])
-
-        syncNodes = self._syncNodes()
-        if not syncNodes["OK"]:
-            gLogger.error(syncNodes["Message"])
 
         return S_OK()
 
@@ -168,20 +165,6 @@ class Synchronizer:
         removingResources = self.__removeNonExistingResourcesFromRM()
         if not removingResources["OK"]:
             gLogger.error(removingResources["Message"])
-
-        return S_OK()
-
-    def _syncNodes(self):
-        """
-        Sync resources: compares CS with DB and does the necessary modifications.
-        ( Queues )
-        """
-        gLogger.info("-- Synchronizing Nodes --")
-
-        gLogger.verbose("-> Queues")
-        queues = self.__syncQueues()
-        if not queues["OK"]:
-            gLogger.error(queues["Message"])
 
         return S_OK()
 
@@ -484,73 +467,6 @@ class Synchronizer:
 
             query = self.rStatus.addIfNotThereStatusElement(
                 "Resource",
-                "Status",
-                name=_name,
-                statusType=_statusType,
-                status=_status,
-                elementType=_elementType,
-                tokenOwner=self.tokenOwner,
-                reason=_reason,
-            )
-            if not query["OK"]:
-                return query
-
-        return S_OK()
-
-    def __syncQueues(self):
-        """
-        Sync Queues: compares CS with DB and does the necessary modifications.
-        """
-
-        queuesCS = CSHelpers.getQueuesRSS()
-        if not queuesCS["OK"]:
-            return queuesCS
-        queuesCS = queuesCS["Value"]
-
-        gLogger.verbose(f"{len(queuesCS)} Queues found in CS")
-
-        queuesDB = self.rStatus.selectStatusElement("Node", "Status", elementType="Queue", meta={"columns": ["Name"]})
-        if not queuesDB["OK"]:
-            return queuesDB
-        queuesDB = [queueDB[0] for queueDB in queuesDB["Value"]]
-
-        # ComputingElements that are in DB but not in CS
-        toBeDeleted = list(set(queuesDB).difference(set(queuesCS)))
-        gLogger.verbose(f"{len(toBeDeleted)} Queues to be deleted")
-
-        # Delete storage elements
-        for queueName in toBeDeleted:
-            deleteQuery = self.rStatus._extermineStatusElement("Node", queueName)
-
-            gLogger.verbose(f"... {queueName}")
-            if not deleteQuery["OK"]:
-                return deleteQuery
-
-        statusTypes = self.rssConfig.getConfigStatusType("Queue")
-        # statusTypes = RssConfiguration.getValidStatusTypes()[ 'Node' ]
-
-        result = self.rStatus.selectStatusElement(
-            "Node", "Status", elementType="Queue", meta={"columns": ["Name", "StatusType"]}
-        )
-        if not result["OK"]:
-            return result
-        queueTuple = [(x[0], x[1]) for x in result["Value"]]
-
-        # For each ( se, statusType ) tuple not present in the DB, add it.
-        queueStatusTuples = [(se, statusType) for se in queuesCS for statusType in statusTypes]
-        toBeAdded = list(set(queueStatusTuples).difference(set(queueTuple)))
-
-        gLogger.verbose(f"{len(toBeAdded)} Queue entries to be added")
-
-        for queueTuple in toBeAdded:
-            _name = queueTuple[0]
-            _statusType = queueTuple[1]
-            _status = self.defaultStatus
-            _reason = "Synchronized"
-            _elementType = "Queue"
-
-            query = self.rStatus.addIfNotThereStatusElement(
-                "Node",
                 "Status",
                 name=_name,
                 statusType=_statusType,

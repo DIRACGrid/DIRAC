@@ -4,7 +4,6 @@ modules.
 """
 
 from DIRAC import S_OK, gConfig, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues
 from DIRAC.Core.Utilities.SiteSEMapping import getSEParameters
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
@@ -76,7 +75,7 @@ def getFileCatalogs():
 
 def getSiteElements(siteName):
     """
-    Gets all the computing and storage elements for a given site
+    Gets all the storage elements for a given site
     """
 
     res = DMSHelpers().getSiteSEMapping()
@@ -84,52 +83,4 @@ def getSiteElements(siteName):
         return res
     resources = res["Value"][1].get(siteName, [])
 
-    res = getQueues(siteName)
-    if not res["OK"]:
-        return res
-    resources = list(resources) + list(res["Value"].get(siteName, []))
-
-    return S_OK(resources)
-
-
-def getQueuesRSS():
-    """
-    Gets all queues from /Resources/Sites/<>/<>/CEs/<>/Queues
-    """
-    _basePath = "Resources/Sites"
-
-    queues = []
-
-    domainNames = gConfig.getSections(_basePath)
-    if not domainNames["OK"]:
-        return domainNames
-    domainNames = domainNames["Value"]
-
-    for domainName in domainNames:
-        domainSites = gConfig.getSections(f"{_basePath}/{domainName}")
-        if not domainSites["OK"]:
-            return domainSites
-        domainSites = domainSites["Value"]
-
-        for site in domainSites:
-            siteCEs = gConfig.getSections(f"{_basePath}/{domainName}/{site}/CEs")
-            if not siteCEs["OK"]:
-                # return siteCEs
-                gLogger.error(siteCEs["Message"])
-                continue
-            siteCEs = siteCEs["Value"]
-
-            for siteCE in siteCEs:
-                siteQueue = gConfig.getSections(f"{_basePath}/{domainName}/{site}/CEs/{siteCE}/Queues")
-                if not siteQueue["OK"]:
-                    # return siteQueue
-                    gLogger.error(siteQueue["Message"])
-                    continue
-                siteQueue = siteQueue["Value"]
-
-                queues.extend(siteQueue)
-
-    # Remove duplicated ( just in case )
-    queues = list(set(queues))
-
-    return S_OK(queues)
+    return S_OK(list(resources))

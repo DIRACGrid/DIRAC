@@ -13,4 +13,5 @@ Here the reader can find technical documentation for developing DIRAC systems
    Transformation/index
    Monitoring/index
    RequestManagement/index
+   ResourceStatus/index
    WorkloadManagement/index

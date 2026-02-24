@@ -62,6 +62,10 @@ we cannot define the following matchParams:
 
 .. warning :: This setting will match the cartesian product of name x statusType. We will match CERN-USER for WriteAccess and PIC-USER for ReadAccess as well. We will need two separate policies.
 
+.. seealso::
+
+   Code templates and examples for creating custom policies: :doc:`../../../DeveloperGuide/Systems/ResourceStatus/index`
+
 -------------
 PolicyActions
 -------------

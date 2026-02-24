@@ -4,6 +4,7 @@
 Module that collects utility functions.
 
 """
+
 from DIRAC import S_OK
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -106,7 +107,7 @@ def getValidElements():
     """
     Returns from the OperationsHelper: <_rssConfigPath>/GeneralConfig/ValidElements
     """
-    _DEFAULTS = ("Site", "Resource", "Node")
+    _DEFAULTS = ("Site", "Resource")
 
     #  result = Operations().getValue( '%s/GeneralConfig/ValidElements' % _rssConfigPath )
     #  if result is not None:

@@ -1,4 +1,4 @@
-""" TokenAgent
+"""TokenAgent
 
   This agent inspect all elements, and resets their tokens if necessary.
 
@@ -10,6 +10,7 @@ The following options can be set for the TokenAgent.
   :dedent: 2
   :caption: TokenAgent options
 """
+
 from datetime import datetime, timedelta
 
 from DIRAC import S_OK, S_ERROR
@@ -62,7 +63,7 @@ class TokenAgent(AgentModule):
         # Initialized here, as it is needed empty at the beginning of the execution
         self.tokenDict = {}
 
-        elements = ("Site", "Resource", "Node")
+        elements = ("Site", "Resource")
 
         for element in elements:
             self.log.info(f"Processing {element}")
@@ -182,7 +183,7 @@ class TokenAgent(AgentModule):
 
             resNotify = self._notify(tokenOwner, expired, expiring)
             if not resNotify["OK"]:
-                self.log.error("Failed to notify token owner", resNotify["Message"])
+                self.log.error("Failed to notify token owner", f"{resNotify['Message']}")
 
         if (adminExpired or adminExpiring) and self.adminMail:
             return self._notify(self.adminMail, adminExpired, adminExpiring)
