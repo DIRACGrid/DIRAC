@@ -2,6 +2,7 @@
 This Service provides functionality to access and modify the
 InstalledComponentsDB database
 """
+
 from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.FrameworkSystem.DB.InstalledComponentsDB import (
@@ -278,14 +279,14 @@ class ComponentMonitoringHandlerMixin:
         host is the name of the machine to which the logging information belongs
         fields is a dictionary where the fields contain the logging information to be stored in the database
         """
-        result = ComponentMonitoringHandler.db.exists(HostLogging, {"hostName": host})
+        result = ComponentMonitoringHandler.db.exists(HostLogging, {"HostName": host})
         if not result["OK"]:
             return result
 
         if result["Value"]:
-            result = ComponentMonitoringHandler.db.updateLogs({"hostName": host}, fields)
+            result = ComponentMonitoringHandler.db.updateLogs({"HostName": host}, fields)
         else:
-            fields["hostName"] = host
+            fields["HostName"] = host
             result = ComponentMonitoringHandler.db.addLog(fields)
 
         if not result["OK"]:
@@ -299,13 +300,13 @@ class ComponentMonitoringHandlerMixin:
         """
         Retrieves the logging information currently stored for the given host
         """
-        result = ComponentMonitoringHandler.db.exists(HostLogging, {"hostName": host})
+        result = ComponentMonitoringHandler.db.exists(HostLogging, {"HostName": host})
         if not result["OK"]:
             return result
         if not result["Value"]:
             return S_ERROR(f"Host {host} does not exist")
 
-        return ComponentMonitoringHandler.db.getLogs({"hostName": host})
+        return ComponentMonitoringHandler.db.getLogs({"HostName": host})
 
     types_getLogs = []
 
