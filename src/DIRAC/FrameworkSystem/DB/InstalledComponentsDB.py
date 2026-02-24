@@ -3,18 +3,16 @@ Classes and functions for easier management of the InstalledComponents database
 """
 
 import re
-import datetime
-
 from urllib import parse as urlparse
 
-from sqlalchemy import MetaData, Column, Integer, String, DateTime, create_engine, text
+from sqlalchemy import Column, DateTime, Integer, MetaData, String, create_engine
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, scoped_session, relationship
+from sqlalchemy.orm import relationship, scoped_session, sessionmaker
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.sql.expression import null
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
 metadata = MetaData()
@@ -35,7 +33,7 @@ class Component(componentsBase):
     module = Column("DIRACModule", String(32), nullable=False)
     cType = Column("Type", String(32), nullable=False)
 
-    def __init__(self, system=null(), module=null(), cType=null()):
+    def __init__(self, system=None, module=None, cType=None):
         """just defines some instance members"""
         self.system = system
         self.module = module
@@ -52,6 +50,14 @@ class Component(componentsBase):
         self.system = dictionary.get("DIRACSystem", self.system)
         self.module = dictionary.get("DIRACModule", self.module)
         self.cType = dictionary.get("Type", self.cType)
+
+        # Validate required fields
+        if self.system is None:
+            return S_ERROR("DIRACSystem is required")
+        if self.module is None:
+            return S_ERROR("DIRACModule is required")
+        if self.cType is None:
+            return S_ERROR("Type is required")
 
         return S_OK("Successfully read from dictionary")
 
@@ -95,7 +101,7 @@ class Host(componentsBase):
     cpu = Column("CPU", String(64), nullable=False)
     installationList = relationship("InstalledComponent", backref="installationHost")
 
-    def __init__(self, host=null(), cpu=null()):
+    def __init__(self, host=None, cpu=None):
         self.hostName = host
         self.cpu = cpu
 
@@ -108,6 +114,12 @@ class Host(componentsBase):
         self.hostID = dictionary.get("HostID", self.hostID)
         self.hostName = dictionary.get("HostName", self.hostName)
         self.cpu = dictionary.get("CPU", self.cpu)
+
+        # Validate required fields
+        if self.hostName is None:
+            return S_ERROR("HostName is required")
+        if self.cpu is None:
+            return S_ERROR("CPU is required")
 
         return S_OK("Successfully read from dictionary")
 
@@ -245,6 +257,7 @@ class HostLogging(componentsBase):
 
     def __init__(self, host=null(), **kwargs):
         self.hostName = host
+
         fields = dir(self)
 
         for key, value in kwargs.items():
@@ -262,8 +275,10 @@ class HostLogging(componentsBase):
 
         try:
             for key, value in dictionary.items():
-                if key in fields and not re.match("_.*", key):
-                    setattr(self, key, value)
+                attrName = HOST_LOGGING_FIELD_MAP.get(key, key)
+                # Check if this attribute exists on the class
+                if hasattr(self.__class__, attrName) and not re.match("_.*", key):
+                    setattr(self, attrName, value)
         except Exception as e:
             return S_ERROR(e)
 
@@ -299,6 +314,58 @@ class HostLogging(componentsBase):
         }
 
         return S_OK(dictionary)
+
+
+# Whitelists for valid field names to prevent SQL injection
+COMPONENT_FIELDS = {"ComponentID", "DIRACSystem", "DIRACModule", "Type"}
+HOST_FIELDS = {"HostID", "HostName", "CPU"}
+INSTALLED_COMPONENT_FIELDS = {
+    "ComponentID",
+    "HostID",
+    "Instance",
+    "InstallationTime",
+    "UnInstallationTime",
+    "InstalledBy",
+    "UnInstalledBy",
+}
+HOST_LOGGING_FIELDS = {
+    "HostName",
+    "DIRACVersion",
+    "Extension",
+    "Load1",
+    "Load5",
+    "Load15",
+    "Memory",
+    "DiskOccupancy",
+    "Swap",
+    "CPUClock",
+    "CPUModel",
+    "CertificateDN",
+    "CertificateIssuer",
+    "CertificateValidity",
+    "Cores",
+    "PhysicalCores",
+    "OpenFiles",
+    "OpenPipes",
+    "OpenSockets",
+    "Uptime",
+    "Timestamp",
+}
+
+# Mappings from external field names (DB column names) to SQLAlchemy attribute names
+# External API uses database column names, but Python attributes may differ
+COMPONENT_FIELD_MAP = {"ComponentID": "componentID", "DIRACSystem": "system", "DIRACModule": "module", "Type": "cType"}
+HOST_FIELD_MAP = {"HostID": "hostID", "HostName": "hostName", "CPU": "cpu"}
+INSTALLED_COMPONENT_FIELD_MAP = {
+    "ComponentID": "componentID",
+    "HostID": "hostID",
+    "Instance": "instance",
+    "InstallationTime": "installationTime",
+    "UnInstallationTime": "unInstallationTime",
+    "InstalledBy": "installedBy",
+    "UnInstalledBy": "unInstalledBy",
+}
+HOST_LOGGING_FIELD_MAP = {"HostName": "hostName", "DIRACVersion": "DIRAC"}
 
 
 class InstalledComponentsDB:
@@ -379,12 +446,28 @@ class InstalledComponentsDB:
 
         return S_OK("Tables created")
 
+    def __getFieldWhitelist(self, table):
+        """
+        Get the whitelist of valid field names for a given table class
+        Returns a tuple of (whitelist_set, field_mapping_dict)
+        """
+        if table == Component:
+            return COMPONENT_FIELDS, COMPONENT_FIELD_MAP
+        elif table == Host:
+            return HOST_FIELDS, HOST_FIELD_MAP
+        elif table == InstalledComponent:
+            return INSTALLED_COMPONENT_FIELDS, INSTALLED_COMPONENT_FIELD_MAP
+        elif table == HostLogging:
+            return HOST_LOGGING_FIELDS, HOST_LOGGING_FIELD_MAP
+        else:
+            return set(), {}
+
     def __filterFields(self, session, table, matchFields=None):
         """
         Filters instances of a selection by finding matches on the given fields
         session argument is a Session instance used to retrieve the items
         table argument must be one the following three: Component, Host,
-        InstalledComponent
+        InstalledComponent, HostLogging
         matchFields argument should be a dictionary with the fields to match.
         matchFields accepts fields of the form <Field.bigger> and <Field.smaller>
         to filter using > and < relationships.
@@ -395,11 +478,13 @@ class InstalledComponentsDB:
             matchFields = {}
 
         filtered = session.query(table)
+        validFields, fieldMap = self.__getFieldWhitelist(table)
 
         for key in matchFields:
             actualKey = key
-
             comparison = "="
+
+            # Determine comparison operator
             if ".bigger" in key:
                 comparison = ">"
                 actualKey = key.replace(".bigger", "")
@@ -407,38 +492,38 @@ class InstalledComponentsDB:
                 comparison = "<"
                 actualKey = key.replace(".smaller", "")
 
-            if matchFields[key] is None:
-                sql = f"`{actualKey}` IS NULL"
-            elif isinstance(matchFields[key], list):
-                if len(matchFields[key]) > 0 and None not in matchFields[key]:
-                    sql = f"`{actualKey}` IN ( "
-                    for i, element in enumerate(matchFields[key]):
-                        toAppend = element
-                        if isinstance(toAppend, datetime.datetime):
-                            toAppend = toAppend.strftime("%Y-%m-%d %H:%M:%S")
-                        if isinstance(toAppend, str):
-                            toAppend = f"'{toAppend}'"
-                        if i == 0:
-                            sql = f"{sql}{toAppend}"
-                        else:
-                            sql = f"{sql}, {toAppend}"
-                    sql = f"{sql} )"
-                else:
-                    continue
-            elif isinstance(matchFields[key], str):
-                sql = f"`{actualKey}` {comparison} '{matchFields[key]}'"
-            elif isinstance(matchFields[key], datetime.datetime):
-                sql = f"{actualKey} {comparison} '{matchFields[key].strftime('%Y-%m-%d %H:%M:%S')}'"
-            else:
-                sql = f"`{actualKey}` {comparison} {matchFields[key]}"
+            # Validate field name against whitelist
+            if actualKey not in validFields:
+                return S_ERROR(f"Invalid field name: {actualKey}")
 
-            filteredTemp = filtered.filter(text(sql))
+            # Map external field name to SQLAlchemy attribute name if needed
+            attributeName = fieldMap.get(actualKey, actualKey)
+
+            # Get the actual column object from the table
             try:
-                session.execute(filteredTemp)
-                session.commit()
+                column = getattr(table, attributeName)
+            except AttributeError:
+                return S_ERROR(f"Field {actualKey} does not exist in {table}")
+
+            # Build filter using SQLAlchemy ORM (safe from SQL injection)
+            value = matchFields[key]
+
+            try:
+                if value is None:
+                    filtered = filtered.filter(column.is_(None))
+                elif isinstance(value, list):
+                    if len(value) > 0 and None not in value:
+                        filtered = filtered.filter(column.in_(value))
+                    else:
+                        continue
+                elif comparison == ">":
+                    filtered = filtered.filter(column > value)
+                elif comparison == "<":
+                    filtered = filtered.filter(column < value)
+                else:  # comparison == "="
+                    filtered = filtered.filter(column == value)
             except Exception as e:
-                return S_ERROR(f"Could not filter the fields: {e}")
-            filtered = filteredTemp
+                return S_ERROR(f"Could not apply filter for field {actualKey}: {e}")
 
         return S_OK(filtered)
 
@@ -551,7 +636,10 @@ class InstalledComponentsDB:
         session = self.session()
 
         component = Component()
-        component.fromDict(newComponent)
+        result = component.fromDict(newComponent)
+        if not result["OK"]:
+            session.close()
+            return result
 
         try:
             session.add(component)
@@ -606,7 +694,7 @@ class InstalledComponentsDB:
         session.close()
         return S_OK("Components successfully removed")
 
-    def getComponents(self, matchFields={}, includeInstallations=False, includeHosts=False):
+    def getComponents(self, matchFields=None, includeInstallations=False, includeHosts=False):
         """
         Returns a list with all the components with matches in the given fields
         matchFields argument should be a dictionary with the fields to match or
@@ -619,6 +707,8 @@ class InstalledComponentsDB:
         whether data about the host in which there are instances of this component
         is to be retrieved
         """
+        if matchFields is None:
+            matchFields = {}
 
         session = self.session()
 
@@ -667,9 +757,9 @@ class InstalledComponentsDB:
         try:
             query = (
                 session.query(Component)
-                .filter(text(Component.system == component.system))
-                .filter(text(Component.module == component.module))
-                .filter(text(Component.cType == component.cType))
+                .filter(Component.system == component.system)
+                .filter(Component.module == component.module)
+                .filter(Component.cType == component.cType)
             )
         except Exception as e:
             session.rollback()
@@ -683,7 +773,7 @@ class InstalledComponentsDB:
         else:
             return S_OK(True)
 
-    def updateComponents(self, matchFields={}, updates={}):
+    def updateComponents(self, matchFields=None, updates=None):
         """
         Updates Components objects on the database
         matchFields argument should be a dictionary with the fields to match
@@ -696,6 +786,10 @@ class InstalledComponentsDB:
         updates argument should be a dictionary with the Installation fields and
         their new updated values
         """
+        if matchFields is None:
+            matchFields = {}
+        if updates is None:
+            updates = {}
 
         session = self.session()
 
@@ -708,7 +802,11 @@ class InstalledComponentsDB:
         components = result["Value"]
 
         for component in components:
-            component.fromDict(updates)
+            result = component.fromDict(updates)
+            if not result["OK"]:
+                session.rollback()
+                session.close()
+                return result
 
         try:
             session.commit()
@@ -732,7 +830,10 @@ class InstalledComponentsDB:
         session = self.session()
 
         host = Host()
-        host.fromDict(newHost)
+        result = host.fromDict(newHost)
+        if not result["OK"]:
+            session.close()
+            return result
 
         try:
             session.add(host)
@@ -751,7 +852,7 @@ class InstalledComponentsDB:
         session.close()
         return S_OK("Host successfully added")
 
-    def removeHosts(self, matchFields={}):
+    def removeHosts(self, matchFields=None):
         """
         Removes hosts with matches in the given fields
         matchFields argument should be a dictionary with the fields and values
@@ -763,6 +864,8 @@ class InstalledComponentsDB:
         NOTE: The removal of the items is temporary. To commit the changes to
         the database it is necessary to call commitChanges()
         """
+        if matchFields is None:
+            matchFields = {}
 
         session = self.session()
 
@@ -785,7 +888,7 @@ class InstalledComponentsDB:
         session.close()
         return S_OK("Hosts successfully removed")
 
-    def getHosts(self, matchFields={}, includeInstallations=False, includeComponents=False):
+    def getHosts(self, matchFields=None, includeInstallations=False, includeComponents=False):
         """
         Returns a list with all the hosts with matches in the given fields
         matchFields argument should be a dictionary with the fields to match or
@@ -798,6 +901,8 @@ class InstalledComponentsDB:
         whether data about the components installed into this host is to
         be retrieved
         """
+        if matchFields is None:
+            matchFields = {}
 
         session = self.session()
 
@@ -845,7 +950,7 @@ class InstalledComponentsDB:
         session = self.session()
 
         try:
-            query = session.query(Host).filter(text(Host.hostName == host.hostName)).filter(text(Host.cpu == host.cpu))
+            query = session.query(Host).filter(Host.hostName == host.hostName).filter(Host.cpu == host.cpu)
         except Exception as e:
             session.rollback()
             session.close()
@@ -858,7 +963,7 @@ class InstalledComponentsDB:
         else:
             return S_OK(True)
 
-    def updateHosts(self, matchFields={}, updates={}):
+    def updateHosts(self, matchFields=None, updates=None):
         """
         Updates Hosts objects on the database
         matchFields argument should be a dictionary with the fields to
@@ -870,6 +975,10 @@ class InstalledComponentsDB:
         updates argument should be a dictionary with the Installation fields and
         their new updated values
         """
+        if matchFields is None:
+            matchFields = {}
+        if updates is None:
+            updates = {}
 
         session = self.session()
 
@@ -882,7 +991,11 @@ class InstalledComponentsDB:
         hosts = result["Value"]
 
         for host in hosts:
-            host.fromDict(updates)
+            result = host.fromDict(updates)
+            if not result["OK"]:
+                session.rollback()
+                session.close()
+                return result
 
         try:
             session.commit()
@@ -933,6 +1046,8 @@ class InstalledComponentsDB:
                 else:
                     component = Component()
                     component.fromDict(componentDict)
+                    session.add(component)
+                    session.flush()  # Flush to get the auto-generated ID
         else:
             component = result["Value"][0]
 
@@ -967,6 +1082,8 @@ class InstalledComponentsDB:
             else:
                 host = Host()
                 host.fromDict(hostDict)
+                session.add(host)
+                session.flush()  # Flush to get the auto-generated ID
 
         if component:
             installation.installationComponent = component
@@ -1028,7 +1145,7 @@ class InstalledComponentsDB:
 
         return S_OK(dictInstallations)
 
-    def updateInstalledComponents(self, matchFields={}, updates={}):
+    def updateInstalledComponents(self, matchFields=None, updates=None):
         """
         Updates installations matching the given criteria
         matchFields argument should be a dictionary with the fields to match or
@@ -1039,6 +1156,10 @@ class InstalledComponentsDB:
         updates argument should be a dictionary with the Installation fields and
         their new updated values
         """
+        if matchFields is None:
+            matchFields = {}
+        if updates is None:
+            updates = {}
 
         session = self.session()
 
@@ -1051,7 +1172,11 @@ class InstalledComponentsDB:
         installations = result["Value"]
 
         for installation in installations:
-            installation.fromDict(updates)
+            result = installation.fromDict(updates)
+            if not result["OK"]:
+                session.rollback()
+                session.close()
+                return result
 
         try:
             session.commit()
@@ -1063,7 +1188,7 @@ class InstalledComponentsDB:
         session.close()
         return S_OK("InstalledComponent(s) updated")
 
-    def removeInstalledComponents(self, matchFields={}):
+    def removeInstalledComponents(self, matchFields=None):
         """
         Removes InstalledComponents with matches in the given fields
         matchFields argument should be a dictionary with the fields and values
@@ -1076,6 +1201,8 @@ class InstalledComponentsDB:
         NOTE: The removal of the items is temporary. To commit the changes to
         the database it is necessary to call commitChanges()
         """
+        if matchFields is None:
+            matchFields = {}
 
         session = self.session()
 
@@ -1130,7 +1257,7 @@ class InstalledComponentsDB:
         session.close()
         return S_OK("Log successfully added")
 
-    def removeLogs(self, matchFields={}):
+    def removeLogs(self, matchFields=None):
         """
         Removes logs with matches in the given fields
         matchFields argument should be a dictionary with the fields and values
@@ -1139,6 +1266,8 @@ class InstalledComponentsDB:
         <Field.smaller> to filter using > and < relationships
         matchFields argument can be empty to remove all the logs
         """
+        if matchFields is None:
+            matchFields = {}
 
         session = self.session()
 
@@ -1161,7 +1290,7 @@ class InstalledComponentsDB:
         session.close()
         return S_OK("Logs successfully removed")
 
-    def getLogs(self, matchFields={}):
+    def getLogs(self, matchFields=None):
         """
         Returns a list with all the logs with matches in the given fields
         matchFields argument should be a dictionary with the fields to match or
@@ -1169,6 +1298,8 @@ class InstalledComponentsDB:
         matchFields also accepts fields of the form <Field.bigger> and
         <Field.smaller> to filter using > and < relationships
         """
+        if matchFields is None:
+            matchFields = {}
 
         session = self.session()
 
@@ -1192,7 +1323,7 @@ class InstalledComponentsDB:
         session.close()
         return S_OK(dictLogs)
 
-    def updateLogs(self, matchFields={}, updates={}):
+    def updateLogs(self, matchFields=None, updates=None):
         """
         Updates logs matching the given criteria
         matchFields argument should be a dictionary with the fields to match or
@@ -1202,6 +1333,10 @@ class InstalledComponentsDB:
         updates argument should be a dictionary with the logs fields and
         their new updated values
         """
+        if matchFields is None:
+            matchFields = {}
+        if updates is None:
+            updates = {}
 
         session = self.session()
 
@@ -1214,7 +1349,11 @@ class InstalledComponentsDB:
         logs = result["Value"]
 
         for log in logs:
-            log.fromDict(updates)
+            result = log.fromDict(updates)
+            if not result["OK"]:
+                session.rollback()
+                session.close()
+                return result
 
         try:
             session.commit()
