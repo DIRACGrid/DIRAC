@@ -1,3 +1,41 @@
+[v9.1.0]
+
+*FileCatalog
+
+FIX: (#8467) RucioFileCatalogClient.setMetadata returns empty result on success #8330
+
+*DataManagementSystem
+
+CHANGE: (#8466) FTS3 jobs don't call delete when TPC fails
+
+*WorkloadManagement
+
+NEW: (#8464) add `UseDiracXBackendOnly` CS option to SandboxStore to make DiracX the exclusive sandbox backend and disable local purging
+FIX: (#8463) Add composite (DestinationSite, Queue, Status) index to PilotAgents table for SiteDirector.countPilots()
+FIX: (#8463) Add JobName index to Jobs table for TransformationSystem and monitoring lookups
+FIX: (#8462) Optimize TaskQueueDB matching queries by adding composite (TQId, Value) indices and replacing COUNT subqueries with EXISTS/NOT EXISTS
+
+*Deployment
+
+CHANGE: (#8463) USE JobDB; ALTER TABLE `Jobs` ADD INDEX `JobName` (`JobName`), ALGORITHM=INPLACE, LOCK=NONE;
+CHANGE: (#8463) USE PilotAgentsDB; ALTER Table `PilotAgents` ADD INDEX `idx_dest_queue_status` (`DestinationSite`,`Queue`,`Status`), ALGORITHM=INPLACE, LOCK=NONE;
+CHANGE: (#8462) ALTER TABLE tq_TQToBannedSites ADD PRIMARY KEY (TQId, Value), DROP INDEX TaskIndex;
+CHANGE: (#8462) ALTER TABLE tq_TQToGridCEs ADD PRIMARY KEY (TQId, Value), DROP INDEX TaskIndex;
+CHANGE: (#8462) ALTER TABLE tq_TQToGridMiddlewares ADD PRIMARY KEY (TQId, Value), DROP INDEX TaskIndex;
+CHANGE: (#8462) ALTER TABLE tq_TQToJobTypes ADD PRIMARY KEY (TQId, Value), DROP INDEX TaskIndex;
+CHANGE: (#8462) ALTER TABLE tq_TQToPlatforms ADD PRIMARY KEY (TQId, Value), DROP INDEX TaskIndex;
+CHANGE: (#8462) ALTER TABLE tq_TQToSites ADD PRIMARY KEY (TQId, Value), DROP INDEX TaskIndex;
+CHANGE: (#8462) ALTER TABLE tq_TQToTags ADD PRIMARY KEY (TQId, Value), DROP INDEX TaskIndex;
+CHANGE: (#8446) USE ResourceStatusDB; DROP TABLE `NodeHistory`; DROP TABLE `NodeLog`; DROP TABLE `NodeStatus`;
+
+*docs
+
+NEW: (#8446) added RSS technical documentation
+
+*ResourceStatusSystem
+
+CHANGE: (#8446) Removed nodes (queues) tables
+
 [v9.0.20]
 
 *WorkloadManagement
