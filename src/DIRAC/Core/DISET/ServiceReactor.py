@@ -244,16 +244,31 @@ class ServiceReactor:
                     duration = now - throttleStartedAt
                     diag = self.__services[svcName].throttleDiagnostics()
                     gLogger.warn(
-                        f"Service {svcName} still throttling after {duration:.0f}s",
-                        f"queue={diag['queue']}/{diag['maxQueue']}, " f"threads={diag['threads']}/{diag['maxThreads']}",
+                        f"Service {svcName} still throttling",
+                        f"duration={duration:.0f}s, queue={diag['queue']}/{diag['maxQueue']}, "
+                        f"threads={diag['threads']}/{diag['maxThreads']}",
                     )
                     lastThrottleLog = now
+                # Check if throttle has exceeded the maximum allowed duration
+                maxThrottleDuration = self.__services[svcName].getConfig().getMaxThrottleDuration()
+                if maxThrottleDuration > 0 and (now - throttleStartedAt) > maxThrottleDuration:
+                    diag = self.__services[svcName].throttleDiagnostics()
+                    gLogger.fatal(
+                        f"Service {svcName} stuck in throttle, initiating process restart",
+                        f"duration={now - throttleStartedAt:.0f}s (limit: {maxThrottleDuration}s), "
+                        f"queue={diag['queue']}/{diag['maxQueue']}, "
+                        f"threads={diag['threads']}/{diag['maxThreads']}",
+                    )
+                    clientTransport.close()
+                    self.__alive = False
+                    return
+                gLogger.warn("Rejecting client due to throttling", str(clientTransport.getRemoteAddress()))
                 clientTransport.close()
                 time.sleep(THROTTLE_SERVICE_SLEEP_SECONDS)
                 continue
             if throttleStartedAt is not None:
                 duration = time.time() - throttleStartedAt
-                gLogger.info(f"Service {svcName} throttle cleared after {duration:.1f}s")
+                gLogger.info(f"Service {svcName} throttle cleared", f"duration={duration:.1f}s")
                 throttleStartedAt = None
             # Handle connection
             self.__stats.connectionStablished()
