@@ -42,7 +42,7 @@ class SiteStatus(metaclass=DIRACSingleton):
 
         cacheLifeTime = int(self.rssConfig.getConfigCache())
 
-        # RSSCache only affects the calls directed to RSS, if using the CS it is not used.
+        # RSSCache only affects the calls directed to RSS
         self.rssCache = RSSCache(cacheLifeTime, self.__updateRssCache)
 
     def __updateRssCache(self):
