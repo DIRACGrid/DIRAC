@@ -95,6 +95,6 @@ The ``Optimizers`` executor is necessary for the WMS. It should be installed usi
 To run additional executors inside the ``Optimizers`` executor change its ``Load`` parameter in the CS or during the
 installation with the :ref:`system administrator console <system-admin-console>`::
 
-  install executor WorkloadManagement Optimizers -p Load=JobPath,JobSanity,InputData,MyCustomExecutor,JobScheduling
+  install executor WorkloadManagement Optimizers -p Load=JobPath,JobSanity,InputData,JobScheduling
 
 For detailed information on each of these components, please do refer to the WMS :ref:`Code Documentation<code_documentation>`.
