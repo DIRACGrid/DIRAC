@@ -31,10 +31,6 @@ from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
-#: Time during which the service does not accept new requests and handles those in the queue, if the backlog is too large
-#: This sleep is repeated for as long as Service.wantsThrottle is truthy
-THROTTLE_SERVICE_SLEEP_SECONDS = 0.25
-
 #: Interval between periodic throttle warning messages (seconds)
 THROTTLE_LOG_INTERVAL_SECONDS = 30
 
@@ -264,7 +260,6 @@ class ServiceReactor:
                     return
                 gLogger.warn("Rejecting client due to throttling", str(clientTransport.getRemoteAddress()))
                 clientTransport.close()
-                time.sleep(THROTTLE_SERVICE_SLEEP_SECONDS)
                 continue
             if throttleStartedAt is not None:
                 duration = time.time() - throttleStartedAt
