@@ -1,4 +1,4 @@
-""" ResourceStatus
+"""ResourceStatus
 
 Module that acts as a helper for knowing the status of a resource.
 It takes care of switching between the CS and the RSS.
@@ -46,7 +46,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
 
         :param elementName: name of the element or list of element names
         :type elementName: str, list
-        :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
+        :param elementType: type of the element (StorageElement, ComputingElement, FTS)
         :type elementType: str
         :param statusType: type of the status (meaningful only when elementType==StorageElement)
         :type statusType: None, str, list
@@ -65,8 +65,6 @@ class ResourceStatus(metaclass=DIRACSingleton):
             S_ERROR( xyz.. )
         >>> getElementStatus('ThisIsAWrongName', 'StorageElement', 'WriteAccess')
             S_ERROR( xyz.. )
-        >>> getElementStatus('A_file_catalog', 'FileCatalog')
-            S_OK( { 'A_file_catalog': { 'all': 'Active' } } } )
         >>> getElementStatus('SE1', 'StorageElement', ['ReadAccess', 'WriteAccess'])
             S_OK( { 'SE1': { 'ReadAccess': 'Banned' , 'WriteAccess': 'Active'} } } )
         >>> getElementStatus('SE1', 'StorageElement')
@@ -79,7 +77,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
                    'CE2': {'all': 'Probing'}}}
         """
 
-        allowedParameters = ["StorageElement", "ComputingElement", "FTS", "Catalog"]
+        allowedParameters = ["StorageElement", "ComputingElement", "FTS"]
 
         if elementType not in allowedParameters:
             return S_ERROR(f"{elementType} in not in the list of the allowed parameters: {allowedParameters}")
@@ -92,8 +90,6 @@ class ResourceStatus(metaclass=DIRACSingleton):
                 statusType = ["all"]
             elif elementType == "FTS":
                 statusType = ["all"]
-            elif elementType == "Catalog":
-                statusType = ["all"]
 
         return self.__getRSSElementStatus(elementName, elementType, statusType, vO)
 
@@ -102,7 +98,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
 
         :param elementName: name of the element
         :type elementName: str
-        :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
+        :param elementType: type of the element (StorageElement, ComputingElement, FTS)
         :type elementType: str
         :param statusType: type of the status (meaningful only when elementType==StorageElement)
         :type statusType: str
@@ -159,7 +155,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
 
         :param elementName: name of the element or list of element names
         :type elementName: str, list
-        :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
+        :param elementType: type of the element (StorageElement, ComputingElement, FTS)
         :type elementType: str
         :param statusType: type of the status (meaningful only when elementType==StorageElement,
                            otherwise it is 'all' or ['all'])
@@ -178,7 +174,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
 
         :param elementName: name of the element
         :type elementName: str
-        :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
+        :param elementType: type of the element (StorageElement, ComputingElement, FTS)
         :type elementType: str
         :param statusType: type of the status (meaningful only when elementType==StorageElement)
         :type statusType: str, list
@@ -190,12 +186,9 @@ class ResourceStatus(metaclass=DIRACSingleton):
         if elementType in ("ComputingElement", "FTS"):
             return S_OK({elementName: {"all": "Active"}})
 
-        # If we are here it is because elementType is either 'StorageElement' or 'Catalog'
+        # If we are here it is because elementType is 'StorageElement'
         if elementType == "StorageElement":
             cs_path = "/Resources/StorageElements"
-        elif elementType == "Catalog":
-            cs_path = "/Resources/FileCatalogs"
-            statusType = ["Status"]
 
         if not isinstance(elementName, list):
             elementName = [elementName]
@@ -263,7 +256,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
         if elementType in ("ComputingElement", "FTS"):
             return S_OK()
 
-        # If we are here it is because elementType is either 'StorageElement' or 'Catalog'
+        # If we are here it is because elementType is 'StorageElement'
         statuses = self.rssConfig.getConfigStatusType(elementType)
         if statusType not in statuses:
             gLogger.error(f"{statusType} is not a valid statusType")
@@ -271,11 +264,6 @@ class ResourceStatus(metaclass=DIRACSingleton):
 
         if elementType == "StorageElement":
             cs_path = "/Resources/StorageElements"
-        elif elementType == "Catalog":
-            cs_path = "/Resources/FileCatalogs"
-            # FIXME: This a probably outdated location (new one is in /Operations/[]/Services/Catalogs)
-            # but needs to be VO-aware
-            statusType = "Status"
 
         csAPI = CSAPI()
         csAPI.setOption(f"{cs_path}/{elementName}/{elementType}/{statusType}", status)

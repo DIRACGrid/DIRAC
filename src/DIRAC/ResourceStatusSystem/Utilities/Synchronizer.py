@@ -136,7 +136,7 @@ class Synchronizer:
     def _syncResources(self):
         """
         Sync resources: compares CS with DB and does the necessary modifications.
-        ( StorageElements, FTS, FileCatalogs and ComputingElements )
+        (StorageElements, FTS and ComputingElements)
         """
 
         gLogger.info("-- Synchronizing Resources --")
@@ -150,11 +150,6 @@ class Synchronizer:
         fts = self.__syncFTS()
         if not fts["OK"]:
             gLogger.error(fts["Message"])
-
-        gLogger.verbose("-> FileCatalogs")
-        fileCatalogs = self.__syncFileCatalogs()
-        if not fileCatalogs["OK"]:
-            gLogger.error(fileCatalogs["Message"])
 
         gLogger.verbose("-> ComputingElements")
         computingElements = self.__syncComputingElements()
@@ -262,75 +257,6 @@ class Synchronizer:
             _status = self.defaultStatus
             _reason = "Synchronized"
             _elementType = "ComputingElement"
-
-            query = self.rStatus.addIfNotThereStatusElement(
-                "Resource",
-                "Status",
-                name=_name,
-                statusType=_statusType,
-                status=_status,
-                elementType=_elementType,
-                tokenOwner=self.tokenOwner,
-                reason=_reason,
-            )
-            if not query["OK"]:
-                return query
-
-        return S_OK()
-
-    def __syncFileCatalogs(self):
-        """
-        Sync FileCatalogs: compares CS with DB and does the necessary modifications.
-        """
-
-        catalogsCS = CSHelpers.getFileCatalogs()
-        if not catalogsCS["OK"]:
-            return catalogsCS
-        catalogsCS = catalogsCS["Value"]
-
-        gLogger.verbose(f"{len(catalogsCS)} File catalogs found in CS")
-
-        catalogsDB = self.rStatus.selectStatusElement(
-            "Resource", "Status", elementType="Catalog", meta={"columns": ["Name"]}
-        )
-        if not catalogsDB["OK"]:
-            return catalogsDB
-        catalogsDB = [catalogDB[0] for catalogDB in catalogsDB["Value"]]
-
-        # StorageElements that are in DB but not in CS
-        toBeDeleted = list(set(catalogsDB).difference(set(catalogsCS)))
-        gLogger.verbose(f"{len(toBeDeleted)} File catalogs to be deleted")
-
-        # Delete storage elements
-        for catalogName in toBeDeleted:
-            deleteQuery = self.rStatus._extermineStatusElement("Resource", catalogName)
-
-            gLogger.verbose(f"... {catalogName}")
-            if not deleteQuery["OK"]:
-                return deleteQuery
-
-        # statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
-        statusTypes = self.rssConfig.getConfigStatusType("Catalog")
-
-        result = self.rStatus.selectStatusElement(
-            "Resource", "Status", elementType="Catalog", meta={"columns": ["Name", "StatusType"]}
-        )
-        if not result["OK"]:
-            return result
-        sesTuple = [(x[0], x[1]) for x in result["Value"]]
-
-        # For each ( se, statusType ) tuple not present in the DB, add it.
-        catalogsStatusTuples = [(se, statusType) for se in catalogsCS for statusType in statusTypes]
-        toBeAdded = list(set(catalogsStatusTuples).difference(set(sesTuple)))
-
-        gLogger.verbose(f"{len(toBeAdded)} File catalogs entries to be added")
-
-        for catalogTuple in toBeAdded:
-            _name = catalogTuple[0]
-            _statusType = catalogTuple[1]
-            _status = self.defaultStatus
-            _reason = "Synchronized"
-            _elementType = "Catalog"
 
             query = self.rStatus.addIfNotThereStatusElement(
                 "Resource",
