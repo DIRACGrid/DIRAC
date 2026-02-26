@@ -200,7 +200,6 @@ class ServiceReactor:
                                   services at the same time
         """
         sel = self.__getListeningSelector(svcName)
-        throttleExpires = None
         while self.__alive:
             clientTransport = None
             try:
@@ -224,16 +223,13 @@ class ServiceReactor:
                 gLogger.warn(f"Client connected from banned ip {clientIP}")
                 clientTransport.close()
                 continue
-            # Handle throttling
-            if self.__services[svcName].wantsThrottle and throttleExpires is None:
-                throttleExpires = time.time() + THROTTLE_SERVICE_SLEEP_SECONDS
-            if throttleExpires:
-                if time.time() > throttleExpires:
-                    throttleExpires = None
-                else:
-                    gLogger.warn("Rejecting client due to throttling", str(clientTransport.getRemoteAddress()))
-                    clientTransport.close()
-                    continue
+            # Handle throttling: reject all connections while overloaded
+            # to prevent queue growth when threads are stuck
+            if self.__services[svcName].wantsThrottle:
+                gLogger.warn("Rejecting client due to throttling", str(clientTransport.getRemoteAddress()))
+                clientTransport.close()
+                time.sleep(THROTTLE_SERVICE_SLEEP_SECONDS)
+                continue
             # Handle connection
             self.__stats.connectionStablished()
             self.__services[svcName].handleConnection(clientTransport)
