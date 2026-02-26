@@ -128,7 +128,7 @@ class Job(API):
             self.addToInputSandbox.append(executable)
             logName = f"{os.path.basename(executable)}.log"
         else:
-            self.log.warn("The executable code could not be found locally")
+            self.log.verbose("The executable code is not local")
             logName = "CodeOutput.log"
 
         self.stepCount += 1
