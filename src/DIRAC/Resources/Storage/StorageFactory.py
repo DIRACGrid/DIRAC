@@ -333,14 +333,14 @@ class StorageFactory:
         for protocolSectionName, protocolDict in self.protocols.items():
             # Now update the local and remote protocol lists.
             # A warning will be given if the Access option is not set to local or remote.
-            if protocolDict["Access"].lower() == "remote":
+            if protocolDict["Access"].lower() in ("remote", "remoteonly"):
                 self.remoteProtocolSections.append(protocolSectionName)
             elif protocolDict["Access"].lower() == "local":
                 self.localProtocolSections.append(protocolSectionName)
             else:
                 errStr = (
                     "StorageFactory.__getProtocolDetails: The 'Access' option \
-        for %s:%s is neither 'local' or 'remote'."
+        for %s:%s is not 'local', 'remote' or 'remoteonly'."
                     % (storageName, protocolSectionName)
                 )
                 gLogger.warn(errStr)
