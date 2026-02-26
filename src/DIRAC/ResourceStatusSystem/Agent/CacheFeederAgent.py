@@ -1,4 +1,4 @@
-""" CacheFeederAgent
+"""CacheFeederAgent
 
   This agent feeds the Cache tables with the outputs of the cache commands.
 
@@ -8,6 +8,7 @@
   :dedent: 2
   :caption: CacheFeederAgent options
 """
+
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
@@ -60,21 +61,6 @@ class CacheFeederAgent(AgentModule):
             {"Pilot": {"element": "Site", "siteName": None}},
             {"Pilot": {"element": "Resource", "siteName": None}},
         ]
-
-        # FIXME: do not forget about hourly vs Always ...etc
-        # AccountingCacheCommand
-        #    self.commands[ 'AccountingCache' ] = [
-        #                                          {'SuccessfullJobsBySiteSplitted'    :{'hours' :24, 'plotType' :'Job' }},
-        #                                          {'FailedJobsBySiteSplitted'         :{'hours' :24, 'plotType' :'Job' }},
-        #                                          {'SuccessfullPilotsBySiteSplitted'  :{'hours' :24, 'plotType' :'Pilot' }},
-        #                                          {'FailedPilotsBySiteSplitted'       :{'hours' :24, 'plotType' :'Pilot' }},
-        #                                          {'SuccessfullPilotsByCESplitted'    :{'hours' :24, 'plotType' :'Pilot' }},
-        #                                          {'FailedPilotsByCESplitted'         :{'hours' :24, 'plotType' :'Pilot' }},
-        #                                          {'RunningJobsBySiteSplitted'        :{'hours' :24, 'plotType' :'Job' }},
-        # #                                          {'RunningJobsBySiteSplitted'        :{'hours' :168, 'plotType' :'Job' }},
-        # #                                          {'RunningJobsBySiteSplitted'        :{'hours' :720, 'plotType' :'Job' }},
-        # #                                          {'RunningJobsBySiteSplitted'        :{'hours' :8760, 'plotType' :'Job' }},
-        #                                          ]
 
         # VOBOXAvailability
         #    self.commands[ 'VOBOXAvailability' ] = [

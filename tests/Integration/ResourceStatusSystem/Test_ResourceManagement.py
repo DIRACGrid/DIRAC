@@ -1,8 +1,8 @@
-""" This is a test of the chain
-    ResourceManagementClient -> ResourceManagementHandler -> ResourceManagementDB
-    It supposes that the DB is present, and that the service is running
+"""This is a test of the chain
+ResourceManagementClient -> ResourceManagementHandler -> ResourceManagementDB
+It supposes that the DB is present, and that the service is running
 
-    The DB is supposed to be empty when the test starts
+The DB is supposed to be empty when the test starts
 """
 # pylint: disable=wrong-import-position, missing-docstring
 
@@ -26,44 +26,6 @@ lastCheckTime = datetime.datetime.now()
 @pytest.fixture(name="rmClient")
 def fixtureResourceManagementClient():
     yield ResourceManagementClient()
-
-
-def test_AccountingCache(rmClient):
-    """
-    DowntimeCache table
-    """
-
-    res = rmClient.deleteAccountingCache("TestName12345")  # just making sure it's not there (yet)
-    assert res["OK"] is True, res["Message"]
-
-    # TEST addOrModifyAccountingCache
-    res = rmClient.addOrModifyAccountingCache(
-        "TestName12345", "plotType", "plotName", "result", datetime.datetime.now(), datetime.datetime.now()
-    )
-    assert res["OK"] is True, res["Message"]
-
-    res = rmClient.selectAccountingCache("TestName12345")
-    assert res["OK"] is True, res["Message"]
-    # check if the name that we got is equal to the previously added 'TestName12345'
-    assert res["Value"][0][0] == "TestName12345"
-
-    res = rmClient.addOrModifyAccountingCache(
-        "TestName12345", "plotType", "plotName", "changedresult", dateEffective, lastCheckTime
-    )
-    assert res["OK"] is True, res["Message"]
-
-    res = rmClient.selectAccountingCache("TestName12345")
-    # check if the result has changed
-    rmClient.assertEqual(res["Value"][0][4], "changedresult")
-
-    # TEST deleteAccountingCache
-    # ...............................................................................
-    res = rmClient.deleteAccountingCache("TestName12345")
-    assert res["OK"] is True, res["Message"]
-
-    res = rmClient.selectAccountingCache("TestName12345")
-    assert res["OK"] is True, res["Message"]
-    assert not res["Value"], res["Value"]
 
 
 def test_DowntimeCache(rmClient):
