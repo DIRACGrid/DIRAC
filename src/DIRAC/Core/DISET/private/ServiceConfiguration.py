@@ -121,6 +121,18 @@ class ServiceConfiguration:
         self.setURL(serviceURL)
         return serviceURL
 
+    def getMaxThrottleDuration(self):
+        """Maximum seconds a service can remain in throttle mode before triggering a restart.
+
+        Set to 0 to disable auto-restart (default).
+        When the throttle duration exceeds this value, the service process exits
+        to allow the process supervisor (e.g. runsv) to restart it cleanly.
+        """
+        try:
+            return int(self.getOption("MaxThrottleDuration"))
+        except Exception:
+            return 0
+
     def getContextLifeTime(self):
         optionValue = self.getOption("ContextLifeTime")
         try:
