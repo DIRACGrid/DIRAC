@@ -31,9 +31,6 @@ from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
-#: Interval between periodic throttle warning messages (seconds)
-THROTTLE_LOG_INTERVAL_SECONDS = 30
-
 
 class ServiceReactor:
     __transportExtraKeywords = {
@@ -199,8 +196,6 @@ class ServiceReactor:
                                   services at the same time
         """
         sel = self.__getListeningSelector(svcName)
-        throttleStartedAt = None
-        lastThrottleLog = 0
         while self.__alive:
             clientTransport = None
             try:
@@ -225,33 +220,17 @@ class ServiceReactor:
                 clientTransport.close()
                 continue
             # Handle throttling: reject all connections while overloaded
-            # to prevent queue growth when threads are stuck
-            if self.__services[svcName].wantsThrottle:
-                now = time.time()
-                if throttleStartedAt is None:
-                    throttleStartedAt = now
-                    diag = self.__services[svcName].throttleDiagnostics()
-                    gLogger.warn(
-                        f"Service {svcName} entering throttle mode",
-                        f"queue={diag['queue']}/{diag['maxQueue']}, " f"threads={diag['threads']}/{diag['maxThreads']}",
-                    )
-                    lastThrottleLog = now
-                elif now - lastThrottleLog >= THROTTLE_LOG_INTERVAL_SECONDS:
-                    duration = now - throttleStartedAt
-                    diag = self.__services[svcName].throttleDiagnostics()
-                    gLogger.warn(
-                        f"Service {svcName} still throttling",
-                        f"duration={duration:.0f}s, queue={diag['queue']}/{diag['maxQueue']}, "
-                        f"threads={diag['threads']}/{diag['maxThreads']}",
-                    )
-                    lastThrottleLog = now
+            # to prevent queue growth when threads are stuck.
+            # wantsThrottle also handles state tracking and diagnostic logging.
+            svc = self.__services[svcName]
+            if svc.wantsThrottle:
                 # Check if throttle has exceeded the maximum allowed duration
-                maxThrottleDuration = self.__services[svcName].getConfig().getMaxThrottleDuration()
-                if maxThrottleDuration > 0 and (now - throttleStartedAt) > maxThrottleDuration:
-                    diag = self.__services[svcName].throttleDiagnostics()
+                maxThrottleDuration = svc.getConfig().getMaxThrottleDuration()
+                if maxThrottleDuration > 0 and svc.throttleDuration > maxThrottleDuration:
+                    diag = svc.throttleDiagnostics()
                     gLogger.fatal(
                         f"Service {svcName} stuck in throttle, initiating process restart",
-                        f"duration={now - throttleStartedAt:.0f}s (limit: {maxThrottleDuration}s), "
+                        f"duration={svc.throttleDuration:.0f}s (limit: {maxThrottleDuration}s), "
                         f"queue={diag['queue']}/{diag['maxQueue']}, "
                         f"threads={diag['threads']}/{diag['maxThreads']}",
                     )
@@ -261,10 +240,6 @@ class ServiceReactor:
                 gLogger.warn("Rejecting client due to throttling", str(clientTransport.getRemoteAddress()))
                 clientTransport.close()
                 continue
-            if throttleStartedAt is not None:
-                duration = time.time() - throttleStartedAt
-                gLogger.info(f"Service {svcName} throttle cleared", f"duration={duration:.1f}s")
-                throttleStartedAt = None
             # Handle connection
             self.__stats.connectionStablished()
             self.__services[svcName].handleConnection(clientTransport)
