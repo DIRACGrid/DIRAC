@@ -35,6 +35,9 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 #: This sleep is repeated for as long as Service.wantsThrottle is truthy
 THROTTLE_SERVICE_SLEEP_SECONDS = 0.25
 
+#: Interval between periodic throttle warning messages (seconds)
+THROTTLE_LOG_INTERVAL_SECONDS = 30
+
 
 class ServiceReactor:
     __transportExtraKeywords = {
@@ -200,6 +203,8 @@ class ServiceReactor:
                                   services at the same time
         """
         sel = self.__getListeningSelector(svcName)
+        throttleStartedAt = None
+        lastThrottleLog = 0
         while self.__alive:
             clientTransport = None
             try:
@@ -226,10 +231,30 @@ class ServiceReactor:
             # Handle throttling: reject all connections while overloaded
             # to prevent queue growth when threads are stuck
             if self.__services[svcName].wantsThrottle:
-                gLogger.warn("Rejecting client due to throttling", str(clientTransport.getRemoteAddress()))
+                now = time.time()
+                if throttleStartedAt is None:
+                    throttleStartedAt = now
+                    diag = self.__services[svcName].throttleDiagnostics()
+                    gLogger.warn(
+                        f"Service {svcName} entering throttle mode",
+                        f"queue={diag['queue']}/{diag['maxQueue']}, " f"threads={diag['threads']}/{diag['maxThreads']}",
+                    )
+                    lastThrottleLog = now
+                elif now - lastThrottleLog >= THROTTLE_LOG_INTERVAL_SECONDS:
+                    duration = now - throttleStartedAt
+                    diag = self.__services[svcName].throttleDiagnostics()
+                    gLogger.warn(
+                        f"Service {svcName} still throttling after {duration:.0f}s",
+                        f"queue={diag['queue']}/{diag['maxQueue']}, " f"threads={diag['threads']}/{diag['maxThreads']}",
+                    )
+                    lastThrottleLog = now
                 clientTransport.close()
                 time.sleep(THROTTLE_SERVICE_SLEEP_SECONDS)
                 continue
+            if throttleStartedAt is not None:
+                duration = time.time() - throttleStartedAt
+                gLogger.info(f"Service {svcName} throttle cleared after {duration:.1f}s")
+                throttleStartedAt = None
             # Handle connection
             self.__stats.connectionStablished()
             self.__services[svcName].handleConnection(clientTransport)

@@ -286,6 +286,15 @@ class Service:
         nQueued = self._threadPool._work_queue.qsize()
         return nQueued > self._cfg.getMaxWaitingPetitions()
 
+    def throttleDiagnostics(self):
+        """Return a dict of diagnostics useful for throttle logging"""
+        return {
+            "queue": self._threadPool._work_queue.qsize(),
+            "maxQueue": self._cfg.getMaxWaitingPetitions(),
+            "threads": len(self._threadPool._threads),
+            "maxThreads": self._cfg.getMaxThreads(),
+        }
+
     # Threaded process function
     def _processInThread(self, clientTransport):
         """
