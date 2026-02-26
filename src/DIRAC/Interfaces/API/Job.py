@@ -93,7 +93,16 @@ class Job(API):
 
     #############################################################################
 
-    def setExecutable(self, executable, arguments="", logFile="", modulesList=None, parameters=None, paramValues=None):
+    def setExecutable(
+        self,
+        executable,
+        arguments="",
+        logFile="",
+        modulesList=None,
+        parameters=None,
+        paramValues=None,
+        includeInSandbox=True,
+    ):
         """Helper function.
 
         Specify executable script to run with optional arguments and log file
@@ -118,12 +127,13 @@ class Job(API):
         :type parameters: python:list of tuples
         :param paramValues: Optional list of parameters values (to be used mostly when extending this method)
         :type parameters: python:list of tuples
+        :param bool includeInSandbox: flag to include the executable in the input sandbox (default: True)
         """
         kwargs = {"executable": executable, "arguments": arguments, "logFile": logFile}
         if not isinstance(executable, str) or not isinstance(arguments, str) or not isinstance(logFile, str):
             return self._reportError("Expected strings for executable and arguments", **kwargs)
 
-        if os.path.exists(executable):
+        if includeInSandbox and os.path.exists(executable):
             self.log.verbose(f"Found script executable file {executable}")
             self.addToInputSandbox.append(executable)
             logName = f"{os.path.basename(executable)}.log"
