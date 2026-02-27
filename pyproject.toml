@@ -2,11 +2,303 @@
 requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.4"]
 build-backend = "setuptools.build_meta"
 
-# Enable setuptools_scm to compute the version number from the most recent tag
-# https://github.com/pypa/setuptools_scm/#pyprojecttoml-usage
-[tool.setuptools_scm]
-# Avoid letting setuptools_scm use old style tags (i.e. vXrYpZ)
-git_describe_command = "git describe --dirty --tags --long --match *[0-9].[0-9]* --exclude v[0-9]r* --exclude v[0-9][0-9]r*"
+[project]
+name = "DIRAC"
+description = "DIRAC is an interware, meaning a software framework for distributed computing."
+readme = "README.rst"
+license-files = ["LICENSE"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering",
+  "Topic :: System :: Distributed Computing",
+]
+dynamic = ["version"]
+requires-python = ">=3.11"
+dependencies = [
+  "boto3>=1.35",
+  "botocore>=1.35",
+  "cachetools",
+  "certifi",
+  "cwltool",
+  "diraccfg",
+  "DIRACCommon",
+  "diracx-client >=v0.0.1",
+  "diracx-core >=v0.0.1",
+  "diracx-cli >=v0.0.1",
+  "db12",
+  "fts3",
+  "gfal2-python",
+  "importlib_metadata >=4.4",
+  "importlib_resources",
+  "M2Crypto >=0.36",
+  "packaging",
+  "pexpect",
+  "prompt-toolkit >=3",
+  "psutil",
+  "pyasn1",
+  "pyasn1-modules",
+  "pydantic >=2.4",
+  "pyparsing",
+  "python-dateutil",
+  "pytz",
+  "requests",
+  "rucio-clients >=34.4.2",
+  "sqlalchemy",
+  "typing_extensions >=4.3.0",
+  "Authlib >=1.0.0.a2",
+  "pyjwt",
+  "dominate",
+  "zstandard",
+  "xattr",
+]
+
+[project.optional-dependencies]
+server = [
+  "CMRESHandler",
+  "opensearch-py",
+  "GitPython",
+  "ldap3",
+  "apache-libcloud",
+  "matplotlib",
+  "mysqlclient",
+  "numpy",
+  "pillow",
+  "python-json-logger",
+  "pyyaml",
+  "stomp.py",
+  "suds",
+  "tornado ~=5.1.1",
+  "tornado-m2crypto",
+  "importlib_resources",
+]
+testing = [
+  "hypothesis",
+  "mock",
+  "parameterized",
+  "pytest",
+  "pytest-cov",
+  "pytest-mock",
+  "pytest-rerunfailures",
+  "pycodestyle",
+]
+
+[project.scripts]
+dirac-accounting-decode-fileid = "DIRAC.AccountingSystem.scripts.dirac_accounting_decode_fileid:main"
+dirac-admin-accounting-cli = "DIRAC.AccountingSystem.scripts.dirac_admin_accounting_cli:main [admin]"
+dirac-admin-add-resources = "DIRAC.ConfigurationSystem.scripts.dirac_admin_add_resources:main [admin]"
+dirac-admin-add-shifter = "DIRAC.ConfigurationSystem.scripts.dirac_admin_add_shifter:main [admin]"
+dirac-admin-add-site = "DIRAC.ConfigurationSystem.scripts.dirac_admin_add_site:main [admin]"
+dirac-admin-check-config-options = "DIRAC.ConfigurationSystem.scripts.dirac_admin_check_config_options:main [admin]"
+dirac-admin-sort-cs-sites = "DIRAC.ConfigurationSystem.scripts.dirac_admin_sort_cs_sites:main [admin]"
+dirac-admin-voms-sync = "DIRAC.ConfigurationSystem.scripts.dirac_admin_voms_sync:main [admin]"
+dirac-configuration-cli = "DIRAC.ConfigurationSystem.scripts.dirac_configuration_cli:main [admin]"
+dirac-configuration-dump-local-cache = "DIRAC.ConfigurationSystem.scripts.dirac_configuration_dump_local_cache:main [admin]"
+dirac-configuration-shell = "DIRAC.ConfigurationSystem.scripts.dirac_configuration_shell:main [admin]"
+dirac-agent = "DIRAC.Core.scripts.dirac_agent:main [server,pilot]"
+dirac-apptainer-exec = "DIRAC.Core.scripts.dirac_apptainer_exec:main [server,pilot]"
+dirac-configure = "DIRAC.Core.scripts.dirac_configure:main"
+dirac-executor = "DIRAC.Core.scripts.dirac_executor:main [server]"
+dirac-info = "DIRAC.Core.scripts.dirac_info:main"
+dirac-install-db = "DIRAC.Core.scripts.dirac_install_db:main [server]"
+dirac-install-web-portal = "DIRAC.Core.scripts.dirac_install_web_portal:main [server]"
+dirac-platform = "DIRAC.Core.scripts.dirac_platform:main"
+dirac-service = "DIRAC.Core.scripts.dirac_service:main [server]"
+dirac-setup-site = "DIRAC.Core.scripts.dirac_setup_site:main [server]"
+dirac-version = "DIRAC.Core.scripts.dirac_version:main"
+dirac-cert-convert = "DIRAC.Core.scripts.dirac_cert_convert:main"
+dirac-generate-cas = "DIRAC.Core.scripts.dirac_generate_cas:main"
+dirac-generate-crls = "DIRAC.Core.scripts.dirac_generate_crls:main"
+tornado-start-CS = "DIRAC.Core.Tornado.scripts.tornado_start_CS:main [server]"
+tornado-start-all = "DIRAC.Core.Tornado.scripts.tornado_start_all:main [server]"
+dirac-admin-allow-se = "DIRAC.DataManagementSystem.scripts.dirac_admin_allow_se:main [admin]"
+dirac-admin-ban-se = "DIRAC.DataManagementSystem.scripts.dirac_admin_ban_se:main [admin]"
+dirac-admin-user-quota = "DIRAC.DataManagementSystem.scripts.dirac_admin_user_quota:main"
+dirac-dms-add-file = "DIRAC.DataManagementSystem.scripts.dirac_dms_add_file:main"
+dirac-dms-catalog-metadata = "DIRAC.DataManagementSystem.scripts.dirac_dms_catalog_metadata:main"
+dirac-dms-change-replica-status = "DIRAC.DataManagementSystem.scripts.dirac_dms_change_replica_status:main [admin]"
+dirac-dms-clean-directory = "DIRAC.DataManagementSystem.scripts.dirac_dms_clean_directory:main [admin]"
+dirac-dms-create-archive-request = "DIRAC.DataManagementSystem.scripts.dirac_dms_create_archive_request:main"
+dirac-dms-create-moving-request = "DIRAC.DataManagementSystem.scripts.dirac_dms_create_moving_request:main"
+dirac-dms-create-removal-request = "DIRAC.DataManagementSystem.scripts.dirac_dms_create_removal_request:main"
+dirac-dms-data-size = "DIRAC.DataManagementSystem.scripts.dirac_dms_data_size:main"
+dirac-dms-directory-sync = "DIRAC.DataManagementSystem.scripts.dirac_dms_directory_sync:main"
+dirac-dms-filecatalog-cli = "DIRAC.DataManagementSystem.scripts.dirac_dms_filecatalog_cli:main"
+dirac-dms-find-lfns = "DIRAC.DataManagementSystem.scripts.dirac_dms_find_lfns:main"
+dirac-dms-move-replica-request = "DIRAC.DataManagementSystem.scripts.dirac_dms_move_replica_request:main"
+dirac-dms-protocol-matrix = "DIRAC.DataManagementSystem.scripts.dirac_dms_protocol_matrix:main [admin]"
+dirac-dms-put-and-register-request = "DIRAC.DataManagementSystem.scripts.dirac_dms_put_and_register_request:main"
+dirac-dms-remove-catalog-files = "DIRAC.DataManagementSystem.scripts.dirac_dms_remove_catalog_files:main"
+dirac-dms-remove-catalog-replicas = "DIRAC.DataManagementSystem.scripts.dirac_dms_remove_catalog_replicas:main"
+dirac-dms-remove-files = "DIRAC.DataManagementSystem.scripts.dirac_dms_remove_files:main"
+dirac-dms-remove-replicas = "DIRAC.DataManagementSystem.scripts.dirac_dms_remove_replicas:main"
+dirac-dms-replica-metadata = "DIRAC.DataManagementSystem.scripts.dirac_dms_replica_metadata:main"
+dirac-dms-replicate-and-register-request = "DIRAC.DataManagementSystem.scripts.dirac_dms_replicate_and_register_request:main"
+dirac-dms-resolve-guid = "DIRAC.DataManagementSystem.scripts.dirac_dms_resolve_guid:main"
+dirac-dms-set-replica-status = "DIRAC.DataManagementSystem.scripts.dirac_dms_set_replica_status:main"
+dirac-dms-show-se-status = "DIRAC.DataManagementSystem.scripts.dirac_dms_show_se_status:main"
+dirac-dms-user-lfns = "DIRAC.DataManagementSystem.scripts.dirac_dms_user_lfns:main"
+dirac-dms-user-quota = "DIRAC.DataManagementSystem.scripts.dirac_dms_user_quota:main"
+dirac-login = "DIRAC.FrameworkSystem.scripts.dirac_login:main"
+dirac-logout = "DIRAC.FrameworkSystem.scripts.dirac_logout:main"
+dirac-diracx-whoami = "DIRAC.FrameworkSystem.scripts.dirac_diracx_whoami:main"
+dirac-admin-get-CAs = "DIRAC.FrameworkSystem.scripts.dirac_admin_get_CAs:main [server]"
+dirac-admin-get-proxy = "DIRAC.FrameworkSystem.scripts.dirac_admin_get_proxy:main [admin]"
+dirac-admin-proxy-upload = "DIRAC.FrameworkSystem.scripts.dirac_admin_proxy_upload:main [admin]"
+dirac-admin-sysadmin-cli = "DIRAC.FrameworkSystem.scripts.dirac_admin_sysadmin_cli:main [admin]"
+dirac-admin-update-instance = "DIRAC.FrameworkSystem.scripts.dirac_admin_update_instance:main [admin]"
+dirac-admin-update-pilot = "DIRAC.FrameworkSystem.scripts.dirac_admin_update_pilot:main [admin]"
+dirac-admin-users-with-proxy = "DIRAC.FrameworkSystem.scripts.dirac_admin_users_with_proxy:main [admin]"
+dirac-install-component = "DIRAC.FrameworkSystem.scripts.dirac_install_component:main [server]"
+dirac-proxy-destroy = "DIRAC.FrameworkSystem.scripts.dirac_proxy_destroy:main"
+dirac-proxy-get-uploaded-info = "DIRAC.FrameworkSystem.scripts.dirac_proxy_get_uploaded_info:main"
+dirac-proxy-info = "DIRAC.FrameworkSystem.scripts.dirac_proxy_info:main"
+dirac-proxy-init = "DIRAC.FrameworkSystem.scripts.dirac_proxy_init:main"
+dirac-restart-component = "DIRAC.FrameworkSystem.scripts.dirac_restart_component:main [server]"
+dirac-start-component = "DIRAC.FrameworkSystem.scripts.dirac_start_component:main [server]"
+dirac-status-component = "DIRAC.FrameworkSystem.scripts.dirac_status_component:main [server]"
+dirac-stop-component = "DIRAC.FrameworkSystem.scripts.dirac_stop_component:main [server]"
+dirac-sys-sendmail = "DIRAC.FrameworkSystem.scripts.dirac_sys_sendmail:main [admin]"
+dirac-uninstall-component = "DIRAC.FrameworkSystem.scripts.dirac_uninstall_component:main [server]"
+dirac-admin-add-group = "DIRAC.Interfaces.scripts.dirac_admin_add_group:main [admin]"
+dirac-admin-add-host = "DIRAC.Interfaces.scripts.dirac_admin_add_host:main [admin]"
+dirac-admin-add-user = "DIRAC.Interfaces.scripts.dirac_admin_add_user:main [admin]"
+dirac-admin-allow-site = "DIRAC.Interfaces.scripts.dirac_admin_allow_site:main [admin]"
+dirac-admin-ban-site = "DIRAC.Interfaces.scripts.dirac_admin_ban_site:main [admin]"
+dirac-admin-ce-info = "DIRAC.Interfaces.scripts.dirac_admin_ce_info:main [admin]"
+dirac-admin-delete-user = "DIRAC.Interfaces.scripts.dirac_admin_delete_user:main [admin]"
+dirac-admin-get-banned-sites = "DIRAC.Interfaces.scripts.dirac_admin_get_banned_sites:main"
+dirac-admin-get-job-pilot-output = "DIRAC.Interfaces.scripts.dirac_admin_get_job_pilot_output:main"
+dirac-admin-get-job-pilots = "DIRAC.Interfaces.scripts.dirac_admin_get_job_pilots:main"
+dirac-admin-get-pilot-info = "DIRAC.Interfaces.scripts.dirac_admin_get_pilot_info:main"
+dirac-admin-get-pilot-logging-info = "DIRAC.Interfaces.scripts.dirac_admin_get_pilot_logging_info:main"
+dirac-admin-get-pilot-output = "DIRAC.Interfaces.scripts.dirac_admin_get_pilot_output:main"
+dirac-admin-get-site-mask = "DIRAC.Interfaces.scripts.dirac_admin_get_site_mask:main [admin]"
+dirac-admin-list-hosts = "DIRAC.Interfaces.scripts.dirac_admin_list_hosts:main [admin]"
+dirac-admin-list-users = "DIRAC.Interfaces.scripts.dirac_admin_list_users:main [admin]"
+dirac-admin-modify-user = "DIRAC.Interfaces.scripts.dirac_admin_modify_user:main [admin]"
+dirac-admin-pilot-summary = "DIRAC.Interfaces.scripts.dirac_admin_pilot_summary:main [admin]"
+dirac-admin-reset-job = "DIRAC.Interfaces.scripts.dirac_admin_reset_job:main [admin]"
+dirac-admin-set-site-protocols = "DIRAC.Interfaces.scripts.dirac_admin_set_site_protocols:main [admin]"
+dirac-admin-site-info = "DIRAC.Interfaces.scripts.dirac_admin_site_info:main"
+dirac-admin-site-mask-logging = "DIRAC.Interfaces.scripts.dirac_admin_site_mask_logging:main [admin]"
+dirac-admin-sync-users-from-file = "DIRAC.Interfaces.scripts.dirac_admin_sync_users_from_file:main [admin]"
+dirac-dms-get-file = "DIRAC.Interfaces.scripts.dirac_dms_get_file:main"
+dirac-dms-lfn-accessURL = "DIRAC.Interfaces.scripts.dirac_dms_lfn_accessURL:main"
+dirac-dms-lfn-metadata = "DIRAC.Interfaces.scripts.dirac_dms_lfn_metadata:main"
+dirac-dms-lfn-replicas = "DIRAC.Interfaces.scripts.dirac_dms_lfn_replicas:main"
+dirac-dms-pfn-accessURL = "DIRAC.Interfaces.scripts.dirac_dms_pfn_accessURL:main"
+dirac-dms-pfn-metadata = "DIRAC.Interfaces.scripts.dirac_dms_pfn_metadata:main"
+dirac-dms-replicate-lfn = "DIRAC.Interfaces.scripts.dirac_dms_replicate_lfn:main"
+dirac-framework-ping-service = "DIRAC.Interfaces.scripts.dirac_framework_ping_service:main [admin]"
+dirac-framework-self-ping = "DIRAC.Interfaces.scripts.dirac_framework_self_ping:main [server]"
+dirac-utils-file-adler = "DIRAC.Interfaces.scripts.dirac_utils_file_adler:main"
+dirac-utils-file-md5 = "DIRAC.Interfaces.scripts.dirac_utils_file_md5:main"
+dirac-wms-job-attributes = "DIRAC.Interfaces.scripts.dirac_wms_job_attributes:main"
+dirac-wms-job-delete = "DIRAC.Interfaces.scripts.dirac_wms_job_delete:main"
+dirac-wms-job-get-input = "DIRAC.Interfaces.scripts.dirac_wms_job_get_input:main"
+dirac-wms-job-get-jdl = "DIRAC.Interfaces.scripts.dirac_wms_job_get_jdl:main"
+dirac-wms-job-get-output = "DIRAC.Interfaces.scripts.dirac_wms_job_get_output:main"
+dirac-wms-job-get-output-data = "DIRAC.Interfaces.scripts.dirac_wms_job_get_output_data:main"
+dirac-wms-job-kill = "DIRAC.Interfaces.scripts.dirac_wms_job_kill:main"
+dirac-wms-job-logging-info = "DIRAC.Interfaces.scripts.dirac_wms_job_logging_info:main"
+dirac-wms-job-parameters = "DIRAC.Interfaces.scripts.dirac_wms_job_parameters:main"
+dirac-wms-job-peek = "DIRAC.Interfaces.scripts.dirac_wms_job_peek:main"
+dirac-wms-job-reschedule = "DIRAC.Interfaces.scripts.dirac_wms_job_reschedule:main"
+dirac-wms-job-status = "DIRAC.Interfaces.scripts.dirac_wms_job_status:main"
+dirac-wms-job-submit = "DIRAC.Interfaces.scripts.dirac_wms_job_submit:main"
+dirac-wms-jobs-select-output-search = "DIRAC.Interfaces.scripts.dirac_wms_jobs_select_output_search:main"
+dirac-wms-select-jobs = "DIRAC.Interfaces.scripts.dirac_wms_select_jobs:main"
+dcd = "DIRAC.Interfaces.scripts.dcd:main"
+dchgrp = "DIRAC.Interfaces.scripts.dchgrp:main"
+dchmod = "DIRAC.Interfaces.scripts.dchmod:main"
+dchown = "DIRAC.Interfaces.scripts.dchown:main"
+dconfig = "DIRAC.Interfaces.scripts.dconfig:main"
+dfind = "DIRAC.Interfaces.scripts.dfind:main"
+dget = "DIRAC.Interfaces.scripts.dget:main"
+dgetenv = "DIRAC.Interfaces.scripts.dgetenv:main"
+dkill = "DIRAC.Interfaces.scripts.dkill:main"
+dlogging = "DIRAC.Interfaces.scripts.dlogging:main"
+dls = "DIRAC.Interfaces.scripts.dls:main"
+dmeta = "DIRAC.Interfaces.scripts.dmeta:main"
+dmkdir = "DIRAC.Interfaces.scripts.dmkdir:main"
+doutput = "DIRAC.Interfaces.scripts.doutput:main"
+dput = "DIRAC.Interfaces.scripts.dput:main"
+dpwd = "DIRAC.Interfaces.scripts.dpwd:main"
+drepl = "DIRAC.Interfaces.scripts.drepl:main"
+dreplicas = "DIRAC.Interfaces.scripts.dreplicas:main"
+drm = "DIRAC.Interfaces.scripts.drm:main"
+drmdir = "DIRAC.Interfaces.scripts.drmdir:main"
+dsize = "DIRAC.Interfaces.scripts.dsize:main"
+dstat = "DIRAC.Interfaces.scripts.dstat:main"
+dsub = "DIRAC.Interfaces.scripts.dsub:main"
+dirac-prod-add-trans = "DIRAC.ProductionSystem.scripts.dirac_prod_add_trans:main [admin]"
+dirac-prod-complete = "DIRAC.ProductionSystem.scripts.dirac_prod_complete:main [admin]"
+dirac-prod-clean = "DIRAC.ProductionSystem.scripts.dirac_prod_clean:main [admin]"
+dirac-prod-delete = "DIRAC.ProductionSystem.scripts.dirac_prod_delete:main [admin]"
+dirac-prod-get = "DIRAC.ProductionSystem.scripts.dirac_prod_get:main [admin]"
+dirac-prod-get-all = "DIRAC.ProductionSystem.scripts.dirac_prod_get_all:main [admin]"
+dirac-prod-get-description = "DIRAC.ProductionSystem.scripts.dirac_prod_get_description:main [admin]"
+dirac-prod-get-trans = "DIRAC.ProductionSystem.scripts.dirac_prod_get_trans:main [admin]"
+dirac-prod-start = "DIRAC.ProductionSystem.scripts.dirac_prod_start:main [admin]"
+dirac-prod-stop = "DIRAC.ProductionSystem.scripts.dirac_prod_stop:main [admin]"
+dirac-resource-get-parameters = "DIRAC.Resources.scripts.dirac_resource_get_parameters:main [admin, pilot]"
+dirac-resource-info = "DIRAC.Resources.scripts.dirac_resource_info:main [admin]"
+dirac-rms-list-req-cache = "DIRAC.RequestManagementSystem.scripts.dirac_rms_list_req_cache:main"
+dirac-rms-reqdb-summary = "DIRAC.RequestManagementSystem.scripts.dirac_rms_reqdb_summary:main [admin]"
+dirac-rms-request = "DIRAC.RequestManagementSystem.scripts.dirac_rms_request:main"
+dirac-rss-list-status = "DIRAC.ResourceStatusSystem.scripts.dirac_rss_list_status:main"
+dirac-rss-query-db = "DIRAC.ResourceStatusSystem.scripts.dirac_rss_query_db:main [admin]"
+dirac-rss-query-dtcache = "DIRAC.ResourceStatusSystem.scripts.dirac_rss_query_dtcache:main [admin]"
+dirac-rss-set-status = "DIRAC.ResourceStatusSystem.scripts.dirac_rss_set_status:main [admin]"
+dirac-rss-set-token = "DIRAC.ResourceStatusSystem.scripts.dirac_rss_set_token:main [admin]"
+dirac-rss-sync = "DIRAC.ResourceStatusSystem.scripts.dirac_rss_sync:main [admin]"
+dirac-stager-monitor-file = "DIRAC.StorageManagementSystem.scripts.dirac_stager_monitor_file:main"
+dirac-stager-monitor-jobs = "DIRAC.StorageManagementSystem.scripts.dirac_stager_monitor_jobs:main"
+dirac-stager-monitor-request = "DIRAC.StorageManagementSystem.scripts.dirac_stager_monitor_request:main"
+dirac-stager-monitor-requests = "DIRAC.StorageManagementSystem.scripts.dirac_stager_monitor_requests:main"
+dirac-stager-show-stats = "DIRAC.StorageManagementSystem.scripts.dirac_stager_show_stats:main"
+dirac-stager-stage-files = "DIRAC.StorageManagementSystem.scripts.dirac_stager_stage_files:main"
+dirac-production-runjoblocal = "DIRAC.TransformationSystem.scripts.dirac_production_runjoblocal:main"
+dirac-transformation-add-files = "DIRAC.TransformationSystem.scripts.dirac_transformation_add_files:main [admin]"
+dirac-transformation-cli = "DIRAC.TransformationSystem.scripts.dirac_transformation_cli:main [admin]"
+dirac-transformation-get-files = "DIRAC.TransformationSystem.scripts.dirac_transformation_get_files:main [admin]"
+dirac-transformation-information = "DIRAC.TransformationSystem.scripts.dirac_transformation_information:main [admin]"
+dirac-transformation-recover-data = "DIRAC.TransformationSystem.scripts.dirac_transformation_recover_data:main [admin]"
+dirac-transformation-replication = "DIRAC.TransformationSystem.scripts.dirac_transformation_replication:main [admin]"
+dirac-transformation-verify-outputdata = "DIRAC.TransformationSystem.scripts.dirac_transformation_verify_outputdata:main [admin]"
+dirac-transformation-update-derived = "DIRAC.TransformationSystem.scripts.dirac_transformation_update_derived:main [admin]"
+dirac-admin-add-pilot = "DIRAC.WorkloadManagementSystem.scripts.dirac_admin_add_pilot:main [pilot]"
+dirac-admin-debug-ce = "DIRAC.WorkloadManagementSystem.scripts.dirac_admin_debug_ce:main [admin]"
+dirac-admin-kill-pilot = "DIRAC.WorkloadManagementSystem.scripts.dirac_admin_kill_pilot:main [admin]"
+dirac-admin-show-task-queues = "DIRAC.WorkloadManagementSystem.scripts.dirac_admin_show_task_queues:main [admin]"
+dirac-admin-sync-pilot = "DIRAC.WorkloadManagementSystem.scripts.dirac_admin_sync_pilot:main [admin]"
+dirac-jobexec = "DIRAC.WorkloadManagementSystem.scripts.dirac_jobexec:main [pilot]"
+dirac-wms-cpu-normalization = "DIRAC.WorkloadManagementSystem.scripts.dirac_wms_cpu_normalization:main [pilot]"
+dirac-wms-get-queue-cpu-time = "DIRAC.WorkloadManagementSystem.scripts.dirac_wms_get_queue_cpu_time:main [pilot]"
+dirac-wms-get-wn = "DIRAC.WorkloadManagementSystem.scripts.dirac_wms_get_wn:main [admin]"
+dirac-wms-get-wn-parameters = "DIRAC.WorkloadManagementSystem.scripts.dirac_wms_get_wn_parameters:main [pilot]"
+dirac-wms-match = "DIRAC.WorkloadManagementSystem.scripts.dirac_wms_match:main [admin]"
+dirac-wms-pilot-job-info = "DIRAC.WorkloadManagementSystem.scripts.dirac_wms_pilot_job_info:main"
+
+[project.entry-points."dirac"]
+metadata = "DIRAC:extension_metadata"
+
+[project.urls]
+Homepage = "https://github.com/DIRACGrid/DIRAC/"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"*" = ["ConfigTemplate.cfg", "*.sql"]
 
 [tool.black]
 line-length = 120
@@ -16,86 +308,50 @@ target-version = ['py311']
 profile = "black"
 
 [tool.mypy]
+python_version = "3.11"
 allow_redefinition = true
 strict = true
 check_untyped_defs = true
 ignore_missing_imports = true
-no_incremental=true
-implicit_reexport=true
+implicit_reexport = true
 files = [
-    'src/DIRAC/Core/Utilities/ReturnValues.py',
-    'src/DIRAC/Core/Security/Properties.py'
+  'src/DIRAC/Core/Utilities/ReturnValues.py',
+  'src/DIRAC/Core/Security/Properties.py',
 ]
-exclude = [
-    '/tests/'
-]
-
+exclude = ['/tests/']
 
 [tool.ruff]
 select = ["E", "F", "B", "I", "PLE"]
 ignore = ["B905", "B008", "B006"]
 line-length = 120
 
+[tool.pycodestyle]
+ignore = ["E203", "E211", "E266", "E402", "W503"]
+max-line-length = 130
+
 [tool.pylint.basic]
-
-# We mostly have CamelCase, with a few differences.
-# In tests we have quite some snake_case, mostly due to pytest
-# We can instruct pylint to understand both, but the problem is that it
-# will stick to one style per file (i.e if the first variable is snake,
-# all the following must be snake)
-# It's not quite the case yet...
-# For the time being, I wrote the regex that matches best our code.
-# (except for the services with their export_ and types_ ...)
-# We will see about tests later...
-# See https://pylint.readthedocs.io/en/latest/user_guide/messages/convention/invalid-name.html#multiple-naming-styles-for-custom-regular-expressions
-
-# Camel case with capital letter first
 class-rgx = '([A-Z][a-z]*)+$'
 module-rgx = '([A-Z][a-z]*)+$'
-
-# Attributes, variables, functions and methods
-# are camelCase, but can start with one or two understcore
 attr-rgx = '(?:_*[a-z]+([A-Z][a-z]*)*)$'
 variable-rgx = '(?:_*[a-z]+([A-Z][a-z]*)*)$'
 function-rgx = '(?:_*[a-z]+([A-Z][a-z]*)*)$'
 method-rgx = '(?:_*[a-z]+([A-Z][a-z]*)*)$'
-
 argument-naming-style = "camelCase"
 
 [tool.pylint.main]
-# Files or directories to be skipped. They should be base names, not paths.
 ignore = [".svn", ".git", "integration_tests.py"]
-
-# List of module names for which member attributes should not be checked (useful
-# for modules/projects where namespaces are manipulated during runtime and thus
-# existing member attributes cannot be deduced by static analysis). It supports
-# qualified module names, as well as Unix pattern matching.
 ignored-modules = ["MySQLdb", "numpy"]
-
-# Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
-# number of processors available to use, and will cap the count on Windows to
-# avoid hangs.
 jobs = 0
-
-# This allows pylint to not display the following false error :
-# No name 'BaseModel' in module 'pydantic' (no-name-in-module)
-# Related issue: https://github.com/pydantic/pydantic/issues/1961
 extension-pkg-whitelist = ["pydantic"]
 
 [tool.pylint.typecheck]
-# List of decorators that change the signature of a decorated function.
 signature-mutators = []
 
 [tool.pylint.format]
-
-# Maximum number of characters on a single line.
 max-line-length = 120
 
 [tool.pylint."messages control"]
-disable = ["R0903","I0011","c-extension-no-member"]
+disable = ["R0903", "I0011", "c-extension-no-member"]
 
 [tool.pylint.reports]
-# Set the output format. Available formats are text, parseable, colorized, json
-# and msvs (visual studio). You can also give a reporter class, e.g.
-# mypackage.mymodule.MyReporterClass.
 output-format = "colorized"

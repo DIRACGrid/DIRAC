@@ -9,6 +9,7 @@ Example:
   This is the servicesList: MyService
   We are done with detail report.
 """
+
 from DIRAC import S_OK, S_ERROR, gLogger, exit as DIRACExit
 from DIRAC.Core.Base.Script import Script
 
@@ -91,7 +92,7 @@ def parseSwitchesAndPositionalArguments():
     return switches, repType, user, services
 
 
-# IMPORTANT: Make sure to add the console-scripts entry to setup.cfg as well!
+# IMPORTANT: Make sure to add the console-scripts entry to pyproject.toml as well!
 @Script()
 def main():
     """

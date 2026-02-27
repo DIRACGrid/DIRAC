@@ -18,7 +18,7 @@ All scripts should live in the *scripts* directory of their parent system. For i
 
 will live in `src/DIRAC/WorkloadManagementSystem/scripts/dirac_wms_job_submit.py`.
 
-Scripts become command line scripts when DIRAC is pip-installed, using the `console_scripts entry point <https://setuptools.pypa.io/en/latest/userguide/entry_point.html>`_, meaning that new scripts should be added to the list in `setup.cfg file <https://github.com/DIRACGrid/DIRAC/blob/integration/setup.cfg>`_.
+Scripts become command line scripts when DIRAC is pip-installed, using the `console_scripts entry point <https://setuptools.pypa.io/en/latest/userguide/entry_point.html>`_, meaning that new scripts should be added to the list in `pyproject.toml file <https://github.com/DIRACGrid/DIRAC/blob/integration/pyproject.toml>`_.
 
 
 Coding commands

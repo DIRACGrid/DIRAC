@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Pin DIRACCommon version in setup.cfg during deployment.
+Pin DIRACCommon version in pyproject.toml during deployment.
 
 This script is used during the deployment process to ensure DIRAC
 depends on the exact version of DIRACCommon being released.
@@ -31,19 +31,19 @@ def get_diraccommon_version():
 
 
 def pin_diraccommon_version(version):
-    """Pin DIRACCommon to exact version in setup.cfg."""
-    setup_cfg = Path("setup.cfg")
-    content = setup_cfg.read_text()
+    """Pin DIRACCommon to exact version in pyproject.toml."""
+    pyproject_toml = Path("pyproject.toml")
+    content = pyproject_toml.read_text()
 
     # Replace the DIRACCommon line with exact version pin
     updated_content = re.sub(r"^(\s*)DIRACCommon\s*$", f"\\1DIRACCommon=={version}", content, flags=re.MULTILINE)
 
     if content == updated_content:
-        print(f"Warning: DIRACCommon line not found or already pinned in setup.cfg")
+        print(f"Warning: DIRACCommon line not found or already pinned in pyproject.toml")
         return False
 
-    setup_cfg.write_text(updated_content)
-    print(f"Pinned DIRACCommon to version {version} in setup.cfg")
+    pyproject_toml.write_text(updated_content)
+    print(f"Pinned DIRACCommon to version {version} in pyproject.toml")
     return True
 
 
