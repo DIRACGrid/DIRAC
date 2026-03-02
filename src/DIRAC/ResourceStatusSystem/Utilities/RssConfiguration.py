@@ -6,7 +6,6 @@ Module that collects utility functions.
 """
 
 from DIRAC import S_OK
-from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine import RSSMachine
 from DIRAC.ResourceStatusSystem.Utilities import Utils
@@ -50,25 +49,6 @@ class RssConfiguration:
         """
 
         return self.opsHelper.getValue(f"{_rssConfigPath}/Config/FromAddress", default)
-
-    def getConfigStatusType(self, elementType=None):
-        """
-        Gets all the status types per elementType, if not given, it takes default
-        from CS. If not, hardcoded variable DEFAULT.
-        """
-
-        _DEFAULTS = ("all",)
-
-        res = self.opsHelper.getOptionsDict(f"{_rssConfigPath}/Config/StatusTypes")
-
-        if res["OK"]:
-            if elementType in res["Value"]:
-                return List.fromChar(res["Value"][elementType])
-
-            if "default" in res["Value"]:
-                return List.fromChar(res["Value"]["default"])
-
-        return _DEFAULTS
 
 
 def getPolicies():

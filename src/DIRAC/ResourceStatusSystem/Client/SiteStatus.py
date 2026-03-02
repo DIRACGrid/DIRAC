@@ -159,7 +159,7 @@ class SiteStatus(metaclass=DIRACSingleton):
               S_OK( ['test1.test1.uk', 'test3.test3.org'] )
           >>> siteStatus.getSites( 'Banned' )
               S_OK( ['test0.test0.uk', ... ] )
-          >>> siteStatus.getSites( 'All' )
+          >>> siteStatus.getSites( 'all' )
               S_OK( ['test1.test1.uk', 'test3.test3.org', 'test4.test4.org', 'test5.test5.org'...] )
           >>> siteStatus.getSites( None )
               S_ERROR( ... )

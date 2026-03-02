@@ -124,7 +124,7 @@ def initSEs():
     from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
     from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
     from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
-    from DIRAC.ResourceStatusSystem.Utilities import CSHelpers, RssConfiguration
+    from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
     # WarmUp local copy
     CSHelpers.warmUp()
@@ -134,7 +134,7 @@ def initSEs():
     rssClient = ResourceStatusClient.ResourceStatusClient()
 
     statuses = StateMachine.RSSMachine(None).getStates()
-    statusTypes = RssConfiguration.RssConfiguration().getConfigStatusType("StorageElement")
+    statusTypes = ["ReadAccess", "WriteAccess", "RemoveAccess", "CheckAccess"]
     reason = "dirac-rss-sync"
 
     gLogger.debug(statuses)

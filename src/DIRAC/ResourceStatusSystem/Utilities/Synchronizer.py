@@ -235,9 +235,6 @@ class Synchronizer:
             if not deleteQuery["OK"]:
                 return deleteQuery
 
-        # statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
-        statusTypes = self.rssConfig.getConfigStatusType("ComputingElement")
-
         result = self.rStatus.selectStatusElement(
             "Resource", "Status", elementType="ComputingElement", meta={"columns": ["Name", "StatusType"]}
         )
@@ -246,7 +243,7 @@ class Synchronizer:
         cesTuple = [(x[0], x[1]) for x in result["Value"]]
 
         # For each ( se, statusType ) tuple not present in the DB, add it.
-        cesStatusTuples = [(se, statusType) for se in cesCS for statusType in statusTypes]
+        cesStatusTuples = [(se, "all") for se in cesCS]
         toBeAdded = list(set(cesStatusTuples).difference(set(cesTuple)))
 
         gLogger.debug(f"{len(toBeAdded)} Computing elements entries to be added")
@@ -302,9 +299,6 @@ class Synchronizer:
             if not deleteQuery["OK"]:
                 return deleteQuery
 
-        statusTypes = self.rssConfig.getConfigStatusType("FTS")
-        # statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
-
         result = self.rStatus.selectStatusElement(
             "Resource", "Status", elementType="FTS", meta={"columns": ["Name", "StatusType"]}
         )
@@ -313,7 +307,7 @@ class Synchronizer:
         sesTuple = [(x[0], x[1]) for x in result["Value"]]
 
         # For each ( se, statusType ) tuple not present in the DB, add it.
-        ftsStatusTuples = [(se, statusType) for se in ftsCS for statusType in statusTypes]
+        ftsStatusTuples = [(se, "all") for se in ftsCS]
         toBeAdded = list(set(ftsStatusTuples).difference(set(sesTuple)))
 
         gLogger.verbose(f"{len(toBeAdded)} FTS endpoints entries to be added")
@@ -368,9 +362,6 @@ class Synchronizer:
             if not deleteQuery["OK"]:
                 return deleteQuery
 
-        statusTypes = self.rssConfig.getConfigStatusType("StorageElement")
-        # statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
-
         result = self.rStatus.selectStatusElement(
             "Resource", "Status", elementType="StorageElement", meta={"columns": ["Name", "StatusType"]}
         )
@@ -379,7 +370,11 @@ class Synchronizer:
         sesTuple = [(x[0], x[1]) for x in result["Value"]]
 
         # For each ( se, statusType ) tuple not present in the DB, add it.
-        sesStatusTuples = [(se, statusType) for se in sesCS for statusType in statusTypes]
+        sesStatusTuples = [
+            (se, statusType)
+            for se in sesCS
+            for statusType in ["ReadAccess", "WriteAccess", "CheckAccess", "RemoveAccess"]
+        ]
         toBeAdded = list(set(sesStatusTuples).difference(set(sesTuple)))
 
         gLogger.verbose(f"{len(toBeAdded)} storage element entries to be added")

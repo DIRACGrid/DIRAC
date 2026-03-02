@@ -9,7 +9,6 @@ import datetime
 from DIRAC import S_OK
 from DIRAC import exit as DIRACExit
 from DIRAC import gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities import TimeUtilities
@@ -126,29 +125,6 @@ def getToken(key):
         return expirationDate
 
 
-def checkStatusTypes(statusTypes):
-    """
-    To check if values for 'statusType' are valid
-    """
-
-    opsH = Operations().getValue(
-        "ResourceStatus/Config/StatusTypes/StorageElement", "ReadAccess,WriteAccess,CheckAccess,RemoveAccess"
-    )
-    acceptableStatusTypes = opsH.replace(",", "").split()
-
-    for statusType in statusTypes:
-        if statusType not in acceptableStatusTypes and statusType != "all":
-            acceptableStatusTypes.append("all")
-            error(
-                "'%s' is a wrong value for switch 'statusType'.\n\tThe acceptable values are:\n\t%s"
-                % (statusType, str(acceptableStatusTypes))
-            )
-
-    if "all" in statusType:
-        return acceptableStatusTypes
-    return statusTypes
-
-
 def unpack(switchDict):
     """
     To split and process comma-separated list of values for 'name' and 'statusType'
@@ -163,7 +139,6 @@ def unpack(switchDict):
 
     if switchDict["statusType"] is not None:
         statusTypes = list(filter(None, switchDict["statusType"].split(",")))
-        statusTypes = checkStatusTypes(statusTypes)
 
     if names and statusTypes:
         combinations = [(a, b) for a in names for b in statusTypes]

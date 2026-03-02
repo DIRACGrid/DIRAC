@@ -544,9 +544,6 @@ Policies
 Actions
    ``/Operations/Defaults/ResourceStatus/PolicyActions``
 
-Status Types
-   ``/Operations/Defaults/ResourceStatus/Config/StatusTypes``
-
 Services
    ``/Systems/ResourceStatus/Services/``
 
