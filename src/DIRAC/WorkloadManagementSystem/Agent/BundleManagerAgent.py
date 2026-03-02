@@ -36,11 +36,6 @@ class BundleManagerAgent(AgentModule):
         if not result["OK"]:
             self.log.warn(f"Failed send the bundles: {result}")
 
-        self.log.info("Cleaning inputs of finished bundles bundles")
-        result = self._cleanFinishedBundles()
-        if not result["OK"]:
-            self.log.warn(f"Failed to clean the inputs: {result}")
-
         self.log.info("Deleting killed jobs from bundles")
         result = self._removeKilledJobs()
         if not result["OK"]:
@@ -54,38 +49,6 @@ class BundleManagerAgent(AgentModule):
         return S_OK()
 
     #############################################################################
-
-    def _cleanFinishedBundles(self):
-        result = self.bundleDB.getUnpurgedBundles()
-        if not result["OK"]:
-            return result
-
-        bundleIDs = result["Value"]
-        self.log.verbose(f"> Found {len(bundleIDs)} finished and unpurged bundles")
-
-        for bundleId in bundleIDs:
-            success = True
-            result = self.bundleDB.getJobIDsOfBundle(bundleId)
-            if not result["OK"]:
-                self.log.error(f"Failed to obtain the jobs of the bundle {bundleId}")
-                return result
-
-            jobIDs = result["Value"]
-
-            self.log.verbose(f"> Purging inputs of bundle with ID '{bundleId}'")
-
-            for jobId in jobIDs:
-                result = self.bundleDB.removeJobInputs(jobId)
-                if not result["OK"]:
-                    success = False
-                    self.log.error(f"Failed to remove inputs of job {jobId} from bundle {bundleId}, skipping...")
-                    self.log.error(result)
-
-            if success:
-                self.log.info(f"> Inputs of bundle with ID '{bundleId}' were removed from DB")
-                self.bundleDB.setBundleAsPurged(bundleId)
-
-        return S_OK()
 
     def _removeKilledJobs(self):
         killedJobs = []
