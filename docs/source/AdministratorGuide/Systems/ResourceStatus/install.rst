@@ -20,7 +20,6 @@ Please, make sure you have the following schema::
 
     /Operations/Defaults/ResourceStatus
       /Config
-        State        = InActive
         Cache        = 300
         /StatusTypes
             default = all
