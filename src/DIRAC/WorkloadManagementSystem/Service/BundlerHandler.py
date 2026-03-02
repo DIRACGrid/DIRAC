@@ -15,7 +15,7 @@ from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFa
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.DB.BundleDB import BundleDB
-from DIRAC.WorkloadManagementSystem.Utilities.BundlerTemplates import BASH_RUN_TASK, generate_template
+from DIRAC.WorkloadManagementSystem.Utilities.BundlerTemplates import BASH_RUN_TASK, BASH_WRAPPER
 
 
 class BundlerHandler(RequestHandler):
@@ -355,14 +355,6 @@ class BundlerHandler(RequestHandler):
 
     def _wrapBundle(self, bundleId):
         """Bundles the jobs in a bundle for its submission."""
-        result = self.bundleDB.getWholeBundle(bundleId)
-
-        if not result["OK"]:
-            self.log.error("Failed to obtain bundle while wrapping. BundleID ", str(bundleId))
-            return result
-
-        bundle = result["Value"]
-
         result = self.bundleDB.getJobsOfBundle(bundleId)
 
         if not result["OK"]:
@@ -371,7 +363,6 @@ class BundlerHandler(RequestHandler):
 
         jobs: dict = result["Value"]
 
-        template = bundle["ExecTemplate"]
         executables = []
         inputs = []
         outputs = []
@@ -400,13 +391,10 @@ class BundlerHandler(RequestHandler):
 
             outputs.extend(jobInfo["Outputs"])
 
-        result = generate_template(template, executables, bundleId)
+        formatted_inputs = "(" + " ".join(inputs) + ")"
+        formatMap = {"inputs": formatted_inputs, "bundleId": bundleId}
+        wrappedBundle = BASH_WRAPPER.format(**formatMap)
 
-        if not result["OK"]:
-            self.log.error("Error while generating wrapper")
-            return result
-
-        wrappedBundle = result["Value"]
         wrapperPath = os.path.join(bundlePath, "bundle_wrapper")
         runnerPath = os.path.join(bundlePath, "run_task.sh")
 

@@ -7,11 +7,6 @@ Allows grouping jobs in a single big job prior to their submission in an actual 
 Configuration for the BundleComputingElemenet submission can be done via the configuration system.
 Below, you can find a list of parameters specific to the BundleCE.
 
-ExecTemplate:
-    Name of the execution template to be used to bundle the jobs.
-    This template will the one that be passed to the CE to be executed alongside
-        each jobExecutable file and input as the inputs of the template.
-
 InnerCEType:
     Type of the CE that will end up executing the templated wrapper.
 
@@ -50,7 +45,6 @@ CEs
     {
         CEType = BUNDLE
         InnerCEType = SSH
-        ExecTemplate = BASH
 
         SSHHost = host
         SSHUser = user
@@ -118,7 +112,7 @@ class BundleComputingElement(ComputingElement):
 
         super().__init__(ceUniqueID)
 
-        self.mandatoryParameters = ["ExecTemplate", "InnerCEType"]
+        self.mandatoryParameters = ["InnerCEType"]
 
         self.innerCE = None
         self.innerCEParams = {}

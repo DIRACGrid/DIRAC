@@ -41,7 +41,6 @@ class BundleDB(DB):
             "CE",
             "Queue",
             "CEDict",
-            "ExecTemplate",
             "TaskID",
             "Status",
             "ProxyPath",
@@ -364,9 +363,6 @@ class BundleDB(DB):
 
     def _createNewBundle(self, ceDict, proxyPath):
         """Initialize a new Bundle."""
-        if "ExecTemplate" not in ceDict:
-            return S_ERROR("CE must have a properly formatted ExecTemplate")
-
         timestamp = datetime.now(tz=timezone.utc).strftime(self.MYSQL_DATETIME_FORMAT)
 
         bundleId = uuid.uuid4().hex
@@ -374,7 +370,6 @@ class BundleDB(DB):
             "BundleID": bundleId,
             "ProcessorSum": 0,
             "MaxProcessors": ceDict["NumberOfProcessors"],
-            "ExecTemplate": ceDict["ExecTemplate"],
             "Site": ceDict["Site"],
             "CE": ceDict["GridCE"],
             "Queue": ceDict["Queue"],

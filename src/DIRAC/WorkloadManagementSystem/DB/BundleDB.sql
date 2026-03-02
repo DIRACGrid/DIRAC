@@ -26,7 +26,6 @@ CREATE TABLE `BundlesInfo` (
     `CE`                VARCHAR(128) NOT NULL,
     `Queue`             VARCHAR(128) NOT NULL,
     `CEDict`            TEXT NOT NULL,
-    `ExecTemplate`      VARCHAR(25) NOT NULL,
     `TaskID`            VARCHAR(255),
     `Status`            ENUM('Waiting', 'Running', 'Done', 'Failed') NOT NULL DEFAULT 'Waiting',
     `ProxyPath`         VARCHAR(255),
