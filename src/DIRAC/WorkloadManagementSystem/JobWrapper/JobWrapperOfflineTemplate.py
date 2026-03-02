@@ -40,17 +40,7 @@ def execute(arguments: dict):
         gLogger.exception("JobWrapper failed the initialization phase", lException=exc)
         return 1
 
-    result = job.preProcess()
-    if not result["OK"]:
-        gLogger.error("JobWrapper failed the pre-processing phase")
-        return 1
-
-    payloadParams = result["Value"]
-
-    payloadResult = job.process(
-        command=payloadParams["command"],
-        env=payloadParams["env"],
-    )
+    payloadResult = job.process(**payloadParams)
     if not payloadResult["OK"]:
         return 1
 
