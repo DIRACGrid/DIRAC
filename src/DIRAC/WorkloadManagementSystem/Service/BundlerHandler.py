@@ -241,7 +241,7 @@ class BundlerHandler(RequestHandler):
 
     def export_getBundleStatus(self, bundleId):
         """Reports the Bundle status.
-        Waiting -> Bundle still waiting for more jobs 
+        Waiting -> Bundle still waiting for more jobs
         Running -> Bundle submitted to CE
         Done    -> Bundle finished (not the specific job)
         Failed  -> Bundle failed to execute

@@ -99,9 +99,7 @@ class BundleDB(DB):
                 return result
 
             bundleId = result["Value"]
-            result = self._insertJobInBundle(
-                jobId, bundleId, executable, inputs, outputs, processors, proxyPath, diracId
-            )
+            result = self._insertJobInBundle(jobId, bundleId, executable, inputs, outputs, processors, diracId)
 
             if not result["OK"]:
                 return result
@@ -121,7 +119,7 @@ class BundleDB(DB):
             bundleId = result["Value"]
 
         # Insert it and obtain if it is ready to be submitted
-        result = self._insertJobInBundle(jobId, bundleId, executable, inputs, outputs, processors, proxyPath, diracId)
+        result = self._insertJobInBundle(jobId, bundleId, executable, inputs, outputs, processors, diracId)
 
         if not result["OK"]:
             return result
@@ -254,7 +252,7 @@ class BundleDB(DB):
             if len(row) == len(self.JOB_TO_BUNDLE_COLUMNS) - 1:  # All columns except BundleID
                 jobID, diracId, jobExecutablePath, jobOutputs, processors = row
                 jobInputPath = ""
-            else: # All columns except BundleID but with the inputs
+            else:  # All columns except BundleID but with the inputs
                 jobID, diracId, jobExecutablePath, jobOutputs, processors, jobInputPath = row
 
             if jobID not in retVal:
@@ -393,7 +391,7 @@ class BundleDB(DB):
 
         return S_OK(bundleId)
 
-    def _insertJobInBundle(self, jobId, bundleId, executable, inputs, outputs, nProcessors, proxyPath, diracId):
+    def _insertJobInBundle(self, jobId, bundleId, executable, inputs, outputs, nProcessors, diracId):
         """Add the info of a Job to a Bundle."""
         timestamp = datetime.now(tz=timezone.utc).strftime(self.MYSQL_DATETIME_FORMAT)
 
@@ -491,8 +489,7 @@ class BundleDB(DB):
         return S_OK()
 
     def __selectBestBundle(self, bundles, nProcessors):
-        """Return the BundleID of the best match from a list of bundles and the number of processors requested.
-        """
+        """Return the BundleID of the best match from a list of bundles and the number of processors requested."""
         bestBundleId = None
         currentBestProcs = 0
 

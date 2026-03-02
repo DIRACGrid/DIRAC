@@ -815,9 +815,7 @@ class PushJobAgent(JobAgent):
                 continue
 
             if status == PilotStatus.FAILED:
-                job.jobReport.setJobStatus(
-                    status=JobStatus.FAILED, minorStatus="Payload failed", sendFlag=False
-                )
+                job.jobReport.setJobStatus(status=JobStatus.FAILED, minorStatus="Payload failed", sendFlag=False)
                 job.sendFailoverRequest()
                 job.sendJobAccounting(status=JobStatus.FAILED, minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC)
                 continue
