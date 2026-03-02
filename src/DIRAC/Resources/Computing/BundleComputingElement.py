@@ -75,7 +75,7 @@ import os
 import shutil
 import uuid
 
-from filelock import FileLock, Timeout
+from filelock import FileLock
 
 from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
@@ -210,7 +210,7 @@ class BundleComputingElement(ComputingElement):
         else:
             self.log.info("Submitting job to CE: ", self.innerCE.ceName)
 
-        # Return the id of the job (NOT THE BUNDLE)
+        # Return the id of the job, setting the "PilotStamp" to the BundleID
         return result
 
     def getJobOutput(self, jobId, workingDirectory="."):
@@ -251,10 +251,9 @@ class BundleComputingElement(ComputingElement):
 
         self.log.notice(f"Outputs at: {jobOutputDir}")
 
-        # Move all outputs from the temporary directory, to where they should belong
+        # Move all outputs from the temporary directory, to the job working directory
         for item in os.listdir(jobOutputDir):
-            # shutil.move(os.path.join(jobBaseDir, item), os.path.join(outputAbsPath, item))
-            shutil.copy2(os.path.join(jobOutputDir, item), os.path.join(outputAbsPath, item))
+            shutil.move(os.path.join(jobOutputDir, item), os.path.join(outputAbsPath, item))
 
         error = os.path.join(workingDirectory, f"{bundleId}.err")
         output = os.path.join(workingDirectory, f"{bundleId}.out")
@@ -376,7 +375,7 @@ class BundleComputingElement(ComputingElement):
         try:
             # Always acquire the lock before checking anything
             with lock.acquire(timeout=60):
-                self.log.debug("Acquiring outputs lock")
+                self.log.debug("Outputs lock acquired")
                 # If the output does not exist, dowload the outputs
                 if not os.path.exists(outputsPath):
                     os.mkdir(outputsPath)

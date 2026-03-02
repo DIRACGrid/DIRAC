@@ -53,6 +53,9 @@ class BundlerHandler(RequestHandler):
     types_storeInBundle = [str, str, list, list, str, int, dict, [int, type(None)]]
 
     def export_storeInBundle(self, jobId, executable, inputs, outputs, proxyPath, processors, ceDict, diracId):
+        """Stores a job in a bundle depending on the information on the CEDict.
+        If the bundle fills, it automatically gets send.
+        """
         result = self._setupCE(ceDict, proxyPath)
 
         if not result["OK"]:
@@ -86,9 +89,15 @@ class BundlerHandler(RequestHandler):
     types_getTaskInfo = [str]
 
     def export_getTaskInfo(self, bundleId):
+        """Return the TaskID of the submitted bundle
+        If the Bundle hasn't been submitted yet, returns S_ERROR
+        """
         return self._getTaskInfo(bundleId)
 
     def _getTaskInfo(self, bundleId):
+        """Return the TaskID of the submitted bundle
+        If the Bundle hasn't been submitted yet, returns S_ERROR
+        """
         result = self.bundleDB.getBundleStatus(bundleId)
 
         if not result["OK"]:
@@ -116,6 +125,7 @@ class BundlerHandler(RequestHandler):
     types_bundleIdFromJobId = [str]
 
     def export_bundleIdFromJobId(self, jobId):
+        """Returns the BundleID of a specific job from its ID."""
         return self._getBundleIdFromJobId(jobId)
 
     #############################################################################
@@ -178,6 +188,7 @@ class BundlerHandler(RequestHandler):
     types_cleanJob = [str]
 
     def export_cleanJob(self, jobId):
+        """Tries to clean the working directory of a specific job both locally and remotely."""
         result = self._getBundleIdFromJobId(jobId)
         if not result["OK"]:
             return result
@@ -229,6 +240,12 @@ class BundlerHandler(RequestHandler):
     types_getBundleStatus = [str]
 
     def export_getBundleStatus(self, bundleId):
+        """Reports the Bundle status.
+        Waiting -> Bundle still waiting for more jobs 
+        Running -> Bundle submitted to CE
+        Done    -> Bundle finished (not the specific job)
+        Failed  -> Bundle failed to execute
+        """
         result = self._getTaskInfo(bundleId)
 
         if not result["OK"]:
@@ -268,6 +285,9 @@ class BundlerHandler(RequestHandler):
     types_forceSubmitBundles = [list]
 
     def export_forceSubmitBundles(self, bundleIds):
+        """Forcibly submits a list of bundles.
+        This is useful for stalled bundles.
+        """
         resultDict = {}
 
         if not isinstance(bundleIds, list):
@@ -280,6 +300,7 @@ class BundlerHandler(RequestHandler):
         return S_OK(resultDict)
 
     def _submitBundle(self, bundleId):
+        """Submits a Bundle from its ID."""
         result = self._getBundleCE(bundleId)
 
         if not result["OK"]:
@@ -321,6 +342,7 @@ class BundlerHandler(RequestHandler):
     #############################################################################
 
     def _getBundleIdFromJobId(self, jobId):
+        """Obtains the BundleID corresponding to a JobID."""
         if jobId in self.jobToBundle:
             return S_OK(self.jobToBundle[jobId])
 
@@ -332,6 +354,7 @@ class BundlerHandler(RequestHandler):
         return result
 
     def _wrapBundle(self, bundleId):
+        """Bundles the jobs in a bundle for its submission."""
         result = self.bundleDB.getWholeBundle(bundleId)
 
         if not result["OK"]:
@@ -398,6 +421,7 @@ class BundlerHandler(RequestHandler):
         return S_OK((jobIds, wrapperPath, inputs, list(set(outputs))))
 
     def _getBundleCEDict(self, bundleId):
+        """Returns the CEDict of a specific Bundle as a dictionary."""
         result = self.bundleDB.getBundleCE(bundleId)
         if not result["OK"]:
             return result
@@ -408,6 +432,7 @@ class BundlerHandler(RequestHandler):
         return S_OK({"CEDict": ceDict, "ProxyPath": result["Value"]["ProxyPath"]})
 
     def _setupCE(self, ceDict, proxyPath):
+        """Prepares the CE instance."""
         result = getProxyInfo(proxy=proxyPath)
 
         if not result["OK"]:
@@ -416,7 +441,7 @@ class BundlerHandler(RequestHandler):
 
         proxy = result["Value"]["chain"]
 
-        # Setup CE
+        # CE Initialization
         result = self.ceFactory.getCE(ceType=ceDict["CEType"], ceName=ceDict["GridCE"], ceParametersDict=ceDict)
 
         if not result["OK"]:
@@ -430,6 +455,7 @@ class BundlerHandler(RequestHandler):
         return S_OK({"CE": ce, "Proxy": proxy})
 
     def _getBundleCE(self, bundleId):
+        """Returns the CE of a the corresponding Bundle from its ID."""
         if bundleId not in self.bundleToCE:
             result = self._getBundleCEDict(bundleId)
 
@@ -446,6 +472,7 @@ class BundlerHandler(RequestHandler):
         return S_OK(self.bundleToCE[bundleId])
 
     def _getJobCE(self, jobId):
+        """Returns the CE of a the corresponding Job from its ID."""
         if jobId not in self.jobToCE:
             result = self._getBundleIdFromJobId(jobId)
 
@@ -464,9 +491,10 @@ class BundlerHandler(RequestHandler):
 
         return S_OK(self.jobToCE[jobId])
 
-    def __reportJob(self, jobId: int, status: PilotStatus, info: str):
+    def __reportJob(self, jobId, status, minorStatus):
+        """Calls the JobReport of the Job if possible."""
         if jobId not in self.jobReports:
             return
 
-        self.jobReports[jobId].setJobStatus(status=status, minorStatus=info)
+        self.jobReports[jobId].setJobStatus(status=status, minorStatus=minorStatus)
         self.jobReports[jobId].commit()

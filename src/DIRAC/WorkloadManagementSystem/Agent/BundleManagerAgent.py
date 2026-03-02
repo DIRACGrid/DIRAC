@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.WorkloadManagementSystem.Client import PilotStatus, JobStatus
+from DIRAC.WorkloadManagementSystem.Client import JobStatus, PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.BundlerClient import BundlerClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.DB.BundleDB import BundleDB

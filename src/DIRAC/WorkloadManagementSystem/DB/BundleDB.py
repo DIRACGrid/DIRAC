@@ -83,6 +83,7 @@ class BundleDB(DB):
     #############################################################################
 
     def insertJobToBundle(self, jobId, executable, inputs, outputs, processors, ceDict, proxyPath, diracId):
+        """Inserts a new job in a new or existing Bundle depending of the CE to be submitted."""
         result = self._getBundlesFromCEDict(ceDict)
 
         if not result["OK"]:
@@ -128,6 +129,10 @@ class BundleDB(DB):
         return S_OK({"BundleId": bundleId, "Ready": result["Value"]["Ready"]})
 
     def removeJobsFromBundle(self, jobIds):
+        """Receives a list of DIRAC JobIds, matches them to their corresponding bundle and removes them."""
+        if not isinstance(jobIds, list):
+            jobIds = list(jobIds)
+
         for jobId in jobIds:
             result = self.getFields(self.JOB_TO_BUNDLE_TABLE, ["BundleID", "Processors"], {"JobID": jobId})
 
@@ -135,9 +140,10 @@ class BundleDB(DB):
                 return result
 
             jobInfo = result["Value"][0]
-            bundleId, procs = jobInfo[0], jobInfo[1]
+            bundleId = jobInfo[0]
+            nProcs = jobInfo[1]
 
-            result = self._reduceProcessorSum(bundleId, procs)
+            result = self._reduceProcessorSum(bundleId, nProcs)
 
             if not result["OK"]:
                 return result
@@ -148,6 +154,7 @@ class BundleDB(DB):
     #############################################################################
 
     def getUnpurgedBundles(self):
+        """Obtains the list of Bundles that inputs haven't been removed locally."""
         cmd = 'SELECT BundleID FROM BundlesInfo WHERE Status = "{status}" AND Flags & {flag} != {flag};'.format(
             status=PilotStatus.DONE, flag=self.BUNDLE_FLAGS["Purged"]
         )
@@ -160,6 +167,7 @@ class BundleDB(DB):
         return S_OK([entry[0] for entry in result["Value"]])
 
     def isBundleCleaned(self, bundleId):
+        """Check if ce.cleanJob has been performed properly."""
         cmd = 'SELECT BundleID FROM BundlesInfo WHERE BundleID = "{bundleId}" AND Flags & {flag} = {flag};'.format(
             bundleId=bundleId, flag=self.BUNDLE_FLAGS["Cleaned"]
         )
@@ -180,6 +188,7 @@ class BundleDB(DB):
         return self._getBundlesWithStatus(PilotStatus.RUNNING)
 
     def _getBundlesWithStatus(self, status):
+        """Get Bundles that match certain status."""
         result = self.getFields(self.BUNDLES_INFO_TABLE, self.BUNDLES_INFO_COLUMNS, {"Status": status})
 
         if not result["OK"]:
@@ -191,6 +200,7 @@ class BundleDB(DB):
     #############################################################################
 
     def getBundleIdFromJobId(self, jobId):
+        """Returns the BundleId that corresponds to a DIRAC JobId."""
         result = self.getFields(self.JOB_TO_BUNDLE_TABLE, ["BundleID"], {"JobID": jobId})
 
         if not result["OK"]:
@@ -202,6 +212,7 @@ class BundleDB(DB):
         return S_OK(result["Value"][0][0])
 
     def getBundleStatus(self, bundleId):
+        """Obtain the status of the Bundle."""
         result = self.getFields(self.BUNDLES_INFO_TABLE, ["Status"], {"BundleID": bundleId})
 
         if not result["Value"]:
@@ -209,7 +220,9 @@ class BundleDB(DB):
 
         return S_OK(result["Value"][0][0])
 
+    # TODO: This whole function is incomprehensible, needs to be split in 2
     def getJobsOfBundle(self, bundleId, noInputs=False):
+        """Get every Job that comprise a Bundle."""
         if noInputs:
             cmd = """\
             SELECT JobID, DiracID, ExecutablePath, Outputs, Processors
@@ -241,7 +254,7 @@ class BundleDB(DB):
             if len(row) == len(self.JOB_TO_BUNDLE_COLUMNS) - 1:  # All columns except BundleID
                 jobID, diracId, jobExecutablePath, jobOutputs, processors = row
                 jobInputPath = ""
-            else:
+            else: # All columns except BundleID but with the inputs
                 jobID, diracId, jobExecutablePath, jobOutputs, processors, jobInputPath = row
 
             if jobID not in retVal:
@@ -263,6 +276,7 @@ class BundleDB(DB):
         return S_OK(retVal)
 
     def getJobIDsOfBundle(self, bundleId):
+        """Returns the list of JobIds that are contained in a bundle"""
         result = self.getFields(self.JOB_TO_BUNDLE_TABLE, ["JobID"], {"BundleID": bundleId})
 
         if not result["OK"]:
@@ -271,6 +285,7 @@ class BundleDB(DB):
         return S_OK([entry[0] for entry in result["Value"]])
 
     def removeJobInputs(self, jobIds):
+        """Removes the contents of the JobInputs table for each corresponding JobID."""
         if not isinstance(jobIds, list):
             jobIds = [jobIds]
 
@@ -279,12 +294,14 @@ class BundleDB(DB):
     #############################################################################
 
     def setTaskId(self, bundleId, taskId):
+        """Sets the value of the TaskID generetad by the real CE during Bundle submission."""
         result = self.updateFields(
             self.BUNDLES_INFO_TABLE, ["TaskID", "Status"], [taskId, PilotStatus.RUNNING], {"BundleID": bundleId}
         )
         return result
 
     def getTaskId(self, bundleId):
+        """Returns the value of the TaskId stored."""
         result = self.getFields(self.BUNDLES_INFO_TABLE, ["TaskID"], {"BundleID": bundleId})
 
         if not result["OK"]:
@@ -348,6 +365,7 @@ class BundleDB(DB):
         return self._query(cmd)
 
     def _createNewBundle(self, ceDict, proxyPath):
+        """Initialize a new Bundle."""
         if "ExecTemplate" not in ceDict:
             return S_ERROR("CE must have a properly formatted ExecTemplate")
 
@@ -376,9 +394,10 @@ class BundleDB(DB):
         return S_OK(bundleId)
 
     def _insertJobInBundle(self, jobId, bundleId, executable, inputs, outputs, nProcessors, proxyPath, diracId):
+        """Add the info of a Job to a Bundle."""
         timestamp = datetime.now(tz=timezone.utc).strftime(self.MYSQL_DATETIME_FORMAT)
 
-        # Insert the job into the bundle
+        # Job Insertion
         insertInfo = {
             "JobID": jobId,
             "BundleID": bundleId,
@@ -395,7 +414,6 @@ class BundleDB(DB):
         if not result["OK"]:
             return result
 
-        # Insert the Inputs
         for _input in inputs:
             insertInfo = {
                 "JobID": jobId,
@@ -420,6 +438,7 @@ class BundleDB(DB):
         if not result["OK"]:
             return result
 
+        # TODO: Move all of this out of the function
         # Obtain the info to be returned to the Service
         result = self.getFields(
             self.BUNDLES_INFO_TABLE,
@@ -432,14 +451,14 @@ class BundleDB(DB):
 
         selection = formatSelectOutput(
             result["Value"], ["ProcessorSum", "MaxProcessors", "Status", "FirstTimestamp", "LastTimestamp"]
-        )
-        selection = selection[0]
+        )[0]
 
         ready = selection["ProcessorSum"] == selection["MaxProcessors"]
 
         return S_OK({"BundleId": bundleId, "Ready": ready})
 
     def _getBundlesFromCEDict(self, ceDict):
+        """Returns the bundles that match a CE (Site, CE and Queue)."""
         cmd = 'SELECT * FROM BundlesInfo WHERE Site = "{Site}" AND CE = "{CE}" AND Queue = "{Queue}";'.format(
             Site=ceDict["Site"],
             CE=ceDict["GridCE"],
@@ -460,6 +479,7 @@ class BundleDB(DB):
         return S_OK(retVal)
 
     def _updateBundleStatus(self, bundleId, newStatus):
+        """Changes the status of a Bundle."""
         cmd = 'UPDATE BundlesInfo SET Status = "{status}" WHERE BundleID = "{bundleId}";'.format(
             bundleId=bundleId, status=newStatus
         )
@@ -470,27 +490,9 @@ class BundleDB(DB):
 
         return S_OK()
 
-    # This is function quite dumb, and should not work like this, but for a fist
-    #  aproximation is fine (I guess).
-    #
-    # The best way (in my opinion) of approching this is by taking advantage of
-    #  dynamic programming.
-    # We could approach this by considering the bundles as sacks and selecting
-    #  the bundle to insert the same way it is done in the Knapsack Problem.
-    #
-    #  REF: https://en.wikipedia.org/wiki/Knapsack_problem
-    #
-    # Each bundle that relates to the same CE would be a Knapsack and each item
-    #  would be a different job. The job would have its 'weight' and 'price' set
-    #  to the number of processors it needs, and the algorithm would optimize
-    #  how they are distributed around the bundles.
-    #
-    # By having multiple bundles, this would relate more to the Bin Packing Problem,
-    #  which is an abstaction of the Knapsack Problem.
-    #
-    #  REF: https://en.wikipedia.org/wiki/Bin_packing_problem
-    #
     def __selectBestBundle(self, bundles, nProcessors):
+        """Return the BundleID of the best match from a list of bundles and the number of processors requested.
+        """
         bestBundleId = None
         currentBestProcs = 0
 

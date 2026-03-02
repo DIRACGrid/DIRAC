@@ -2,7 +2,6 @@
 """
 
 from DIRAC.Core.Base.Client import Client, createClient
-from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 
 
 @createClient("WorkloadManagement/Bundler")
@@ -11,7 +10,6 @@ class BundlerClient(Client):
 
     This inherits the DIRAC base Client for direct execution of server functionality.
     The following methods are available (although not visible here).
-
     """
 
     def __init__(self, url=None, **kwargs):
