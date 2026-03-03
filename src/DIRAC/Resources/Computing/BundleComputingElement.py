@@ -66,10 +66,7 @@ CEs
 import copy
 import inspect
 import os
-import shutil
 import uuid
-
-from filelock import FileLock
 
 from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
@@ -224,30 +221,8 @@ class BundleComputingElement(ComputingElement):
             return S_ERROR("Output not ready yet")
 
         taskId = result["Value"]["TaskID"]
-        _, innerStamp = taskId.split(":::")
 
-        result = self.__getOutputPath(bundleId, taskId)
-
-        if not result["OK"]:
-            return result
-
-        # The output obtation Timed Out, we need to wait a little longer
-        if not result["Value"]["Available"]:
-            return S_ERROR("Outputs not yet available")
-
-        outputsPath = result["Value"]["Path"]
-        outputAbsPath = os.path.abspath(workingDirectory)
-
-        jobOutputDir = os.path.join(outputsPath, f"{jobId}")
-
-        if not os.path.exists(jobOutputDir):
-            return S_ERROR("Failed to locate job output files from base output directory")
-
-        self.log.notice(f"Outputs at: {jobOutputDir}")
-
-        # Move all outputs from the temporary directory, to the job working directory
-        for item in os.listdir(jobOutputDir):
-            shutil.move(os.path.join(jobOutputDir, item), os.path.join(outputAbsPath, item))
+        result = self.innerCE.getJobOutput(taskId, workingDirectory=workingDirectory, path=jobId)
 
         error = os.path.join(workingDirectory, f"{bundleId}.err")
         output = os.path.join(workingDirectory, f"{bundleId}.out")
@@ -354,34 +329,3 @@ class BundleComputingElement(ComputingElement):
             return S_OK(0)
 
         return S_OK(1)
-
-    def __getOutputPath(self, bundleId, innerTaskId):
-        """Returns the output path of the whole bundle
-        If it hasn't been created yet, it obtains the output from the Inner CE.
-        """
-        self.log.debug(f"Obtaining the output path of bundle '{bundleId}' with task '{innerTaskId}'")
-
-        basePath = os.path.join(self.bundlesBaseDir, bundleId)
-        lock = FileLock(os.path.join(basePath, "outputs.lock"))
-
-        outputsPath = os.path.join(basePath, "outputs")
-
-        try:
-            # Always acquire the lock before checking anything
-            with lock.acquire(timeout=60):
-                self.log.debug("Outputs lock acquired")
-                # If the output does not exist, dowload the outputs
-                if not os.path.exists(outputsPath):
-                    os.mkdir(outputsPath)
-                    self.log.debug(f"Saving inner CE outputs from task '{innerTaskId}' into '{outputsPath}'")
-                    result = self.innerCE.getJobOutput(innerTaskId, outputsPath)
-
-                    if not result["OK"]:
-                        self.log.error("Failed to obtain the outputs, removing the directory")
-                        os.rmdir(outputsPath)
-                        return result
-
-        except TimeoutError:
-            return S_OK({"Available": False})
-
-        return S_OK({"Available": True, "Path": outputsPath})
