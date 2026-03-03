@@ -1,8 +1,9 @@
-""" InfoGetter
+"""InfoGetter
 
-  Module used to map the policies with the CS.
+Module used to map the policies with the CS.
 
 """
+
 import copy
 
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -189,7 +190,7 @@ def _sanitizedecisionParams(decisionParams):
 def _getComputingElementsByDomainName(targetDomain=None):
     """
     WARNING: TO ADD TO CSHelpers
-    Gets all computing elements from /Resources/Sites/<>/<>/CE
+    Gets all computing elements from /Resources/Sites/<domain>/<site_name>/CEs
     """
 
     _basePath = "Resources/Sites"

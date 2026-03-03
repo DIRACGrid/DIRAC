@@ -20,13 +20,13 @@ class RssConfiguration:
       {
         Config:
         {
-          State        : Active | InActive,
           Cache        : 300,
           FromAddress  : 'email@site.domain'
-          StatusType   :
+          Policies
           {
-            default       : all,
-            StorageElement: ReadAccess, WriteAccess, CheckAccess, RemoveAccess
+          }
+          PolicyActions
+          {
           }
         }
       }
@@ -81,24 +81,3 @@ def getNotifications():
     """
 
     return Utils.getCSTree(f"{_rssConfigPath}/Notification")
-
-
-def getValidElements():
-    """
-    Returns from the OperationsHelper: <_rssConfigPath>/GeneralConfig/ValidElements
-    """
-    _DEFAULTS = ("Site", "Resource")
-
-    #  result = Operations().getValue( '%s/GeneralConfig/ValidElements' % _rssConfigPath )
-    #  if result is not None:
-    #    return List.fromChar( result )
-    return _DEFAULTS
-
-
-def getValidStatus():
-    """
-    Returns a list of statuses as were defined on the RSS(State)Machine
-    """
-
-    validStatus = RSSMachine(None).getStates()
-    return S_OK(validStatus)
