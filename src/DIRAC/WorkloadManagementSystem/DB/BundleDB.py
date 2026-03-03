@@ -219,7 +219,7 @@ class BundleDB(DB):
 
     def getJobsAndInputsOfBundle(self, bundleId):
         """Get every Job and Inputs that comprise a Bundle."""
-    
+
         cmd = """\
         SELECT JobToBundle.JobID, DiracID, ExecutablePath, Outputs, Processors, InputPath
         FROM JobToBundle
@@ -257,12 +257,9 @@ class BundleDB(DB):
 
     def getJobsOfBundle(self, bundleId):
         """Get every Job that comprise a Bundle."""
-        cmd = """\
-        SELECT JobID, DiracID, ExecutablePath, Outputs, Processors
+        cmd = f"""        SELECT JobID, DiracID, ExecutablePath, Outputs, Processors
         FROM JobToBundle
-        WHERE BundleID = "{bundleId}";""".format(
-            bundleId=bundleId
-        )
+        WHERE BundleID = "{bundleId}";"""
 
         result = self._query(cmd)
 
@@ -512,7 +509,7 @@ class BundleDB(DB):
 
             newProcSum = procs + nProcessors
 
-            if status != PilotStatus.WAITING:
+            if status != PilotStatus.WAITING or newProcSum > maxProcs:
                 continue
 
             if newProcSum == maxProcs:
