@@ -391,7 +391,7 @@ class BundlerHandler(RequestHandler):
 
             outputs.extend(jobInfo["Outputs"])
 
-        formatted_inputs = "(" + " ".join(inputs) + ")"
+        formatted_inputs = "(" + " ".join(executables) + ")"
         formatMap = {"inputs": formatted_inputs, "bundleId": bundleId}
         wrappedBundle = BASH_WRAPPER.format(**formatMap)
 
