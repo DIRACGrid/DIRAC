@@ -355,7 +355,7 @@ class BundlerHandler(RequestHandler):
 
     def _wrapBundle(self, bundleId):
         """Bundles the jobs in a bundle for its submission."""
-        result = self.bundleDB.getJobsOfBundle(bundleId)
+        result = self.bundleDB.getJobsAndInputsOfBundle(bundleId)
 
         if not result["OK"]:
             self.log.error("Failed to obtain bundled job while wrapping. BundleID=", str(bundleId))

@@ -217,25 +217,17 @@ class BundleDB(DB):
 
         return S_OK(result["Value"][0][0])
 
-    # TODO: This whole function is incomprehensible, needs to be split in 2
-    def getJobsOfBundle(self, bundleId, noInputs=False):
-        """Get every Job that comprise a Bundle."""
-        if noInputs:
-            cmd = """\
-            SELECT JobID, DiracID, ExecutablePath, Outputs, Processors
-            FROM JobToBundle
-            WHERE BundleID = "{bundleId}";""".format(
-                bundleId=bundleId
-            )
-        else:
-            cmd = """\
-            SELECT JobToBundle.JobID, DiracID, ExecutablePath, Outputs, Processors, InputPath
-            FROM JobToBundle
-            LEFT JOIN JobInputs
-            ON JobToBundle.JobID = JobInputs.JobID
-            WHERE BundleID = "{bundleId}";""".format(
-                bundleId=bundleId
-            )
+    def getJobsAndInputsOfBundle(self, bundleId):
+        """Get every Job and Inputs that comprise a Bundle."""
+    
+        cmd = """\
+        SELECT JobToBundle.JobID, DiracID, ExecutablePath, Outputs, Processors, InputPath
+        FROM JobToBundle
+        LEFT JOIN JobInputs
+        ON JobToBundle.JobID = JobInputs.JobID
+        WHERE BundleID = "{bundleId}";""".format(
+            bundleId=bundleId
+        )
 
         result = self._query(cmd)
 
@@ -245,14 +237,44 @@ class BundleDB(DB):
         rows = list(result["Value"])
         retVal = {}
 
-        # For each row (JobID, ExecutablePath, Outputs, Processors, [InputPath])
+        # For each row (JobID, ExecutablePath, Outputs, Processors, InputPath)
         for row in rows:
-            # The job has no input
-            if len(row) == len(self.JOB_TO_BUNDLE_COLUMNS) - 1:  # All columns except BundleID
-                jobID, diracId, jobExecutablePath, jobOutputs, processors = row
-                jobInputPath = ""
-            else:  # All columns except BundleID but with the inputs
-                jobID, diracId, jobExecutablePath, jobOutputs, processors, jobInputPath = row
+            jobID, diracId, jobExecutablePath, jobOutputs, processors, jobInputPath = row
+
+            if jobID not in retVal:
+                retVal[jobID] = {
+                    "ExecutablePath": jobExecutablePath,
+                    "DiracID": diracId,
+                    "Outputs": [],
+                    "Processors": processors,
+                    "Inputs": [],
+                }
+
+            retVal[jobID]["Outputs"].extend(literal_eval(jobOutputs))
+            retVal[jobID]["Inputs"].append(jobInputPath)
+
+        return S_OK(retVal)
+
+    def getJobsOfBundle(self, bundleId):
+        """Get every Job that comprise a Bundle."""
+        cmd = """\
+        SELECT JobID, DiracID, ExecutablePath, Outputs, Processors
+        FROM JobToBundle
+        WHERE BundleID = "{bundleId}";""".format(
+            bundleId=bundleId
+        )
+
+        result = self._query(cmd)
+
+        if not result["OK"]:
+            return result
+
+        rows = list(result["Value"])
+        retVal = {}
+
+        # For each row (JobID, ExecutablePath, Outputs, Processors)
+        for row in rows:
+            jobID, diracId, jobExecutablePath, jobOutputs, processors = row
 
             if jobID not in retVal:
                 retVal[jobID] = {
@@ -262,13 +284,7 @@ class BundleDB(DB):
                     "Processors": processors,
                 }
 
-                if not noInputs:
-                    retVal[jobID]["Inputs"] = []
-
             retVal[jobID]["Outputs"].extend(literal_eval(jobOutputs))
-
-            if jobInputPath:
-                retVal[jobID]["Inputs"].append(jobInputPath)
 
         return S_OK(retVal)
 

@@ -63,7 +63,7 @@ class BundleManagerAgent(AgentModule):
         for bundleInfo in bundles:
             bundleId = bundleInfo["BundleID"]
 
-            result = self.bundleDB.getJobsOfBundle(bundleId, noInputs=True)
+            result = self.bundleDB.getJobsOfBundle(bundleId)
             if not result["OK"]:
                 self.log.error(f"Failed to get the jobs of the bundle '{bundleId}'")
                 return result
@@ -148,7 +148,7 @@ class BundleManagerAgent(AgentModule):
 
         for bundleInfo in result["Value"]:
             if bundleInfo["Status"] == PilotStatus.RUNNING:
-                result = self.bundleDB.getJobsOfBundle(bundleInfo["BundleID"], noInputs=True)
+                result = self.bundleDB.getJobsOfBundle(bundleInfo["BundleID"])
                 if not result["OK"]:
                     continue
 
