@@ -1,15 +1,8 @@
 import os
-import sys
-import time
-from DIRAC.Core.Security.X509Chain import X509Chain
-from DIRAC.Resources.Computing.AREXComputingElement import AREXComputingElement
-
-# AREXComputingElement redefinition
-import os
-import json
-import requests
 import shutil
-from DIRAC import S_OK, S_ERROR
+
+from DIRAC import S_ERROR, S_OK
+from DIRAC.Resources.Computing.AREXComputingElement import AREXComputingElement
 
 
 class AREXEnhancedComputingElement(AREXComputingElement):
