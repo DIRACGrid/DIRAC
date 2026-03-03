@@ -43,7 +43,7 @@ Before running it, make sure that the following conditions are satisfied:
 
 For the configuration, simply issuing `dirac-configure` will start a configuration wizard, using some predefined setups. If your setup is not present, but you know the URL of DIRAC's Configuration Server, issue instead::
 
-  $ dirac-configure -C $DIRAC_CS_URL --SkipCAChecks --SkipCADownload
+  $ dirac-configure -C $DIRAC_CS_URL
 
 In both cases you will be prompted to insert the password of your personal certificate.
 
