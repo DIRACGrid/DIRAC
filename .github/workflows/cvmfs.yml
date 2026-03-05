@@ -7,6 +7,10 @@ jobs:
   deploy_CVMFS:
     runs-on: "ubuntu-latest"
     steps:
+    - name: Install system packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y fetch-crl ca-certificates
     - name: prepare environment
       run: |
         conda create -c conda-forge -n cvmfs-env ca-policy-lcg openssl==3.0.7 gct
@@ -18,8 +22,8 @@ jobs:
           conda info
           conda info --envs
           conda list
-          conda install ca-policy-lcg openssl==3.0.7 gct
-          fetch-crl
+          # conda install ca-policy-lcg openssl==3.0.7 gct
+          sudo fetch-crl
 
           echo "$CVMFS_PROXY_BASE64" | base64 --decode > cvmfs.proxy
           export X509_USER_PROXY=cvmfs.proxy
