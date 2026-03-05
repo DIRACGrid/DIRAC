@@ -20,7 +20,7 @@ DIRAC provides an abstraction of a SE interface that allows to access different 
         # The name of the DIRAC Plugin module to be used for implementation
         # of the access protocol
         PluginName = SRM2
-        # Flag specifying the access type (local/remote)
+        # Flag specifying the access type (local/remote/remoteonly)
         Access = remote
         # Protocol name
         Protocol = srm
@@ -50,6 +50,7 @@ Configuration options are:
 * ``UseCatalogURL``: default ``False``. If ``True``, use the url stored in the catalog instead of regenerating it
 * ``ChecksumType``: default ``ADLER32``. NOT ACTIVE !
 * ``Alias``: when set to the name of another storage element, it instanciates the other SE instead.
+* ``Access``: Can be ``local``, ``remote`` or ``remoteonly``. Options specify that the protocol can be used in local (e.g. upload from a WN to local SE), remote+local or remote context.
 * ``ReadAccess``: default ``True``. Allowed for Read if no RSS enabled (:ref:`activateRSS`)
 * ``WriteAccess``: default ``True``. Allowed for Write if no RSS enabled
 * ``CheckAccess``: default ``True``. Allowed for Check if no RSS enabled
@@ -221,7 +222,7 @@ There are also a set of plugins based on the `gfal2 libraries <https://dmc-docs.
 
 Default plugin options:
 
-* ``Access``: ``Remote`` or ``Local``. If ``Local``, then this protocol can be used only if we are running at the site to which the SE is associated. Typically, if a site mounts the storage as NFS, the ``file`` protocol can be used.
+* ``Access``: ``Remote``, ``Local`` or ``RemoteOnly``. If ``Local``, then this protocol can be used only if we are running at the site to which the SE is associated. Typically, if a site mounts the storage as NFS, the ``file`` protocol can be used. If ``RemoteOnly``, this protocol is not used when running at the site. For example, if you need to use a different hostname within the site than from outside.
 * InputProtocols/OutputProtocols: a given plugin normally contain a hard coded list of protocol it is able to generate or accept as input. There are however seldom cases (like SRM) where the site configuration may change these lists. These options are here to accomodate for that case.
 
 GRIDFTP Optimisation
@@ -314,6 +315,32 @@ You need to define a protocol section with SRM, specifying that a ``file`` URL c
       WSUrl = /srm/managerv2?SFN=
       # This is different from the ``standard`` definition
       OutputProtocols = file, https, gsiftp, root, srm
+    }
+
+
+RemoteOnly protocol definition
+------------------------------
+
+Some sites may want you to have a different endpoint when running on the worker node than when transfering files via FTS. Or they recommend a protocol remotely only. This is possible with the ``RemoteOnly`` only option::
+
+
+    HTTPsConfig
+    {
+      Host = webdav.fromoutside.ac.uk
+      Port = 1094
+      PluginName = Echo
+      Protocol = https
+      Path = lhcb:mydata
+      Access = remoteonly
+    }
+    HTTPsConfigLocal
+    {
+      Host = inner-webdav-gateway..ac.uk
+      Port = 1095
+      PluginName = Echo
+      Protocol = https
+      Path = lhcb:mydata
+      Access = local
     }
 
 

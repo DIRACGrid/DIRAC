@@ -1092,7 +1092,6 @@ class StorageElementItem:
         Returns:
           list: list of storage plugins
         """
-
         log = self.log.getSubLogger("__filterPlugins")
         log.debug(f"Filtering plugins for {methodName} (protocol = {protocols} ; inputProtocol = {inputProtocol})")
 
@@ -1103,6 +1102,8 @@ class StorageElementItem:
 
         potentialProtocols = []
         allowedProtocols = []
+
+        localSE = self.__isLocalSE()["Value"]
 
         if methodName in self.readMethods + self.checkMethods:
             allowedProtocols = self.localAccessProtocolList
@@ -1125,12 +1126,12 @@ class StorageElementItem:
                 pluginsToUse = list(self.storages.values())
 
             # The closest list for "OK" methods is the AccessProtocol preference, so we sort based on that
-
+            # note: False < True, so to have local plugin first IF we are in a localSE, we use the remoteProtocol list
             pluginsToUse = sorted(
                 pluginsToUse,
                 key=lambda x: (
                     getIndexInList(x.protocolParameters["Protocol"], self.localAccessProtocolList),
-                    x.protocolSectionName in self.remoteProtocolSections,
+                    x.protocolSectionName in (self.remoteProtocolSections if localSE else self.localAccessProtocolList),
                 ),
             )
 
@@ -1147,12 +1148,11 @@ class StorageElementItem:
 
         log.debug(f"Potential protocols {potentialProtocols}")
 
-        localSE = self.__isLocalSE()["Value"]
-
         for protocolSection, plugin in self.storages.items():
             # Determine whether to use this storage object
             pluginParameters = plugin.getParameters()
             isProxyPlugin = pluginParameters.get("PluginName") == "Proxy"
+            isRemoteOnly = pluginParameters.get("Access", "").lower() == "remoteonly"
 
             if not pluginParameters:
                 log.debug("Failed to get storage parameters.", f"{self.name} {protocolSection}")
@@ -1165,6 +1165,10 @@ class StorageElementItem:
 
             if pluginParameters["Protocol"] not in potentialProtocols:
                 log.debug(f"Plugin {protocolSection} not allowed for {methodName}.")
+                continue
+
+            # If protocol is remote only and the context is local, skip it.
+            if isRemoteOnly and localSE:
                 continue
 
             # If we are attempting a putFile and we know the inputProtocol
@@ -1188,7 +1192,6 @@ class StorageElementItem:
         )
 
         log.debug(f"Plugins to be used for {methodName}: {[p.protocolSectionName for p in pluginsToUse]}")
-
         return pluginsToUse
 
     def __executeMethod(self, lfn, *args, **kwargs):
