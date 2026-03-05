@@ -29,8 +29,9 @@ jobs:
           type -a openssl
           openssl version
           type -a gsissh
+          env
 
           mkdir -p ~/.ssh/ && touch ~/.ssh/known_hosts
           ssh-keyscan cvmfs-uploader-egi.gridpp.rl.ac.uk >> ~/.ssh/known_hosts
 
-          gsissh -p 1975 -t cvmfs-uploader-egi.gridpp.rl.ac.uk /home/diracsgm/admin/sync_packages.sh -v
+          gsissh -p 1975 -t -v cvmfs-uploader-egi.gridpp.rl.ac.uk /home/diracsgm/admin/sync_packages.sh -v
