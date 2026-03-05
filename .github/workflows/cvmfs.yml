@@ -23,6 +23,7 @@ jobs:
           conda info --envs
           conda list
           # conda install ca-policy-lcg openssl==3.0.7 gct
+          export X509_CERT_DIR=$CONDA_PREFIX/etc/grid-security/certificates
           sudo fetch-crl
 
           echo "$CVMFS_PROXY_BASE64" | base64 --decode > cvmfs.proxy
