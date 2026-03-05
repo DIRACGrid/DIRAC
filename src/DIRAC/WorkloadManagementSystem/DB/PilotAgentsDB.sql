@@ -55,8 +55,8 @@ CREATE TABLE `JobToPilotMapping` (
   `PilotID` INT(11) UNSIGNED NOT NULL,
   `JobID` INT(11) UNSIGNED NOT NULL,
   `StartTime` DATETIME NOT NULL,
-  KEY `JobID` (`JobID`),
-  KEY `PilotID` (`PilotID`)
+  PRIMARY KEY (`PilotID`, `JobID`),
+  FOREIGN KEY (`PilotID`) REFERENCES `PilotAgents`(`PilotID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 DROP TABLE IF EXISTS `PilotOutput`;
@@ -64,5 +64,6 @@ CREATE TABLE `PilotOutput` (
   `PilotID` INT(11) UNSIGNED NOT NULL,
   `StdOutput` MEDIUMTEXT,
   `StdError` MEDIUMTEXT,
-  PRIMARY KEY (`PilotID`)
+  PRIMARY KEY (`PilotID`),
+  FOREIGN KEY (`PilotID`) REFERENCES `PilotAgents`(`PilotID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

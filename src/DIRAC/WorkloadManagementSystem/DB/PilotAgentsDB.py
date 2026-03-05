@@ -194,19 +194,13 @@ class PilotAgentsDB(DB):
         if not isinstance(pilotIDs, list):
             return S_ERROR("Input argument is not a List")
 
-        failed = []
-
         result = self._escapeValues(pilotIDs)
         if not result["OK"]:
             return S_ERROR(f"Failed to remove pilot: {result['Value']}")
         stringIDs = ",".join(result["Value"])
-        for table in ["PilotOutput", "JobToPilotMapping", "PilotAgents"]:
-            result = self._update(f"DELETE FROM {table} WHERE PilotID in ({stringIDs})", conn=conn)
-            if not result["OK"]:
-                failed.append(table)
-
-        if failed:
-            return S_ERROR(f"Failed to remove pilot from {', '.join(failed)} tables")
+        result = self._update(f"DELETE FROM PilotAgents WHERE PilotID in ({stringIDs})", conn=conn)
+        if not result["OK"]:
+            return S_ERROR("Failed to remove pilots: ", result["Message"])
         return S_OK(pilotIDs)
 
     ##########################################################################################
