@@ -9,7 +9,7 @@ jobs:
     steps:
     - name: Install system packages
       run: |
-        echo "===== Install fetch-crl as a system package ====="  
+        echo "===== Install fetch-crl as a system package ====="
         sudo apt-get update
         sudo apt-get install -y fetch-crl
     - name: prepare environment
