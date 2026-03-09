@@ -1,3 +1,20 @@
+[v9.1.1]
+
+*ResourceStatusSystem
+
+CHANGE: (#8473) removed ResourceManagement.AccountingCache table and methods
+CHANGE: (#8473) removed Catalogs from list of managed RSS resources
+
+*Deployment
+
+CHANGE: (#8473) MySQL -- USE ResourceManagementDB; DROP TABLE AccountingCache;
+CHANGE: (#8473) CS -- remove CS entry /Operations/<>/ResourceStatus/StatusTypes
+
+*Interfaces
+
+CHANGE: (#8470) added includeInSandbox flag to Job().setExecutable(). Default: True
+FIX: (#8470) Job().setExecutable(): warn->verbose message when the executable is not local
+
 [v9.1.0]
 
 *FileCatalog
