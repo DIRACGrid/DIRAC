@@ -1,25 +1,26 @@
-""" ResourceManagementDB:
-    This module provides definition of the DB tables, and methods to access them.
+"""ResourceManagementDB:
+This module provides definition of the DB tables, and methods to access them.
 
-    Written using sqlalchemy declarative_base
+Written using sqlalchemy declarative_base
 
 
 
-    For extending the ResourceStatusDB tables:
+For extending the ResourceStatusDB tables:
 
-    1) In the extended module, call:
+1) In the extended module, call:
 
-    from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import rmsBase, TABLESLIST
-    TABLESLIST = TABLESLIST + [list of new table names]
+from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import rmsBase, TABLESLIST
+TABLESLIST = TABLESLIST + [list of new table names]
 
-    2) provide a declarative_base definition of the tables (new or extended) in the extension module
+2) provide a declarative_base definition of the tables (new or extended) in the extension module
 
 """
+
 import datetime
 from sqlalchemy.orm import class_mapper
 from sqlalchemy.orm.query import Query
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, String, DateTime, exc, Text, Integer, Float
+from sqlalchemy import Column, String, DateTime, exc, Integer, Float
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
@@ -28,7 +29,6 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 # Defining the tables
 
 TABLESLIST = [
-    "AccountingCache",
     "DowntimeCache",
     "GGUSTicketsCache",
     "JobCache",
@@ -39,49 +39,6 @@ TABLESLIST = [
 ]
 
 rmsBase = declarative_base()
-
-
-class AccountingCache(rmsBase):
-    """AccountingCache table"""
-
-    __tablename__ = "AccountingCache"
-    __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
-
-    name = Column("Name", String(64), nullable=False, primary_key=True)
-    plotname = Column("PlotName", String(64), nullable=False, primary_key=True)
-    plottype = Column("PlotType", String(16), nullable=False, primary_key=True)
-    lastchecktime = Column("LastCheckTime", DateTime, nullable=False)
-    result = Column("Result", Text, nullable=False)
-    dateeffective = Column("DateEffective", DateTime, nullable=False)
-
-    def fromDict(self, dictionary):
-        """
-        Fill the fields of the AccountingCache object from a dictionary
-
-        :param dictionary: Dictionary to fill a single line
-        :type arguments: dict
-        """
-
-        self.name = dictionary.get("Name", self.name)
-        self.plotname = dictionary.get("PlotName", self.plotname)
-        self.plottype = dictionary.get("PlotType", self.plottype)
-        self.lastchecktime = dictionary.get(
-            "LastCheckTime",
-            self.lastchecktime.replace(microsecond=0)
-            if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0),
-        )
-        self.result = dictionary.get("Result", self.result)
-        self.dateeffective = dictionary.get(
-            "DateEffective",
-            self.dateeffective.replace(microsecond=0)
-            if self.dateeffective
-            else datetime.datetime.utcnow().replace(microsecond=0),
-        )
-
-    def toList(self):
-        """Simply returns a list of column values"""
-        return [self.name, self.plotname, self.plottype, self.lastchecktime, self.result, self.dateeffective]
 
 
 class DowntimeCache(rmsBase):

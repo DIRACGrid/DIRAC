@@ -42,7 +42,7 @@ class SiteStatus(metaclass=DIRACSingleton):
 
         cacheLifeTime = int(self.rssConfig.getConfigCache())
 
-        # RSSCache only affects the calls directed to RSS, if using the CS it is not used.
+        # RSSCache only affects the calls directed to RSS
         self.rssCache = RSSCache(cacheLifeTime, self.__updateRssCache)
 
     def __updateRssCache(self):
@@ -159,7 +159,7 @@ class SiteStatus(metaclass=DIRACSingleton):
               S_OK( ['test1.test1.uk', 'test3.test3.org'] )
           >>> siteStatus.getSites( 'Banned' )
               S_OK( ['test0.test0.uk', ... ] )
-          >>> siteStatus.getSites( 'All' )
+          >>> siteStatus.getSites( 'all' )
               S_OK( ['test1.test1.uk', 'test3.test3.org', 'test4.test4.org', 'test5.test5.org'...] )
           >>> siteStatus.getSites( None )
               S_ERROR( ... )

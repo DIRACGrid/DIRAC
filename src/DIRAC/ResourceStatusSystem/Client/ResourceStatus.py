@@ -1,4 +1,4 @@
-""" ResourceStatus
+"""ResourceStatus
 
 Module that acts as a helper for knowing the status of a resource.
 It takes care of switching between the CS and the RSS.
@@ -10,9 +10,7 @@ import math
 from datetime import datetime, timedelta
 from time import sleep
 
-from DIRAC import S_ERROR, S_OK, gConfig, gLogger
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.Core.Utilities import DErrno
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import getPoliciesThatApply
@@ -36,17 +34,16 @@ class ResourceStatus(metaclass=DIRACSingleton):
 
         cacheLifeTime = int(self.rssConfig.getConfigCache())
 
-        # RSSCache only affects the calls directed to RSS, if using the CS it is not used.
+        # RSSCache only affects the calls directed to RSS
         self.rssCache = RSSCache(cacheLifeTime, self.__updateRssCache)
 
     def getElementStatus(self, elementName, elementType, statusType=None, default=None, vO=None):
         """
-        Helper function, tries to get information from the RSS for the given
-        Element, otherwise, it gets it from the CS.
+        Helper function, tries to get information from the RSS for the given Element
 
         :param elementName: name of the element or list of element names
         :type elementName: str, list
-        :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
+        :param elementType: type of the element (StorageElement, ComputingElement, FTS)
         :type elementType: str
         :param statusType: type of the status (meaningful only when elementType==StorageElement)
         :type statusType: None, str, list
@@ -65,8 +62,6 @@ class ResourceStatus(metaclass=DIRACSingleton):
             S_ERROR( xyz.. )
         >>> getElementStatus('ThisIsAWrongName', 'StorageElement', 'WriteAccess')
             S_ERROR( xyz.. )
-        >>> getElementStatus('A_file_catalog', 'FileCatalog')
-            S_OK( { 'A_file_catalog': { 'all': 'Active' } } } )
         >>> getElementStatus('SE1', 'StorageElement', ['ReadAccess', 'WriteAccess'])
             S_OK( { 'SE1': { 'ReadAccess': 'Banned' , 'WriteAccess': 'Active'} } } )
         >>> getElementStatus('SE1', 'StorageElement')
@@ -79,7 +74,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
                    'CE2': {'all': 'Probing'}}}
         """
 
-        allowedParameters = ["StorageElement", "ComputingElement", "FTS", "Catalog"]
+        allowedParameters = ["StorageElement", "ComputingElement", "FTS"]
 
         if elementType not in allowedParameters:
             return S_ERROR(f"{elementType} in not in the list of the allowed parameters: {allowedParameters}")
@@ -92,17 +87,15 @@ class ResourceStatus(metaclass=DIRACSingleton):
                 statusType = ["all"]
             elif elementType == "FTS":
                 statusType = ["all"]
-            elif elementType == "Catalog":
-                statusType = ["all"]
 
         return self.__getRSSElementStatus(elementName, elementType, statusType, vO)
 
     def setElementStatus(self, elementName, elementType, statusType, status, reason=None, tokenOwner=None):
-        """Tries set information in RSS and in CS.
+        """Tries set information in RSS
 
         :param elementName: name of the element
         :type elementName: str
-        :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
+        :param elementType: type of the element (StorageElement, ComputingElement, FTS)
         :type elementType: str
         :param statusType: type of the status (meaningful only when elementType==StorageElement)
         :type statusType: str
@@ -159,7 +152,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
 
         :param elementName: name of the element or list of element names
         :type elementName: str, list
-        :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
+        :param elementType: type of the element (StorageElement, ComputingElement, FTS)
         :type elementType: str
         :param statusType: type of the status (meaningful only when elementType==StorageElement,
                            otherwise it is 'all' or ['all'])
@@ -172,53 +165,6 @@ class ResourceStatus(metaclass=DIRACSingleton):
         self.log.debug(cacheMatch)
 
         return cacheMatch
-
-    def __getCSElementStatus(self, elementName, elementType, statusType, default):
-        """Gets from the CS the Element status
-
-        :param elementName: name of the element
-        :type elementName: str
-        :param elementType: type of the element (StorageElement, ComputingElement, FTS, Catalog)
-        :type elementType: str
-        :param statusType: type of the status (meaningful only when elementType==StorageElement)
-        :type statusType: str, list
-        :param default: defult value
-        :type default: None, str
-        """
-        cs_path = None
-        # DIRAC doesn't store the status of ComputingElements nor FTS in the CS, so here we can just return 'Active'
-        if elementType in ("ComputingElement", "FTS"):
-            return S_OK({elementName: {"all": "Active"}})
-
-        # If we are here it is because elementType is either 'StorageElement' or 'Catalog'
-        if elementType == "StorageElement":
-            cs_path = "/Resources/StorageElements"
-        elif elementType == "Catalog":
-            cs_path = "/Resources/FileCatalogs"
-            statusType = ["Status"]
-
-        if not isinstance(elementName, list):
-            elementName = [elementName]
-
-        if not isinstance(statusType, list):
-            statusType = [statusType]
-
-        result = {}
-        for element in elementName:
-            for sType in statusType:
-                # Look in standard location, 'Active' by default
-                res = gConfig.getValue(f"{cs_path}/{element}/{sType}", "Active")
-                result.setdefault(element, {})[sType] = res
-
-        if result:
-            return S_OK(result)
-
-        if default is not None:
-            defList = [[el, statusType, default] for el in elementName]
-            return S_OK(getDictFromList(defList))
-
-        _msg = "Element '%s', with statusType '%s' is unknown for CS."
-        return S_ERROR(DErrno.ERESUNK, _msg % (elementName, statusType))
 
     def __setRSSElementStatus(self, elementName, elementType, statusType, status, reason, tokenOwner):
         """
@@ -253,38 +199,6 @@ class ResourceStatus(metaclass=DIRACSingleton):
         finally:
             # Release lock, no matter what.
             self.rssCache.releaseLock()
-
-    def __setCSElementStatus(self, elementName, elementType, statusType, status):
-        """
-        Sets on the CS the Elements status
-        """
-        cs_path = None
-        # DIRAC doesn't store the status of ComputingElements nor FTS in the CS, so here we can just do nothing
-        if elementType in ("ComputingElement", "FTS"):
-            return S_OK()
-
-        # If we are here it is because elementType is either 'StorageElement' or 'Catalog'
-        statuses = self.rssConfig.getConfigStatusType(elementType)
-        if statusType not in statuses:
-            gLogger.error(f"{statusType} is not a valid statusType")
-            return S_ERROR(f"{statusType} is not a valid statusType: {statuses}")
-
-        if elementType == "StorageElement":
-            cs_path = "/Resources/StorageElements"
-        elif elementType == "Catalog":
-            cs_path = "/Resources/FileCatalogs"
-            # FIXME: This a probably outdated location (new one is in /Operations/[]/Services/Catalogs)
-            # but needs to be VO-aware
-            statusType = "Status"
-
-        csAPI = CSAPI()
-        csAPI.setOption(f"{cs_path}/{elementName}/{elementType}/{statusType}", status)
-
-        res = csAPI.commitChanges()
-        if not res["OK"]:
-            gLogger.warn(f"CS: {res['Message']}")
-
-        return res
 
     def isStorageElementAlwaysBanned(self, seName, statusType):
         """Checks if the AlwaysBanned policy is applied to the SE given as parameter

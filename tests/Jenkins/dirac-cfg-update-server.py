@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """update local cfg"""
+
 import os
 import sys
 
@@ -304,14 +305,6 @@ csAPI.setOption("Resources/FTSEndpoints/FTS3/JENKINS-FTS3", "https://jenkins-fts
 #         State = Active
 #         FromAddress = fstagni@cern.ch
 #         notificationGroups = ShiftersGroup
-#         StatusTypes
-#         {
-#           default = all
-#           StorageElement = ReadAccess
-#           StorageElement += WriteAccess
-#           StorageElement += CheckAccess
-#           StorageElement += RemoveAccess
-#         }
 #       }
 #       Policies
 #       {
@@ -361,15 +354,6 @@ if not res["OK"]:
 csAPI.setOption("Operations/Defaults/ResourceStatus/Config/Cache", "600")
 csAPI.setOption("Operations/Defaults/ResourceStatus/Config/FromAddress", "fstagni@cern.ch")
 csAPI.setOption("Operations/Defaults/ResourceStatus/Config/notificationGroups", "ShiftersGroup")
-res = csAPI.createSection("Operations/Defaults/ResourceStatus/Config/StatusTypes")
-if not res["OK"]:
-    print(res["Message"])
-    sys.exit(1)
-csAPI.setOption("Operations/Defaults/ResourceStatus/Config/StatusTypes/default", "all")
-csAPI.setOption(
-    "Operations/Defaults/ResourceStatus/Config/StatusTypes/StorageElement",
-    "ReadAccess,WriteAccess,CheckAccess,RemoveAccess",
-)
 
 res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies")
 if not res["OK"]:

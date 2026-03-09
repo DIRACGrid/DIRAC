@@ -61,7 +61,7 @@ class ResourceStatusCache(rssBase):
 
     def fromDict(self, dictionary):
         """
-        Fill the fields of the AccountingCache object from a dictionary
+        Fill the fields of the ResourceStatusCache object from a dictionary
 
         :param dictionary: Dictionary to fill a single line
         :type arguments: dict
@@ -116,8 +116,6 @@ class ElementStatusBase:
 
     def fromDict(self, dictionary):
         """
-        Fill the fields of the AccountingCache object from a dictionary
-
         :param dictionary: Dictionary to fill a single line
         :type arguments: dict
         """
@@ -196,8 +194,6 @@ class ElementStatusBaseWithID(ElementStatusBase):
 
     def fromDict(self, dictionary):
         """
-        Fill the fields of the AccountingCache object from a dictionary
-
         :param dictionary: Dictionary to fill a single line
         :type arguments: dict
         """

@@ -104,8 +104,6 @@ Cache tables for metrics used by policies.
 
    * - Table
      - Purpose
-   * - AccountingCache
-     - Accounting plots and metrics
    * - DowntimeCache
      - Scheduled downtimes from GOCDB (DowntimeID, StartDate, EndDate, Severity)
    * - GGUSTicketsCache
@@ -545,9 +543,6 @@ Policies
 
 Actions
    ``/Operations/Defaults/ResourceStatus/PolicyActions``
-
-Status Types
-   ``/Operations/Defaults/ResourceStatus/Config/StatusTypes``
 
 Services
    ``/Systems/ResourceStatus/Services/``

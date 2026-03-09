@@ -20,11 +20,7 @@ Please, make sure you have the following schema::
 
     /Operations/Defaults/ResourceStatus
       /Config
-        State        = InActive
         Cache        = 300
-        /StatusTypes
-            default = all
-            StorageElement = ReadAccess,WriteAccess,CheckAccess,RemoveAccess
 
 For a more detailed explanation, take a look to the official documentation:
 :ref:`rss-configuration`.
