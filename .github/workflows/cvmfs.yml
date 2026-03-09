@@ -9,8 +9,9 @@ jobs:
     steps:
     - name: Install system packages
       run: |
+        echo "===== Install fetch-crl as a system package ====="  
         sudo apt-get update
-        sudo apt-get install -y fetch-crl ca-certificates
+        sudo apt-get install -y fetch-crl
     - name: prepare environment
       run: |
         conda create -c conda-forge -n cvmfs-env ca-policy-lcg openssl==3.0.7 gct
@@ -19,25 +20,32 @@ jobs:
           CVMFS_PROXY_BASE64: ${{ secrets.CVMFS_PROXY_BASE64 }}
       run: |
         eval "$(conda shell.bash hook)" && conda activate cvmfs-env
+          echo "===== conda info ====="
           conda info
+          echo "===== conda envorpnments ====="
           conda info --envs
+          echo "===== list conda packages ====="
           conda list
-          # conda install ca-policy-lcg openssl==3.0.7 gct
           export X509_CERT_DIR=$CONDA_PREFIX/etc/grid-security/certificates
-          sudo fetch-crl
+          echo "===== fetch crls, this can fail partially, should be not a problem ====="
+          sudo fetch-crl -l $X509_CERT_DIR -T 30 || echo "fetch-crl is not completely successful"
 
+          echo "===== set up proxy ====="
           echo "$CVMFS_PROXY_BASE64" | base64 --decode > cvmfs.proxy
           export X509_USER_PROXY=cvmfs.proxy
           chmod 600 cvmfs.proxy
+          echo "===== list the currect directory ====="
           ls -l
-          cat cvmfs.proxy
+          echo "===== list executables ====="
           export PATH=/usr/share/miniconda3/bin:/opt/conda/bin/:/opt/conda/condabin:$PATH
           type -a openssl
           openssl version
           type -a gsissh
+          echo "===== Environment ====="
           env
 
+          echo "===== put the target server into the knwn_hosts ====="
           mkdir -p ~/.ssh/ && touch ~/.ssh/known_hosts
           ssh-keyscan cvmfs-uploader-egi.gridpp.rl.ac.uk >> ~/.ssh/known_hosts
-
+          echo "===== run the repository update script now ====="
           gsissh -p 1975 -t -v cvmfs-uploader-egi.gridpp.rl.ac.uk /home/diracsgm/admin/sync_packages.sh
