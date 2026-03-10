@@ -4,6 +4,7 @@ modules.
 """
 
 from DIRAC import S_OK, gConfig, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Utilities.SiteSEMapping import getSEParameters
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
@@ -75,12 +76,17 @@ def getFileCatalogs():
 
 def getSiteElements(siteName):
     """
-    Gets all the storage elements for a given site
+    Gets all the storage and computing elements for a given site
     """
 
     res = DMSHelpers().getSiteSEMapping()
     if not res["OK"]:
         return res
-    resources = res["Value"][1].get(siteName, [])
+    resources = list(res["Value"][1].get(siteName, []))
 
-    return S_OK(list(resources))
+    res = getCESiteMapping()
+    if not res["OK"]:
+        return res
+    resources.extend(ce for ce, site in res["Value"].items() if site == siteName)
+
+    return S_OK(resources)
