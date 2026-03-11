@@ -1,5 +1,5 @@
-""" Utilities for WMS
-"""
+"""Utilities for WMS"""
+
 import os
 from pathlib import Path
 from glob import glob
@@ -161,7 +161,7 @@ pixi install --manifest-path {protoPath}
 # Get json
 dirac-wms-job-get-input {jobID} -D {rootLocation}
 # Run JobWrapper
-pixi run --manifest-path {protoPath} python {directJobWrapperFile} {directJobWrapperJsonFile}
+pixi run --manifest-path {protoPath} python {directJobWrapperFile} {directJobWrapperJsonFile} {jobID}
 """
     return S_OK((jobWrapperFile, jobWrapperJsonFile, jobExeFile, jobFileContents))
 
