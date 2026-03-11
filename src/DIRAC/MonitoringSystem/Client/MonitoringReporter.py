@@ -134,6 +134,7 @@ class MonitoringReporter:
         self.__documents = []
         self.__documentLock.release()
         recordSent = 0
+        try_count = 0
         try:
             while documents:
                 recordsToSend = documents[: self.__maxRecordsInABundle]
@@ -150,8 +151,13 @@ class MonitoringReporter:
                         # if we managed to publish the records we can delete from the list
                         recordSent += len(recordsToSend)
                         del documents[: self.__maxRecordsInABundle]
+                        try_count = 0
                     else:
                         gLogger.warn("Failed to insert the records:", retVal["Message"])
+                        try_count += 1
+                        if try_count == 10:
+                            gLogger.error("Failed to insert Monitoring records after 10 attempts")
+                            break
         except Exception as e:  # pylint: disable=broad-except
             gLogger.exception("Error committing", lException=e)
             return S_ERROR(f"Error committing {repr(e).replace(',)',')')}")
