@@ -929,6 +929,13 @@ class SiteDirector(AgentModule):
             result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, pilotGroup, proxyMinimumRequiredValidity)
             if not result["OK"]:
                 return result
+            result_validity = result["Value"].getRemainingSecs()
+            if not result_validity["OK"]:
+                return result_validity
+            if result_validity["Value"] < proxyMinimumRequiredValidity:
+                self.log.warn(
+                    f"The validity of the generated proxy ({result_validity['Value']} seconds) is less than the requested {proxyMinimumRequiredValidity} seconds"
+                )
             ce.setProxy(result["Value"])
 
         # Get valid token if needed
