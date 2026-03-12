@@ -315,8 +315,7 @@ class SiteDirector(AgentModule):
         ce = self.queueDict[queueName]["CE"]
 
         # Set credentials
-        cpuTime = queueCPUTime + 86400
-        result = self._setCredentials(ce, cpuTime)
+        result = self._setCredentials(ce, queueCPUTime)
         if not result["OK"]:
             self.log.error("Failed to set credentials:", result["Message"])
             return result
@@ -924,6 +923,7 @@ class SiteDirector(AgentModule):
 
         # Generate a new proxy if needed
         if getNewProxy:
+            proxyMinimumRequiredValidity = proxyMinimumRequiredValidity + 86400
             self.log.verbose("Getting pilot proxy", f"for {self.pilotDN}/{self.vo} {proxyMinimumRequiredValidity} long")
             pilotGroup = Operations(vo=self.vo).getValue("Pilot/GenericPilotGroup")
             result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, pilotGroup, proxyMinimumRequiredValidity)
