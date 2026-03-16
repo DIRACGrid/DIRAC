@@ -1,5 +1,5 @@
-""" Frontend to MySQL DB AccountingDB
-"""
+"""Frontend to MySQL DB AccountingDB"""
+
 import datetime
 import random
 import threading
@@ -531,6 +531,8 @@ class AccountingDB(DB):
             return [(currentBucketStart, 1, bucketTimeLength)]
         buckets = []
         totalLength = endTime - startTime
+        if totalLength == 0:
+            return [(currentBucketStart, 1, bucketTimeLength)]
         while currentBucketStart < endTime:
             start = max(currentBucketStart, startTime)
             end = min(currentBucketStart + bucketTimeLength, endTime)
