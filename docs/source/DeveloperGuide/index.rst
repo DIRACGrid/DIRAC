@@ -39,4 +39,3 @@ For questions, comments, or operational issues, use `GitHub discussions <https:/
    Externals/index
    TornadoServices/index
    APIs/index
-   OAuth2Authorization/index
