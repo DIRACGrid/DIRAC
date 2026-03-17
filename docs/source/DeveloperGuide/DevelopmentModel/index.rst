@@ -22,4 +22,3 @@ The content of the other repositories at `https://github.com/DIRACGrid` have eit
 
 DIRAC releases nomenclature follow `PEP 440 <https://www.python.org/dev/peps/pep-0440/>`_.
 DIRAC uses `Trunk Based Development <https://trunkbaseddevelopment.com>`_ and uses the `integration` branch as trunk.
-
