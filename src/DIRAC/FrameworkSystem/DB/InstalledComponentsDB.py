@@ -317,40 +317,10 @@ class HostLogging(componentsBase):
 
 
 # Whitelists for valid field names to prevent SQL injection
-COMPONENT_FIELDS = {"ComponentID", "DIRACSystem", "DIRACModule", "Type"}
-HOST_FIELDS = {"HostID", "HostName", "CPU"}
-INSTALLED_COMPONENT_FIELDS = {
-    "ComponentID",
-    "HostID",
-    "Instance",
-    "InstallationTime",
-    "UnInstallationTime",
-    "InstalledBy",
-    "UnInstalledBy",
-}
-HOST_LOGGING_FIELDS = {
-    "HostName",
-    "DIRACVersion",
-    "Extension",
-    "Load1",
-    "Load5",
-    "Load15",
-    "Memory",
-    "DiskOccupancy",
-    "Swap",
-    "CPUClock",
-    "CPUModel",
-    "CertificateDN",
-    "CertificateIssuer",
-    "CertificateValidity",
-    "Cores",
-    "PhysicalCores",
-    "OpenFiles",
-    "OpenPipes",
-    "OpenSockets",
-    "Uptime",
-    "Timestamp",
-}
+COMPONENT_FIELDS = Component.__table__.columns
+HOST_FIELDS = Host.__table__.columns
+INSTALLED_COMPONENT_FIELDS = InstalledComponent.__table__.columns
+HOST_LOGGING_FIELDS = HostLogging.__table__.columns
 
 # Mappings from external field names (DB column names) to SQLAlchemy attribute names
 # External API uses database column names, but Python attributes may differ
