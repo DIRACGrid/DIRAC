@@ -33,10 +33,7 @@ For questions, comments, or operational issues, use `GitHub discussions <https:/
    CodeDocumenting/index
    CodeTesting/index
    Systems/index
-   REST/index
    WebAppDIRAC/index
    Internals/index
    Externals/index
    TornadoServices/index
-   APIs/index
-   OAuth2Authorization/index
