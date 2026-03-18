@@ -302,24 +302,6 @@ class SiteDirector(AgentModule):
             self.failedQueues[queueName] += 1
             return S_OK(0)
 
-        # Adjust queueCPUTime: needed to generate the proxy
-        if "CPUTime" not in queueDictionary["ParametersDict"]:
-            self.log.error("CPU time limit is not specified, skipping", f"queue {queueName}")
-            return S_ERROR(f"CPU time limit is not specified, skipping queue {queueName}")
-
-        queueCPUTime = int(queueDictionary["ParametersDict"]["CPUTime"])
-        if queueCPUTime > self.maxQueueLength:
-            queueCPUTime = self.maxQueueLength
-
-        # Get CE instance
-        ce = self.queueDict[queueName]["CE"]
-
-        # Set credentials
-        result = self._setCredentials(ce, queueCPUTime)
-        if not result["OK"]:
-            self.log.error("Failed to set credentials:", result["Message"])
-            return result
-
         # Get the number of available slots on the target site/queue
         totalSlots, waitingPilots = self._getQueueSlots(queueName)
         if totalSlots <= 0:
@@ -340,6 +322,7 @@ class SiteDirector(AgentModule):
         )
 
         # Now really submitting
+        ce = self.queueDict[queueName]["CE"]
         result = self._submitPilotsToQueue(pilotsToSubmit, ce, queueName)
         if not result["OK"]:
             self.log.info("Failed pilot submission", f"Queue: {queueName}")
@@ -455,6 +438,12 @@ class SiteDirector(AgentModule):
             return result
         jobProxy = result["Value"]
         executable = self._getExecutable(queue, proxy=jobProxy, jobExecDir=jobExecDir, envVariables=envVariables)
+
+        # Add the credentials to the CE
+        result = self._setCredentials(ce, 3600)
+        if not result["OK"]:
+            self.log.error("Failed to set credentials:", result["Message"])
+            return result
 
         # Submit the job
         submitResult = ce.submitJob(executable, "", pilotsToSubmit)
@@ -900,20 +889,18 @@ class SiteDirector(AgentModule):
         return "Token" in ce.ceParameters.get("Tag", []) or f"Token:{self.vo}" in ce.ceParameters.get("Tag", [])
 
     def _setCredentials(self, ce: ComputingElement, proxyMinimumRequiredValidity: int):
-        """
+        """Add a proxy and a token to the ComputingElement.
 
         :param ce: ComputingElement instance
         :param proxyMinimumRequiredValidity: number of seconds needed to perform an operation with the proxy
-        :param tokenMinimumRequiredValidity: number of seconds needed to perform an operation with the token
         """
         getNewProxy = False
 
         # If the CE does not already embed a proxy, we need one
         if not ce.proxy:
             getNewProxy = True
-
-        # If the CE embeds a proxy that is too short to perform a given operation, we need a new one
-        if ce.proxy:
+        else:
+            # If the CE embeds a proxy that is too short to perform a given operation, we need a new one
             result = ce.proxy.getRemainingSecs()
             if not result["OK"]:
                 return result
@@ -923,18 +910,18 @@ class SiteDirector(AgentModule):
 
         # Generate a new proxy if needed
         if getNewProxy:
-            proxyMinimumRequiredValidity = proxyMinimumRequiredValidity + 86400
-            self.log.verbose("Getting pilot proxy", f"for {self.pilotDN}/{self.vo} {proxyMinimumRequiredValidity} long")
+            proxyRequestedValidity = max(proxyMinimumRequiredValidity, 86400)
+            self.log.verbose("Getting pilot proxy", f"for {self.pilotDN}/{self.vo} {proxyRequestedValidity} long")
             pilotGroup = Operations(vo=self.vo).getValue("Pilot/GenericPilotGroup")
-            result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, pilotGroup, proxyMinimumRequiredValidity)
+            result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, pilotGroup, proxyRequestedValidity)
             if not result["OK"]:
                 return result
             result_validity = result["Value"].getRemainingSecs()
             if not result_validity["OK"]:
                 return result_validity
-            if result_validity["Value"] < proxyMinimumRequiredValidity:
+            if result_validity["Value"] < proxyRequestedValidity:
                 self.log.warn(
-                    f"The validity of the generated proxy ({result_validity['Value']} seconds) is less than the requested {proxyMinimumRequiredValidity} seconds"
+                    f"The validity of the generated proxy ({result_validity['Value']} seconds) is less than the requested {proxyRequestedValidity} seconds"
                 )
             ce.setProxy(result["Value"])
 
