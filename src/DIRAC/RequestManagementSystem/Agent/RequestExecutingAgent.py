@@ -39,7 +39,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.Core.Utilities.DErrno import cmpError
-from DIRAC.Core.Utilities.ProcessPool import ProcessPool
+from DIRAC.Core.Utilities.ProcessPool import ProcessPool, FAST_PROCESS_POOL
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
@@ -394,8 +394,9 @@ class RequestExecutingAgent(AgentModule):
 
                             # # update request counter
                             taskCounter += 1
-                            # # task created, a little time kick to proceed
-                            time.sleep(0.1)
+                            if not FAST_PROCESS_POOL:
+                                # Preserve previous pacing unless explicitly disabled.
+                                time.sleep(0.1)
                             break
 
         self.log.info("Flushing callbacks", f"({len(self.__requestCache)} requests still in cache)")
