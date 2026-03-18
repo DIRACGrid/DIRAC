@@ -131,6 +131,9 @@ except ImportError:
 sLog = gLogger.getSubLogger(__name__)
 
 
+FAST_PROCESS_POOL = os.environ.get("DIRAC_FAST_PROCESS_POOL", "no").lower() in ["true", "yes"]
+
+
 class WorkingProcess(multiprocessing.Process):
     """
     .. class:: WorkingProcess
@@ -650,6 +653,14 @@ class ProcessPool:
         except NotImplementedError:
             return 0
 
+    @property
+    def __pendingQueueApproxSize(self):
+        # qsize fails if sem_getvalue is not available for the current platform
+        try:
+            return self.__pendingQueue.qsize()
+        except NotImplementedError:
+            return 0
+
     def stopProcessing(self, timeout=10):
         """
         Case fire
@@ -814,8 +825,9 @@ class ProcessPool:
             self.__prListLock.release()
 
         self.__spawnNeededWorkingProcesses()
-        # throttle a bit to allow task state propagation
-        time.sleep(0.1)
+        if not FAST_PROCESS_POOL:
+            # Preserve previous pacing unless explicitly disabled.
+            time.sleep(0.1)
         return S_OK()
 
     def createAndQueueTask(
@@ -856,7 +868,7 @@ class ProcessPool:
         :warning: results may be misleading if elements put into the queue are big
 
         """
-        return not self.__pendingQueue.empty()
+        return self.__pendingQueueApproxSize > 0
 
     def isFull(self):
         """
@@ -875,7 +887,7 @@ class ProcessPool:
 
         :param self: self reference
         """
-        return not self.__pendingQueue.empty() or self.getNumWorkingProcesses()
+        return self.__pendingQueueApproxSize > 0 or self.getNumWorkingProcesses()
 
     def processResults(self):
         """
@@ -897,11 +909,15 @@ class ProcessPool:
             start = time.time()
             self.__cleanDeadProcesses()
             log.debug("__cleanDeadProcesses", f"t={time.time() - start:.2f}")
-            if not self.__pendingQueue.empty():
+            if self.__pendingQueueApproxSize:
                 self.__spawnNeededWorkingProcesses()
                 log.debug("__spawnNeededWorkingProcesses", f"t={time.time() - start:.2f}")
-            time.sleep(0.1)
-            if self.__resultsQueue.empty():
+            if not FAST_PROCESS_POOL:
+                # Preserve previous pacing unless explicitly disabled.
+                time.sleep(0.1)
+            try:
+                task = self.__resultsQueue.get(block=False)
+            except queue.Empty:
                 if self.__resultsQueueApproxSize:
                     log.warn("Results queue is empty but has non zero size", "%d" % self.__resultsQueueApproxSize)
                     # We only commit suicide if we reach a backlog greater than the maximum number of workers
@@ -912,13 +928,6 @@ class ProcessPool:
                 if processed == 0:
                     log.debug("Process results, but queue is empty...")
                 break
-            # In principle, there should be a task right away. However,
-            # queue.empty can't be trusted (https://docs.python.org/3/library/queue.html#queue.Queue.empty)
-            try:
-                task = self.__resultsQueue.get(timeout=10)
-            except queue.Empty:
-                log.warn("Queue.empty lied to us again...")
-                return 0
 
             log.debug("__resultsQueue.get", f"t={time.time() - start:.2f}")
             # execute callbacks
@@ -949,7 +958,7 @@ class ProcessPool:
         :param self: self reference
         """
         start = time.time()
-        while self.getNumWorkingProcesses() or not self.__pendingQueue.empty():
+        while self.getNumWorkingProcesses() or self.__pendingQueueApproxSize:
             self.processResults()
             time.sleep(1)
             if time.time() - start > timeout:
@@ -1041,7 +1050,7 @@ class ProcessPool:
             if self.__draining:
                 return
             self.processResults()
-            time.sleep(1)
+            time.sleep(0.1 if FAST_PROCESS_POOL else 1)
 
     def __del__(self):
         """
