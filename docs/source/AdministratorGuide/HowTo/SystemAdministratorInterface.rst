@@ -40,7 +40,6 @@ The following command shows information about the host setup and currently used 
 
     volhcb03.cern.ch >show info
 
-    Setup: LHCb-Certification
     DIRAC version: v5r12-pre9
     LHCb version v5r11p10
     LHCbWeb version v1r1
@@ -64,11 +63,11 @@ The status of the installed components can be obtained like::
 
     volhcb01.cern.ch> show status
 
-       System                      Name                         Type         Setup    Installed Runit    Uptime    PID
-    --------------------------------------------------------------------------------------------------------------------
-    ResourceStatus               ResourceStatus               service        SetUp    Installed Down    2532910        0
-    WorkloadManagement           SandboxStore                 service        SetUp    Installed Run        8390    20510
-    WorkloadManagement           JobMonitoring                service        SetUp    Installed Run        8390    20494
+       System                      Name                         Type         Installed Runit    Uptime    PID
+    -----------------------------------------------------------------------------------------------------------
+    ResourceStatus               ResourceStatus               service        Installed Down    2532910        0
+    WorkloadManagement           SandboxStore                 service        Installed Run        8390    20510
+    WorkloadManagement           JobMonitoring                service        Installed Run        8390    20494
     ...
 
 The output of the command shows for each component its system, name and type as well as the status information:
@@ -78,7 +77,7 @@ The output of the command shows for each component its system, name and type as 
   Runit system
 
 
-Show setup command allows administrators to know which components, Services and Agents are setup up in the host::
+Show setup command allows administrators to know which components, Services and Agents are setup in the host::
 
     mardirac1.in2p3.fr >show setup
     {'Agents': {'Configuration': ['CE2CSAgent'],
