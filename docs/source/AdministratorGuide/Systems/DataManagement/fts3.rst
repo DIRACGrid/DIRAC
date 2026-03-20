@@ -173,7 +173,7 @@ They named this strategy *MultiHop* |trade|. It consists of turning a transfer `
 
 DIRAC supports one intermediate hop (note: not that it would be very hard to implement any number, but having to implement that feature to transfer between two WLCG sites is already afflicting enough, so let's not overdo it). The choice of the intermediate SE is done in the FTS3Plugin, so feel free to customize it (see above).
 
-The configuration of multihop is done in the form of a ``[source][destination]`` matrix in ``Operations/<vo/setup>/DataManagement/MultiHopMatrixOfShame``. You can:
+The configuration of multihop is done in the form of a ``[source][destination]`` matrix in ``Operations/<vo/DataManagement/MultiHopMatrixOfShame``. You can:
 
    * Use specific SE Names
    * Use ``BaseSE`` names

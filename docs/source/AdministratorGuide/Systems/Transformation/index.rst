@@ -127,7 +127,7 @@ Configuration
 
 * **Operations**
 
-  * In the Operations/[VO]/[SETUP]/Transformations or Operations/Defaults/Transformations section, *Transformation Types* must be added
+  * In the Operations/[VO]/Transformations or Operations/Defaults/Transformations section, *Transformation Types* must be added
   * By default, the WorkflowTaskAgent will treat all the *DataProcessing* transformations and the RequestTaskAgent all the *DataManipulation* ones
   * An example of working configuration is give below::
 

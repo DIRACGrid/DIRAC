@@ -39,7 +39,6 @@ Format of the URL:
 
 #. https://: protocol
 #. lhcb-portal-dirac.cern.ch/DIRAC/: host.
-#. s:LHCb-Production: DIRAC setup.
 #. g:lhcb_prmgr : role
 #. theme=Grey: it is the look and feel.
 #. &url_state=1: it is desktop or application.
@@ -309,37 +308,7 @@ You have to click on the **Settings** widget:
 You can define the following:
 
 * Group you can change the role
-* Setup: you can switch between different setups.
 * Theme you can change the look and feel and also you can switch between Tab and Desktop themes.
-
-We have 3 look and feels:
-
-#. Grey it is the default
-#. Neptune
-#. Classic
 
 You can automatically change the applications using *Automatic tab change* Note: After you set it you have to save the desktop.
 Consequently, you can not have automatic tab change in the *Default* desktop.
-
-**Grey**
-
-.. image:: images/grey.png
-   :scale: 30 %
-   :alt: Grey look and feel.
-   :align: center
-
-
-**Neptune**
-
-.. image:: images/neptune.png
-   :scale: 30 %
-   :alt: Neptune look and feel.
-   :align: center
-
-
-**Classic**
-
-.. image:: images/classic.png
-   :scale: 30 %
-   :alt: Classic look and feel.
-   :align: center
