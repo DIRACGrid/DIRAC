@@ -11,7 +11,6 @@ This section allows to configure options concerning to:
 - Job description
 - Service Shifters
 - Virtual Organization special parameters
-- Component Monitoring
 
 .. toctree::
    :maxdepth: 2
@@ -24,7 +23,6 @@ This section allows to configure options concerning to:
    Pilots/index
    Shifter/index
    VOs/index
-   ComponentMonitoring/index
 
 
 List of options

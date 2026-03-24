@@ -15,7 +15,7 @@ So, the only real thing that you need to have is:
 
 The last 2 bullets can be achieved with the following command::
 
-   dirac-configure -S MyProductionSetup -C dips://some.whe.re:9135/Configuration/Server --SkipCAChecks
+   dirac-configure -C dips://some.whe.re:9135/Configuration/Server --SkipCAChecks
 
 Or simply by manual editing the dirac.cfg file.
 
