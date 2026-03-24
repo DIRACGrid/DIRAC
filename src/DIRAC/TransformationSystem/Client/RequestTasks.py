@@ -94,6 +94,64 @@ class RequestTasks(TaskBase):
 
         return S_OK(taskDict)
 
+    @staticmethod
+    def _buildOperationsBodyForTask(transJson, task, owner, ownerGroup):
+        """
+        :param transJson: list of lists of string and dictionaries, e.g.:
+
+          .. code :: python
+
+            body = [ ( "ReplicateAndRegister", { "SourceSE":"FOO-SRM", "TargetSE":"TASK:TargetSE" }),
+                     ( "RemoveReplica", { "TargetSE":"FOO-SRM" } ),
+                   ]
+
+            If a value of an operation parameter in the body starts with ``TASK:``,
+            we take it from the taskDict.
+            For example ``TASK:TargetSE`` is replaced with ``task['TargetSE']``
+
+        :param dict taskDict: dictionary of tasks, modified in this function
+        :param str owner: owner used for the requests
+        :param str onwerGroup: dirac group used for the requests
+
+        :returns: Request
+        """
+
+        files = []
+        oRequest = Request()
+        if isinstance(task["InputData"], list):
+            files = task["InputData"]
+        elif isinstance(task["InputData"], str):
+            files = task["InputData"].split(";")
+
+        # create the operations from the json structure
+        for operationTuple in transJson:
+            op = Operation()
+            op.Type = operationTuple[0]
+            for parameter, value in operationTuple[1].items():
+                # Here we massage a bit the body to replace some parameters
+                # with what we have in the task.
+                try:
+                    taskKey = value.split("TASK:")[1]
+                    value = task[taskKey]
+                # Either the attribute is not a string (AttributeError)
+                # or it does not start with 'TASK:' (IndexError)
+                except (AttributeError, IndexError):
+                    pass
+                # That happens when the requested substitution is not
+                # a key in the task, and that's a problem
+                except KeyError:
+                    raise StopTaskIteration(f"Parameter {taskKey} does not exist in taskDict")
+
+                setattr(op, parameter, value)
+
+            for lfn in files:
+                opFile = File()
+                opFile.LFN = lfn
+                op.addFile(opFile)
+
+            oRequest.addOperation(op)
+        return oRequest
+
     def _multiOperationsBody(self, transJson, taskDict, owner, ownerGroup):
         """Deal with a Request that has multiple operations
 
@@ -120,41 +178,7 @@ class RequestTasks(TaskBase):
                 transID = task["TransformationID"]
                 if not task.get("InputData"):
                     raise StopTaskIteration("No input data")
-                files = []
-
-                oRequest = Request()
-                if isinstance(task["InputData"], list):
-                    files = task["InputData"]
-                elif isinstance(task["InputData"], str):
-                    files = task["InputData"].split(";")
-
-                # create the operations from the json structure
-                for operationTuple in transJson:
-                    op = Operation()
-                    op.Type = operationTuple[0]
-                    for parameter, value in operationTuple[1].items():
-                        # Here we massage a bit the body to replace some parameters
-                        # with what we have in the task.
-                        try:
-                            taskKey = value.split("TASK:")[1]
-                            value = task[taskKey]
-                        # Either the attribute is not a string (AttributeError)
-                        # or it does not start with 'TASK:' (IndexError)
-                        except (AttributeError, IndexError):
-                            pass
-                        # That happens when the requested substitution is not
-                        # a key in the task, and that's a problem
-                        except KeyError:
-                            raise StopTaskIteration(f"Parameter {taskKey} does not exist in taskDict")
-
-                        setattr(op, parameter, value)
-
-                    for lfn in files:
-                        opFile = File()
-                        opFile.LFN = lfn
-                        op.addFile(opFile)
-
-                    oRequest.addOperation(op)
+                oRequest = self._buildOperationsBodyForTask(transJson, task, owner, ownerGroup)
 
                 result = self._assignRequestToTask(oRequest, taskDict, transID, taskID, owner, ownerGroup)
                 if not result["OK"]:
