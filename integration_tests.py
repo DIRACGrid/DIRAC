@@ -757,6 +757,7 @@ def _find_dirac_release():
 
 def _make_env(flags):
     env = os.environ.copy()
+    env.setdefault("BUILDKIT_PROGRESS", "plain")
     env["DIRAC_UID"] = str(os.getuid())
     env["DIRAC_GID"] = str(os.getgid())
     env["HOST_OS"] = flags.pop("HOST_OS", DEFAULT_HOST_OS)
