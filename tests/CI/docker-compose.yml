@@ -255,7 +255,15 @@ services:
     environment:
       - DIRACX_DB_URL_AUTHDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXAuthDB
     entrypoint: |
-      /entrypoint.sh bash -xc 'micromamba install --yes -c conda-forge mysql-client && mysql -h mysql -u root --password=password -e "CREATE DATABASE DiracXAuthDB" && mysql -h mysql -u root --password=password -e "GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES,CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE ON DiracXAuthDB.* TO Dirac@'"'"'%'"'"'" && python -m diracx.db init-sql && python -m diracx.db init-os'
+      /entrypoint.sh bash -xc 'python3 -c "
+      import pymysql
+      db = pymysql.connect(host=\"mysql\", user=\"root\", password=\"password\")
+      c = db.cursor()
+      c.execute(\"CREATE USER IF NOT EXISTS Dirac@\\x27%%\\x27 IDENTIFIED BY \\x27Dirac\\x27\")
+      c.execute(\"CREATE DATABASE DiracXAuthDB\")
+      c.execute(\"GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES,CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE ON DiracXAuthDB.* TO Dirac@\\x27%%\\x27\")
+      db.commit()
+      " && python -m diracx.db init-sql && python -m diracx.db init-os'
     pull_policy: always
 
   diracx:
@@ -300,7 +308,7 @@ services:
       /entrypoint.sh bash -xc 'uvicorn --factory diracx.routers:create_app --host=0.0.0.0'
 
     healthcheck:
-      test: ["CMD", "/opt/conda/bin/python", "-c", 'import requests; requests.get("http://localhost:8000/.well-known/openid-configuration").raise_for_status()']
+      test: ["CMD", "/entrypoint.sh", "python", "-c", "import requests; requests.get('http://localhost:8000/.well-known/openid-configuration').raise_for_status()"]
       interval: 5s
       timeout: 2s
       retries: 15
