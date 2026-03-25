@@ -360,13 +360,11 @@ To deactivate a service from being used with DiracX, you can add it in `integrat
       "WorkloadManagement/JobMonitoring",
     ]
 
-By setting `TEST_DIRACX=Yes` only, it will take the last version of DiracX by default. If you want to provide your own, you have to build your DiracX project, and provide the `dist` folder path when calling `prepare-client`. This path has to be absolute.
+By setting `TEST_DIRACX=Yes` only, it will take the last version of DiracX by default. If you want to test against a local DiracX checkout, provide the source directory path when calling `prepare-environment`. This will build the DiracX container images from source and build wheels for the DIRAC containers.
 
 .. code-block:: bash
 
-    ./integration-tests.py prepare-client TEST_DIRACX=Yes --diracx-dist-dir my-dist-folder/
-
-It will then mount your dist folder into DIRAC and DiracX (in `/diracx_sources`) to install the right dependencies.
+    ./integration-tests.py prepare-environment TEST_DIRACX=Yes --diracx-src-dir /path/to/diracx/
 
 For MacOS, there are two bugs that can be fixed.
 

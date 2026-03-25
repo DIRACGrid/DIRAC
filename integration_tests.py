@@ -175,14 +175,14 @@ def create(
     flags: Optional[list[str]] = typer.Argument(None),
     editable: Optional[bool] = None,
     extra_module: Optional[list[str]] = None,
-    diracx_dist_dir: Optional[str] = None,
+    diracx_src_dir: Optional[str] = None,
     release_var: Optional[str] = None,
     run_server_tests: bool = True,
     run_client_tests: bool = True,
     run_pilot_tests: bool = True,
 ):
     """Start a local instance of the integration tests"""
-    prepare_environment(flags, editable, extra_module, diracx_dist_dir, release_var)
+    prepare_environment(flags, editable, extra_module, diracx_src_dir, release_var)
     install_server()
     install_client()
     install_pilot()
@@ -230,7 +230,7 @@ def prepare_environment(
     flags: Optional[list[str]] = typer.Argument(None),
     editable: Optional[bool] = None,
     extra_module: Optional[list[str]] = None,
-    diracx_dist_dir: Optional[str] = None,
+    diracx_src_dir: Optional[str] = None,
     release_var: Optional[str] = None,
 ):
     """Prepare the local environment for installing DIRAC."""
@@ -277,7 +277,7 @@ def prepare_environment(
     extra_services = list(chain(*[config["extra-services"] for config in module_configs.values()]))
 
     typer.secho("Running docker compose to create containers", fg=c.GREEN)
-    with _gen_docker_compose(modules, diracx_dist_dir=diracx_dist_dir) as docker_compose_fn:
+    with _gen_docker_compose(modules, diracx_src_dir=diracx_src_dir) as docker_compose_fn:
         subprocess.run(
             [*DOCKER_COMPOSE_CMD, "-f", docker_compose_fn, "up", "-d", "dirac-server", "dirac-client", "dirac-pilot"]
             + extra_services,
@@ -374,11 +374,24 @@ def prepare_environment(
     typer.secho("Running docker compose to create DiracX containers", fg=c.GREEN)
     typer.secho(f"Will leave a folder behind: {docker_compose_fn_final}", fg=c.YELLOW)
 
-    with _gen_docker_compose(modules, diracx_dist_dir=diracx_dist_dir) as docker_compose_fn:
+    with _gen_docker_compose(modules, diracx_src_dir=diracx_src_dir) as docker_compose_fn:
         # We cannot use the temporary directory created in the context manager because
         # we don't stay in the contect manager (Popen)
         # So we need something that outlives it.
         shutil.copytree(docker_compose_fn.parent, docker_compose_fn_final, dirs_exist_ok=True)
+
+        docker_compose_file = docker_compose_fn_final / "docker-compose.yml"
+
+        # Pre-build any images defined with build: directives so that the
+        # background "up -d" below only needs to start containers (fast).
+        if diracx_src_dir is not None:
+            typer.secho("Building DiracX container images from source", fg=c.GREEN)
+            subprocess.run(
+                [*DOCKER_COMPOSE_CMD, "-f", docker_compose_file, "build"],
+                check=True,
+                env=docker_compose_env,
+            )
+
         # We use Popen because we don't want to wait for this command to finish.
         # It is going to start all the diracx containers, including one which waits
         # for the DIRAC installation to be over.
@@ -386,7 +399,7 @@ def prepare_environment(
         subStderr = open(docker_compose_fn_final / "stderr", "w")
 
         subprocess.Popen(
-            [*DOCKER_COMPOSE_CMD, "-f", docker_compose_fn_final / "docker-compose.yml", "up", "-d", "diracx"],
+            [*DOCKER_COMPOSE_CMD, "-f", docker_compose_file, "up", "-d", "diracx"],
             env=docker_compose_env,
             stdin=None,
             stdout=subStdout,
@@ -591,7 +604,7 @@ class TestExit(typer.Exit):
 
 
 @contextmanager
-def _gen_docker_compose(modules, *, diracx_dist_dir=None):
+def _gen_docker_compose(modules, *, diracx_src_dir=None):
     # Load the docker compose configuration and mount the necessary volumes
     input_fn = Path(__file__).parent / "tests/CI/docker-compose.yml"
     docker_compose = yaml.safe_load(input_fn.read_text())
@@ -607,22 +620,49 @@ def _gen_docker_compose(modules, *, diracx_dist_dir=None):
     docker_compose["services"]["diracx-wait-for-db"]["volumes"].extend(volumes[:])
 
     module_configs = _load_module_configs(modules)
-    if diracx_dist_dir is not None:
-        for container_name in [
-            "dirac-client",
-            "dirac-pilot",
-            "dirac-server",
-            "diracx-init-cs",
-            "diracx-wait-for-db",
-            "diracx-init-db",
-            "diracx",
-        ]:
+    if diracx_src_dir is not None:
+        diracx_src_dir = str(Path(diracx_src_dir).absolute())
+
+        # Build wheels from the diracx source for the DIRAC containers
+        diracx_wheel_dir = Path(tempfile.mkdtemp(prefix="diracx-wheels-"))
+        typer.secho(f"Building diracx wheels in {diracx_wheel_dir}", fg=c.GREEN)
+        subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "wheel",
+                "--no-deps",
+                f"--wheel-dir={diracx_wheel_dir}",
+                *[f"{diracx_src_dir}/diracx-{pkg}" for pkg in ["core", "client", "cli"]],
+            ],
+            check=True,
+        )
+
+        # Mount wheels into DIRAC containers so installDIRACX can find them
+        for container_name in ["dirac-client", "dirac-pilot", "dirac-server"]:
             docker_compose["services"][container_name].setdefault("volumes", []).append(
-                f"{diracx_dist_dir}:/diracx_sources"
+                f"{diracx_wheel_dir}:/diracx_sources"
             )
             docker_compose["services"][container_name].setdefault("environment", []).append(
                 "DIRACX_CUSTOM_SOURCE_PREFIXES=/diracx_sources"
             )
+
+        # Build diracx container images from source instead of pulling pre-built ones
+        diracx_build_services = {
+            "container-services": ["diracx", "diracx-init-keystore", "diracx-init-db"],
+            "container-client": ["diracx-init-cs"],
+        }
+        for pixi_env, container_names in diracx_build_services.items():
+            for container_name in container_names:
+                service = docker_compose["services"][container_name]
+                del service["image"]
+                service.pop("pull_policy", None)
+                service["build"] = {
+                    "context": diracx_src_dir,
+                    "dockerfile": "containers/Dockerfile",
+                    "args": {"PIXI_ENV": pixi_env},
+                }
 
     # Add any extension services
     for module_name, module_configs in module_configs.items():
@@ -717,6 +757,7 @@ def _find_dirac_release():
 
 def _make_env(flags):
     env = os.environ.copy()
+    env.setdefault("BUILDKIT_PROGRESS", "plain")
     env["DIRAC_UID"] = str(os.getuid())
     env["DIRAC_GID"] = str(os.getgid())
     env["HOST_OS"] = flags.pop("HOST_OS", DEFAULT_HOST_OS)
