@@ -11,7 +11,6 @@ import pytest
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 
 from DIRAC import S_ERROR, S_OK, gLogger
-from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.Resources.Computing.test.Test_PoolComputingElement import badJobScript, jobScript
 from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
@@ -150,28 +149,27 @@ def test__checkCEAvailability(mocker, ceType, mockCEReply, expectedResult):
 
 
 @pytest.mark.parametrize(
-    "initTimeLeft, timeLeft, cpuFactor, mockTimeLeftReply, expectedTimeLeft",
+    "initCPUWork, cpuPower, elapsedSeconds, expectedTimeLeft",
     [
-        (100000, 75000, None, {"OK": False, "Message": "Error"}, 75000),
-        (100000, 75000, 10, {"OK": False, "Message": "Error"}, 100000),
-        (100000, 75000, 10, {"OK": True, "Value": 25000}, 25000),
+        # No CPU power: no work consumed, time left equals initial
+        (100000, 0, 100, 100000),
+        # With CPU power: elapsed * cpuPower is subtracted from initCPUWork
+        (100000, 10, 100, 99000),
+        # Longer elapsed time
+        (100000, 10, 5000, 50000),
     ],
 )
-def test__computeCPUWorkLeft(mocker, initTimeLeft, timeLeft, cpuFactor, mockTimeLeftReply, expectedTimeLeft):
+def test__computeCPUWorkLeft(mocker, initCPUWork, cpuPower, elapsedSeconds, expectedTimeLeft):
     """Test JobAgent()._computeCPUWorkLeft()"""
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
-    mocker.patch(
-        "DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft.TimeLeft.getTimeLeft", return_value=mockTimeLeftReply
-    )
 
     jobAgent = JobAgent("Test", "Test1")
     jobAgent.log = gLogger
     jobAgent.log.setLevel("DEBUG")
-    jobAgent.timeLeftUtil = TimeLeft()
 
-    jobAgent.initTimeLeft = initTimeLeft
-    jobAgent.timeLeft = timeLeft
-    jobAgent.cpuFactor = cpuFactor
+    jobAgent.initCPUWork = initCPUWork
+    jobAgent.cpuPower = cpuPower
+    jobAgent.initTime = time.time() - elapsedSeconds
     result = jobAgent._computeCPUWorkLeft()
 
     assert abs(result - expectedTimeLeft) < 10

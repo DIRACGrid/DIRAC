@@ -27,7 +27,6 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
-from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client import JobStatus, PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
@@ -66,10 +65,10 @@ class JobAgent(AgentModule):
 
         # Agent options
         # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
-        self.cpuFactor = 0.0
+        self.cpuPower = 0.0
         self.jobSubmissionDelay = 10
         self.fillingMode = True
-        self.minimumTimeLeft = 5000
+        self.minimumCPUWork = 5000
         self.stopOnApplicationFailure = True
         self.hostFailureCount = 0
         self.stopAfterHostFailures = 3
@@ -80,11 +79,10 @@ class JobAgent(AgentModule):
         self.logLevel = "INFO"
         self.defaultWrapperLocation = "DIRAC/WorkloadManagementSystem/JobWrapper/JobWrapperTemplate.py"
 
-        # Timeleft
-        self.initTimes = os.times()
-        self.initTimeLeft = 0.0
-        self.timeLeft = self.initTimeLeft
-        self.timeLeftUtil = None
+        # CPU work left (Wall-clock time * CPU Power)
+        self.initCPUWork = 0.0
+        self.cpuWorkLeft = self.initCPUWork
+        self.initTime = time.time()
         self.pilotInfoReportedFlag = False
 
         # Attributes related to the processed jobs, it should take the following form:
@@ -109,35 +107,27 @@ class JobAgent(AgentModule):
         if not result["OK"]:
             return result
 
-        result = self._getCEDict(self.computingElement)
-        if not result["OK"]:
-            return result
-        ceDict = result["Value"][0]
+        # Read initial CPU work left from config (seeded by pilot via dirac-wms-get-queue-cpu-time)
+        self.initCPUWork = gConfig.getValue("/LocalSite/CPUTimeLeft", self.initCPUWork)
+        self.cpuWorkLeft = self.initCPUWork
 
-        self.initTimeLeft = ceDict.get("CPUTime", self.initTimeLeft)
-        self.initTimeLeft = gConfig.getValue("/Resources/Computing/CEDefaults/MaxCPUTime", self.initTimeLeft)
-        self.timeLeft = self.initTimeLeft
-
-        self.initTimes = os.times()
+        self.initTime = time.time()
         # Localsite options
         self.siteName = siteName()
         self.pilotReference = gConfig.getValue("/LocalSite/PilotReference", self.pilotReference)
         self.defaultProxyLength = gConfig.getValue("/Registry/DefaultProxyLifeTime", self.defaultProxyLength)
         # Agent options
         # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
-        self.cpuFactor = gConfig.getValue("/LocalSite/CPUNormalizationFactor", self.cpuFactor)
+        self.cpuPower = gConfig.getValue("/LocalSite/CPUNormalizationFactor", self.cpuPower)
         self.jobSubmissionDelay = self.am_getOption("SubmissionDelay", self.jobSubmissionDelay)
         self.fillingMode = self.am_getOption("FillingModeFlag", self.fillingMode)
-        self.minimumTimeLeft = self.am_getOption("MinimumTimeLeft", self.minimumTimeLeft)
+        self.minimumCPUWork = self.am_getOption("MinimumTimeLeft", self.minimumCPUWork)
         self.stopOnApplicationFailure = self.am_getOption("StopOnApplicationFailure", self.stopOnApplicationFailure)
         self.stopAfterHostFailures = self.am_getOption("StopAfterHostFailures", self.stopAfterHostFailures)
         self.stopAfterFailedMatches = self.am_getOption("StopAfterFailedMatches", self.stopAfterFailedMatches)
         self.extraOptions = gConfig.getValue("/AgentJobRequirements/ExtraOptions", self.extraOptions)
         self.logLevel = self.am_getOption("DefaultLogLevel", self.logLevel)
         self.defaultWrapperLocation = self.am_getOption("JobWrapperTemplate", self.defaultWrapperLocation)
-
-        # Utilities
-        self.timeLeftUtil = TimeLeft()
 
         # Some innerCEs may want to make use of CGroup2 support, so we prepare it globally here
         res = CG2Manager().setUp()
@@ -180,13 +170,15 @@ class JobAgent(AgentModule):
         if result["OK"] and result["Value"]:
             return result
 
-        # Check that we are allowed to continue and that time left is sufficient
+        # Update CPU work left: wall-clock is ticking whether a job is running or not
+        cpuWorkLeft = self._computeCPUWorkLeft()
+        result = self._setCPUWorkLeft(cpuWorkLeft)
+        if not result["OK"]:
+            return result
+
+        # After the first job, check filling mode eligibility
         if self.jobCount:
-            cpuWorkLeft = self._computeCPUWorkLeft()
             result = self._checkCPUWorkLeft(cpuWorkLeft)
-            if not result["OK"]:
-                return result
-            result = self._setCPUWorkLeft(cpuWorkLeft)
             if not result["OK"]:
                 return result
 
@@ -373,7 +365,7 @@ class JobAgent(AgentModule):
             ceDict["GridCE"] = gridCE
         if "PilotReference" not in ceDict:
             ceDict["PilotReference"] = str(self.pilotReference)
-        ceDict["PilotBenchmark"] = self.cpuFactor
+        ceDict["PilotBenchmark"] = self.cpuPower
         ceDict["PilotInfoReportedFlag"] = self.pilotInfoReportedFlag
 
         # Add possible job requirements
@@ -403,46 +395,40 @@ class JobAgent(AgentModule):
         return S_OK()
 
     #############################################################################
-    def _computeCPUWorkLeft(self, processors=1):
+    def _computeCPUWorkLeft(self):
         """
-        Compute CPU Work Left in hepspec06 seconds
+        Compute CPU Work Left in hepspec06 seconds.
 
-        :param int processors: number of processors available
-        :return: cpu work left (cpu time left * cpu power of the cpus)
+        Uses a simple wall-clock countdown from the initial value (seeded by the pilot
+        via dirac-wms-get-queue-cpu-time). The elapsed wall-clock time is multiplied by
+        the CPU power to get the consumed CPU work.
+
+        :return: cpu work left (wall-clock time left * cpu power)
         """
-        # Sum all times but the last one (elapsed_time) and remove times at init (is this correct?)
-        cpuTimeConsumed = sum(os.times()[:-1]) - sum(self.initTimes[:-1])
-        result = self.timeLeftUtil.getTimeLeft(cpuTimeConsumed, processors)
-        if not result["OK"]:
-            self.log.warn("There were errors calculating time left using the Timeleft utility", result["Message"])
-            self.log.warn("The time left will be calculated using os.times() and the info in our possession")
-            self.log.info(f"Current raw CPU time consumed is {cpuTimeConsumed}")
-            if self.cpuFactor:
-                return self.initTimeLeft - cpuTimeConsumed * self.cpuFactor
-            return self.timeLeft
-        return result["Value"]
+        elapsed = time.time() - self.initTime
+        cpuWorkConsumed = elapsed * self.cpuPower
+        return self.initCPUWork - cpuWorkConsumed
 
     def _checkCPUWorkLeft(self, cpuWorkLeft):
         """Check that fillingMode is enabled and time left is sufficient to continue the execution"""
-        # Only call timeLeft utility after a job has been picked up
         self.log.info("Attempting to check CPU time left for filling mode")
         if not self.fillingMode:
             return self._finish("Filling Mode is Disabled")
 
         self.log.info("normalized CPU units remaining in slot", cpuWorkLeft)
-        if cpuWorkLeft <= self.minimumTimeLeft:
+        if cpuWorkLeft <= self.minimumCPUWork:
             return self._finish("No more time left")
         return S_OK()
 
     def _setCPUWorkLeft(self, cpuWorkLeft):
-        """Update the TimeLeft within the CE and the configuration for next matching request"""
-        self.timeLeft = cpuWorkLeft
+        """Update the CPU work left within the CE and the configuration for next matching request"""
+        self.cpuWorkLeft = cpuWorkLeft
 
-        result = self.computingElement.setCPUTimeLeft(cpuTimeLeft=self.timeLeft)
+        result = self.computingElement.setCPUTimeLeft(cpuTimeLeft=self.cpuWorkLeft)
         if not result["OK"]:
             return self._finish(result["Message"])
 
-        self._updateConfiguration("CPUTimeLeft", self.timeLeft)
+        self._updateConfiguration("CPUTimeLeft", self.cpuWorkLeft)
         return S_OK()
 
     #############################################################################

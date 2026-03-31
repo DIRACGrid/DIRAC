@@ -7,9 +7,6 @@ exceeded and fail jobs meaningfully.
 Information is returned to the WMS via the heart-beat mechanism.  This
 also interprets control signals from the WMS e.g. to kill a running
 job.
-
-- Still to implement:
-     - CPU normalization for correct comparison with job limit
 """
 
 import datetime
@@ -27,7 +24,6 @@ from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities.Os import getDiskSpace
 from DIRAC.Core.Utilities.Profiler import Profiler
-from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
@@ -85,10 +81,9 @@ class Watchdog:
         self.wallClockCheckCount = 0
         self.nullCPUCount = 0
 
-        self.grossTimeLeftLimit = 10 * self.checkingTime
-        self.timeLeftUtil = TimeLeft()
-        self.timeLeft = 0
-        self.littleTimeLeft = False
+        self.initialWallClockLeft = 0
+        self.wallClockLeft = 0
+        self.stopMargin = 300  # seconds of wall-clock time to reserve for post-processing
         self.cpuPower = 1.0
         self.processors = processors
 
@@ -132,11 +127,15 @@ class Watchdog:
             )
             self.checkingTime = self.minCheckingTime
 
-        # The time left is returned in seconds @ 250 SI00 = 1 HS06,
-        # the self.checkingTime and self.pollingTime are in seconds,
-        # thus they need to be multiplied by a large enough factor
-        self.fineTimeLeftLimit = gConfig.getValue(self.section + "/TimeLeftLimit", 150 * self.pollingTime)
         self.cpuPower = gConfig.getValue("/LocalSite/CPUNormalizationFactor", 1.0)
+        self.stopMargin = gConfig.getValue(self.section + "/StopMargin", self.stopMargin)
+
+        # Read CPU work left from config (written by JobAgent) and convert to wall-clock seconds
+        cpuWorkLeft = gConfig.getValue("/LocalSite/CPUTimeLeft", 0)
+        if cpuWorkLeft and self.cpuPower:
+            self.initialWallClockLeft = cpuWorkLeft / self.cpuPower
+        else:
+            self.initialWallClockLeft = 0
 
         return S_OK()
 
@@ -185,15 +184,14 @@ class Watchdog:
         ):
             self.wallClockCheckCount += 1
 
-        if self.littleTimeLeft:
-            # if we have gone over enough iterations query again
-            if self.littleTimeLeftCount == 0 and self.__timeLeft() == -1:
-                self.checkError = JobMinorStatus.JOB_EXCEEDED_CPU
-                self.log.error(self.checkError, self.timeLeft)
+        # Check time left on every poll cycle (cheap: just reads wall-clock)
+        if self.testTimeLeft:
+            result = self.__checkTimeLeft()
+            if not result["OK"]:
+                self.checkError = result["Message"]
+                self.log.error(self.checkError, f"wallClockLeft={self.wallClockLeft:.0f}s")
                 self.spObject.killChild()
                 return S_OK()
-
-            self.littleTimeLeftCount -= 1
 
         # Note: need to poll regularly to see if the thread is alive
         #      but only perform checks with a certain frequency
@@ -314,8 +312,8 @@ class Watchdog:
                 )
                 border = "=" * len(recentStdOut)
                 cpuTotal = f"Last reported CPU consumed for job is {hmsCPU} (h:m:s)"
-                if self.timeLeft:
-                    cpuTotal += f", Batch Queue Time Left {self.timeLeft} (s @ HS06)"
+                if self.wallClockLeft:
+                    cpuTotal += f", Wall-clock time left {self.wallClockLeft:.0f}s"
                 recentStdOut = f"\n{border}\n{recentStdOut}\n{cpuTotal}\n{border}\n"
                 self.log.info(recentStdOut)
                 for line in outputList:
@@ -449,9 +447,10 @@ class Watchdog:
             report += "CPULimit: NA, "
 
         if self.testTimeLeft:
-            self.__timeLeft()
-            if self.timeLeft:
+            if self.initialWallClockLeft:
                 report += "TimeLeft: OK"
+            else:
+                report += "TimeLeft: N/A (not available)"
         else:
             report += "TimeLeft: NA"
 
@@ -721,34 +720,26 @@ class Watchdog:
         self.__reportParameters(self.initialValues, "InitialValues")
         return S_OK()
 
-    def __timeLeft(self):
-        """
-        return Normalized CPU time left in the batch system
-        0 if not available
-        update self.timeLeft and self.littleTimeLeft
-        """
-        # Get CPU time left in the batch system
-        result = self.timeLeftUtil.getTimeLeft(0.0)
-        if not result["OK"]:
-            # Could not get CPU time left, we might need to wait for the first loop
-            # or the Utility is not working properly for this batch system
-            # or we are in a batch system
-            timeLeft = 0
-        else:
-            timeLeft = result["Value"]
+    def __checkTimeLeft(self):
+        """Check if there is enough wall-clock time left in the batch slot.
 
-        self.timeLeft = timeLeft
-        if not self.littleTimeLeft:
-            if timeLeft and timeLeft < self.grossTimeLeftLimit:
-                self.log.info("Checking with higher frequency as TimeLeft below grossTimeLeftLimit", f"{timeLeft=}")
-                self.littleTimeLeft = True
-                # TODO: better configurable way of doing this to be coded
-                self.littleTimeLeftCount = 15
-        else:
-            if self.timeLeft and self.timeLeft < self.fineTimeLeftLimit:
-                timeLeft = -1
+        The initial wall-clock time left is read from the local configuration at initialization
+        (written by the JobAgent). A simple countdown is then used to determine the remaining time.
 
-        return timeLeft
+        Returns S_ERROR when the remaining wall-clock time drops below the configurable StopMargin
+        (default: 300s), leaving enough time for post-processing (output upload, cleanup, etc.).
+        """
+        if not self.initialWallClockLeft:
+            return S_OK("TimeLeft not available")
+
+        elapsed = time.time() - self.initialValues["StartTime"]
+        wallClockLeft = self.initialWallClockLeft - elapsed
+        self.wallClockLeft = wallClockLeft
+
+        if wallClockLeft < self.stopMargin:
+            return S_ERROR(JobMinorStatus.JOB_EXCEEDED_CPU)
+
+        return S_OK()
 
     #############################################################################
     def __getUsageSummary(self):

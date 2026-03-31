@@ -14,15 +14,11 @@ from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 
 
 def getCPUTime(cpuNormalizationFactor):
-    """Trying to get CPUTime left for execution (in seconds).
+    """Compute the initial CPUTime left for execution (in seconds).
 
-    It will first look to get the work left looking for batch system information useing the TimeLeft utility.
-    If it succeeds, it will convert it in real second, and return it.
-
-    If it fails, it tries to get it from the static info found in CS.
-    If it fails, it returns the default, which is a large 9999999, that we may consider as "Infinite".
-
-    This is a generic method, independent from the middleware of the resource if TimeLeft doesn't return a value
+    This is called at pilot bootstrap (via dirac-wms-get-queue-cpu-time) to seed
+    the initial CPUTimeLeft value. It queries the batch system first, then falls
+    back to static CS configuration.
 
     args:
       cpuNormalizationFactor (float): the CPU power of the current Worker Node.
@@ -31,55 +27,58 @@ def getCPUTime(cpuNormalizationFactor):
     returns:
       cpuTimeLeft (int): the CPU time left, in seconds
     """
-    cpuTimeLeft = 0.0
-    cpuWorkLeft = gConfig.getValue("/LocalSite/CPUTimeLeft", 0)
 
-    if not cpuWorkLeft:
-        # Try and get the information from the CPU left utility
-        result = TimeLeft().getTimeLeft()
-        if result["OK"]:
-            cpuWorkLeft = result["Value"]
-
-    if cpuWorkLeft > 0:
-        # This is in HS06sseconds
-        # We need to convert in real seconds
-        if not cpuNormalizationFactor:  # if cpuNormalizationFactor passed in is 0, try get it from the local cfg
+    # 1. Try to compute time left from the batch system (sacct, qstat, etc.)
+    result = TimeLeft().getTimeLeft()
+    if result["OK"]:
+        cpuWorkLeft = result["Value"]
+        # Batch system answered — trust it, even if 0
+        if not cpuNormalizationFactor:
             cpuNormalizationFactor = gConfig.getValue("/LocalSite/CPUNormalizationFactor", 0.0)
         if cpuNormalizationFactor:
-            cpuTimeLeft = cpuWorkLeft / cpuNormalizationFactor
+            return int(cpuWorkLeft / cpuNormalizationFactor)
+        return 0
+
+    cpuTimeLeft = 0.0
+
+    # 2. Fall back to queue configuration in the CS.
+    # These values are wall-clock minutes from BDII, so we convert to seconds.
+    gridCE = gConfig.getValue("/LocalSite/GridCE")
+    ceQueue = gConfig.getValue("/LocalSite/CEQueue")
+    if not ceQueue:
+        # we have to look for a ceQueue in the CS
+        # A bit hacky. We should better profit from something generic
+        gLogger.warn("No CEQueue in local configuration, looking to find one in CS")
+        siteName = DIRAC.siteName()
+        queueSection = f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/CEs/{gridCE}/Queues"
+        res = gConfig.getSections(queueSection)
+        if not res["OK"]:
+            raise RuntimeError(res["Message"])
+        queues = res["Value"]
+        cpuTimes = [gConfig.getValue(queueSection + "/" + queue + "/maxCPUTime", 0.0) for queue in queues]
+        cpuTimes = [t for t in cpuTimes if t > 0]
+        if cpuTimes:
+            cpuTimeLeft = min(cpuTimes) * 60
+    else:
+        queueInfo = getQueueInfo(f"{gridCE}/{ceQueue}")
+        if not queueInfo["OK"] or not queueInfo["Value"]:
+            gLogger.warn("Can't find a CE/queue in CS")
+        else:
+            queueCSSection = queueInfo["Value"]["QueueCSSection"]
+            cpuTimeInMinutes = gConfig.getValue(f"{queueCSSection}/maxCPUTime", 0.0)
+            if cpuTimeInMinutes:
+                cpuTimeLeft = cpuTimeInMinutes * 60.0
+                gLogger.info(f"CPUTime for {queueCSSection}: {cpuTimeLeft:f}")
+            else:
+                gLogger.warn(f"Can't find maxCPUTime for {queueCSSection}")
 
     if not cpuTimeLeft:
-        # now we know that we have to find the CPUTimeLeft by looking in the CS
-        # this is not granted to be correct as the CS units may not be real seconds
-        gridCE = gConfig.getValue("/LocalSite/GridCE")
-        ceQueue = gConfig.getValue("/LocalSite/CEQueue")
-        if not ceQueue:
-            # we have to look for a ceQueue in the CS
-            # A bit hacky. We should better profit from something generic
-            gLogger.warn("No CEQueue in local configuration, looking to find one in CS")
-            siteName = DIRAC.siteName()
-            queueSection = f"/Resources/Sites/{siteName.split('.')[0]}/{siteName}/CEs/{gridCE}/Queues"
-            res = gConfig.getSections(queueSection)
-            if not res["OK"]:
-                raise RuntimeError(res["Message"])
-            queues = res["Value"]
-            cpuTimes = [gConfig.getValue(queueSection + "/" + queue + "/maxCPUTime", 9999999.0) for queue in queues]
-            # These are (real, wall clock) minutes - damn BDII!
-            cpuTimeLeft = min(cpuTimes) * 60
+        # 3. Last resort: global default from CS, or 0 (fail safe: match no more jobs)
+        cpuTimeLeft = gConfig.getValue("/Resources/Computing/CEDefaults/MaxCPUTime", 0)
+        if cpuTimeLeft:
+            gLogger.warn(f"Using fallback MaxCPUTime: {cpuTimeLeft}")
         else:
-            queueInfo = getQueueInfo(f"{gridCE}/{ceQueue}")
-            cpuTimeLeft = 9999999.0
-            if not queueInfo["OK"] or not queueInfo["Value"]:
-                gLogger.warn("Can't find a CE/queue, defaulting CPUTime to %d" % cpuTimeLeft)
-            else:
-                queueCSSection = queueInfo["Value"]["QueueCSSection"]
-                # These are (real, wall clock) minutes - damn BDII!
-                cpuTimeInMinutes = gConfig.getValue(f"{queueCSSection}/maxCPUTime", 0.0)
-                if cpuTimeInMinutes:
-                    cpuTimeLeft = cpuTimeInMinutes * 60.0
-                    gLogger.info(f"CPUTime for {queueCSSection}: {cpuTimeLeft:f}")
-                else:
-                    gLogger.warn(f"Can't find maxCPUTime for {queueCSSection}, defaulting CPUTime to {cpuTimeLeft:f}")
+            gLogger.warn("Could not determine CPUTime left")
 
     return int(cpuTimeLeft)
 
