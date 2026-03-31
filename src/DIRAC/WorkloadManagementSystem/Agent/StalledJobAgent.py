@@ -8,6 +8,7 @@ seconds will be assigned the "Stalled" state.
   :dedent: 2
   :caption: StalledJobAgent options
 """
+
 import concurrent.futures
 import datetime
 
@@ -20,9 +21,9 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.TimeUtilities import fromString, second, toEpoch
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
+from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import getJobParameters
 from DIRAC.WorkloadManagementSystem.DB.StatusUtils import kill_delete_jobs
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_KILL
-from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getJobParameters
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import rescheduleJobs
 
 

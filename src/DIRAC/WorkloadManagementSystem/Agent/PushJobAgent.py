@@ -1,4 +1,4 @@
-"""  The Push Job Agent class inherits from Job Agent and aims to support job submission in
+"""The Push Job Agent class inherits from Job Agent and aims to support job submission in
      sites with no external connectivity (e.g. some supercomputers).
 
 .. literalinclude:: ../ConfigTemplate.cfg
@@ -32,6 +32,7 @@ from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus, PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
+from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import getJobParameters
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapperUtilities import (
     getJobWrapper,
@@ -41,7 +42,6 @@ from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapperUtilities import (
     transferInputSandbox,
 )
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
-from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getJobParameters
 from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 
