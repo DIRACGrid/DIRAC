@@ -64,6 +64,10 @@ DIRAC_ROOT_PATH
   If set, overwrites the value of DIRAC.rootPath.
   Useful for using a non-standard location for `etc/dirac.cfg`, `runit/`, `startup/`, etc.
 
+DIRAC_FAST_PROCESS_POOL
+  If ``true`` or ``yes``, enables faster pacing in RequestExecutingAgent
+  and ProcessPool by removing legacy enqueue/result-processing sleeps (default, ``no``).
+
 DIRACSYSCONFIG
   If set, its value should be (the full locations on the file system of) one of more DIRAC cfg file(s) (comma separated), whose content will be used for the DIRAC configuration
   (see :ref:`dirac-cs-structure`)
