@@ -1,4 +1,4 @@
-""" The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
+"""The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 
     This agent will take care of:
     - removing all jobs that are in status JobStatus.DELETED
@@ -22,6 +22,7 @@ this purpose the options MaxHBJobsAtOnce and RemoveStatusDelayHB/[Done|Killed|Fa
 than 0.
 
 """
+
 import datetime
 import os
 
@@ -37,10 +38,10 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import getJobParameters
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 from DIRAC.WorkloadManagementSystem.DB.StatusUtils import kill_delete_jobs
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_DELETE
-from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getJobParameters
 
 
 class JobCleaningAgent(AgentModule):
