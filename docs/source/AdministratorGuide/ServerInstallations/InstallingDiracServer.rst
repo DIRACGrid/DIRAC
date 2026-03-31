@@ -7,6 +7,9 @@ DIRAC Server Installation
 .. set highlighting to python console input/output
 .. highlight:: console
 
+DIRAC server can be installed on linux machines. We suggest using EL9+ compatible distributions, like Alma9.
+
+DIRAC needs MySQL and OpenSearch. The installation of these tools is not covered in this guide.
 
 The procedure described here outlines the installation of the DIRAC components on a host machine, a
 DIRAC server. There are two distinct cases of installations:
@@ -57,6 +60,11 @@ Requirements
 
    $ iptables -I INPUT -p tcp --dport 9130:9200 -j ACCEPT
    $ iptables-save
+
+- On Alma9, in order to add the port permanently::
+
+   sudo firewall-cmd --permanent --add-port=9130-9200/tcp
+   sudo firewall-cmd --reload
 
 - DIRAC extensions that need specific services which are not an extension of DIRAC used
   should better use ports 9201-9300 in order to avoid confusion. If this happens,
@@ -184,6 +192,10 @@ Reload the configuration and restart::
   systemctl restart runsvdir-start
   systemctl enable runsvdir-start
 
+Check its status::
+
+  systemctl status runsvdir-start
+
 Server Certificates
 -------------------
 
@@ -194,6 +206,17 @@ Couple notes:
 
 * SAN in your certificates: if you are contacting a machine using its aliases, make sure that all the aliases are in the SubjectAlternativeName (SAN) field of the certificates
 * FQDN in the configuration: SAN normally contains only FQDN, so make sure you use the FQDN in the CS as well (e.g. ``mymachine.cern.ch`` and not ``mymachine``)
+
+The procedure might change depending on what is already in your machine. What follows are few commands that you can find useful::
+
+  dnf install ca-certificates
+  update-ca-trust
+  yum clean cache metadata
+  yum update lcg-CA
+  yum install ca-policy-egi-core
+  yum install ca_CERN-Root-2
+  dnf install fetch-crl
+  dnf install ca-policy-igtf
 
 
 User (admin) certificate
@@ -411,6 +434,19 @@ Now it is time to add the necessary services for a minimal installation. In orde
 - start the `dirac-admin-sysadmin-cli --host=$your_server_host` and inside install the services "Framework/BundleDelivery", "Framework/ProxyManager" (see instructions on the use of this CLI below)
 - exit the CLI, and simply run `dirac-proxy-init`
 
+
+In case of installation failure
+-------------------------------
+
+Installation might fail for several reasons. If that's your case, the clean-up procedure is the following::
+
+  rm -rf /opt/dirac/bashrc /opt/dirac/pro /opt/dirac/runit /opt/dirac/startup /opt/dirac/versions/
+  rm -rf /opt/dirac/etc/*.cfg /opt/dirac/etc/csbackup/
+  rm -rf ~/.cache ~/.conda
+
+  pid=`lsof -i :9135 | awk '{print $2}' | grep -v PID | sort -n | uniq`
+  kill -9 $pid
+  pkill runsvdir; pkill runsv; pkill runs
 
 .. _install_additional_server:
 
