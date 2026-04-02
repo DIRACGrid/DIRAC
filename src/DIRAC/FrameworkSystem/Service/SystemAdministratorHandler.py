@@ -259,8 +259,8 @@ class SystemAdministratorHandler(RequestHandler):
         A version can be:
         - a PEP440 valid version of DIRAC.
         - a PEP440 valid version of a DIRAC extension.
-        - "integration" or "devel" or "master" or "main" would all be interpreted as git+https://github.com/DIRACGrid/DIRAC.git@integration#egg=DIRAC[server]
-        - a git tag/branch like git+https://github.com/fstagni/DIRAC.git@test_branch#egg=DIRAC[server]
+        - "integration" or "devel" or "master" or "main" would all be interpreted as "DIRAC[server] @ git+https://github.com/DIRACGrid/DIRAC.git@integration"
+        - a git tag/branch like "DIRAC[server] @ git+https://github.com/fstagni/DIRAC.git@test_branch"
         """
         # Validate and normalise the requested version
         primaryExtension = None
@@ -273,7 +273,7 @@ class SystemAdministratorHandler(RequestHandler):
         # Special cases (e.g. installing the integration/main branch)
         if version.lower() in ["integration", "devel", "master", "main"]:
             released_version = False
-            version = "git+https://github.com/DIRACGrid/DIRAC.git@integration#egg=DIRAC[server]"
+            version = "DIRAC[server] @ git+https://github.com/DIRACGrid/DIRAC.git@integration"
 
         if released_version:
             try:
@@ -340,8 +340,15 @@ class SystemAdministratorHandler(RequestHandler):
         else:
             # from here on we assume a version like git+https://github.com/DIRACGrid/DIRAC.git@integration#egg=DIRAC[server]
             # is specified, for the primaryExtension
-            if not version.startswith("git+"):
-                version = f"git+{version}"
+            if "#egg=" in version:
+                if not version.startswith("git+"):
+                    version = f"git+{version}"
+
+                # pip removed support for egg= syntax, convert to current syntax but warn
+                url, _, spec = version.rpartition("#egg=")
+                version = f"{spec} @ {url}"
+                self.log.warn("The #egg= syntax has been removed from pip, using:", version)
+
             cmd += [version]
 
         cmd += [f"{e}[server]" for e in otherExtensions]
