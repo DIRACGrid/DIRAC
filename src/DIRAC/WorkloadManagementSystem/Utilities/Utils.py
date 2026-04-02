@@ -139,7 +139,7 @@ def __createCWLJobWrapper(jobID, wrapperPath, log, rootLocation):
         rootLocation = wrapperPath
 
     try:
-        wrapper_ref = importlib.resources.files("diracx.logic.jobs") / "job_wrapper_template.py"
+        wrapper_ref = importlib.resources.files("diracx.cli.internal") / "job_wrapper.py"
         jobWrapperFile = os.path.join(wrapperPath, f"CWLWrapper_{jobID}.py")
         with importlib.resources.as_file(wrapper_ref) as template_path:
             with open(template_path) as src, open(jobWrapperFile, "w") as dst:
