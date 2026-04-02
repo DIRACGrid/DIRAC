@@ -2,8 +2,6 @@
 
 import os
 from pathlib import Path
-from glob import glob
-import subprocess
 import sys
 import json
 
@@ -129,39 +127,40 @@ def createJobWrapper(
 
 
 def __createCWLJobWrapper(jobID, wrapperPath, log, rootLocation):
-    # Get the new JobWrapper
+    """Create a CWL job wrapper that fetches the workflow from the diracX API.
+
+    The CWL definition and input parameters are fetched at runtime from diracX
+    using the job_id. The job wrapper template is loaded from dirac-cwl via
+    importlib.resources.
+    """
     if not rootLocation:
         rootLocation = wrapperPath
-    protoPath = Path(wrapperPath) / f"proto{jobID}"
-    protoPath.unlink(missing_ok=True)
-    log.info("Cloning JobWrapper from repository https://github.com/DIRACGrid/dirac-cwl.git into", protoPath)
-    try:
-        subprocess.run(["git", "clone", "https://github.com/DIRACGrid/dirac-cwl.git", str(protoPath)], check=True)
-    except subprocess.CalledProcessError:
-        return S_ERROR("Failed to clone the JobWrapper repository")
-    wrapperFound = glob(os.path.join(str(protoPath), "**", "job_wrapper_template.py"), recursive=True)
-    if len(wrapperFound) < 1 or not Path(wrapperFound[0]).is_file():
-        return S_ERROR("Could not find the JobWrapper in the cloned repository")
-    jobWrapperFile = wrapperFound[0]
-    directJobWrapperFile = str(Path(rootLocation) / Path(wrapperFound[0]).relative_to(wrapperPath))
 
-    jobWrapperJsonFile = Path(wrapperPath) / f"InputSandbox{jobID}" / "job.json"
-    directJobWrapperJsonFile = Path(rootLocation) / f"InputSandbox{jobID}" / "job.json"
-    # Create the executable file
+    # Locate the job wrapper template from the installed dirac-cwl package
+    try:
+        import importlib.resources
+
+        wrapper_ref = importlib.resources.files("dirac_cwl.job") / "job_wrapper_template.py"
+        jobWrapperFile = os.path.join(wrapperPath, f"CWLWrapper_{jobID}.py")
+        with importlib.resources.as_file(wrapper_ref) as template_path:
+            with open(template_path) as src, open(jobWrapperFile, "w") as dst:
+                dst.write(src.read())
+    except (ImportError, FileNotFoundError) as e:
+        return S_ERROR(f"Could not load dirac-cwl job wrapper template: {e}")
+
+    # Write job config — the wrapper fetches workflow_id and params from the diracX API
+    jobWrapperJsonFile = os.path.join(wrapperPath, f"cwl_job_{jobID}.json")
+    with open(jobWrapperJsonFile, "w") as f:
+        json.dump({"JobID": jobID}, f)
+
+    directJobWrapperFile = str(Path(rootLocation) / Path(jobWrapperFile).relative_to(wrapperPath))
+    directJobWrapperJsonFile = str(Path(rootLocation) / Path(jobWrapperJsonFile).relative_to(wrapperPath))
+
+    # Create the executable — fetches CWL + params from diracX API at runtime
     jobExeFile = os.path.join(wrapperPath, f"Job{jobID}")
-    protoPath = str(Path(rootLocation) / Path(protoPath).relative_to(wrapperPath))
-    pixiPath = str(Path(rootLocation) / ".pixi")
     jobFileContents = f"""#!/bin/bash
-# Install pixi
-export PIXI_NO_PATH_UPDATE=1
-export PIXI_HOME={pixiPath}
-curl -fsSL https://pixi.sh/install.sh | bash
-export PATH="{pixiPath}/bin:$PATH"
-pixi install --manifest-path {protoPath}
-# Get json
-dirac-wms-job-get-input {jobID} -D {rootLocation}
-# Run JobWrapper
-pixi run --manifest-path {protoPath} python {directJobWrapperFile} {directJobWrapperJsonFile} {jobID}
+# Fetch CWL workflow and params from diracX API, then run via dirac-cwl
+python {directJobWrapperFile} {directJobWrapperJsonFile} {jobID}
 """
     return S_OK((jobWrapperFile, jobWrapperJsonFile, jobExeFile, jobFileContents))
 
