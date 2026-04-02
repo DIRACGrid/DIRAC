@@ -130,37 +130,32 @@ def __createCWLJobWrapper(jobID, wrapperPath, log, rootLocation):
     """Create a CWL job wrapper that fetches the workflow from the diracX API.
 
     The CWL definition and input parameters are fetched at runtime from diracX
-    using the job_id. The job wrapper template is loaded from dirac-cwl via
-    importlib.resources.
+    using the job ID. The wrapper script is extracted from diracx-logic via
+    importlib.resources and written to disk for execution.
     """
+    import importlib.resources
+
     if not rootLocation:
         rootLocation = wrapperPath
 
-    # Locate the job wrapper template from the installed dirac-cwl package
     try:
-        import importlib.resources
-
-        wrapper_ref = importlib.resources.files("dirac_cwl.job") / "job_wrapper_template.py"
+        wrapper_ref = importlib.resources.files("diracx.logic.jobs") / "job_wrapper_template.py"
         jobWrapperFile = os.path.join(wrapperPath, f"CWLWrapper_{jobID}.py")
         with importlib.resources.as_file(wrapper_ref) as template_path:
             with open(template_path) as src, open(jobWrapperFile, "w") as dst:
                 dst.write(src.read())
     except (ImportError, FileNotFoundError) as e:
-        return S_ERROR(f"Could not load dirac-cwl job wrapper template: {e}")
+        return S_ERROR(f"Could not load CWL job wrapper template: {e}")
 
-    # Write job config — the wrapper fetches workflow_id and params from the diracX API
     jobWrapperJsonFile = os.path.join(wrapperPath, f"cwl_job_{jobID}.json")
     with open(jobWrapperJsonFile, "w") as f:
         json.dump({"JobID": jobID}, f)
 
     directJobWrapperFile = str(Path(rootLocation) / Path(jobWrapperFile).relative_to(wrapperPath))
-    directJobWrapperJsonFile = str(Path(rootLocation) / Path(jobWrapperJsonFile).relative_to(wrapperPath))
 
-    # Create the executable — fetches CWL + params from diracX API at runtime
     jobExeFile = os.path.join(wrapperPath, f"Job{jobID}")
     jobFileContents = f"""#!/bin/bash
-# Fetch CWL workflow and params from diracX API, then run via dirac-cwl
-python {directJobWrapperFile} {directJobWrapperJsonFile} {jobID}
+python {directJobWrapperFile} {jobID}
 """
     return S_OK((jobWrapperFile, jobWrapperJsonFile, jobExeFile, jobFileContents))
 
