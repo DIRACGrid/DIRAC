@@ -278,12 +278,38 @@ def prepare_environment(
 
     typer.secho("Running docker compose to create containers", fg=c.GREEN)
     with _gen_docker_compose(modules, diracx_src_dir=diracx_src_dir) as docker_compose_fn:
-        subprocess.run(
-            [*DOCKER_COMPOSE_CMD, "-f", docker_compose_fn, "up", "-d", "dirac-server", "dirac-client", "dirac-pilot"]
-            + extra_services,
-            check=True,
-            env=docker_compose_env,
-        )
+        try:
+            subprocess.run(
+                [
+                    *DOCKER_COMPOSE_CMD,
+                    "-f",
+                    docker_compose_fn,
+                    "up",
+                    "-d",
+                    "dirac-server",
+                    "dirac-client",
+                    "dirac-pilot",
+                ]
+                + extra_services,
+                check=True,
+                env=docker_compose_env,
+            )
+        except subprocess.CalledProcessError:
+            typer.secho(
+                "docker compose up failed, dumping container logs for diagnosis",
+                fg=c.RED,
+            )
+            subprocess.run(
+                [*DOCKER_COMPOSE_CMD, "-f", docker_compose_fn, "ps", "-a"],
+                check=False,
+                env=docker_compose_env,
+            )
+            subprocess.run(
+                [*DOCKER_COMPOSE_CMD, "-f", docker_compose_fn, "logs", "--no-color"],
+                check=False,
+                env=docker_compose_env,
+            )
+            raise
 
     typer.secho("Creating users in server client and pilot containers", fg=c.GREEN)
     for container_name in ["server", "client", "pilot"]:
