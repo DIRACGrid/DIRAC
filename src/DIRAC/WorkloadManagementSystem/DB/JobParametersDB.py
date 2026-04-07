@@ -33,6 +33,68 @@ mapping = {
 }
 
 
+def getJobParameters(jobIDs: list[int], parName: str | None, vo: str = "") -> dict:
+    """Utility to get a job parameter for a list of jobIDs pertaining to a VO.
+    If the jobID is not in the JobParametersDB, it will be looked up in the JobDB.
+
+    Requires direct access to the JobParametersDB and JobDB.
+
+    :param jobIDs: list of jobIDs
+    :param parName: name of the parameter to be retrieved
+    :param vo: VO of the jobIDs
+    :return: dictionary with jobID as key and the parameter as value
+    :rtype: dict
+    """
+
+    from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+
+    elasticJobParametersDB = JobParametersDB()
+    jobDB = JobDB()
+
+    if vo:  # a user is connecting, with a proxy
+        res = elasticJobParametersDB.getJobParameters(jobIDs, vo, parName)
+        if not res["OK"]:
+            return res
+        parameters = res["Value"]
+    else:  # a service is connecting, no proxy, e.g. StalledJobAgent
+        q = f"SELECT JobID, VO FROM Jobs WHERE JobID IN ({','.join([str(jobID) for jobID in jobIDs])})"
+        res = jobDB._query(q)
+        if not res["OK"]:
+            return res
+        if not res["Value"]:
+            return S_OK({})
+        # get the VO for each jobID
+        voDict = {}
+        for jobID, vo in res["Value"]:
+            if vo not in voDict:
+                voDict[vo] = []
+            voDict[vo].append(jobID)
+        # get the parameters for each VO
+        parameters = {}
+        for vo, jobIDs in voDict.items():
+            res = elasticJobParametersDB.getJobParameters(jobIDs, vo, parName)
+            if not res["OK"]:
+                return res
+            parameters.update(res["Value"])
+
+    # Need anyway to get also from JobDB, for those jobs with parameters registered in MySQL or in both backends
+    res = jobDB.getJobParameters(jobIDs, parName)
+    if not res["OK"]:
+        return res
+    parametersM = res["Value"]
+
+    # and now combine
+    final = dict(parametersM)
+    # if job in JobDB, update with parameters from ES if any
+    for jobID in final:
+        final[jobID].update(parameters.get(jobID, {}))
+    # if job in ES and not in JobDB, take ES
+    for jobID in parameters:
+        if jobID not in final:
+            final[jobID] = parameters[jobID]
+    return S_OK(final)
+
+
 class JobParametersDB(ElasticDB):
     def __init__(self, parentLogger=None):
         """Standard Constructor"""
