@@ -228,11 +228,28 @@ def prepare_environment(
 
     typer.secho("Running docker-compose to create containers", fg=c.GREEN)
     with _gen_docker_compose(modules) as docker_compose_fn:
-        subprocess.run(
-            ["docker", "compose", "-f", docker_compose_fn, "up", "-d"],
-            check=True,
-            env=docker_compose_env,
-        )
+        try:
+            subprocess.run(
+                ["docker", "compose", "-f", docker_compose_fn, "up", "-d"],
+                check=True,
+                env=docker_compose_env,
+            )
+        except subprocess.CalledProcessError:
+            typer.secho(
+                "docker compose up failed, dumping container logs for diagnosis",
+                fg=c.RED,
+            )
+            subprocess.run(
+                ["docker", "compose", "-f", docker_compose_fn, "ps", "-a"],
+                check=False,
+                env=docker_compose_env,
+            )
+            subprocess.run(
+                ["docker", "compose", "-f", docker_compose_fn, "logs", "--no-color"],
+                check=False,
+                env=docker_compose_env,
+            )
+            raise
 
     typer.secho("Creating users in server and client containers", fg=c.GREEN)
     for container_name in ["server", "client"]:
