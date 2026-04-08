@@ -102,7 +102,7 @@ class ProxyManagerHandlerMixin:
         :return: S_OK(dict)/S_ERROR() -- dict contain proxies
         """
         credDict = self.getRemoteCredentials()
-        userId = f'{credDict["username"]}:{credDict["group"]}'
+        userId = f"{credDict['username']}:{credDict['group']}"
         retVal = self.__proxyDB.completeDelegation(requestId, credDict["DN"], pemChain)
         if not retVal["OK"]:
             gLogger.error("Upload proxy failed", f"id: {requestId} user: {userId} message: {retVal['Message']}")
@@ -240,7 +240,7 @@ class ProxyManagerHandlerMixin:
         requiredLifetime = int(min(secsLeft, requiredLifetime * self.__maxExtraLifeFactor))
         return chain.generateChainFromRequestString(requestPem, lifetime=requiredLifetime, requireLimited=forceLimited)
 
-    types_deleteProxyBundle = [(list, tuple)]
+    types_deleteProxyBundle = [list]
 
     def export_deleteProxyBundle(self, idList):
         """delete a list of id's
@@ -252,9 +252,7 @@ class ProxyManagerHandlerMixin:
         errorInDelete = []
         deleted = 0
         for _id in idList:
-            if len(_id) != 2:
-                errorInDelete.append(f"{str(_id)} doesn't have two fields")
-            retVal = self.export_deleteProxy(_id[0], _id[1])
+            retVal = self.export_deleteProxy(_id)
             if not retVal["OK"]:
                 errorInDelete.append(f"{str(_id)} : {retVal['Message']}")
             else:
@@ -263,13 +261,12 @@ class ProxyManagerHandlerMixin:
             return S_ERROR(f"Could not delete some proxies: {','.join(errorInDelete)}")
         return S_OK(deleted)
 
-    types_deleteProxy = [(list, tuple)]
+    types_deleteProxy = [str]
 
-    def export_deleteProxy(self, userDN, userGroup):
+    def export_deleteProxy(self, userDN):
         """Delete a proxy from the DB
 
         :param str userDN: user DN
-        :param str userGroup: DIRAC group
 
         :return: S_OK()/S_ERROR()
         """
@@ -277,10 +274,10 @@ class ProxyManagerHandlerMixin:
         if Properties.PROXY_MANAGEMENT not in credDict["properties"]:
             if userDN != credDict["DN"]:
                 return S_ERROR("You aren't allowed!")
-        retVal = self.__proxyDB.deleteProxy(userDN, userGroup)
+        retVal = self.__proxyDB.deleteProxy(userDN)
         if not retVal["OK"]:
             return retVal
-        self.__proxyDB.logAction("delete proxy", credDict["DN"], credDict["group"], userDN, userGroup)
+        self.__proxyDB.logAction("delete proxy", credDict["DN"], userDN)
         return S_OK()
 
     types_getContents = [dict, (list, tuple), int, int]

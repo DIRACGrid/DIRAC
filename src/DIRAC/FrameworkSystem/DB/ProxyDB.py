@@ -1,13 +1,14 @@
-""" ProxyDB class is a front-end to the ProxyDB MySQL database.
+"""ProxyDB class is a front-end to the ProxyDB MySQL database.
 
-    Database contains the following tables:
+Database contains the following tables:
 
-    * ProxyDB_Requests -- a delegation requests storage table for a given proxy Chain
-    * ProxyDB_CleanProxies -- table for storing proxies in "clean" form, ie without
-      the presence of DIRAC and VOMS extensions.
-    * ProxyDB_VOMSProxies -- proxy storage table with VOMS extension already added.
-    * ProxyDB_Log -- table with logs.
+* ProxyDB_Requests -- a delegation requests storage table for a given proxy Chain
+* ProxyDB_CleanProxies -- table for storing proxies in "clean" form, ie without
+  the presence of DIRAC and VOMS extensions.
+* ProxyDB_VOMSProxies -- proxy storage table with VOMS extension already added.
+* ProxyDB_Log -- table with logs.
 """
+
 import textwrap
 from threading import Lock
 
@@ -167,8 +168,7 @@ class ProxyDB(DB):
         data = retVal["Value"]
         if not data:
             return S_ERROR("Insertion of the request in the db didn't work as expected")
-        userGroup = proxyChain.getDIRACGroup().get("Value") or "unset"
-        self.logAction("request upload", userDN, userGroup, userDN, "any")
+        self.logAction("request upload", userDN, userDN)
         # Here we go!
         return S_OK({"id": data[0][0], "request": reqStr})
 
@@ -249,8 +249,7 @@ class ProxyDB(DB):
         return self.deleteRequest(requestId) if retVal["OK"] else retVal
 
     def __storeProxy(self, userDN, chain, proxyProvider=None):
-        """Store user proxy into the Proxy repository for a user specified by his
-        DN and group or proxy provider.
+        """Store user proxy into the Proxy repository for a user specified by their DN
 
         :param str userDN: user DN from proxy
         :param X509Chain() chain: proxy chain
@@ -353,7 +352,7 @@ class ProxyDB(DB):
                     sqlSet.append(f"{k} = {dValues[k]}")
             cmd = f"UPDATE `{sTable}` SET {', '.join(sqlSet)} WHERE {' AND '.join(sqlWhere)}"
 
-        self.logAction("store proxy", userDN, proxyProvider, userDN, proxyProvider)
+        self.logAction("store proxy", userDN, userDN)
         return self._update(cmd)
 
     def purgeExpiredProxies(self, sendNotifications=True):
@@ -376,23 +375,17 @@ class ProxyDB(DB):
                 return result
         return S_OK(purged)
 
-    def deleteProxy(self, userDN, userGroup=None, proxyProvider=None):
+    def deleteProxy(self, userDN):
         """Remove proxy of the given user from the repository
 
         :param str userDN: user DN
-        :param str userGroup: DIRAC group
-        :param str proxyProvider: proxy provider name
 
         :return: S_OK()/S_ERROR()
         """
         try:
             userDN = self._escapeString(userDN)["Value"]
-            if userGroup:
-                userGroup = self._escapeString(userGroup)["Value"]
-            if proxyProvider:
-                proxyProvider = self._escapeString(proxyProvider)["Value"]
         except KeyError:
-            return S_ERROR("Invalid DN or group or proxy provider")
+            return S_ERROR("Invalid DN")
         errMsgs = []
         req = f"DELETE FROM `ProxyDB_CleanProxies` WHERE UserDN={userDN}"
         result = self._update(req)
@@ -552,7 +545,7 @@ class ProxyDB(DB):
                     result = chain.generateProxyToString(remainingSecs, diracGroup=userGroup)
                     if result["OK"]:
                         return S_OK((result["Value"], remainingSecs))
-                errMsgs.append(f"\"{proxyProvider}\": {result['Message']}")
+                errMsgs.append(f'"{proxyProvider}": {result["Message"]}')
 
         return S_ERROR("Cannot generate proxy%s" % (errMsgs and ": " + ", ".join(errMsgs) or ""))
 
@@ -592,8 +585,8 @@ class ProxyDB(DB):
 
         # Proxy is invalid for some reason, let's delete it
         if not chain.isValidProxy()["OK"]:
-            self.deleteProxy(userDN, userGroup)
-            return S_ERROR(DErrno.EPROXYFIND, f"{userDN}@{userGroup} has no proxy registered")
+            self.deleteProxy(userDN)
+            return S_ERROR(DErrno.EPROXYFIND, f"{userDN} has no proxy registered")
         return S_OK((chain, timeLeft))
 
     def __getVOMSAttribute(self, userGroup, requiredVOMSAttribute=False):
@@ -824,27 +817,23 @@ class ProxyDB(DB):
         totalRecords = len(data)
         return S_OK({"ParameterNames": fields, "Records": data, "TotalRecords": totalRecords})
 
-    def logAction(self, action, issuerDN, issuerGroup, targetDN, targetGroup):
+    def logAction(self, action, issuerDN, targetDN):
         """Add an action to the log
 
         :param str action: proxy action
         :param str issuerDN: user DN of issuer
-        :param str issuerGroup: DIRAC group of issuer
         :param str targetDN: user DN of target
-        :param str targetGroup: DIRAC group of target
 
         :return: S_ERROR()
         """
         try:
             sAction = self._escapeString(action)["Value"]
             sIssuerDN = self._escapeString(issuerDN)["Value"]
-            sIssuerGroup = self._escapeString(issuerGroup)["Value"]
             sTargetDN = self._escapeString(targetDN)["Value"]
-            sTargetGroup = self._escapeString(targetGroup)["Value"]
         except KeyError:
             return S_ERROR("Can't escape from death")
         cmd = "INSERT INTO `ProxyDB_Log` ( Action, IssuerDN, IssuerGroup, TargetDN, TargetGroup, Timestamp ) VALUES "
-        cmd += f"( {sAction}, {sIssuerDN}, {sIssuerGroup}, {sTargetDN}, {sTargetGroup}, UTC_TIMESTAMP() )"
+        cmd += f"( {sAction}, {sIssuerDN}, 'IssuerGroup' {sTargetDN}, 'TargetGroup', UTC_TIMESTAMP() )"
         retVal = self._update(cmd)
         if not retVal["OK"]:
             self.log.error("Can't add a proxy action log: ", retVal["Message"])
