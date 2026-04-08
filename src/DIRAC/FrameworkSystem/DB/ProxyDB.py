@@ -833,7 +833,7 @@ class ProxyDB(DB):
         except KeyError:
             return S_ERROR("Can't escape from death")
         cmd = "INSERT INTO `ProxyDB_Log` ( Action, IssuerDN, IssuerGroup, TargetDN, TargetGroup, Timestamp ) VALUES "
-        cmd += f"( {sAction}, {sIssuerDN}, 'IssuerGroup' {sTargetDN}, 'TargetGroup', UTC_TIMESTAMP() )"
+        cmd += f"( {sAction}, {sIssuerDN}, 'IssuerGroup', {sTargetDN}, 'TargetGroup', UTC_TIMESTAMP() )"
         retVal = self._update(cmd)
         if not retVal["OK"]:
             self.log.error("Can't add a proxy action log: ", retVal["Message"])
