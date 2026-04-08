@@ -1,3 +1,13 @@
+[v9.1.5]
+
+*FrameworkSystem
+
+FIX: (#8499) delete proxy does not need a group
+
+*WorkloadManagementSystem
+
+FIX: (#8495) moved getJobParameters in JobParametersDB
+
 [v9.1.4]
 
 *FrameworkSystem
