@@ -178,7 +178,7 @@ class ProxyManagerHandlerMixin:
             return result
         forceLimited = result["Value"]
 
-        self.__proxyDB.logAction("download proxy", credDict["DN"], credDict["group"], userDN, userGroup)
+        self.__proxyDB.logAction("download proxy", credDict["DN"], userDN)
         return self.__getProxy(userDN, userGroup, requestPem, requiredLifetime, forceLimited)
 
     def __getProxy(self, userDN, userGroup, requestPem, requiredLifetime, forceLimited):
@@ -226,7 +226,7 @@ class ProxyManagerHandlerMixin:
             return result
         forceLimited = result["Value"]
 
-        self.__proxyDB.logAction("download voms proxy", credDict["DN"], credDict["group"], userDN, userGroup)
+        self.__proxyDB.logAction("download voms proxy", credDict["DN"], userDN)
         return self.__getVOMSProxy(userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, forceLimited)
 
     def __getVOMSProxy(self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, forceLimited):
