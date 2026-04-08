@@ -1,6 +1,7 @@
-""" This is a test of the ProxyDB
-    It supposes that the DB is present and installed in DIRAC
+"""This is a test of the ProxyDB
+It supposes that the DB is present and installed in DIRAC
 """
+
 # pylint: disable=invalid-name,wrong-import-position,protected-access
 import os
 import re
@@ -19,7 +20,6 @@ import DIRAC
 
 DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration
 
-import DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
@@ -39,8 +39,8 @@ Resources
     DIRAC_CA
     {{
       ProviderType = DIRACCA
-      CertFile = {os.path.join(certsPath, 'ca/ca.cert.pem')}
-      KeyFile = {os.path.join(certsPath, 'ca/ca.key.pem')}
+      CertFile = {os.path.join(certsPath, "ca/ca.cert.pem")}
+      KeyFile = {os.path.join(certsPath, "ca/ca.key.pem")}
       Supplied = C, O, OU, CN
       Optional = emailAddress
       DNOrder = C, O, OU, CN, emailAddress
@@ -391,7 +391,7 @@ class testDB(ProxyDBTestCase):
     def test_getRemoveProxy(self):
         """Testing get, store proxy"""
         gLogger.info("\n* Check that DB is clean..")
-        result = db.getProxiesContent({"UserName": ["user_ca", "user", "user_1" "user_2", "user_3"]}, {})
+        result = db.getProxiesContent({"UserName": ["user_ca", "user", "user_1", "user_2", "user_3"]}, {})
         self.assertTrue(result["OK"], "\n" + result.get("Message", "Error message is absent."))
         self.assertTrue(bool(int(result["Value"]["TotalRecords"]) == 0), "In DB present proxies.")
 
@@ -441,9 +441,7 @@ class testDB(ProxyDBTestCase):
         )
 
         gLogger.info("* Check that DB is clean..")
-        result = db.deleteProxy(
-            "/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org", proxyProvider="DIRAC_CA"
-        )
+        result = db.deleteProxy("/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org")
         self.assertTrue(result["OK"], "\n" + result.get("Message", "Error message is absent."))
         result = db.getProxiesContent({"UserName": ["user_ca", "user", "user_1", "user_2", "user_3"]}, {})
         self.assertTrue(result["OK"], "\n" + result.get("Message", "Error message is absent."))
@@ -523,7 +521,7 @@ class testDB(ProxyDBTestCase):
                 gLogger.info(f"Msg: {result['Message']}")
 
         gLogger.info("* Check that DB is clean..")
-        result = db.deleteProxy("/C=CC/O=DN/O=DIRAC/CN=user", proxyProvider="Certificate")
+        result = db.deleteProxy("/C=CC/O=DN/O=DIRAC/CN=user")
         self.assertTrue(result["OK"], "\n" + result.get("Message", "Error message is absent."))
         result = db.getProxiesContent({"UserName": ["user_ca", "user", "user_2", "user_3"]}, {})
         self.assertTrue(result["OK"], "\n" + result.get("Message", "Error message is absent."))
