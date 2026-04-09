@@ -62,6 +62,7 @@ Important links
 - HTML documentation (stable release): http://diracgrid.org (http://dirac.readthedocs.io/en/latest/index.html)
 - Issue tracker: https://github.com/DIRACGrid/DIRAC/issues
 - Discussions: https://github.com/DIRACGrid/DIRAC/discussions
+- Developer mailing list: diracproject-users@cern.ch
 - [ARCHIVED] Support Mailing list: https://groups.google.com/forum/#!forum/diracgrid-forum
 
 Install
