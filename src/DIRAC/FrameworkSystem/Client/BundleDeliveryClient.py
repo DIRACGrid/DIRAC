@@ -1,5 +1,5 @@
-""" Client for interacting with Framework/BundleDelivery service
-"""
+"""Client for interacting with Framework/BundleDelivery service"""
+
 import getpass
 import os
 import tarfile
@@ -143,9 +143,10 @@ class BundleDeliveryClient(Client):
         if "X509_CERT_DIR" in os.environ:
             X509_CERT_DIR = os.environ["X509_CERT_DIR"]
             del os.environ["X509_CERT_DIR"]
+        result = self.syncDir("CAs", Locations.getCAsLocation())
         if X509_CERT_DIR:
             os.environ["X509_CERT_DIR"] = X509_CERT_DIR
-        return self.syncDir("CAs", Locations.getCAsLocation())
+        return result
 
     def syncCRLs(self):
         """Synchronize CRLs
@@ -156,9 +157,10 @@ class BundleDeliveryClient(Client):
         if "X509_CERT_DIR" in os.environ:
             X509_CERT_DIR = os.environ["X509_CERT_DIR"]
             del os.environ["X509_CERT_DIR"]
+        result = self.syncDir("CRLs", Locations.getCAsLocation())
         if X509_CERT_DIR:
             os.environ["X509_CERT_DIR"] = X509_CERT_DIR
-        return self.syncDir("CRLs", Locations.getCAsLocation())
+        return result
 
     def getCAs(self):
         """This method can be used to create the CAs. If the file can not be created,
