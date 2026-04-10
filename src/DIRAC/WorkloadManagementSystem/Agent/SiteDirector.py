@@ -302,6 +302,15 @@ class SiteDirector(AgentModule):
             self.failedQueues[queueName] += 1
             return S_OK(0)
 
+        # Get CE instance
+        ce = self.queueDict[queueName]["CE"]
+
+        # Set credentials: needed for authenticated CE operations (e.g. ce.available() on AREX)
+        result = self._setCredentials(ce, 3600)
+        if not result["OK"]:
+            self.log.error("Failed to set credentials:", result["Message"])
+            return result
+
         # Get the number of available slots on the target site/queue
         totalSlots, waitingPilots = self._getQueueSlots(queueName)
         if totalSlots <= 0:
@@ -322,7 +331,6 @@ class SiteDirector(AgentModule):
         )
 
         # Now really submitting
-        ce = self.queueDict[queueName]["CE"]
         result = self._submitPilotsToQueue(pilotsToSubmit, ce, queueName)
         if not result["OK"]:
             self.log.info("Failed pilot submission", f"Queue: {queueName}")
@@ -438,12 +446,6 @@ class SiteDirector(AgentModule):
             return result
         jobProxy = result["Value"]
         executable = self._getExecutable(queue, proxy=jobProxy, jobExecDir=jobExecDir, envVariables=envVariables)
-
-        # Add the credentials to the CE
-        result = self._setCredentials(ce, 3600)
-        if not result["OK"]:
-            self.log.error("Failed to set credentials:", result["Message"])
-            return result
 
         # Submit the job
         submitResult = ce.submitJob(executable, "", pilotsToSubmit)
