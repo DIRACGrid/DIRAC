@@ -14,7 +14,7 @@ class DB(DIRACDB, MySQL):
 
         result = getDBParameters(fullname)
         if not result["OK"]:
-            raise RuntimeError(f"Cannot get database parameters: {result['Message']}")
+            raise RuntimeError(f"Cannot get database parameters for '{dbname}': {result['Message']}")
 
         dbParameters = result["Value"]
         self.dbHost = dbParameters["Host"]
