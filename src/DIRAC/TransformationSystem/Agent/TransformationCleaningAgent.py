@@ -7,6 +7,7 @@
   :caption: TransformationCleaningAgent options
 
 """
+
 # # imports
 import ast
 import errno
@@ -69,7 +70,6 @@ class TransformationCleaningAgent(AgentModule):
         self.jobDB = None
         self.pilotAgentsDB = None
         self.taskQueueDB = None
-        self.storageManagementDB = None
 
         # # transformations types
         self.transformationTypes = None
@@ -143,11 +143,6 @@ class TransformationCleaningAgent(AgentModule):
         if not result["OK"]:
             return result
         self.taskQueueDB = result["Value"]()
-
-        result = ObjectLoader().loadObject("StorageManagementSystem.DB.StorageManagementDB", "StorageManagementDB")
-        if not result["OK"]:
-            return result
-        self.storageManagementDB = result["Value"]()
 
         return S_OK()
 
@@ -640,7 +635,6 @@ class TransformationCleaningAgent(AgentModule):
             jobdb=self.jobDB,
             taskqueuedb=self.taskQueueDB,
             pilotagentsdb=self.pilotAgentsDB,
-            storagemanagementdb=self.storageManagementDB,
         )
         # Prevent 0 job IDs
         jobIDs = [int(j) for j in transJobIDs if int(j)]

@@ -1,14 +1,15 @@
-""" JobManagerHandler is the implementation of the JobManager service
-    in the DISET framework
+"""JobManagerHandler is the implementation of the JobManager service
+in the DISET framework
 
-    The following methods are available in the Service interface
+The following methods are available in the Service interface
 
-    submitJob()
-    rescheduleJob()
-    deleteJob()
-    killJob()
+submitJob()
+rescheduleJob()
+deleteJob()
+killJob()
 
 """
+
 from pydantic import ValidationError
 
 from DIRAC import S_ERROR, S_OK
@@ -64,11 +65,6 @@ class JobManagerHandlerMixin:
             if not result["OK"]:
                 return result
             cls.pilotAgentsDB = result["Value"](parentLogger=cls.log)
-
-            result = ObjectLoader().loadObject("StorageManagementSystem.DB.StorageManagementDB", "StorageManagementDB")
-            if not result["OK"]:
-                return result
-            cls.storageManagementDB = result["Value"](parentLogger=cls.log)
 
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to DB: {excp!r}")
@@ -468,7 +464,6 @@ class JobManagerHandlerMixin:
             jobdb=self.jobDB,
             taskqueuedb=self.taskQueueDB,
             pilotagentsdb=self.pilotAgentsDB,
-            storagemanagementdb=self.storageManagementDB,
         )
 
         result["requireProxyUpload"] = len(ownerJobList) > 0 and self.__checkIfProxyUploadIsRequired()
@@ -506,7 +501,6 @@ class JobManagerHandlerMixin:
             jobdb=self.jobDB,
             taskqueuedb=self.taskQueueDB,
             pilotagentsdb=self.pilotAgentsDB,
-            storagemanagementdb=self.storageManagementDB,
         )
 
         result["requireProxyUpload"] = len(ownerJobList) > 0 and self.__checkIfProxyUploadIsRequired()
