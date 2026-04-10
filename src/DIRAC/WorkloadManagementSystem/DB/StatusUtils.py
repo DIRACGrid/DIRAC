@@ -1,6 +1,6 @@
 from DIRAC import S_ERROR, S_OK, gLogger
-from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_DELETE, RIGHT_KILL
 from DIRAC.WorkloadManagementSystem.Utilities.jobAdministration import _filterJobStateTransition
 
@@ -96,11 +96,6 @@ def kill_delete_jobs(
         if not result["OK"]:
             return result
         pilotagentsdb = result["Value"]()
-    if storagemanagementdb is None:
-        result = ObjectLoader().loadObject("StorageManagementSystem.DB.StorageManagementDB", "StorageManagementDB")
-        if not result["OK"]:
-            return result
-        storagemanagementdb = result["Value"]()
 
     badIDs = []
 
@@ -133,6 +128,14 @@ def kill_delete_jobs(
         stagingJobList = [jobID for jobID, sDict in jobStates.items() if sDict["Status"] == JobStatus.STAGING]
 
         if stagingJobList:
+            if storagemanagementdb is None:
+                result = ObjectLoader().loadObject(
+                    "StorageManagementSystem.DB.StorageManagementDB", "StorageManagementDB"
+                )
+                if not result["OK"]:
+                    return result
+                storagemanagementdb = result["Value"]()
+
             gLogger.info("Going to send killing signal to stager as well!")
             result = storagemanagementdb.killTasksBySourceTaskID(stagingJobList)
             if not result["OK"]:
