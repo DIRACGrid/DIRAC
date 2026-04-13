@@ -1,5 +1,5 @@
-""" Test class for Job Cleaning Agent
-"""
+"""Test class for Job Cleaning Agent"""
+
 from unittest.mock import MagicMock
 
 import pytest
@@ -16,6 +16,9 @@ mockAM = MagicMock()
 mockNone = MagicMock()
 mockNone.return_value = None
 mockJMC = MagicMock()
+mockJobDB = MagicMock()
+mockJobDB.getDistinctJobAttributes = mockReply
+mockJobDB.selectJobs = mockReply
 
 
 @pytest.fixture
@@ -27,16 +30,20 @@ def jca(mocker):
         create=True,
     )
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.am_getOption", return_value=mockAM)
-    mocker.patch(
-        "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.getDistinctJobAttributes", side_effect=mockReply
-    )
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.selectJobs", side_effect=mockReply)
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.__init__", side_effect=mockNone)
-    mocker.patch(
-        "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.SandboxMetadataDB.__init__", side_effect=mockNone
-    )
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.ReqClient", return_value=mockNone)
 
+    def mock_load_object(module_path, class_name):
+        mocks = {
+            "JobDB": mockJobDB,
+            "TaskQueueDB": MagicMock(),
+            "PilotAgentsDB": MagicMock(),
+            "SandboxMetadataDB": MagicMock(),
+        }
+        return {"OK": True, "Value": lambda: mocks[class_name]}
+
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.ObjectLoader.loadObject",
+        side_effect=mock_load_object,
+    )
     jca = JobCleaningAgent()
     jca.log = gLogger
     jca.log.setLevel("DEBUG")
@@ -128,15 +135,27 @@ def test_deleteJobOversizedSandbox(mocker, inputs, params, expected):
 
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.__init__")
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.am_getOption", return_value=mockAM)
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB", return_value=mockNone)
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.SandboxMetadataDB", return_value=mockNone)
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.ReqClient", return_value=mockNone)
     mocker.patch(
         "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.getDNForUsername", return_value=S_OK(["/bih/boh/DN"])
     )
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.getJobParameters", return_value=params)
 
+    def mock_load_object(module_path, class_name):
+        mocks = {
+            "JobDB": MagicMock(),
+            "TaskQueueDB": MagicMock(),
+            "PilotAgentsDB": MagicMock(),
+            "SandboxMetadataDB": MagicMock(),
+        }
+        return {"OK": True, "Value": lambda: mocks[class_name]}
+
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.ObjectLoader.loadObject",
+        side_effect=mock_load_object,
+    )
     jobCleaningAgent = JobCleaningAgent()
+
     jobCleaningAgent.log = gLogger
     jobCleaningAgent.log.setLevel("DEBUG")
     jobCleaningAgent._AgentModule__configDefaults = mockAM
