@@ -115,8 +115,9 @@ installSite() {
 
   echo "==> CAs and certificates"
 
-  # Copy the CA to the list of trusted CA
+  # Copy the CA and CRL to the list of trusted CA
   cp "/ca/certs/ca.cert.pem" "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/"
+  cp "/ca/certs/ca.crl.pem" "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/"
 
   # Copy the cert and host key to the certificates directory
   cp /ca/certs/hostcert.pem "${SERVERINSTALLDIR}/diracos/etc/grid-security/"
@@ -128,6 +129,7 @@ installSite() {
   # because otherwise the BundleDeliveryClient will send the full path, which
   # will be wrong on the client
   ln -s "ca.cert.pem" "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/$caHash.0"
+  tar --create --file "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/$caHash.r0" --gzip "${SERVERINSTALLDIR}/diracos/etc/grid-security/certificates/ca.crl.pem"
 
   rm -rf "${SERVERINSTALLDIR}/etc"
   ln -s "${SERVERINSTALLDIR}/diracos/etc" "${SERVERINSTALLDIR}/etc"
