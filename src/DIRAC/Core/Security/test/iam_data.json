@@ -1,0 +1,854 @@
+{
+  "users": [
+    {
+      "id": "73f16d93-2441-4a50-88ff-85360d78c6b5",
+      "meta": {
+        "created": "2026-03-25T18:22:14.000Z",
+        "lastModified": "2026-03-25T18:22:14.000Z",
+        "location": "https://iam.test.example/scim/Users/73f16d93-2441-4a50-88ff-85360d78c6b5",
+        "resourceType": "User"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:User",
+        "urn:indigo-dc:scim:schemas:IndigoUser"
+      ],
+      "userName": "admin",
+      "name": {
+        "familyName": "User",
+        "formatted": "Admin User",
+        "givenName": "Admin"
+      },
+      "displayName": "admin",
+      "active": true,
+      "emails": [
+        {
+          "type": "work",
+          "value": "admin@iam.test",
+          "primary": true
+        }
+      ],
+      "urn:indigo-dc:scim:schemas:IndigoUser": {}
+    },
+    {
+      "id": "c2e241bd-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:46.000Z",
+        "lastModified": "2026-03-25T18:23:46.000Z",
+        "location": "https://iam.test.example/scim/Users/c2e241bd-2877-11f1-8d29-364a3910c199",
+        "resourceType": "User"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:User",
+        "urn:indigo-dc:scim:schemas:IndigoUser"
+      ],
+      "userName": "test-user",
+      "name": {
+        "familyName": "User",
+        "formatted": "TestDpps User",
+        "givenName": "TestDpps"
+      },
+      "displayName": "test-user",
+      "active": true,
+      "emails": [
+        {
+          "type": "work",
+          "value": "dpps@test.example",
+          "primary": true
+        }
+      ],
+      "groups": [
+        {
+          "display": "ctao.dpps.test",
+          "value": "c2c8a08e-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2c8a08e-2877-11f1-8d29-364a3910c199"
+        },
+        {
+          "display": "ctao.dpps.test/dpps/user",
+          "value": "c2c9195b-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2c9195b-2877-11f1-8d29-364a3910c199"
+        },
+        {
+          "display": "ctao.dpps.test/dpps/pipelines/user",
+          "value": "c2c9b71a-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2c9b71a-2877-11f1-8d29-364a3910c199"
+        },
+        {
+          "display": "ctao.dpps.test/dpps/archive/user",
+          "value": "c2c9e1e3-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2c9e1e3-2877-11f1-8d29-364a3910c199"
+        },
+        {
+          "display": "ctao.dpps.test/dpps/dataquality/user",
+          "value": "c2ca135c-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2ca135c-2877-11f1-8d29-364a3910c199"
+        }
+      ],
+      "urn:indigo-dc:scim:schemas:IndigoUser": {
+        "certificates": [
+          {
+            "primary": true,
+            "subjectDn": "CN=DPPS User",
+            "issuerDn": "CN=DPPS Development CA",
+            "pemEncodedCertificate": "-----BEGIN CERTIFICATE-----\nMIIDFDCCAfygAwIBAgIUWSpm66BDmQ5S3F5islg8y3DJvfcwDQYJKoZIhvcNAQEL\nBQAwHjEcMBoGA1UEAwwTRFBQUyBEZXZlbG9wbWVudCBDQTAgFw0yNjAzMjUxODIx\nMjJaGA8yMDUwMTExNDE4MjEyMlowFDESMBAGA1UEAwwJRFBQUyBVc2VyMIIBIjAN\nBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsdoSQbF1528f0TvM0myNSVQGRsl3\n1gAhdITyyC3cssKoaQZDZDKWI5x8rxRasTbcs/k6ryKiyD8OyDaxXLqc00ojytv0\ngnaare823RgGlAbUsr/sBOxb4EY/mnpPtjhTzRU0EAdImBtAyjPcbbTjotbLRdR2\nMdCBIobJwAzMxVUk9TWYknKRQqFRwxCmuA6+P4NphGE0wrae4sak+VAyOqBIqUqk\n9kre7BDopQHhOc3pE/ekka+x70UIbMWOuOpK+kk8kZqkzJcAmBgm6GqBA1cZbTKh\nIl52RigLBFFQBLbowWYjwJNdVRkQlxHplZJkNBRz/UWu6qL0PikEBIkB/QIDAQAB\no1IwUDAOBgNVHQ8BAf8EBAMCBaAwHQYDVR0OBBYEFIiOvfe/pr7T8Y5532bLN1xn\nO0anMB8GA1UdIwQYMBaAFPJEl9u6MM6EDJjrKET3PrRcWd+oMA0GCSqGSIb3DQEB\nCwUAA4IBAQAFzTP752/J0TwsGBgxqzwaM0EvS9W6kHO1LulFPlrO0KfT6jSOzq0C\npCdXwFHBeOw+3cyHyr8EKeK2GkxG0C3kQJmjQY5PTEwwlFiAY03SiviJhnYsp21t\nWyQuoWjL0lX2bZJK0gY3F/mibVMIH8ECfDVf9LrSgchBaO5UCRA+0zN72ZNXoxw2\nCaMXETqh2CAMb4V+wXFwZtwdzMyc84CMhYOKxlLFu+pzWLcITDWjmlAOJwT7rFPJ\n0DYNzmDxijuMcNz9mHP5hJxzb+RjjPDsiOHFwNYLCYqm8VkJ/gU8bqtNaSgcLgTU\nw0iRty3lUF3m7B62LQz53KybhRmrnmJh\n-----END CERTIFICATE-----\n",
+            "display": "test-user cert",
+            "created": "2026-03-25T18:23:46.000Z",
+            "lastModified": "2026-03-25T18:23:46.000Z",
+            "hasProxyCertificate": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "c2faf772-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:46.000Z",
+        "lastModified": "2026-03-25T18:23:46.000Z",
+        "location": "https://iam.test.example/scim/Users/c2faf772-2877-11f1-8d29-364a3910c199",
+        "resourceType": "User"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:User",
+        "urn:indigo-dc:scim:schemas:IndigoUser"
+      ],
+      "userName": "test-user-unprivileged",
+      "name": {
+        "familyName": "User",
+        "formatted": "TestUnprivilegedDpps User",
+        "givenName": "TestUnprivilegedDpps"
+      },
+      "displayName": "test-user-unprivileged",
+      "active": true,
+      "emails": [
+        {
+          "type": "work",
+          "value": "unprivileged-dpps@test.example",
+          "primary": true
+        }
+      ],
+      "groups": [
+        {
+          "display": "alt_ctao.dpps.test",
+          "value": "c2fbf3ed-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2fbf3ed-2877-11f1-8d29-364a3910c199"
+        }
+      ],
+      "urn:indigo-dc:scim:schemas:IndigoUser": {
+        "certificates": [
+          {
+            "primary": true,
+            "subjectDn": "CN=DPPS User Unprivileged",
+            "issuerDn": "CN=DPPS Development CA",
+            "pemEncodedCertificate": "-----BEGIN CERTIFICATE-----\nMIIDITCCAgmgAwIBAgIUWSpm66BDmQ5S3F5islg8y3DJvfgwDQYJKoZIhvcNAQEL\nBQAwHjEcMBoGA1UEAwwTRFBQUyBEZXZlbG9wbWVudCBDQTAgFw0yNjAzMjUxODIx\nMjNaGA8yMDUwMTExNDE4MjEyM1owITEfMB0GA1UEAwwWRFBQUyBVc2VyIFVucHJp\ndmlsZWdlZDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKOCSd/opqET\nlM8tyKbi9t92/1AIMusbdJs8LwR1v+VfugemxtUU0VcMkb5/8i++ey7UJ/Rdj/1S\n9DqSeglZ+7Mr3Qf6c56vo5SFCWOYsxILXFqosi3hCijGpCIww7yaJR8YgpS1xPLx\nu+Lml9pQbZD/11kuGTMUQRZEtiqWtO58GJRW2WRZoofkHGn7+oQgVi6XrK2o/77I\nZ2WSf1eGra/AKP9PyVghBAOC2Sancjqmh3z8TYBHQiIQA/8Ef+BXwj9+QecP2+5X\ndkoq+dZhmdHBwU87+mT7vYbRfGNAOAyiCIwSk8ChqZXLedh6RtJfIbSnxZfdHVuD\n7pxW9qRiawsCAwEAAaNSMFAwDgYDVR0PAQH/BAQDAgWgMB0GA1UdDgQWBBShLiEa\nd3IgXbfaaFZM8m+Sa5urzTAfBgNVHSMEGDAWgBTyRJfbujDOhAyY6yhE9z60XFnf\nqDANBgkqhkiG9w0BAQsFAAOCAQEAhEG2PawoXSRVqdXAZ1J083WazLdlMEFwIbO8\nKwuf7MQ6RaJGABjkIGu3nC10zV12MLhLEUSU8376HGXXuTha0UGKhL8ESLQJHpy+\n4DNkRVARz5qgGl26BE+r6m1rl7n+6Q7kj191OjYc1BeVAR3iQ04+GYqzOo5YgDWh\nxxKCvX9uLv0XAbXV7WvoDpOUMQlhof45ADCKciOfhq5k/tvtyywFHHZw2Ixi7PYc\n2tYqya9drvYw+Fkx4D2OthtHkE2V3lmtHyRpkT3H5NuotyB0cmuMrtRSgRbaj6UK\nTyIR+/UTELgoNLriv2xeufEucysh+9U7WsQnKPrnh12MkIRvAg==\n-----END CERTIFICATE-----\n",
+            "display": "test-user-unprivileged cert",
+            "created": "2026-03-25T18:23:46.000Z",
+            "lastModified": "2026-03-25T18:23:46.000Z",
+            "hasProxyCertificate": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "c31479ae-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:46.000Z",
+        "lastModified": "2026-03-25T18:23:46.000Z",
+        "location": "https://iam.test.example/scim/Users/c31479ae-2877-11f1-8d29-364a3910c199",
+        "resourceType": "User"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:User",
+        "urn:indigo-dc:scim:schemas:IndigoUser"
+      ],
+      "userName": "test-user-non-dpps",
+      "name": {
+        "familyName": "User",
+        "formatted": "TestNonDpps User",
+        "givenName": "TestNonDpps"
+      },
+      "displayName": "test-user-non-dpps",
+      "active": true,
+      "emails": [
+        {
+          "type": "work",
+          "value": "non-dpps@test.example",
+          "primary": true
+        }
+      ],
+      "urn:indigo-dc:scim:schemas:IndigoUser": {
+        "certificates": [
+          {
+            "primary": true,
+            "subjectDn": "CN=Non-DPPS User",
+            "issuerDn": "CN=DPPS Development CA",
+            "pemEncodedCertificate": "-----BEGIN CERTIFICATE-----\nMIIDGDCCAgCgAwIBAgIUWSpm66BDmQ5S3F5islg8y3DJvfkwDQYJKoZIhvcNAQEL\nBQAwHjEcMBoGA1UEAwwTRFBQUyBEZXZlbG9wbWVudCBDQTAgFw0yNjAzMjUxODIx\nMjNaGA8yMDUwMTExNDE4MjEyM1owGDEWMBQGA1UEAwwNTm9uLURQUFMgVXNlcjCC\nASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAKtok+yBFBXw2Llz31eHv13e\nws+y0GTG75anhkJ78DBVyrbCXYY9CuGsXFuMDFEvzYtCf6+rCyR9HHkMLurbRQOO\nuoVcLymZ5ty4lepv8p3u4/KVdvwFPODsY0drJyGCKcPahp/JIFzNKnr5vyV+NOUa\nYyjRKAO44k+SJWmzap8YI9/IsXvTyCejdyTX6MMzVNB5vlILFSZhn/VJLbkXOKAQ\nriqMo+RjhaLG4NfzfOVTDHX2qmLkFGkj6ReNpEm1z9y1pzmYg52qH7d0kZ9Kpl47\n5FThf4lvfU4tu+2pcunrFkoa5xyemBmfJpiaQVZqNJ3Cdmh3+oQTS/VdpiaLDgUC\nAwEAAaNSMFAwDgYDVR0PAQH/BAQDAgWgMB0GA1UdDgQWBBRfXrotnG53/9r4iwMO\nAbvdaBUedzAfBgNVHSMEGDAWgBTyRJfbujDOhAyY6yhE9z60XFnfqDANBgkqhkiG\n9w0BAQsFAAOCAQEANDPrAef9+sWUqti21MwcnJ+zAnU2eY32tcUUvO+JsDdqDL/U\nlJCfAMwmHaZpmRj3G0pzvUKIlgHdRKvUaLPhTZovwaZ2ftwBHVBWSM5J+oY0JYzp\nvnCyIs//7/eetkZVoUt5+armtmmtg7zL06ZN9sUeHoadJCQ07Q5MGCoQuc0NpcUx\n1pgQk0fckgJCr4mNlBz0PGu291vYOKDpK0tICvQIaG9f2Cu7UBRiIGaIyjeypGUr\n9Il/XdGtCJ72GB4EvkWSBD8zi/p/icCX5ISYP++bpgjtiDx7UplNul9C8LsFraHr\na4PUfGO6vgi/J+oQ6f5nHI5TnCSrdVTZcSufLw==\n-----END CERTIFICATE-----\n",
+            "display": "test-user-non-dpps cert",
+            "created": "2026-03-25T18:23:46.000Z",
+            "lastModified": "2026-03-25T18:23:46.000Z",
+            "hasProxyCertificate": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "c32c9b29-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:46.000Z",
+        "lastModified": "2026-03-25T18:23:46.000Z",
+        "location": "https://iam.test.example/scim/Users/c32c9b29-2877-11f1-8d29-364a3910c199",
+        "resourceType": "User"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:User",
+        "urn:indigo-dc:scim:schemas:IndigoUser"
+      ],
+      "userName": "admin-user",
+      "name": {
+        "familyName": "User",
+        "formatted": "TestAdmin User",
+        "givenName": "TestAdmin"
+      },
+      "displayName": "admin-user",
+      "active": true,
+      "emails": [
+        {
+          "type": "work",
+          "value": "dpps@test.example",
+          "primary": true
+        }
+      ],
+      "groups": [
+        {
+          "display": "ctao.dpps.test",
+          "value": "c2c8a08e-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2c8a08e-2877-11f1-8d29-364a3910c199"
+        },
+        {
+          "display": "ctao.dpps.test/dpps/archive/metadata-manager",
+          "value": "c2ca030f-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2ca030f-2877-11f1-8d29-364a3910c199"
+        },
+        {
+          "display": "ctao.dpps.test/dpps/pipelines/user",
+          "value": "c2c9b71a-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2c9b71a-2877-11f1-8d29-364a3910c199"
+        },
+        {
+          "display": "ctao.dpps.test/dpps/pipelines/manager",
+          "value": "c2c9ceea-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2c9ceea-2877-11f1-8d29-364a3910c199"
+        },
+        {
+          "display": "ctao.dpps.test/dpps/archive/manager",
+          "value": "c2c9ed94-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2c9ed94-2877-11f1-8d29-364a3910c199"
+        },
+        {
+          "display": "ctao.dpps.test/dpps/dataquality/user",
+          "value": "c2ca135c-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2ca135c-2877-11f1-8d29-364a3910c199"
+        },
+        {
+          "display": "ctao.dpps.test/dpps/manager",
+          "value": "c2c99745-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2c99745-2877-11f1-8d29-364a3910c199"
+        },
+        {
+          "display": "ctao.dpps.test/dpps/user",
+          "value": "c2c9195b-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2c9195b-2877-11f1-8d29-364a3910c199"
+        },
+        {
+          "display": "ctao.dpps.test/dpps/archive/user",
+          "value": "c2c9e1e3-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2c9e1e3-2877-11f1-8d29-364a3910c199"
+        },
+        {
+          "display": "ctao.dpps.test/dpps/dataquality/manager",
+          "value": "c2ca1d3e-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2ca1d3e-2877-11f1-8d29-364a3910c199"
+        }
+      ],
+      "urn:indigo-dc:scim:schemas:IndigoUser": {}
+    },
+    {
+      "id": "c3452356-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:46.000Z",
+        "lastModified": "2026-03-25T18:23:46.000Z",
+        "location": "https://iam.test.example/scim/Users/c3452356-2877-11f1-8d29-364a3910c199",
+        "resourceType": "User"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:User",
+        "urn:indigo-dc:scim:schemas:IndigoUser"
+      ],
+      "userName": "test-user-non-ctao",
+      "name": {
+        "familyName": "User",
+        "formatted": "TestNonCTAO User",
+        "givenName": "TestNonCTAO"
+      },
+      "displayName": "test-user-non-ctao",
+      "active": true,
+      "emails": [
+        {
+          "type": "work",
+          "value": "non-ctao@test.example",
+          "primary": true
+        }
+      ],
+      "groups": [
+        {
+          "display": "non-ctao.test",
+          "value": "c3454859-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c3454859-2877-11f1-8d29-364a3910c199"
+        }
+      ],
+      "urn:indigo-dc:scim:schemas:IndigoUser": {
+        "certificates": [
+          {
+            "primary": true,
+            "subjectDn": "CN=Non-CTAO User",
+            "issuerDn": "CN=DPPS Development CA",
+            "pemEncodedCertificate": "-----BEGIN CERTIFICATE-----\nMIIDGDCCAgCgAwIBAgIUWSpm66BDmQ5S3F5islg8y3DJvfowDQYJKoZIhvcNAQEL\nBQAwHjEcMBoGA1UEAwwTRFBQUyBEZXZlbG9wbWVudCBDQTAgFw0yNjAzMjUxODIx\nMjNaGA8yMDUwMTExNDE4MjEyM1owGDEWMBQGA1UEAwwNTm9uLUNUQU8gVXNlcjCC\nASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAL2njE2nEZPpa7Fx/ZkmEhYV\nj0+CCcv6v52pZf/1qbDnYE/q84ceDL179YQkPRVG8PPMRxxosfTRVYJ2IYwdS0n2\nzoNpt73sXgxNLkvVqnqqnrK3m7zp1b2PvCVNCz782ZfgCcjRyBFx8Zt648scE63P\nRjByCIW4YHY5U4DlRq+sIWgJHHe62IqPaVXkwB6dL0Pw++H7KMfasGBlQjkLR2Eb\nMuhMIA3mVi3xu6wdoRcqV0AUHRY/C/L8tv3x2m3tFmv75ty50Uf63jua3fRJlQhY\niJUlzWLEslLjRaRWuKHrptO+0iqU5LLr7kvFcbLWRa60EdpJ/ceIfYkt1Zr7+O8C\nAwEAAaNSMFAwDgYDVR0PAQH/BAQDAgWgMB0GA1UdDgQWBBRWQF2BvYfO9A5ipCOH\nLXOEUIyTEDAfBgNVHSMEGDAWgBTyRJfbujDOhAyY6yhE9z60XFnfqDANBgkqhkiG\n9w0BAQsFAAOCAQEAWFiL5fCk/m+HPMo1A7kMr8zFjuAGp5Lnd57VlMzzJGI+sq+f\nMGnm/af2QXKig4hsl90B5aFOy6Fb0tQuBncq4h2jC9aL96HHM47MiuZoXV+UtBOK\nVKGz7fxoR1EdU8ljeYKRu6919/clXmgiE/i48D2y71d8OTGT56dwZz9FmrDgLi8N\nNdCmN/pv3ptQZbQNRTjlisd26YdwOYWtmZzFt3BL13AmUVWdExsaH6d6jJ1qHAKH\nOWVqvljoctTkUR05z1CeOLeGNWL/QPicX1nWwaEachuQlSND/c8A//V1MEJ3wBTs\nDTWS6ADDKMdj43h9YFpJjg/xzgzBK3BsoLZ+Lw==\n-----END CERTIFICATE-----\n",
+            "display": "test-user-non-ctao cert",
+            "created": "2026-03-25T18:23:46.000Z",
+            "lastModified": "2026-03-25T18:23:46.000Z",
+            "hasProxyCertificate": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "19e3b6be-2879-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:33:21.000Z",
+        "lastModified": "2026-03-25T18:33:21.000Z",
+        "location": "https://iam.test.example/scim/Users/19e3b6be-2879-11f1-8d29-364a3910c199",
+        "resourceType": "User"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:User",
+        "urn:indigo-dc:scim:schemas:IndigoUser"
+      ],
+      "userName": "dpps-unprivileged-user",
+      "name": {
+        "familyName": "User",
+        "formatted": "DPPS Unprivileged User",
+        "givenName": "DPPS Unprivileged"
+      },
+      "displayName": "dpps-unprivileged-user",
+      "active": true,
+      "emails": [
+        {
+          "type": "work",
+          "value": "dpps@test.example",
+          "primary": true
+        }
+      ],
+      "groups": [
+        {
+          "display": "ctao.dpps.test",
+          "value": "c2c8a08e-2877-11f1-8d29-364a3910c199",
+          "$ref": "https://iam.test.example/scim/Groups/c2c8a08e-2877-11f1-8d29-364a3910c199"
+        }
+      ],
+      "urn:indigo-dc:scim:schemas:IndigoUser": {}
+    }
+  ],
+  "groups": [
+    {
+      "id": "c2c8a08e-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2c8a08e-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test",
+        "labels": null
+      }
+    },
+    {
+      "id": "c2c8a7e0-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2c8a7e0-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test/dpps",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test/dpps",
+        "labels": null
+      }
+    },
+    {
+      "id": "c2c9195b-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2c9195b-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test/dpps/user",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test/dpps/user",
+        "labels": [
+          {
+            "prefix": null,
+            "name": "voms.role",
+            "value": null
+          },
+          {
+            "prefix": null,
+            "name": "wlcg.optional-group",
+            "value": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "c2c99745-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2c99745-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test/dpps/manager",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test/dpps/manager",
+        "labels": [
+          {
+            "prefix": null,
+            "name": "voms.role",
+            "value": null
+          },
+          {
+            "prefix": null,
+            "name": "wlcg.optional-group",
+            "value": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "c2c9a585-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2c9a585-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test/dpps/operator",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test/dpps/operator",
+        "labels": [
+          {
+            "prefix": null,
+            "name": "voms.role",
+            "value": null
+          },
+          {
+            "prefix": null,
+            "name": "wlcg.optional-group",
+            "value": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "c2c9b17f-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2c9b17f-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test/dpps/pipelines",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test/dpps/pipelines",
+        "labels": null
+      }
+    },
+    {
+      "id": "c2c9b71a-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2c9b71a-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test/dpps/pipelines/user",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test/dpps/pipelines/user",
+        "labels": [
+          {
+            "prefix": null,
+            "name": "voms.role",
+            "value": null
+          },
+          {
+            "prefix": null,
+            "name": "wlcg.optional-group",
+            "value": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "c2c9c2d8-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2c9c2d8-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test/dpps/pipelines/expert",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test/dpps/pipelines/expert",
+        "labels": [
+          {
+            "prefix": null,
+            "name": "voms.role",
+            "value": null
+          },
+          {
+            "prefix": null,
+            "name": "wlcg.optional-group",
+            "value": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "c2c9ceea-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2c9ceea-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test/dpps/pipelines/manager",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test/dpps/pipelines/manager",
+        "labels": [
+          {
+            "prefix": null,
+            "name": "voms.role",
+            "value": null
+          },
+          {
+            "prefix": null,
+            "name": "wlcg.optional-group",
+            "value": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "c2c9dbb7-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2c9dbb7-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test/dpps/archive",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test/dpps/archive",
+        "labels": null
+      }
+    },
+    {
+      "id": "c2c9e1e3-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2c9e1e3-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test/dpps/archive/user",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test/dpps/archive/user",
+        "labels": [
+          {
+            "prefix": null,
+            "name": "voms.role",
+            "value": null
+          },
+          {
+            "prefix": null,
+            "name": "wlcg.optional-group",
+            "value": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "c2c9ed94-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2c9ed94-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test/dpps/archive/manager",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test/dpps/archive/manager",
+        "labels": [
+          {
+            "prefix": null,
+            "name": "voms.role",
+            "value": null
+          },
+          {
+            "prefix": null,
+            "name": "wlcg.optional-group",
+            "value": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "c2c9f89b-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2c9f89b-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test/dpps/archive/producer",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test/dpps/archive/producer",
+        "labels": [
+          {
+            "prefix": null,
+            "name": "voms.role",
+            "value": null
+          },
+          {
+            "prefix": null,
+            "name": "wlcg.optional-group",
+            "value": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "c2ca030f-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2ca030f-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test/dpps/archive/metadata-manager",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test/dpps/archive/metadata-manager",
+        "labels": [
+          {
+            "prefix": null,
+            "name": "voms.role",
+            "value": null
+          },
+          {
+            "prefix": null,
+            "name": "wlcg.optional-group",
+            "value": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "c2ca0dbc-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2ca0dbc-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test/dpps/dataquality",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test/dpps/dataquality",
+        "labels": null
+      }
+    },
+    {
+      "id": "c2ca135c-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2ca135c-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test/dpps/dataquality/user",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test/dpps/dataquality/user",
+        "labels": [
+          {
+            "prefix": null,
+            "name": "voms.role",
+            "value": null
+          },
+          {
+            "prefix": null,
+            "name": "wlcg.optional-group",
+            "value": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "c2ca1d3e-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:45.000Z",
+        "lastModified": "2026-03-25T18:23:45.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2ca1d3e-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "ctao.dpps.test/dpps/dataquality/manager",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group ctao.dpps.test/dpps/dataquality/manager",
+        "labels": [
+          {
+            "prefix": null,
+            "name": "voms.role",
+            "value": null
+          },
+          {
+            "prefix": null,
+            "name": "wlcg.optional-group",
+            "value": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "c2fbf3ed-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:46.000Z",
+        "lastModified": "2026-03-25T18:23:46.000Z",
+        "location": "https://iam.test.example/scim/Groups/c2fbf3ed-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "alt_ctao.dpps.test",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group alt_ctao.dpps.test",
+        "labels": null
+      }
+    },
+    {
+      "id": "c3454859-2877-11f1-8d29-364a3910c199",
+      "meta": {
+        "created": "2026-03-25T18:23:46.000Z",
+        "lastModified": "2026-03-25T18:23:46.000Z",
+        "location": "https://iam.test.example/scim/Groups/c3454859-2877-11f1-8d29-364a3910c199",
+        "resourceType": "Group"
+      },
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Group",
+        "urn:indigo-dc:scim:schemas:IndigoGroup"
+      ],
+      "displayName": "non-ctao.test",
+      "urn:indigo-dc:scim:schemas:IndigoGroup": {
+        "parentGroup": null,
+        "description": "Group non-ctao.test",
+        "labels": null
+      }
+    }
+  ]
+}
