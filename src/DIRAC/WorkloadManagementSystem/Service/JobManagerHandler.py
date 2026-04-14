@@ -14,7 +14,6 @@ from pydantic import ValidationError
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getVOForGroup
-from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
@@ -23,6 +22,7 @@ from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.DB.StatusUtils import kill_delete_jobs
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     RIGHT_DELETE,
     RIGHT_KILL,
@@ -31,7 +31,6 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     RIGHT_SUBMIT,
     JobPolicy,
 )
-from DIRAC.WorkloadManagementSystem.DB.StatusUtils import kill_delete_jobs
 from DIRAC.WorkloadManagementSystem.Utilities.JobModel import JobDescriptionModel
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import rescheduleJobs
@@ -45,31 +44,34 @@ class JobManagerHandlerMixin:
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         """Initialization of DB objects and OptimizationMind"""
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobDB", "JobDB")
+        if not result["OK"]:
+            return result
+        cls.jobDB = result["Value"](parentLogger=cls.log)
+
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobLoggingDB", "JobLoggingDB")
+        if not result["OK"]:
+            return result
+        cls.jobLoggingDB = result["Value"](parentLogger=cls.log)
+
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.TaskQueueDB", "TaskQueueDB")
+        if not result["OK"]:
+            return result
+        cls.taskQueueDB = result["Value"](parentLogger=cls.log)
+
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotAgentsDB", "PilotAgentsDB")
+        if not result["OK"]:
+            return result
+        cls.pilotAgentsDB = result["Value"](parentLogger=cls.log)
+
         try:
-            result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobDB", "JobDB")
+            result = ObjectLoader().loadObject("StorageManagementSystem.DB.StorageManagementDB", "StorageManagementDB")
             if not result["OK"]:
                 return result
-            cls.jobDB = result["Value"](parentLogger=cls.log)
+            cls.storageManagementDB = result["Value"]()
+        except RuntimeError:
+            cls.storageManagementDB = None
 
-            result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobLoggingDB", "JobLoggingDB")
-            if not result["OK"]:
-                return result
-            cls.jobLoggingDB = result["Value"](parentLogger=cls.log)
-
-            result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.TaskQueueDB", "TaskQueueDB")
-            if not result["OK"]:
-                return result
-            cls.taskQueueDB = result["Value"](parentLogger=cls.log)
-
-            result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotAgentsDB", "PilotAgentsDB")
-            if not result["OK"]:
-                return result
-            cls.pilotAgentsDB = result["Value"](parentLogger=cls.log)
-
-        except RuntimeError as excp:
-            return S_ERROR(f"Can't connect to DB: {excp!r}")
-
-        cls.msgClient = MessageClient("WorkloadManagement/OptimizationMind")
         result = cls.msgClient.connect(JobManager=True)
         if not result["OK"]:
             cls.log.warn("Cannot connect to OptimizationMind!", result["Message"])
@@ -464,6 +466,7 @@ class JobManagerHandlerMixin:
             jobdb=self.jobDB,
             taskqueuedb=self.taskQueueDB,
             pilotagentsdb=self.pilotAgentsDB,
+            storagemanagementDB=self.storageManagementDB,
         )
 
         result["requireProxyUpload"] = len(ownerJobList) > 0 and self.__checkIfProxyUploadIsRequired()
@@ -501,6 +504,7 @@ class JobManagerHandlerMixin:
             jobdb=self.jobDB,
             taskqueuedb=self.taskQueueDB,
             pilotagentsdb=self.pilotAgentsDB,
+            storagemanagementDB=self.storageManagementDB,
         )
 
         result["requireProxyUpload"] = len(ownerJobList) > 0 and self.__checkIfProxyUploadIsRequired()

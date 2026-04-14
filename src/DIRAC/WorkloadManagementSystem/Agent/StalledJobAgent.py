@@ -41,6 +41,7 @@ class StalledJobAgent(AgentModule):
         self.logDB = None
         self.taskQueueDB = None
         self.pilotAgentsDB = None
+        self.storageManagementDB = None
         self.matchedTime = 7200
         self.rescheduledTime = 600
         self.submittingTime = 300
@@ -71,6 +72,14 @@ class StalledJobAgent(AgentModule):
         if not result["OK"]:
             return result
         self.pilotAgentsDB = result["Value"]()
+
+        try:
+            result = ObjectLoader().loadObject("StorageManagementSystem.DB.StorageManagementDB", "StorageManagementDB")
+            if not result["OK"]:
+                return result
+            self.storageManagementDB = result["Value"]()
+        except RuntimeError:
+            pass
 
         # getting parameters
 
@@ -261,6 +270,7 @@ class StalledJobAgent(AgentModule):
                 jobdb=self.jobDB,
                 taskqueuedb=self.taskQueueDB,
                 pilotagentsdb=self.pilotAgentsDB,
+                storagemanagementdb=self.storageManagementDB,
             )
             if not res["OK"]:
                 self.log.error("Failed to kill job", jobID)
