@@ -57,6 +57,7 @@ class JobCleaningAgent(AgentModule):
         self.taskQueueDB = None
         self.pilotAgentsDB = None
         self.sandboxDB = None
+        self.storageManagementDB = None
 
         self.maxJobsAtOnce = 500
         self.prodTypes = []
@@ -87,6 +88,14 @@ class JobCleaningAgent(AgentModule):
         if not result["OK"]:
             return result
         self.sandboxDB = result["Value"]()
+
+        try:
+            result = ObjectLoader().loadObject("StorageManagementSystem.DB.StorageManagementDB", "StorageManagementDB")
+            if not result["OK"]:
+                return result
+            self.storageManagementDB = result["Value"]()
+        except RuntimeError:
+            pass
 
         agentTSTypes = self.am_getOption("ProductionTypes", [])
         if agentTSTypes:
@@ -263,6 +272,7 @@ class JobCleaningAgent(AgentModule):
                     jobdb=self.jobDB,
                     taskqueuedb=self.taskQueueDB,
                     pilotagentsdb=self.pilotAgentsDB,
+                    storagemanagementdb=self.storageManagementDB,
                 )
             if not result["OK"]:
                 self.log.error(
