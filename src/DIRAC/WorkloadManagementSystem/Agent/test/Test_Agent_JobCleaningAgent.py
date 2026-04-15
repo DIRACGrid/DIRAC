@@ -37,11 +37,12 @@ def jca(mocker):
             "TaskQueueDB": MagicMock(),
             "PilotAgentsDB": MagicMock(),
             "SandboxMetadataDB": MagicMock(),
+            "StorageManagementDB": MagicMock(),
         }
         return {"OK": True, "Value": lambda: mocks[class_name]}
 
     mocker.patch(
-        "DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.ObjectLoader.loadObject",
+        "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.ObjectLoader.loadObject",
         side_effect=mock_load_object,
     )
     jca = JobCleaningAgent()
@@ -147,11 +148,12 @@ def test_deleteJobOversizedSandbox(mocker, inputs, params, expected):
             "TaskQueueDB": MagicMock(),
             "PilotAgentsDB": MagicMock(),
             "SandboxMetadataDB": MagicMock(),
+            "StorageManagementDB": MagicMock(),
         }
         return {"OK": True, "Value": lambda: mocks[class_name]}
 
     mocker.patch(
-        "DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.ObjectLoader.loadObject",
+        "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.ObjectLoader.loadObject",
         side_effect=mock_load_object,
     )
     jobCleaningAgent = JobCleaningAgent()
