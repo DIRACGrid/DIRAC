@@ -68,7 +68,7 @@ from urllib.parse import urlparse
 
 from fabric import Connection
 from invoke.exceptions import CommandTimedOut
-from paramiko.ssh_exception import SSHException
+from paramiko.ssh_exception import NoValidConnectionsError, SSHException
 
 import DIRAC
 from DIRAC import S_ERROR, S_OK
@@ -123,6 +123,8 @@ class SSHComputingElement(ComputingElement):
             return S_ERROR(
                 errno.ETIME, f"[{connection.host}] The command timed out. Consider increasing the timeout: {e}"
             )
+        except NoValidConnectionsError as e:
+            return S_ERROR(f"[{connection.host}] Unable to connect: {str(e)}")
         except SSHException as e:
             return S_ERROR(f"[{connection.host}] SSH error occurred: {str(e)}")
 
