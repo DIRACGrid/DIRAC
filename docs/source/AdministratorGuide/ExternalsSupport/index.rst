@@ -55,6 +55,7 @@ You can run your OpenSearch cluster without authentication, or using User name a
   - ``ca_certs`` (default:``None``)
   - ``client_key`` (default:``None``)
   - ``client_cert`` (default:``None``)
+  - ``IndexPrefix`` (default:``''``). Prefix prepended to all DIRAC-created OpenSearch indexes. The prefix will be lower case only.
 
 
 to the location::

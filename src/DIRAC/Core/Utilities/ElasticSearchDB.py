@@ -103,6 +103,7 @@ class ElasticSearchDB:
         user=None,
         password=None,
         indexPrefix="",
+        globalIndexPrefix="",
         useSSL=True,
         useCRT=False,
         ca_certs=None,
@@ -117,6 +118,7 @@ class ElasticSearchDB:
         :param str user: user name to access the db
         :param str password: if the db is password protected we need to provide a password
         :param str indexPrefix: it is the indexPrefix used to get all indexes
+        :param str globalIndexPrefix: prefix prepended to all index names and patterns
         :param bool useSSL: We can disable using secure connection. By default we use secure connection.
         :param bool useCRT: Use certificates.
         :param str ca_certs: CA certificates bundle.
@@ -125,6 +127,7 @@ class ElasticSearchDB:
         """
 
         self._connected = False
+        self.globalIndexPrefix = globalIndexPrefix
         if user and password:
             sLog.debug("Specified username and password")
             password = urlparse.quote_plus(password)
@@ -191,6 +194,43 @@ class ElasticSearchDB:
         except ElasticConnectionError as e:
             sLog.error(repr(e))
 
+    @property
+    def globalIndexPrefix(self) -> str:
+        """Global prefix prepended to all index names and patterns."""
+        return self._globalIndexPrefix
+
+    @globalIndexPrefix.setter
+    def globalIndexPrefix(self, value: str):
+        self._globalIndexPrefix = (value or "").strip().lower()
+
+    def _withGlobalPrefix(self, indexName):
+        """Prepend the global index prefix to an index name or pattern."""
+        if not self._globalIndexPrefix:
+            return indexName
+
+        prefixedTokens = []
+        for token in indexName.split(","):
+            strippedToken = token.strip()
+            if not strippedToken:
+                prefixedTokens.append(strippedToken)
+                continue
+
+            excluded = strippedToken.startswith("-")
+            if excluded:
+                strippedToken = strippedToken[1:]
+
+            if strippedToken == "_all":
+                strippedToken = "*"
+
+            if not strippedToken.startswith(self._globalIndexPrefix):
+                strippedToken = f"{self._globalIndexPrefix}{strippedToken}"
+
+            if excluded:
+                strippedToken = f"-{strippedToken}"
+            prefixedTokens.append(strippedToken)
+
+        return ",".join(prefixedTokens)
+
     @ifConnected
     def addIndexTemplate(
         self, name: str, index_patterns: list, mapping: dict, priority: int = 1, settings: dict = None
@@ -204,6 +244,7 @@ class ElasticSearchDB:
         """
         if settings is None:
             settings = {"index": {"number_of_shards": 1, "number_of_replicas": 1}}
+        index_patterns = [self._withGlobalPrefix(pattern) for pattern in index_patterns]
         body = {
             "index_patterns": index_patterns,
             "priority": priority,
@@ -225,6 +266,7 @@ class ElasticSearchDB:
         :param dict query: It is the query in OpenSearch DSL language
 
         """
+        index = self._withGlobalPrefix(index)
         try:
             esDSLQueryResult = self.client.search(index=index, body=query)
             return S_OK(esDSLQueryResult)
@@ -247,6 +289,7 @@ class ElasticSearchDB:
         if not index or not query:
             return S_ERROR("Missing index or query")
 
+        index = self._withGlobalPrefix(index)
         try:
             if updateByQuery:
                 esDSLQueryResult = self.client.update_by_query(index=index, body=query)
@@ -263,6 +306,7 @@ class ElasticSearchDB:
         :param index: name of the index
         :param docID: document ID
         """
+        index = self._withGlobalPrefix(index)
         sLog.debug(f"Retrieving document {docID} in index {index}")
         try:
             return S_OK(self.client.get(index=index, id=docID)["_source"])
@@ -280,7 +324,7 @@ class ElasticSearchDB:
         :param docIDs: document IDs
         """
         sLog.debug(f"Retrieving documents {docIDs}")
-        docs = [{"_index": indexFunc(docID, vo), "_id": docID} for docID in docIDs]
+        docs = [{"_index": self._withGlobalPrefix(indexFunc(docID, vo)), "_id": docID} for docID in docIDs]
         try:
             response = self.client.mget(body={"docs": docs})
         except RequestError as re:
@@ -298,6 +342,7 @@ class ElasticSearchDB:
         :param body: The request definition requires either `script` or
             partial `doc`
         """
+        index = self._withGlobalPrefix(index)
         sLog.debug(f"Updating document {docID} in index {index}")
         try:
             self.client.update(index=index, id=docID, body=body)
@@ -317,6 +362,7 @@ class ElasticSearchDB:
         :param index: name of the index
         :param docID: document ID
         """
+        index = self._withGlobalPrefix(index)
         sLog.debug(f"Deleting document {docID} in index {index}")
         try:
             return S_OK(self.client.delete(index=index, id=docID))
@@ -333,6 +379,7 @@ class ElasticSearchDB:
         :param index: name of the index
         :param docID: document ID
         """
+        index = self._withGlobalPrefix(index)
         sLog.debug(f"Checking if document {docID} in index {index} exists")
         return self.client.exists(index=index, id=docID)
 
@@ -341,6 +388,7 @@ class ElasticSearchDB:
         """
         it returns the object which can be used for retreiving certain value from the DB
         """
+        indexname = self._withGlobalPrefix(indexname)
         return Search(using=self.client, index=indexname)
 
     def _Q(self, name_or_query="match", **params):
@@ -361,8 +409,7 @@ class ElasticSearchDB:
         """
         It returns the available indexes...
         """
-        if not indexName:
-            indexName = ""
+        indexName = self._withGlobalPrefix(indexName) if indexName else self.globalIndexPrefix
         sLog.debug(f"Getting indices alias of {indexName}")
         # we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.
         return list(self.client.indices.get_alias(index=f"{indexName}*"))
@@ -376,6 +423,7 @@ class ElasticSearchDB:
         :return: S_OK or S_ERROR
         """
         result = []
+        indexName = self._withGlobalPrefix(indexName)
         try:
             sLog.debug("Getting mappings for ", indexName)
             result = self.client.indices.get_mapping(index=indexName)
@@ -407,6 +455,7 @@ class ElasticSearchDB:
         :param str indexName: the name of the index
         :returns: S_OK/S_ERROR if the request is successful
         """
+        indexName = self._withGlobalPrefix(indexName)
         sLog.debug(f"Checking existance of index {indexName}")
         try:
             return S_OK(self.client.indices.exists(index=indexName))
@@ -428,6 +477,7 @@ class ElasticSearchDB:
         else:
             sLog.warn("The period is not provided, so using non-periodic indexes names")
             fullIndex = indexPrefix
+        fullIndex = self._withGlobalPrefix(fullIndex)
 
         try:
             if not mapping:
@@ -444,6 +494,7 @@ class ElasticSearchDB:
         """
         :param str indexName: the name of the index to be deleted...
         """
+        indexName = self._withGlobalPrefix(indexName)
         sLog.info("Deleting index", indexName)
         try:
             retVal = self.client.indices.delete(index=indexName)
@@ -474,6 +525,7 @@ class ElasticSearchDB:
         if not indexName or not body:
             return S_ERROR("Missing index or body")
 
+        indexName = self._withGlobalPrefix(indexName)
         try:
             res = self.client.index(index=indexName, body=body, id=docID, params={"op_type": op_type})
         except (RequestError, TransportError) as e:
@@ -505,8 +557,9 @@ class ElasticSearchDB:
             indexName = self.generateFullIndexName(indexPrefix, period)
         else:
             indexName = indexPrefix
-        sLog.debug(f"Bulk indexing into {indexName} of {len(data)}")
+        sLog.debug(f"Bulk indexing into {self._withGlobalPrefix(indexName)} of {len(data)}")
 
+        # Keep existence/creation checks on the raw name path; methods apply global prefix internally.
         res = self.existingIndex(indexName)
         if not res["OK"]:
             return res
@@ -514,6 +567,9 @@ class ElasticSearchDB:
             retVal = self.createIndex(indexPrefix, mapping, period)
             if not retVal["OK"]:
                 return retVal
+
+        # Prefix exactly once for the direct bulk API call.
+        indexName = self._withGlobalPrefix(indexName)
 
         try:
             res = bulk(client=self.client, index=indexName, actions=generateDocs(data, withTimeStamp))
@@ -534,7 +590,6 @@ class ElasticSearchDB:
         :param dict orderBy: it is a dictionary in case we want to order the result {key:'desc'} or {key:'asc'}
         :returns: a list of unique value for a certain key from the dictionary.
         """
-
         query = self._Search(indexName)
 
         endDate = datetime.utcnow()
@@ -592,6 +647,7 @@ class ElasticSearchDB:
         :param str indexName: the name of the index
         :param str query: the JSON-formatted query for which we want to issue the delete
         """
+        indexName = self._withGlobalPrefix(indexName)
         try:
             self.client.delete_by_query(index=indexName, body=query)
         except Exception as inst:

@@ -34,6 +34,7 @@ class ElasticDB(DIRACDB, ElasticSearchDB):
         self.__ca_certs = dbParameters.get("ca_certs", None)
         self.__client_key = dbParameters.get("client_key", None)
         self.__client_cert = dbParameters.get("client_cert", None)
+        self.__globalIndexPrefix = dbParameters.get("IndexPrefix", "")
 
         super().__init__(
             host=self._dbHost,
@@ -41,6 +42,7 @@ class ElasticDB(DIRACDB, ElasticSearchDB):
             user=self.__user,
             password=self.__dbPassword,
             indexPrefix=indexPrefix,
+            globalIndexPrefix=self.__globalIndexPrefix,
             useSSL=self.__useSSL,
             useCRT=self.__useCRT,
             ca_certs=self.__ca_certs,

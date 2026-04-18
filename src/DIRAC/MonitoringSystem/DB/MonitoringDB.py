@@ -3,9 +3,8 @@ Wrapper on top of ElasticDB. It is used to manage the DIRAC monitoring types.
 
 **Configuration Parameters**:
 
-The following option can be set in `Systems/Monitoring/Databases/MonitoringDB`
-
-* *IndexPrefix*:  Prefix used to prepend to indexes created in the OpenSearch instance.
+The global OpenSearch index prefix can be set in
+`Systems/NoSQLDatabases/IndexPrefix`.
 
 For each monitoring types managed, the Period (how often a new index is created)
 can be defined with::
@@ -31,8 +30,6 @@ import calendar
 import time
 
 from DIRAC import S_ERROR, S_OK
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
 
@@ -45,10 +42,8 @@ class MonitoringDB(ElasticDB):
         """Standard constructor"""
 
         try:
-            section = getDatabaseSection("Monitoring/MonitoringDB")
-            indexPrefix = gConfig.getValue(f"{section}/IndexPrefix", "").lower()
             # Connecting to the ES cluster
-            super().__init__(fullName=name, indexPrefix=indexPrefix)
+            super().__init__(fullName=name)
         except RuntimeError as ex:
             self.log.error("Can't connect to MonitoringDB", repr(ex))
             raise ex
