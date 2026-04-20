@@ -1,8 +1,17 @@
-""" DowntimeCommand module will look into GOC DB to find announced downtimes for RSS-managed sites and resources.
-    If found, downtimes are added to the internal RSS cache using ResourceManagementClient.
+"""DowntimeCommand
 
-    GOCDB downtimes that are modified or deleted are also synced.
+Command to fetch and cache GOCDB downtime information for RSS-managed Sites and Resources.
+Downtimes found are stored in the DowntimeCache table via ResourceManagementClient.
+Stale or deleted GOCDB downtimes are also removed from the cache.
+
+The look-ahead window is controlled by the ``hours`` argument (read from ``self.args``,
+populated from ``/Operations/Defaults/ResourceStatus/Policies/Downtime/hours``):
+
+* ``hours = 0`` (default) — only ongoing downtimes are considered.
+* ``hours > 0``            — downtimes starting within the next ``hours`` hours are also included.
+
 """
+
 import re
 from datetime import datetime, timedelta
 from operator import itemgetter
@@ -43,7 +52,10 @@ diracToGOC_conversion = {
 
 class DowntimeCommand(Command):
     """
-    Downtime "master" Command or removed DTs.
+    Command that queries GOCDB for downtime information and caches the results.
+
+    Supports Sites, Storage Elements, FTS servers, and Computing Elements.
+    DIRAC resource types are mapped to GOCDB service types via ``diracToGOC_conversion``.
     """
 
     def __init__(self, args=None, clients=None):
@@ -54,7 +66,13 @@ class DowntimeCommand(Command):
 
     def _storeCommand(self, result):
         """
-        Stores the results of doNew method on the database.
+        Persist a list of downtime records to the DowntimeCache table.
+
+        :param list result: list of downtime dicts, each containing ``DowntimeID``,
+            ``Element``, ``Name``, ``StartDate``, ``EndDate``, ``Severity``,
+            ``Description``, ``Link``, and ``gOCDBServiceType``.
+
+        :returns: S_OK / S_ERROR from the last ``addOrModifyDowntimeCache`` call.
         """
 
         for dt in result:
@@ -73,7 +91,15 @@ class DowntimeCommand(Command):
 
     def _cleanCommand(self, element, elementNames):
         """
-        Clear Cache from expired DT.
+        Remove expired or deleted downtime entries from the DowntimeCache.
+
+        A cached entry is removed if its ``EndDate`` is in the past or if its
+        GOCDB link no longer appears in the list of current GOCDB downtimes.
+
+        :param str element: ``'Site'`` or ``'Resource'``.
+        :param list elementNames: names of the elements whose cache entries should be checked.
+
+        :returns: S_OK with a list of deletion results, or S_ERROR on DB / GOCDB failure.
         """
 
         resQuery = []
@@ -107,13 +133,28 @@ class DowntimeCommand(Command):
 
     def _prepareCommand(self):
         """
-        DowntimeCommand requires four arguments:
-        - name : <str>
-        - element : Site / Resource
-        - elementType: <str>
+        Extract and validate command arguments from ``self.args``, resolving DIRAC
+        names to their GOCDB equivalents where necessary.
 
-        If the elements are Site(s), we need to get their GOCDB names. They may
-        not have, so we ignore them if they do not have.
+        Required keys:
+
+        * ``name`` (str)        — DIRAC element name.
+        * ``element`` (str)     — ``'Site'`` or ``'Resource'``.
+        * ``elementType`` (str) — resource type (e.g. ``StorageElement``, ``ComputingElement``, ``FTS3``).
+
+        Optional key:
+
+        * ``hours`` (int) — look-ahead window in hours (default: ``None`` = ongoing only).
+
+        Name resolution:
+
+        * **Site** — converted to the GOCDB site name via ``getGOCSiteName``.
+        * **StorageElement** — resolved to one or more SE hosts; GOCDB service type
+          derived from SE type and access protocol via ``diracToGOC_conversion``.
+        * **FTS / FTS3** — resolved to the GOCDB FTS name via ``getGOCFTSName``.
+        * **ComputingElement** — GOCDB service type derived from CE type via ``diracToGOC_conversion``.
+
+        :returns: S_OK tuple ``(element, elementName, hours, gOCDBServiceType)`` or S_ERROR.
         """
 
         if "name" not in self.args:
@@ -208,19 +249,24 @@ class DowntimeCommand(Command):
 
     def doNew(self, masterParams=None):
         """
-        Gets the parameters to run, either from the master method or from its
-        own arguments.
+        Fetch current downtime information from GOCDB and store it in the cache.
 
-        For every elementName, unless it is given a list, in which case it contacts
-        the gocdb client. The server is not very stable, so in case of failure tries
-        a second time.
+        Queries GOCDB for ongoing (and optionally upcoming) downtimes for the given
+        element(s). The GOCDB server is queried twice on ``URLError`` to handle
+        transient failures. Found downtimes are stored via ``_storeCommand``; the
+        cache is cleaned of stale entries via ``_cleanCommand``.
 
-        If there are downtimes, are recorded and then returned.
+        :param masterParams: when called from ``doMaster``, a ``(element, elementNames)``
+            tuple (e.g. ``('Site', ['CERN', 'IN2P3-CC'])``); the look-ahead window is
+            taken from ``self.args.get('hours', 0)``. Pass ``None`` to use ``self.args``
+            directly (normal per-element policy evaluation path).
+
+        :returns: S_OK on success (value is ``None`` if no downtimes were found), or S_ERROR.
         """
 
         if masterParams is not None:
             element, elementNames = masterParams
-            hours = 120
+            hours = self.args.get("hours", 0)
             elementName = None
             gOCDBServiceType = None
 
@@ -293,8 +339,23 @@ class DowntimeCommand(Command):
 
     def doCache(self):
         """
-        Method that reads the cache table and tries to read from it. It will
-        return a list with one dictionary describing the DT if there are results.
+        Retrieve the most relevant downtime for this element from the DowntimeCache.
+
+        When ``hours`` is set, the target date is shifted into the future and the
+        earliest matching downtime is returned (useful for advance warning of scheduled
+        outages). When ``hours`` is ``None``, ongoing downtimes are evaluated and the
+        highest-severity, longest-lasting one is returned.
+
+        Priority when multiple downtimes overlap:
+
+        * OUTAGE takes precedence over WARNING.
+        * Among equal severity: the one ending latest wins (``hours=None`` path) or
+          the one starting earliest wins (``hours>0`` path).
+
+        :returns: S_OK with a downtime dict (keys: ``DowntimeID``, ``Element``, ``Name``,
+            ``StartDate``, ``EndDate``, ``Severity``, ``Description``, ``Link``,
+            ``gOCDBServiceType``) if a relevant downtime exists, S_OK with ``None``
+            if no downtime applies, or S_ERROR on DB failure.
         """
 
         params = self._prepareCommand()
@@ -362,10 +423,20 @@ class DowntimeCommand(Command):
             return S_OK(dtOverlapping[-1])
 
     def doMaster(self):
-        """Master method, which looks little bit spaghetti code, sorry !
-        - It gets all sites and transforms them into gocSites.
-        - It gets all the storage elements and transforms them into their hosts
-        - It gets the the CEs (FTS and file catalogs will come).
+        """
+        Refresh downtime data for all known Sites and Resources from GOCDB.
+
+        Collects:
+
+        * All GOCDB site names (from ``getGOCSites``).
+        * All SE hosts (from ``getStorageElementsHosts``).
+        * All FTS3 server hosts (from ``getFTS3Servers``).
+        * All Computing Element names (from ``getCESiteMapping``).
+
+        Calls ``doNew`` separately for Sites and Resources. Failures are recorded in
+        ``self.metrics['failed']`` but do not abort the run.
+
+        :returns: S_OK with ``self.metrics`` dict (containing a ``'failed'`` list).
         """
 
         gocSites = getGOCSites()
