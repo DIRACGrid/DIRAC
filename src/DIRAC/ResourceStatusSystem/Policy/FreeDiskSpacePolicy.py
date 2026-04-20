@@ -1,36 +1,37 @@
-""" FreeDiskSpacePolicy
+"""FreeDiskSpacePolicy
 
-   FreeDiskSpacePolicy.__bases__:
-     DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase.PolicyBase
+Policy to evaluate the free disk space of a Storage Element.
+The unit and thresholds (Banned_threshold, Degraded_threshold) are fully
+configurable via the Operations CS under
+``/Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace``.
 
 """
+
 from DIRAC import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
 
 class FreeDiskSpacePolicy(PolicyBase):
     """
-    The FreeDiskSpacePolicy class is a policy class satisfied when a SE has a
-    low occupancy.
+    Policy that proposes a new status for a Storage Element based on its free disk space.
 
-    FreeDiskSpacePolicy, given the space left at the element, proposes a new status.
+    The free space value and the thresholds (Banned_threshold, Degraded_threshold) are
+    expressed in the same unit (TB, GB or MB) as configured for the FreeDiskSpace policy
+    in the Operations CS. Default unit is TB; default thresholds are 0.1 (Banned) and 5
+    (Degraded).
     """
 
     @staticmethod
     def _evaluate(commandResult):
         """
-        Evaluate policy on SE occupancy: Use FreeDiskSpaceCommand
+        Evaluate the free disk space policy.
 
-        :Parameters:
-          **commandResult** - S_OK / S_ERROR
-            result of the command. It is expected ( iff S_OK ) a dictionary like
-            { 'Total' : .., 'Free' : ..}
+        :param dict commandResult: S_OK / S_ERROR result from FreeDiskSpaceCommand.
+            On success the value is expected to be a dict with keys:
+            ``Free``, ``Total``, ``Banned_threshold`` (optional), ``Degraded_threshold`` (optional).
 
-        :return:
-          {
-            'Status':Error|Active|Bad|Banned,
-            'Reason': Some lame statements that have to be updated
-          }
+        :returns: S_OK wrapping a dict ``{'Status': str, 'Reason': str}`` where Status is one of
+            ``Error``, ``Unknown``, ``Banned``, ``Degraded``, ``Active``.
         """
 
         result = {}
@@ -57,10 +58,10 @@ class FreeDiskSpacePolicy(PolicyBase):
 
         # Units (TB, GB, MB) may change,
         # depending on the configuration of the command in Configurations.py
-        if free < 0.1:
+        if free < commandResult.get("Banned_threshold", 0.1):
             result["Status"] = "Banned"
             result["Reason"] = "Too little free space"
-        elif free < 5:
+        elif free < commandResult.get("Degraded_threshold", 5):
             result["Status"] = "Degraded"
             result["Reason"] = "Little free space"
         else:

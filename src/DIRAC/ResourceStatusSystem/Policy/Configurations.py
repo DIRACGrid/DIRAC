@@ -1,62 +1,44 @@
-""" Configurations module
+"""Configurations module
 
-  Configuration to use policies.
+Configuration to use policies.
 
-  Follows the schema::
+Follows the schema::
 
-    <PolicyNameInCS> : {
-               'description' : <some human readable description>,
-               'module'      : <policy module name>,
-               'command'     : ( <command module name >, < command class name > ),
-               'args'        : { arguments for the command } or None
-                       }
+  <PolicyNameInCS> : {
+             'description' : <some human readable description>,
+             'module'      : <policy module name>,
+             'command'     : ( <command module name >, < command class name > ),
+             'args'        : { arguments for the command } or None
+                     }
 
 """
+
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+
 POLICIESMETA = {  # DownTime POLICIES
     "DTOngoing": {
         "description": "Ongoing and scheduled down-times",
         "module": "DowntimePolicy",
         "command": ("DowntimeCommand", "DowntimeCommand"),
-        "args": {"hours": 0, "onlyCache": True},
-    },
-    "DTScheduled1": {
-        "description": "Ongoing and scheduled down-times",
-        "module": "DowntimePolicy",
-        "command": ("DowntimeCommand", "DowntimeCommand"),
-        "args": {"hours": 1, "onlyCache": True},
-    },
-    "DTScheduled3": {
-        "description": "Ongoing and scheduled down-times",
-        "module": "DowntimePolicy",
-        "command": ("DowntimeCommand", "DowntimeCommand"),
-        "args": {"hours": 3, "onlyCache": True},
+        "args": {"hours": Operations().getValue("ResourceStatus/Policies/DTOngoing/hours", 0), "onlyCache": True},
     },
     "DTScheduled": {
         "description": "Scheduled down-times, starting in <hours>",
         "module": "DowntimePolicy",
         "command": ("DowntimeCommand", "DowntimeCommand"),
-        "args": {"hours": 12, "onlyCache": True},
+        "args": {"hours": Operations().getValue("ResourceStatus/Policies/DTScheduled/hours", 12), "onlyCache": True},
     },
-    # Free Disk Space in Terabytes
-    "FreeDiskSpaceTB": {
-        "description": "Free disk space, in TB",
+    # Free Disk Space
+    "FreeDiskSpace": {
+        "description": "Free disk space",
         "module": "FreeDiskSpacePolicy",
         "command": ("FreeDiskSpaceCommand", "FreeDiskSpaceCommand"),
-        "args": {"unit": "TB", "onlyCache": True},
-    },
-    # Free Disk Space in Gigabytes
-    "FreeDiskSpaceGB": {
-        "description": "Free disk space, in GB",
-        "module": "FreeDiskSpacePolicy",
-        "command": ("FreeDiskSpaceCommand", "FreeDiskSpaceCommand"),
-        "args": {"unit": "GB", "onlyCache": True},
-    },
-    # Free Disk Space in Megabytes
-    "FreeDiskSpaceMB": {
-        "description": "Free disk space, in MB",
-        "module": "FreeDiskSpacePolicy",
-        "command": ("FreeDiskSpaceCommand", "FreeDiskSpaceCommand"),
-        "args": {"unit": "MB", "onlyCache": True},
+        "args": {
+            "unit": Operations().getValue("ResourceStatus/Policies/FreeDiskSpace/Unit", "TB"),
+            "Banned_threshold": Operations().getValue("ResourceStatus/Policies/FreeDiskSpace/Banned_threshold", 0.1),
+            "Degraded_threshold": Operations().getValue("ResourceStatus/Policies/FreeDiskSpace/Degraded_threshold", 5),
+            "onlyCache": True,
+        },
     },
     # GGUS tickets open
     "GGUSTickets": {
