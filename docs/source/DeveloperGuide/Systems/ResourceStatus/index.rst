@@ -115,7 +115,7 @@ Cache tables for metrics used by policies.
    * - PolicyResult
      - Policy evaluation results (Element, Name, PolicyName, Status, Reason)
    * - SpaceTokenOccupancyCache
-      - Storage space usage (Endpoint, Token, Free, Total) — values stored in MB
+     - Storage space usage (Endpoint, Token, Free, Total) — values stored in MB
    * - TransferCache
      - Transfer quality metrics (SourceName, DestinationName, Metric, Value)
 
