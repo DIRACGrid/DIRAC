@@ -1,65 +1,18 @@
-"""Unit tests for SystemAdministratorHandler version normalisation logic
-and the SystemAdministratorClientCLI do_update input validation.
+"""Unit tests for SystemAdministratorHandler helper functions and
+the SystemAdministratorClientCLI do_update input validation.
 """
 
 import pytest
 from unittest.mock import MagicMock, patch
 
-
-# ---------------------------------------------------------------------------
-# Helpers – replicate the version-normalisation logic from
-# SystemAdministratorHandler.export_updateSoftware so we can test it
-# without standing up a full DIRAC service.
-# ---------------------------------------------------------------------------
-
-
-def _normalise_version(version):
-    """Mirror the normalisation applied at the top of export_updateSoftware.
-
-    Returns the normalised version string, or raises ValueError if invalid.
-    Mirrors the side-effects relevant to the directory-name derivation and
-    the pip command construction.
-    """
-    from packaging.version import Version, InvalidVersion
-
-    version = version.strip()
-    if not version:
-        raise ValueError("No version specified")
-
-    released_version = True
-    isPrerelease = False
-
-    if version.lower() in ["integration", "devel", "master", "main"]:
-        released_version = False
-        version = "DIRAC[server] @ git+https://github.com/DIRACGrid/DIRAC.git@integration"
-
-    if released_version:
-        try:
-            parsed = Version(version)
-            isPrerelease = parsed.is_prerelease
-            version = f"v{parsed}"
-        except InvalidVersion:
-            if "https://" in version:
-                released_version = False
-            else:
-                raise ValueError(f"Invalid version passed {version!r}")
-
-    return version, released_version, isPrerelease
-
-
-def _directory_from_version(version, released_version):
-    """Mirror the directory-name derivation in export_updateSoftware.
-
-    Split on the *first* "@" only (the pip package @ URL separator), strip
-    whitespace, then drop any "#egg=..." fragment.
-    """
-    if released_version:
-        return version
-    return version.split("@", 1)[1].strip().split("#")[0]
+from DIRAC.FrameworkSystem.Service.SystemAdministratorHandler import (
+    _directory_label,
+    _normalise_version,
+)
 
 
 # ---------------------------------------------------------------------------
-# Tests: version normalisation
+# Tests: _normalise_version
 # ---------------------------------------------------------------------------
 
 
@@ -73,37 +26,44 @@ class TestNormaliseVersion:
             _normalise_version("   ")
 
     def test_released_version(self):
-        version, released, pre = _normalise_version("9.0.18")
+        version, primary, released, pre = _normalise_version("9.0.18")
         assert released is True
         assert pre is False
         assert version == "v9.0.18"
+        assert primary is None
 
     def test_released_prerelease_version(self):
-        version, released, pre = _normalise_version("9.0.18a1")
+        version, primary, released, pre = _normalise_version("9.0.18a1")
         assert released is True
         assert pre is True
         assert version == "v9.0.18a1"
 
+    def test_extension_syntax_splits_primary(self):
+        version, primary, released, pre = _normalise_version("MyExtension==9.0.18")
+        assert primary == "MyExtension"
+        assert version == "v9.0.18"
+        assert released is True
+
     @pytest.mark.parametrize("keyword", ["integration", "devel", "master", "main"])
     def test_special_keywords(self, keyword):
-        version, released, pre = _normalise_version(keyword)
+        version, primary, released, pre = _normalise_version(keyword)
         assert released is False
+        assert pre is False
         assert "DIRACGrid/DIRAC" in version
         assert "@integration" in version
 
     def test_git_url_without_spaces(self):
         raw = "DIRAC[server]@git+https://github.com/fstagni/DIRAC.git@test_branch"
-        version, released, pre = _normalise_version(raw)
+        version, primary, released, pre = _normalise_version(raw)
         assert released is False
         assert version == raw
 
     def test_git_url_with_spaces_around_at(self):
-        """The CLI now sends the raw user input; leading/trailing spaces must be stripped."""
-        raw = "  DIRAC[server] @ git+https://github.com/fstagni/DIRAC.git@test_branch  "
-        version, released, pre = _normalise_version(raw)
+        """Leading/trailing whitespace is stripped; internal pip spaces are kept."""
+        raw = "DIRAC[server] @ git+https://github.com/fstagni/DIRAC.git@test_branch"
+        version, primary, released, pre = _normalise_version(f"  {raw}  ")
         assert released is False
-        # Internal spaces around "@" are preserved (pip accepts them)
-        assert version.strip() == raw.strip()
+        assert version == raw
 
     def test_invalid_version_no_url_raises(self):
         with pytest.raises(ValueError, match="Invalid version passed"):
@@ -111,34 +71,35 @@ class TestNormaliseVersion:
 
 
 # ---------------------------------------------------------------------------
-# Tests: directory derivation from version string
+# Tests: _directory_label
 # ---------------------------------------------------------------------------
 
 
-class TestDirectoryFromVersion:
+class TestDirectoryLabel:
     def test_released_version_uses_version_directly(self):
-        d = _directory_from_version("v9.0.18", released_version=True)
-        assert d == "v9.0.18"
+        assert _directory_label("v9.0.18", released_version=True) == "v9.0.18"
 
     def test_git_url_without_spaces(self):
-        """No spaces around '@' separator — branch name must be included."""
+        """Branch name after the second '@' must be preserved."""
         version = "DIRAC[server]@git+https://github.com/fstagni/DIRAC.git@test_branch"
-        d = _directory_from_version(version, released_version=False)
-        # Split on first "@" → "git+https://github.com/fstagni/DIRAC.git@test_branch"
-        assert d == "git+https://github.com/fstagni/DIRAC.git@test_branch"
+        assert (
+            _directory_label(version, released_version=False) == "git+https://github.com/fstagni/DIRAC.git@test_branch"
+        )
 
-    def test_git_url_with_spaces_around_at_separator(self):
-        """Spaces around the pip '@' separator must be stripped; branch part kept."""
-        # Simulate what the handler receives after version.strip()
+    def test_git_url_with_spaces_around_pip_separator(self):
+        """Spaces around the pip '@' separator are stripped; branch part kept."""
         version = "DIRAC[server] @ git+https://github.com/fstagni/DIRAC.git@test_branch"
-        d = _directory_from_version(version, released_version=False)
-        assert d == "git+https://github.com/fstagni/DIRAC.git@test_branch"
+        assert (
+            _directory_label(version, released_version=False) == "git+https://github.com/fstagni/DIRAC.git@test_branch"
+        )
 
     def test_git_url_with_hash_fragment(self):
-        """#egg= fragment must be stripped from directory name."""
+        """#egg= fragment must be stripped from the directory label."""
         version = "DIRAC[server]@git+https://github.com/DIRACGrid/DIRAC.git@integration#egg=DIRAC"
-        d = _directory_from_version(version, released_version=False)
-        assert d == "git+https://github.com/DIRACGrid/DIRAC.git@integration"
+        assert (
+            _directory_label(version, released_version=False)
+            == "git+https://github.com/DIRACGrid/DIRAC.git@integration"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -150,15 +111,12 @@ class TestDoUpdate:
     """Test SystemAdministratorClientCLI.do_update input validation."""
 
     def _make_cli(self):
-        from DIRAC.FrameworkSystem.Client.SystemAdministratorClientCLI import (
-            SystemAdministratorClientCLI,
-        )
+        from DIRAC.FrameworkSystem.Client.SystemAdministratorClientCLI import SystemAdministratorClientCLI
 
-        with patch("DIRAC.FrameworkSystem.Client.SystemAdministratorClientCLI.SystemAdministratorClient"):
-            cli = SystemAdministratorClientCLI.__new__(SystemAdministratorClientCLI)
-            cli.host = "localhost"
-            cli.port = 9162
-            return cli
+        cli = SystemAdministratorClientCLI.__new__(SystemAdministratorClientCLI)
+        cli.host = "localhost"
+        cli.port = 9162
+        return cli
 
     def test_empty_args_prints_usage_and_returns(self):
         cli = self._make_cli()
@@ -169,12 +127,10 @@ class TestDoUpdate:
             patch("DIRAC.FrameworkSystem.Client.SystemAdministratorClientCLI.gLogger") as mock_logger,
         ):
             cli.do_update("")
-            # Client must NOT be contacted
             mock_client_cls.assert_not_called()
-            # Usage should be printed
             assert mock_logger.notice.called
 
-    def test_whitespace_only_args_prints_usage_and_returns(self):
+    def test_whitespace_only_args_does_not_contact_server(self):
         cli = self._make_cli()
         with (
             patch(
@@ -202,8 +158,8 @@ class TestDoUpdate:
             mock_client_cls.assert_called_once_with(cli.host, cli.port)
             mock_instance.updateSoftware.assert_called_once_with("9.0.18", timeout=600)
 
-    def test_git_url_with_spaces_passes_stripped_version(self):
-        """Spaces are stripped from the outer edges but the version body is preserved."""
+    def test_git_url_with_spaces_passes_full_version_to_server(self):
+        """The version body (including internal spaces) is forwarded as-is."""
         cli = self._make_cli()
         with (
             patch(
