@@ -66,6 +66,38 @@ we cannot define the following matchParams:
 
    Code templates and examples for creating custom policies: :doc:`../../../DeveloperGuide/Systems/ResourceStatus/index`
 
+Built-in Downtime Policy
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``Downtime`` policy type evaluates GOCDB downtime data for a Site or Resource.
+Severity is mapped to RSS status as follows:
+
+* **OUTAGE** → **Banned**
+* **WARNING** → **Degraded**
+* No downtime → **Active**
+
+The look-ahead window is configurable from the Operations CS:
+
+::
+
+  /Operations/Defaults/ResourceStatus
+                          /Policies
+                              /Downtime
+                                  hours = 0   # hours to look ahead (0 = ongoing only, default)
+
+.. note::
+
+   Setting ``hours = 0`` (the default) means only downtimes that are currently ongoing
+   are considered. Setting a positive value (e.g. ``12``) also catches downtimes scheduled
+   to start within that window, which is useful for proactive status changes.
+
+Example: flag elements with downtimes starting within the next 24 hours::
+
+  /Operations/Defaults/ResourceStatus/Policies/Downtime
+  {
+    hours = 24
+  }
+
 Built-in FreeDiskSpace Policy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

@@ -16,17 +16,11 @@ Follows the schema::
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 POLICIESMETA = {  # DownTime POLICIES
-    "DTOngoing": {
-        "description": "Ongoing and scheduled down-times",
+    "Downtime": {
+        "description": "Ongoing or scheduled down-times within <hours> from now (0 = ongoing only)",
         "module": "DowntimePolicy",
         "command": ("DowntimeCommand", "DowntimeCommand"),
-        "args": {"hours": Operations().getValue("ResourceStatus/Policies/DTOngoing/hours", 0), "onlyCache": True},
-    },
-    "DTScheduled": {
-        "description": "Scheduled down-times, starting in <hours>",
-        "module": "DowntimePolicy",
-        "command": ("DowntimeCommand", "DowntimeCommand"),
-        "args": {"hours": Operations().getValue("ResourceStatus/Policies/DTScheduled/hours", 12), "onlyCache": True},
+        "args": {"hours": Operations().getValue("ResourceStatus/Policies/Downtime/hours", 0), "onlyCache": True},
     },
     # Free Disk Space
     "FreeDiskSpace": {
