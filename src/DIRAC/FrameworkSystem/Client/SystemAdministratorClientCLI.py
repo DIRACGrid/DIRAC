@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-""" System Administrator Client Command Line Interface """
+"""System Administrator Client Command Line Interface"""
 
 import atexit
 import datetime
@@ -1066,13 +1066,11 @@ class SystemAdministratorClientCLI(CLI):
 
           update <version>
         """
-        try:
-            version = args.split()[0]
-        except Exception as x:
-            gLogger.notice("ERROR: wrong input:", str(x))
+        version = args.strip()
+        if not version:
+            gLogger.notice("ERROR: no version specified")
             gLogger.notice(self.do_update.__doc__)
             return
-
         client = SystemAdministratorClient(self.host, self.port)
         gLogger.notice("Software update can take a while, please wait ...")
         result = client.updateSoftware(version, timeout=600)

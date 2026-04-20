@@ -1,34 +1,33 @@
 """SystemAdministrator service is a tool to control and monitor the DIRAC services and agents"""
 
-import socket
-import os
-import re
-import time
 import getpass
 import importlib
-import shutil
+import os
 import platform
-import tempfile
+import re
+import shutil
+import socket
 import subprocess
+import tempfile
+import time
 from datetime import datetime, timedelta
-import requests
 
 import psutil
-from packaging.version import Version, InvalidVersion
-
+import requests
 from diraccfg import CFG
+from packaging.version import InvalidVersion, Version
 
-from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger, convertToPy3VersionNumber
+from DIRAC import S_ERROR, S_OK, convertToPy3VersionNumber, gConfig, gLogger, rootPath
+from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Utilities import Os
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority, getExtensionMetadata
 from DIRAC.Core.Utilities.File import mkLink
-from DIRAC.Core.Utilities.TimeUtilities import fromString, hour, day
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
-from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.Core.Utilities.TimeUtilities import day, fromString, hour
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
@@ -263,6 +262,12 @@ class SystemAdministratorHandler(RequestHandler):
         - a git tag/branch like "DIRAC[server] @ git+https://github.com/fstagni/DIRAC.git@test_branch"
         """
         # Validate and normalise the requested version
+        # Strip surrounding whitespace and collapse any internal spaces around "@"
+        # so that both "DIRAC[server] @ git+https://..." and
+        # "DIRAC[server]@git+https://..." are accepted.
+        version = version.strip()
+        if not version:
+            return S_ERROR("No version specified")
         primaryExtension = None
         if "==" in version:
             primaryExtension, version = version.split("==")
@@ -311,7 +316,7 @@ class SystemAdministratorHandler(RequestHandler):
             installer.flush()
             self.log.info("Downloaded DIRACOS installer to", installer.name)
 
-            directory = version if released_version else version.split("@")[1].split("#")[0]
+            directory = version if released_version else version.split("@", 1)[1].strip().split("#")[0]
             newProPrefix = os.path.join(
                 rootPath,
                 "versions",
