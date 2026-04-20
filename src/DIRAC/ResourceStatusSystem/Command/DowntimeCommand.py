@@ -4,11 +4,11 @@ Command to fetch and cache GOCDB downtime information for RSS-managed Sites and 
 Downtimes found are stored in the DowntimeCache table via ResourceManagementClient.
 Stale or deleted GOCDB downtimes are also removed from the cache.
 
-The look-ahead window is controlled by the ``hours`` argument (read from ``self.args``,
-populated from ``/Operations/Defaults/ResourceStatus/Policies/Downtime/hours``):
+The look-ahead window is controlled by the ``hours`` argument read from ``self.args``,
+populated by the policy engine from ``POLICIESMETA`` defaults and any CS overrides:
 
-* ``hours = 0`` (default) — only ongoing downtimes are considered.
-* ``hours > 0``            — downtimes starting within the next ``hours`` hours are also included.
+* ``hours = 0`` — only ongoing downtimes are considered.
+* ``hours > 0`` — downtimes starting within the next ``hours`` hours are also included.
 
 """
 
@@ -144,7 +144,7 @@ class DowntimeCommand(Command):
 
         Optional key:
 
-        * ``hours`` (int) — look-ahead window in hours (default: ``None`` = ongoing only).
+        * ``hours`` (int) — look-ahead window in hours (populated from ``POLICIESMETA``).
 
         Name resolution:
 
@@ -172,9 +172,7 @@ class DowntimeCommand(Command):
         if element not in ["Site", "Resource"]:
             return S_ERROR("element is neither Site nor Resource")
 
-        hours = None
-        if "hours" in self.args:
-            hours = self.args["hours"]
+        hours = self.args.get("hours")
 
         gOCDBServiceType = None
 

@@ -28,7 +28,7 @@ class FreeDiskSpacePolicy(PolicyBase):
 
         :param dict commandResult: S_OK / S_ERROR result from FreeDiskSpaceCommand.
             On success the value is expected to be a dict with keys:
-            ``Free``, ``Total``, ``Banned_threshold`` (optional), ``Degraded_threshold`` (optional).
+            ``Free``, ``Total``, ``Banned_threshold``, ``Degraded_threshold``.
 
         :returns: S_OK wrapping a dict ``{'Status': str, 'Reason': str}`` where Status is one of
             ``Error``, ``Unknown``, ``Banned``, ``Degraded``, ``Active``.
@@ -58,10 +58,10 @@ class FreeDiskSpacePolicy(PolicyBase):
 
         # Units (TB, GB, MB) may change,
         # depending on the configuration of the command in Configurations.py
-        if free < commandResult.get("Banned_threshold", 0.1):
+        if free < commandResult["Banned_threshold"]:  # default: 0.1
             result["Status"] = "Banned"
             result["Reason"] = "Too little free space"
-        elif free < commandResult.get("Degraded_threshold", 5):
+        elif free < commandResult["Degraded_threshold"]:  # default: 5
             result["Status"] = "Degraded"
             result["Reason"] = "Little free space"
         else:

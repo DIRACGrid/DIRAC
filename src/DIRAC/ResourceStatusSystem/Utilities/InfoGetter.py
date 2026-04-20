@@ -285,9 +285,6 @@ def postProcessingPolicyList(policiesThatApply):
     element, we keep only the most specific one. Specificity is determined by the number
     of ``matchParams`` keys: more keys = more specific. If one of the duplicates matched
     by ``name`` it is always considered more specific than one that did not.
-
-    This replaces the old per-type hacks (``FreeDiskSpaceMB`` > ``FreeDiskSpaceGB`` >
-    ``FreeDiskSpaceTB``) with a generic rule that works for any policy type.
     """
     from collections import defaultdict
 

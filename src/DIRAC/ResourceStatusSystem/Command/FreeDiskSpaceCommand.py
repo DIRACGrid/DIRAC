@@ -2,12 +2,12 @@
 
 Command to retrieve and cache the free/total disk space of a Storage Element.
 
-The unit and decision thresholds are read from ``self.args`` (populated from the
-Operations CS ``/Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace``):
+The unit and decision thresholds are read from ``self.args``, which are populated
+by the policy engine from ``POLICIESMETA`` defaults and any CS overrides:
 
-* ``unit``               — space unit for the occupancy query: ``TB`` (default), ``GB`` or ``MB``
-* ``Banned_threshold``   — free-space value below which the SE is Banned (default: 0.1)
-* ``Degraded_threshold`` — free-space value below which the SE is Degraded (default: 5)
+* ``unit``               — space unit for the occupancy query (``TB``, ``GB`` or ``MB``)
+* ``Banned_threshold``   — free-space value below which the SE is Banned
+* ``Degraded_threshold`` — free-space value below which the SE is Degraded
 
 Note: there are still many references to "space tokens" (e.g.
 ``ResourceManagementClient().selectSpaceTokenOccupancyCache(token=elementName)``).
@@ -52,11 +52,11 @@ class FreeDiskSpaceCommand(Command):
 
         * ``name`` (str) — Storage Element name.
 
-        Optional keys (all read from the FreeDiskSpace policy configuration):
+        Optional keys (populated from ``POLICIESMETA`` defaults and CS overrides):
 
-        * ``unit`` (str)               — space unit: ``TB`` (default), ``GB`` or ``MB``.
-        * ``Banned_threshold`` (float) — free space below which the SE is Banned (default: 0.1).
-        * ``Degraded_threshold`` (float) — free space below which the SE is Degraded (default: 5).
+        * ``unit`` (str)                 — space unit: ``TB``, ``GB`` or ``MB``.
+        * ``Banned_threshold`` (float)   — free space below which the SE is Banned.
+        * ``Degraded_threshold`` (float) — free space below which the SE is Degraded.
 
         :returns: S_OK tuple ``(elementName, unit, banned_threshold, degraded_threshold)``
             or S_ERROR if ``name`` is missing.
@@ -66,10 +66,9 @@ class FreeDiskSpaceCommand(Command):
             return S_ERROR('"name" not found in self.args')
         elementName = self.args["name"]
 
-        unit = self.args.get("unit", "TB")
-
-        banned_threshold = self.args.get("Banned_threshold", 0.1)
-        degraded_threshold = self.args.get("Degraded_threshold", 5)
+        unit = self.args["unit"]
+        banned_threshold = self.args["Banned_threshold"]
+        degraded_threshold = self.args["Degraded_threshold"]
 
         return S_OK((elementName, unit, banned_threshold, degraded_threshold))
 
@@ -91,8 +90,8 @@ class FreeDiskSpaceCommand(Command):
 
         if masterParams is not None:
             elementName, unit = masterParams
-            banned_threshold = self.args.get("Banned_threshold", 0.1)
-            degraded_threshold = self.args.get("Degraded_threshold", 5)
+            banned_threshold = self.args["Banned_threshold"]
+            degraded_threshold = self.args["Degraded_threshold"]
         else:
             params = self._prepareCommand()
             if not params["OK"]:
