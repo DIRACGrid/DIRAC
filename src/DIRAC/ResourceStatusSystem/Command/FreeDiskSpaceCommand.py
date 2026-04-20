@@ -1,10 +1,17 @@
-""" FreeDiskSpaceCommand
-    The Command gets the free space that is left in a Storage Element
+"""FreeDiskSpaceCommand
 
-    Note: there are, still, many references to "space tokens",
-    for example ResourceManagementClient().selectSpaceTokenOccupancyCache(token=elementName)
-    This is for historical reasons, and shoud be fixed one day.
-    For the moment, when you see "token" or "space token" here, just read "StorageElement".
+Command to retrieve and cache the free/total disk space of a Storage Element.
+
+The unit and decision thresholds are read from ``self.args`` (populated from the
+Operations CS ``/Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace``):
+
+* ``unit``               — space unit for the occupancy query: ``TB`` (default), ``GB`` or ``MB``
+* ``Banned_threshold``   — free-space value below which the SE is Banned (default: 0.1)
+* ``Degraded_threshold`` — free-space value below which the SE is Degraded (default: 5)
+
+Note: there are still many references to "space tokens" (e.g.
+``ResourceManagementClient().selectSpaceTokenOccupancyCache(token=elementName)``).
+This is for historical reasons; when you see "token" or "space token" here, read "StorageElement".
 
 """
 
@@ -25,7 +32,11 @@ from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
 class FreeDiskSpaceCommand(Command):
     """
-    Uses diskSpace method to get the free space
+    Command that queries the occupancy of a Storage Element and caches the result.
+
+    Occupancy values are stored in the SpaceTokenOccupancyCache table (in MB) and
+    recorded in the StorageOccupancy accounting. The unit used for the returned
+    values is configurable (default: TB).
     """
 
     def __init__(self, args=None, clients=None):
@@ -35,41 +46,58 @@ class FreeDiskSpaceCommand(Command):
 
     def _prepareCommand(self):
         """
-        FreeDiskSpaceCommand requires one argument:
-        - name : <str>
+        Extract and validate command arguments from ``self.args``.
+
+        Required key:
+
+        * ``name`` (str) — Storage Element name.
+
+        Optional keys (all read from the FreeDiskSpace policy configuration):
+
+        * ``unit`` (str)               — space unit: ``TB`` (default), ``GB`` or ``MB``.
+        * ``Banned_threshold`` (float) — free space below which the SE is Banned (default: 0.1).
+        * ``Degraded_threshold`` (float) — free space below which the SE is Degraded (default: 5).
+
+        :returns: S_OK tuple ``(elementName, unit, banned_threshold, degraded_threshold)``
+            or S_ERROR if ``name`` is missing.
         """
 
         if "name" not in self.args:
             return S_ERROR('"name" not found in self.args')
         elementName = self.args["name"]
 
-        # We keep TB as default as this is what was used (and will still be used)
-        # in the policy for "space tokens" ("real", "data" SEs)
         unit = self.args.get("unit", "TB")
 
-        return S_OK((elementName, unit))
+        banned_threshold = self.args.get("Banned_threshold", 0.1)
+        degraded_threshold = self.args.get("Degraded_threshold", 5)
+
+        return S_OK((elementName, unit, banned_threshold, degraded_threshold))
 
     def doNew(self, masterParams=None):
         """
-        Gets the parameters to run, either from the master method or from its
-        own arguments.
+        Query the SE occupancy directly and cache the result.
 
-        Gets the total and the free disk space of a storage element
-        and inserts the results in the SpaceTokenOccupancyCache table
-        of ResourceManagementDB database.
+        Fetches the free and total disk space from the Storage Element, stores the
+        values in the SpaceTokenOccupancyCache table (in MB) and in the StorageOccupancy
+        accounting, then returns them to the caller in the configured unit together with
+        the decision thresholds.
 
-        The result is also returned to the caller, not only inserted.
-        What is inserted in the DB will normally be in MB,
-        what is returned will be in the specified unit.
+        :param masterParams: when called from ``doMaster``, a ``(name, unit)`` tuple
+            that overrides ``self.args``; otherwise ``None``.
+
+        :returns: S_OK dict with keys ``Free``, ``Total``, ``Banned_threshold``,
+            ``Degraded_threshold`` (all in the configured unit), or S_ERROR.
         """
 
         if masterParams is not None:
             elementName, unit = masterParams
+            banned_threshold = self.args.get("Banned_threshold", 0.1)
+            degraded_threshold = self.args.get("Degraded_threshold", 5)
         else:
             params = self._prepareCommand()
             if not params["OK"]:
                 return params
-            elementName, unit = params["Value"]
+            elementName, unit, banned_threshold, degraded_threshold = params["Value"]
 
         se = StorageElement(elementName)
         occupancyResult = se.getOccupancy(unit=unit)
@@ -84,18 +112,32 @@ class FreeDiskSpaceCommand(Command):
         if not result["OK"]:
             return result
 
-        return S_OK({"Free": free, "Total": total})
+        return S_OK(
+            {
+                "Free": free,
+                "Total": total,
+                "Banned_threshold": banned_threshold,
+                "Degraded_threshold": degraded_threshold,
+            }
+        )
 
     def _storeCommand(self, results):
         """
-        Stores the results in the cache (SpaceTokenOccupancyCache),
-        and adds records to the StorageOccupancy accounting.
+        Persist occupancy data to the cache table and accounting system.
 
-        :param dict results: something like {'ElementName': 'CERN-HIST-EOS',
-                                             'Endpoint': 'httpg://srm-eoslhcb-bis.cern.ch:8443/srm/v2/server',
-                                             'Free': 3264963586.10073,
-                                             'Total': 8000000000.0}
-        :returns: S_OK/S_ERROR dict
+        Writes to SpaceTokenOccupancyCache (values in MB) and registers
+        Free/Total/Used records in the StorageOccupancy accounting type.
+
+        :param dict results: occupancy data, e.g.::
+
+            {
+                'ElementName': 'CERN-HIST-EOS',
+                'Endpoint':    'httpg://srm-eoslhcb-bis.cern.ch:8443/srm/v2/server',
+                'Free':        3264963586.10073,   # MB
+                'Total':       8000000000.0,        # MB
+            }
+
+        :returns: S_OK on success, S_ERROR otherwise.
         """
 
         # Stores in cache
@@ -141,14 +183,21 @@ class FreeDiskSpaceCommand(Command):
 
     def doCache(self):
         """
-        This is a method that gets the element's details from the spaceTokenOccupancyCache DB table.
-        It will return a dictionary with th results, converted to "correct" unit.
+        Retrieve SE occupancy from the SpaceTokenOccupancyCache table.
+
+        Values are stored in MB and converted on the fly to the configured unit
+        before being returned. The decision thresholds are appended to the result
+        so that ``FreeDiskSpacePolicy`` can evaluate them without re-reading the CS.
+
+        :returns: S_OK dict with keys ``Free``, ``Total``, ``Banned_threshold``,
+            ``Degraded_threshold`` (all in the configured unit), or S_ERROR if
+            no cached record exists or the unit is invalid.
         """
 
         params = self._prepareCommand()
         if not params["OK"]:
             return params
-        elementName, unit = params["Value"]
+        elementName, unit, banned_threshold, degraded_threshold = params["Value"]
 
         result = self.rmClient.selectSpaceTokenOccupancyCache(token=elementName)
 
@@ -167,17 +216,28 @@ class FreeDiskSpaceCommand(Command):
         if free == -sys.maxsize or total == -sys.maxsize:
             return S_ERROR("No valid unit specified")
 
-        return S_OK({"Free": free, "Total": total})
+        return S_OK(
+            {
+                "Free": free,
+                "Total": total,
+                "Banned_threshold": banned_threshold,
+                "Degraded_threshold": degraded_threshold,
+            }
+        )
 
     def doMaster(self):
         """
-        This method calls the doNew method for each storage element
-        that exists in the CS.
+        Refresh occupancy data for all Storage Elements known to the CS.
+
+        Iterates over all SEs returned by DMSHelpers, calls ``doNew`` for each one
+        (always using MB as the internal storage unit), then purges stale entries
+        from the cache via ``_cleanCommand``.
+
+        :returns: S_OK on success, S_ERROR if the cache cleanup fails.
         """
 
         for name in DMSHelpers().getStorageElements():
             try:
-                # keeping TB as default
                 diskSpace = self.doNew((name, "MB"))
                 if not diskSpace["OK"]:
                     self.log.warn("Unable to calculate free/total disk space", f"name: {name}")
@@ -191,10 +251,17 @@ class FreeDiskSpaceCommand(Command):
         return self._cleanCommand()
 
     def _cleanCommand(self, toDelete=None):
-        """Clean the spaceTokenOccupancy table from old endpoints
+        """
+        Remove stale entries from the SpaceTokenOccupancyCache table.
 
-        :param tuple toDelete: endpoint to remove (endpoint, storage_element_name),
-                               e.g. ('httpg://srm-lhcb.cern.ch:8443/srm/managerv2', CERN-RAW)
+        An entry is considered stale when its ``LastCheckTime`` is older than 6 hours
+        and the corresponding SE/endpoint pair no longer exists in the CS.
+
+        :param tuple toDelete: if provided, a single ``(endpoint, storage_element_name)``
+            tuple to delete explicitly, e.g. ``('httpg://srm-lhcb.cern.ch:8443/srm/managerv2', 'CERN-RAW')``.
+            If ``None`` (default), stale entries are detected automatically.
+
+        :returns: S_OK always (individual deletion failures are logged as warnings).
         """
         if not toDelete:
             toDelete = []

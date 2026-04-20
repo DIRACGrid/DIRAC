@@ -115,7 +115,7 @@ Cache tables for metrics used by policies.
    * - PolicyResult
      - Policy evaluation results (Element, Name, PolicyName, Status, Reason)
    * - SpaceTokenOccupancyCache
-     - Storage space usage (Endpoint, Token, Free, Guaranteed)
+      - Storage space usage (Endpoint, Token, Free, Total) — values stored in MB
    * - TransferCache
      - Transfer quality metrics (SourceName, DestinationName, Metric, Value)
 
@@ -214,6 +214,24 @@ Policies inherit from ``PolicyBase`` and implement ``evaluate()``.
            elif efficiency > 0.7:
                return {'Status': 'Degraded', 'Reason': f'Low efficiency: {efficiency:.2%}'}
            return {'Status': 'Banned', 'Reason': f'Very low efficiency: {efficiency:.2%}'}
+
+FreeDiskSpace Policy
+--------------------
+
+The ``FreeDiskSpacePolicy`` (``Policy/FreeDiskSpacePolicy.py``) evaluates SE occupancy using
+configurable thresholds.  Thresholds are passed through as command arguments so they propagate
+from the CS configuration all the way to the policy evaluation:
+
+1. ``Configurations.py`` reads ``Unit``, ``Banned_threshold`` and ``Degraded_threshold`` from the
+   Operations CS via ``Operations().getValue("ResourceStatus/Policies/FreeDiskSpace/Banned_threshold", 0.1)``
+   and stores them in the policy ``args`` dict.
+2. ``FreeDiskSpaceCommand`` reads these values from ``self.args`` in ``_prepareCommand()`` and
+   returns them alongside ``Free`` and ``Total`` in both ``doNew()`` and ``doCache()``.
+3. ``FreeDiskSpacePolicy._evaluate()`` reads ``Banned_threshold`` and ``Degraded_threshold``
+   from the command result dict (with safe defaults) and applies the comparison.
+
+This design keeps thresholds fully configurable per deployment without code changes.
+See :ref:`rss_advanced_configuration` for the available CS keys.
 
 Command Implementation
 ----------------------

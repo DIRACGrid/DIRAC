@@ -66,6 +66,46 @@ we cannot define the following matchParams:
 
    Code templates and examples for creating custom policies: :doc:`../../../DeveloperGuide/Systems/ResourceStatus/index`
 
+Built-in FreeDiskSpace Policy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``FreeDiskSpace`` policy type monitors Storage Element occupancy.
+It compares the free space reported by the SE against two configurable thresholds:
+
+* If free space is below ``Banned_threshold``, the SE is set to **Banned**.
+* If free space is below ``Degraded_threshold`` (but above ``Banned_threshold``), the SE is set to **Degraded**.
+* Otherwise the SE is set to **Active**.
+
+All three parameters — unit, banned threshold, and degraded threshold — are fully configurable
+from the Operations CS and fall back to safe defaults:
+
+::
+
+  /Operations/Defaults/ResourceStatus
+                          /Policies
+                              /FreeDiskSpace
+                                  Unit               = TB     # unit for the SE occupancy query (TB, GB or MB)
+                                  Banned_threshold   = 0.1    # in the chosen unit (default)
+                                  Degraded_threshold = 5      # in the chosen unit (default)
+
+.. note::
+
+   These keys live under ``/Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace``,
+   not under the ``/matchParams`` sub-section.  They tune the **command arguments**, not the
+   element-matching logic.
+
+   The default values of ``0.1`` and ``5`` are always used as fallback regardless of unit.
+   Make sure to set meaningful threshold values explicitly in the CS when changing the unit.
+
+Example: use GB with tighter thresholds::
+
+  /Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace
+  {
+    Unit               = GB
+    Banned_threshold   = 100
+    Degraded_threshold = 5000
+  }
+
 -------------
 PolicyActions
 -------------
