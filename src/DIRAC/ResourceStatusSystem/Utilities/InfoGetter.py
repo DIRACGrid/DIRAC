@@ -45,12 +45,11 @@ def getPoliciesThatApply(decisionParams):
 
     # Get policies that match the given decisionParameters
     for policyName, policySetup in policiesConfig.items():
-        # The parameter policyType is mandatory. If not present, skip this entry —
-        # it is a command-args defaults section, not a policy definition.
+        # The parameter policyType is mandatory. If not present, we pick policyName
         try:
             policyType = policySetup["policyType"][0]
         except KeyError:
-            continue
+            policyType = policyName
 
         # The section matchParams is not mandatory, so we set {} as default.
         policyMatchParams = policySetup.get("matchParams", {})
@@ -285,9 +284,6 @@ def postProcessingPolicyList(policiesThatApply):
     element, we keep only the most specific one. Specificity is determined by the number
     of ``matchParams`` keys: more keys = more specific. If one of the duplicates matched
     by ``name`` it is always considered more specific than one that did not.
-
-    This replaces the old per-type hacks (``FreeDiskSpaceMB`` > ``FreeDiskSpaceGB`` >
-    ``FreeDiskSpaceTB``) with a generic rule that works for any policy type.
     """
     from collections import defaultdict
 
