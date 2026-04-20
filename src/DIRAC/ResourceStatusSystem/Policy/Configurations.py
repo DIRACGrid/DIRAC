@@ -11,16 +11,21 @@ Follows the schema::
              'args'        : { arguments for the command } or None
                      }
 
-"""
+The values in ``args`` are code-level defaults. They can be overridden per-policy
+via the CS entry (e.g. ``Unit = GB`` directly under the policy name in
+``/Operations/Defaults/ResourceStatus/Policies/<PolicyName>``).
+Deployment-wide defaults can also be set in a command-args section named after
+the policy type (e.g. ``/Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace``);
+these are picked up by InfoGetter before code-level defaults are applied.
 
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+"""
 
 POLICIESMETA = {  # DownTime POLICIES
     "Downtime": {
         "description": "Ongoing or scheduled down-times within <hours> from now (0 = ongoing only)",
         "module": "DowntimePolicy",
         "command": ("DowntimeCommand", "DowntimeCommand"),
-        "args": {"hours": Operations().getValue("ResourceStatus/Policies/Downtime/hours", 0), "onlyCache": True},
+        "args": {"hours": 0, "onlyCache": True},
     },
     # Free Disk Space
     "FreeDiskSpace": {
@@ -28,9 +33,9 @@ POLICIESMETA = {  # DownTime POLICIES
         "module": "FreeDiskSpacePolicy",
         "command": ("FreeDiskSpaceCommand", "FreeDiskSpaceCommand"),
         "args": {
-            "unit": Operations().getValue("ResourceStatus/Policies/FreeDiskSpace/Unit", "TB"),
-            "Banned_threshold": Operations().getValue("ResourceStatus/Policies/FreeDiskSpace/Banned_threshold", 0.1),
-            "Degraded_threshold": Operations().getValue("ResourceStatus/Policies/FreeDiskSpace/Degraded_threshold", 5),
+            "unit": "TB",
+            "Banned_threshold": 0.1,
+            "Degraded_threshold": 5,
             "onlyCache": True,
         },
     },

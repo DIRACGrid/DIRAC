@@ -91,6 +91,9 @@ The look-ahead window is configurable from the Operations CS:
    are considered. Setting a positive value (e.g. ``12``) also catches downtimes scheduled
    to start within that window, which is useful for proactive status changes.
 
+   This section has no ``policyType`` key and is therefore treated purely as
+   command-argument defaults, not as a policy definition.
+
 Example: flag elements with downtimes starting within the next 24 hours::
 
   /Operations/Defaults/ResourceStatus/Policies/Downtime
@@ -124,7 +127,8 @@ from the Operations CS and fall back to safe defaults:
 
    These keys live under ``/Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace``,
    not under the ``/matchParams`` sub-section.  They tune the **command arguments**, not the
-   element-matching logic.
+   element-matching logic. This section has no ``policyType`` key and is therefore not treated
+   as a policy definition by the policy engine.
 
    The default values of ``0.1`` and ``5`` are always used as fallback regardless of unit.
    Make sure to set meaningful threshold values explicitly in the CS when changing the unit.
