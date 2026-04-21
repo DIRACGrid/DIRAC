@@ -1,14 +1,15 @@
-""" JobManagerHandler is the implementation of the JobManager service
-    in the DISET framework
+"""JobManagerHandler is the implementation of the JobManager service
+in the DISET framework
 
-    The following methods are available in the Service interface
+The following methods are available in the Service interface
 
-    submitJob()
-    rescheduleJob()
-    deleteJob()
-    killJob()
+submitJob()
+rescheduleJob()
+deleteJob()
+killJob()
 
 """
+
 from pydantic import ValidationError
 
 from DIRAC import S_ERROR, S_OK
@@ -22,6 +23,7 @@ from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.DB.StatusUtils import kill_delete_jobs
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     RIGHT_DELETE,
     RIGHT_KILL,
@@ -30,7 +32,6 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import (
     RIGHT_SUBMIT,
     JobPolicy,
 )
-from DIRAC.WorkloadManagementSystem.DB.StatusUtils import kill_delete_jobs
 from DIRAC.WorkloadManagementSystem.Utilities.JobModel import JobDescriptionModel
 from DIRAC.WorkloadManagementSystem.Utilities.ParametricJob import generateParametricJobs, getParameterVectorLength
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import rescheduleJobs
@@ -44,34 +45,33 @@ class JobManagerHandlerMixin:
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         """Initialization of DB objects and OptimizationMind"""
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobDB", "JobDB")
+        if not result["OK"]:
+            return result
+        cls.jobDB = result["Value"](parentLogger=cls.log)
+
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobLoggingDB", "JobLoggingDB")
+        if not result["OK"]:
+            return result
+        cls.jobLoggingDB = result["Value"](parentLogger=cls.log)
+
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.TaskQueueDB", "TaskQueueDB")
+        if not result["OK"]:
+            return result
+        cls.taskQueueDB = result["Value"](parentLogger=cls.log)
+
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotAgentsDB", "PilotAgentsDB")
+        if not result["OK"]:
+            return result
+        cls.pilotAgentsDB = result["Value"](parentLogger=cls.log)
+
         try:
-            result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobDB", "JobDB")
-            if not result["OK"]:
-                return result
-            cls.jobDB = result["Value"](parentLogger=cls.log)
-
-            result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobLoggingDB", "JobLoggingDB")
-            if not result["OK"]:
-                return result
-            cls.jobLoggingDB = result["Value"](parentLogger=cls.log)
-
-            result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.TaskQueueDB", "TaskQueueDB")
-            if not result["OK"]:
-                return result
-            cls.taskQueueDB = result["Value"](parentLogger=cls.log)
-
-            result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotAgentsDB", "PilotAgentsDB")
-            if not result["OK"]:
-                return result
-            cls.pilotAgentsDB = result["Value"](parentLogger=cls.log)
-
             result = ObjectLoader().loadObject("StorageManagementSystem.DB.StorageManagementDB", "StorageManagementDB")
             if not result["OK"]:
                 return result
             cls.storageManagementDB = result["Value"](parentLogger=cls.log)
-
-        except RuntimeError as excp:
-            return S_ERROR(f"Can't connect to DB: {excp!r}")
+        except RuntimeError:
+            cls.storageManagementDB = None
 
         cls.msgClient = MessageClient("WorkloadManagement/OptimizationMind")
         result = cls.msgClient.connect(JobManager=True)

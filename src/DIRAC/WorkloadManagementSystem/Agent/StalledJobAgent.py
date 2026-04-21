@@ -73,10 +73,13 @@ class StalledJobAgent(AgentModule):
             return result
         self.pilotAgentsDB = result["Value"]()
 
-        result = ObjectLoader().loadObject("StorageManagementSystem.DB.StorageManagementDB", "StorageManagementDB")
-        if not result["OK"]:
-            return result
-        self.storageManagementDB = result["Value"]()
+        try:
+            result = ObjectLoader().loadObject("StorageManagementSystem.DB.StorageManagementDB", "StorageManagementDB")
+            if not result["OK"]:
+                return result
+            self.storageManagementDB = result["Value"]()
+        except RuntimeError:
+            pass
 
         # getting parameters
 
