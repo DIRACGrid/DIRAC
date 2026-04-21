@@ -1,3 +1,27 @@
+[v9.1.7]
+
+*Docs
+
+FIX: (#8519) added NumberOfGPUs and MemoryLimitMB to the configuration example
+
+*Resources
+
+FIX: (#8518) handle NoValidConnectionsError properly in SSHCE
+
+*WorkloadManagement
+
+FIX: (#8512) move setCredentials back to its original location in SD
+
+*Core
+
+FIX: (#8510) Improved error message. Fixes #8509
+FIX: (#8507) remove MySQL ping reconnect
+FIX: (#8491) Improve VOMS2CSAgent to handle nested groups and only sync groups that have the voms.role label
+
+*FrameworkSystem
+
+FIX: (#8503) getCAs and CRLs unsetting X509_CERT_DIR
+
 [v9.1.6]
 
 
