@@ -1,34 +1,33 @@
 """SystemAdministrator service is a tool to control and monitor the DIRAC services and agents"""
 
-import socket
-import os
-import re
-import time
 import getpass
 import importlib
-import shutil
+import os
 import platform
-import tempfile
+import re
+import shutil
+import socket
 import subprocess
+import tempfile
+import time
 from datetime import datetime, timedelta
-import requests
 
 import psutil
-from packaging.version import Version, InvalidVersion
-
+import requests
 from diraccfg import CFG
+from packaging.version import InvalidVersion, Version
 
-from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger, convertToPy3VersionNumber
+from DIRAC import S_ERROR, S_OK, convertToPy3VersionNumber, gConfig, gLogger, rootPath
+from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Utilities import Os
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority, getExtensionMetadata
 from DIRAC.Core.Utilities.File import mkLink
-from DIRAC.Core.Utilities.TimeUtilities import fromString, hour, day
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
-from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.Core.Utilities.TimeUtilities import day, fromString, hour
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
@@ -46,6 +45,76 @@ def loadDIRACCFG():
         return S_ERROR(f"Could not load dirac.cfg: {repr(excp)}")
 
     return S_OK((cfgPath, diracCFG))
+
+
+def _normalise_version(version):
+    """Validate and normalise a raw version string supplied by the operator.
+
+    :param str version: Raw string as received from the client (may contain surrounding
+        whitespace or use the spaced ``pkg @ url`` pip syntax).
+    :returns: A 4-tuple ``(version, primaryExtension, released_version, isPrerelease)`` where
+
+        - *version* is the normalised version string ready to be passed to pip,
+        - *primaryExtension* is the package name when the caller used
+          ``extension==version`` syntax, or ``None`` otherwise,
+        - *released_version* is ``True`` when installing a PEP 440 release and
+          ``False`` when installing from a VCS URL,
+        - *isPrerelease* is ``True`` when the PEP 440 version is a pre-release.
+
+    :rtype: tuple(str, str or None, bool, bool)
+    :raises ValueError: When the version string is empty, or is not a valid PEP 440
+        version and does not contain a recognised VCS URL.
+    """
+    version = version.strip()
+    if not version:
+        raise ValueError("No version specified")
+
+    primaryExtension = None
+    if "==" in version:
+        primaryExtension, version = version.split("==", 1)
+
+    released_version = True
+    isPrerelease = False
+
+    # Special aliases: install DIRAC from the integration branch
+    if version.lower() in ("integration", "devel", "master", "main"):
+        released_version = False
+        version = "DIRAC[server] @ git+https://github.com/DIRACGrid/DIRAC.git@integration"
+        return version, primaryExtension, released_version, isPrerelease
+
+    # Try to parse as a PEP 440 version number
+    try:
+        parsed = Version(version)
+        isPrerelease = parsed.is_prerelease
+        version = f"v{parsed}"
+    except InvalidVersion:
+        if "https://" in version:
+            # Treat as a VCS URL (e.g. "DIRAC[server] @ git+https://...")
+            released_version = False
+        else:
+            raise ValueError(f"Invalid version passed {version!r}")
+
+    return version, primaryExtension, released_version, isPrerelease
+
+
+def _directory_label(version, released_version):
+    """Derive the filesystem directory label for a given version.
+
+    For released versions this is the version string itself.  For VCS URLs
+    (pip ``pkg @ url`` syntax) it is the URL part, stripped of any
+    ``#egg=...`` fragment and surrounding whitespace.
+
+    :param str version: Normalised version string as returned by :func:`_normalise_version`.
+    :param bool released_version: ``True`` when *version* is a PEP 440 release string.
+    :returns: A filesystem-safe label derived from *version*.
+    :rtype: str
+    """
+    if released_version:
+        return version
+    # version is "pkg @ git+https://host/repo.git@branch"
+    # Split on the *first* "@" (the pip separator) only, then strip spaces
+    # and drop any "#egg=..." fragment so the branch name is preserved.
+    return version.split("@", 1)[1].strip().split("#")[0]
 
 
 class SystemAdministratorHandler(RequestHandler):
@@ -263,29 +332,11 @@ class SystemAdministratorHandler(RequestHandler):
         - a git tag/branch like "DIRAC[server] @ git+https://github.com/fstagni/DIRAC.git@test_branch"
         """
         # Validate and normalise the requested version
-        primaryExtension = None
-        if "==" in version:
-            primaryExtension, version = version.split("==")
-
-        released_version = True
-        isPrerelease = False
-
-        # Special cases (e.g. installing the integration/main branch)
-        if version.lower() in ["integration", "devel", "master", "main"]:
-            released_version = False
-            version = "DIRAC[server] @ git+https://github.com/DIRACGrid/DIRAC.git@integration"
-
-        if released_version:
-            try:
-                version = Version(version)
-                isPrerelease = version.is_prerelease
-                version = f"v{version}"
-            except InvalidVersion:
-                if "https://" in version:
-                    released_version = False
-                else:
-                    self.log.exception("Invalid version passed", version)
-                    return S_ERROR(f"Invalid version passed {version!r}")
+        try:
+            version, primaryExtension, released_version, isPrerelease = _normalise_version(version)
+        except ValueError as e:
+            self.log.exception("Invalid version passed", version)
+            return S_ERROR(str(e))
 
         # Find what to install
         otherExtensions = []
@@ -311,7 +362,7 @@ class SystemAdministratorHandler(RequestHandler):
             installer.flush()
             self.log.info("Downloaded DIRACOS installer to", installer.name)
 
-            directory = version if released_version else version.split("@")[1].split("#")[0]
+            directory = _directory_label(version, released_version)
             newProPrefix = os.path.join(
                 rootPath,
                 "versions",
