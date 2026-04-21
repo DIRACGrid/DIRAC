@@ -50,29 +50,20 @@ def loadDIRACCFG():
 def _normalise_version(version):
     """Validate and normalise a raw version string supplied by the operator.
 
-    Parameters
-    ----------
-    version:
-        Raw string as received from the client (may contain surrounding
+    :param str version: Raw string as received from the client (may contain surrounding
         whitespace or use the spaced ``pkg @ url`` pip syntax).
+    :returns: A 4-tuple ``(version, primaryExtension, released_version, isPrerelease)`` where
 
-    Returns
-    -------
-    tuple(str, str | None, bool, bool)
-        ``(version, primaryExtension, released_version, isPrerelease)``
+        - *version* is the normalised version string ready to be passed to pip,
+        - *primaryExtension* is the package name when the caller used
+          ``extension==version`` syntax, or ``None`` otherwise,
+        - *released_version* is ``True`` when installing a PEP 440 release and
+          ``False`` when installing from a VCS URL,
+        - *isPrerelease* is ``True`` when the PEP 440 version is a pre-release.
 
-        - *version* – normalised version string ready to be passed to pip.
-        - *primaryExtension* – package name when the caller used
-          ``extension==version`` syntax; ``None`` otherwise.
-        - *released_version* – ``True`` when installing a PEP 440 release,
-          ``False`` when installing from a VCS URL.
-        - *isPrerelease* – ``True`` when the PEP 440 version is a pre-release.
-
-    Raises
-    ------
-    ValueError
-        When the version string is empty or not a valid PEP 440 version and
-        does not contain a recognised VCS URL.
+    :rtype: tuple(str, str or None, bool, bool)
+    :raises ValueError: When the version string is empty, or is not a valid PEP 440
+        version and does not contain a recognised VCS URL.
     """
     version = version.strip()
     if not version:
@@ -113,17 +104,10 @@ def _directory_label(version, released_version):
     (pip ``pkg @ url`` syntax) it is the URL part, stripped of any
     ``#egg=...`` fragment and surrounding whitespace.
 
-    Parameters
-    ----------
-    version:
-        Normalised version string as returned by :func:`_normalise_version`.
-    released_version:
-        ``True`` when *version* is a PEP 440 release string.
-
-    Returns
-    -------
-    str
-        A filesystem-safe label derived from *version*.
+    :param str version: Normalised version string as returned by :func:`_normalise_version`.
+    :param bool released_version: ``True`` when *version* is a PEP 440 release string.
+    :returns: A filesystem-safe label derived from *version*.
+    :rtype: str
     """
     if released_version:
         return version
