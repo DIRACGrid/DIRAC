@@ -1,9 +1,9 @@
-""" Handler for CAs + CRLs bundles
-"""
+"""Handler for CAs + CRLs bundles"""
 
 import io
 import os
 import tarfile
+from pathlib import Path
 
 from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -66,12 +66,15 @@ class BundleManager:
             buffer_ = io.BytesIO()
             filesToBundle = sorted(File.getGlobbedFiles(bundlePaths))
             if filesToBundle:
-                commonPath = os.path.commonprefix(filesToBundle)
-                commonEnd = len(commonPath)
-                gLogger.info(f"Bundle will have {len(filesToBundle)} files with common path {commonPath}")
+                paths = [Path(f) for f in filesToBundle]
+                # Path.parents is path-component-aware, unlike os.path.commonprefix
+                commonParent = (
+                    Path(os.path.commonpath(paths)).parent if len(paths) == 1 else Path(os.path.commonpath(paths))
+                )
+                gLogger.info(f"Bundle will have {len(filesToBundle)} files with common path {commonParent}")
                 with tarfile.open("dummy", "w:gz", buffer_) as tarBuffer:
-                    for filePath in filesToBundle:
-                        tarBuffer.add(filePath, filePath[commonEnd:])
+                    for p in paths:
+                        tarBuffer.add(str(p), str(p.relative_to(commonParent)))
                 zippedData = buffer_.getvalue()
                 buffer_.close()
                 hash_ = File.getMD5ForFiles(filesToBundle)
