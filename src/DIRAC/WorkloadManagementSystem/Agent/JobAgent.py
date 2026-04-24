@@ -428,7 +428,9 @@ class JobAgent(AgentModule):
         if not result["OK"]:
             return self._finish(result["Message"])
 
-        self._updateConfiguration("CPUTimeLeft", self.cpuWorkLeft)
+        # Store as int: consumers generally call gConfig.getValue(..., 0)
+        # with an int default, and a float-formatted value silently coerces to 0.
+        self._updateConfiguration("CPUTimeLeft", int(self.cpuWorkLeft))
         return S_OK()
 
     #############################################################################
