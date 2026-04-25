@@ -20,7 +20,7 @@ class JobWrapperError(Exception):
 
     def __init__(self, value):
         self.value = value
-        super().__init__()
+        super().__init__(value)
 
     def __str__(self):
         return str(self.value)
