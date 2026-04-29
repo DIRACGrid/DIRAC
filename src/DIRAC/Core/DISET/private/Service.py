@@ -560,9 +560,6 @@ class Service:
                         retStatus = "OK"
                     else:
                         retStatus = "ERROR"
-                from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-
-                self.activityMonitoringReporter = MonitoringReporter(monitoringType="ServiceMonitoring")
                 self.activityMonitoringReporter.addRecord(
                     {
                         "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
@@ -592,9 +589,6 @@ class Service:
         handlerObj = result["Value"]
         response = handlerObj._rh_executeMessageCallback(msgObj)
         if self.activityMonitoring and response["OK"]:
-            from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-
-            self.activityMonitoringReporter = MonitoringReporter(monitoringType="ServiceMonitoring")
             self.activityMonitoringReporter.addRecord(
                 {
                     "timestamp": int(TimeUtilities.toEpochMilliSeconds()),
