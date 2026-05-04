@@ -430,6 +430,17 @@ class ConnectionPool:
         self.__assigned[thid] = [conn, dbName, now]
         return conn, dbName, thid, needsPing
 
+    def discardCurrentThreadConn(self):
+        """Drop the current thread's cached connection without returning it to the spare pool."""
+        thid = self.__thid
+        data = self.__assigned.pop(thid, None)
+        if data is None:
+            return
+        try:
+            data[0].close()
+        except Exception:
+            pass
+
     def __pop(self, thid):
         try:
             data = self.__assigned.pop(thid)
@@ -536,6 +547,9 @@ class MySQL:
         except Exception:
             pass
 
+    # MySQLdb error codes that mean the connection itself is dead and must be discarded.
+    __CONNECTION_LOST_ERRNOS = frozenset((2006, 2013, 2055, 4031))
+
     def _except(self, methodName, x, err, cmd="", debug=True):
         """
         print MySQL error or exception
@@ -544,6 +558,8 @@ class MySQL:
         try:
             raise x
         except MySQLdb.Error as e:
+            if e.args and e.args[0] in self.__CONNECTION_LOST_ERRNOS:
+                self.__connectionPool.discardCurrentThreadConn()
             if debug:
                 self.log.error(f"{methodName} ({self._safeCmd(cmd)}): {err}", "%d: %s" % (e.args[0], e.args[1]))
             return S_ERROR(DErrno.EMYSQL, "%s: ( %d: %s )" % (err, e.args[0], e.args[1]))
