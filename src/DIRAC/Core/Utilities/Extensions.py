@@ -118,6 +118,7 @@ def entrypointToExtension(entrypoint):
     return module.split(".")[0]
 
 
+@functools.cache
 def extensionsByPriority():
     """Discover extensions using the setuptools metadata"""
 
@@ -140,6 +141,7 @@ def extensionsByPriority():
     return extensions
 
 
+@functools.cache
 def getExtensionMetadata(extensionName):
     """Get the metadata for a given extension name"""
     for entrypoint in metadata.entry_points().select(group="dirac"):
