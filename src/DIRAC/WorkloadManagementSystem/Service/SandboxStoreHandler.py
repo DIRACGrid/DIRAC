@@ -366,8 +366,8 @@ class SandboxStoreHandlerMixin:
 
     def _sendToClient(self, fileID, token, fileHelper=None, raw=False):
         credDict = self.getRemoteCredentials()
-        serviceURL = self.serviceInfoDict["URL"]
-        filePath = fileID.replace(serviceURL, "")
+        serviceName = self.serviceInfoDict["serviceName"]
+        filePath = fileID.split(serviceName)[1]
 
         # If the PFN starts with S3, we know it has been uploaded to the
         # S3 sandbox store, so download it from there before sending it
