@@ -2,9 +2,11 @@
 This module contains helper methods for accessing operational attributes or parameters of DMS objects
 
 """
+from __future__ import annotations
 
 from collections import defaultdict
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
@@ -95,10 +97,28 @@ def _getConnectionIndex(connectionLevel, default=None):
 
 class DMSHelpers:
     """
-    This class is used to get information about sites, SEs and their interrelations
+    This class is used to get information about sites, SEs and their interrelations.
+
+    Instances are shared per VO and re-derived only when the configuration system
+    has been refreshed since the last initialisation.
     """
 
+    _instances: dict[object, DMSHelpers] = {}
+
+    def __new__(cls, vo=False):
+        inst = cls._instances.get(vo)
+        if inst is None:
+            inst = super().__new__(cls)
+            inst.__csVersion = None
+            cls._instances[vo] = inst
+        return inst
+
     def __init__(self, vo=False):
+        # We're a per-VO singleton (see __new__); skip re-init unless the CS
+        # has been refreshed since we last populated.
+        currentVersion = gConfigurationData.getVersion()
+        if self.__csVersion == currentVersion:
+            return
         self.siteSEMapping = {}
         self.storageElementSet = set()
         self.siteSet = set()
@@ -106,6 +126,7 @@ class DMSHelpers:
         self.failoverSEs = None
         self.archiveSEs = None
         self.notForJobSEs = None
+        self.__csVersion = currentVersion
 
     def getSiteSEMapping(self):
         """Returns a dictionary of all sites and their localSEs as a list, e.g.
