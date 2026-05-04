@@ -201,6 +201,7 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
         except Exception:  # pylint: disable=broad-except
             pass
         dInfo["name"] = self._serviceInfoDict["serviceName"]
+        dInfo["URL"] = self._serviceInfoDict["URL"]
         stTimes = os.times()
         dInfo["cpu times"] = {
             "user time": stTimes[0],
