@@ -632,24 +632,21 @@ class AccountingDB(DB):
         if not retVal["OK"]:
             return retVal
         connObj = retVal["Value"]
-        try:
-            retVal = self.insertFields(
-                _getTableName("type", typeName), self.dbCatalog[typeName]["typeFields"], insertList, conn=connObj
-            )
-            if not retVal["OK"]:
-                return retVal
-            # HACK: One more record to split in the buckets to be able to count total entries
-            valuesList.append(1)
-            retVal = self.__startTransaction(connObj)
-            if not retVal["OK"]:
-                return retVal
-            retVal = self.__splitInBuckets(typeName, startTime, endTime, valuesList, connObj=connObj)
-            if not retVal["OK"]:
-                self.__rollbackTransaction(connObj)
-                return retVal
-            return self.__commitTransaction(connObj)
-        finally:
-            connObj.close()
+        retVal = self.insertFields(
+            _getTableName("type", typeName), self.dbCatalog[typeName]["typeFields"], insertList, conn=connObj
+        )
+        if not retVal["OK"]:
+            return retVal
+        # HACK: One more record to split in the buckets to be able to count total entries
+        valuesList.append(1)
+        retVal = self.__startTransaction(connObj)
+        if not retVal["OK"]:
+            return retVal
+        retVal = self.__splitInBuckets(typeName, startTime, endTime, valuesList, connObj=connObj)
+        if not retVal["OK"]:
+            self.__rollbackTransaction(connObj)
+            return retVal
+        return self.__commitTransaction(connObj)
 
     def deleteRecord(self, typeName, startTime, endTime, valuesList):
         """

@@ -68,8 +68,6 @@ class PilotStatusAgent(AgentModule):
         # Now handle pilots not updated in the last N days and declare them Deleted.
         result = self.handleOldPilots(connection)
 
-        connection.close()
-
         result = self.pilots.clearPilots(self.clearPilotsDelay, self.clearAbortedDelay)
         if not result["OK"]:
             self.log.warn("Failed to clear old pilots in the PilotAgentsDB")
