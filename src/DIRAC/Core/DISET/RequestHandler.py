@@ -504,6 +504,7 @@ class RequestHandler:
         # Load average
         dInfo["load"] = " ".join([str(lx) for lx in os.getloadavg()])
         dInfo["name"] = self.serviceInfoDict["serviceName"]
+        dInfo["URL"] = self.serviceInfoDict["URL"]
         stTimes = os.times()
         dInfo["cpu times"] = {
             "user time": stTimes[0],
