@@ -544,41 +544,54 @@ class JobWrapper:
         """This method is called after the payload has finished running."""
         self.log.info(f"Job Wrapper is starting the post processing phase for job {self.jobID}")
 
-        # if the execution thread didn't complete
-        if payloadStatus is None and not payloadExecutorError:
+        # process() and postProcess() may run on different machines: propagate the
+        # CPU figures to executionResults early so the accounting record sees them
+        # even if we hit one of the early-return failure paths below.
+        if cpuTimeConsumed and not self.executionResults.get("CPU"):
+            self.executionResults["CPU"] = cpuTimeConsumed
+
+        # No clean exit code: identify the cause (watchdog > executor > generic)
+        # Watchdog kills (killChild -> SIGTERM/SIGKILL) may leave payloadStatus=None,
+        # so checking watchdogError first preserves its specific reason.
+        if payloadStatus is None:
+            self.__logWatchdogStats(watchdogStats)
+            if payloadOutput and self.executionResults.get("CPU"):
+                self.__sendFinalStdOut(payloadOutput)
+
+            if watchdogError:
+                self.log.error("Payload killed by watchdog", watchdogError)
+                self.__report(status=JobStatus.FAILED, minorStatus=watchdogError, sendFlag=True)
+                self.__setJobParam("ApplicationError", watchdogError, sendFlag=True)
+                return S_ERROR(f"Payload killed by watchdog: {watchdogError}")
+            if payloadExecutorError:
+                self.log.error("Failed to execute the payload", payloadExecutorError)
+                self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_THREAD_FAILED, sendFlag=True)
+                self.__setJobParam("ApplicationError", "None reported", sendFlag=True)
+                return S_ERROR(payloadExecutorError)
             self.log.error("Application thread did not complete")
             self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_THREAD_NOT_COMPLETE, sendFlag=True)
             self.__setJobParam("ApplicationError", JobMinorStatus.APP_THREAD_NOT_COMPLETE, sendFlag=True)
             return S_ERROR("No outputs generated from job execution")
 
-        # If the execution thread got an error (not a payload error)
+        # payloadStatus is set: payload exited with a real exit code.
+
         if payloadExecutorError:
             self.log.error("Failed to execute the payload", payloadExecutorError)
             self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_THREAD_FAILED, sendFlag=True)
-            applicationErrorStatus = "None reported"
-            if payloadStatus:
-                applicationErrorStatus = str(payloadStatus)
-            self.__setJobParam("ApplicationError", applicationErrorStatus, sendFlag=True)
+            self.__setJobParam("ApplicationError", str(payloadStatus), sendFlag=True)
 
-        # This might happen if process() and postProcess() are called on different machines
-        if cpuTimeConsumed and not self.executionResults.get("CPU"):
-            self.executionResults["CPU"] = cpuTimeConsumed
-
-        if watchdogError:
+        # Trust the payload's exit code over the watchdog: an elastic payload that catches
+        # the signal and exits cleanly should be reported per its exit code.
+        cleanExit = payloadStatus == 0 or payloadStatus in (DErrno.EWMSRESC, DErrno.EWMSRESC & 255)
+        if watchdogError and not cleanExit:
             self.__report(status=JobStatus.FAILED, minorStatus=watchdogError, sendFlag=True)
 
-        if watchdogStats:
-            self.log.info(
-                "Statistics collected by the Watchdog:\n ",
-                "\n  ".join(["%s: %s" % items for items in watchdogStats.items()]),
-            )  # can be an iterator
+        self.__logWatchdogStats(watchdogStats)
 
-        if payloadStatus is None:
-            return S_ERROR("No outputs generated from job execution")
-
-        # Send final heartbeat of a configurable number of lines here
-        self.log.verbose("Sending final application standard output heartbeat")
-        self.__sendFinalStdOut(payloadOutput)
+        # Send final heartbeat of a configurable number of lines here.
+        if self.executionResults.get("CPU"):
+            self.log.verbose("Sending final application standard output heartbeat")
+            self.__sendFinalStdOut(payloadOutput)
         self.log.verbose(f"Execution thread status = {payloadStatus}")
 
         self.log.info("Checking directory contents after execution:")
@@ -591,10 +604,13 @@ class JobWrapper:
             # no timeout and exit code is 0
             self.log.info(res["Value"][1])
 
+        # Non-zero exit without a watchdog reason: report a generic application error.
         if not watchdogError and payloadStatus != 0:
             self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.APP_ERRORS, sendFlag=True)
 
-        if not watchdogError and payloadStatus in (
+        # Reschedule and success branches honour the payload's exit code regardless of
+        # the watchdog: the payload survived the signal long enough to declare its outcome.
+        if payloadStatus in (
             DErrno.EWMSRESC,
             DErrno.EWMSRESC & 255,
         ):  # the status will be truncated to 0xDE (222)
@@ -602,7 +618,7 @@ class JobWrapper:
             self.__report(minorStatus=JobMinorStatus.GOING_RESCHEDULE, sendFlag=True)
             return S_ERROR(DErrno.EWMSRESC, "Job will be rescheduled")
 
-        if not watchdogError and payloadStatus == 0:
+        if payloadStatus == 0:
             self.failedFlag = False
             self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.APP_SUCCESS, sendFlag=True)
 
@@ -701,6 +717,15 @@ class JobWrapper:
         humanTime = "%02d:%02d:%02d" % (hours, mins, secs)
         self.log.verbose(f"Human readable CPU time is: {humanTime}")
         return S_OK((cpuTime, humanTime))
+
+    #############################################################################
+    def __logWatchdogStats(self, watchdogStats: dict):
+        """Log the stats collected by the Watchdog, if any."""
+        if watchdogStats:
+            self.log.info(
+                "Statistics collected by the Watchdog:\n ",
+                "\n  ".join(["%s: %s" % items for items in watchdogStats.items()]),
+            )
 
     #############################################################################
     def resolveInputData(self):
