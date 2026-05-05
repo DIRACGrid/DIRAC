@@ -224,6 +224,7 @@ def test_submitJobWrapper(mocker, jobID):
         jobID=jobID,
         ce=jobAgent.queueDict["ce1.site2.com_condor"]["CE"],
         diracInstallLocation="diracInstallLocation",
+        cpuInfo={"CPUTimeLeft": 0, "CPUNormalizationFactor": 0.0},
         jobParams=jobParams,
         resourceParams={},
         optimizerParams={},
@@ -258,6 +259,7 @@ def test_submitJobWrapper(mocker, jobID):
         jobID=jobID,
         ce=jobAgent.queueDict["ce1.site2.com_condor"]["CE"],
         diracInstallLocation="diracInstallLocation",
+        cpuInfo={"CPUTimeLeft": 0, "CPUNormalizationFactor": 0.0},
         jobParams=jobParams,
         resourceParams={},
         optimizerParams={},
@@ -293,6 +295,7 @@ def test_submitJobWrapper(mocker, jobID):
         jobID=jobID,
         ce=jobAgent.queueDict["ce1.site2.com_condor"]["CE"],
         diracInstallLocation="diracInstallLocation",
+        cpuInfo={"CPUTimeLeft": 0, "CPUNormalizationFactor": 0.0},
         jobParams=jobParams,
         resourceParams={},
         optimizerParams={},
@@ -327,6 +330,7 @@ def test_submitJobWrapper(mocker, jobID):
         jobID=jobID,
         ce=jobAgent.queueDict["ce1.site2.com_condor"]["CE"],
         diracInstallLocation="diracInstallLocation",
+        cpuInfo={"CPUTimeLeft": 0, "CPUNormalizationFactor": 0.0},
         jobParams=jobParams,
         resourceParams={},
         optimizerParams={},
@@ -370,6 +374,7 @@ def test_submitJobWrapper(mocker, jobID):
         jobID=jobID,
         ce=ce,
         diracInstallLocation="diracInstallLocation",
+        cpuInfo={"CPUTimeLeft": 0, "CPUNormalizationFactor": 0.0},
         jobParams=jobParams,
         resourceParams={},
         optimizerParams={},
@@ -412,6 +417,7 @@ def test_submitJobWrapper(mocker, jobID):
         jobID=jobID,
         ce=ce,
         diracInstallLocation="diracInstallLocation",
+        cpuInfo={"CPUTimeLeft": 0, "CPUNormalizationFactor": 0.0},
         jobParams=jobParams,
         resourceParams={},
         optimizerParams={},
@@ -429,3 +435,110 @@ def test_submitJobWrapper(mocker, jobID):
 
     job.sendJobAccounting.assert_not_called()
     shutil.rmtree("job")
+
+
+def _bareAgent(mocker):
+    """Create a minimal PushJobAgent stub for unit-testing helper methods."""
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule._AgentModule__moduleProperties",
+        side_effect=lambda x, y=None: y,
+        create=True,
+    )
+    agent = PushJobAgent("Test", "Test1")
+    agent.log = gLogger
+    return agent
+
+
+def test__appendLocalSiteCFG_writes_options(mocker, tmp_path):
+    """The helper adds /LocalSite options to a CFG file without clobbering existing ones."""
+    from diraccfg import CFG
+
+    agent = _bareAgent(mocker)
+    cfgFile = tmp_path / "dirac.cfg"
+    seed = CFG()
+    seed.createNewSection("/DIRAC")
+    seed.setOption("/DIRAC/VirtualOrganization", "lhcb")
+    cfgFile.write_text(str(seed))
+
+    agent._appendLocalSiteCFG(cfgFile, {"CPUTimeLeft": 7200, "CPUNormalizationFactor": 12.5})
+
+    reloaded = CFG()
+    reloaded.loadFromFile(str(cfgFile))
+    assert reloaded.getOption("/LocalSite/CPUTimeLeft") == "7200"
+    assert reloaded.getOption("/LocalSite/CPUNormalizationFactor") == "12.5"
+    # Existing section is preserved
+    assert reloaded.getOption("/DIRAC/VirtualOrganization") == "lhcb"
+
+
+@pytest.mark.slow
+def test_submitJobWrapper_writes_local_site_to_dirac_cfg(mocker, jobID):
+    """End-to-end: _submitJobWrapper patches the dumped dirac.cfg with /LocalSite options."""
+    from diraccfg import CFG
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule._AgentModule__moduleProperties",
+        side_effect=lambda x, y=None: y,
+        create=True,
+    )
+
+    jobAgent = PushJobAgent("Test", "Test1")
+    jobAgent.submissionPolicy = "JobWrapper"
+    jobAgent.queueDict = jobAgent._buildQueueDict(
+        siteNames=["LCG.Site1.com", "LCG.Site2.site2"], ces=None, ceTypes=None
+    )["Value"]
+    jobAgent.log = gLogger
+
+    jobAgent.jobs[jobID] = {"JobReport": JobReport(jobID)}
+    jobParams = {"InputSandbox": True, "InputData": True}
+
+    job = Mock()
+    job.owner = None
+    job.userGroup = None
+    job.jobArgs = jobParams
+    job.jobIDPath = Path(jobID)
+    job.initialize = Mock()
+    job.transferInputSandbox = Mock(return_value=S_OK())
+    job.resolveInputData = Mock(return_value=S_OK())
+    job.preProcess = Mock(return_value=S_OK())
+    job.sendJobAccounting = Mock()
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapperUtilities.JobWrapper", return_value=job)
+
+    # dumpRemoteCFGToFile writes a minimal stub so _appendLocalSiteCFG has something to patch
+    def fakeDump(filename):
+        seed = CFG()
+        seed.createNewSection("/DIRAC")
+        seed.setOption("/DIRAC/VirtualOrganization", "lhcb")
+        Path(filename).write_text(str(seed))
+
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.PushJobAgent.gConfig.dumpRemoteCFGToFile",
+        side_effect=fakeDump,
+    )
+
+    ce = Mock()
+    ce.submitJob = Mock(return_value={"OK": True, "Value": ["789"], "PilotStampDict": {"789": "abcdef"}})
+
+    result = jobAgent._submitJobWrapper(
+        jobID=jobID,
+        ce=ce,
+        diracInstallLocation="diracInstallLocation",
+        cpuInfo={"CPUTimeLeft": 4242, "CPUNormalizationFactor": 7.5},
+        jobParams=jobParams,
+        resourceParams={},
+        optimizerParams={},
+        processors=1,
+    )
+
+    assert result["OK"], result
+
+    # Verify the CFG that was shipped has the LocalSite section we injected
+    reloaded = CFG()
+    reloaded.loadFromFile(str(Path(jobID) / "dirac.cfg"))
+    assert reloaded.getOption("/LocalSite/CPUTimeLeft") == "4242"
+    assert reloaded.getOption("/LocalSite/CPUNormalizationFactor") == "7.5"
+    assert reloaded.getOption("/DIRAC/VirtualOrganization") == "lhcb"
+
+    shutil.rmtree("job", ignore_errors=True)

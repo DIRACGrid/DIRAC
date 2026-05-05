@@ -19,6 +19,8 @@ import time
 from collections import defaultdict
 from pathlib import Path
 
+from diraccfg import CFG
+
 from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues
@@ -243,6 +245,22 @@ class PushJobAgent(JobAgent):
             ce = queueDictionary["CE"]
             ce.setProxy(pilotProxy)
 
+            # Resolve per-queue CPU info to advertise to the payload via
+            # /LocalSite/CPUTimeLeft and /LocalSite/CPUNormalizationFactor.
+            # For push CEs both CPUTime (wall-clock seconds) and
+            # CPUNormalizationFactor (HS06) are CS fields on the queue;
+            # /LocalSite/CPUTimeLeft is read downstream as CPU work in
+            # HS06-seconds (see JobAgent._computeCPUWorkLeft docstring), so we
+            # multiply here.
+            queueParams = queueDictionary["ParametersDict"]
+            cpuTime = int(queueParams.get("CPUTime", 0) or 0)
+            cpuNormalizationFactor = float(queueParams.get("CPUNormalizationFactor", 0) or 0)
+            cpuInfo = {
+                "CPUTimeLeft": int(cpuTime * cpuNormalizationFactor),
+                "CPUNormalizationFactor": cpuNormalizationFactor,
+            }
+            self.log.info("Injecting per-queue CPU info", f"queue={queueName} info={cpuInfo}")
+
             if self.submissionPolicy == "JobWrapper":
                 # Check errors that could have occurred during job submission and/or execution
                 result = self._checkSubmittedJobWrappers(ce, queueDictionary["ParametersDict"]["Site"])
@@ -342,6 +360,16 @@ class PushJobAgent(JobAgent):
                         break
                     proxyChain = result_setupProxy.get("Value")
 
+                    # Splice /LocalSite CPU info onto the dirac-jobexec command line
+                    # (PoolCE workers are reused across queues, so a per-job arg is the
+                    # safest way to deliver per-queue values to the payload).
+                    if "dirac-jobexec" in params.get("Executable", "").strip():
+                        cpuOpts = (
+                            f"-o /LocalSite/CPUTimeLeft={cpuInfo['CPUTimeLeft']} "
+                            f"-o /LocalSite/CPUNormalizationFactor={cpuInfo['CPUNormalizationFactor']}"
+                        )
+                        params["Arguments"] = (params.get("Arguments", "") + " " + cpuOpts).strip()
+
                     resultSubmission = self._submitJob(
                         jobID=jobID,
                         jobParams=params,
@@ -353,7 +381,7 @@ class PushJobAgent(JobAgent):
                         maxNumberOfProcessors=submissionParams["maxNumberOfProcessors"],
                         mpTag=submissionParams["mpTag"],
                     )
-                    if not result["OK"]:
+                    if not resultSubmission["OK"]:
                         self._rescheduleFailedJob(jobID, resultSubmission["Message"])
                         self.failedQueues[queueName] += 1
                         break
@@ -362,12 +390,13 @@ class PushJobAgent(JobAgent):
                         jobID=jobID,
                         ce=ce,
                         diracInstallLocation=queueDictionary["ParametersDict"]["DIRACInstallLocation"],
+                        cpuInfo=cpuInfo,
                         jobParams=params,
                         resourceParams=ceDict,
                         optimizerParams=optimizerParams,
                         processors=submissionParams["processors"],
                     )
-                    if not result["OK"]:
+                    if not resultSubmission["OK"]:
                         self.failedQueues[queueName] += 1
                         break
 
@@ -512,11 +541,30 @@ class PushJobAgent(JobAgent):
         job.jobReport.commit()
         return S_OK(result["Value"])
 
+    def _appendLocalSiteCFG(self, cfgFilename, cpuInfo):
+        """Append /LocalSite/CPUTimeLeft and /LocalSite/CPUNormalizationFactor
+        to a CFG file produced by ``gConfig.dumpRemoteCFGToFile``.
+
+        Necessary because ``dumpRemoteCFGToFile`` only writes ``remoteCFG``
+        while ``gConfig.setOptionValue`` writes to ``localCFG`` — so an
+        in-memory mutation followed by the dump would not propagate the
+        values to the JobWrapper.
+        """
+        cfg = CFG()
+        cfg.loadFromFile(str(cfgFilename))
+        if not cfg.isSection("LocalSite"):
+            cfg.createNewSection("LocalSite")
+        cfg.setOption("/LocalSite/CPUTimeLeft", str(cpuInfo["CPUTimeLeft"]))
+        cfg.setOption("/LocalSite/CPUNormalizationFactor", str(cpuInfo["CPUNormalizationFactor"]))
+        with open(cfgFilename, "w") as fd:
+            fd.write(str(cfg))
+
     def _submitJobWrapper(
         self,
         jobID: str,
         ce: ComputingElement,
         diracInstallLocation: str,
+        cpuInfo: dict,
         jobParams: dict,
         resourceParams: dict,
         optimizerParams: dict,
@@ -526,6 +574,8 @@ class PushJobAgent(JobAgent):
 
         :param jobID: job ID
         :param ce: ComputingElement instance
+        :param cpuInfo: per-queue CPU info ``{'CPUTimeLeft', 'CPUNormalizationFactor'}``
+            to advertise to the payload via the shipped ``dirac.cfg``
         :param jobParams: job parameters
         :param resourceParams: resource parameters
         :param optimizerParams: optimizer parameters
@@ -571,6 +621,9 @@ class PushJobAgent(JobAgent):
         # Dump the remote CFG config into the job directory: it is needed for the JobWrapperTemplate
         cfgFilename = Path(job.jobIDPath) / "dirac.cfg"
         gConfig.dumpRemoteCFGToFile(cfgFilename)
+        # Inject /LocalSite/CPUTimeLeft and /LocalSite/CPUNormalizationFactor for the payload.
+        # dumpRemoteCFGToFile only dumps remoteCFG, so we patch the dirac.cfg file directly.
+        self._appendLocalSiteCFG(cfgFilename, cpuInfo)
 
         # Generate a light JobWrapper executor script
         jobDesc = {
