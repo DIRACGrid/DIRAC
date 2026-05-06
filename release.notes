@@ -1,3 +1,33 @@
+[v9.1.9]
+
+*WorkloadManagement
+
+FIX: (#8527) Sandboxstore - find filepath from serviceName instead of URL to support loadbalancer
+FIX: (#8526) adapt PushJobAgent to new time management mechanism
+
+*Core
+
+NEW: (#8525) return full URL when pinging a service. This is useful to know which host answers behind a load balancer
+CHANGE: (#8524) (#8524) cache extension entry-point lookups
+CHANGE: (#8524) (#8524) avoid per-frame stat() in S_ERROR stack capture
+CHANGE: (#8524) (#8524) cache parsed proxy file by (path, mtime, size, inode)
+CHANGE: (#8524) (#8524) skip MySQL ping on warm thread-local connections
+FIX: (#8524) (#8524) drop dead MySQL connection on connection-loss errors
+FIX: (#8522) Most activity sent via MonitoringReporter was lost.
+
+*DataManagementSystem
+
+CHANGE: (#8524) (#8524) share DMSHelpers instance per VO
+FIX: (#8524) (#8524) stop closing pooled MySQL connection in getDirectorySize
+
+*AccountingSystem
+
+FIX: (#8524) (#8524) stop closing pooled MySQL connection in bucket insert
+
+*WorkloadManagementSystem
+
+FIX: (#8524) (#8524) stop closing pooled MySQL connection in PilotStatusAgent
+
 [v9.1.8]
 
 *WorkloadManagement
