@@ -6,6 +6,7 @@ __all__ = (
     "diracxTokenFromPEM",
     "executeRPCStub",
     "FutureClient",
+    "writeDiracxTokenCache",
 )
 
 import base64
@@ -93,9 +94,18 @@ class FutureClient:
     ...
 
 
-@contextmanager
-def DiracXClient() -> Iterator[SyncDiracClient]:
-    """Get a DiracX client instance with the current user's credentials"""
+def writeDiracxTokenCache() -> tuple[str, Path]:
+    """Resolve the DiracX URL and write the proxy's token to a hash-named
+    cache file under ``gettempdir()``. Idempotent — re-uses an existing
+    cache file when its content already matches the current token.
+
+    Suitable for both ``DiracxPreferences(credentials_path=...)`` and the
+    ``DIRACX_CREDENTIALS_PATH`` env var.
+
+    :return: Tuple of (diracx_url, token_file_path).
+    :raises ValueError: If ``/DiracX/URL`` is unset or the proxy carries no
+        DiracX token.
+    """
     diracxUrl = gConfig.getValue("/DiracX/URL")
     if not diracxUrl:
         raise ValueError("Missing mandatory /DiracX/URL configuration")
@@ -112,6 +122,13 @@ def DiracXClient() -> Iterator[SyncDiracClient]:
         with secureOpenForWrite(token_file) as (fd, _):
             fd.write(json.dumps(diracxToken))
 
+    return diracxUrl, token_file
+
+
+@contextmanager
+def DiracXClient() -> Iterator[SyncDiracClient]:
+    """Get a DiracX client instance with the current user's credentials"""
+    diracxUrl, token_file = writeDiracxTokenCache()
     pref = DiracxPreferences(url=diracxUrl, credentials_path=token_file)
     with SyncDiracClient(diracx_preferences=pref) as api:
         yield api
