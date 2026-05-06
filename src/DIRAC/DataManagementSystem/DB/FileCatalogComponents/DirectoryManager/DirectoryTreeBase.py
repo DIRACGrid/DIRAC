@@ -804,12 +804,10 @@ class DirectoryTreeBase:
             )
 
         if not resultLogical["OK"]:
-            connection.close()
             return resultLogical
 
         resultDict = resultLogical["Value"]
         if not resultDict["Successful"]:
-            connection.close()
             return resultLogical
 
         if longOutput:
@@ -826,11 +824,9 @@ class DirectoryTreeBase:
                 resultDict["QueryTime"] = time.time() - start
                 result = S_OK(resultDict)
                 result["Message"] = "Failed to get the physical size on storage"
-                connection.close()
                 return result
             for lfn in resultPhysical["Value"]["Successful"]:
                 resultDict["Successful"][lfn]["PhysicalSize"] = resultPhysical["Value"]["Successful"][lfn]
-        connection.close()
         resultDict["QueryTime"] = time.time() - start
 
         return S_OK(resultDict)

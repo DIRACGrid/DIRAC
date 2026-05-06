@@ -8,6 +8,7 @@
 from __future__ import annotations
 
 import functools
+import linecache
 import sys
 import traceback
 from types import TracebackType
@@ -41,6 +42,41 @@ class DErrorReturnType(TypedDict):
 DReturnType = Union[DOKReturnType[T], DErrorReturnType]
 
 
+def _formatStackCached(skip: int = 1) -> list[str]:
+    """Like ``traceback.format_stack()`` but without the per-frame ``stat()``.
+
+    Source files are read into ``linecache`` once and reused; cached lines may
+    therefore lag behind a mid-process source edit.
+    """
+    frame = sys._getframe(skip)
+    frames = []
+    while frame is not None:
+        code = frame.f_code
+        frames.append((code.co_filename, frame.f_lineno, code.co_name))
+        frame = frame.f_back
+    frames.reverse()
+
+    cache = linecache.cache
+    out = []
+    for filename, lineno, name in frames:
+        if filename not in cache:
+            try:
+                linecache.updatecache(filename)
+            except OSError:
+                pass
+        cached = cache.get(filename)
+        line_text = ""
+        if cached is not None:
+            file_lines = cached[2]
+            if 0 < lineno <= len(file_lines):
+                line_text = file_lines[lineno - 1].strip()
+        formatted = f'  File "{filename}", line {lineno}, in {name}\n'
+        if line_text:
+            formatted += f"    {line_text}\n"
+        out.append(formatted)
+    return out
+
+
 def S_ERROR(*args: Any, **kwargs: Any) -> DErrorReturnType:
     """return value on error condition
 
@@ -69,8 +105,7 @@ def S_ERROR(*args: Any, **kwargs: Any) -> DErrorReturnType:
 
     if callStack is None:
         try:
-            callStack = traceback.format_stack()
-            callStack.pop()
+            callStack = _formatStackCached(skip=2)
         except Exception:
             callStack = []
 

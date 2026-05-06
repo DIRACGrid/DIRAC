@@ -4,9 +4,13 @@ Link to the RFC 3820: https://tools.ietf.org/html/rfc3820
 In particular, limited proxy: https://tools.ietf.org/html/rfc3820#section-3.8
 
 """
+from __future__ import annotations
+
 import copy
 import hashlib
+import os
 import re
+from collections import OrderedDict
 
 import M2Crypto.X509
 
@@ -22,6 +26,10 @@ from DIRAC.Core.Utilities.File import secureOpenForWrite
 needCertList = executeOnlyIf("_certList", S_ERROR(DErrno.ENOCHAIN))
 # Decorator to check that the PKey has been loaded
 needPKey = executeOnlyIf("_keyObj", S_ERROR(DErrno.ENOPKEY))
+
+# Cache of parsed proxy files keyed by (path, mtime_ns, size, inode).
+_PROXY_LOAD_CACHE: OrderedDict[tuple, dict] = OrderedDict()
+_PROXY_LOAD_CACHE_MAX = 8
 
 
 class X509Chain:
@@ -290,11 +298,40 @@ class X509Chain:
         :returns: S_OK  / S_ERROR
         """
         try:
+            st = os.stat(chainLocation)
+        except OSError as e:
+            return S_ERROR(DErrno.EOF, f"{chainLocation}: {repr(e).replace(',)', ')')}")
+
+        cacheKey = (chainLocation, st.st_mtime_ns, st.st_size, st.st_ino)
+        cached = _PROXY_LOAD_CACHE.get(cacheKey)
+        if cached is not None:
+            _PROXY_LOAD_CACHE.move_to_end(cacheKey)
+            # Shallow copy so callers mutating self._certList don't poison the cache
+            self._certList = list(cached["certList"])
+            self._keyObj = cached["keyObj"]
+            self.__isProxy = cached["isProxy"]
+            self.__isLimitedProxy = cached["isLimitedProxy"]
+            self.__firstProxyStep = cached["firstProxyStep"]
+            self.__hash = False
+            return S_OK()
+
+        try:
             with open(chainLocation) as fd:
                 pemData = fd.read()
         except Exception as e:
             return S_ERROR(DErrno.EOF, f"{chainLocation}: {repr(e).replace(',)', ')')}")
-        return self.loadProxyFromString(pemData)
+        result = self.loadProxyFromString(pemData)
+        if result["OK"]:
+            _PROXY_LOAD_CACHE[cacheKey] = {
+                "certList": list(self._certList),
+                "keyObj": self._keyObj,
+                "isProxy": self.__isProxy,
+                "isLimitedProxy": self.__isLimitedProxy,
+                "firstProxyStep": self.__firstProxyStep,
+            }
+            while len(_PROXY_LOAD_CACHE) > _PROXY_LOAD_CACHE_MAX:
+                _PROXY_LOAD_CACHE.popitem(last=False)
+        return result
 
     def loadProxyFromString(self, pemData):
         """
