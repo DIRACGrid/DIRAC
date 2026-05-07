@@ -97,7 +97,7 @@ dependencies:
   - types-cachetools
   - types-python-dateutil
   - types-pytz
-  - types-PyYAML
+  - types-pyyaml
   - types-requests
   - types-setuptools
   - pip:
