@@ -704,7 +704,7 @@ class MySQL:
         return S_OK()
 
     @captureOptimizerTraces
-    def _query(self, cmd, *, conn=None, debug=True):
+    def _query(self, cmd, *, args=None, conn=None, debug=True):
         """
         execute MySQL query command
 
@@ -727,7 +727,7 @@ class MySQL:
 
         try:
             cursor = connection.cursor()
-            if cursor.execute(cmd):
+            if cursor.execute(cmd, args=args):
                 res = cursor.fetchall()
             else:
                 res = ()
