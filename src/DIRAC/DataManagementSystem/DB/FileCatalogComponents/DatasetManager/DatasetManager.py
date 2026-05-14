@@ -199,13 +199,17 @@ class DatasetManager:
                 directoryPaths[directoryIDs[dirPath]] = dirPath
 
         wheres = []
+        args = []
         for dirPath in directoryIDs:
             dsNames = dirDict[dirPath]
             dirID = directoryIDs[dirPath]
-            wheres.append("( DirID=%d AND DatasetName IN (%s) )" % (dirID, stringListToString(dsNames)))
+            placeholders = ", ".join(["%s"] * len(dsNames))
+            wheres.append(f" DirID=%s AND DatasetName IN ({placeholders})")
+            args.append(dirID)
+            args.extend(dsNames)
 
         req = f"SELECT DatasetName,DirID,DatasetID FROM FC_MetaDatasets WHERE {' OR '.join(wheres)}"
-        result = self.db._query(req, conn=connection)
+        result = self.db._query(req, args=args, conn=connection)
         if not result["OK"]:
             return result
         for dsName, dirID, dsID in result["Value"]:
@@ -223,9 +227,9 @@ class DatasetManager:
         failed = {}
         successful = {}
         dsIDs = {}
-        req = "SELECT COUNT(DatasetName),DatasetName,DatasetID FROM FC_MetaDatasets WHERE DatasetName in "
-        req += f"( {stringListToString(nodirDatasets)} ) GROUP BY DatasetName,DatasetID"
-        result = self.db._query(req, conn=connection)
+        placeholders = ", ".join(["%s"] * len(nodirDatasets))
+        req = f"SELECT COUNT(DatasetName),DatasetName,DatasetID FROM FC_MetaDatasets WHERE DatasetName IN ({placeholders}) GROUP BY DatasetName,DatasetID"
+        result = self.db._query(req, args=nodirDatasets, conn=connection)
         if not result["OK"]:
             return result
         for dsCount, dsName, dsID in result["Value"]:
@@ -235,10 +239,9 @@ class DatasetManager:
                 dsIDs[dsName] = str(dsID)
 
         if dsIDs:
-            req = "SELECT DatasetName,DatasetID,DirID FROM FC_MetaDatasets WHERE DatasetID in (%s)" % ",".join(
-                dsIDs.values()
-            )
-            result = self.db._query(req, conn=connection)
+            placeholders = ", ".join(["%s"] * len(dsIDs))
+            req = f"SELECT DatasetName,DatasetID,DirID FROM FC_MetaDatasets WHERE DatasetID IN ({placeholders})"
+            result = self.db._query(req, args=list(dsIDs.values()), conn=connection)
             if not result["OK"]:
                 return result
             for dsName, dsID, dirID in result["Value"]:
@@ -261,11 +264,12 @@ class DatasetManager:
         datasetDict = result["Value"]["Successful"]
         for dataset, annotation in datasets.items():
             if dataset in datasetDict:
-                req = "REPLACE FC_DatasetAnnotations (Annotation,DatasetID) VALUE ('%s',%d)" % (
+                req = "REPLACE FC_DatasetAnnotations (Annotation,DatasetID) VALUE (%s,%s)"
+                args = (
                     annotation,
                     datasetDict[dataset]["DatasetID"],
                 )
-                result = self.db._update(req, conn=connection)
+                result = self.db._update(req, args=args, conn=connection)
                 if not result["OK"]:
                     failed[dataset] = "Failed to add annotation"
                 else:
@@ -277,6 +281,7 @@ class DatasetManager:
         """Get annotations for the given datasets"""
         successful = {}
         failed = {}
+        idNames = None
         if datasets:
             result = self._findDatasets(datasets)
             if not result["OK"]:
@@ -287,11 +292,12 @@ class DatasetManager:
             for dataset in result["Value"]["Failed"]:
                 failed[dataset] = "Dataset not found"
 
-            idString = ",".join([str(x) for x in dsDict])
-            req = f"SELECT DatasetID, Annotation FROM FC_DatasetAnnotations WHERE DatasetID in ({idString})"
+            idNames = [str(x) for x in dsDict]
+            placeholders = ", ".join(["%s"] * len(idNames))
+            req = f"SELECT DatasetID, Annotation FROM FC_DatasetAnnotations WHERE DatasetID in ({placeholders})"
         else:
             req = "SELECT DatasetID, Annotation FROM FC_DatasetAnnotations"
-        result = self.db._query(req)
+        result = self.db._query(req, args=idNames)
         if not result["OK"]:
             return result
 
@@ -362,8 +368,8 @@ class DatasetManager:
     def __removeDataset(self, datasetName, credDict):
         """Remove existing dataset"""
 
-        req = f"SELECT DatasetID FROM FC_MetaDatasets WHERE DatasetName='{datasetName}'"
-        result = self.db._query(req)
+        req = "SELECT DatasetID FROM FC_MetaDatasets WHERE DatasetName=%s"
+        result = self.db._query(req, args=(datasetName,))
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -372,8 +378,8 @@ class DatasetManager:
         datasetID = result["Value"][0][0]
 
         for table in ["FC_MetaDatasetFiles", "FC_MetaDatasets", "FC_DatasetAnnotations"]:
-            req = f"DELETE FROM {table} WHERE DatasetID={datasetID}"
-            result = self.db._update(req)
+            req = f"DELETE FROM {table} WHERE DatasetID=%s"
+            result = self.db._update(req, args=(datasetID,))
 
         return result
 
@@ -398,8 +404,8 @@ class DatasetManager:
     def __checkDataset(self, datasetName, credDict):
         """Check that the dataset parameters correspond to the actual state"""
         req = "SELECT MetaQuery,DatasetHash,TotalSize,NumberOfFiles FROM FC_MetaDatasets"
-        req += f" WHERE DatasetName='{datasetName}'"
-        result = self.db._query(req)
+        req += " WHERE DatasetName=%s"
+        result = self.db._query(req, args=(datasetName,))
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -462,11 +468,14 @@ class DatasetManager:
             changeDict = result["Value"]
 
         req = "UPDATE FC_MetaDatasets SET "
+        args = []
         for field in changeDict:
-            req += f"{field}='{str(changeDict[field][1])}', "
+            req += f"{field}=%s, "
+            args.append(str(changeDict[field][1]))
         req += "ModificationDate=UTC_TIMESTAMP() "
-        req += f"WHERE DatasetName='{datasetName}'"
-        result = self.db._update(req)
+        req += "WHERE DatasetName=%s"
+        args.append(datasetName)
+        result = self.db._update(req, args=args)
         return result
 
     def getDatasets(self, datasets, credDict):
@@ -507,15 +516,15 @@ class DatasetManager:
         ]
         parameterString = ",".join(parameterList)
 
-        req = f"SELECT {parameterString} FROM FC_MetaDatasets"
+        req = f"SELECT {parameerString} FROM FC_MetaDatasets"
         dsName = os.path.basename(datasetName)
         if "*" in dsName:
-            dName = dsName.replace("*", "%")
-            req += f" WHERE DatasetName LIKE '{dName}'"
+            dName = dsName.replace("_", "\\_").replace("*", "%")
+            req += " WHERE DatasetName LIKE %s"
         elif dsName:
-            req += f" WHERE DatasetName='{dsName}'"
+            req += " WHERE DatasetName=%s"
 
-        result = self.db._query(req)
+        result = self.db._query(req, args=(dsName,))
         if not result["OK"]:
             return result
 
@@ -546,8 +555,8 @@ class DatasetManager:
         ]
         parameterString = ",".join(parameterList)
 
-        req = f"SELECT {parameterString} FROM FC_MetaDatasets WHERE DirID={str(dirID)}"
-        result = self.db._query(req)
+        req = f"SELECT {parameterString} FROM FC_MetaDatasets WHERE DirID=%s"
+        result = self.db._query(req, args=(str(dirID),))
         if not result["OK"]:
             return result
         userDict = {}
@@ -668,8 +677,12 @@ class DatasetManager:
         ]
         parameterString = ",".join(parameterList)
 
-        req = "SELECT %s FROM FC_MetaDatasets WHERE DatasetName='%s' AND DirID=%d" % (parameterString, dsName, dirID)
-        result = self.db._query(req)
+        req = f"SELECT {parameterString} FROM FC_MetaDatasets WHERE DatasetName=%s AND DirID=%s"
+        args = (
+            dsName,
+            dirID,
+        )
+        result = self.db._query(req, args)
         if not result["OK"]:
             return result
 
@@ -684,9 +697,15 @@ class DatasetManager:
         if not result["OK"]:
             return result
         intStatus = result["Value"]
-        req = "UPDATE FC_MetaDatasets SET Status=%d, ModificationDate=UTC_TIMESTAMP() " % intStatus
-        req += f"WHERE DatasetName='{datasetName}'"
-        result = self.db._update(req)
+        req = "UPDATE FC_MetaDatasets SET Status=%s, ModificationDate=UTC_TIMESTAMP() "
+        req += "WHERE DatasetName=%s"
+        result = self.db._update(
+            req,
+            args=(
+                intStatus,
+                datasetName,
+            ),
+        )
         return result
 
     def getDatasetStatus(self, datasetName, credDict):
@@ -700,8 +719,8 @@ class DatasetManager:
 
     def __getDynamicDatasetFiles(self, datasetID, credDict):
         """Get dataset lfns from a dynamic meta query"""
-        req = "SELECT MetaQuery FROM FC_MetaDatasets WHERE DatasetID=%d" % datasetID
-        result = self.db._query(req)
+        req = "SELECT MetaQuery FROM FC_MetaDatasets WHERE DatasetID=%s"
+        result = self.db._query(req, args=(datasetID,))
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -720,8 +739,8 @@ class DatasetManager:
     def __getFrozenDatasetFiles(self, datasetID, credDict):
         """Get dataset lfns from a frozen snapshot"""
 
-        req = "SELECT FileID FROM FC_MetaDatasetFiles WHERE DatasetID=%d" % datasetID
-        result = self.db._query(req)
+        req = "SELECT FileID FROM FC_MetaDatasetFiles WHERE DatasetID=%s"
+        result = self.db._query(req, args=(datasetID,))
         if not result["OK"]:
             return result
 
@@ -794,20 +813,21 @@ class DatasetManager:
             return S_OK()
 
         datasetID = result["Value"]["DatasetID"]
-        req = "DELETE FROM FC_MetaDatasetFiles WHERE DatasetID=%d" % datasetID
-        result = self.db._update(req)
+        req = "DELETE FROM FC_MetaDatasetFiles WHERE DatasetID=%s"
+        result = self.db._update(req, args=(datasetID,))
 
         result = self.__getDynamicDatasetFiles(datasetID, credDict)
 
         if not result["OK"]:
             return result
         fileIDList = result["FileIDList"]
-        valueList = []
+        req = f"INSERT INTO FC_MetaDatasetFiles (DatasetID,FileID) VALUES "
+        args = []
         for fileID in fileIDList:
-            valueList.append("(%d,%d)" % (datasetID, fileID))
-        valueString = ",".join(valueList)
-        req = f"INSERT INTO FC_MetaDatasetFiles (DatasetID,FileID) VALUES {valueString}"
-        result = self.db._update(req)
+            req += "(%s,%s)"
+            args.append(datasetID)
+            args.append(fileID)
+        result = self.db._update(req, args=args)
         if not result["OK"]:
             return result
 
@@ -842,8 +862,8 @@ class DatasetManager:
             return S_OK()
 
         datasetID = result["Value"]["DatasetID"]
-        req = "DELETE FROM FC_MetaDatasetFiles WHERE DatasetID=%d" % datasetID
-        result = self.db._update(req)
+        req = "DELETE FROM FC_MetaDatasetFiles WHERE DatasetID=%s"
+        result = self.db._update(req, args=(datasetID,))
 
         result = self.setDatasetStatus(datasetName, "Dynamic")
         return result
