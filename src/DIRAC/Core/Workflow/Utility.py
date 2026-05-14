@@ -3,6 +3,7 @@
     workflow operations
 """
 import re
+from DIRAC.Core.Utilities.SaferEval import saferEval
 
 
 def getSubstitute(param, skip_list=[]):
@@ -23,7 +24,7 @@ def substitute(param, variable, value):
     tmp_string = str(param).replace("@{" + variable + "}", value)
     if isinstance(param, str):
         return tmp_string
-    return eval(tmp_string)
+    return saferEval(tmp_string)
 
 
 def resolveVariables(varDict):

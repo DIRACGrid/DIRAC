@@ -405,7 +405,7 @@ class DSession(DConfig):
         self.setEnv("cwd", value)
 
     def getReplicationSEs(self):
-        replication_scheme = self.getEnv("replication_scheme", "all( )")["Value"]
+        replication_scheme = self.getEnv("replication_scheme", "all()")["Value"]
         replication_ses = self.getEnv("replication_ses", "")["Value"]
 
         if not replication_ses:
@@ -413,17 +413,32 @@ class DSession(DConfig):
 
         replication_ses = replication_ses.split(",")
 
-        def randomSEs(num):
-            random.shuffle(replication_ses)
+        def get_ses():
+            return replication_ses
+
+        def first_se(num):
             return replication_ses[0:num]
 
-        schemes = {
-            "all": lambda: replication_ses,
-            "first": lambda num: replication_ses[0:num],
-            "random": randomSEs,
-        }
+        def random_se(num=None):
+            random.shuffle(replication_ses)
+            return replication_ses[0:num] if num is not None else replication_ses
 
-        return eval(replication_scheme, schemes)
+        schemes = {"all": get_ses, "first": first_se, "random": random_se}
+
+        parts = replication_scheme.strip().split("(")
+        func_name = parts[0]
+        if func_name not in schemes:
+            raise ValueError(f"Unknown replication scheme: {func_name!r}")
+
+        args = None
+        if len(parts) > 1:
+            arg_val = parts[1].rstrip(")").strip()
+            if arg_val:
+                args = int(arg_val)
+        func = schemes[func_name]
+        if args is not None:
+            return func(args)
+        return func()
 
     def getJDL(self):
         return self.getEnv("jdl", "")["Value"]

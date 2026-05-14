@@ -13,6 +13,9 @@ class PluginBase:
         """plugin name has to be passed in: it will then be executed as one of the functions below, e.g.
         plugin = 'BySize' will execute TransformationPlugin('BySize')._BySize()
         """
+        plugin = str(plugin)
+        if not re.fullmatch(r"[a-zA-Z]+", plugin):
+            raise ValueError(f"Invalid plugin name: {plugin!r}")
         self.plugin = plugin
         self.params = {}
 
@@ -28,8 +31,8 @@ class PluginBase:
     def run(self):
         """this is a wrapper to invoke the plugin (self._%s()" % self.plugin)"""
         try:
-            evalString = f"self._{self.plugin}()"
-            return eval(evalString)  # pylint: disable=eval-used
+            method = getattr(self, f"_{self.plugin}")
+            return method()
         except AttributeError as x:
             if re.search(self.plugin, str(x)):
                 return S_ERROR("Plugin not found")

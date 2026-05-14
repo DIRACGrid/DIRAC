@@ -9,6 +9,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.API import API
 from DIRAC.Core.Utilities.JEncode import encode
 from DIRAC.Core.Utilities.PromptUser import promptUser
+from DIRAC.Core.Utilities.SaferEval import saferEval
 from DIRAC.MonitoringSystem.Client.WebAppClient import WebAppClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.TransformationSystem.Client.BodyPlugin.BaseBody import BaseBody
@@ -168,7 +169,7 @@ class Transformation(API):
     def __setSE(self, seParam, seList):
         if isinstance(seList, str):
             try:
-                seList = eval(seList)
+                seList = saferEval(seList)
             except Exception:
                 seList = seList.split(",")
         elif isinstance(seList, (list, dict, tuple)):
