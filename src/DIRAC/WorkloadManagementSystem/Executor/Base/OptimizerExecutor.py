@@ -1,9 +1,9 @@
 """ Base class for all the executor modules for Jobs Optimization
 """
 import threading
-import datetime  # Because eval(valenc) might require it
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, List
+from DIRAC.Core.Utilities.SaferEval import saferEval
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
 from DIRAC.WorkloadManagementSystem.Client import JobStatus, JobMinorStatus
@@ -122,7 +122,7 @@ class OptimizerExecutor(ExecutorModule):
                 return S_OK(value)
         except Exception:
             self.jobLog.exception(f"Opt param {name} doesn't seem to be dencoded {valenc!r}")
-        return S_OK(eval(valenc))
+        return S_OK(saferEval(valenc))
 
     @property
     def jobLog(self):

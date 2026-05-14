@@ -10,6 +10,7 @@ from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.Core.Utilities.SaferEval import saferEval
 
 
 def registerSwitches():
@@ -316,7 +317,7 @@ def run(args, switchDict):
 
     # it exectues the query request: e.g. if it's a 'select' it executes 'select()'
     # the same if it is add, delete
-    result = eval(query + "( switchDict )")
+    result = saferEval(query + "( switchDict )")
 
     if result["OK"]:
         if query == "select" and result["match"] > 0:

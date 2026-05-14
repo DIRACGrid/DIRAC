@@ -38,6 +38,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getGroupsWithVOMSAttribute
 from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Core.Utilities.SaferEval import saferEval
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -126,8 +127,8 @@ class OperationHandlerBase(metaclass=DynamicProps):
         for option, value in csOptionsDict.items():
             # hack to set proper types
             try:
-                value = eval(value)
-            except NameError:
+                value = saferEval(value)
+            except ValueError:
                 pass
             self.makeProperty(option, value, True)  # pylint: disable=no-member
 
