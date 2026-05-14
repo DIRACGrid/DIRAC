@@ -5,6 +5,7 @@ import os
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.List import stringListToString
+from DIRAC.Core.Utilities.SaferEval import saferEval
 
 
 class DatasetManager:
@@ -412,7 +413,7 @@ class DatasetManager:
             return S_ERROR(f"Unknown MetaDataset {datasetName}")
 
         row = result["Value"][0]
-        metaQuery = eval(row[0])
+        metaQuery = saferEval(row[0])
         datasetHashOld = row[1]
         totalSizeOld = int(row[2])
         numberOfFilesOld = int(row[3])
@@ -516,7 +517,7 @@ class DatasetManager:
         ]
         parameterString = ",".join(parameterList)
 
-        req = f"SELECT {parameerString} FROM FC_MetaDatasets"
+        req = f"SELECT {parameterString} FROM FC_MetaDatasets"
         dsName = os.path.basename(datasetName)
         if "*" in dsName:
             dName = dsName.replace("_", "\\_").replace("*", "%")
@@ -604,7 +605,7 @@ class DatasetManager:
     def __getDatasetDict(self, row):
         resultDict = {}
         resultDict["DatasetID"] = int(row[0])
-        resultDict["MetaQuery"] = eval(row[1])
+        resultDict["MetaQuery"] = saferEval(row[1])
         resultDict["DirID"] = int(row[2])
         resultDict["TotalSize"] = int(row[3])
         resultDict["NumberOfFiles"] = int(row[4])
@@ -726,7 +727,7 @@ class DatasetManager:
         if not result["Value"]:
             return S_ERROR("Unknown MetaDataset ID %d" % datasetID)
 
-        metaQuery = eval(result["Value"][0][0])
+        metaQuery = saferEval(result["Value"][0][0])
         result = self.__getMetaQueryParameters(metaQuery, credDict)
         if not result["OK"]:
             return result
