@@ -103,8 +103,6 @@ def main():
     if not jobs:
         gLogger.always("No jobs found...")
         DIRAC.exit(0)
-    # res = monitoring.getJobsSummary( jobs )
-    # print eval( res['Value'] )[jobs[0]]
 
     allJobs = set()
     result = {}

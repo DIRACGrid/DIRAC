@@ -6,6 +6,7 @@ from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
 from DIRAC.Core.Workflow.Workflow import Workflow
+from DIRAC.Core.Utilities.SaferEval import saferEval
 
 
 class WorkflowXMLHandler(ContentHandler):
@@ -112,7 +113,7 @@ class WorkflowXMLHandler(ContentHandler):
             if self.stack[-1].isTypeString():
                 self.stack[-1].setValue(ch)
             else:
-                self.stack[-1].setValue(eval(ch))
+                self.stack[-1].setValue(saferEval(ch))
 
         # objects
         elif name == "Workflow":

@@ -8,6 +8,7 @@ from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.JEncode import encode
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Base.API import API
+from DIRAC.Core.Utilities.SaferEval import saferEval
 from DIRAC.TransformationSystem.Client.BodyPlugin.BaseBody import BaseBody
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -170,7 +171,7 @@ class Transformation(API):
     def __setSE(self, seParam, seList):
         if isinstance(seList, str):
             try:
-                seList = eval(seList)
+                seList = saferEval(seList)
             except Exception:
                 seList = seList.split(",")
         elif isinstance(seList, (list, dict, tuple)):

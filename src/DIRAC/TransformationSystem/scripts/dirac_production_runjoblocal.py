@@ -6,6 +6,7 @@ files and runs the job
 """
 import os
 import shutil
+import subprocess
 import ssl
 
 from xml.etree import ElementTree as et
@@ -81,11 +82,25 @@ def __configurePilot(basepath, vo):
     currentSetup = getSetup()
     masterCS = gConfigurationData.getMasterServer()
 
-    os.system(
-        "python "
-        + basepath
-        + "dirac-pilot.py -S %s -l %s -C %s -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch -dd"
-        % (currentSetup, vo, masterCS)
+    subprocess.run(
+        [
+            "python",
+            basepath + "dirac-pilot.py",
+            "-S",
+            currentSetup,
+            "-l",
+            vo,
+            "-C",
+            masterCS,
+            "-N",
+            "ce.debug.ch",
+            "-Q",
+            "default",
+            "-n",
+            "DIRAC.JobDebugger.ch",
+            "-dd",
+        ],
+        check=False,
     )
 
     diracdir = os.path.expanduser("~") + os.path.sep

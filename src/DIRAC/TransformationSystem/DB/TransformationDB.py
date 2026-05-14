@@ -18,6 +18,7 @@ from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import stringListToString, intListToString, breakListIntoChunks
+from DIRAC.Core.Utilities.SaferEval import saferEval
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.Subprocess import pythonCall
@@ -1197,7 +1198,7 @@ class TransformationDB(DB):
             elif parameterType == "Integer":
                 parameterValue = int(parameterValue)
             elif parameterType == "Dict":
-                parameterValue = eval(parameterValue)
+                parameterValue = saferEval(parameterValue)
             queryDict[parameterName] = parameterValue
         if not queryDict:
             return S_ERROR(ENOENT, "No MetaQuery found for transformation")
