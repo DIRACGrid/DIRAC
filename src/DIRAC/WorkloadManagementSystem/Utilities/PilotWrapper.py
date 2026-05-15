@@ -290,11 +290,17 @@ for loc in locations:
       # in practice, some prior versions may be composed of recent urllib version containing the param
       if 'context' in url_library_urlopen.__code__.co_varnames:
         import ssl
-        context = ssl._create_unverified_context()
+        context = ssl.create_default_context()
+        check_dirs = [
+          os.environ.get('X509_CERT_DIR', '/etc/grid-security/certificates'),
+          "/cvmfs/grid.cern.ch/etc/grid-security/certificates",
+        ]
+        for cert_dir in check_dirs:
+            if cert_dir and os.path.isdir(cert_dir):
+                context.load_verify_locations(capath=cert_dir)
         remoteFile = url_library_urlopen(os.path.join(loc, fileName),
                                          timeout=10,
                                          context=context)
-
       else:
         remoteFile = url_library_urlopen(os.path.join(loc, fileName),
                                          timeout=10)
