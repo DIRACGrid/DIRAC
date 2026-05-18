@@ -179,16 +179,39 @@ jobs:
           # Workaround for https://github.com/prefix-dev/pixi/issues/3762
           sed -i.bak 's@editable = true@editable = false@g' pixi.toml
           rm pixi.toml.bak
-          # Add annotations to github actions
-          pixi add --pypi --feature diracx-core pytest-github-actions-annotate-failures
-          # Add the current DIRAC clone to the pixi.toml
-          pixi add --pypi --feature diracx-core 'DIRACCommon @ file://'$PWD'/../DIRAC/dirac-common'
-          pixi add --pypi --feature diracx-core 'DIRAC @ file://'$PWD'/../DIRAC'
+          # Inject the local DIRAC/DIRACCommon clones (and the GHA annotations
+          # plugin) as test-time pypi deps. We edit pixi.toml directly rather
+          # than via `pixi add`: that command has no --environment scope, so
+          # mutating the diracx-core feature ripples to every env using it,
+          # including gubbins. Gubbins is unnecessary for this job and brittle
+          # on pixi 0.68.x (build-dispatch panics, and the resulting lockfile
+          # also fails the next `pixi install --locked`).
+          python3 - <<PYEOF
+          import os, re
+          pwd = os.environ["PWD"]
+          addition = (
+              f'DIRACCommon = {{ path = "{pwd}/../DIRAC/dirac-common", editable = false }}\n'
+              f'DIRAC = {{ path = "{pwd}/../DIRAC", editable = false }}\n'
+              f'pytest-github-actions-annotate-failures = "*"\n'
+          )
+          text = open("pixi.toml").read()
+          new_text, n = re.subn(
+              r"(\[feature\.diracx-core\.pypi-dependencies\]\s*\n)",
+              r"\1" + addition,
+              text, count=1,
+          )
+          assert n == 1, "Could not find [feature.diracx-core.pypi-dependencies] section"
+          open("pixi.toml", "w").write(new_text)
+          PYEOF
           # Show any changes
           git diff
       - uses: prefix-dev/setup-pixi@v0.9.3
         with:
           cache: false
+          # We edit pixi.toml above without regenerating pixi.lock, so the
+          # committed lockfile is stale relative to the working manifest by
+          # construction. Let pixi regenerate it during install.
+          locked: false
           manifest-path: diracx/pixi.toml
           environments: >-
             diracx-core
