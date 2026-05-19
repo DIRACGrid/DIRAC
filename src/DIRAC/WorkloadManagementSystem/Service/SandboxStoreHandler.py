@@ -184,7 +184,7 @@ class SandboxStoreHandlerMixin:
         if fileHelper:
             hdHash = fileHelper.getHash()
         else:
-            oMD5 = hashlib.md5()
+            oMD5 = hashlib.md5(usedforsecurity=False)
             with open(hdPath, "rb") as fd:
                 bData = fd.read(10240)
                 while bData:

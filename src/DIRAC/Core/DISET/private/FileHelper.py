@@ -20,7 +20,7 @@ class FileHelper:
     def __init__(self, oTransport=None, checkSum=True):
         self.oTransport = oTransport
         self.__checkMD5 = checkSum
-        self.__oMD5 = hashlib.md5()
+        self.__oMD5 = hashlib.md5(usedforsecurity=False)
         self.bFinishedTransmission = False
         self.bReceivedEOF = False
         self.direction = False
@@ -149,7 +149,7 @@ class FileHelper:
     def networkToDataSink(self, dataSink, maxFileSize=0):
         if "write" not in dir(dataSink):
             return S_ERROR(f"{str(dataSink)} data sink object does not have a write method")
-        self.__oMD5 = hashlib.md5()
+        self.__oMD5 = hashlib.md5(usedforsecurity=False)
         self.bReceivedEOF = False
         self.bErrorInMD5 = False
         receivedBytes = 0
@@ -212,7 +212,7 @@ class FileHelper:
         return S_OK()
 
     def FDToNetwork(self, iFD):
-        self.__oMD5 = hashlib.md5()
+        self.__oMD5 = hashlib.md5(usedforsecurity=False)
         iPacketSize = self.packetSize
         self.__fileBytes = 0
         sentBytes = 0
@@ -244,7 +244,7 @@ class FileHelper:
     def DataSourceToNetwork(self, dataSource):
         if "read" not in dir(dataSource):
             return S_ERROR(f"{str(dataSource)} data source object does not have a read method")
-        self.__oMD5 = hashlib.md5()
+        self.__oMD5 = hashlib.md5(usedforsecurity=False)
         iPacketSize = self.packetSize
         self.__fileBytes = 0
         sentBytes = 0

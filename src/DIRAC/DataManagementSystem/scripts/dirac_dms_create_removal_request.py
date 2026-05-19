@@ -59,8 +59,8 @@ def main():
     for lfnList in breakListIntoChunks(lfns, 100):
         oRequest = Request()
         requestName = "{}_{}".format(
-            md5(repr(time.time()).encode()).hexdigest()[:16],
-            md5(repr(time.time()).encode()).hexdigest()[:16],
+            md5(repr(time.time()).encode(), usedforsecurity=False).hexdigest()[:16],
+            md5(repr(time.time()).encode(), usedforsecurity=False).hexdigest()[:16],
         )
         oRequest.RequestName = requestName
 

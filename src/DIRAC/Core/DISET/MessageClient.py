@@ -31,7 +31,7 @@ class MessageClient(BaseClient):
         hashStr = ":".join(
             (str(datetime.datetime.utcnow()), str(random.random()), Network.getFQDN(), gLogger.getName())
         )
-        hexHash = md5(hashStr.encode()).hexdigest()
+        hexHash = md5(hashStr.encode(), usedforsecurity=False).hexdigest()
         return hexHash
 
     def setUniqueName(self, uniqueName):

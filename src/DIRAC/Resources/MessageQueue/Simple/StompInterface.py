@@ -100,7 +100,7 @@ def getSubscriptionID(broker: tuple[str, int], dest: str) -> str:
 
     """
     host, port = broker
-    return hashlib.md5((f"{host}_{port}_{dest}").encode()).hexdigest()
+    return hashlib.md5((f"{host}_{port}_{dest}").encode(), usedforsecurity=False).hexdigest()
 
 
 class StompConsumer:

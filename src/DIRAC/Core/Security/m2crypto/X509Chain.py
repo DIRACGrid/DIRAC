@@ -144,7 +144,7 @@ class X509Chain:
         # This is the position of the first proxy in the chain
         self.__firstProxyStep = 0
 
-        # Cache for sha1 hash of the object
+        # Cache for sha256 hash of the object
         # This is just used as a unique identifier for
         # indexing in the ProxyCache
         self.__hash = False
@@ -1004,25 +1004,25 @@ class X509Chain:
 
     @needCertList
     def hash(self):
-        """Get a hash of the chain
+        """Get a hash of the chain (32 byte hex-string is returned)
         In practice, this is only used to index the chain in a DictCache
 
         :returns: S_OK(string hash)
         """
         if self.__hash:
             return S_OK(self.__hash)
-        sha1 = hashlib.sha1()
+        sha = hashlib.sha256()
         for cert in self._certList:
-            sha1.update(str(cert.getSubjectNameObject()["Value"]).encode())
-        sha1.update(str(self.getRemainingSecs()["Value"] / 3600).encode())
-        sha1.update(self.getDIRACGroup()["Value"].encode())
+            sha.update(str(cert.getSubjectNameObject()["Value"]).encode())
+        sha.update(str(self.getRemainingSecs()["Value"] / 3600).encode())
+        sha.update(self.getDIRACGroup()["Value"].encode())
         if self.isVOMS():
-            sha1.update(b"VOMS")
+            sha.update(b"VOMS")
             from DIRAC.Core.Security.VOMS import VOMS
 
             result = VOMS().getVOMSAttributes(self)
             if result["OK"]:
                 for attribute in result["Value"]:
-                    sha1.update(attribute.encode())
-        self.__hash = sha1.hexdigest()
-        return S_OK(self.__hash)
+                    sha.update(attribute.encode())
+        self.__hash = sha.hexdigest()
+        return S_OK(self.__hash[:32])

@@ -39,7 +39,7 @@ class MainReporter:
         for key in ("startTime", "endTime"):
             epoch = requestToHash[key]
             requestToHash[key] = epoch - epoch % granularity
-        md5Hash = hashlib.md5()
+        md5Hash = hashlib.md5(usedforsecurity=False)
         md5Hash.update(repr(requestToHash).encode())
         return md5Hash.hexdigest()
 

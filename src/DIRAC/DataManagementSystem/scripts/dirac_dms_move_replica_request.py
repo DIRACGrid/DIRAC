@@ -81,8 +81,8 @@ def main():
 
         request = Request()
         request.RequestName = "{}_{}".format(
-            md5(repr(time.time()).encode()).hexdigest()[:16],
-            md5(repr(time.time()).encode()).hexdigest()[:16],
+            md5(repr(time.time()).encode(), usedforsecurity=False).hexdigest()[:16],
+            md5(repr(time.time()).encode(), usedforsecurity=False).hexdigest()[:16],
         )
 
         moveReplica = Operation()

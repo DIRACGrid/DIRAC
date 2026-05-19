@@ -144,7 +144,7 @@ class SandboxStoreClient:
                 result["SandboxFileName"] = tmpFilePath
                 return result
 
-        oMD5 = hashlib.md5()
+        oMD5 = hashlib.md5(usedforsecurity=False)
         with open(tmpFilePath, "rb") as fd:
             bData = fd.read(10240)
             while bData:

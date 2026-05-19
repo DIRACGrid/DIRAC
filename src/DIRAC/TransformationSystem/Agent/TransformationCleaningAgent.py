@@ -723,7 +723,8 @@ class TransformationCleaningAgent(AgentModule):
 
         for index, lfnList in enumerate(breakListIntoChunks(lfns, 300)):
             oRequest = Request()
-            requestName = f"TCA_{transID}_{index}_{md5(repr(time.time()).encode()).hexdigest()[:5]}"
+            reqHash = md5(repr(time.time()).encode(), usedforsecurity=False).hexdigest()[:5]
+            requestName = f"TCA_{transID}_{index}_{reqHash}"
             oRequest.RequestName = requestName
             oOperation = Operation()
             oOperation.Type = "RemoveFile"
