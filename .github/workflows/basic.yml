@@ -169,14 +169,6 @@ jobs:
           fetch-depth: 0
           repository: DIRACGrid/diracx
           path: diracx
-      # Install the diracx environments from the committed (pristine) lockfile
-      # FIRST. pixi 0.68 needs an already-installed conda environment to build
-      # PyPI *source* dependencies during a solve. The next step injects the
-      # local DIRAC/DIRACCommon clones as source deps, which forces a re-solve
-      # (locked: false below) -- and with no conda env present that solve panics
-      # in build_dispatch ("installation of conda environment is required to
-      # solve PyPI source dependencies but `--no-install` flag has been set").
-      # Materialising the envs here gives that re-solve a usable interpreter.
       - uses: prefix-dev/setup-pixi@v0.9.3
         with:
           cache: false
@@ -197,19 +189,15 @@ jobs:
           # Workaround for https://github.com/prefix-dev/pixi/issues/3762
           sed -i.bak 's@editable = true@editable = false@g' pixi.toml
           rm pixi.toml.bak
-          # Inject the local DIRAC/DIRACCommon clones (and the GHA annotations
-          # plugin) as test-time pypi deps of the shared diracx-core feature.
-          grep -q '^\[feature\.diracx-core\.pypi-dependencies\]$' pixi.toml \
-            || { echo "::error::[feature.diracx-core.pypi-dependencies] not found in pixi.toml"; exit 1; }
-          sed -i "/^\[feature\.diracx-core\.pypi-dependencies\]\$/a pytest-github-actions-annotate-failures = \"*\"" pixi.toml
-          sed -i "/^\[feature\.diracx-core\.pypi-dependencies\]\$/a DIRAC = { path = \"${PWD}/../DIRAC\", editable = false }" pixi.toml
-          sed -i "/^\[feature\.diracx-core\.pypi-dependencies\]\$/a DIRACCommon = { path = \"${PWD}/../DIRAC/dirac-common\", editable = false }" pixi.toml
+          sed -i.bak '/solve-group = "gubbins"/d' pixi.toml
+          rm pixi.toml.bak
+          # Add annotations to github actions
+          pixi add --pypi --feature diracx-core pytest-github-actions-annotate-failures
+          # Add the current DIRAC clone to the pixi.toml
+          pixi add --pypi --feature diracx-core 'DIRACCommon @ file://'$PWD'/../DIRAC/dirac-common'
+          pixi add --pypi --feature diracx-core 'DIRAC @ file://'$PWD'/../DIRAC'
           # Show any changes
           git diff
-      # Re-install with the injected DIRAC/DIRACCommon source deps. The manifest
-      # no longer matches the committed lockfile, so let pixi regenerate it
-      # (locked: false); the conda envs installed above let it build the new
-      # source deps without the build_dispatch panic.
       - uses: prefix-dev/setup-pixi@v0.9.3
         with:
           cache: false
