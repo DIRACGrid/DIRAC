@@ -169,10 +169,28 @@ jobs:
           fetch-depth: 0
           repository: DIRACGrid/diracx
           path: diracx
+      # Install the diracx environments from the committed (pristine) lockfile
+      # FIRST. pixi 0.68 needs an already-installed conda environment to build
+      # PyPI *source* dependencies during a solve. The next step injects the
+      # local DIRAC/DIRACCommon clones as source deps, which forces a re-solve
+      # (locked: false below) -- and with no conda env present that solve panics
+      # in build_dispatch ("installation of conda environment is required to
+      # solve PyPI source dependencies but `--no-install` flag has been set").
+      # Materialising the envs here gives that re-solve a usable interpreter.
       - uses: prefix-dev/setup-pixi@v0.9.3
         with:
-          run-install: false
+          cache: false
           post-cleanup: false
+          manifest-path: diracx/pixi.toml
+          environments: >-
+            diracx-core
+            diracx-db
+            diracx-logic
+            diracx-tasks
+            diracx-routers
+            diracx-client
+            diracx-api
+            diracx-cli
       - name: Apply workarounds
         run: |
           cd diracx
@@ -180,43 +198,28 @@ jobs:
           sed -i.bak 's@editable = true@editable = false@g' pixi.toml
           rm pixi.toml.bak
           # Inject the local DIRAC/DIRACCommon clones (and the GHA annotations
-          # plugin) as test-time pypi deps. We edit pixi.toml directly rather
-          # than via `pixi add`: that command has no --environment scope, so
-          # mutating the diracx-core feature ripples to every env using it,
-          # including gubbins. Gubbins is unnecessary for this job and brittle
-          # on pixi 0.68.x (build-dispatch panics, and the resulting lockfile
-          # also fails the next `pixi install --locked`).
-          python3 - <<PYEOF
-          import os, re
-          pwd = os.environ["PWD"]
-          addition = (
-              f'DIRACCommon = {{ path = "{pwd}/../DIRAC/dirac-common", editable = false }}\n'
-              f'DIRAC = {{ path = "{pwd}/../DIRAC", editable = false }}\n'
-              f'pytest-github-actions-annotate-failures = "*"\n'
-          )
-          text = open("pixi.toml").read()
-          new_text, n = re.subn(
-              r"(\[feature\.diracx-core\.pypi-dependencies\]\s*\n)",
-              r"\1" + addition,
-              text, count=1,
-          )
-          assert n == 1, "Could not find [feature.diracx-core.pypi-dependencies] section"
-          open("pixi.toml", "w").write(new_text)
-          PYEOF
+          # plugin) as test-time pypi deps of the shared diracx-core feature.
+          grep -q '^\[feature\.diracx-core\.pypi-dependencies\]$' pixi.toml \
+            || { echo "::error::[feature.diracx-core.pypi-dependencies] not found in pixi.toml"; exit 1; }
+          sed -i "/^\[feature\.diracx-core\.pypi-dependencies\]\$/a pytest-github-actions-annotate-failures = \"*\"" pixi.toml
+          sed -i "/^\[feature\.diracx-core\.pypi-dependencies\]\$/a DIRAC = { path = \"${PWD}/../DIRAC\", editable = false }" pixi.toml
+          sed -i "/^\[feature\.diracx-core\.pypi-dependencies\]\$/a DIRACCommon = { path = \"${PWD}/../DIRAC/dirac-common\", editable = false }" pixi.toml
           # Show any changes
           git diff
+      # Re-install with the injected DIRAC/DIRACCommon source deps. The manifest
+      # no longer matches the committed lockfile, so let pixi regenerate it
+      # (locked: false); the conda envs installed above let it build the new
+      # source deps without the build_dispatch panic.
       - uses: prefix-dev/setup-pixi@v0.9.3
         with:
           cache: false
-          # We edit pixi.toml above without regenerating pixi.lock, so the
-          # committed lockfile is stale relative to the working manifest by
-          # construction. Let pixi regenerate it during install.
           locked: false
           manifest-path: diracx/pixi.toml
           environments: >-
             diracx-core
             diracx-db
             diracx-logic
+            diracx-tasks
             diracx-routers
             diracx-client
             diracx-api
