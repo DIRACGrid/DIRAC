@@ -1,17 +1,18 @@
 # We disable pylint no-callable because of https://github.com/PyCQA/pylint/issues/8138
 
-""" Frontend for ReqDB
+"""Frontend for ReqDB
 
-    :mod: RequestDB
+:mod: RequestDB
 
-    =======================
+=======================
 
-    .. module: RequestDB
+.. module: RequestDB
 
-    :synopsis: db holding Requests
+:synopsis: db holding Requests
 
-    db holding Request, Operation and File
+db holding Request, Operation and File
 """
+
 import datetime
 import errno
 import random
@@ -803,8 +804,8 @@ class RequestDB:
                 groupingColumn = self._get_column("Request", groupingAttribute)
 
             summaryQuery = session.query(
-                groupingColumn, func.count(Request.RequestID)
-            )  # pylint: disable=not-callable,no-member
+                groupingColumn, func.count(Request.RequestID)  # pylint: disable=not-callable,no-member
+            )
 
             for key, value in selectDict.items():
                 if key == "ToDate":
