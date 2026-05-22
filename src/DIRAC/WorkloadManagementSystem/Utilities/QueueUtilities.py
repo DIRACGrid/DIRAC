@@ -135,7 +135,7 @@ def setAdditionalParams(ceDict, queueDict):
 
 def generateQueueHash(queueDict):
     """Generate a hash of the queue description"""
-    myMD5 = hashlib.md5()
+    myMD5 = hashlib.md5(usedforsecurity=False)
     myMD5.update(str(queueDict).encode())
     hexstring = myMD5.hexdigest()
     return hexstring

@@ -83,7 +83,7 @@ class Palette:
             return self.generateColor(label)
 
     def generateColor(self, label):
-        myMD5 = hashlib.md5()
+        myMD5 = hashlib.md5(usedforsecurity=False)
         myMD5.update(label.encode())
         hexstring = myMD5.hexdigest()
         color = "#" + hexstring[:6]

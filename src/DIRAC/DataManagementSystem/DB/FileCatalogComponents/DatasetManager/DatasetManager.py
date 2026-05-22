@@ -321,7 +321,7 @@ class DatasetManager:
         idLfnDict = result["Value"]
         lfnIDList = list(idLfnDict)
         lfnList = sorted(idLfnDict.values())
-        myMd5 = hashlib.md5()
+        myMd5 = hashlib.md5(usedforsecurity=False)
         myMd5.update(str(lfnList).encode())
         datasetHash = myMd5.hexdigest().upper()
         numberOfFiles = len(lfnList)

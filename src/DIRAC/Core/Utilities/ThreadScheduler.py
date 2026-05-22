@@ -32,7 +32,7 @@ class ThreadScheduler:
             return S_ERROR(f"{str(taskFunc)} is not callable")
         period = max(period, self.__minPeriod)
         elapsedTime = min(elapsedTime, period - 1)
-        md = hashlib.md5()
+        md = hashlib.md5(usedforsecurity=False)
         task = {
             "period": period,
             "func": taskFunc,

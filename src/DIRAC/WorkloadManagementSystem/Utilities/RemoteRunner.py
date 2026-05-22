@@ -274,7 +274,7 @@ class RemoteRunner:
             for line in f:
                 checkSum, remoteOutput = list(filter(None, line.strip("\n").split(" ")))
 
-                hash = hashlib.md5()
+                hash = hashlib.md5(usedforsecurity=False)
                 localOutput = os.path.join(workingDirectory, remoteOutput)
                 if not os.path.exists(localOutput):
                     return S_ERROR(f"{localOutput} was expected but not found")
