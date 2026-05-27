@@ -115,6 +115,8 @@ class SlackAction(BaseAction):
         """
 
         payload = {"text": message}
-        response = requests.post(self.url, data=json.dumps(payload), headers={"Content-Type": "application/json"})
+        response = requests.post(
+            self.url, data=json.dumps(payload), headers={"Content-Type": "application/json"}, timeout=30
+        )
         response.raise_for_status()
         return S_OK()

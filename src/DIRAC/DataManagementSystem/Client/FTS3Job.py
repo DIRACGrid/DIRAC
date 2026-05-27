@@ -69,7 +69,7 @@ def get_scitag(vo: str, activity: Optional[str] = None) -> int:
     @cached(_scitag_json_cache, lock=_scitag_json_lock)
     def get_remote_json():
         gLogger.verbose("Fetching https://scitags.org/api.json from the network")
-        response = requests.get("https://scitags.org/api.json")
+        response = requests.get("https://scitags.org/api.json", timeout=30)
         response.raise_for_status()
         return response.json()
 
