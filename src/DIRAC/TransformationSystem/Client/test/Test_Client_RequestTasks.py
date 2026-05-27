@@ -15,9 +15,8 @@ from hypothesis.strategies import (
     lists,
     text,
     dictionaries,
-    from_regex,
 )
-from string import ascii_letters, digits
+from string import ascii_letters, ascii_lowercase, digits
 
 
 from DIRAC.Core.Utilities.JEncode import encode
@@ -32,7 +31,10 @@ def taskStrategy(draw):
     """Generate a strategy that returns a task dictionary"""
     transformationID = draw(integers(min_value=1))
     targetSE = ",".join(draw(lists(text(ascii_letters, min_size=5, max_size=10), min_size=1, max_size=3)))
-    inputData = draw(lists(from_regex("(/[a-z]+)+", fullmatch=True), min_size=1, max_size=10))
+    pathStrategy = lists(text(ascii_lowercase, min_size=1), min_size=1, max_size=10).map(
+        lambda segs: "/" + "/".join(segs)
+    )
+    inputData = draw(lists(pathStrategy, min_size=1, max_size=10))
 
     return {"TransformationID": transformationID, "TargetSE": targetSE, "InputData": inputData}
 
@@ -65,7 +67,7 @@ reqTasks = RequestTasks(
     ],
 )
 @mark.slow
-@settings(max_examples=50, deadline=500)
+@settings(max_examples=50)
 @given(
     owner=text(ascii_letters + "-_" + digits, min_size=1),
     taskDict=taskDictStrategy(),
@@ -148,7 +150,7 @@ def test_prepareSingleOperationsBody(transBody, owner, taskDict):
     ],
 )
 @mark.slow
-@settings(max_examples=50, deadline=500)
+@settings(max_examples=50)
 @given(
     owner=text(ascii_letters + "-_" + digits, min_size=1),
     taskDict=taskDictStrategy(),
@@ -226,7 +228,7 @@ def test_prepareMultiOperationsBody(transBody, owner, taskDict):
     ],
 )
 @mark.slow
-@settings(max_examples=50, deadline=500)
+@settings(max_examples=50)
 @given(
     owner=text(ascii_letters + "-_" + digits, min_size=1),
     taskDict=taskDictStrategy(),
@@ -298,7 +300,7 @@ def test_prepareProblematicMultiOperationsBody(transBody, owner, taskDict):
 
 
 @mark.slow
-@settings(max_examples=50, deadline=500)
+@settings(max_examples=50)
 @given(
     taskDict=taskDictStrategy(),
     pluginFactor=integers(),
