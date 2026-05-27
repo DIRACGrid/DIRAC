@@ -187,7 +187,7 @@ class S3Storage(StorageBase):
     #           failed[key] = res['Message']
     #           continue
     #         presignedURL = res['Value']
-    #         response = requests.get(presignedURL)
+    #         response = requests.get(presignedURL, timeout=30)
     #         if response.status_code == 200:
     #           successful[key] = True
     #         elif response.status_code == 404:  # not found
@@ -268,7 +268,7 @@ class S3Storage(StorageBase):
         # and perform it with requests
         for url, presignedURL in presignedURLs.items():
             try:
-                response = requests.get(presignedURL)
+                response = requests.get(presignedURL, timeout=30)
                 if response.status_code == 200:
                     successful[url] = True
                 elif response.status_code == 404:  # not found
@@ -373,7 +373,7 @@ class S3Storage(StorageBase):
 
                 # Stream download to save memory
                 # https://requests.readthedocs.io/en/latest/user/advanced/#body-content-workflow
-                with requests.get(presignedURL, stream=True) as r:
+                with requests.get(presignedURL, timeout=30, stream=True) as r:
                     r.raise_for_status()
                     with open(dest_file, "wb") as f:
                         for chunk in r.iter_content():
@@ -489,7 +489,7 @@ class S3Storage(StorageBase):
                 with open(src_file, "rb") as src_fd:
                     # files = {'file': (dest_key, src_fd)}
                     files = {"file": src_fd}
-                    response = requests.post(presignedURL, data=presignedFields, files=files)
+                    response = requests.post(presignedURL, data=presignedFields, files=files, timeout=30)
 
                     if not response.ok:
                         raise Exception(response.reason)
@@ -567,7 +567,7 @@ class S3Storage(StorageBase):
 
         for url, presignedURL in presignedURLs.items():
             try:
-                response = requests.head(presignedURL)
+                response = requests.head(presignedURL, timeout=30)
                 if not response.ok:
                     raise Exception(response.reason)
 
@@ -652,7 +652,7 @@ class S3Storage(StorageBase):
 
         for url, presignedURL in presignedURLs.items():
             try:
-                response = requests.delete(presignedURL)
+                response = requests.delete(presignedURL, timeout=30)
                 if not response.ok:
                     raise Exception(response.reason)
 

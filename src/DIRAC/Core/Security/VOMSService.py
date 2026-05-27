@@ -80,8 +80,9 @@ class VOMSService:
                         cert=getProxyLocation(),
                         verify=getCAsLocation(),
                         params={"startIndex": str(startIndex), "pageSize": "100"},
+                        timeout=30,
                     )
-                except requests.ConnectionError as exc:
+                except (requests.ConnectionError, requests.Timeout) as exc:
                     error = f"{url}:{repr(exc)}"
                     urlDone = True
                     continue

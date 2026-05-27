@@ -29,6 +29,7 @@ def make_release(version, commit_hash, release_notes=""):
             "prerelease": Version(version).is_prerelease,
         },
         headers=headers,
+        timeout=30,
     )
     r.raise_for_status()
     release_data = r.json()
@@ -41,6 +42,7 @@ def make_release(version, commit_hash, release_notes=""):
             "draft": False,
         },
         headers=headers,
+        timeout=30,
     )
     r.raise_for_status()
     release_data = r.json()

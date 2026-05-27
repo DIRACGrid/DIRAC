@@ -577,6 +577,7 @@ class OAuth2IdProvider(OAuth2Session):
                 self.get_metadata("device_authorization_endpoint"),
                 data=dict(client_id=self.client_id, scope=list_to_scope(scope_to_list(self.scope) + groupScopes)),
                 verify=self.verify,
+                timeout=30,
             )
             r.raise_for_status()
             deviceResponse = r.json()
@@ -616,6 +617,7 @@ class OAuth2IdProvider(OAuth2Session):
                 self.get_metadata("token_endpoint"),
                 data=dict(client_id=self.client_id, grant_type=DEVICE_CODE_GRANT_TYPE, device_code=deviceCode),
                 verify=self.verify,
+                timeout=30,
             )
             token = r.json()
             if not token:

@@ -354,7 +354,7 @@ class SystemAdministratorHandler(RequestHandler):
         )
         self.log.info("Downloading DIRACOS2 installer from", installer_url)
         with tempfile.NamedTemporaryFile(suffix=".sh", mode="wb") as installer:
-            with requests.get(installer_url, stream=True) as r:
+            with requests.get(installer_url, timeout=30, stream=True) as r:
                 if not r.ok:
                     return S_ERROR(f"Failed to download {installer_url}")
                 for chunk in r.iter_content(chunk_size=1024**2):

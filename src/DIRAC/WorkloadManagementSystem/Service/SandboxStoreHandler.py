@@ -374,7 +374,7 @@ class SandboxStoreHandlerMixin:
         if filePath.startswith("/S3"):
             with TheImpersonator(credDict, source="SandboxStore") as client:
                 res = client.jobs.get_sandbox_file(pfn=filePath)
-                r = requests.get(res.url)
+                r = requests.get(res.url, timeout=30)
                 r.raise_for_status()
                 sbData = r.content
                 if fileHelper:

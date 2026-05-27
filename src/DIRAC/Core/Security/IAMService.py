@@ -65,7 +65,7 @@ class IAMService:
         totalResults = 1000  # total number of users
         itemsPerPage = 10
         while startIndex <= totalResults:
-            resp = requests.get(url, headers=headers, params={"startIndex": startIndex})
+            resp = requests.get(url, headers=headers, params={"startIndex": startIndex}, timeout=30)
             resp.raise_for_status()
             data = resp.json()
             # These 2 should never change while looping
