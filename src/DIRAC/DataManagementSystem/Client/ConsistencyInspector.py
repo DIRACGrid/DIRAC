@@ -727,7 +727,7 @@ class ConsistencyInspector:
 
     def _getCatalogMetadata(self, lfns):
         """Obtain the file metadata from the catalog while checking they exist"""
-        allMetadata = []
+        allMetadata = {}
         missingCatalogFiles = []
         zeroSizeFiles = []
 
