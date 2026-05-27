@@ -4,27 +4,24 @@
 # Author :  Stuart Paterson
 ########################################################################
 """
-Upload a file to the grid storage and register it in the File Catalog
+Upload a file to the grid storage and register it in the File Catalog.
+
+The file(s) to upload can be passed either directly as arguments, or listed in a
+local text file given as the only argument (one upload per line).
 
 Usage:
   dirac-dms-add-file [options] ... LFN Path SE [GUID]
-
-Arguments:
-  LFN:      Logical File Name
-  Path:     Local path to the file
-  SE:       DIRAC Storage Element
-  GUID:     GUID to use in the registration (optional)
-
-**OR**
-
-Usage:
   dirac-dms-add-file [options] ... LocalFile ...
 
 Arguments:
-  LocalFile: Path to local file containing all the above, i.e.::
+  LFN:       Logical File Name
+  Path:      Local path to the file
+  SE:        DIRAC Storage Element
+  GUID:      GUID to use in the registration (optional)
+  LocalFile: Path to a local file listing the uploads described above, one per line, i.e.::
 
-  lfn1 localfile1 SE [GUID1]
-  lfn2 localfile2 SE [GUID2]
+               lfn1 localfile1 SE [GUID1]
+               lfn2 localfile2 SE [GUID2]
 
 Example:
   $ dirac-dms-add-file LFN:/formation/user/v/vhamar/Example.txt Example.txt DIRAC-USER
