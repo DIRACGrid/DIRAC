@@ -265,7 +265,7 @@ class ElasticSearchDB:
         """
         sLog.debug(f"Retrieving document {docID} in index {index}")
         try:
-            return S_OK(self.client.get(index, docID)["_source"])
+            return S_OK(self.client.get(index=index, id=docID)["_source"])
         except NotFoundError:
             sLog.warn("Could not find the document in index", index)
             return S_OK({})
@@ -282,7 +282,7 @@ class ElasticSearchDB:
         sLog.debug(f"Retrieving documents {docIDs}")
         docs = [{"_index": indexFunc(docID, vo), "_id": docID} for docID in docIDs]
         try:
-            response = self.client.mget({"docs": docs})
+            response = self.client.mget(body={"docs": docs})
         except RequestError as re:
             return S_ERROR(re)
         else:
@@ -300,12 +300,12 @@ class ElasticSearchDB:
         """
         sLog.debug(f"Updating document {docID} in index {index}")
         try:
-            self.client.update(index, docID, body)
+            self.client.update(index=index, id=docID, body=body)
         except ConflictError:
             # updates are rather "heavy" operations from ES point of view, needing seqNo to be updated.
             # Not ideal, but we just wait and retry.
             time.sleep(1)
-            self.client.update(index, docID, body, params={"retry_on_conflict": 3})
+            self.client.update(index=index, id=docID, body=body, params={"retry_on_conflict": 3})
         except RequestError as re:
             return S_ERROR(re)
         return S_OK()
@@ -319,7 +319,7 @@ class ElasticSearchDB:
         """
         sLog.debug(f"Deleting document {docID} in index {index}")
         try:
-            return S_OK(self.client.delete(index, docID))
+            return S_OK(self.client.delete(index=index, id=docID))
         except RequestError as re:
             return S_ERROR(re)
         except NotFoundError:
@@ -334,7 +334,7 @@ class ElasticSearchDB:
         :param docID: document ID
         """
         sLog.debug(f"Checking if document {docID} in index {index} exists")
-        return self.client.exists(index, docID)
+        return self.client.exists(index=index, id=docID)
 
     @ifConnected
     def _Search(self, indexname):
@@ -365,7 +365,7 @@ class ElasticSearchDB:
             indexName = ""
         sLog.debug(f"Getting indices alias of {indexName}")
         # we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.
-        return list(self.client.indices.get_alias(f"{indexName}*"))
+        return list(self.client.indices.get_alias(index=f"{indexName}*"))
 
     @ifConnected
     def getDocTypes(self, indexName):
@@ -378,7 +378,7 @@ class ElasticSearchDB:
         result = []
         try:
             sLog.debug("Getting mappings for ", indexName)
-            result = self.client.indices.get_mapping(indexName)
+            result = self.client.indices.get_mapping(index=indexName)
         except Exception as e:  # pylint: disable=broad-except
             sLog.exception()
             return S_ERROR(e)
@@ -409,7 +409,7 @@ class ElasticSearchDB:
         """
         sLog.debug(f"Checking existance of index {indexName}")
         try:
-            return S_OK(self.client.indices.exists(indexName))
+            return S_OK(self.client.indices.exists(index=indexName))
         except TransportError as e:
             sLog.exception()
             return S_ERROR(e)
@@ -446,7 +446,7 @@ class ElasticSearchDB:
         """
         sLog.info("Deleting index", indexName)
         try:
-            retVal = self.client.indices.delete(indexName)
+            retVal = self.client.indices.delete(index=indexName)
         except NotFoundError:
             sLog.warn("Index does not exist", indexName)
             return S_OK("Nothing to delete")

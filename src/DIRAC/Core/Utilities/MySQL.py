@@ -401,7 +401,7 @@ class ConnectionPool:
 
     def __ping(self, conn):
         try:
-            conn.ping(True)
+            conn.ping()
             return True
         except Exception:
             return False

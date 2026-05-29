@@ -1,4 +1,4 @@
-""" The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
+"""The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 
     This agent will take care of:
     - removing all jobs that are in status JobStatus.DELETED
@@ -22,6 +22,7 @@ this purpose the options MaxHBJobsAtOnce and RemoveStatusDelayHB/[Done|Killed|Fa
 than 0.
 
 """
+
 import datetime
 import os
 
@@ -30,14 +31,13 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import TimeUtilities
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 from DIRAC.WorkloadManagementSystem.DB.StatusUtils import kill_delete_jobs
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_DELETE
 from DIRAC.WorkloadManagementSystem.Utilities.JobParameters import getJobParameters
@@ -54,7 +54,10 @@ class JobCleaningAgent(AgentModule):
 
         # clients
         self.jobDB = None
+        self.taskQueueDB = None
+        self.pilotAgentsDB = None
         self.sandboxDB = None
+        self.storageManagementDB = None
 
         self.maxJobsAtOnce = 500
         self.prodTypes = []
@@ -66,8 +69,33 @@ class JobCleaningAgent(AgentModule):
     def initialize(self):
         """Sets defaults"""
 
-        self.jobDB = JobDB()
-        self.sandboxDB = SandboxMetadataDB()
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.JobDB", "JobDB")
+        if not result["OK"]:
+            return result
+        self.jobDB = result["Value"]()
+
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.TaskQueueDB", "TaskQueueDB")
+        if not result["OK"]:
+            return result
+        self.taskQueueDB = result["Value"]()
+
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.PilotAgentsDB", "PilotAgentsDB")
+        if not result["OK"]:
+            return result
+        self.pilotAgentsDB = result["Value"]()
+
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.SandboxMetadataDB", "SandboxMetadataDB")
+        if not result["OK"]:
+            return result
+        self.sandboxDB = result["Value"]()
+
+        try:
+            result = ObjectLoader().loadObject("StorageManagementSystem.DB.StorageManagementDB", "StorageManagementDB")
+            if not result["OK"]:
+                return result
+            self.storageManagementDB = result["Value"]()
+        except RuntimeError:
+            pass
 
         agentTSTypes = self.am_getOption("ProductionTypes", [])
         if agentTSTypes:
@@ -238,7 +266,14 @@ class JobCleaningAgent(AgentModule):
                 wmsClient = WMSClient(useCertificates=True, delegatedDN=res["Value"][0], delegatedGroup=ownerGroup)
                 result = wmsClient.removeJob(jobsList)
             else:
-                result = kill_delete_jobs(RIGHT_DELETE, jobsList)
+                result = kill_delete_jobs(
+                    RIGHT_DELETE,
+                    jobsList,
+                    jobdb=self.jobDB,
+                    taskqueuedb=self.taskQueueDB,
+                    pilotagentsdb=self.pilotAgentsDB,
+                    storagemanagementdb=self.storageManagementDB,
+                )
             if not result["OK"]:
                 self.log.error(
                     f"Could not {'remove' if remove else 'delete'} jobs",

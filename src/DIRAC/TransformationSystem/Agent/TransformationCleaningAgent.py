@@ -7,6 +7,7 @@
   :caption: TransformationCleaningAgent options
 
 """
+
 # # imports
 import ast
 import errno
@@ -144,10 +145,13 @@ class TransformationCleaningAgent(AgentModule):
             return result
         self.taskQueueDB = result["Value"]()
 
-        result = ObjectLoader().loadObject("StorageManagementSystem.DB.StorageManagementDB", "StorageManagementDB")
-        if not result["OK"]:
-            return result
-        self.storageManagementDB = result["Value"]()
+        try:
+            result = ObjectLoader().loadObject("StorageManagementSystem.DB.StorageManagementDB", "StorageManagementDB")
+            if not result["OK"]:
+                return result
+            self.storageManagementDB = result["Value"]()
+        except RuntimeError:
+            pass
 
         return S_OK()
 

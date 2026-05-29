@@ -16,28 +16,28 @@ DIRAC provides a complete solution to one or more user community requiring acces
 
 DIRAC has been started by the `LHCb collaboration <https://lhcb.web.cern.ch/lhcb/>`_ who still maintains it. It is now used by several communities (AKA VO=Virtual Organizations) for their distributed computing workflows.
 
-DIRAC is written in python 3.9.
+DIRAC is written in python 3.11.
 
-Status rel-v8r0 series (stable, recommended):
+Status rel-v9r0 series (stable, recommended):
 
-.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Basic%20tests/badge.svg?branch=rel-v8r0
-   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Basic+tests%22+branch%3Arel-v8r0
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Basic%20tests/badge.svg?branch=rel-v9r0
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Basic+tests%22+branch%3Arel-v9r0
    :alt: Basic Tests Status
 
-.. image:: https://github.com/DIRACGrid/DIRAC/workflows/pilot%20wrapper/badge.svg?branch=rel-v8r0
-   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22pilot+wrapper%22+branch%3Arel-v8r0
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/pilot%20wrapper/badge.svg?branch=rel-v9r0
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22pilot+wrapper%22+branch%3Arel-v9r0
    :alt: Pilot Wrapper Status
 
-.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Integration%20tests/badge.svg?branch=rel-v8r0
-   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Integration+tests%22+branch%3Arel-v8r0
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Integration%20tests/badge.svg?branch=rel-v9r0
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Integration+tests%22+branch%3Arel-v9r0
    :alt: Integration Tests Status
 
-.. image:: https://readthedocs.org/projects/dirac/badge/?version=rel-v8r0
-   :target: http://dirac.readthedocs.io/en/rel-v8r0/
+.. image:: https://readthedocs.org/projects/dirac/badge/?version=rel-v9r0
+   :target: http://dirac.readthedocs.io/en/rel-v9r0/
    :alt: Documentation Status
 
 
-Status integration branch (devel):
+Status integration branch:
 
 .. image:: https://github.com/DIRACGrid/DIRAC/workflows/Basic%20tests/badge.svg?branch=integration
    :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Basic+tests%22+branch%3Aintegration
@@ -124,7 +124,7 @@ Code quality
 ~~~~~~~~~~~~
 
 To ensure the code meets DIRAC's coding conventions we recommend installing ``pre-commit`` system wide using your operating system's package manager.
-Alteratively, ``pre-commit`` is included in the Python 3 development environment, see the `development guide <https://dirac.readthedocs.io/en/integration/DeveloperGuide/DevelopmentEnvironment/DeveloperInstallation/editingCode.html>`_ for details on how to create one.
+Alteratively, ``pre-commit`` is included in the development environment, see the `development guide <https://dirac.readthedocs.io/en/integration/DeveloperGuide/DevelopmentEnvironment/DeveloperInstallation/editingCode.html>`_ for details on how to create one.
 
 Once ``pre-commit`` is installed you can enable it by running:
 
