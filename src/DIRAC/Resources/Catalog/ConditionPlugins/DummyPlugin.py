@@ -2,6 +2,7 @@
   Defines the plugin to return the boolean given as param
 """
 from DIRAC.Resources.Catalog.ConditionPlugins.FCConditionBasePlugin import FCConditionBasePlugin
+from DIRAC.Core.Utilities.SaferEval import saferEval
 
 
 class DummyPlugin(FCConditionBasePlugin):
@@ -15,4 +16,4 @@ class DummyPlugin(FCConditionBasePlugin):
 
     def eval(self, **kwargs):
         """evaluate whether the conditon is True or False"""
-        return eval(self.conditions)
+        return saferEval(self.conditions)

@@ -121,6 +121,7 @@ Script.registerSwitch("S", "shortRange", "run short parameter range", setShortRa
 
 Script.parseCommandLine(ignoreErrors=True)
 
+
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 
@@ -275,6 +276,13 @@ def doException(expt):
     print("Exception", expt)
 
 
+_testFunctions = {
+    "listDirectory": listDirectory,
+    "getBulkReplicas": getBulkReplicas,
+    "getDirectoryReplicas": getDirectoryReplicas,
+}
+
+
 def runTest():
     global nClients, nQueries, testType, resultTest, testDir, lfnListFile
 
@@ -282,7 +290,11 @@ def runTest():
 
     pp = ProcessPool(nClients)
 
-    testFunction = eval(testType)
+    if testType not in _testFunctions:
+        print(f"Unknown test type: {testType}")
+        print("Available types:", ", ".join(_testFunctions))
+        sys.exit(1)
+    testFunction = _testFunctions[testType]
 
     for c in range(nClients):
         pp.createAndQueueTask(testFunction, [nQueries], callback=finalize, exceptionCallback=doException)

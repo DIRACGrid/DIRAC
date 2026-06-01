@@ -48,7 +48,6 @@ def test_calls(timeout, expected):
 def test_getChildrenPIDs():
     import os
 
-    os.system("echo $PWD")
     mainProcess = Popen(["python", join(dirname(__file__), "ProcessesCreator.py")])
     time.sleep(1)
     res = getChildrenPIDs(mainProcess.pid)
