@@ -25,7 +25,6 @@ default() {
   fi
 }
 
-
 # Finders... functions devoted to find DBs, Services, versions, etc..
 
 #.............................................................................
@@ -43,11 +42,10 @@ findSystems() {
     echo "ERROR: cannot change to ${TESTCODE}" >&2
     exit 1
   fi
-  python -m DIRAC.Core.Utilities.Extensions findSystems > systems
+  python -m DIRAC.Core.Utilities.Extensions findSystems >systems
 
   echo "found $(wc -l systems)"
 }
-
 
 #.............................................................................
 #
@@ -84,14 +82,13 @@ findDatabases() {
   #  and InstalledComponentsDB which is installed at the beginning
   #
   if [[ -n "${DBstoExclude}" ]]; then
-    python -m DIRAC.Core.Utilities.Extensions findDatabases | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | grep -v "${DBstoExclude}" > databases
+    python -m DIRAC.Core.Utilities.Extensions findDatabases | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | grep -v "${DBstoExclude}" >databases
   else
-    python -m DIRAC.Core.Utilities.Extensions findDatabases | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | grep "${DBstoSearch}" > databases
+    python -m DIRAC.Core.Utilities.Extensions findDatabases | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | grep "${DBstoSearch}" >databases
   fi
 
   echo "found $(wc -l databases)"
 }
-
 
 #-------------------------------------------------------------------------------
 # findServices:
@@ -101,9 +98,8 @@ findDatabases() {
 #
 #-------------------------------------------------------------------------------
 
-findServices(){
+findServices() {
   echo '==> [findServices]'
-
 
   if [[ -n "${1}" ]]; then
     ServicestoSearch=${1}
@@ -121,15 +117,15 @@ findServices(){
     exit 1
   fi
   if [[ -n "${ServicestoExclude}" ]]; then
-    python -m DIRAC.Core.Utilities.Extensions findServices | grep -v "${ServicestoExclude}" > services
+    python -m DIRAC.Core.Utilities.Extensions findServices | grep -v "${ServicestoExclude}" >services
   else
-    python -m DIRAC.Core.Utilities.Extensions findServices | grep "${ServicestoSearch}" > services
+    python -m DIRAC.Core.Utilities.Extensions findServices | grep "${ServicestoSearch}" >services
   fi
 
   echo "found $(wc -l services)"
 }
 
-findAgents(){
+findAgents() {
   echo '==> [findAgents]'
 
   if [[ -n "${1}" ]]; then
@@ -150,14 +146,13 @@ findAgents(){
 
   # Always remove the JobAgent, which is not a real agent
   if [[ -n "${AgentstoExclude}" ]]; then
-    python -m DIRAC.Core.Utilities.Extensions findAgents | grep -v "WorkloadManagementSystem JobAgent" | grep -v "${AgentstoExclude}" > agents
+    python -m DIRAC.Core.Utilities.Extensions findAgents | grep -v "WorkloadManagementSystem JobAgent" | grep -v "${AgentstoExclude}" >agents
   else
-    python -m DIRAC.Core.Utilities.Extensions findAgents | grep -v "WorkloadManagementSystem JobAgent" | grep "${AgentstoSearch}" > agents
+    python -m DIRAC.Core.Utilities.Extensions findAgents | grep -v "WorkloadManagementSystem JobAgent" | grep "${AgentstoSearch}" >agents
   fi
 
   echo "found $(wc -l agents)"
 }
-
 
 #-------------------------------------------------------------------------------
 # findServices:
@@ -167,7 +162,6 @@ findAgents(){
 #   Little bit different from findAgents as we allow multiple exclusions
 #
 #-------------------------------------------------------------------------------
-
 
 findFutureServices() {
   echo '==> [findFutureServices]'
@@ -191,23 +185,22 @@ findFutureServices() {
   fi
 
   # Build the list of services
-  python -m DIRAC.Core.Utilities.Extensions findFutureServices \
-    | sed -e 's/System / /g' \
-          -e 's/Handler//g' \
-          -e 's/Client//g' \
-          -e 's/ /\//g' \
-    | grep -v "JobAgent" > futureServices
+  python -m DIRAC.Core.Utilities.Extensions findFutureServices |
+    sed -e 's/System / /g' \
+      -e 's/Handler//g' \
+      -e 's/Client//g' \
+      -e 's/ /\//g' |
+    grep -v "JobAgent" >futureServices
 
   # Apply exclusion if any
   if [[ -n "$disabledPattern" ]]; then
     # Use grep -F for fixed strings (space-safe)
-    grep -Fv -f <(printf "%s\n" $disabledPattern) futureServices > futureServices.tmp
+    grep -Fv -f <(printf "%s\n" $disabledPattern) futureServices >futureServices.tmp
     mv futureServices.tmp futureServices
   fi
 
-  echo "found $(wc -l < futureServices)"
+  echo "found $(wc -l <futureServices)"
 }
-
 
 #-------------------------------------------------------------------------------
 # findExecutors:
@@ -217,15 +210,13 @@ findFutureServices() {
 #
 #-------------------------------------------------------------------------------
 
-findExecutors(){
+findExecutors() {
   echo '==> [findExecutors]'
 
-  python -m DIRAC.Core.Utilities.Extensions findExecutors > executors
+  python -m DIRAC.Core.Utilities.Extensions findExecutors >executors
 
   echo "found $(wc -l executors)"
 }
-
-
 
 #-------------------------------------------------------------------------------
 # finalCleanup:
@@ -233,7 +224,7 @@ findExecutors(){
 #   remove symlinks, remove cached info
 #-------------------------------------------------------------------------------
 
-finalCleanup(){
+finalCleanup() {
   echo '==> [finalCleanup]'
 
   rm -Rf etc/grid-security/certificates
@@ -243,14 +234,12 @@ finalCleanup(){
   rm -Rf /tmp/tmp.*
 }
 
-
 getCFGFile() {
   echo '==> [getCFGFile]'
 
   cp "$INSTALL_CFG_FILE" "${SERVERINSTALLDIR}/"
   sed -i "s/VAR_Release/${DIRAC_RELEASE}/g" "${SERVERINSTALLDIR}/install.cfg"
 }
-
 
 ####################################################
 # This installs the DIRAC client
@@ -280,13 +269,13 @@ installDIRAC() {
     else
       DIRACOS2_URL="https://github.com/DIRACGrid/DIRACOS2/releases/latest/download/DIRACOS-Linux-x86_64.sh"
     fi
-    curl -L "${DIRACOS2_URL}" > "installer.sh"
+    curl -L "${DIRACOS2_URL}" >"installer.sh"
   fi
   bash "installer.sh"
   rm "installer.sh"
   # TODO: Remove
-  echo "source \"$PWD/diracos/diracosrc\"" > "$PWD/bashrc"
-  echo "export X509_CERT_DIR=\"$PWD/diracos/etc/grid-security/certificates\"" >> "$PWD/bashrc"
+  echo "source \"$PWD/diracos/diracosrc\"" >"$PWD/bashrc"
+  echo "export X509_CERT_DIR=\"$PWD/diracos/etc/grid-security/certificates\"" >>"$PWD/bashrc"
   source diracos/diracosrc
 
   if [[ -n "${DIRAC_RELEASE+x}" ]]; then
@@ -325,12 +314,7 @@ installDIRAC() {
     configureArgs+=("--LegacyExchangeApiKey=diracx:legacy:InsecureChangeMe")
   fi
 
-  if [[ -n "${INSTALLATION_BRANCH}" ]]; then
-    # Use this for (e.g.) running backward-compatibility tests
-    cmd="dirac-configure -S ${DIRACSETUP} -C ${CSURL} --SkipCAChecks "${configureArgs[@]}" ${CONFIGUREOPTIONS} ${DEBUG}"
-  else
-    cmd="dirac-configure -C ${CSURL} --SkipCAChecks ${CONFIGUREOPTIONS} ${DEBUG}"
-  fi
+  cmd="dirac-configure -C ${CSURL} --SkipCAChecks ${CONFIGUREOPTIONS} ${DEBUG}"
   if ! bash -c "${cmd}"; then
     echo 'ERROR: dirac-configure failed' >&2
     exit 1
@@ -359,10 +343,10 @@ function installDIRACX() {
   fi
 
   for wheel_name in "$@"; do
-    wheels=( $(find "${DIRACX_CUSTOM_SOURCE_PREFIXES}" -name "diracx_${wheel_name}-*.whl") )
+    wheels=($(find "${DIRACX_CUSTOM_SOURCE_PREFIXES}" -name "diracx_${wheel_name}-*.whl"))
     if [[ ! ${#wheels[@]} -eq 1 ]]; then
-        echo "ERROR: Multiple or no wheels found for ${wheel_name} in ${DIRACX_CUSTOM_SOURCE_PREFIXES}"
-        exit 1
+      echo "ERROR: Multiple or no wheels found for ${wheel_name} in ${DIRACX_CUSTOM_SOURCE_PREFIXES}"
+      exit 1
     fi
     pip install "${wheels[0]}"
   done
@@ -468,7 +452,6 @@ diracUserAndGroup() {
   fi
 }
 
-
 #.............................................................................
 #
 # diracSite:
@@ -493,10 +476,10 @@ diracAddSite() {
 #
 #-------------------------------------------------------------------------------
 
-diracServices(){
+diracServices() {
   echo '==> [diracServices]'
 
-  local services=$(cut -d '.' -f 1 < services | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
+  local services=$(cut -d '.' -f 1 <services | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
 
   for serv in $services; do
     echo "==> calling dirac-install-component $serv -o /DIRAC/Security/UseServerCertificate=True ${DEBUG}"
@@ -507,8 +490,7 @@ diracServices(){
   done
 }
 
-
-diracSEs(){
+diracSEs() {
   echo '==> [diracSEs]'
 
   echo "==> Installing SE-1"
@@ -529,7 +511,6 @@ diracSEs(){
 
 }
 
-
 #-------------------------------------------------------------------------------
 # diracUninstallServices:
 #
@@ -537,13 +518,13 @@ diracSEs(){
 #
 #-------------------------------------------------------------------------------
 
-diracUninstallServices(){
+diracUninstallServices() {
   echo '==> [diracUninstallServices]'
 
   findServices
 
   # Ignore tornado services
-  local services=$(cut -d '.' -f 1 < services | grep -v TokenManager | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | grep -v Tornado | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
+  local services=$(cut -d '.' -f 1 <services | grep -v TokenManager | grep -v ^ConfigurationSystem | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | grep -v Tornado | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
 
   # check if errexit mode is set and disabling as the component may not exist
   local save=$-
@@ -562,7 +543,6 @@ diracUninstallServices(){
 
 }
 
-
 #-------------------------------------------------------------------------------
 # diracAgents:
 #
@@ -570,10 +550,10 @@ diracUninstallServices(){
 #
 #-------------------------------------------------------------------------------
 
-diracAgents(){
+diracAgents() {
   echo '==> [diracAgents]'
 
-  local agents=$(cut -d '.' -f 1 < agents | grep -v CE2CSAgent | grep -v GOCDB2CS | grep -v Bdii2CS | grep -v CacheFeeder | grep -v NetworkAgent | grep -v FrameworkSystem | grep -v DataProcessingProgressAgent | grep -v RAWIntegrityAgent  | grep -v GridSiteWMSMonitoringAgent | grep -v HCAgent | grep -v GridCollectorAgent | grep -v HCProxyAgent | grep -v Nagios | grep -v AncestorFiles | grep -v BKInputData | grep -v LHCbPRProxyAgent | sed 's/System / /g' | sed 's/ /\//g')
+  local agents=$(cut -d '.' -f 1 <agents | grep -v CE2CSAgent | grep -v GOCDB2CS | grep -v Bdii2CS | grep -v CacheFeeder | grep -v NetworkAgent | grep -v FrameworkSystem | grep -v DataProcessingProgressAgent | grep -v RAWIntegrityAgent | grep -v GridSiteWMSMonitoringAgent | grep -v HCAgent | grep -v GridCollectorAgent | grep -v HCProxyAgent | grep -v Nagios | grep -v AncestorFiles | grep -v BKInputData | grep -v LHCbPRProxyAgent | sed 's/System / /g' | sed 's/ /\//g')
 
   for agent in $agents; do
     if [[ $agent == *" JobAgent"* ]]; then
@@ -590,7 +570,6 @@ diracAgents(){
   done
 }
 
-
 #-------------------------------------------------------------------------------
 # diracDBs:
 #
@@ -598,10 +577,10 @@ diracAgents(){
 #
 #-------------------------------------------------------------------------------
 
-diracDBs(){
+diracDBs() {
   echo '==> [diracDBs]'
 
-  local dbs=$(cut -d ' ' -f 2 < databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB | grep -v ^InstalledComponentsDB)
+  local dbs=$(cut -d ' ' -f 2 <databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB | grep -v ^InstalledComponentsDB)
   for db in $dbs; do
     if ! dirac-install-db "$db" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
       echo 'ERROR: dirac-install-db failed' >&2
@@ -611,31 +590,31 @@ diracDBs(){
 }
 
 # Drop, then Install manually the DFC
-diracDFCDB(){
+diracDFCDB() {
   echo '==> [diracDFCDB]'
 
   mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" -e "DROP DATABASE IF EXISTS FileCatalogDB;"
   SRC_ROOT="$(python -c 'import os; import DIRAC; print(os.path.dirname(DIRAC.__file__))')"
-  mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" < "${SRC_ROOT}/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql"
+  mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" <"${SRC_ROOT}/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql"
 }
 
 # Drop, then manually install the DFC with MultiVOFileCatalogDB
-diracMVDFCDB(){
+diracMVDFCDB() {
   echo '==> [diracMVDFCDB]'
 
   SRC_ROOT="$(python -c 'import os; import DIRAC; print(os.path.dirname(DIRAC.__file__))')"
   cp "${SRC_ROOT}/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql" "${SRC_ROOT}/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
   sed -i 's/FileCatalogDB/MultiVOFileCatalogDB/g' "${SRC_ROOT}/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
   mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" -e "DROP DATABASE IF EXISTS MultiVOFileCatalogDB;"
-  mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" < "${SRC_ROOT}/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
+  mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" <"${SRC_ROOT}/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
   rm "${SRC_ROOT}/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
 }
 
-dropDBs(){
+dropDBs() {
   echo '==> [dropDBs]'
 
   # make dbs a real array to avoid future mistake with escaping
-  mapfile -t dbs < <(cut -d ' ' -f 2 < databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB)
+  mapfile -t dbs < <(cut -d ' ' -f 2 <databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB)
   python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-drop-db.py" "${dbs[@]}" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"
 }
 
@@ -646,12 +625,11 @@ dropDBs(){
 #
 #-------------------------------------------------------------------------------
 
-diracOptimizers(){
+diracOptimizers() {
   echo '==> [diracOptimizers]'
 
   local executors=$(cat executors | grep WorkloadManagementSystem | cut -d ' ' -f 2 | grep -v Base)
-  for executor in $executors
-  do
+  for executor in $executors; do
     echo "==> calling dirac-install-component WorkloadManagement/$executor  -o /DIRAC/Security/UseServerCertificate=True"
     if ! dirac-install-component "WorkloadManagement/$executor" -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
       echo 'ERROR: dirac-install-component failed' >&2
@@ -663,7 +641,6 @@ diracOptimizers(){
 #-------------------------------------------------------------------------------
 # Kill, Stop and Start scripts. Used to clean environment.
 #-------------------------------------------------------------------------------
-
 
 #.............................................................................
 #

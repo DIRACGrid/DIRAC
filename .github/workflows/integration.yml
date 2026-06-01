@@ -4,18 +4,18 @@ on:
   push:
     paths-ignore:
       # Docs
-      - 'docs/**'
-      - 'README.rst'
+      - "docs/**"
+      - "README.rst"
       # When push new release
-      - 'release.notes'
-      - 'src/DIRAC/__init__.py'  # It is expected that only the version number will change here
-      - 'releases.cfg'
+      - "release.notes"
+      - "src/DIRAC/__init__.py" # It is expected that only the version number will change here
+      - "releases.cfg"
   pull_request:
     paths-ignore:
       # RPs with docs
-      - 'docs/**'
-      - 'README.rst'
-      - 'release.notes'
+      - "docs/**"
+      - "README.rst"
+      - "release.notes"
 
 jobs:
   Integration:
@@ -36,63 +36,63 @@ jobs:
           - TEST_NAME: "Force DEncode and MySQL8"
             ARGS: DIRAC_USE_JSON_ENCODE=NO MYSQL_VER=mysql:8.0.40
           - TEST_NAME: "Backward Compatibility"
-            ARGS: CLIENT_INSTALLATION_BRANCH=rel-v8r0 PILOT_INSTALLATION_BRANCH=rel-v8r0
+            ARGS: CLIENT_INSTALLATION_BRANCH=rel-v9r0 PILOT_INSTALLATION_BRANCH=rel-v9r0
           - TEST_NAME: "Test DiracX latest"
             ARGS: TEST_DIRACX=Yes
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Fail-fast for outdated pipelines
-      run: .github/workflows/fail-fast.sh
-    - run: |
-        git fetch --prune --unshallow
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-    - uses: cvmfs-contrib/github-action-cvmfs@v5
-    - name: Installing dependencies
-      run: |
-        python -m pip install \
-            gitpython \
-            packaging \
-            pyyaml \
-            requests \
-            typer
-    - name: Prepare environment
-      run: ./integration_tests.py prepare-environment ${{ matrix.ARGS }}
-    - name: Install server
-      run: ./integration_tests.py install-server
-    - name: Install client
-      run: ./integration_tests.py install-client
-    - name: Install pilot
-      run: ./integration_tests.py install-pilot
-    - name: Server tests
-      run: ./integration_tests.py test-server || touch server-tests-failed
-    - name: Client tests
-      run: ./integration_tests.py test-client || touch client-tests-failed
-    - name: Pilot tests
-      run: ./integration_tests.py test-pilot || touch pilot-tests-failed
-    - name: Opensearch logs
-      run: docker logs opensearch
-    - name: Check test status
-      run: |
-        has_error=0
-        if [ -f server-tests-failed ]; then has_error=1; echo "Server tests failed"; fi
-        if [ -f client-tests-failed ]; then has_error=1; echo "Client tests failed"; fi
-        if [ -f pilot-tests-failed ]; then has_error=1; echo "pilot tests failed"; fi
-        if [ ${has_error} = 1 ]; then exit 1; fi
-    - name: diracx filtered requests logs
-      if: contains(matrix.ARGS, 'TEST_DIRACX=Yes')
-      run: |
-        docker logs diracx 2>/dev/null | grep '/api/' \
-          | awk -F\" '{print $2, $3}' \
-          | awk '{print $1, $2, $4}' \
-          | sort | uniq -c | sort
+      - uses: actions/checkout@v4
+      - name: Fail-fast for outdated pipelines
+        run: .github/workflows/fail-fast.sh
+      - run: |
+          git fetch --prune --unshallow
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: cvmfs-contrib/github-action-cvmfs@v5
+      - name: Installing dependencies
+        run: |
+          python -m pip install \
+              gitpython \
+              packaging \
+              pyyaml \
+              requests \
+              typer
+      - name: Prepare environment
+        run: ./integration_tests.py prepare-environment ${{ matrix.ARGS }}
+      - name: Install server
+        run: ./integration_tests.py install-server
+      - name: Install client
+        run: ./integration_tests.py install-client
+      - name: Install pilot
+        run: ./integration_tests.py install-pilot
+      - name: Server tests
+        run: ./integration_tests.py test-server || touch server-tests-failed
+      - name: Client tests
+        run: ./integration_tests.py test-client || touch client-tests-failed
+      - name: Pilot tests
+        run: ./integration_tests.py test-pilot || touch pilot-tests-failed
+      - name: Opensearch logs
+        run: docker logs opensearch
+      - name: Check test status
+        run: |
+          has_error=0
+          if [ -f server-tests-failed ]; then has_error=1; echo "Server tests failed"; fi
+          if [ -f client-tests-failed ]; then has_error=1; echo "Client tests failed"; fi
+          if [ -f pilot-tests-failed ]; then has_error=1; echo "pilot tests failed"; fi
+          if [ ${has_error} = 1 ]; then exit 1; fi
+      - name: diracx filtered requests logs
+        if: contains(matrix.ARGS, 'TEST_DIRACX=Yes')
+        run: |
+          docker logs diracx 2>/dev/null | grep '/api/' \
+            | awk -F\" '{print $2, $3}' \
+            | awk '{print $1, $2, $4}' \
+            | sort | uniq -c | sort
 
-    - name: diracx error logs
-      if: ${{ failure() && contains(matrix.ARGS, 'TEST_DIRACX=Yes') }}
-      run: |
-        mkdir -p /tmp/service-logs
-        docker logs diracx 2>&1 | tee /tmp/service-logs/diracx.log
-        cd /tmp/DIRACRepo
-        ./integration_tests.py logs --no-follow --lines 1000 2>&1 | tee /tmp/service-logs/dirac.log
+      - name: diracx error logs
+        if: ${{ failure() && contains(matrix.ARGS, 'TEST_DIRACX=Yes') }}
+        run: |
+          mkdir -p /tmp/service-logs
+          docker logs diracx 2>&1 | tee /tmp/service-logs/diracx.log
+          cd /tmp/DIRACRepo
+          ./integration_tests.py logs --no-follow --lines 1000 2>&1 | tee /tmp/service-logs/dirac.log

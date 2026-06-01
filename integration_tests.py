@@ -128,7 +128,7 @@ The currently known features and their default values are:
   MYSQL_VER: {DEFAULT_MYSQL_VER!r}
   ES_VER: {DEFAULT_ES_VER!r}
   IAM_VER: {DEFAULT_IAM_VER!r}
-  {(os.linesep + '  ').join(['%s: %r' % x for x in FEATURE_VARIABLES.items()])}
+  {(os.linesep + "  ").join(["%s: %r" % x for x in FEATURE_VARIABLES.items()])}
 
 All features can be prefixed with "SERVER_" or "CLIENT_" to limit their scope.
 
@@ -738,7 +738,7 @@ def _check_containers_running(*, is_up=True):
 
 def _find_dirac_release():
     # Start by looking for the GitHub/GitLab environment variables
-    if "GITHUB_BASE_REF" in os.environ:  # this will be "rel-v8r0"
+    if "GITHUB_BASE_REF" in os.environ:  # this will be "rel-v9r0"
         return os.environ["GITHUB_BASE_REF"]
     if "CI_COMMIT_REF_NAME" in os.environ:
         return os.environ["CI_COMMIT_REF_NAME"]
