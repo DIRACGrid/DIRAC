@@ -62,7 +62,7 @@ class FilenamePlugin(FCConditionBasePlugin):
         return fnName, args, kwargs
 
     def __init__(self, conditions):
-        """the condition can be any of these methods which evaulate to a boolean:
+        """The condition can be any of these methods which evaulate to a boolean:
 
             * startswith
             * endswith
@@ -74,6 +74,7 @@ class FilenamePlugin(FCConditionBasePlugin):
             * istitle
             * isupper
             * find
+
         (Find strictly doesn't return a boolean, but it is remapped to one)
 
         It should be written just like if you were calling the python call yourself.
