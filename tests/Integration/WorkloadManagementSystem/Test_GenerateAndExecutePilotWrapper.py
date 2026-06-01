@@ -22,6 +22,7 @@ from __future__ import absolute_import, division, print_function
 import os
 import sys
 import time
+import subprocess
 
 # 1) gets the (DIRAC-free) PilotWrapper.py
 
@@ -60,7 +61,7 @@ with open("pilot-wrapper.sh", "wb") as pj:
 
 # 3) now start it
 
-result = subprocess.run(["sh", "pilot-wrapper.sh"])
-if result.returncode != 0:
+result = subprocess.call(["sh", "pilot-wrapper.sh"])
+if result != 0:
     sys.exit(1)
 sys.exit(0)
