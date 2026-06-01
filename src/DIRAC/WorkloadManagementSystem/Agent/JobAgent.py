@@ -9,6 +9,7 @@ import os
 import re
 import sys
 import time
+import subprocess
 from pathlib import Path
 
 from diraccfg import CFG
@@ -494,8 +495,13 @@ class JobAgent(AgentModule):
         retVal = gProxyManager.getPayloadProxyFromDIRACGroup(ownerDN, ownerGroup, self.defaultProxyLength)
         if not retVal["OK"]:
             self.log.error("Could not retrieve payload proxy", retVal["Message"])
-            os.system("dirac-proxy-info")
-            sys.stdout.flush()
+            result = subprocess.run(
+                ["dirac-proxy-info"],
+                stderr=subprocess.STDOUT,
+                text=True,
+            )
+            if result.stdout:
+                self.log.error(f"dirac-proxy-info output:\n{result.stdout}\n")
             return S_ERROR("Error retrieving proxy")
 
         chain = retVal["Value"]

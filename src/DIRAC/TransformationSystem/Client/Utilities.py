@@ -6,7 +6,6 @@
 """
 Utilities for Transformation system
 """
-import ast
 import random
 
 from cachetools import LRUCache, cachedmethod
@@ -14,6 +13,7 @@ from cachetools.keys import hashkey
 from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.Core.Utilities.SaferEval import saferEval
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 
 # from DIRAC.Core.Utilities.Time import timeThis
@@ -356,7 +356,7 @@ class PluginUtilities:
         if valueType and not isinstance(value, valueType):
             if valueType is list:
                 try:
-                    value = ast.literal_eval(value) if value and value != "None" else []
+                    value = saferEval(value) if value and value != "None" else []
                 # literal_eval('SE-DST') -> ValueError
                 # literal_eval('SE_MC-DST') -> SyntaxError
                 # Don't ask...
@@ -450,7 +450,7 @@ class PluginUtilities:
         if not inputParam:
             return []
         if inputParam.count("["):
-            return eval(inputParam)  # pylint: disable=eval-used
+            return saferEval(inputParam)
         elif isinstance(inputParam, list):
             return inputParam
         return [inputParam]

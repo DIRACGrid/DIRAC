@@ -12,6 +12,7 @@ from DIRAC.Core.Base.CLI import CLI
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Core.Utilities.PrettyPrint import int_with_commas, printTable
+from DIRAC.Core.Utilities.SaferEval import saferEval
 from DIRAC.DataManagementSystem.Client.DirectoryListing import DirectoryListing
 from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery, FILE_STANDARD_METAKEYS
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem, UnixLikeFileSystem
@@ -1942,7 +1943,7 @@ class FileCatalogClientCLI(CLI):
 
         if argss:
             if argss[0][0] == "{":
-                metaDict = eval(argss[0])
+                metaDict = saferEval(argss[0])
             else:
                 result = self.__createQuery(" ".join(argss))
                 if not result["OK"]:

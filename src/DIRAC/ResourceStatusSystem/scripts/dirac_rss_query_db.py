@@ -13,6 +13,7 @@ from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.PrettyPrint import printTable
+from DIRAC.Core.Utilities.SaferEval import saferEval
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 
 
@@ -375,7 +376,7 @@ def run(args, switchDictSet):
     for switchDict in switchDictSet:
         # exectue the query request: e.g. if it's a 'select' it executes 'select()'
         # the same if it is insert, update, add, modify, delete
-        result = eval(query + "( args, switchDict )")
+        result = saferEval(query + "( args, switchDict )")
 
         if result["successful"]:
             if query == "select" and result["match"] > 0:

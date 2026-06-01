@@ -60,6 +60,7 @@ with open("pilot-wrapper.sh", "wb") as pj:
 
 # 3) now start it
 
-ret = os.system("sh pilot-wrapper.sh")
-if ret:
+result = subprocess.run(["sh", "pilot-wrapper.sh"])
+if result.returncode != 0:
     sys.exit(1)
+sys.exit(0)

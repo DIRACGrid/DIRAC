@@ -14,6 +14,7 @@ from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache
 from DIRAC.Interfaces.Utilities.DCommands import ArrayFormatter
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Utilities.TimeUtilities import toString, day
+from DIRAC.Core.Utilities.SaferEval import saferEval
 from DIRAC.WorkloadManagementSystem.Client.JobStatus import JOB_STATES, JOB_FINAL_STATES
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import (
     JobMonitoringClient,
@@ -42,7 +43,7 @@ def getJobSummary(jobs):
 
     if isinstance(result["Value"], str):
         try:
-            jobSummary = eval(result["Value"])
+            jobSummary = saferEval(result["Value"])
         except:
             return S_ERROR("Problem while converting result from job monitoring")
     else:
