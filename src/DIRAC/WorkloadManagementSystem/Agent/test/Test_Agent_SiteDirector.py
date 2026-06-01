@@ -1,5 +1,4 @@
-""" Test class for SiteDirector
-"""
+"""Test class for SiteDirector"""
 # pylint: disable=protected-access
 
 import datetime
@@ -145,6 +144,7 @@ Resources
 
 mockPMProxy = MagicMock()
 mockPMProxy.dumpAllToString.return_value = {"OK": True, "Value": "fakeProxy"}
+mockPMProxy.getRemainingSecs.return_value = {"OK": True, "Value": 1000}
 mockPMProxyReply = MagicMock()
 mockPMProxyReply.return_value = {"OK": True, "Value": mockPMProxy}
 
@@ -182,6 +182,10 @@ def sd(mocker, config):
     )
     mocker.patch(
         "DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gProxyManager.downloadProxy", side_effect=mockPMProxyReply
+    )
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gProxyManager.getPilotProxyFromDIRACGroup",
+        side_effect=mockPMProxyReply,
     )
     sd = SiteDirector()
 
@@ -288,7 +292,8 @@ def test_getPilotWrapper(mocker, sd, pilotWrapperDirectory):
     assert os.path.exists(res) and os.path.isfile(res)
 
 
-def test__submitPilotsToQueue(sd):
+@pytest.mark.parametrize("proxy_validity", [1, 1000, 900000])
+def test__submitPilotsToQueue(sd, proxy_validity):
     """Testing SiteDirector()._submitPilotsToQueue()"""
     # Create a MagicMock that does not have the workingDirectory
     # attribute (https://cpython-test-docs.readthedocs.io/en/latest/library/unittest.mock.html#deleting-attributes)
@@ -297,6 +302,7 @@ def test__submitPilotsToQueue(sd):
     del ceMock.workingDirectory
     proxyObject_mock = MagicMock()
     proxyObject_mock.dumpAllToString.return_value = S_OK("aProxy")
+    proxyObject_mock.getRemainingSecs.return_value = S_OK(proxy_validity)
     ceMock.proxy = proxyObject_mock
 
     sd.queueCECache = {"ce1.site1.com_condor": {"CE": ceMock, "Hash": "3d0dd0c60fffa900c511d7442e9c7634"}}

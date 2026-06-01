@@ -1,9 +1,9 @@
 """
-  Service class implements the server side part of the DISET protocol
-  There are 2 main parts in this class:
+Service class implements the server side part of the DISET protocol
+There are 2 main parts in this class:
 
-  - All useful functions for initialization
-  - All useful functions to handle the requests
+- All useful functions for initialization
+- All useful functions to handle the requests
 """
 # pylint: skip-file
 # __searchInitFunctions gives RuntimeError: maximum recursion depth exceeded
@@ -102,17 +102,10 @@ class Service:
         }
         self.securityLogging = Operations().getValue("EnableSecurityLogging", False)
 
-        # Initialize Monitoring
-        # The import needs to be here because of the CS must be initialized before importing
-        # this class (see https://github.com/DIRACGrid/DIRAC/issues/4793)
-        from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-
-        self.activityMonitoringReporter = MonitoringReporter(monitoringType="ServiceMonitoring")
-
         # Call static initialization function
         try:
             self._handler["class"]._rh__initializeClass(
-                dict(self._serviceInfoDict), self._lockManager, self._msgBroker, self.activityMonitoringReporter
+                dict(self._serviceInfoDict), self._lockManager, self._msgBroker, None
             )
             if self._handler["init"]:
                 for initFunc in self._handler["init"]:
@@ -132,6 +125,10 @@ class Service:
             gLogger.exception(errMsg)
             return S_ERROR(errMsg)
         if self.activityMonitoring:
+            from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+
+            self.activityMonitoringReporter = MonitoringReporter(monitoringType="ServiceMonitoring")
+
             gThreadScheduler.addPeriodicTask(30, self.__reportActivity)
             gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
 

@@ -1,21 +1,21 @@
 # We disable pylint no-callable because of https://github.com/PyCQA/pylint/issues/8138
 
-""" Frontend for ReqDB
+"""Frontend for ReqDB
 
-    :mod: RequestDB
+:mod: RequestDB
 
-    =======================
+=======================
 
-    .. module: RequestDB
+.. module: RequestDB
 
-    :synopsis: db holding Requests
+:synopsis: db holding Requests
 
-    db holding Request, Operation and File
+db holding Request, Operation and File
 """
+
 import datetime
 import errno
 import random
-
 from urllib.parse import quote_plus
 
 from sqlalchemy import (
@@ -32,6 +32,7 @@ from sqlalchemy import (
     create_engine,
     distinct,
     func,
+    inspect,
 )
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import backref, joinedload, registry, relationship, sessionmaker
@@ -186,6 +187,38 @@ class RequestDB:
 
     db holding requests
     """
+
+    @staticmethod
+    def _get_column(table_name, column_name):
+        """Resolve supported ORM column attributes without evaluating input."""
+
+        models = {"Request": Request, "Operation": Operation}
+        aliases = {"Status": "_Status"}
+
+        model = models.get(table_name)
+        if model is None:
+            raise ValueError(f"Unknown table '{table_name}'")
+
+        resolved_name = aliases.get(column_name, column_name)
+        if resolved_name not in inspect(model).column_attrs:
+            raise ValueError(f"Unknown {table_name} attribute '{column_name}'")
+
+        return getattr(model, resolved_name)
+
+    @classmethod
+    def _apply_web_filter(cls, query, table_name, column_name, value):
+        column = cls._get_column(table_name, column_name)
+        if isinstance(value, list):
+            return query.filter(column.in_(value))
+        return query.filter(column == value)
+
+    @classmethod
+    def _get_order_expression(cls, table_name, column_name, direction):
+        column = cls._get_column(table_name, column_name)
+        normalized_direction = direction.lower()
+        if normalized_direction not in {"asc", "desc"}:
+            raise ValueError(f"Unknown sort direction '{direction}'")
+        return getattr(column, normalized_direction)()
 
     def __getDBConnectionInfo(self, fullname):
         """Collect from the CS all the info needed to connect to the DB.
@@ -704,13 +737,12 @@ class RequestDB:
                     elif key == "Status":
                         key = "_Status"
 
-                    if isinstance(value, list):
-                        summaryQuery = summaryQuery.filter(eval(f"{tableName}.{key}.in_({value})"))
-                    else:
-                        summaryQuery = summaryQuery.filter(eval(f"{tableName}.{key}") == value)
+                    summaryQuery = self._apply_web_filter(summaryQuery, tableName, key, value)
 
             if sortList:
-                summaryQuery = summaryQuery.order_by(eval(f"Request.{sortList[0][0]}.{sortList[0][1].lower()}()"))
+                summaryQuery = summaryQuery.order_by(
+                    self._get_order_expression("Request", sortList[0][0], sortList[0][1])
+                )
 
             try:
                 requestLists = summaryQuery.all()
@@ -744,6 +776,8 @@ class RequestDB:
             resultDict["TotalRecords"] = nRequests
 
             return S_OK(resultDict)
+        except ValueError as e:
+            return S_ERROR(str(e))
         #
         except Exception as e:
             self.log.exception("getRequestSummaryWeb: unexpected exception", lException=e)
@@ -763,16 +797,14 @@ class RequestDB:
 
         session = self.DBSession()
 
-        if groupingAttribute == "Type":
-            groupingAttribute = "Operation.Type"
-        elif groupingAttribute == "Status":
-            groupingAttribute = "Request._Status"
-        else:
-            groupingAttribute = f"Request.{groupingAttribute}"
-
         try:
+            if groupingAttribute == "Type":
+                groupingColumn = self._get_column("Operation", "Type")
+            else:
+                groupingColumn = self._get_column("Request", groupingAttribute)
+
             summaryQuery = session.query(
-                eval(groupingAttribute), func.count(Request.RequestID)  # pylint: disable=not-callable,no-member
+                groupingColumn, func.count(Request.RequestID)  # pylint: disable=not-callable,no-member
             )
 
             for key, value in selectDict.items():
@@ -788,12 +820,9 @@ class RequestDB:
                     elif key == "Status":
                         key = "_Status"
 
-                    if isinstance(value, list):
-                        summaryQuery = summaryQuery.filter(eval(f"{objectType}.{key}.in_({value})"))
-                    else:
-                        summaryQuery = summaryQuery.filter(eval(f"{objectType}.{key}") == value)
+                    summaryQuery = self._apply_web_filter(summaryQuery, objectType, key, value)
 
-            summaryQuery = summaryQuery.group_by(eval(groupingAttribute))
+            summaryQuery = summaryQuery.group_by(groupingColumn)
 
             try:
                 requestLists = summaryQuery.all()
@@ -805,6 +834,8 @@ class RequestDB:
 
             return S_OK(resultDict)
 
+        except ValueError as e:
+            return S_ERROR(str(e))
         except Exception as e:
             self.log.exception("getRequestSummaryWeb: unexpected exception", lException=e)
             return S_ERROR(f"getRequestSummaryWeb: unexpected exception : {e}")
@@ -817,11 +848,11 @@ class RequestDB:
 
         session = self.DBSession()
         distinctValues = []
-        if columnName == "Status":
-            columnName = "_Status"
         try:
-            result = session.query(distinct(eval(f"{tableName}.{columnName}"))).all()
+            result = session.query(distinct(self._get_column(tableName, columnName))).all()
             distinctValues = [dist[0] for dist in result]
+        except ValueError as e:
+            return S_ERROR(str(e))
         except NoResultFound:
             pass
         except Exception as e:

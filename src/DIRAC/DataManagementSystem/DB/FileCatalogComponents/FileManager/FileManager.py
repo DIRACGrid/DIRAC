@@ -298,7 +298,7 @@ class FileManager(FileManagerBase):
         if insertTuples:
             fields = "FileID,GUID,Checksum,ChecksumType,CreationDate,ModificationDate,Mode"
             req = f"INSERT INTO FC_FileInfo ({fields}) VALUES {','.join(insertTuples)}"
-            res = self.db._update(req)
+            res = self.db._update(req, conn=connection)
             if not res["OK"]:
                 self._deleteFiles(toDelete, connection=connection)
                 for lfn in list(lfns):
@@ -841,7 +841,7 @@ class FileManager(FileManagerBase):
 
         fields = "FileID,GUID,CreationDate,ModificationDate,Mode"
         req = f"INSERT INTO FC_FileInfo ({fields}) VALUES {','.join(insertTuples)}"
-        result = self.db._update(req)
+        result = self.db._update(req, conn=connection)
         if not result["OK"]:
             return result
 
