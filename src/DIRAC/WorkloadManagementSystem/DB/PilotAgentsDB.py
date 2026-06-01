@@ -35,6 +35,26 @@ from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 
 class PilotAgentsDB(DB):
+    # Columns that may be specified by users for sort / return
+    # These span multiple tables, the important thing is preventing arbitrary expressions
+    # that could contains SQL.
+    ALLOWED_COLUMNS = {
+        "AccountingSent",
+        "BenchMark",
+        "CurrentJobID",
+        "DestinationSite",
+        "GridSite",
+        "GridType",
+        "LastUpdateTime",
+        "PilotID",
+        "PilotJobReference",
+        "PilotStamp",
+        "Queue",
+        "Status",
+        "SubmissionTime",
+        "VO",
+    }
+
     def __init__(self, parentLogger=None):
         super().__init__("PilotAgentsDB", "WorkloadManagement/PilotAgentsDB", parentLogger=parentLogger)
         self._defaultLogger = self.log
@@ -60,11 +80,15 @@ class PilotAgentsDB(DB):
             req = (
                 "INSERT INTO PilotAgents "
                 + "(PilotJobReference, VO, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp) "
-                + "VALUES ('%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted','%s')"
-                % (ref, VO, gridType, stamp)
+                + "VALUES (%s,%s,%s,UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted',%s)"
             )
-
-            result = self._update(req)
+            args = (
+                ref,
+                VO,
+                gridType,
+                stamp,
+            )
+            result = self._update(req, args=args)
             if not result["OK"]:
                 return result
 
@@ -90,32 +114,43 @@ class PilotAgentsDB(DB):
         """Set pilot job status"""
 
         setList = []
-        setList.append(f"Status='{status}'")
+        args = []
+        setList.append("Status=%s")
+        args.append(status)
         if updateTime:
-            setList.append(f"LastUpdateTime='{updateTime}'")
+            setList.append("LastUpdateTime=%s")
+            args.append(updateTime)
         else:
             setList.append("LastUpdateTime=UTC_TIMESTAMP()")
         if not statusReason:
             statusReason = "Not given"
-        setList.append(f"StatusReason='{statusReason}'")
+        setList.append("StatusReason=%s")
+        args.append(statusReason)
         if gridSite:
-            setList.append(f"GridSite='{gridSite}'")
+            setList.append("GridSite=%s")
+            args.append(gridSite)
         if queue:
-            setList.append(f"Queue='{queue}'")
+            setList.append("Queue=%s")
+            args.append(queue)
         if benchmark:
-            setList.append(f"BenchMark='{float(benchmark)}'")
+            setList.append("BenchMark=%s")
+            args.append(str(float(benchmark)))
         if currentJob:
-            setList.append(f"CurrentJobID='{int(currentJob)}'")
+            setList.append("CurrentJobID=%s")
+            args.append(str(int(currentJob)))
         if destination:
-            setList.append(f"DestinationSite='{destination}'")
+            setList.append(f"DestinationSite=%s")
+            args.append(destination)
             if not gridSite:
                 res = getCESiteMapping(destination)
                 if res["OK"] and res["Value"]:
-                    setList.append(f"GridSite='{res['Value'][destination]}'")
+                    setList.append(f"GridSite=%s")
+                    args.append(res["Value"][destination])
 
         set_string = ",".join(setList)
-        req = f"UPDATE PilotAgents SET {set_string} WHERE PilotJobReference='{pilotRef}'"
-        return self._update(req, conn=conn)
+        req = f"UPDATE PilotAgents SET {set_string} WHERE PilotJobReference=%s"
+        args.append(pilotRef)
+        return self._update(req, args=args, conn=conn)
 
     # ###########################################################################################
     # FIXME: this can't work ATM because of how the DB table is made. Maybe it would be useful later.
@@ -142,20 +177,24 @@ class PilotAgentsDB(DB):
         """Select pilot references according to the provided criteria. "newer" and "older"
         specify the time interval in minutes
         """
-
         condition = self.buildCondition(condDict, older, newer, timeStamp)
         if orderAttribute:
             orderType = None
             orderField = orderAttribute
             if orderAttribute.find(":") != -1:
                 orderType = orderAttribute.split(":")[1].upper()
+                if orderType not in {"ASC", "DESC"}:
+                    return S_ERROR(f"Unknown order attribute type {orderType}")
                 orderField = orderAttribute.split(":")[0]
+            if orderField not in self.ALLOWED_COLUMNS:
+                return S_ERROR(f"Unknown order attribute field {orderField}")
             condition = condition + " ORDER BY " + orderField
             if orderType:
                 condition = condition + " " + orderType
 
         if limit:
-            condition = condition + " LIMIT " + str(limit)
+            # Must cast to int to prevent SQL injection
+            condition = condition + " LIMIT " + str(int(limit))
 
         req = "SELECT PilotJobReference from PilotAgents"
         if condition:
@@ -273,6 +312,9 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             if not paramNames
             else paramNames
         )
+        for col in parameters:
+            if not col in self.ALLOWED_COLUMNS:
+                return S_ERROR(f"Unknown column: {col}")
 
         cmd = f"SELECT {', '.join(parameters)} FROM PilotAgents"
         condSQL = []
@@ -331,23 +373,35 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         if res["OK"] and res["Value"]:
             gridSite = res["Value"][destination]
 
-        req = "UPDATE PilotAgents SET DestinationSite='%s', GridSite='%s' WHERE PilotJobReference='%s'"
-        req = req % (destination, gridSite, pilotRef)
-        return self._update(req, conn=conn)
+        req = "UPDATE PilotAgents SET DestinationSite=%s, GridSite=%s WHERE PilotJobReference=%s"
+        args = (
+            destination,
+            gridSite,
+            pilotRef,
+        )
+        return self._update(req, args=args, conn=conn)
 
     ##########################################################################################
     def setPilotBenchmark(self, pilotRef, mark):
         """Set the pilot agent benchmark"""
 
-        req = f"UPDATE PilotAgents SET BenchMark='{mark:f}' WHERE PilotJobReference='{pilotRef}'"
-        return self._update(req)
+        req = "UPDATE PilotAgents SET BenchMark=%s WHERE PilotJobReference=%s"
+        args = (
+            f"{mark:f}",
+            pilotRef,
+        )
+        return self._update(req, args=args)
 
     ##########################################################################################
     def setAccountingFlag(self, pilotRef, mark="True"):
         """Set the pilot AccountingSent flag"""
 
-        req = f"UPDATE PilotAgents SET AccountingSent='{mark}' WHERE PilotJobReference='{pilotRef}'"
-        return self._update(req)
+        req = "UPDATE PilotAgents SET AccountingSent=%s WHERE PilotJobReference=%s"
+        args = (
+            mark,
+            pilotRef,
+        )
+        return self._update(req, args=args)
 
     ##########################################################################################
     def storePilotOutput(self, pilotRef, output, error):
@@ -356,24 +410,21 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         if not pilotID:
             return S_ERROR(f"Pilot reference not found {pilotRef}")
 
-        result = self._escapeString(output)
-        if not result["OK"]:
-            return result
-        e_output = result["Value"]
-        result = self._escapeString(error)
-        if not result["OK"]:
-            return result
-        e_error = result["Value"]
-        req = f"INSERT INTO PilotOutput (PilotID,StdOutput,StdError) VALUES ({pilotID}, {e_output}, {e_error})"
-        return self._update(req)
+        req = "INSERT INTO PilotOutput (PilotID,StdOutput,StdError) VALUES (%s, %s, %s)"
+        args = (
+            pilotID,
+            output,
+            error,
+        )
+        return self._update(req, args=args)
 
     ##########################################################################################
     def getPilotOutput(self, pilotRef):
         """Retrieve standard output and error for pilot with pilotRef"""
 
         req = "SELECT StdOutput, StdError FROM PilotOutput,PilotAgents WHERE "
-        req += f"PilotOutput.PilotID = PilotAgents.PilotID AND PilotAgents.PilotJobReference='{pilotRef}'"
-        result = self._query(req)
+        req += "PilotOutput.PilotID = PilotAgents.PilotID AND PilotAgents.PilotJobReference=%s"
+        result = self._query(req, args=(pilotRef,))
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -395,8 +446,8 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         """Get Pilot ID for the given pilot reference or a list of references"""
 
         if isinstance(pilotRef, (str, int)):
-            req = f"SELECT PilotID from PilotAgents WHERE PilotJobReference='{pilotRef}'"
-            result = self._query(req)
+            req = "SELECT PilotID from PilotAgents WHERE PilotJobReference=%s"
+            result = self._query(req, args=(pilotRef,))
             if not result["OK"]:
                 return 0
             if result["Value"]:
@@ -431,28 +482,39 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
                 result = self.setPilotStatus(pilotRef, status=PilotStatus.RUNNING, statusReason=reason, gridSite=site)
                 if not result["OK"]:
                     return result
-            req = f"INSERT INTO JobToPilotMapping (PilotID,JobID,StartTime) VALUES ({int(pilotID)}, {int(jobID)}, UTC_TIMESTAMP())"
-            return self._update(req)
+            req = "INSERT INTO JobToPilotMapping (PilotID,JobID,StartTime) VALUES (%s, %s, UTC_TIMESTAMP())"
+            args = (
+                f"{int(pilotID)}",
+                f"{int(jobID)}",
+            )
+            return self._update(req, args=args)
         return S_ERROR(f"PilotJobReference {pilotRef} not found")
 
     ##########################################################################################
     def setCurrentJobID(self, pilotRef, jobID):
         """Set the pilot agent current DIRAC job ID"""
 
-        req = "UPDATE PilotAgents SET CurrentJobID=%d WHERE PilotJobReference='%s'" % (jobID, pilotRef)
-        return self._update(req)
+        req = "UPDATE PilotAgents SET CurrentJobID=%s WHERE PilotJobReference=%s"
+        args = (
+            jobID,
+            pilotRef,
+        )
+        return self._update(req, args=args)
 
     ##########################################################################################
     def getJobsForPilot(self, pilotID):
         """Get IDs of Jobs that were executed by a pilot"""
         cmd = "SELECT pilotID,JobID FROM JobToPilotMapping "
+        args = []
         if isinstance(pilotID, list):
-            pilotIDs_string = ",".join(str(int(x)) for x in pilotID)
-            cmd = f"{cmd} WHERE pilotID IN ({pilotIDs_string})"
+            placeholders = ",".join(["%s"] * len(pilotID))
+            cmd = f"SELECT JobID FROM JobToPilotMapping WHERE pilotID IN ({placeholders})"
+            args = [str(int(x)) for x in pilotID]
         else:
-            cmd = f"{cmd} WHERE pilotID = {pilotID}"
+            cmd = f"{cmd} WHERE pilotID = %s"
+            args.append(pilotID)
 
-        result = self._query(cmd)
+        result = self._query(cmd, args=args)
         if not result["OK"]:
             return result
 
@@ -466,9 +528,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
     ##########################################################################################
     def getPilotsForJobID(self, jobID):
         """Get ID of Pilot Agent that is running a given JobID"""
-
-        result = self._query(f"SELECT PilotID FROM JobToPilotMapping WHERE JobID={jobID}")
-
+        result = self._query("SELECT PilotID FROM JobToPilotMapping WHERE JobID=%s", args=(jobID,))
         if not result["OK"]:
             self.log.error("getPilotsForJobID failed", result["Message"])
             return result
@@ -482,9 +542,8 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
     ##########################################################################################
     def getPilotCurrentJob(self, pilotRef):
         """The job ID currently executed by the pilot"""
-        req = f"SELECT CurrentJobID FROM PilotAgents WHERE PilotJobReference='{pilotRef}' "
-
-        result = self._query(req)
+        req = "SELECT CurrentJobID FROM PilotAgents WHERE PilotJobReference=%s"
+        result = self._query(req, args=(pilotRef,))
         if not result["OK"]:
             return result
         if result["Value"]:
@@ -501,15 +560,18 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         summary_dict["Total"] = {}
 
         for st in PilotStatus.PILOT_STATES:
+            args = []
             summary_dict["Total"][st] = 0
-            req = "SELECT DestinationSite,count(DestinationSite) FROM PilotAgents " + f"WHERE Status='{st}' "
+            req = "SELECT DestinationSite,count(DestinationSite) FROM PilotAgents WHERE Status=%s"
+            args.append(st)
             if startdate:
-                req = req + f" AND SubmissionTime >= '{startdate}'"
+                req = req + " AND SubmissionTime >= %s"
+                args.append(startdate)
             if enddate:
-                req = req + f" AND SubmissionTime <= '{enddate}'"
-
+                req = req + " AND SubmissionTime <= %s"
+                args.append(enddate)
             req = req + " GROUP BY DestinationSite"
-            result = self._query(req)
+            result = self._query(req, args=args)
             if not result["OK"]:
                 return result
             if result["Value"]:
@@ -558,6 +620,9 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         # TODO:
         #  add startItem and maxItems to the argument list
         #  limit output to  finalDict['Records'] = records[startItem:startItem + maxItems]
+        for col in columnList:
+            if col not in self.ALLOWED_COLUMNS:
+                return S_ERROR(f"Column not known: {col}")
         table = PivotedPilotSummaryTable(columnList)
         sqlQuery = table.buildSQL()
 
@@ -1052,6 +1117,9 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         """Get the summary snapshot for a given combination"""
         if not requestedFields:
             requestedFields = ["GridSite", "GridType", "Status"]
+        for col in requestedFields:
+            if not col in self.ALLOWED_COLUMNS:
+                return S_ERROR(f"Unknown field: {col}")
         valueFields = ["COUNT(PilotID)"]
         defString = ", ".join(requestedFields)
         valueString = ", ".join(valueFields)
