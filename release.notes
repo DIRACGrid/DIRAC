@@ -1,3 +1,15 @@
+[v8.0.79]
+
+*docs
+
+FIX: (#8546) lost dirac-dms-add-file lost documentation
+
+*Core
+
+CHANGE: (#8538) New eval helper function
+CHANGE: (#8537) Allow args parameter in MySQL _query calls
+CHANGE: (#8492) use importlib instead of pkg_resources
+
 [v8.0.78]
 
 *Core
