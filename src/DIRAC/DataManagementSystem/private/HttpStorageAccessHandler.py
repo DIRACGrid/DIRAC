@@ -10,6 +10,7 @@
 import os
 import shutil
 import random
+import tarfile
 
 from http import server
 
