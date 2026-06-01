@@ -2,6 +2,7 @@
    Collection of DIRAC useful operating system related modules
    by default on Error they return None
 """
+import json
 import os
 import shutil
 
@@ -87,7 +88,7 @@ def sourceEnv(timeout, cmdTuple, inputEnv=None):
     """
 
     # add appropriate extension to first element of the tuple (the command)
-    envAsDict = '&& python -c "import os,sys ; print >> sys.stderr, os.environ"'
+    envAsDict = '&& python -c "import os,sys,json; print(json.dumps(dict(os.environ)), file=sys.stderr)"'
 
     # 1.- Choose the right version of the configuration file
     if DIRAC.getPlatformTuple()[0] == "Windows":
@@ -125,7 +126,7 @@ def sourceEnv(timeout, cmdTuple, inputEnv=None):
         if ret["Value"][0] == 0:
             # execution was OK
             try:
-                result["outputEnv"] = eval(stderr.split("\n")[-2] + "\n")
+                result["outputEnv"] = json.loads(stderr.strip())
                 stderr = "\n".join(stderr.split("\n")[:-2])
             except Exception:
                 stdout = cmd + "\n" + stdout

@@ -28,6 +28,7 @@ from matplotlib.dates import (
     DAILY,
 )
 from dateutil.relativedelta import relativedelta
+from DIRAC.Core.Utilities.SaferEval import saferEval
 
 # This is a hack to workaround the use of float(ScalarFormatter.__call__(...))
 rcParams["axes.unicode_minus"] = False
@@ -68,7 +69,7 @@ def convert_to_datetime(dstring):
         if isinstance(dstring, datetime.datetime):
             results = dstring
         else:
-            results = eval(str(dstring), {"__builtins__": None, "time": time, "math": math}, {})
+            results = saferEval(dstring)
         if isinstance(results, (int, float)):
             results = datetime.datetime.fromtimestamp(int(results))
         elif isinstance(results, datetime.datetime):

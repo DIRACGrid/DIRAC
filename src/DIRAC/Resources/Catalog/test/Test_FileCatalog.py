@@ -105,13 +105,13 @@ def mock_fc_getSelectedCatalogs(self, desiredCatalogs):
 
     for catalogDescription in desiredCatalogs:
         name, master, read, write, nb_read, nb_read_no_lfn, nb_write, nb_write_no_lfn = catalogDescription.split("_")
-        master = eval(master)
-        read = eval(read)
-        write = eval(write)
-        nb_read = eval(nb_read)
-        nb_read_no_lfn = eval(nb_read_no_lfn)
-        nb_write = eval(nb_write)
-        nb_write_no_lfn = eval(nb_write_no_lfn)
+        master = master.lower() == "true"
+        read = read.lower() == "true"
+        write = write.lower() == "true"
+        nb_read = int(nb_read)
+        nb_read_no_lfn = int(nb_read_no_lfn)
+        nb_write = int(nb_write)
+        nb_write_no_lfn = int(nb_write_no_lfn)
 
         obj = GenericCatalog(name, nb_read, nb_read_no_lfn, nb_write, nb_write_no_lfn)
 
