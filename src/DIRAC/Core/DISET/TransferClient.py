@@ -40,7 +40,7 @@ class TransferClient(BaseClient):
             self._disconnect(trid)
             return S_ERROR(f"Cound not request transfer: {str(e)}")
 
-    def sendFile(self, filename, fileId, token=""):
+    def sendFile(self, filename, fileId, token=""):  # nosec B107
         """
         Send a file to server
 
@@ -74,7 +74,7 @@ class TransferClient(BaseClient):
             fileHelper.oFile.close()
             self._disconnect(trid)
 
-    def receiveFile(self, filename, fileId, token=""):
+    def receiveFile(self, filename, fileId, token=""):  # nosec B107
         """
         Receive a file from the server
 
@@ -117,7 +117,7 @@ class TransferClient(BaseClient):
                 bogusEntries.append(entry)
         return bogusEntries
 
-    def sendBulk(self, fileList, bulkId, token="", compress=True, bulkSize=-1, onthefly=True):
+    def sendBulk(self, fileList, bulkId, token="", compress=True, bulkSize=-1, onthefly=True):  # nosec B107
         """
         Send a bulk of files to server
 
@@ -154,7 +154,7 @@ class TransferClient(BaseClient):
         finally:
             self._disconnect(trid)
 
-    def receiveBulk(self, destDir, bulkId, token="", compress=True):
+    def receiveBulk(self, destDir, bulkId, token="", compress=True):  # nosec B107
         """
         Receive a bulk of files from server
 
@@ -188,7 +188,7 @@ class TransferClient(BaseClient):
         finally:
             self._disconnect(trid)
 
-    def listBulk(self, bulkId, token="", compress=True):
+    def listBulk(self, bulkId, token="", compress=True):  # nosec B107
         """
         List the contents of a bulk
 
