@@ -840,7 +840,7 @@ class ProxyDB(DB):
         :return: S_OK()/S_ERROR()
         """
         return self._update(
-            "DELETE FROM `ProxyDB_Log` WHERE TIMESTAMPDIFF( SECOND, Timestamp, UTC_TIMESTAMP() ) > 15552000"
+            "DELETE FROM `ProxyDB_Log` WHERE `Timestamp` < UTC_TIMESTAMP() - INTERVAL 15552000 SECOND LIMIT 50000"
         )
 
     def getLogsContent(self, selDict, sortList, start=0, limit=0):
