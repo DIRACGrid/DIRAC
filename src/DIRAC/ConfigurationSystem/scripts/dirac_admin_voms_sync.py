@@ -6,12 +6,8 @@
 """
 Synchronize VOMS user data with the DIRAC Registry
 """
-from DIRAC import gLogger, exit as DIRACExit, S_OK
 from DIRAC.Core.Base.Script import Script
-from DIRAC.ConfigurationSystem.Client.VOMS2CSSynchronizer import VOMS2CSSynchronizer
-from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
-from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
+from DIRAC import gLogger, exit as DIRACExit, S_OK
 
 dryRun = False
 voName = None
@@ -19,38 +15,39 @@ compareWithIAM = False
 useIAM = False
 
 
-def setDryRun(value):
-    global dryRun
-    dryRun = True
-    return S_OK()
-
-
-def setVO(value):
-    global voName
-    voName = value
-    return S_OK()
-
-
-def setCompareWithIAM(value):
-    global compareWithIAM
-    compareWithIAM = True
-    return S_OK()
-
-
-def setUseIAM(value):
-    global useIAM
-    useIAM = True
-    return S_OK()
-
-
 @Script()
 def main():
+    def setDryRun(value):
+        global dryRun
+        dryRun = True
+        return S_OK()
+
+    def setVO(value):
+        global voName
+        voName = value
+        return S_OK()
+
+    def setCompareWithIAM(value):
+        global compareWithIAM
+        compareWithIAM = True
+        return S_OK()
+
+    def setUseIAM(value):
+        global useIAM
+        useIAM = True
+        return S_OK()
+
     Script.registerSwitch("V:", "vo=", "VO name", setVO)
     Script.registerSwitch("D", "dryRun", "Dry run", setDryRun)
     Script.registerSwitch("C", "compareWithIAM", "Compare user list with IAM", setCompareWithIAM)
     Script.registerSwitch("I", "useIAM", "Use IAM as authoritative source", setUseIAM)
 
     Script.parseCommandLine(ignoreErrors=True)
+
+    from DIRAC.ConfigurationSystem.Client.VOMS2CSSynchronizer import VOMS2CSSynchronizer
+    from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
+    from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
+    from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 
     @executeWithUserProxy
     def syncCSWithVOMS(vomsSync):

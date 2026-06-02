@@ -9,7 +9,7 @@ Catalogs represent the namespace in DIRAC. They are queried based on the LFN. Ev
 The definition of catalogs is shared between two sections:
 
 * `/Resources/FileCatalogs`: this describes the catalog, how to access it, and all its options
-* `/Operations/<vo/setup>/Services/Catalogs/`: this describes how we use the catalog.
+* `/Operations/<vo>/Services/Catalogs/`: this describes how we use the catalog.
 
 Resources
 ---------

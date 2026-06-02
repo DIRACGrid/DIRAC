@@ -72,9 +72,16 @@ class BundleManager:
                     Path(os.path.commonpath(paths)).parent if len(paths) == 1 else Path(os.path.commonpath(paths))
                 )
                 gLogger.info(f"Bundle will have {len(filesToBundle)} files with common path {commonParent}")
+
+                def _makeWritable(tarinfo):
+                    # Ensure files are extracted as writable so subsequent syncs can overwrite them.
+                    # by setting the owner-write bit (0o200)
+                    tarinfo.mode |= 0o200
+                    return tarinfo
+
                 with tarfile.open("dummy", "w:gz", buffer_) as tarBuffer:
                     for p in paths:
-                        tarBuffer.add(str(p), str(p.relative_to(commonParent)))
+                        tarBuffer.add(str(p), str(p.relative_to(commonParent)), filter=_makeWritable)
                 zippedData = buffer_.getvalue()
                 buffer_.close()
                 hash_ = File.getMD5ForFiles(filesToBundle)

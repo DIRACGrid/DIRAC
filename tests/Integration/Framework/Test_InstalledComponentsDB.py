@@ -3,6 +3,7 @@ Tests the ComponentMonitoring DB and Service by creating, checking,
 updating and removing several instances of each table in the DB
 This program assumes that the service Framework/ComponentMonitoring is running
 """
+
 # pylint: disable=invalid-name,wrong-import-position
 import datetime
 import sys
@@ -328,7 +329,7 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
         self.assertTrue(result["OK"] and result["Value"][0]["DIRACVersion"] == "v6r15")
 
         # Update the fields of the created log
-        result = self.client.updateLog("TestHost", {"hostName": "StillATestHost"})
+        result = self.client.updateLog("TestHost", {"HostName": "StillATestHost"})
         self.assertTrue(result["OK"])
 
         # Check if the log with the modified fields exists
@@ -336,7 +337,7 @@ class ComponentMonitoringClientChain(TestClientComponentMonitoring):
         self.assertTrue(result["OK"] and result["Value"][0]["DIRACVersion"] == "v6r15")
 
         # Remove the log
-        result = self.client.removeLogs({"hostName": "StillATestHost"})
+        result = self.client.removeLogs({"HostName": "StillATestHost"})
         self.assertTrue(result["OK"])
 
         # Check that the log was actually removed
