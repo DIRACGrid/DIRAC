@@ -44,8 +44,8 @@ class PieGraph(PlotBase):
         labels = [l[0] for l in labels]
         if explode is None:
             explode = [0] * len(x)
-        assert len(x) == len(labels)
-        assert len(x) == len(explode)
+        if (len(x) != len(labels)) or (len(x) != len(explode)):
+            raise AssertionError("'labels' or 'explode' length doesn't make x-values length!")
         plot_axis_labels = self.prefs.get("plot_axis_labels", True)
 
         center = 0, 0
