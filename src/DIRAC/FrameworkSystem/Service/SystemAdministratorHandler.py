@@ -1,6 +1,5 @@
 """SystemAdministrator service is a tool to control and monitor the DIRAC services and agents"""
 
-import getpass
 import importlib
 import os
 import platform
@@ -606,23 +605,34 @@ class SystemAdministratorHandler(RequestHandler):
         result["DiskOccupancy"] = summary[1:]
         result["RootDiskSpace"] = Os.getDiskSpace(rootPath)
 
-        # Open files
-        puser = getpass.getuser()
-        _status, output = subprocess.getstatusoutput("lsof")
+        # Open files for processes owned by the current service user
+        current_uid = os.getuid()
         pipes = 0
         files = 0
         sockets = 0
-        lines = output.split("\n")
-        for line in lines:
-            fType = line.split()[4]
-            user = line.split()[2]
-            if user == puser:
-                if fType in ["REG"]:
-                    files += 1
-                elif fType in ["unix", "IPv4"]:
-                    sockets += 1
-                elif fType in ["FIFO"]:
-                    pipes += 1
+        for proc_entry in os.scandir("/proc"):
+            pid = proc_entry.name
+            if not pid.isdigit():
+                continue
+
+            proc_dir = proc_entry.path
+
+            try:
+                if os.stat(proc_dir).st_uid != current_uid:
+                    continue
+
+                fd_dir = os.path.join(proc_dir, "fd")
+                for fd_entry in os.scandir(fd_dir):
+                    target = os.readlink(fd_entry.path)
+                    if target.startswith("socket:"):
+                        sockets += 1
+                    elif target.startswith("pipe:"):
+                        pipes += 1
+                    else:
+                        files += 1
+            except (FileNotFoundError, PermissionError, ProcessLookupError, OSError):
+                # Process might disappear while iterating, or be temporarily inaccessible.
+                continue
         result["OpenSockets"] = sockets
         result["OpenFiles"] = files
         result["OpenPipes"] = pipes
