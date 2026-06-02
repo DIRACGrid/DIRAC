@@ -257,8 +257,8 @@ A version can be:
 
 * a PEP440 valid version of DIRAC.
 * a PEP440 valid version of a DIRAC extension.
-* "integration" or "devel" or "master" or "main" would all be interpreted as git+https://github.com/DIRACGrid/DIRAC.git@integration#egg=DIRAC[server]
-* a git tag/branch like git+https://github.com/fstagni/DIRAC.git@test_branch#egg=DIRAC[server]
+* "integration" or "devel" or "master" or "main" would all be interpreted as ``DIRAC[server] @ git+https://github.com/DIRACGrid/DIRAC.git@integration``
+* a dependency link pointing to a git tag/branch like ``DIRAC[server] @ git+https://github.com/fstagni/DIRAC.git@test_branch``
 
 Usage::
 
@@ -268,4 +268,4 @@ For example::
 
     update 9.0.18
     update integration
-    update git+https://github.com/fstagni/DIRAC.git@test_branch#egg=DIRAC[server]
+    update 'DIRAC[server] @ git+https://github.com/fstagni/DIRAC.git@test_branch'
