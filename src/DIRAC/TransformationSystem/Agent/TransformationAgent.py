@@ -465,12 +465,14 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
             # When removing files, we don't care about their replicas
             return S_OK(dict.fromkeys(lfns, ["None"]))
         clearCacheFile = os.path.join(self.controlDirectory, f"ClearCache_{str(transID)}")
-        try:
-            clearCache = os.path.exists(clearCacheFile)
-            if clearCache:
+        clearCache = os.path.exists(clearCacheFile)
+        if clearCache:
+            try:
                 os.remove(clearCacheFile)
-        except Exception:
-            pass
+            except Exception as err:
+                self._logWarn(
+                    f"Failed to clear cache file {clearCacheFile}: {str(err)}", method=method, transID=transID
+                )
         if clearCache or transDict["Status"] == "Flush":
             self._logInfo("Replica cache cleared", method=method, transID=transID)
             # We may need to get new replicas
@@ -748,5 +750,5 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
                     )
                     self.replicaCache.pop(transID)
                     self.__writeCache(transID)
-            except Exception:
-                pass
+            except Exception as err:
+                self._logWarn(f"Failed to invalidate cache: {str(err)}", method="pluginCallBack", transID=transID)

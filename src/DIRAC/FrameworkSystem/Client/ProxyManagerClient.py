@@ -40,7 +40,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         """
         try:
             os.remove(filename)
-        except Exception:
+        except OSError:
             pass
 
     def clearCaches(self):

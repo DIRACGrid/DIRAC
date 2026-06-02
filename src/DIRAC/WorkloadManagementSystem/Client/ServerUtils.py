@@ -13,6 +13,6 @@ def getPilotAgentsDB():
         if gPilotAgentsDB and gPilotAgentsDB._connected:
             return gPilotAgentsDB
     except Exception:
-        pass
+        pass  # nosec B110
 
     return Client(url="WorkloadManagement/PilotManager")

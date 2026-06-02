@@ -35,8 +35,11 @@ def main():
         try:
             with open(lfns[0]) as f:
                 lfns = f.read().splitlines()
-        except Exception:
-            pass
+        except FileNotFoundError:
+            pass  # The user probably supplied an LFN not a local file name
+        except Exception as err:
+            gLogger.error(f"Failed to read LFN list file {lfns[0]}: {str(err)}")
+            DIRAC.exit(1)
 
     result = dirac.getFile(lfns, printOutput=True)
     if not result["OK"]:

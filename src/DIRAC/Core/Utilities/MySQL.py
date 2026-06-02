@@ -437,7 +437,7 @@ class ConnectionPool:
         try:
             data[0].close()
         except Exception:
-            pass
+            pass  # nosec B110
 
     def __pop(self, thid):
         try:
@@ -543,7 +543,7 @@ class MySQL:
         try:
             gInstancesCount -= 1
         except Exception:
-            pass
+            pass  # nosec B110
 
     # MySQLdb error codes that mean the connection itself is dead and must be discarded.
     __CONNECTION_LOST_ERRNOS = frozenset((2006, 2013, 2055, 4031))
@@ -767,7 +767,7 @@ class MySQL:
         try:
             cursor.close()
         except Exception:
-            pass
+            pass  # nosec B110
 
         return retDict
 
@@ -807,7 +807,7 @@ class MySQL:
         try:
             cursor.close()
         except Exception:
-            pass
+            pass  # nosec B110
 
         return retDict
 
@@ -842,7 +842,7 @@ class MySQL:
         try:
             cursor.close()
         except Exception:
-            pass
+            pass  # nosec B110
 
         return retDict
 
@@ -1714,7 +1714,7 @@ class MySQL:
         try:
             cursor.close()
         except Exception:
-            pass
+            pass  # nosec B110
         return retDict
 
     # For the procedures that execute a select without storing the result
@@ -1745,6 +1745,6 @@ class MySQL:
         try:
             cursor.close()
         except Exception:
-            pass
+            pass  # nosec B110
 
         return retDict

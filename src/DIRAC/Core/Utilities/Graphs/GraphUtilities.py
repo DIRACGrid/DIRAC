@@ -91,7 +91,7 @@ def convert_to_datetime(dstring):
                 results = datetime.datetime.utcfromtimestamp(timestamp)
                 break
             except Exception:
-                pass
+                pass  # nosec B110
         if t is None:
             try:
                 dstring = dstring.split(".", 1)[0]
@@ -112,7 +112,7 @@ def to_timestamp(val):
         if v > 1000000000 and v < 1900000000:
             return v
     except Exception:
-        pass
+        pass  # nosec B110
 
     val = convert_to_datetime(val)
     return calendar.timegm(val.timetuple())

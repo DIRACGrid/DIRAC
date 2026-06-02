@@ -87,5 +87,5 @@ class DataCache:
                         os.unlink(fPath)
                     else:
                         gLogger.info("Plot has already been deleted", value)
-        except Exception:
-            pass
+        except Exception as err:
+            gLogger.warn(f"Error while deleting plot! {str(err)}")

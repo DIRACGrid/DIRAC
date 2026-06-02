@@ -16,12 +16,7 @@ def main():
 
     # parseCommandLine show help when mandatory arguments are not specified or incorrect argument
     args = Script.getPositionalArgs()
-    guids = args[0]
-
-    try:
-        guids = guids.split(",")
-    except Exception:
-        pass
+    guids = args[0].split(",")
 
     from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 

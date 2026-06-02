@@ -19,7 +19,7 @@ import inspect
 import traceback
 
 from collections import defaultdict
-from pprint import pprint
+from pprint import pformat
 
 from DIRAC import gLogger
 
@@ -207,10 +207,10 @@ def printDebugCallstack(headerMessage):
                     lines.append(f"Calling frame: {frame[1:3]}")
                     if isRPCCall:
                         lines.append(rpcDetails)
-                    lines.append(f"With arguments {pprint(dencArgs)}")
+                    lines.append(f"With arguments {pformat(dencArgs)}")
                     break
-    except Exception:
-        pass
+    except Exception as err:
+        gLogger.warn(f"Failed to trace frames: {str(err)}")
     lines.append("=" * 100)
     lines.append("")
     lines.append("")
@@ -532,4 +532,4 @@ def decode(data):
 if __name__ == "__main__":
     gObject = {2: "3", True: (3, None), 2.0 * 10**20: 2.0 * 10**-10}
     msg = f"Initial: {gObject}\nEncoded: {encode(gObject)}\nDecoded: {decode(gObject)}"
-    gLogger.debug(msg)
+    gLogger.notice(msg)

@@ -319,8 +319,8 @@ class BaseClient:
             failoverUrlsStr = getServiceFailoverURL(self._destinationSrv)
             if failoverUrlsStr:
                 failoverUrls = failoverUrlsStr.split(",")
-        except Exception:
-            pass
+        except Exception as err:
+            gLogger.warn(f"Failed to set any failover URLs: {str(err)}")
 
         # We randomize the list, and add at the end the failover URLs (System/FailoverURLs/Component)
         urlsList = List.fromChar(urls, ",") + failoverUrls
@@ -608,7 +608,7 @@ and this is thread {cThID}
         if self.KW_KEEP_ALIVE_LAPSE in self.kwargs:
             try:
                 kaa = max(0, int(self.kwargs[self.KW_KEEP_ALIVE_LAPSE]))
-            except Exception:
+            except (ValueError, TypeError):
                 pass
         if kaa:
             kaa = max(150, kaa)

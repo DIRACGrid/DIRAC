@@ -388,7 +388,7 @@ class FTS3Operation(JSerializable):
             ftsOp.activity = argumentDic["activity"]
             ftsOp.priority = argumentDic["priority"]
         except Exception:
-            pass
+            pass  # nosec B110
 
         return ftsOp
 

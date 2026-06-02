@@ -84,7 +84,7 @@ class ServiceReactor:
                 try:
                     self.__listeningConnections[svcName]["transport"].close()
                 except Exception:
-                    pass
+                    pass  # nosec B110
                 del self.__listeningConnections[svcName]["transport"]
         gLogger.info("Connections closed")
 

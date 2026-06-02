@@ -144,7 +144,7 @@ class FileHelper:
             try:
                 dataSink.close()
             except Exception:
-                pass
+                pass  # nosec B110
 
     def networkToDataSink(self, dataSink, maxFileSize=0):
         if "write" not in dir(dataSink):
@@ -208,7 +208,7 @@ class FileHelper:
         try:
             stringIO.close()
         except Exception:
-            pass
+            pass  # nosec B110
         return S_OK()
 
     def FDToNetwork(self, iFD):
@@ -323,7 +323,7 @@ class FileHelper:
             try:
                 filePipe.close()
             except Exception:
-                pass
+                pass  # nosec B110
 
     def bulkToNetwork(self, fileList, compress=True, onthefly=True):
         if not onthefly:
@@ -341,7 +341,7 @@ class FileHelper:
                 fo.close()
                 os.unlink(filePath)
             except Exception:
-                pass
+                pass  # nosec B110
             return result
         else:
             rPipe, wPipe = os.pipe()
@@ -351,7 +351,7 @@ class FileHelper:
             try:
                 os.close(rPipe)
             except Exception:
-                pass
+                pass  # nosec B110
             return response
 
     def __extractTar(self, destDir, rPipe, compress):
@@ -365,14 +365,14 @@ class FileHelper:
         try:
             filePipe.close()
         except Exception:
-            pass
+            pass  # nosec B110
 
     def __receiveToPipe(self, wPipe, retList, maxFileSize):
         retList.append(self.networkToFD(wPipe, maxFileSize=maxFileSize))
         try:
             os.close(wPipe)
         except Exception:
-            pass
+            pass  # nosec B110
 
     def networkToBulk(self, destDir, compress=True, maxFileSize=0):
         retList = []

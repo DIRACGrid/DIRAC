@@ -519,7 +519,7 @@ class GFAL2_StorageBase(StorageBase):
         try:
             os.remove(dest_file)
         except Exception:
-            pass
+            log.debug(f"Failed to remove file {dest_file}")
         raise RuntimeError(f"Remote and local filesizes don't match: {sourceSize} vs {localSize}")
 
     @convertToReturnValue

@@ -234,14 +234,14 @@ class AgentModule:
         try:
             with open(self.am_getStopAgentFile(), "w") as fd:
                 fd.write(f"Dirac site agent Stopped at {str(datetime.datetime.utcnow())}")
-        except Exception:
-            pass
+        except Exception as err:
+            self.log.info(f"Failed to write stop file: {str(err)}")
 
     def am_removeStopAgentFile(self):
         try:
             os.unlink(self.am_getStopAgentFile())
-        except Exception:
-            pass
+        except Exception as err:
+            self.log.info(f"Failed to remove stop file: {str(err)}")
 
     def am_getWorkDirectory(self):
         return os.path.join(self.__basePath, str(self.am_getOption("WorkDirectory")))

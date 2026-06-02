@@ -189,7 +189,7 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
                 iUptime = int(float(oFD.readline().split()[0].strip()))
             dInfo["host uptime"] = iUptime
         except Exception:  # pylint: disable=broad-except
-            pass
+            pass  # nosec B110
         startTime = self._startTime
         dInfo["service start time"] = self._startTime
         serviceUptime = datetime.utcnow() - startTime
@@ -199,7 +199,7 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
             with open("/proc/loadavg") as oFD:
                 dInfo["load"] = " ".join(oFD.read().split()[:3])
         except Exception:  # pylint: disable=broad-except
-            pass
+            pass  # nosec B110
         dInfo["name"] = self._serviceInfoDict["serviceName"]
         dInfo["URL"] = self._serviceInfoDict["URL"]
         stTimes = os.times()

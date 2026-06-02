@@ -11,7 +11,7 @@ def getMonitoringDB():
         if gMonitoringDB and gMonitoringDB._connected:
             return gMonitoringDB
     except Exception:
-        pass
+        pass  # nosec B110
 
     from DIRAC.Core.Base.Client import Client
 

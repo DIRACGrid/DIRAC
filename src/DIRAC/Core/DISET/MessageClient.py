@@ -90,7 +90,7 @@ class MessageClient(BaseClient):
         try:
             self.__transport.close()
         except Exception:
-            pass
+            pass  # nosec B110
         for cb in self.__specialCallbacks["drop"]:
             try:
                 cb(self)
