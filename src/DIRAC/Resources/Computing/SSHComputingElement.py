@@ -514,6 +514,38 @@ class SSHComputingElement(ComputingElement):
             jobIDList = [jobIDList]
         return self._killJobOnHost(self.connection, jobIDList)
 
+    def _closeConnection(self, connection):
+        """Close an SSH connection *and its gateway* (if any).
+
+        ``fabric.Connection.close()`` closes the connection's own client and SFTP
+        sessions but NOT a gateway ``Connection``, which is opened separately as a
+        jump host. The gateway must therefore be closed explicitly, otherwise its
+        Paramiko ``Transport`` thread (and the resources it pins) leaks. This is a
+        no-op on a connection that was never opened.
+        """
+        if connection is None:
+            return
+        gateway = getattr(connection, "gateway", None)
+        try:
+            connection.close()
+        except Exception as e:  # a close failure must not break cache eviction
+            self.log.warn("Failed to close SSH connection", str(e))
+        # The jump host (SSHTunnel) is a separate Connection that close() ignores
+        if isinstance(gateway, Connection):
+            try:
+                gateway.close()
+            except Exception as e:
+                self.log.warn("Failed to close SSH gateway connection", str(e))
+
+    def shutdown(self):
+        """Close the SSH connection (and its gateway), releasing the Paramiko
+        Transport thread. Called when the CE is evicted/rebuilt by the
+        :class:`~DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities.QueueCECache`.
+        """
+        self._closeConnection(self.connection)
+        self.connection = None
+        return S_OK()
+
     def _killJobOnHost(self, connection: Connection, jobIDList: list[str]):
         """Kill the jobs for the given list of job IDs"""
         batchSystemJobList = []

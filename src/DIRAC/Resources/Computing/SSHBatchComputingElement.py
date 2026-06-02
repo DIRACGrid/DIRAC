@@ -158,6 +158,16 @@ class SSHBatchComputingElement(SSHComputingElement):
 
         return result
 
+    def shutdown(self):
+        """Close every per-host SSH connection (and gateway), releasing their
+        Paramiko Transport threads. Called when the CE is evicted/rebuilt by the
+        :class:`~DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities.QueueCECache`.
+        """
+        for details in self.connections.values():
+            self._closeConnection(details.get("connection"))
+        self.connections = {}
+        return S_OK()
+
     #############################################################################
 
     def getCEStatus(self):

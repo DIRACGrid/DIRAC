@@ -56,7 +56,7 @@ def main():
         gLogger.error("Failed to get CE information")
         DIRACExit(-1)
     siteDict = resultQueues["Value"]
-    result = getQueuesResolved(siteDict, {}, checkPlatform=True)
+    result = getQueuesResolved(siteDict, checkPlatform=True)
     if not resultQueues["OK"]:
         gLogger.error("Failed to get CE information")
         DIRACExit(-1)

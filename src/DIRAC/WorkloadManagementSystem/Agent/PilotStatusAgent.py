@@ -9,17 +9,18 @@
 """
 import datetime
 
-from DIRAC import S_OK, gConfig
+from DIRAC import S_OK
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import TimeUtilities
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import killPilotsInQueues
+from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import QueueCECache
 
 
 class PilotStatusAgent(AgentModule):
@@ -39,14 +40,15 @@ class PilotStatusAgent(AgentModule):
 
         self.jobDB = None
         self.pilotDB = None
-        self.diracadmin = None
+        # Cache of ComputingElement instances keyed by queue.
+        self.ceCache = None
 
     #############################################################################
     def initialize(self):
         """Sets defaults"""
 
         self.pilotDB = PilotAgentsDB()
-        self.diracadmin = DiracAdmin()
+        self.ceCache = QueueCECache()
         self.jobDB = JobDB()
         self.clearPilotsDelay = self.am_getOption("ClearPilotsDelay", 30)
         self.clearAbortedDelay = self.am_getOption("ClearAbortedPilotsDelay", 7)
@@ -200,16 +202,33 @@ class PilotStatusAgent(AgentModule):
         return S_OK()
 
     def _killPilots(self, acc):
-        for i in sorted(acc.keys()):
-            result = self.diracadmin.getPilotInfo(i)
-            if result["OK"] and i in result["Value"] and "Status" in result["Value"][i]:
-                ret = self.diracadmin.killPilot(str(i))
-                if ret["OK"]:
-                    self.log.info("Successfully deleted", f": {i} (Status : {result['Value'][i]['Status']})")
-                else:
-                    self.log.error("Failed to delete pilot: ", f"{i} : {ret['Message']}")
-            else:
-                self.log.error("Failed to get pilot info", f"{i} : {str(result)}")
+        """Declare the given pilots killed on their CEs.
+
+        Pilots are grouped per queue and killed with a single call per queue,
+        reusing a cached CE/connection per queue across cycles (see
+        :func:`~DIRAC.WorkloadManagementSystem.Service.WMSUtilities.killPilotsInQueues`).
+        """
+        # Group the pilots to kill per queue
+        pilotsByQueue = {}
+        for pRef in acc:
+            pilotDict = acc[pRef]
+            queueFields = [pilotDict["VO"], pilotDict["GridSite"], pilotDict["DestinationSite"], pilotDict["Queue"]]
+            # A pilot with an incomplete queue definition cannot be located on a
+            # CE; skip it rather than letting it abort the whole batch.
+            if not all(queueFields):
+                self.log.warn("Cannot determine queue for pilot, skipping kill", f"{pRef} : {queueFields}")
+                continue
+            queueKey = "@@@".join(queueFields)
+            queueData = pilotsByQueue.setdefault(queueKey, {"GridType": pilotDict["GridType"], "PilotList": []})
+            queueData["PilotList"].append(pRef)
+
+        if not pilotsByQueue:
+            return
+
+        # The CEs (and their connections) are reused across cycles via self.ceCache.
+        result = killPilotsInQueues(pilotsByQueue, ceCache=self.ceCache)
+        if not result["OK"]:
+            self.log.error("Failed to kill some pilots", result["Message"])
 
     def _checkJobLastUpdateTime(self, joblist, StalledDays):
         timeLimitToConsider = datetime.datetime.utcnow() - TimeUtilities.day * StalledDays

@@ -14,6 +14,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.PilotScopes import PILOT_SCOPES
+from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import QueueCECache
 
 # List of files to be inserted/retrieved into/from pilot Output Sandbox
 # first will be defined as StdOut in JDL and the second as StdErr
@@ -101,34 +102,52 @@ def getPilotRef(pilotReference, pilotDict):
     return S_OK(pRef)
 
 
-def killPilotsInQueues(pilotRefDict):
-    """kill pilots queue by queue
+def killPilotsInQueues(pilotRefDict, ceCache=None):
+    """Kill pilots queue by queue.
 
-    :params dict pilotRefDict: a dict of pilots in queues
+    Pilots are grouped per queue in ``pilotRefDict`` (key
+    ``"<vo>@@@<site>@@@<ce>@@@<queue>"``) and killed with a single call per queue.
+    Every queue is attempted: failures are collected and reported together, so a
+    single unreachable CE no longer prevents pilots on the other queues from being
+    killed (previous versions failed fast on the first error).
+
+    :param dict pilotRefDict: ``{queueKey: {"GridType": str, "PilotList": [ref, ...]}}``
+    :param ceCache: optional :class:`~DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities.QueueCECache`
+        whose CEs (and their connections) are reused across calls. When omitted, a
+        transient cache is created for this call only.
+    :return: S_OK() if all queues succeeded, otherwise S_ERROR aggregating the failures
     """
+    if ceCache is None:
+        ceCache = QueueCECache()
 
-    ceFactory = ComputingElementFactory()
-
+    failures = {}
     for key, pilotDict in pilotRefDict.items():
         vo, site, ce, queue = key.split("@@@")
+
         result = getQueue(site, ce, queue)
         if not result["OK"]:
-            return result
-        queueDict = result["Value"]
-        gridType = pilotDict["GridType"]
-        result = ceFactory.getCE(gridType, ce, queueDict)
+            failures[key] = result["Message"]
+            continue
+
+        result = ceCache.getCE(key, pilotDict["GridType"], ce, result["Value"])
         if not result["OK"]:
-            return result
-        ce = result["Value"]
+            failures[key] = result["Message"]
+            continue
+        computingElement = result["Value"]
 
         pilotDict["VO"] = vo
-        result = setPilotCredentials(ce, pilotDict)
+        result = setPilotCredentials(computingElement, pilotDict)
         if not result["OK"]:
-            return result
+            failures[key] = result["Message"]
+            continue
 
-        pilotList = pilotDict["PilotList"]
-        result = ce.killJob(pilotList)
+        result = computingElement.killJob(pilotDict["PilotList"])
         if not result["OK"]:
-            return result
+            # Drop the (possibly stale) CE so it is rebuilt on the next call
+            ceCache.drop(key)
+            failures[key] = result["Message"]
+            continue
 
+    if failures:
+        return S_ERROR(f"Failed to kill pilots in queues: {failures}")
     return S_OK()
