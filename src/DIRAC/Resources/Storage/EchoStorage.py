@@ -175,7 +175,7 @@ class EchoStorage(GFAL2_StorageBase):
 
                     # If it took too long, we sleep for a bit
                     if duration > REMOVAL_DURATION_THROTTLE_LIMIT:
-                        time.sleep(random.uniform(0, 3))
+                        time.sleep(random.uniform(0, 3))  # nosec B311
 
     def __addDoubleSlash(self, res):
         """Utilities to add the double slash between the host(:port) and the path for xroot only

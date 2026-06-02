@@ -36,7 +36,7 @@ class HttpStorageAccessHandler(server.BaseHTTPRequestHandler):
             path = os.path.join(cache_path, fileList[0])
         else:
             # multiple files, make archive
-            unique = str(random.getrandbits(24))
+            unique = str(random.getrandbits(24))  # nosec B311
             fileString = " ".join(fileList)
             tar_path = os.path.join(cache_path, f"dirac_data_{unique}.tar")
             with tarfile.open(tar_path, "w") as tar:

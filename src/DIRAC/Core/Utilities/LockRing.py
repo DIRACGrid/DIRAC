@@ -15,10 +15,10 @@ class LockRing(metaclass=DIRACSingleton):
 
     def __genName(self, container):
         # TODO: Shouldn't this be a UUID?
-        name = md5(str(time.time() + random.random()).encode(), usedforsecurity=False).hexdigest()
+        name = md5(str(time.time() + random.random()).encode(), usedforsecurity=False).hexdigest()  # nosec B311
         retries = 10
         while name in container and retries:
-            name = md5(str(time.time() + random.random()).encode(), usedforsecurity=False).hexdigest()
+            name = md5(str(time.time() + random.random()).encode(), usedforsecurity=False).hexdigest()  # nosec B311
             retries -= 1
         return name
 

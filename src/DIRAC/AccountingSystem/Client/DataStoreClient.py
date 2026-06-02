@@ -127,7 +127,7 @@ def _sendToFailover(rpcStub):
     """Create a ForwardDISET operation for failover"""
     try:
         request = Request()
-        request.RequestName = f"Accounting.DataStore.{time.time()}.{random.random()}"
+        request.RequestName = f"Accounting.DataStore.{time.time()}.{random.random()}"  # nosec B311
         forwardDISETOp = Operation()
         forwardDISETOp.Type = "ForwardDISET"
         forwardDISETOp.Arguments = DEncode.encode(rpcStub)

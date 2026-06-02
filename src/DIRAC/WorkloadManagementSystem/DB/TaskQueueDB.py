@@ -655,7 +655,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
                     self.log.info("Task queue seems to be empty, triggering a cleaning of", tqId)
                     self.__deleteTQWithDelay.add(tqId, 300, (tqId, tqOwner, tqOwnerGroup))
                 while jobTQList:
-                    jobId, tqId = jobTQList.pop(random.randint(0, len(jobTQList) - 1))
+                    jobId, tqId = jobTQList.pop(random.randint(0, len(jobTQList) - 1))  # nosec B311
                     self.log.verbose("Trying to extract job from TQ", f"{jobId} : {tqId}")
                     retVal = self.deleteJob(jobId, connObj=connObj)
                     if not retVal["OK"]:
