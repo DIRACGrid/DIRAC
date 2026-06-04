@@ -293,7 +293,10 @@ class StalledJobAgent(AgentModule):
         result = getJobParameters([jobID], "Pilot_Reference")
         if not result["OK"]:
             return result
-        pilotReference = result["Value"].get("Pilot_Reference")
+        # getJobParameters returns {jobID: {parName: value, ...}, ...}, with jobID being either an int (JobDB)
+        # or a str (JobParametersDB), so look it up both ways
+        jobParameters = result["Value"].get(jobID) or result["Value"].get(str(jobID)) or {}
+        pilotReference = jobParameters.get("Pilot_Reference")
         if not pilotReference:
             # There is no pilot reference, hence its status is unknown
             return S_OK("NoPilot")
@@ -426,14 +429,17 @@ class StalledJobAgent(AgentModule):
                 endTime = lastHeartBeatTime
 
             result = getJobParameters([jobID], "CPUNormalizationFactor")
-            if not result["OK"] or not result["Value"] or not result["Value"].get("CPUNormalizationFactor"):
-                self.log.error(
-                    "Error getting Job Parameter CPUNormalizationFactor, setting 0",
-                    result.get("Message"),
+            # getJobParameters returns {jobID: {parName: value, ...}, ...}, with jobID being either an int (JobDB)
+            # or a str (JobParametersDB), so look it up both ways
+            jobParameters = result.get("Value", {}).get(jobID) or result.get("Value", {}).get(str(jobID)) or {}
+            if not result["OK"] or not jobParameters.get("CPUNormalizationFactor"):
+                errorMsg = f"- {result['Message']}" if "Message" in result else "empty"
+                self.log.warn(
+                    "Error getting Job Parameter CPUNormalizationFactor for", f"{jobID}: setting 0 - {errorMsg}"
                 )
                 cpuNormalization = 0.0
             else:
-                cpuNormalization = float(result["Value"].get("CPUNormalizationFactor"))
+                cpuNormalization = float(jobParameters.get("CPUNormalizationFactor"))
 
         except Exception as e:
             self.log.exception(
