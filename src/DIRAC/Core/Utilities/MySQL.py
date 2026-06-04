@@ -173,9 +173,7 @@ def _checkFields(inFields, inValues):
     if inFields is None and inValues is None:
         return S_OK()
 
-    try:
-        assert len(inFields) == len(inValues)
-    except AssertionError:
+    if len(inFields) != len(inValues):
         return S_ERROR(DErrno.EMYSQL, "Mismatch between inFields and inValues.")
 
     return S_OK()

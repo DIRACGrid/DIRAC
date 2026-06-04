@@ -105,8 +105,10 @@ class CSShellCLI(CLI):
         Go one directory deeper in the CS"""
         # Check if invariant holds
         if self.connected:
-            assert self.root == "/" or not self.root.endswith("/")
-            assert self.root.startswith("/")
+            if (self.root != "/") and self.root.endswith("/"):
+                raise AssertionError("Unexpected trailing / on path")
+            if not self.root.startswith("/"):
+                raise AssertionError("Root path doesn't start with /")
             secs = self.modificator.getSections(self.root)
             if line == "..":
                 self.root = os.path.dirname(self.root)

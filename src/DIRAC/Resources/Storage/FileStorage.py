@@ -113,7 +113,8 @@ def set_xattr_adler32(path, checksum):
         + value_field  # 64 bytes
     )  # Total: 96 bytes
 
-    assert len(xrd_cks_data) == 96, f"Structure size mismatch: {len(xrd_cks_data)}"
+    if len(xrd_cks_data) != 96:
+        raise AssertionError(f"Structure size mismatch: {len(xrd_cks_data)}")
 
     # Set the extended attribute
     # XRootD uses "XrdCks.adler32" which becomes "user.XrdCks.adler32" on Linux

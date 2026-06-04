@@ -169,7 +169,8 @@ class GOCDBClient:
 
           :attr:`entity` : a string. Actual name of the entity.
         """
-        assert isinstance(granularity, str) and isinstance(entity, str)
+        if (not isinstance(granularity, str)) or (not isinstance(entity, str)):
+            raise AssertionError("Granularity or entity are not expected types")
         try:
             serviceXML = self._getServiceEndpointCurlDownload(granularity, entity)
             return S_OK(self._serviceEndpointXMLParsing(serviceXML))

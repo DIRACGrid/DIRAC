@@ -53,7 +53,8 @@ def _resolve_brokers(alias: str, port: int, ipv4Only: bool = False, ipv6Only: bo
     :param ipv6Only: Only return IPv6
     :return: A list of tuples (resolved ip, port)
     """
-    assert not (ipv4Only and ipv6Only)
+    if ipv4Only and ipv6Only:
+        raise AssertionError("ipv4Only & ipv6Only are mutually exclusive")
 
     brokers = list()
 
