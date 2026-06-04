@@ -192,7 +192,7 @@ class RequestExecutingAgent(AgentModule):
         :param self: self reference
         """
         self.log.info("putAllRequests: will put back requests", f"{len(self.__requestCache)}")
-        for requestID in self.__requestCache.keys():
+        for requestID in list(self.__requestCache.keys()):
             reset = self.putRequest(requestID)
             if not reset["OK"]:
                 self.log.error("Failed to put request", reset["Message"])
