@@ -1,3 +1,49 @@
+[v9.1.10]
+
+*Core
+
+FIX: (#8574) Update profiler test to make it more reliable
+FIX: (#8542) Use truncated sha256 for proxy hash (caching) rather than md5.
+CHANGE: (#8536) New eval helper function
+CHANGE: (#8535) Allow args parameter in MySQL _query calls
+
+*RequestManagementSystem
+
+FIX: (#8571) REA iterate over a copy of the keys
+FIX: (#8539) Speed up Client_RequestTasks test path gen
+
+*WorkloadManagement
+
+FIX: (#8570) get job parameters the right way in StalledJobAgent
+
+*CI
+
+NEW: (#8567) Add diracx RSS DB to the CI environment
+FIX: (#8545) the not-working pixi workaround
+FIX: (#8540) CI workaround for pixi 0.68
+
+*All
+
+FIX: (#8564) Remove asserts from non-test code.
+CHANGE: (#8562) Check all random module usage
+CHANGE: (#8562) Increase proxy serial length
+FIX: (#8543) Ensure all requests calls have a timeout
+FIX: (#8542) Mark md5/sha1 usage as not used for security where appropriate.
+
+*FrameworkSystem
+
+FIX: (#8560) Use sargable query for ProxyDB.purgeLogs
+FIX: (#8541) BundleDelivery: adding the owner-write bit to bundled files
+
+*DataManagementSystem
+
+FIX: (#8544) correct default type for catalog metadata in ConsistencyInspector
+FIX: (#8529) Use existing connection for all updates in FileManager
+
+*Deps
+
+FIX: (#8530) fix typo for types-pyyaml dependency
+
 [v9.1.9]
 
 *WorkloadManagement
