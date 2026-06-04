@@ -325,7 +325,7 @@ installDIRAC() {
     configureArgs+=("--LegacyExchangeApiKey=diracx:legacy:InsecureChangeMe")
   fi
 
-  if [[ -n "${INSTALLATION_BRANCH}" ]]; then
+  if [[ "${INSTALLATION_BRANCH}" = "rel-v8r0" ]]; then
     # Use this for (e.g.) running backward-compatibility tests
     cmd="dirac-configure -S ${DIRACSETUP} -C ${CSURL} --SkipCAChecks "${configureArgs[@]}" ${CONFIGUREOPTIONS} ${DEBUG}"
   else
