@@ -1,3 +1,14 @@
+[v9.0.22]
+
+*All
+
+FIX: (#8554) Various backports from integration
+
+*Core
+
+CHANGE: (#8552) Allow args parameter in MySQL _query calls
+CHANGE: (#8552) New eval helper function
+
 [v9.0.21]
 
 
