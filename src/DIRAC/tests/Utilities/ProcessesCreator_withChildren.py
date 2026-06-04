@@ -26,3 +26,8 @@ if __name__ == "__main__":
         p.daemon = False
         p.start()
         p.join()
+
+    # On fast machines, this can finish too quickly
+    # Just sleep (we've accumulated usage now)
+    # and the test can interrupt this with a kill
+    time.sleep(60)
