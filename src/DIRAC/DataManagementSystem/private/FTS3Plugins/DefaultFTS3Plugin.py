@@ -103,8 +103,8 @@ class DefaultFTS3Plugin:
             raise ValueError("No valid replicas")
 
         # pick a random source
-
-        randSource = random.choice(list(allowedReplicaSource))  # one has to convert to list
+        # (choice requires a list)
+        randSource = random.choice(list(allowedReplicaSource))  # nosec B311
         return randSource
 
     def inferFTSActivity(self, ftsOperation, rmsRequest, rmsOperation):

@@ -40,7 +40,7 @@ class Cache:
 
         # We set a 20% of the lifetime randomly, so that if we have thousands of jobs
         # starting at the same time, all the caches will not end at the same time.
-        randomLifeTimeBias = 0.2 * random.random()
+        randomLifeTimeBias = 0.2 * random.random()  # nosec B311
 
         self.log = gLogger.getSubLogger(self.__class__.__name__)
 

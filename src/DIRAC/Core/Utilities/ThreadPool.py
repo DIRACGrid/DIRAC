@@ -298,8 +298,8 @@ if __name__ == "__main__":
     import random
 
     def doSomething(iNumber):
-        time.sleep(random.randint(1, 5))
-        fResult = random.random() * iNumber
+        time.sleep(random.randint(1, 5))  # nosec B311
+        fResult = random.random() * iNumber  # nosec B311
         if fResult > 3:
             raise Exception("TEST EXCEPTION")
         return fResult
@@ -313,7 +313,7 @@ if __name__ == "__main__":
     OTP = ThreadPool(5, 10)
 
     def generateWork(iWorkUnits):
-        for iNumber in [random.randint(1, 20) for _ in range(iWorkUnits)]:
+        for iNumber in [random.randint(1, 20) for _ in range(iWorkUnits)]:  # nosec B311
             oTJ = ThreadedJob(doSomething, args=(iNumber,), oCallback=showResult, oExceptionCallback=showException)
             OTP.queueJob(oTJ)
 
@@ -324,7 +324,7 @@ if __name__ == "__main__":
     while True:
         time.sleep(1)
         gIResult = OTP.processResults()
-        gINew = gIResult + random.randint(-3, 2)
+        gINew = gIResult + random.randint(-3, 2)  # nosec B311
         print(f"Processed {gIResult}, generating {gINew}..")
         generateWork(gINew)
         print(f"Threads {OTP.numWorkingThreads()}", OTP.pendingJobs())

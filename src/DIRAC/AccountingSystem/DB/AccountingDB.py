@@ -45,7 +45,9 @@ class AccountingDB(DB):
         )
         self.__loadCatalogFromDB()
 
-        self.__compactTime = datetime.time(hour=2, minute=random.randint(0, 59), second=random.randint(0, 59))
+        self.__compactTime = datetime.time(
+            hour=2, minute=random.randint(0, 59), second=random.randint(0, 59)  # nosec B311
+        )
         lcd = datetime.datetime.utcnow()
         lcd.replace(hour=self.__compactTime.hour + 1, minute=0, second=0)
         self.__lastCompactionEpoch = TimeUtilities.toEpoch(lcd)

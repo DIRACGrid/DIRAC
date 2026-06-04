@@ -122,7 +122,7 @@ class SLURM(object):
         :param str executableFile: name of the executable file to wrap
         :return str: name of the wrapper that runs the executable via srun
         """
-        suffix = random.randrange(1, 99999)
+        suffix = random.randrange(1, 99999)  # nosec B311
         wrapper = os.path.join(os.path.dirname(executableFile), "srunExec_%s.sh" % suffix)
 
         with open(executableFile, "r") as f:

@@ -106,7 +106,7 @@ class ReqClient(Client):
                 return setRequestMgr
             errorsDict["RequestManager"] = setRequestMgr["Message"]
             # sleep a bit
-            time.sleep(random.randint(1, 5))
+            time.sleep(random.randint(1, 5))  # nosec B311
 
         self.log.warn(
             f"putRequest: unable to set request '{request.RequestName}' at RequestManager", setRequestMgr["Message"]

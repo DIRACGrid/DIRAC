@@ -115,7 +115,7 @@ def getFilesToStage(lfnList, jobState=None, checkOnlyTapeSEs=None, jobLog=None):
                             break
             # No online site found in common, select randomly
             if not found:
-                offlineLFNsDict.setdefault(random.choice(ses), list()).append(lfn)
+                offlineLFNsDict.setdefault(random.choice(ses), list()).append(lfn)  # nosec B311
 
     return S_OK(
         {

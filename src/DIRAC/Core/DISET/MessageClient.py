@@ -29,7 +29,7 @@ class MessageClient(BaseClient):
 
     def __generateUniqueClientName(self):
         hashStr = ":".join(
-            (str(datetime.datetime.utcnow()), str(random.random()), Network.getFQDN(), gLogger.getName())
+            (str(datetime.datetime.utcnow()), str(random.random()), Network.getFQDN(), gLogger.getName())  # nosec B311
         )
         hexHash = md5(hashStr.encode(), usedforsecurity=False).hexdigest()
         return hexHash
