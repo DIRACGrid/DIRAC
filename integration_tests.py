@@ -738,7 +738,7 @@ def _check_containers_running(*, is_up=True):
 
 def _find_dirac_release():
     # Start by looking for the GitHub/GitLab environment variables
-    if "GITHUB_BASE_REF" in os.environ:  # this will be "rel-v8r0"
+    if "GITHUB_BASE_REF" in os.environ:  # this will be "rel-v9r0"
         return os.environ["GITHUB_BASE_REF"]
     if "CI_COMMIT_REF_NAME" in os.environ:
         return os.environ["CI_COMMIT_REF_NAME"]

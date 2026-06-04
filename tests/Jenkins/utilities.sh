@@ -325,12 +325,7 @@ installDIRAC() {
     configureArgs+=("--LegacyExchangeApiKey=diracx:legacy:InsecureChangeMe")
   fi
 
-  if [[ -n "${INSTALLATION_BRANCH}" ]]; then
-    # Use this for (e.g.) running backward-compatibility tests
-    cmd="dirac-configure -S ${DIRACSETUP} -C ${CSURL} --SkipCAChecks "${configureArgs[@]}" ${CONFIGUREOPTIONS} ${DEBUG}"
-  else
-    cmd="dirac-configure -C ${CSURL} --SkipCAChecks ${CONFIGUREOPTIONS} ${DEBUG}"
-  fi
+  cmd="dirac-configure -C ${CSURL} --SkipCAChecks ${CONFIGUREOPTIONS} ${DEBUG}"
   if ! bash -c "${cmd}"; then
     echo 'ERROR: dirac-configure failed' >&2
     exit 1
