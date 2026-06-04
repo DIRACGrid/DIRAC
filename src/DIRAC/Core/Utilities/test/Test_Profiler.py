@@ -76,8 +76,10 @@ def test_base():
     assert resWC["Value"] >= 0
     assert resWC["Value"] >= res["Value"]
 
+    mainProcess.kill()
+    mainProcess.wait()
 
-@pytest.mark.flaky(reruns=10)
+
 def test_cpuUsage():
     mainProcess = Popen(
         [
@@ -147,6 +149,7 @@ def test_cpuUsage():
     assert resTC["Value"] >= res["Value"]
 
     # After this the main process will no-longer exist
+    mainProcess.kill()
     mainProcess.wait()
 
     res = p.cpuUsageUser()
