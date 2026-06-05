@@ -20,5 +20,5 @@ class TornadoSandboxStoreHandler(SandboxStoreHandlerMixin, TornadoService):
     def export_streamFromClient(self, fileId, token, fileSize, data):
         return self._getFromClient(fileId, token, fileSize, data=data)
 
-    def export_streamToClient(self, fileId, token=""):
+    def export_streamToClient(self, fileId, token=""):  # nosec B107
         return self._sendToClient(fileId, token, raw=True)

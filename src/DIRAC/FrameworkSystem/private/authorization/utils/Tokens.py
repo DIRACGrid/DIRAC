@@ -182,7 +182,7 @@ class OAuth2Token(_OAuth2Token):
         """
         return [s.split(":")[1] for s in self.scopes if s.startswith("g:") and s.split(":")[1]]
 
-    def get_payload(self, token_type="access_token"):
+    def get_payload(self, token_type="access_token"):  # nosec B107
         """Decode token
 
         :param str token_type: token type
@@ -196,7 +196,7 @@ class OAuth2Token(_OAuth2Token):
             options=dict(verify_signature=False, verify_exp=False, verify_aud=False, verify_nbf=False),
         )
 
-    def get_claim(self, claim, token_type="access_token"):
+    def get_claim(self, claim, token_type="access_token"):  # nosec B107
         """Get token claim without verification
 
         :param str attr: attribute

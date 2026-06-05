@@ -504,7 +504,7 @@ class MySQL:
 
     __connectionPools = {}
 
-    def __init__(self, hostName="localhost", userName="dirac", passwd="dirac", dbName="", port=3306, debug=False):
+    def __init__(self, hostName="localhost", userName="dirac", passwd=None, dbName="", port=3306, debug=False):
         """
         set MySQL connection parameters and try to connect
 
