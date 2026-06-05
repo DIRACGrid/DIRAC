@@ -21,14 +21,14 @@ Already described in :ref:`config section <config section>`.
 Policies
 --------
 
-This section describes the policies and the conditions to match elements.
+This section describes the policies, and to which elements such policies are applied.
 
 ::
 
   /Operations/Defaults/ResourceStatus
                           /Policies
                               /PolicyName
-                                  policyType = policyType
+                                  policyType = nameOfPolicyType
                                   doNotCombineResult = something
                                   /matchParams
                                       element = element
@@ -42,10 +42,10 @@ This section describes the policies and the conditions to match elements.
 
 This is the complete definition of a policy. Let's go one by one.
 
-* PolicyName         : this must be a human readable name explaining what the policy is doing ( mandatory ).
-* policyType         : is the name of the policy we want to run as defined in DIRAC.ResourceStatusSystem.Policy.Configurations ( mandatory ).
-* doNotCombineResult : if this option is present, the status will not be merged with the rest of statuses ( but actions on this policy will apply ).
-* matchParams        : is the dictionary containing the policy metadata used by :ref:`Info Getter <info getter>` to match policies. Any of them can be a CSV.
+* PolicyName         : this must be a human readable name explaining what the policy is doing (mandatory).
+* policyType         : is the name of the policy we want to run as defined in DIRAC.ResourceStatusSystem.Policy.Configurations (mandatory). Possible policy names: "Downtime", "FreeDiskSpace", "JobEfficiency", "PilotEfficiency", "AlwaysBanned", "AlwaysActive", "AlwaysProbing", "AlwaysDegraded", "Propagation", "JobDoneRatio", "JobRunningWaitingRatio", "JobRunningMatchedRatio"
+* doNotCombineResult : if this option is present, the status will not be merged with the rest of statuses (but actions on this policy will apply).
+* matchParams        : This section defines to which elements the policy is applied. It is used by :ref:`Info Getter <info getter>` to match policies.
 
 .. note :: Remember, declare ONLY the parameters in match params that want to be taken into account.
 
@@ -66,10 +66,13 @@ we cannot define the following matchParams:
 
    Code templates and examples for creating custom policies: :doc:`../../../DeveloperGuide/Systems/ResourceStatus/index`
 
+
+The Downtime and FreeDiskSpace policies have some configurable parameters.
+
 Built-in Downtime Policy
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``Downtime`` policy type evaluates GOCDB downtime data for a Site or Resource.
+The ``Downtime`` policy type evaluates `GOC DB <https://goc.egi.eu/>`__ downtime data for a Site or Resource.
 Severity is mapped to RSS status as follows:
 
 * **OUTAGE** → **Banned**
@@ -100,6 +103,26 @@ Example: flag elements with downtimes starting within the next 24 hours::
   {
     hours = 24
   }
+
+
+Example: setting 2 downtime policies:
+
+::
+
+  /Operations/Defaults/ResourceStatus
+                          /Policies
+                              /OngoingDowntime
+                                  policyType = Downtime
+                                  hours = 0   # hours to look ahead (0 = ongoing only, default)
+                                  /matchParams
+                                      element = Site
+                              /Downtime12
+                                  policyType = Downtime
+                                  hours = 12
+                                  /matchParams
+                                      element = Resource
+
+
 
 Built-in FreeDiskSpace Policy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
