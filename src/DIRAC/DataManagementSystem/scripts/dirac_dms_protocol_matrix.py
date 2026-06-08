@@ -41,7 +41,9 @@ You can have the following combinations::
   Using sources: IN2P3-User
   Using target: IN2P3-User
 """
+import os
 import csv
+import tempfile
 from collections import defaultdict
 
 from DIRAC.Core.Base.Script import Script
@@ -49,9 +51,10 @@ from DIRAC.Core.Base.Script import Script
 
 @Script()
 def main():
+    outputFile = os.path.join(tempfile.gettempdir(), "protocol-matrix.csv")
     Script.registerSwitch("", "FromSE=", "SE1[,SE2,...]")
     Script.registerSwitch("", "TargetSE=", "SE1[,SE2,...]")
-    Script.registerSwitch("", "OutputFile=", "CSV output file (default /tmp/protocol-matrix.csv)")
+    Script.registerSwitch("", "OutputFile=", f"CSV output file (default {outputFile})")
     Script.registerSwitch("", "Bidirection", "If FromSE or TargetSE are specified, make a square matrix ")
     Script.registerSwitch("", "FTS", "Display the protocols sent to FTS")
     Script.registerSwitch("", "TPC", "Display the protocols tried for interactive TPC")
@@ -69,7 +72,6 @@ def main():
     fromSE = []
     targetSE = []
     excludeSE = []
-    outputFile = "/tmp/protocol-matrix.csv"
     bidirection = False
     ftsTab = False
     tpcTab = False

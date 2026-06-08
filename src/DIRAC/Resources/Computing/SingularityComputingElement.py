@@ -32,7 +32,7 @@ from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 # Default container to use if it isn't specified in the CE options
 CONTAINER_DEFROOT = "/cvmfs/cernvm-prod.cern.ch/cvm4"
 CONTAINER_WORKDIR = "DIRAC_containers"
-CONTAINER_INNERDIR = "/tmp"
+CONTAINER_INNERDIR = "/tmp"  # nosec: B108
 
 
 # What is executed inside the container (2 options given)
@@ -218,7 +218,7 @@ class SingularityComputingElement(ComputingElement):
             pythonPath="python",
             log=log,
             logLevel=logLevel,
-            extraOptions="" if self.__installDIRACInContainer else "/tmp/pilot.cfg",
+            extraOptions="" if self.__installDIRACInContainer else "/tmp/pilot.cfg",  # nosec: B108
         )
         if not result["OK"]:
             return result
@@ -284,8 +284,8 @@ class SingularityComputingElement(ComputingElement):
             payloadEnv = {k: v for k, v in os.environ.items() if ENV_VAR_WHITELIST.match(k)}
 
         payloadEnv["PATH"] = str(Path(sys.executable).parent)
-        payloadEnv["TMP"] = "/tmp"
-        payloadEnv["TMPDIR"] = "/tmp"
+        payloadEnv["TMP"] = "/tmp"  # nosec: B108
+        payloadEnv["TMPDIR"] = "/tmp"  # nosec: B108
         payloadEnv["X509_USER_PROXY"] = os.path.join(self.__innerdir, "proxy")
         payloadEnv["DIRACSYSCONFIG"] = os.path.join(self.__innerdir, "pilot.cfg")
 
@@ -349,7 +349,8 @@ class SingularityComputingElement(ComputingElement):
         outerCmd.extend(["--contain"])  # use minimal /dev and empty other directories (e.g. /tmp and $HOME)
         outerCmd.extend(["--ipc"])  # run container in a new IPC namespace
         outerCmd.extend(["--workdir", baseDir])  # working directory to be used for /tmp, /var/tmp and $HOME
-        outerCmd.extend(["--home", "/tmp"])  # Avoid using small tmpfs for default $HOME and use scratch /tmp instead
+        # Avoid using small tmpfs for default $HOME and use scratch /tmp instead
+        outerCmd.extend(["--home", "/tmp"])  # nosec: B108
         outerCmd.append("--userns")
         if withCVMFS:
             outerCmd.extend(["--bind", "/cvmfs"])

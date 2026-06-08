@@ -33,7 +33,7 @@ def getTokenFileLocation(fileName=None):
     elif os.environ.get("XDG_RUNTIME_DIR"):
         return f"{os.environ['XDG_RUNTIME_DIR']}/bt_u{os.getuid()}"
     else:
-        return f"/tmp/bt_u{os.getuid()}"
+        return f"/tmp/bt_u{os.getuid()}"  # nosec: B108
 
 
 def getLocalTokenDict(location=None):
