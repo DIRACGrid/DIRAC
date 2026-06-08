@@ -268,3 +268,5 @@ For example::
     update 9.0.18
     update integration
     update 'DIRAC[server] @ git+https://github.com/fstagni/DIRAC.git@test_branch'
+
+.. note:: before installing releases from your fork, keep the tags in your fork up-to-date with ``git push origin 'refs/tags/v9*'``

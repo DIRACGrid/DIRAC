@@ -69,6 +69,10 @@ def _normalise_version(version):
     if not version:
         raise ValueError("No version specified")
 
+    # Strip surrounding quotes (shell may pass them literally)
+    if (version.startswith("'") and version.endswith("'")) or (version.startswith('"') and version.endswith('"')):
+        version = version[1:-1].strip()
+
     primaryExtension = None
     if "==" in version:
         primaryExtension, version = version.split("==", 1)
@@ -101,8 +105,9 @@ def _directory_label(version, released_version):
     """Derive the filesystem directory label for a given version.
 
     For released versions this is the version string itself.  For VCS URLs
-    (pip ``pkg @ url`` syntax) it is the URL part, stripped of any
-    ``#egg=...`` fragment and surrounding whitespace.
+    (pip ``pkg @ url`` syntax) it is just the branch/tag name after the
+    second ``@``, stripped of any ``#egg=...`` fragment and sanitized to
+    contain only filesystem-safe characters.
 
     :param str version: Normalised version string as returned by :func:`_normalise_version`.
     :param bool released_version: ``True`` when *version* is a PEP 440 release string.
@@ -112,9 +117,11 @@ def _directory_label(version, released_version):
     if released_version:
         return version
     # version is "pkg @ git+https://host/repo.git@branch"
-    # Split on the *first* "@" (the pip separator) only, then strip spaces
-    # and drop any "#egg=..." fragment so the branch name is preserved.
-    return version.split("@", 1)[1].strip().split("#")[0]
+    # Split on all "@" and take the last part (the branch/tag name),
+    # then strip spaces and drop any "#egg=..." fragment.
+    branch = version.split("@")[-1].strip().split("#")[0]
+    # Sanitize: keep only alphanumeric, hyphens, underscores, and dots
+    return re.sub(r"[^a-zA-Z0-9._-]", "", branch)
 
 
 class SystemAdministratorHandler(RequestHandler):
