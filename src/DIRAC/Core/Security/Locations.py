@@ -22,8 +22,8 @@ def getProxyLocation():
                 return proxyPath
     # /tmp/x509up_u<uid>
     proxyName = "x509up_u%d" % os.getuid()
-    if os.path.isfile(f"/tmp/{proxyName}"):
-        return f"/tmp/{proxyName}"
+    if os.path.isfile(f"/tmp/{proxyName}"):  # nosec: B108
+        return f"/tmp/{proxyName}"  # nosec: B108
 
 
 def getCAsLocation():
@@ -190,7 +190,7 @@ def getDefaultProxyLocation():
 
     # /tmp/x509up_u<uid>
     proxyName = "x509up_u%d" % os.getuid()
-    return f"/tmp/{proxyName}"
+    return f"/tmp/{proxyName}"  # nosec: B108
 
 
 def getVomsesLocation():
