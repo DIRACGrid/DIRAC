@@ -25,7 +25,7 @@ from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-er
 from DIRAC.Core.Utilities import Os
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority, getExtensionMetadata
 from DIRAC.Core.Utilities.File import mkLink
-from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.TimeUtilities import day, fromString, hour
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
@@ -471,7 +471,7 @@ class SystemAdministratorHandler(RequestHandler):
 
     def export_executeCommand(self, command):
         """Execute a command locally and return its output"""
-        result = shellCall(60, command)
+        result = systemCall(60, command.split())
         return result
 
     types_checkComponentLog = [[str, list]]

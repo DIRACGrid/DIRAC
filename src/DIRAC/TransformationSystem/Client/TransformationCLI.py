@@ -6,7 +6,7 @@ DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.Core.Base.CLI import CLI
 from DIRAC.Core.Base.API import API
-from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.TransformationSystem.Client.Transformation import Transformation
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -73,8 +73,7 @@ class TransformationCLI(CLI, API):
 
         usage !<shell_command>
         """
-        comm = args
-        res = shellCall(0, comm)
+        res = systemCall(0, args.split())
         if res["OK"] and res["Value"][0] == 0:
             _returnCode, stdOut, stdErr = res["Value"]
             print(f"{stdOut}\n{stdErr}")

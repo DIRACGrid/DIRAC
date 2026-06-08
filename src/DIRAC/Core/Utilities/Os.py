@@ -8,7 +8,7 @@ import threading
 
 import DIRAC
 from DIRAC.Core.Utilities import List
-from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
+from DIRAC.Core.Utilities.Subprocess import systemCall
 
 DEBUG = 0
 
@@ -36,19 +36,17 @@ def getDiskSpace(path=".", exclude=None):
 
     if not os.path.exists(path):
         return -1
-    comm = f"df -P -m {path} "
+    comm = ["df", "-P", "-m", path]
     if exclude:
-        comm += f"-x {exclude} "
-    comm += "| tail -1"
-    resultDF = shellCall(10, comm)
+        comm.extend(["-x", exclude])
+    resultDF = systemCall(10, comm)
     if not resultDF["OK"] or resultDF["Value"][0]:
         return -1
-    output = resultDF["Value"][1]
+    output = resultDF["Value"][1].strip().splitlines()[-1]
     if output.find(" /afs") >= 0:  # AFS disk space
-        comm = "fs lq | tail -1"
-        resultAFS = shellCall(10, comm)
+        resultAFS = systemCall(10, ["fs", "lq"])
         if resultAFS["OK"] and not resultAFS["Value"][0]:
-            output = resultAFS["Value"][1]
+            output = resultAFS["Value"][1].strip().splitlines()[-1]
             fields = output.split()
             quota = int(fields[1])
             used = int(fields[2])
@@ -67,8 +65,7 @@ def getDiskSpace(path=".", exclude=None):
 def getDirectorySize(path):
     """Get the total size of the given directory in MB"""
 
-    comm = f"du -s -m {path}"
-    result = shellCall(10, comm)
+    result = systemCall(10, ["du", "-s", "-m", path])
     if not result["OK"] or result["Value"][0] != 0:
         return 0
     output = result["Value"][1]
