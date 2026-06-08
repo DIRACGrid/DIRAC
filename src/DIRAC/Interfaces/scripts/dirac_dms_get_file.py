@@ -12,6 +12,7 @@ Example:
    'Successful': {'/formation/user/v/vhamar/Example.txt': '/afs/in2p3.fr/home/h/hamar/Tests/DMS/Example.txt'}}
 """
 import DIRAC
+from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 
 
@@ -39,7 +40,7 @@ def main():
 
     result = dirac.getFile(lfns, printOutput=True)
     if not result["OK"]:
-        print(f"ERROR {result['Message']}")
+        gLogger.error(result["Message"])
         exitCode = 2
 
     DIRAC.exit(exitCode)

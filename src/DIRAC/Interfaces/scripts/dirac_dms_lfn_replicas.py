@@ -13,6 +13,7 @@ Example:
    {'M3PEC-disk': 'srm://se0.m3pec.u-bordeaux1.fr/dpm/m3pec.u-bordeaux1.fr/home/formation/user/v/vhamar/Test.txt'}}}
 """
 import DIRAC
+from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 
 
@@ -43,7 +44,7 @@ def main():
 
     result = dirac.getReplicas(lfns, active=active, printOutput=True)
     if not result["OK"]:
-        print("ERROR: ", result["Message"])
+        gLogger.error(result["Message"])
         exitCode = 2
 
     DIRAC.exit(exitCode)

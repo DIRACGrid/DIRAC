@@ -24,6 +24,7 @@ Example:
                                                         'UID': 2}}}
 """
 import DIRAC
+from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 
 
@@ -47,7 +48,7 @@ def main():
 
     result = dirac.getLfnMetadata(lfns, printOutput=True)
     if not result["OK"]:
-        print("ERROR: ", result["Message"])
+        gLogger.error(result["Message"])
         exitCode = 2
 
     DIRAC.exit(exitCode)
