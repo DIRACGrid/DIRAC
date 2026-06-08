@@ -83,7 +83,10 @@ class Profiler:
         rss = self.process.memory_info().rss
         if withChildren:
             for child in self.process.children(recursive=True):
-                rss += child.memory_info().rss
+                try:
+                    rss += child.memory_info().rss
+                except psutil.NoSuchProcess:
+                    pass
         # converted to MB
         return S_OK(rss / float(2**20))
 
@@ -96,7 +99,10 @@ class Profiler:
         vms = self.process.memory_info().vms
         if withChildren:
             for child in self.process.children(recursive=True):
-                vms += child.memory_info().vms
+                try:
+                    vms += child.memory_info().vms
+                except psutil.NoSuchProcess:
+                    pass
         # converted to MB
         return S_OK(vms / float(2**20))
 
@@ -108,7 +114,10 @@ class Profiler:
         nThreads = self.process.num_threads()
         if withChildren:
             for child in self.process.children(recursive=True):
-                nThreads += child.num_threads()
+                try:
+                    nThreads += child.num_threads()
+                except psutil.NoSuchProcess:
+                    pass
         return S_OK(nThreads)
 
     @checkInvocation
@@ -119,7 +128,10 @@ class Profiler:
         cpuPercentage = self.process.cpu_percent()
         if withChildren:
             for child in self.process.children(recursive=True):
-                cpuPercentage += child.cpu_percent()
+                try:
+                    cpuPercentage += child.cpu_percent()
+                except psutil.NoSuchProcess:
+                    pass
         return S_OK(cpuPercentage)
 
     @checkInvocation
@@ -132,11 +144,17 @@ class Profiler:
         oldChildrenUser = 0
         if withChildren:  # active children
             for child in self.process.children(recursive=True):
-                childrenUser += child.cpu_times().user
+                try:
+                    childrenUser += child.cpu_times().user
+                except psutil.NoSuchProcess:
+                    pass
             gLogger.debug("CPU user (process, children)", f"({cpuUsageUser:.1f}s, {childrenUser:.1f}s)")
         if withTerminatedChildren:  # all terminated children of the root process
             for child in self.process.children(recursive=True):
-                oldChildrenUser += child.cpu_times().children_user
+                try:
+                    oldChildrenUser += child.cpu_times().children_user
+                except psutil.NoSuchProcess:
+                    pass
             gLogger.debug("CPU user (process, old children)", f"({cpuUsageUser:.1f}s, {oldChildrenUser:.1f}s)")
         else:
             gLogger.debug("CPU user", f"{cpuUsageUser:.1f}s")
@@ -152,11 +170,17 @@ class Profiler:
         oldChildrenSystem = 0
         if withChildren:  # active children
             for child in self.process.children(recursive=True):
-                childrenSystem += child.cpu_times().system
+                try:
+                    childrenSystem += child.cpu_times().system
+                except psutil.NoSuchProcess:
+                    pass
             gLogger.debug("CPU user (process, children)", f"({cpuUsageSystem:.1f}s, {childrenSystem:.1f}s)")
         if withTerminatedChildren:  # all terminated children of the root process
             for child in self.process.children(recursive=True):
-                oldChildrenSystem += child.cpu_times().children_system
+                try:
+                    oldChildrenSystem += child.cpu_times().children_system
+                except psutil.NoSuchProcess:
+                    pass
             gLogger.debug("CPU user (process, old children)", f"({cpuUsageSystem:.1f}s, {oldChildrenSystem:.1f}s)")
         else:
             gLogger.debug("CPU user", f"{cpuUsageSystem:.1f}s")
