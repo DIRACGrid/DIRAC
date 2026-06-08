@@ -80,15 +80,15 @@ class TestDirectoryLabel:
         [
             (
                 "DIRAC[server]@git+https://github.com/fstagni/DIRAC.git@test_branch",
-                "git+https://github.com/fstagni/DIRAC.git@test_branch",
+                "test_branch",
             ),
             (
                 "DIRAC[server] @ git+https://github.com/fstagni/DIRAC.git@test_branch",
-                "git+https://github.com/fstagni/DIRAC.git@test_branch",
+                "test_branch",
             ),
             (
                 "DIRAC[server]@git+https://github.com/DIRACGrid/DIRAC.git@integration#egg=DIRAC",
-                "git+https://github.com/DIRACGrid/DIRAC.git@integration",
+                "integration",
             ),
         ],
     )
