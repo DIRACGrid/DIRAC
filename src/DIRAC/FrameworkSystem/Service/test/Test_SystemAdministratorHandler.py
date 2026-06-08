@@ -61,6 +61,24 @@ class TestNormaliseVersion:
         assert released is False
         assert version == raw
 
+    @pytest.mark.parametrize(
+        "quoted, expected",
+        [
+            (
+                "'DIRAC[server] @ git+https://github.com/fstagni/DIRAC.git@test_branch'",
+                "DIRAC[server] @ git+https://github.com/fstagni/DIRAC.git@test_branch",
+            ),
+            (
+                '"DIRAC[server] @ git+https://github.com/fstagni/DIRAC.git@test_branch"',
+                "DIRAC[server] @ git+https://github.com/fstagni/DIRAC.git@test_branch",
+            ),
+            ("'9.0.18'", "v9.0.18"),
+        ],
+    )
+    def test_quoted_version_strips_quotes(self, quoted, expected):
+        version, primary, released, pre = _normalise_version(quoted)
+        assert version == expected
+
     def test_invalid_version_raises(self):
         with pytest.raises(ValueError, match="Invalid version passed"):
             _normalise_version("not-a-valid-version")
@@ -94,6 +112,15 @@ class TestDirectoryLabel:
     )
     def test_git_url_variants(self, version, expected):
         assert _directory_label(version, released_version=False) == expected
+
+    def test_sanitizes_special_characters(self):
+        """Branch names with quotes or other special chars are sanitized."""
+        assert (
+            _directory_label(
+                "DIRAC[server]@git+https://github.com/x/DIRAC.git@rss_configurable_thresholds'", released_version=False
+            )
+            == "rss_configurable_thresholds"
+        )
 
 
 # ---------------------------------------------------------------------------

@@ -69,6 +69,10 @@ def _normalise_version(version):
     if not version:
         raise ValueError("No version specified")
 
+    # Strip surrounding quotes (shell may pass them literally)
+    if (version.startswith("'") and version.endswith("'")) or (version.startswith('"') and version.endswith('"')):
+        version = version[1:-1].strip()
+
     primaryExtension = None
     if "==" in version:
         primaryExtension, version = version.split("==", 1)
