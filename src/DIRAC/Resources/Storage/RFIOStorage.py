@@ -8,7 +8,7 @@ import time
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase import StorageBase
-from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.File import getSize
 
@@ -47,10 +47,7 @@ class RFIOStorage(StorageBase):
             return res
         urls = res["Value"]
         gLogger.debug(f"RFIOStorage.exists: Determining the existance of {len(urls)} files.")
-        comm = "nsls -d"
-        for url in urls:
-            comm = f" {comm} {url}"
-        res = shellCall(self.timeout, comm)
+        res = systemCall(self.timeout, ["nsls", "-d"] + urls)
         successful = {}
         failed = {}
         if res["OK"]:
@@ -83,10 +80,7 @@ class RFIOStorage(StorageBase):
         gLogger.debug(f"RFIOStorage.isFile: Determining whether {len(urls)} paths are files.")
         successful = {}
         failed = {}
-        comm = "nsls -ld"
-        for url in urls:
-            comm = f" {comm} {url}"
-        res = shellCall(self.timeout, comm)
+        res = systemCall(self.timeout, ["nsls", "-ld"] + urls)
         if not res["OK"]:
             return res
         returncode, stdout, stderr = res["Value"]
@@ -110,10 +104,7 @@ class RFIOStorage(StorageBase):
 
     def __getPathMetadata(self, urls):
         gLogger.debug(f"RFIOStorage.__getPathMetadata: Attempting to get metadata for {len(urls)} paths.")
-        comm = "nsls -ld"
-        for url in urls:
-            comm = f" {comm} {url}"
-        res = shellCall(self.timeout, comm)
+        res = systemCall(self.timeout, ["nsls", "-ld"] + urls)
         successful = {}
         failed = {}
         if not res["OK"]:
@@ -155,12 +146,12 @@ class RFIOStorage(StorageBase):
     def __getFileMetadata(self, urls):
         gLogger.debug(f"RFIOStorage.__getPathMetadata: Attempting to get additional metadata for {len(urls)} files.")
         # Check whether the files that exist are staged
-        comm = f"stager_qry -S {self.spaceToken}"
+        cmd = ["stager_qry", "-S", self.spaceToken]
         successful = {}
         for pfn in urls:
             successful[pfn] = {}
-            comm = f"{comm} -M {pfn}"
-        res = shellCall(self.timeout, comm)
+            cmd.extend(["-M", pfn])
+        res = systemCall(self.timeout, cmd)
         if not res["OK"]:
             errStr = "RFIOStorage.__getFileMetadata: Completely failed to get cached status."
             gLogger.error(errStr, res["Message"])
@@ -177,10 +168,8 @@ class RFIOStorage(StorageBase):
                 successful[pfn]["Cached"] = False
 
         # Now for the files that exist get the tape segment (i.e. whether they have been migrated) and related checksum
-        comm = "nsls -lT --checksum"
-        for pfn in urls:
-            comm = f"{comm} {pfn}"
-        res = shellCall(self.timeout, comm)
+        cmd = ["nsls", "-lT", "--checksum"] + list(urls)
+        res = systemCall(self.timeout, cmd)
         if not res["OK"]:
             errStr = "RFIOStorage.__getFileMetadata: Completely failed to get migration status."
             gLogger.error(errStr, res["Message"])
@@ -240,8 +229,8 @@ class RFIOStorage(StorageBase):
         MIN_BANDWIDTH = 1024 * 100  # 100 KB/s
         timeout = int(remoteSize / MIN_BANDWIDTH + 300)
         gLogger.debug(f"RFIOStorage.getFile: Executing transfer of {src_url} to {dest_file}")
-        comm = f"rfcp {src_url} {dest_file}"
-        res = shellCall(timeout, comm)
+        comm = ["rfcp", src_url, dest_file]
+        res = systemCall(timeout, comm)
         if res["OK"]:
             returncode, _stdout, stderr = res["Value"]
             if returncode == 0:
@@ -317,8 +306,8 @@ class RFIOStorage(StorageBase):
         MIN_BANDWIDTH = 1024 * 100  # 100 KB/s
         timeout = sourceSize / MIN_BANDWIDTH + 300
         gLogger.debug(f"RFIOStorage.putFile: Executing transfer of {src_file} to {turl}")
-        comm = f"rfcp {src_file} '{turl}'"
-        res = shellCall(timeout, comm)
+        comm = ["rfcp", src_file, turl]
+        res = systemCall(timeout, comm)
         if res["OK"]:
             returncode, _stdout, stderr = res["Value"]
             if returncode == 0:
@@ -357,17 +346,17 @@ class RFIOStorage(StorageBase):
         listOfLists = breakListIntoChunks(urls, 100)
         for urls in listOfLists:
             gLogger.debug(f"RFIOStorage.removeFile: Attempting to remove {len(urls)} files.")
-            comm = f"stager_rm -S {self.spaceToken}"
+            comm = ["stager_rm", "-S", self.spaceToken]
             for url in urls:
-                comm = f"{comm} -M {url}"
-            res = shellCall(100, comm)
+                comm.extend(["-M", url])
+            res = systemCall(100, comm)
             if res["OK"]:
                 returncode, _stdout, stderr = res["Value"]
                 if returncode in [0, 1]:
-                    comm = "nsrm -f"
+                    comm = ["nsrm", "-f"]
                     for url in urls:
-                        comm = f"{comm} {url}"
-                    res = shellCall(100, comm)
+                        comm.append(url)
+                    res = systemCall(100, comm)
                     if res["OK"]:
                         returncode, _stdout, stderr = res["Value"]
                         if returncode in [0, 1]:
@@ -461,10 +450,10 @@ class RFIOStorage(StorageBase):
             return res
         urls = res["Value"]
         userTag = f"{self.spaceToken}-{time.time()}"
-        comm = f"stager_get -S {self.spaceToken} -U {userTag} "
+        comm = ["stager_get", "-S", self.spaceToken, "-U", userTag]
         for url in urls:
-            comm = f"{comm} -M {url}"
-        res = shellCall(100, comm)
+            comm.extend(["-M", url])
+        res = systemCall(100, comm)
         successful = {}
         failed = {}
         if res["OK"]:
@@ -502,8 +491,8 @@ class RFIOStorage(StorageBase):
                 requestFiles[requestID] = []
             requestFiles[requestID].append(url)
         for requestID, urls in requestFiles.items():
-            comm = f"stager_qry -S {self.spaceToken} -U {requestID} "
-            res = shellCall(100, comm)
+            comm = ["stager_qry", "-S", self.spaceToken, "-U", requestID]
+            res = systemCall(100, comm)
             if res["OK"]:
                 returncode, stdout, stderr = res["Value"]
                 if returncode in [0, 1]:
@@ -799,8 +788,8 @@ class RFIOStorage(StorageBase):
 
     def __makeDir(self, path):
         # First create a local file that will be used as a directory place holder in storage name space
-        comm = f"nsmkdir -m 775 {path}"
-        res = shellCall(100, comm)
+        comm = ["nsmkdir", "-m", "775", path]
+        res = systemCall(100, comm)
         if not res["OK"]:
             return res
         returncode, _stdout, stderr = res["Value"]
@@ -841,8 +830,8 @@ class RFIOStorage(StorageBase):
         successful = {}
         failed = {}
         for url in urls:
-            comm = f"nsrm -r {url}"
-            res = shellCall(100, comm)
+            comm = ["nsrm", "-r", url]
+            res = systemCall(100, comm)
             if res["OK"]:
                 returncode, _stdout, stderr = res["Value"]
                 if returncode == 0:
@@ -880,8 +869,8 @@ class RFIOStorage(StorageBase):
                 failed[url] = errStr
 
         for directory in directories:
-            comm = f"nsls -l {directory}"
-            res = shellCall(self.timeout, comm)
+            comm = ["nsls", "-l", directory]
+            res = systemCall(self.timeout, comm)
             if res["OK"]:
                 returncode, stdout, stderr = res["Value"]
                 if not returncode == 0:

@@ -4,7 +4,6 @@
 from datetime import datetime
 import os
 import tempfile
-import shlex
 import shutil
 
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
@@ -12,7 +11,7 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities import List
 
 # This is a variable so it can be monkeypatched in tests
@@ -267,9 +266,9 @@ class VOMS:
 
         cmd = voms_init_cmd(vo, attribute, chain, proxyLocation, newProxyLocation, self.getVOMSESLocation())
 
-        result = shellCall(
+        result = systemCall(
             self._secCmdTimeout,
-            shlex.join(cmd),
+            cmd,
             env=os.environ
             | {
                 "X509_CERT_DIR": Locations.getCAsLocation(),
@@ -313,7 +312,7 @@ class VOMS:
         if not vpInfoCmd:
             return S_ERROR(DErrno.EVOMS, "Missing voms-proxy-info")
         cmd = f"{vpInfoCmd} -h"
-        result = shellCall(self._secCmdTimeout, cmd)
+        result = systemCall(self._secCmdTimeout, cmd.split())
         if not result["OK"]:
             return False
         status, _output, _error = result["Value"]

@@ -3,7 +3,7 @@ The Grid module contains several utilities for grid operations
 """
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
-from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.Subprocess import systemCall
 
 
 def ldapsearchBDII(filt=None, attr=None, host=None, base=None, selectionString="Glue"):
@@ -34,8 +34,8 @@ def ldapsearchBDII(filt=None, attr=None, host=None, base=None, selectionString="
     if isinstance(attr, list):
         attr = " ".join(attr)
 
-    cmd = f'ldapsearch -x -LLL -o ldif-wrap=no -H ldap://{host} -b {base} "{filt}" {attr}'
-    result = shellCall(0, cmd)
+    cmd = ["ldapsearch", "-x", "-LLL", "-o", "ldif-wrap=no", "-H", f"ldap://{host}", "-b", base, filt, attr]
+    result = systemCall(0, cmd)
 
     response = []
 
