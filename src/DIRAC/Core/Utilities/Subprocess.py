@@ -592,7 +592,7 @@ def shellCall(timeout, cmdSeq, callbackFunction=None, env=None, bufferLimit=5242
         result = shCall(timeout + 1)
     else:
         spObject = Subprocess(timeout, bufferLimit=bufferLimit)
-        result = spObject.systemCall(cmdSeq, callbackFunction=callbackFunction, env=env, shell=True)
+        result = spObject.systemCall(cmdSeq, callbackFunction=callbackFunction, env=env, shell=True)  #  nosec: B604
     return result
 
 

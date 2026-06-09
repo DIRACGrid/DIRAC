@@ -599,7 +599,7 @@ class SystemAdministratorHandler(RequestHandler):
 
         # Disk occupancy
         summary = ""
-        _status, output = subprocess.getstatusoutput("df")
+        _status, output = subprocess.getstatusoutput("df")  # nosec: B605
         lines = output.split("\n")
         for i in range(len(lines)):
             if lines[i].startswith("/dev"):
