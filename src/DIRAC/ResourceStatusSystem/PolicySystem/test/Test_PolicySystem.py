@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import MagicMock
 
 from DIRAC import gLogger
+from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 
 # from DIRAC.ResourceStatusSystem.PolicySystem.PDP          import PDP
@@ -274,10 +275,82 @@ class PEPSuccess(PolicySystemTestCase):
 # # #############################################################################
 #
 # # class PolicyInvokerFailure(PolicySystemTestCase):
-#
+
 # #   def test_policyFail(self):
 # #     for granularity in ValidRes:
 # #       self.assertRaises(Exception, self.pi.evaluatePolicy)
+
+#############################################################################
+
+
+class PDPCombinePoliciesTest(PolicySystemTestCase):
+    """Test cases for PDP._combineSinglePolicyResults, especially edge cases with None status"""
+
+    def test_combineSinglePolicyResults_with_none_status(self):
+        """Test that _combineSinglePolicyResults handles None status without raising KeyError.
+
+        This reproduces the bug where decisionParams['status'] is None, causing
+        StateMachine.setState to raise KeyError when accessing self.states[None].
+        """
+        pdp = PDP()
+        pdp.setup(
+            {
+                "element": "Resource",
+                "name": "testResource",
+                "elementType": "ComputingElement",
+                "statusType": "ReadAccess",
+                "status": None,  # This is the problematic case
+                "reason": None,
+                "tokenOwner": None,
+            }
+        )
+
+        singlePolicyResults = [{"Status": "Active", "Reason": "TestReason", "Policy": {"name": "TestPolicy"}}]
+
+        # This should not raise KeyError
+        result = pdp._combineSinglePolicyResults(singlePolicyResults)
+        self.assertTrue(result["OK"], f"Expected OK=True, got: {result}")
+
+    def test_combineSinglePolicyResults_with_valid_status(self):
+        """Test that _combineSinglePolicyResults works correctly with a valid status"""
+        pdp = PDP()
+        pdp.setup(
+            {
+                "element": "Resource",
+                "name": "testResource",
+                "elementType": "ComputingElement",
+                "statusType": "ReadAccess",
+                "status": "Active",
+                "reason": None,
+                "tokenOwner": None,
+            }
+        )
+
+        singlePolicyResults = [{"Status": "Active", "Reason": "TestReason", "Policy": {"name": "TestPolicy"}}]
+
+        result = pdp._combineSinglePolicyResults(singlePolicyResults)
+        self.assertTrue(result["OK"], f"Expected OK=True, got: {result}")
+        self.assertEqual(result["Value"]["Status"], "Active")
+
+    def test_combineSinglePolicyResults_empty_results(self):
+        """Test that _combineSinglePolicyResults handles empty results"""
+        pdp = PDP()
+        pdp.setup(
+            {
+                "element": "Resource",
+                "name": "testResource",
+                "elementType": "ComputingElement",
+                "statusType": "ReadAccess",
+                "status": None,
+                "reason": None,
+                "tokenOwner": None,
+            }
+        )
+
+        result = pdp._combineSinglePolicyResults([])
+        self.assertTrue(result["OK"], f"Expected OK=True, got: {result}")
+        self.assertEqual(result["Value"]["Status"], "Unknown")
+
 
 #############################################################################
 
@@ -288,6 +361,7 @@ if __name__ == "__main__":
     #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerSuccess))
     #  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PolicyInvokerFailure))
     suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPSuccess))
+    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPCombinePoliciesTest))
     #   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PEPFailure))
     #   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPSuccess))
     #   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPFailure))
