@@ -350,14 +350,6 @@ csAPI.setOption("Resources/FTSEndpoints/FTS3/JENKINS-FTS3", "https://jenkins-fts
 #             domain  = test
 #           }
 #         }
-#         AlwaysDegradedForResource
-#         {
-#           policyType = AlwaysDegraded
-#           matchParams
-#           {
-#             element = Resource
-#           }
-#         }
 #         SpecificFreeDiskSpace
 #         {
 #           policyType         = FreeDiskSpace
@@ -468,17 +460,6 @@ res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysBan
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite2/policyType", "AlwaysBanned")
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite2/matchParams/element", "Site")
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite2/matchParams/domain", "test")
-
-res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysDegradedForResource")
-if not res["OK"]:
-    print(res["Message"])
-    sys.exit(1)
-csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysDegradedForResource/policyType", "AlwaysDegraded")
-res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysDegradedForResource/matchParams")
-if not res["OK"]:
-    print(res["Message"])
-    sys.exit(1)
-csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysDegradedForResource/matchParams/element", "Resource")
 
 res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/SpecificFreeDiskSpace")
 if not res["OK"]:
