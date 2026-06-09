@@ -123,7 +123,7 @@ class ConfigurationData:
                 cfg = cfg[section]
             return self.dangerZoneEnd(cfg.getComment(levelList[-1]))
         except Exception:
-            pass
+            pass  # nosec B110
         return self.dangerZoneEnd(None)
 
     def getSectionsFromCFG(self, path, cfg=False, ordered=False):
@@ -136,7 +136,7 @@ class ConfigurationData:
                 cfg = cfg[section]
             return self.dangerZoneEnd(cfg.listSections(ordered))
         except Exception:
-            pass
+            pass  # nosec B110
         return self.dangerZoneEnd(None)
 
     def getOptionsFromCFG(self, path, cfg=False, ordered=False):
@@ -149,7 +149,7 @@ class ConfigurationData:
                 cfg = cfg[section]
             return self.dangerZoneEnd(cfg.listOptions(ordered))
         except Exception:
-            pass
+            pass  # nosec B110
         return self.dangerZoneEnd(None)
 
     def extractOptionFromCFG(self, path, cfg=False, disableDangerZones=False):
@@ -164,7 +164,7 @@ class ConfigurationData:
             if levelList[-1] in cfg.listOptions():
                 return self.dangerZoneEnd(cfg[levelList[-1]])
         except Exception:
-            pass
+            pass  # nosec B110
         if not disableDangerZones:
             self.dangerZoneEnd()
 

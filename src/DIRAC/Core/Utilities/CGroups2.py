@@ -267,7 +267,7 @@ class CG2Manager(metaclass=DIRACSingleton):
         except Exception as err:
             # We can't even really log here as we're in the set-up
             # context of the new proces
-            pass
+            pass  # nosec B110
 
     def setUp(self):
         """Creates the base cgroup tree if possible. Should be called once

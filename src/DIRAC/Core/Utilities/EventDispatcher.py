@@ -84,7 +84,7 @@ class EventDispatcher:
             try:
                 gEventSync.unlock()
             except Exception:
-                pass
+                pass  # nosec B110
         if not finalResult["OK"]:
             return finalResult
         return S_OK(len(eventFunctors))

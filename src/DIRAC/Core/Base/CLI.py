@@ -53,7 +53,7 @@ class CLI(cmd.Cmd):
         for sigNum in (signal.SIGINT, signal.SIGQUIT, signal.SIGKILL, signal.SIGTERM):
             try:
                 signal.signal(sigNum, self._handleSignal)
-            except Exception:
+            except (ValueError, TypeError, OSError):
                 pass
 
     def _errMsg(self, errMsg):

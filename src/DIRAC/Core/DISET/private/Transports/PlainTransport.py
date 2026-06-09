@@ -49,7 +49,7 @@ class PlainTransport(BaseTransport):
         try:
             self.oSocket.shutdown(socket.SHUT_RDWR)
         except Exception:
-            pass
+            pass  # nosec B110
         self.oSocket.close()
 
     def setClientSocket(self, oSocket):

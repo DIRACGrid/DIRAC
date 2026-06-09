@@ -711,7 +711,7 @@ class SystemAdministratorHandler(RequestHandler):
                 importedModule = importlib.import_module(moduleName)
                 return S_OK(importedModule.__doc__)
             except Exception:
-                pass
+                continue  # Module or doc string missing, keep searching
         return S_ERROR("No documentation was found")
 
     @staticmethod

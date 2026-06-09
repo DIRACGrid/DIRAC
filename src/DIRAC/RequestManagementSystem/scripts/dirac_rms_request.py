@@ -12,7 +12,7 @@ def convertDate(date):
     try:
         value = datetime.datetime.strptime(date, "%Y-%m-%d")
         return value
-    except Exception:
+    except (ValueError, TypeError):
         pass
     try:
         value = datetime.datetime.utcnow() - datetime.timedelta(hours=int(24 * float(date)))
@@ -138,8 +138,8 @@ def main():
         elif switch[0] == "Maximum":
             try:
                 maxRequests = int(switch[1])
-            except Exception:
-                pass
+            except ValueError:
+                gLogger.fatal(f"Invalid maximum value: {switch[1]}")
         elif switch[0] == "TargetSE":
             targetSE = set(switch[1].split(","))
 

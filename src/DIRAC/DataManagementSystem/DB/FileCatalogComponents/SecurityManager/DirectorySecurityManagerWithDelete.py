@@ -68,11 +68,11 @@ class DirectorySecurityManagerWithDelete(DirectorySecurityManager):
             # The try catch is just to protect in case there are duplicate in the paths
             try:
                 paths.remove(path)
-            except Exception as _e:
+            except Exception:
                 try:
                     paths.pop(path)
-                except Exception as _ee:
-                    pass
+                except Exception:
+                    pass  # nosec B110
 
         # For all the paths that exist, check the write permission
         if paths:

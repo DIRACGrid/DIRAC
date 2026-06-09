@@ -518,9 +518,11 @@ class DSession(DConfig):
 
         try:
             self.addVomsExt(filename)
-        except:
-            # silently skip VOMS errors
-            pass
+        except KeyError:
+            pass  # No VOMS server for this group
+        except Exception as err:
+            # Another problem getting VOMS ext
+            gLogger.warn(f"Failed to add VOMS extension: ({str(err)})")
 
         if not (result := addTokenToPEM(filename, params.diracGroup))["OK"]:  # pylint: disable=unsubscriptable-object
             raise Exception(result["Message"])  # pylint: disable=unsubscriptable-object
@@ -533,7 +535,7 @@ class DSession(DConfig):
         group = retVal["Value"]
         vomsAttr = Registry.getVOMSAttributeForGroup(group)
         if not vomsAttr:
-            raise Exception(f"Requested adding a VOMS extension but no VOMS attribute defined for group {group}")
+            raise KeyError(f"Requested adding a VOMS extension but no VOMS attribute defined for group {group}")
 
         result = VOMS.VOMS().setVOMSAttributes(proxy, attribute=vomsAttr, vo=Registry.getVOForGroup(group))
         if not result["OK"]:

@@ -19,7 +19,9 @@ import inspect
 import traceback
 
 from collections import defaultdict
-from pprint import pprint
+from pprint import pformat
+
+from DIRAC import gLogger
 
 
 def _ord(char):
@@ -179,11 +181,12 @@ def printDebugCallstack(headerMessage):
     if any(["AccountingDB" in tr for tr in reversed(tb)]):
         return
 
-    print("=" * 45, headerMessage, "=" * 45)
+    lines = []
+    lines.append("=" * 45 + " " + headerMessage + " " + "=" * 45)
     # print the traceback that leads us here
     # remove the last element which is the traceback module call
     for line in tb[:-1]:
-        print(line)
+        lines.append(line)
 
     # Now we try to navigate up to the caller of dEncode.
     # For this, we find the frame in which we enter dEncode.
@@ -201,17 +204,17 @@ def printDebugCallstack(headerMessage):
                     dencArgs = stripArgs(frame[0])
                     # Take the calling frame
                     frame = next(framesIter)
-                    print(f"Calling frame: {frame[1:3]}")
+                    lines.append(f"Calling frame: {frame[1:3]}")
                     if isRPCCall:
-                        print(rpcDetails)
-                    print("With arguments ", end=" ")
-                    pprint(dencArgs)
+                        lines.append(rpcDetails)
+                    lines.append(f"With arguments {pformat(dencArgs)}")
                     break
-    except Exception:
-        pass
-    print("=" * 100)
-    print()
-    print()
+    except Exception as err:
+        gLogger.warn(f"Failed to trace frames: {str(err)}")
+    lines.append("=" * 100)
+    lines.append("")
+    lines.append("")
+    gLogger.info("\n".join(lines))
 
 
 _dateTimeObject = datetime.datetime.utcnow()
@@ -528,7 +531,5 @@ def decode(data):
 
 if __name__ == "__main__":
     gObject = {2: "3", True: (3, None), 2.0 * 10**20: 2.0 * 10**-10}
-    print(f"Initial: {gObject}")
-    gData = encode(gObject)
-    print(f"Encoded: {gData}")
-    print("Decoded: %s, [%s]" % decode(gData))
+    msg = f"Initial: {gObject}\nEncoded: {encode(gObject)}\nDecoded: {decode(gObject)}"
+    gLogger.notice(msg)

@@ -403,7 +403,7 @@ class Subprocess:
                 self.log.error("Error reading", f"type(nB) ={type(nB)}")
                 self.log.error("Error reading", f"nB ={str(nB)}")
             except Exception:
-                pass
+                pass  # nosec B110
             return S_ERROR(f"Can not read from output: {str(x)}")
         if len(dataString) + baseLength > self.bufferLimit:
             self.log.error("Maximum output buffer length reached")
@@ -464,7 +464,7 @@ class Subprocess:
                 self.child.stdout.close()
                 self.child.stderr.close()
             except Exception:
-                pass
+                pass  # nosec B110
             retDict = S_ERROR(repr(x))
             retDict["Value"] = (-1, "", str(x))
             return retDict
@@ -502,7 +502,7 @@ class Subprocess:
                 self.child.stdout.close()
                 self.child.stderr.close()
             except Exception:
-                pass
+                pass  # nosec B110
 
     def getChildPID(self):
         """child pid getter"""

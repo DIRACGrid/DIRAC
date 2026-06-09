@@ -12,6 +12,7 @@ Example:
    'Successful': {'/formation/user/v/vhamar/Example.txt': '/afs/in2p3.fr/home/h/hamar/Tests/DMS/Example.txt'}}
 """
 import DIRAC
+from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 
 
@@ -34,12 +35,15 @@ def main():
         try:
             with open(lfns[0]) as f:
                 lfns = f.read().splitlines()
-        except Exception:
-            pass
+        except FileNotFoundError:
+            pass  # The user probably supplied an LFN not a local file name
+        except Exception as err:
+            gLogger.error(f"Failed to read LFN list file {lfns[0]}: {str(err)}")
+            DIRAC.exit(1)
 
     result = dirac.getFile(lfns, printOutput=True)
     if not result["OK"]:
-        print(f"ERROR {result['Message']}")
+        gLogger.error(result["Message"])
         exitCode = 2
 
     DIRAC.exit(exitCode)

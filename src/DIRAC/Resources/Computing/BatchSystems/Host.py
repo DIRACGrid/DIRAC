@@ -32,7 +32,7 @@ class Host(object):
         try:
             self.nCores = multiprocessing.cpu_count()
         except Exception:
-            pass
+            pass  # nosec B110
 
     def submitJob(self, **kwargs):
 

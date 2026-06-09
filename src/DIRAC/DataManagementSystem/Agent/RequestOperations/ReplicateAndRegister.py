@@ -477,8 +477,8 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                     vo = getVOfromProxyGroup().get("Value")
                     fts3Plugin = getFTS3Plugin(vo=vo)
                     fts3Operation.activity = fts3Plugin.inferFTSActivity(fts3Operation, self.request, self.operation)
-            except Exception:
-                pass
+            except Exception as err:
+                self.log.warn(f"Failed to infer FTS3 activity: {str(err)}")
 
             ftsSchedule = FTS3Client().persistOperation(fts3Operation)
             if not ftsSchedule["OK"]:

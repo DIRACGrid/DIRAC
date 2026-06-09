@@ -327,7 +327,7 @@ class VOMS:
         else:
             try:
                 os.unlink(files)
-            except Exception:
+            except OSError:
                 pass
 
     def _generateTemporalFile(self):

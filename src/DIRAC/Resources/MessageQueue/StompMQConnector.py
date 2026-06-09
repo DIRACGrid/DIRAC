@@ -206,8 +206,8 @@ class StompMQConnector(MQConnector):
                     # Go to the socket of the Stomp to find the remote host
                     try:
                         remoteIP = self.connection.transport.socket.getpeername()[0]
-                    except Exception:
-                        pass
+                    except Exception as err:
+                        log.info(f"MQ failed to get peer name: {str(err)}")
                     log.info(f"MQ Connected to {remoteIP}")
                     return S_OK(f"Connected to {remoteIP}")
                 else:

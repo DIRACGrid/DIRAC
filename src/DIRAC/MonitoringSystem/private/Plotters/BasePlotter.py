@@ -308,12 +308,12 @@ class BasePlotter(DBUtils):
         if self._extraArgs.get(self._EA_WIDTH):
             try:
                 metadata[self._EA_WIDTH] = min(1600, max(200, int(self._extraArgs[self._EA_WIDTH])))
-            except Exception:
+            except (TypeError, ValueError):
                 pass
         if self._EA_HEIGHT in self._extraArgs and self._extraArgs[self._EA_HEIGHT]:
             try:
                 metadata[self._EA_HEIGHT] = min(1600, max(200, int(self._extraArgs[self._EA_HEIGHT])))
-            except Exception:
+            except (TypeError, ValueError):
                 pass
         if self._extraArgs.get(self._EA_TITLE):
             metadata["title"] = self._extraArgs[self._EA_TITLE]

@@ -4,6 +4,7 @@ Script to apply update to all or some dirac servers and restart them
 """
 
 import DIRAC
+from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 
 
@@ -45,8 +46,11 @@ def main():
         with open(hosts) as f:
             hosts = f.read().splitlines()
             hosts = [str(host) for host in hosts]
-    except Exception:
-        pass
+    except FileNotFoundError:
+        pass  # The user probably supplied one of most hosts directly
+    except Exception as err:
+        gLogger.error(f"Failed to read host list file {hosts}: {str(err)}")
+        DIRAC.exit(1)
 
     if not isinstance(hosts, list):
         hosts = hosts.split(",")
@@ -56,8 +60,11 @@ def main():
         with open(excludeHosts) as f:
             excludeHosts = f.read().splitlines()
             excludeHosts = [str(host) for host in excludeHosts]
-    except Exception:
-        pass
+    except FileNotFoundError:
+        pass  # The user probably supplied one of most hosts directly
+    except Exception as err:
+        gLogger.error(f"Failed to read excluded host list file {hosts}: {str(err)}")
+        DIRAC.exit(1)
 
     if not isinstance(excludeHosts, list):
         excludeHosts = excludeHosts.split(",")
@@ -65,7 +72,6 @@ def main():
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
     from DIRAC import S_OK, S_ERROR
-    from DIRAC import gLogger
     from DIRAC.FrameworkSystem.Client.SystemAdministratorClient import SystemAdministratorClient
     from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 

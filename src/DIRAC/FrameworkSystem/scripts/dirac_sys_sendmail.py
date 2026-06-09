@@ -46,8 +46,8 @@ def main():
     try:
         tmp, body = body.split("\\n\\n")
         head = tmp + "\\n" + head
-    except Exception as x:
-        pass
+    except ValueError as x:
+        pass  # Double new-line not found
 
     body = "".join(body.strip())
 
