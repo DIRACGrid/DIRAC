@@ -325,6 +325,9 @@ def test_doCache(mocker):
     [
         ({"element": "X"}, None, False, None),
         ({"element": "Site", "name": "aSite", "elementType": "Z"}, S_OK(), True, None),
+        ({"element": "Site", "name": None, "elementType": "Z"}, None, False, None),
+        ({"element": "Site", "name": "aSite", "elementType": None}, None, False, None),
+        ({"element": None, "name": "aSite", "elementType": "Z"}, None, False, None),
         (
             {"element": "Resource", "name": "669 devel.edu.mk", "elementType": "Z"},
             {
