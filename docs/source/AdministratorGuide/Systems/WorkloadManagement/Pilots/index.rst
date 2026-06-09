@@ -101,7 +101,7 @@ Further details:
 Version override
 ================
 
-If you want to override, for development or debugging purposes, the version of DIRAC being installed by the pilot, you can set the option ``/Resources/Computing/CEDefaultsModules`` to ``https://github.com/$DIRAC_test_repo/DIRAC.git:::DIRAC:::$DIRAC_test_branch``.
+If you want to override, for development or debugging purposes, the version of DIRAC being installed by the pilot, you can set the option ``/Resources/Computing/CEDefaults/Modules`` to ``https://github.com/$DIRAC_test_repo/DIRAC.git:::DIRAC:::$DIRAC_test_branch``.
 This trick allows, for example, to install at runtime a specific branch of DIRAC. For example ``https://github.com/DIRACGrid/DIRAC.git:::DIRAC:::integration`` would install the ``integration`` branch,
 but similarly a non-released in-development branch can be set.
 
