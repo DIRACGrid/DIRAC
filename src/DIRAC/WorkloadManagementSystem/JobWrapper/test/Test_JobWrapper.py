@@ -639,6 +639,8 @@ def test_execute(mocker, executable, args, src, expectedResult):
 
     if os.path.exists("std.out"):
         os.remove("std.out")
+    if os.path.exists("DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK"):
+        os.remove("DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK")
 
 
 # -------------------------------------------------------------------------------------------------
