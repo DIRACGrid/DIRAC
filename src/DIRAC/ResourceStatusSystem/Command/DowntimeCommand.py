@@ -157,15 +157,15 @@ class DowntimeCommand(Command):
         :returns: S_OK tuple ``(element, elementName, hours, gOCDBServiceType)`` or S_ERROR.
         """
 
-        if "name" not in self.args:
+        if not self.args.get("name"):
             return S_ERROR('"name" not found in self.args')
         elementName = self.args["name"]
 
-        if "element" not in self.args:
+        if not self.args.get("element"):
             return S_ERROR('"element" not found in self.args')
         element = self.args["element"]
 
-        if "elementType" not in self.args:
+        if not self.args.get("elementType"):
             return S_ERROR('"elementType" not found in self.args')
         elementType = self.args["elementType"]
 
