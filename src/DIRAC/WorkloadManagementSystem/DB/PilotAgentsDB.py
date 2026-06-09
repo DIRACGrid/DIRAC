@@ -508,7 +508,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         args = []
         if isinstance(pilotID, list):
             placeholders = ",".join(["%s"] * len(pilotID))
-            cmd = f"SELECT JobID FROM JobToPilotMapping WHERE pilotID IN ({placeholders})"
+            cmd = f"SELECT pilotID,JobID FROM JobToPilotMapping WHERE pilotID IN ({placeholders})"
             args = [str(int(x)) for x in pilotID]
         else:
             cmd = f"{cmd} WHERE pilotID = %s"
