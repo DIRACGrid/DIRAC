@@ -14,14 +14,6 @@
           }
           policyType = AlwaysActive
         }
-        AlwaysDegradedForResource
-        {
-          matchParams
-          {
-            element = Resource
-          }
-          policyType = AlwaysDegraded
-        }
         AlwaysBannedForSE1SE2
         {
           matchParams
@@ -170,19 +162,7 @@ def test_takeDecision_noDecisionParams():
                 "reason": None,
                 "tokenOwner": None,
             },
-            "Degraded",
-        ),
-        (
-            {
-                "element": "Resource",
-                "name": "LogSE",
-                "elementType": "StorageElement",
-                "statusType": "ReadAccess",
-                "status": "Active",
-                "reason": None,
-                "tokenOwner": None,
-            },
-            "Active",
+            "Error",
         ),
         (
             {
