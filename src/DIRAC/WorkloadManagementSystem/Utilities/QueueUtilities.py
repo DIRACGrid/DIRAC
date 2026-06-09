@@ -159,10 +159,12 @@ class QueueCECache:
     """
 
     def __init__(self, backing=None):
-        """:param dict backing: optional pre-existing ``queueKey -> {"Hash", "CE"}`` dict
-        to adopt as the cache store. Used to stay backward compatible with callers
-        that historically passed (and held onto) a plain dict cache; mutating it in
-        place preserves their cross-cycle reuse. A fresh dict is used when omitted.
+        """Initialise the cache, optionally adopting an existing backing store.
+
+        :param dict backing: optional pre-existing ``queueKey -> {"Hash", "CE"}`` dict
+            to adopt as the cache store. Used to stay backward compatible with callers
+            that historically passed (and held onto) a plain dict cache; mutating it in
+            place preserves their cross-cycle reuse. A fresh dict is used when omitted.
         """
         # queueKey -> {"Hash": <str>, "CE": <ComputingElement>}
         self._cache = backing if backing is not None else {}
