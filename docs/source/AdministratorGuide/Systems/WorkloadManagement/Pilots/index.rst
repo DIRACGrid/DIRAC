@@ -101,11 +101,23 @@ Further details:
 Version override
 ================
 
-If you want to override, for development or debugging purposes, the version of DIRAC being installed by the pilot, you can set the option `/Resources/Computing/CEDefaultsModules` to `https://github.com/$DIRAC_test_repo/DIRAC.git:::DIRAC:::$DIRAC_test_branch`.
-This trick allows, for example, to install at runtme a specific branch of DIRAC. For example `https://github.com/DIRACGrid/DIRAC.git:::DIRAC:::integration` would install the `integration` branch,
+If you want to override, for development or debugging purposes, the version of DIRAC being installed by the pilot, you can set the option ``/Resources/Computing/CEDefaults/Modules`` to ``https://github.com/$DIRAC_test_repo/DIRAC.git:::DIRAC:::$DIRAC_test_branch``.
+This trick allows, for example, to install at runtime a specific branch of DIRAC. For example ``https://github.com/DIRACGrid/DIRAC.git:::DIRAC:::integration`` would install the ``integration`` branch,
 but similarly a non-released in-development branch can be set.
 
-DIRAC extensions can be added on the same line after a comma, e.g. `/Resources/Computing/CEDefaultsModules=https://github.com/$DIRAC_test_repo/DIRAC.git:::DIRAC:::$DIRAC_test_branch,https://gitlab.cern.ch/$LHCBDIRAC_repo/LHCbDIRAC.git:::LHCbDIRAC:::$LHCbDIRAC_branch,https://gitlab.cern.ch/$LHCBDIRAC_repo/LHCbDIRAC.git:::LHCbDIRAC:::$LHCbDIRAC_branch`.
+.. note::
+
+   The SiteDirector reads this option when it builds the pilots. After changing ``/Resources/Computing/CEDefaults/Modules`` (or any other pilot configuration), you have to restart the SiteDirector agent for the change to be taken into account by the pilots it submits.
+
+DIRAC extensions can be added on the same line after a comma, e.g.:
+
+.. code-block:: bash
+
+   /Resources/Computing/CEDefaults/Modules=https://github.com/$DIRAC_test_repo/DIRAC.git:::DIRAC:::$DIRAC_test_branch,https://gitlab.cern.ch/$LHCBDIRAC_repo/LHCbDIRAC.git:::LHCbDIRAC:::$LHCbDIRAC_branch
+
+.. note::
+
+   If the pilot version (e.g. ``Operations/Default/Pilot/Version``) points to a release that is already available on CVMFS, the pilot will favour that pre-installed release and ignore the ``Modules`` override. To force the pilot to perform the installation from the URL(s) above every time, set ``GenericOptions = diracInstallOnly`` in the same ``/Resources/Computing/CEDefaults`` section.
 
 Pilot Commands
 ==============
