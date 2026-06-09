@@ -803,8 +803,8 @@ class AREXComputingElement(ComputingElement):
         try:
             ceData = response.json()
         except requests.JSONDecodeError:
-            self.log.exception("Failed decoding the status of the CE")
-            return S_ERROR(f"Failed decoding the status of the CE")
+            self.log.error("Failed decoding the status of the CE")
+            return S_ERROR("Failed decoding the status of the CE")
 
         # Look only in the relevant section out of the headache
         # This "safe_get" function allows to go down the dictionary
