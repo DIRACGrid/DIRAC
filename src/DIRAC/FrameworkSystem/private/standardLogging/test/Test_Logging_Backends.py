@@ -2,6 +2,7 @@
 Test backend attachment
 """
 import pytest
+from pathlib import Path
 
 from DIRAC.FrameworkSystem.private.standardLogging.test.TestLogUtilities import gLogger, gLoggerReset, cleaningLog
 
@@ -146,3 +147,11 @@ def test_registerBackendgLogger(backends):
     for backend, params in backends.items():
         content = params["extractBackendContent"](params["backendOptions"])
         assert content == params["backendContent"]
+
+    # Clean up backend temp output files
+    for params in backends.values():
+        fName = params.get("backendOptions", {}).get("FileName", None)
+        if fName:
+            fPath = Path(fName)
+            if fPath.exists():
+                fPath.unlink()
