@@ -207,6 +207,7 @@ class QueueCECache:
             return
         try:
             cached["CE"].shutdown()
+        # CE.shutdown() is polymorphic across CE types; eviction must never fail
         except Exception as e:
             self.log.warn("Failed to shut down evicted CE", f"{queueKey}: {e}")
 

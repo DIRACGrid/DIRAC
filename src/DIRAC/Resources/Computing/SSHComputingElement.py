@@ -528,13 +528,13 @@ class SSHComputingElement(ComputingElement):
         gateway = getattr(connection, "gateway", None)
         try:
             connection.close()
-        except Exception as e:  # a close failure must not break cache eviction
+        except (OSError, EOFError, SSHException) as e:  # a close failure must not break cache eviction
             self.log.warn("Failed to close SSH connection", str(e))
         # The jump host (SSHTunnel) is a separate Connection that close() ignores
         if isinstance(gateway, Connection):
             try:
                 gateway.close()
-            except Exception as e:
+            except (OSError, EOFError, SSHException) as e:
                 self.log.warn("Failed to close SSH gateway connection", str(e))
 
     def shutdown(self):
