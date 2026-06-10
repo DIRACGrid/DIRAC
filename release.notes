@@ -1,3 +1,36 @@
+[v9.1.11]
+
+*WorkloadManagement
+
+FIX: (#8592) AREX issue decoding the JSON, use error instead of exception
+FIX: (#8581) Add missing pilotID column back in web pilot lookup
+CHANGE: (#8569) improve PilotStatusAgent performances and refactor duplicated code
+
+*docs
+
+FIX: (#8591) add a note about the Site Director for overriding the DIRAC version installed in the pilot
+
+*Core
+
+FIX: (#8588) Find writeable cgroup2 in tree
+FIX: (#8582) Catch NoSuchProcess in Profiler child loops
+FIX: (#8580) Update fixed time conversion window in GraphUtilities
+
+*Tests
+
+FIX: (#8585) Tidy up a few files left by unit tests
+
+*All
+
+FIX: (#8579) Use systemCall instead of shellCall wherever possible
+FIX: (#8578) Check hardcoded /tmp usage.
+CHANGE: (#8566) Check for ignored broad except
+CHANGE: (#8565) Check for hardcoded passwords
+
+*FrameworkSystem
+
+CHANGE: (#8563) SystemAdministrator parses /proc directly instead of using lsof for perf reasons
+
 [v9.1.10]
 
 *Core
