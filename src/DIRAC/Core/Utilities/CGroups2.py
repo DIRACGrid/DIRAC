@@ -4,6 +4,7 @@
 import os
 import functools
 import subprocess
+from pathlib import Path
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 from DIRAC.Core.Utilities import Subprocess
@@ -102,11 +103,29 @@ class CG2Manager(metaclass=DIRACSingleton):
                 return line[4:]
             return False
 
-        if not (root_path := self._detect_root()):
+        if not (root_name := self._detect_root()):
             raise RuntimeError("Failed to find cgroup mount point")
         if not (cur_group := self._filter_file(self.FILE_CUR_CGROUP, filt)):
             raise RuntimeError("Failed to find current cgroup")
-        self._cgroup_path = os.path.join(root_path, cur_group)
+        root_path = Path(root_name)
+        search_path = root_path / cur_group
+        # Work up from the search path until we find a writable directory
+        num = 0
+        while search_path.is_relative_to(root_path):
+            num += 1
+            if num > 10:
+                # We've tried 10 levels of tree! There might be an oddity here
+                # where we're stuck in a loop (perhaps we somehow got all the
+                # way up to "/" and are just looping on that?)
+                raise RuntimeError("Writeable cgroup search exceeded limit")
+            if os.access(search_path, os.W_OK):
+                # We found an entry in the tree that we can write to
+                self._cgroup_path = str(search_path)
+                return
+            search_path = search_path.parent
+        # We've now left the cgroup mount point and didn't find a writeable dir
+        # There probably isn't any delegation enabled
+        raise RuntimeError("Failed to find a writeable cgroup")
 
     def _create_group(self, group_name, isolate_oom=True):
         """Creates a new group.
