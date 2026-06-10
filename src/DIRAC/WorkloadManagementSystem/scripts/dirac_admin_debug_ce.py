@@ -142,7 +142,6 @@ def buildQueues(vo, sites, ces, ceTypes):
 
     result = getQueuesResolved(
         siteDict=result["Value"],
-        queueCECache={},
         vo=vo,
         instantiateCEs=True,
     )

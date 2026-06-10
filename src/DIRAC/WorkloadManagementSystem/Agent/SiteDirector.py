@@ -43,7 +43,7 @@ from DIRAC.WorkloadManagementSystem.Utilities.PilotWrapper import (
     getPilotFilesCompressedEncodedDict,
     pilotWrapperScript,
 )
-from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
+from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved, QueueCECache
 
 MAX_PILOTS_TO_SUBMIT = 100
 
@@ -60,7 +60,7 @@ class SiteDirector(AgentModule):
 
         self.queueDict = {}
         # self.queueCECache aims at saving CEs information over the cycles to avoid to create the exact same CEs each cycle
-        self.queueCECache = {}
+        self.queueCECache = QueueCECache()
         self.failedQueues = defaultdict(int)
         self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
 
@@ -575,7 +575,7 @@ class SiteDirector(AgentModule):
         # in your machine, the executable files will be in the same place
         # but it does not matter since they are very temporary
 
-        ce = self.queueCECache[queue]["CE"]
+        ce = self.queueDict[queue]["CE"]
         workingDirectory = getattr(ce, "workingDirectory", self.workingDirectory)
 
         executable = self._writePilotScript(

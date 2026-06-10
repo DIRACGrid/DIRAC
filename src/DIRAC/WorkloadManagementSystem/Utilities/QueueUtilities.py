@@ -2,7 +2,7 @@
 
 import hashlib
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACPlatform
@@ -11,12 +11,26 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 
 
-def getQueuesResolved(siteDict, queueCECache, vo=None, checkPlatform=False, instantiateCEs=False):
+def getQueuesResolved(siteDict, queueCECache=None, vo=None, checkPlatform=False, instantiateCEs=False):
     """Get the list of relevant CEs (what is in siteDict) and their descriptions.
     The main goal of this method is to return a dictionary of queues
+
+    :param dict siteDict: sites/CEs/queues structure as returned by ``getQueues``
+    :param queueCECache: a :class:`QueueCECache` used to reuse CE instances across
+        cycles when ``instantiateCEs`` is set. For backward compatibility a plain
+        ``dict`` (the legacy cache format) is also accepted and adopted as the cache
+        backing store; if omitted, a fresh cache is used.
+    :param str vo: VO name
+    :param bool checkPlatform: resolve the queue platform
+    :param bool instantiateCEs: instantiate (and cache) a CE object per queue
+    :return: S_OK(queueDict)/S_ERROR
     """
+    # Backward compatibility: callers historically passed a plain dict (or nothing).
+    # Adopt it as the cache backing store so they keep cross-cycle reuse unchanged.
+    if not isinstance(queueCECache, QueueCECache):
+        queueCECache = QueueCECache(queueCECache if isinstance(queueCECache, dict) else None)
+
     queueDict = {}
-    ceFactory = ComputingElementFactory()
 
     for site in siteDict:
         for ce in siteDict[site]:
@@ -50,27 +64,20 @@ def getQueuesResolved(siteDict, queueCECache, vo=None, checkPlatform=False, inst
                 ceQueueDict.update(queueDict[queueName]["ParametersDict"])
 
                 if instantiateCEs:
-                    # Generate the CE object for the queue or pick the already existing one
-                    # if the queue definition did not change
-                    queueHash = generateQueueHash(ceQueueDict)
-                    if queueName in queueCECache and queueCECache[queueName]["Hash"] == queueHash:
-                        queueCE = queueCECache[queueName]["CE"]
-                    else:
-                        result = ceFactory.getCE(ceName=ce, ceType=ceDict["CEType"], ceParametersDict=ceQueueDict)
-                        if not result["OK"]:
-                            queueDict.pop(queueName)
-                            continue
-                        queueCECache.setdefault(queueName, {})
-                        queueCECache[queueName]["Hash"] = queueHash
-                        queueCECache[queueName]["CE"] = result["Value"]
-                        queueCE = queueCECache[queueName]["CE"]
+                    # Get the CE object for the queue, reusing the cached one if the
+                    # queue definition did not change, or (re)building it otherwise.
+                    result = queueCECache.getCE(queueName, ceDict["CEType"], ce, ceQueueDict)
+                    if not result["OK"]:
+                        queueDict.pop(queueName)
+                        continue
+                    queueCE = result["Value"]
 
                     queueDict[queueName]["ParametersDict"].update(queueCE.ceParameters)
                     queueDict[queueName]["CE"] = queueCE
-                    result = queueDict[queueName]["CE"].isValid()
+                    result = queueCE.isValid()
                     if not result["OK"]:
                         queueDict.pop(queueName)
-                        queueCECache.pop(queueName)
+                        queueCECache.drop(queueName)
                         continue
 
                 queueDict[queueName]["CEName"] = ce
@@ -139,6 +146,70 @@ def generateQueueHash(queueDict):
     myMD5.update(str(queueDict).encode())
     hexstring = myMD5.hexdigest()
     return hexstring
+
+
+class QueueCECache:
+    """A cache of ComputingElement instances keyed by queue.
+
+    CEs -- and, for connection-based CEs such as the SSHComputingElement, their
+    underlying connections -- are reused across cycles instead of being
+    re-created on every use. A CE is rebuilt only when its queue parameters
+    change, detected through a hash of the parameters dictionary: the same
+    invalidation strategy used by the SiteDirector (see :func:`getQueuesResolved`).
+    """
+
+    def __init__(self, backing=None):
+        """Initialise the cache, optionally adopting an existing backing store.
+
+        :param dict backing: optional pre-existing ``queueKey -> {"Hash", "CE"}`` dict
+            to adopt as the cache store. Used to stay backward compatible with callers
+            that historically passed (and held onto) a plain dict cache; mutating it in
+            place preserves their cross-cycle reuse. A fresh dict is used when omitted.
+        """
+        # queueKey -> {"Hash": <str>, "CE": <ComputingElement>}
+        self._cache = backing if backing is not None else {}
+        self._ceFactory = ComputingElementFactory()
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
+
+    def getCE(self, queueKey, ceType, ceName, ceParametersDict):
+        """Return a cached CE for ``queueKey``, (re)building it when needed.
+
+        :param str queueKey: unique identifier of the queue, used as cache key
+        :param str ceType: CE type passed to the ComputingElementFactory
+        :param str ceName: CE name passed to the ComputingElementFactory
+        :param dict ceParametersDict: queue/CE parameters; a change triggers a rebuild
+        :return: S_OK(ce)/S_ERROR
+        """
+        queueHash = generateQueueHash(ceParametersDict)
+        cached = self._cache.get(queueKey)
+        if cached is not None and cached["Hash"] == queueHash:
+            return S_OK(cached["CE"])
+
+        # First use, or the queue definition changed: drop any stale cache entry
+        # (which shuts the old CE down, closing its connection) and build a fresh one.
+        self.drop(queueKey)
+        result = self._ceFactory.getCE(ceType=ceType, ceName=ceName, ceParametersDict=ceParametersDict)
+        if not result["OK"]:
+            return result
+        self._cache[queueKey] = {"Hash": queueHash, "CE": result["Value"]}
+        return S_OK(result["Value"])
+
+    def drop(self, queueKey):
+        """Evict a cached CE so it is rebuilt on the next request.
+
+        The evicted CE is shut down so that any underlying connection (e.g. the
+        SSHComputingElement's SSH/gateway connections) is closed immediately
+        rather than left to non-deterministic garbage collection, which Fabric
+        documents as unsafe to rely on.
+        """
+        cached = self._cache.pop(queueKey, None)
+        if cached is None:
+            return
+        try:
+            cached["CE"].shutdown()
+        # CE.shutdown() is polymorphic across CE types; eviction must never fail
+        except Exception as e:
+            self.log.warn("Failed to shut down evicted CE", f"{queueKey}: {e}")
 
 
 def matchQueue(jobJDL, queueDict, fullMatch=False):

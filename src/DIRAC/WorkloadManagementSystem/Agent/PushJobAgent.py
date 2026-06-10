@@ -44,7 +44,7 @@ from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapperUtilities import (
     transferInputSandbox,
 )
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
-from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved
+from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesResolved, QueueCECache
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 
 MAX_JOBS_MANAGED = 100
@@ -61,7 +61,7 @@ class PushJobAgent(JobAgent):
         self.firstPass = True
         self.maxJobsToSubmit = MAX_JOBS_MANAGED
         self.queueDict = {}
-        self.queueCECache = {}
+        self.queueCECache = QueueCECache()
 
         self.pilotDN = ""
         self.vo = ""
