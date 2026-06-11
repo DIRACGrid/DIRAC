@@ -8,7 +8,6 @@ from importlib import import_module
 import os
 import shutil
 import subprocess
-import ssl
 
 from xml.etree import ElementTree as et
 
@@ -59,17 +58,15 @@ def __downloadPilotScripts():
     Downloads the scripts necessary to configure the pilot
     """
 
-    context = ssl._create_unverified_context()
     for fileName in [
         "dirac-pilot.py",
         "pilotCommands.py",
         "pilotTools",
     ]:
         remoteFile = urlopen(
-            os.path.join("https://raw.githubusercontent.com/DIRACGrid/Pilot/master/Pilot/", fileName),
+            f"https://raw.githubusercontent.com/DIRACGrid/Pilot/master/Pilot/{fileName}",
             timeout=10,
-            context=context,
-        )
+        )  # nosec: B310
         with open(fileName, "wb") as localFile:
             localFile.write(remoteFile.read())
 
