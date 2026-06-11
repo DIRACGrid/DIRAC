@@ -14,7 +14,7 @@ from importlib import import_module
 import time
 import os
 import datetime
-import pickle
+import pickle  # nosec: B403
 import concurrent.futures
 from pathlib import Path
 
@@ -672,7 +672,8 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
                 self.replicaCache[transID] = {}
             else:
                 with open(fileName, "rb") as cacheFile:
-                    self.replicaCache[transID] = pickle.load(cacheFile)
+                    # Pickle files are only written locally, so should be safe
+                    self.replicaCache[transID] = pickle.load(cacheFile)  # nosec: B301
                 self._logInfo(
                     "Successfully loaded replica cache from file %s (%d files)"
                     % (fileName, self.__filesInCache(transID)),

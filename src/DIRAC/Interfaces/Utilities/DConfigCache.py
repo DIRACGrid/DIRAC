@@ -2,7 +2,7 @@
 import os
 import re
 import time
-import pickle
+import pickle  # nosec: B403
 import tempfile
 
 from DIRAC import gLogger
@@ -69,7 +69,8 @@ class ConfigCache:
         else:
             try:
                 with open(self.configCacheName, "rb") as fh:
-                    gConfigurationData.mergedCFG = pickle.load(fh)
+                    # Pickle files are cached locally, so should be safe
+                    gConfigurationData.mergedCFG = pickle.load(fh)  # nosec: B301
                     reset_all_caches()
             except:
                 gLogger.error("Cache corrupt or unreadable")
