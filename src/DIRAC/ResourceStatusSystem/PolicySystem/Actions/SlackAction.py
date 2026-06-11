@@ -16,8 +16,8 @@
       Defaults/
         ResourceStatus/
           Config/
-            Slack = https://hooks.slack.com/services/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
-            Mattermost = https://mattermost.web.cern.ch/hooks/axy94k3m1pg5xeyaw3qqb3x8bo
+            Slack = https://hooks.slack.com/services/gibberish/here
+            Mattermost = https://mattermost.web.cern.ch/hooks/nice_random
 
   Even if using Mattermost,the URL is still to be placed at
   Operations/[]/ResourceStatus/Config/Slack and not Operations/[]/ResourceStatus/Config/Mattermost
