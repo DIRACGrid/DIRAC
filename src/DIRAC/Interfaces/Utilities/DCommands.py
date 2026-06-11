@@ -17,6 +17,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security import VOMS, Locations
 from DIRAC.Core.Security.DiracX import addTokenToPEM
 from DIRAC.Core.Security.Locations import getCAsLocation
+from DIRAC.Core.Utilities.File import cleanDirectory
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -358,23 +359,36 @@ class DSession(DConfig):
         def pid_exists(pid):
             try:
                 os.kill(pid, 0)
-            except OSError as _err:
-                # errno.EPERM would denote a process belonging to someone else
-                # so we consider it inexistent
-                # return _err.errno == errno.EPERM
+            except OSError:
                 return False
             return True
 
         sessionPat = "^" + self.sessionFilePrefix() + r"\.(?P<pid>[0-9]+)$"
         sessionRe = re.compile(sessionPat)
-        for f in os.listdir(self.configDir):
-            m = sessionRe.match(f)
-            if m is not None:
-                pid = int(m.group("pid"))
 
-                # delete session files for non running processes
-                if not pid_exists(pid):
-                    os.unlink(os.path.join(self.configDir, f))
+        def _deleteSessionFile(filePath):
+            """Callback for cleanDirectory: only delete session files for dead PIDs.
+
+            Returns True on success (file deleted), False on failure.
+            """
+            match = sessionRe.match(filePath.name)
+            if not match:
+                return False
+            pid = int(match.group("pid"))
+            if pid_exists(pid):
+                return False
+            filePath.unlink()
+            return True
+
+        errFiles = cleanDirectory(
+            self.configDir,
+            maxSecs=None,  # no age filter; all matching files are candidates
+            filePatterns=[self.sessionFilePrefix() + ".*"],
+            maxDepth=1,
+            callbackFn=_deleteSessionFile,
+        )
+        if errFiles:
+            gLogger.warn("Failed to clean session files:", ",".join(errFiles))
 
     def getEnv(self, option, defaultValue=None):
         return self.get(DSession.__ENV_SECTION, option, defaultValue)

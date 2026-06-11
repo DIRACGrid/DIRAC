@@ -1,6 +1,7 @@
 """ Test class for PilotLoggingAgent Agent
 """
 import os
+import stat
 import tempfile
 import time
 from unittest.mock import MagicMock, patch
@@ -211,6 +212,7 @@ def test_oldLogsCleaner(plaBase, filename, fileAge, ageLimit, expectedResult):
     assert os.path.exists(testfile) is True
     # cannot patch os.stat globally because os.path.exists uses it !
     with patch("DIRAC.WorkloadManagementSystem.Agent.PilotLoggingAgent.os.stat") as mockOSStat:
-        mockOSStat.return_value.st_mtime = time.time() - fileAge * 86400  # file older that fileAge in seconds
+        mockOSStat.return_value.st_mtime = int(time.time() - fileAge * 86400)  # file older that fileAge in seconds
+        mockOSStat.return_value.st_mode = stat.S_IFREG | 0o755  # File type
         plaBase.clearOldPilotLogs(filepath)
     assert os.path.exists(testfile) is expectedResult

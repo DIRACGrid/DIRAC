@@ -60,7 +60,7 @@ import uuid
 
 from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.Core.Security.Locations import getCAsLocation
-from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Utilities.File import cleanDirectory, mkDir
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import writeToTokenFile
@@ -582,23 +582,19 @@ class HTCondorCEComputingElement(ComputingElement):
 
         self.log.debug("Cleaning working directory:", self.workingDirectory)
 
-        # remove all files older than 120 minutes starting with DIRAC_ Condor will
+        # remove all files older than 7200 seconds (120 minutes) starting with DIRAC_ Condor will
         # push files on submission, but it takes at least a few seconds until this
         # happens so we can't directly unlink after condor_submit
-        status, stdout = subprocess.getstatusoutput(
-            f'find -O3 {self.workingDirectory} -maxdepth 1 -mmin +120 -name "DIRAC_*" -delete '
-        )
-        if status:
-            self.log.error("Failure during HTCondorCE __cleanup", stdout)
+        errFiles = cleanDirectory(self.workingDirectory, 7200, filePatterns=["DIRAC_*"], maxDepth=1)
+        if errFiles:
+            self.log.error(
+                "Failure during HTCondorCE __cleanup", "Failed to clean DIRAC_ submit files:", ",".join(errFiles)
+            )
 
         # remove all out/err/log files older than "DaysToKeepLogs" days in the working directory
         # not running this for each CE so we do global cleanup
-        findPars = dict(workDir=self.workingDirectory, days=self.daysToKeepLogs)
-        # remove all out/err/log files older than "DaysToKeepLogs" days
-        status, stdout = subprocess.getstatusoutput(
-            r'find %(workDir)s -mtime +%(days)s -type f \( -name "*.out" -o -name "*.err" -o -name "*.log" \) -delete '
-            % findPars
-        )
-        if status:
-            self.log.error("Failure during HTCondorCE __cleanup", stdout)
+        cleanAgeSecs = 60 * 60 * 24 * self.daysToKeepLogs  # days->seconds
+        errFiles = cleanDirectory(self.workingDirectory, cleanAgeSecs, filePatterns=["*.out", "*.err", "*.log"])
+        if errFiles:
+            self.log.error("Failure during HTCondorCE __cleanup", "Failed to clean log files:", ",".join(errFiles))
         self._cleanupLock.release()

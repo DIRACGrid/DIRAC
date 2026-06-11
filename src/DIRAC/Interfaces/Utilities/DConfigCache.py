@@ -7,7 +7,7 @@ import tempfile
 
 from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
-from DIRAC.Core.Utilities.File import secureOpenForWrite
+from DIRAC.Core.Utilities.File import cleanDirectory, secureOpenForWrite
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import reset_all_caches
 
@@ -32,22 +32,38 @@ class ConfigCache:
         def pid_exists(pid):
             try:
                 os.kill(pid, 0)
-            except OSError as _err:
+            except OSError:
                 return False
             return True
 
         cachePat = "^" + self.cacheFilePrefix() + r"\.%s\.(?P<pid>[0-9]+)$" % os.getuid()
         cacheRe = re.compile(cachePat)
-        for fname in os.listdir(self.cacheDir):
-            match = cacheRe.match(fname)
-            if match is not None:
-                pid = int(match.group("pid"))
 
-                path = os.path.join(self.cacheDir, fname)
-                # delete session files for non running processes
-                if not pid_exists(pid) and os.access(path, os.W_OK):
-                    # print("remove old session file", path)
-                    os.unlink(path)
+        def _deleteCacheFile(filePath):
+            """Callback for cleanDirectory: only delete cache files for dead PIDs.
+
+            Returns True on success, False to skip.
+            """
+            match = cacheRe.match(filePath.name)
+            if not match:
+                return False
+            if not os.access(filePath, os.W_OK):
+                return False
+            pid = int(match.group("pid"))
+            if pid_exists(pid):
+                return False
+            filePath.unlink()
+            return True
+
+        errFiles = cleanDirectory(
+            self.cacheDir,
+            maxSecs=0,  # age is irrelevant; all matching files are candidates
+            filePatterns=[self.cacheFilePrefix() + ".*"],
+            maxDepth=1,
+            callbackFn=_deleteCacheFile,
+        )
+        if errFiles:
+            gLogger.warn("Failed to clean cache files:", ",".join(errFiles))
 
     def loadConfig(self):
         self.newConfig = True

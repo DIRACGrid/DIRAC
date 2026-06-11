@@ -13,7 +13,11 @@ import re
 import errno
 import stat
 import tempfile
+import fnmatch
+import time
+from collections.abc import Callable
 from contextlib import contextmanager
+from pathlib import Path
 
 # Translation table of a given unit to Bytes
 # I know, it should be kB...
@@ -254,6 +258,77 @@ def convertSizeUnits(size, srcUnit, dstUnit):
     # KeyError: srcUnit or dstUnit are not in the conversion list
     except (TypeError, ValueError, KeyError):
         return -sys.maxsize
+
+
+def cleanDirectory(
+    workDir: str | os.PathLike[str],
+    maxSecs: int | float | None = None,
+    filePatterns: list[str] = [],
+    maxDepth: int = 0,
+    callbackFn: Callable[[Path], bool] | None = None,
+    delEmptyDirs: bool = False,
+) -> list[str]:
+    """Recursively clean files older than a threshold.
+
+    Walks ``workDir`` bottom-up and deletes (or invokes ``callbackFn`` on)
+    regular files that are older than ``maxSecs`` seconds which match the ``filePatterns``
+    glob. Empty directories can also be removed with ``delEmptyDirs``=``True``.
+
+    :param workDir: directory to scan
+    :param maxSecs: age threshold in seconds (files older are deleted); pass
+                    ``None`` to skip the age filter entirely
+    :param filePatterns: list of globs, only files matching this will be considered
+    :param maxDepth: maximum directory depth to process (0 = unlimited, 1 = root only)
+    :param callbackFn: If ``None`` files will be unlinked, otherwise this function
+                       will be called for matchin files instead. Function should take a
+                       single``Path`` object argument. Returning True indicates the
+                       file was processed without error. Returning False will add the
+                       path onto the list of failed files.
+    :param delEmptyDirs: if ``True``, delete directories that are empty after
+                           file cleanup. All directories are considered, the filePatterns
+                           glob is not used to filter these.
+    :returns: list of file (and dir) paths that could not be deleted (empty on success)
+    """
+    errFiles = []
+    timeThresh = time.time() - maxSecs if maxSecs is not None else None
+    rootPath = Path(workDir)
+    if not rootPath.exists() or not rootPath.is_dir():
+        return errFiles
+
+    for curRoot, dirs, files in os.walk(workDir, topdown=False):
+        curPath = Path(curRoot)
+        depth = len(curPath.relative_to(rootPath).parts)
+
+        # Only process files if we're within maxDepth
+        if not maxDepth or depth < maxDepth:
+            for fileName in files:
+                if any(fnmatch.fnmatch(fileName, p) for p in filePatterns):
+                    filePath = curPath / fileName
+                    try:
+                        if not filePath.is_file() or filePath.is_symlink():
+                            continue  # Not a regular file
+                        if timeThresh is not None and filePath.stat().st_mtime >= timeThresh:
+                            continue  # file is not old enough
+                        if callbackFn:
+                            if not callbackFn(filePath):
+                                errFiles.append(str(filePath))
+                                continue
+                        else:
+                            filePath.unlink()
+                            continue
+                    except OSError:
+                        errFiles.append(str(filePath))
+                        continue
+
+            # Now files are processed, see if dir is empty if we're deleting empty dirs
+            if delEmptyDirs and curPath != rootPath:
+                try:
+                    if not any(curPath.iterdir()):
+                        curPath.rmdir()
+                except OSError:
+                    errFiles.append(str(curPath))
+
+    return errFiles
 
 
 @contextmanager
