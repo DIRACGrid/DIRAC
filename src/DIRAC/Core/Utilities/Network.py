@@ -6,17 +6,7 @@ import socket
 import os
 from urllib import parse
 
-import psutil
-
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-
-
-def discoverInterfaces():
-    interfaces = {k: {a.family: a.address for a in v} for k, v in psutil.net_if_addrs().items()}
-    return {
-        k: {"ip": v.get(socket.AF_INET, "0.0.0.0"), "mac": v.get(psutil.AF_LINK, "00:00:00:00:00:00")}
-        for k, v in interfaces.items()
-    }
 
 
 def getFQDN():
