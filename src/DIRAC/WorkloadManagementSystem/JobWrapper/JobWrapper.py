@@ -951,7 +951,17 @@ class JobWrapper:
             else:
                 nonlfnList.append(out)
 
-        # Check whether list of outputData has a globbable pattern
+        # Check whether the list of LFNs has globbable patterns
+        globbedLfnList = []
+        for lfn in lfnList:
+            lfnPath = os.path.dirname(lfn)
+            lfnLocal = os.path.basename(lfn)
+            globbedLfnList += [os.path.join(lfnPath, gLfn) for gLfn in List.uniqueElements(getGlobbedFiles(lfnLocal))]
+        if globbedLfnList != lfnList and globbedLfnList:
+            self.log.info("Found a pattern in the output data LFN list, LFNs to upload are:", ", ".join(globbedLfnList))
+            lfnList = globbedLfnList
+
+        # Check whether the list of outputData has a globbable pattern
         globbedOutputList = List.uniqueElements(getGlobbedFiles(nonlfnList))
         if globbedOutputList != nonlfnList and globbedOutputList:
             self.log.info(
