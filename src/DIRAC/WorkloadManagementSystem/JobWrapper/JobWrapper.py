@@ -1113,6 +1113,10 @@ class JobWrapper:
                 # If output path is given, append it to the user path and put output files in this directory
                 if outputPath.startswith("/"):
                     outputPath = outputPath[1:]
+                # If output path is given with the LFN: prefix, take it as an absolute path
+                elif outputPath.startswith("LFN:"):
+                    outputPath = outputPath[5:]
+                    basePath = ""
             else:
                 # By default the output path is constructed from the job id
                 subdir = str(int(self.jobID / 1000))
