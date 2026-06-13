@@ -437,21 +437,49 @@ class TransformationDB(DB):
 
     def _getTransformationID(self, transName, connection=False):
         """Method returns ID of transformation with the name=<name>"""
-        try:
-            transName = int(transName)
-            cmd = f"SELECT TransformationID from Transformations WHERE TransformationID={transName};"
-        except ValueError:
-            if not isinstance(transName, str):
-                return S_ERROR("Transformation should be ID or name")
-            cmd = f"SELECT TransformationID from Transformations WHERE TransformationName='{transName}';"
-        res = self._query(cmd, conn=connection)
-        if not res["OK"]:
-            gLogger.error("Failed to obtain transformation ID for transformation", f"{transName}: {res['Message']}")
-            return res
-        elif not res["Value"]:
-            gLogger.verbose(f"Transformation {transName} does not exist")
-            return S_ERROR("Transformation does not exist")
-        return S_OK(res["Value"][0][0])
+        tids = []
+        tnames = []
+        for name in [transName] if isinstance(transName, (int, str)) else transName:
+            if isinstance(name, int):
+                tids.append(name)
+            elif name.isdigit():
+                tids.append(int(name))
+            else:
+                tnames.append(name)
+
+        result = []
+        if tids:
+            cmd = "SELECT TransformationID from Transformations"
+            cmd += f" WHERE TransformationID IN ({','.join(map(connection._escapeString, tids))})"
+            res = self._query(cmd, conn=connection)
+            if not res["OK"]:
+                gLogger.error(
+                    "Failed to obtain transformation IDs for transformations", f"{transName}: {res['Message']}"
+                )
+                return res
+            if len(res["Value"]) != len(tids):
+                missing = set(tids) - {row[0] for row in res["Value"]}
+                gLogger.verbose(f"Transformations {missing} do not exist")
+                return S_ERROR(f"Transformations {missing} do not exist")
+            result.extend(row[0] for row in res["Value"])
+        if tnames:
+            cmd = "SELECT TransformationID, TransformationName from Transformations"
+            cmd += f" WHERE TransformationName IN ({','.join(map(connection._escapeString, tnames))})"
+            res = self._query(cmd, conn=connection)
+            if not res["OK"]:
+                gLogger.error(
+                    "Failed to obtain transformation IDs for transformations", f"{transName}: {res['Message']}"
+                )
+                return res
+            if len(res["Value"]) != len(tnames):
+                missing = set(tnames) - {row[1] for row in res["Value"]}
+                gLogger.verbose(f"Transformations {missing} do not exist")
+                return S_ERROR(f"Transformations {missing} do not exist")
+            result.extend(row[0] for row in res["Value"])
+
+        if isinstance(transName, (int, str)):
+            return S_OK(result[0])
+        return S_OK(result)
 
     def __deleteTransformation(self, transID, connection=False):
         return self._update(f"DELETE FROM Transformations WHERE TransformationID={transID};", conn=connection)
@@ -1295,7 +1323,11 @@ class TransformationDB(DB):
         connection = res["Value"]["Connection"]
         transID = res["Value"]["TransformationID"]
         req = "SELECT TransformationID, Message, Author, MessageDate FROM TransformationLog"
-        req = req + f" WHERE TransformationID={transID} ORDER BY MessageDate;"
+        if isinstance(transID, (int, str)):
+            req += f" WHERE TransformationID={int(transID)}"
+        else:
+            req += f" WHERE TransformationID IN ({','.join(str(int(x)) for x in transID)})"
+        req += " ORDER BY MessageDate;"
         res = self._query(req)
         if not res["OK"]:
             return res

@@ -459,7 +459,7 @@ class TransformationManagerHandlerMixin:
     # These are the methods for transformation logging manipulation
     #
 
-    types_getTransformationLogging = [[int, str]]
+    types_getTransformationLogging = [[int, str, list]]
 
     def export_getTransformationLogging(self, transName):
         return self.transformationDB.getTransformationLogging(transName)
