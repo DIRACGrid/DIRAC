@@ -14,7 +14,6 @@ from __future__ import absolute_import
 from __future__ import division
 import re
 import subprocess
-import shlex
 import os
 
 
@@ -52,13 +51,14 @@ class LSF(object):
                 submitOptions,
                 executable,
             )
+            # shell required for preamble
             sp = subprocess.Popen(
                 cmd,
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
-            )
+            )  # nosec: B602
             output, error = sp.communicate()
             status = sp.returncode
             if status == 0:
@@ -102,11 +102,11 @@ class LSF(object):
         errors = ""
         for job in jobIDList:
             sp = subprocess.Popen(
-                shlex.split("bkill %s" % job),
+                ["bkill", str(job)],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
-            )
+            )  # nosec: B603
             output, error = sp.communicate()
             status = sp.returncode
             if status != 0:
@@ -137,13 +137,12 @@ class LSF(object):
 
         queue = kwargs["Queue"]
 
-        cmd = "bjobs -q %s -a" % queue
         sp = subprocess.Popen(
-            shlex.split(cmd),
+            ["bjobs", "-q", str(queue), "-a"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-        )
+        )  # nosec: B603
         output, error = sp.communicate()
         status = sp.returncode
 
@@ -185,13 +184,14 @@ class LSF(object):
             resultDict["Message"] = "Empty job list"
             return resultDict
 
-        cmd = "bjobs " + " ".join(jobIDList)
+        cmd = ["bjobs"]
+        cmd.extend([str(x) for x in jobIDList])
         sp = subprocess.Popen(
-            shlex.split(cmd),
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-        )
+        )  # nosec: B603
         output, error = sp.communicate()
         status = sp.returncode
 

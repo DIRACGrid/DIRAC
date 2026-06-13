@@ -1381,7 +1381,7 @@ class ComponentInstaller:
                         stdout=devnull,
                         stderr=devnull,
                         universal_newlines=True,
-                    )
+                    )  # nosec: B603
 
         if ["Configuration", "Server"] in setupServices and setupConfigurationController:
             # This server hosts the Controller of the CS

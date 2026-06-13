@@ -14,7 +14,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import subprocess
-import shlex
 import os
 
 
@@ -49,13 +48,14 @@ class Torque(object):
                 "-N DIRACPilot "
                 "%(SubmitOptions)s %(Executable)s 2>/dev/null" % kwargs
             )
+            # shell required for preamble
             sp = subprocess.Popen(
                 cmd,
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
-            )
+            )  # nosec: B602
             output, error = sp.communicate()
             status = sp.returncode
             if status == 0:
@@ -96,13 +96,14 @@ class Torque(object):
             jobNumber = job
             jobDict[jobNumber] = job
 
-        cmd = "qstat " + " ".join(jobIDList)
+        cmd = ["qstat"]
+        cmd.extend([str(x) for x in jobIDList])
         sp = subprocess.Popen(
-            shlex.split(cmd),
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-        )
+        )  # nosec: B603
         output, error = sp.communicate()
         status = sp.returncode
 
@@ -148,33 +149,32 @@ class Torque(object):
             resultDict["Message"] = "No user name"
             return resultDict
 
-        cmd = "qselect -u %s -s WQ | wc -l; qselect -u %s -s R | wc -l" % (user, user)
-        sp = subprocess.Popen(
-            shlex.split(cmd),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-        )
-        output, error = sp.communicate()
-        status = sp.returncode
+        def _countJobs(state):
+            sp = subprocess.Popen(
+                ["qselect", "-u", str(user), "-s", state],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )  # nosec: B603
+            output, error = sp.communicate()
+            status = sp.returncode
+            if status != 0:
+                resultDict["Status"] = status
+                resultDict["Message"] = error
+                return resultDict
+            return len(output.splitlines())
 
-        if status != 0:
-            resultDict["Status"] = status
-            resultDict["Message"] = error
-            return resultDict
-
-        waitingJobs, runningJobs = output.split()[:2]
+        waitingJobs = _countJobs("WQ")
+        if not isinstance(waitingJobs, int):
+            return waitingJobs
+        runningJobs = _countJobs("R")
+        if not isinstance(runningJobs, int):
+            return runningJobs
 
         # Final output
-        try:
-            resultDict["Status"] = 0
-            resultDict["Waiting"] = int(waitingJobs)
-            resultDict["Running"] = int(runningJobs)
-        except Exception as e:
-            resultDict["Status"] = -1
-            resultDict["Output"] = output
-            resultDict["Message"] = "Exception: %s" % str(e)
-
+        resultDict["Status"] = 0
+        resultDict["Waiting"] = waitingJobs
+        resultDict["Running"] = runningJobs
         return resultDict
 
     def killJob(self, **kwargs):
@@ -200,11 +200,11 @@ class Torque(object):
         errors = ""
         for job in jobIDList:
             sp = subprocess.Popen(
-                shlex.split("qdel %s" % job),
+                ["qdel", str(job)],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
-            )
+            )  # nosec: B603
             output, error = sp.communicate()
             status = sp.returncode
             if status != 0:

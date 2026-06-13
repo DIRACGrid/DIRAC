@@ -14,7 +14,6 @@ from __future__ import absolute_import
 from __future__ import division
 
 import subprocess
-import shlex
 import os
 import json
 
@@ -59,13 +58,14 @@ class OAR(object):
                 submitOptions,
                 executable,
             )
+            # shell required for preamble
             sp = subprocess.Popen(
                 cmd,
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
-            )
+            )  # nosec: B602
             output, error = sp.communicate()
             status = sp.returncode
 
@@ -115,11 +115,11 @@ class OAR(object):
         errors = ""
         for job in jobIDList:
             sp = subprocess.Popen(
-                shlex.split("oardel %s" % job),
+                ["oardel", str(job)],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
-            )
+            )  # nosec: B603
             output, error = sp.communicate()
             status = sp.returncode
             if status != 0:
@@ -162,13 +162,18 @@ class OAR(object):
             resultDict["Message"] = "No user name"
             return resultDict
 
-        cmd = "oarstat --sql \"project = '%s'\" -J" % user
+        cmd = [
+            "oarstat",
+            "--sql",
+            "project = '%s'" % user,
+            "-J",
+        ]
         sp = subprocess.Popen(
-            shlex.split(cmd),
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-        )
+        )  # nosec: B603
         output, error = sp.communicate()
         status = sp.returncode
         if status != 0:
@@ -242,11 +247,11 @@ class OAR(object):
         runningJobs = 0
 
         sp = subprocess.Popen(
-            shlex.split("oarstat -u %s -J" % user),
+            ["oarstat", "-u", str(user), "-J"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-        )
+        )  # nosec: B603
         output, error = sp.communicate()
         status = sp.returncode
         if status != 0:

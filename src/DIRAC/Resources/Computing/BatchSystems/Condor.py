@@ -10,7 +10,6 @@ import json
 import re
 import tempfile
 import subprocess
-import shlex
 import os
 
 
@@ -168,13 +167,14 @@ class Condor(object):
 
         cmd = "%s; " % preamble if preamble else ""
         cmd += "condor_submit -spool %s" % jdlFile.name
+        # shell required to handle preamble
         sp = subprocess.Popen(
             cmd,
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-        )
+        )  # nosec: B602
         output, error = sp.communicate()
         status = sp.returncode
 
@@ -231,11 +231,11 @@ class Condor(object):
         errors = ""
         for job in jobIDList:
             sp = subprocess.Popen(
-                shlex.split("condor_rm %s" % job),
+                ["condor_rm", str(job)],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
-            )
+            )  # nosec: B603
             output, error = sp.communicate()
             status = sp.returncode
             if status != 0:
@@ -269,17 +269,18 @@ class Condor(object):
             resultDict["Message"] = "Empty job list"
             return resultDict
 
-        # Prepare the command to get the status of the jobs
-        cmdJobs = " ".join(str(jobID) for jobID in jobIDList)
-
         # Get the status of the jobs currently active
-        cmd = "condor_q %s -attributes %s -json" % (cmdJobs, STATE_ATTRIBUTES)
+        cmd = ["condor_q"]
+        cmd.extend([str(x) for x in jobIDList])
+        cmd.append("-attributes")
+        cmd.append(STATE_ATTRIBUTES)
+        cmd.append("-json")
         sp = subprocess.Popen(
-            shlex.split(cmd),
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-        )
+        )  # nosec: B603
         output, error = sp.communicate()
         status = sp.returncode
 
@@ -293,13 +294,17 @@ class Condor(object):
         jobsMetadata = json.loads(output)
 
         # Get the status of the jobs in the history
-        condorHistCall = "condor_history %s -attributes %s -json" % (cmdJobs, STATE_ATTRIBUTES)
+        cmd = ["condor_history"]
+        cmd.extend([str(x) for x in jobIDList])
+        cmd.append("-attributes")
+        cmd.append(STATE_ATTRIBUTES)
+        cmd.append("-json")
         sp = subprocess.Popen(
-            shlex.split(condorHistCall),
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-        )
+        )  # nosec: B603
         output, _ = sp.communicate()
         status = sp.returncode
 
@@ -335,13 +340,12 @@ class Condor(object):
         """Get the overall status of the CE"""
         resultDict = {}
 
-        cmd = "condor_q -totals -json"
         sp = subprocess.Popen(
-            shlex.split(cmd),
+            ["condor_q", "-totals", "-json"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-        )
+        )  # nosec: B603
         output, error = sp.communicate()
         status = sp.returncode
 
@@ -356,13 +360,20 @@ class Condor(object):
         resultDict["Running"] = jresult[0]["Running"]
 
         # We also need to check the hold jobs, some of them are actually waiting (e.g. for input files)
-        cmd = 'condor_q -json -constraint "JobStatus == 5" -attributes HoldReasonCode'
+        cmd = [
+            "condor_q",
+            "-json",
+            "-constraint",
+            "JobStatus == 5",
+            "-attributes",
+            "HoldReasonCode",
+        ]
         sp = subprocess.Popen(
-            shlex.split(cmd),
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-        )
+        )  # nosec: B603
         output, error = sp.communicate()
         status = sp.returncode
 
@@ -401,13 +412,12 @@ class Condor(object):
         for jobID in jobIDList:
             jobDict[jobID] = {}
 
-            cmd = "condor_transfer_data %s" % jobID
             sp = subprocess.Popen(
-                shlex.split(cmd),
+                ["condor_transfer_data", str(jobID)],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
-            )
+            )  # nosec: B603
             _, error = sp.communicate()
             status = sp.returncode
             if status != 0:

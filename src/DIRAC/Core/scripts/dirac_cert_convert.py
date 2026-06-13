@@ -44,12 +44,12 @@ def main():
         env = os.environ | {"OPENSSL_CONF": tmpdir}
         gLogger.notice("Converting p12 key to pem format")
         cmd = ["openssl", "pkcs12", "-nocerts", "-in", p12, "-out", key]
-        res = run(cmd, env=env, check=False, timeout=900, text=True, stdout=PIPE, stderr=STDOUT)
+        res = run(cmd, env=env, check=False, timeout=900, text=True, stdout=PIPE, stderr=STDOUT)  # nosec: B603
         # The last command was successful
         if res.returncode == 0:
             gLogger.notice("Converting p12 certificate to pem format")
             cmd = ["openssl", "pkcs12", "-clcerts", "-nokeys", "-in", p12, "-out", cert]
-            res = run(cmd, env=env, check=False, timeout=900, text=True, stdout=PIPE, stderr=STDOUT)
+            res = run(cmd, env=env, check=False, timeout=900, text=True, stdout=PIPE, stderr=STDOUT)  # nosec: B603
     # Something went wrong
     if res.returncode != 0:
         gLogger.fatal(res.stdout)
