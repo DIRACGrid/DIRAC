@@ -313,7 +313,8 @@ class HTCondorCEComputingElement(ComputingElement):
 
         self.log.verbose("Executable file path:", executableFile)
         if not os.access(executableFile, 5):
-            os.chmod(executableFile, 0o755)
+            # Script may include bundled credentials, we don't want other users to read it
+            os.chmod(executableFile, 0o700)
 
         # The submitted pilots are going to have a common part of the stamp to construct a path to retrieve results
         # Then they also have an individual part to make them unique

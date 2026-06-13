@@ -67,7 +67,8 @@ def main():
             dirac_env_var, diracos_env_var, etc_dir, rc_script, command, include_proxy=include_proxy
         )
         fd.write(script)
-    os.chmod("dirac_container.sh", 0o755)
+    # Script may include credentials, make sure other users can't read it
+    os.chmod("dirac_container.sh", 0o700)
 
     # Now let's construct the apptainer command
     cmd = ["apptainer", "exec"]
