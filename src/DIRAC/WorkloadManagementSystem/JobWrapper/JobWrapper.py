@@ -1125,7 +1125,7 @@ class JobWrapper:
                     outputPath = outputPath[1:]
                 # If output path is given with the LFN: prefix, take it as an absolute path
                 elif outputPath.startswith("LFN:"):
-                    outputPath = outputPath[5:]
+                    outputPath = outputPath[4:]
                     basePath = ""
             else:
                 # By default the output path is constructed from the job id
