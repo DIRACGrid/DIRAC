@@ -33,6 +33,8 @@ from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 CONTAINER_DEFROOT = "/cvmfs/cernvm-prod.cern.ch/cvm4"
 CONTAINER_WORKDIR = "DIRAC_containers"
 CONTAINER_INNERDIR = "/tmp"  # nosec: B108
+# /tmp dir to use in the container
+CONTAINER_TMPDIR = "/tmp"  # nosec: B108
 
 
 # What is executed inside the container (2 options given)
@@ -218,7 +220,7 @@ class SingularityComputingElement(ComputingElement):
             pythonPath="python",
             log=log,
             logLevel=logLevel,
-            extraOptions="" if self.__installDIRACInContainer else "/tmp/pilot.cfg",  # nosec: B108
+            extraOptions="" if self.__installDIRACInContainer else os.path.join(CONTAINER_TMPDIR, "pilot.cfg"),
         )
         if not result["OK"]:
             return result
@@ -284,8 +286,8 @@ class SingularityComputingElement(ComputingElement):
             payloadEnv = {k: v for k, v in os.environ.items() if ENV_VAR_WHITELIST.match(k)}
 
         payloadEnv["PATH"] = str(Path(sys.executable).parent)
-        payloadEnv["TMP"] = "/tmp"  # nosec: B108
-        payloadEnv["TMPDIR"] = "/tmp"  # nosec: B108
+        payloadEnv["TMP"] = CONTAINER_TMPDIR
+        payloadEnv["TMPDIR"] = CONTAINER_TMPDIR
         payloadEnv["X509_USER_PROXY"] = os.path.join(self.__innerdir, "proxy")
         payloadEnv["DIRACSYSCONFIG"] = os.path.join(self.__innerdir, "pilot.cfg")
 
@@ -350,7 +352,7 @@ class SingularityComputingElement(ComputingElement):
         outerCmd.extend(["--ipc"])  # run container in a new IPC namespace
         outerCmd.extend(["--workdir", baseDir])  # working directory to be used for /tmp, /var/tmp and $HOME
         # Avoid using small tmpfs for default $HOME and use scratch /tmp instead
-        outerCmd.extend(["--home", "/tmp"])  # nosec: B108
+        outerCmd.extend(["--home", CONTAINER_TMPDIR])
         outerCmd.append("--userns")
         if withCVMFS:
             outerCmd.extend(["--bind", "/cvmfs"])

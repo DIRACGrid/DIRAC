@@ -72,7 +72,7 @@ class DirectorySecurityManagerWithDelete(DirectorySecurityManager):
                 try:
                     paths.pop(path)
                 except Exception:
-                    pass  # nosec B110
+                    pass  # nosec
 
         # For all the paths that exist, check the write permission
         if paths:

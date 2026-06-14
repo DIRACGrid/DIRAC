@@ -91,7 +91,7 @@ def convert_to_datetime(dstring):
                 results = datetime.datetime.utcfromtimestamp(timestamp)
                 break
             except Exception:
-                pass  # nosec B110
+                pass  # nosec
         if t is None:
             try:
                 dstring = dstring.split(".", 1)[0]
