@@ -23,7 +23,7 @@ def cleanTaskQueues():
     for jid in result["Value"]:
         result = tqDB.deleteJob(jid)
         if not result["OK"]:
-            gLogger.error(f"Cannot delete from TQ job {jid}", result["Message"])
+            gLogger.error(f"Cannot remove from TQ job {jid}", result["Message"])
             continue
         result = jobDB.rescheduleJob(jid)
         if not result["OK"]:

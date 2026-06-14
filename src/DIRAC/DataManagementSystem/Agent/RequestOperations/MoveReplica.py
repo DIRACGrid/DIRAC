@@ -112,7 +112,7 @@ class MoveReplica(DMSRequestOperationsBase):
                 # Do the replica removal
                 self.log.info("Removing files using Data manager...")
                 toRemoveDict = {opFile.LFN: opFile for opFile in waitingFiles}
-                self.log.info(f"todo: {len(toRemoveDict)} replicas to delete from {len(targetSEs)} sites")
+                self.log.info(f"todo: {len(toRemoveDict)} replicas to remove from {len(targetSEs)} sites")
                 self.dmRemoval(toRemoveDict, targetSEs)
 
         return S_OK()

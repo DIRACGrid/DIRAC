@@ -77,7 +77,7 @@ class RemoveReplica(DMSRequestOperationsBase):
         # # and prepare dict
         toRemoveDict = {opFile.LFN: opFile for opFile in waitingFiles}
 
-        self.log.info(f"Todo: {len(toRemoveDict)} replicas to delete from {len(targetSEs)} SEs")
+        self.log.info(f"Todo: {len(toRemoveDict)} replicas to remove from {len(targetSEs)} SEs")
 
         if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord(self.createRMSRecord("Attempted", len(toRemoveDict)))
