@@ -701,6 +701,32 @@ class MySQL:
         """Just replaces password, if visible, with *********"""
         return command.replace(self.__passwd, "**********")
 
+    def _logCmd(self, cmd, args=None):
+        """Return a copy of the SQL command with %s placeholders
+        replaced by their actual values including basic string quoting.
+        The formatting may not be perfect SQL in every case, but it should be
+        good enough to see what's going to the database in the log.
+        If formatting is not possibe, the unformatted cmd will be returned.
+        """
+        safe = self._safeCmd(cmd)
+        if args is None or not isinstance(args, (list, tuple)) or not args:
+            return safe
+
+        subs = []
+        for v in args:
+            if v is None:
+                subs.append("NULL")
+            elif isinstance(v, (int, float)):
+                subs.append(str(v))
+            else:
+                escaped = str(v).replace('"', '""')
+                subs.append(f'"{escaped}"')
+
+        try:
+            return safe % tuple(subs)
+        except TypeError:
+            return safe
+
     def _connect(self):
         """
         open connection to MySQL DB and put Connection into Queue
@@ -724,18 +750,23 @@ class MySQL:
         return S_OK()
 
     @captureOptimizerTraces
-    def _query(self, cmd, *, args=None, conn=None, debug=True):
+    def _query(self, cmd, *, args=None, logArgs=None, conn=None, debug=True):
         """
         execute MySQL query command
 
         :param debug:  print or not the errors
+        :param logArgs: alternative args list for logging only; when set it is
+                        used by ``_logCmd`` so that secrets present in *args*
+                        can be omitted from the log.
 
         return S_OK structure with fetchall result as tuple
         it returns an empty tuple if no matching rows are found
         return S_ERROR upon error
         """
 
-        self.log.debug(f"_query: {self._safeCmd(cmd)}")
+        if logArgs is None:
+            logArgs = args
+        self.log.debug(f"_query: {self._logCmd(cmd, logArgs)}")
 
         if conn:
             connection = conn
@@ -772,10 +803,13 @@ class MySQL:
         return retDict
 
     @captureOptimizerTraces
-    def _update(self, cmd, *, args=None, conn=None, debug=True):
+    def _update(self, cmd, *, args=None, logArgs=None, conn=None, debug=True):
         """execute MySQL update command
 
         :param args: parameters passed to cursor.execute(..., args=args) method.
+        :param logArgs: alternative args list for logging only; when set it is
+                        used by ``_logCmd`` so that secrets present in *args*
+                        can be omitted from the log.
         :param conn: connection object.
         :param debug: print or not the errors
 
@@ -784,7 +818,9 @@ class MySQL:
                  lastRowId: if set, added to the returned dictionary
         """
 
-        self.log.debug(f"_update: {self._safeCmd(cmd)}")
+        if logArgs is None:
+            logArgs = args
+        self.log.debug(f"_update: {self._logCmd(cmd, logArgs)}")
         if conn:
             connection = conn
         else:
@@ -812,16 +848,28 @@ class MySQL:
         return retDict
 
     @captureOptimizerTraces
-    def _updatemany(self, cmd, data, *, conn=None, debug=True):
+    def _updatemany(self, cmd, data, *, logData=None, conn=None, debug=True):
         """execute MySQL updatemany command
 
+        :param cmd: SQL command template.
+        :param data: iterable of parameter tuples for ``executemany``.
+        :param logData: alternative data for logging only; when set it is
+                        used by ``_logCmd`` so that secrets present in *data*
+                        can be omitted from the log.
+                        logData may have fewer entries than data if logging
+                        a sub-set of example entries is required.
+        :param conn: connection object.
         :param debug: print or not the errors
 
         :return: S_OK with number of updated registers upon success.
                  S_ERROR upon error.
         """
 
-        self.log.debug(f"_updatemany: {self._safeCmd(cmd)}")
+        if logData is None:
+            logData = data
+        for idx, row in enumerate(logData, 1):
+            self.log.debug(f"_updatemany [{idx}]: {self._logCmd(cmd, row)}")
+
         if conn:
             connection = conn
         else:
