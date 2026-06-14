@@ -34,7 +34,7 @@ class GGUSTicketsClient:
         self.gclient = Client("https://prod-ars.ggus.eu/arsys/WSDL/public/prod-ars/GGUS")
         authInfo = self.gclient.factory.create("AuthenticationInfo")
         authInfo.userName = "ticketinfo"
-        authInfo.password = "TicketInfo"
+        authInfo.password = "TicketInfo"  # nosec: B105
         self.vo = gConfig.getOption("DIRAC/VirtualOrganization")
         self.gclient.set_options(soapheaders=authInfo)
 

@@ -460,7 +460,7 @@ class OAuth2IdProvider(OAuth2Session):
             token = self.exchange_token(
                 self.get_metadata("token_endpoint"),
                 subject_token=accessToken,
-                subject_token_type="urn:ietf:params:oauth:token-type:access_token",
+                subject_token_type="urn:ietf:params:oauth:token-type:access_token",  # nosec: B106
                 scope=scope,
             )
             return S_OK(OAuth2Token(dict(token)))
