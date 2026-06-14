@@ -7,6 +7,7 @@ import time
 import os
 import asyncio
 import psutil
+import secrets
 
 import M2Crypto.SSL
 
@@ -216,7 +217,7 @@ class TornadoServer:
             sLog.debug(" - %s" % "\n - ".join([f"{k} = {ssl_options[k]}" for k in ssl_options]))
 
             # Default server configuration
-            settings = dict(compress_response=True, cookie_secret="secret")
+            settings = dict(compress_response=True, cookie_secret=secrets.token_hex(32))
 
             # Merge appllication settings
             settings.update(app["settings"])
