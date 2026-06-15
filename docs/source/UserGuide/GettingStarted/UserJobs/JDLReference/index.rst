@@ -94,21 +94,23 @@ In this section all the attributes that can be used in the DIRAC JDL job descrip
 
 1. Elements of OutputData can be specified in several forms:
 
-  - file names; in this case files with the specified names will be looked for in the job directory and uploaded
-    to a location specified by the OutputPath;
-  - file names with wild cards; same after the file names expansion;
-  - file names in a form "LFN:/vo/full/destination/path/file.name"; in this case the file will be uploaded
-    to the specified LFN path without taking into account the OutputPath. Note that file.name here can be also
-    specified with wild cards.
+  - filenames; in this case files with the specified names will be looked for in the job directory and uploaded
+    to a location specified by the OutputPath (see below);
+  - filenames with wild cards, e.g. "*.log"; same after the filenames expansion;
+  - output data specified in a form "LFN:/vo/full/destination/path/filename"; in this case the file "filename" in
+    the job directory will be uploaded to the specified LFN path without taking into account the OutputPath.
+    Note that "filename" here can be also specified with wild cards, e.g. "LFN:/vo/full/destination/path/*.log".
 
 2. The OutputPath can be specified in several ways
 
-  - if not given it will be taken as the user's home directory + the job directory
+  - if not given, it will be taken as the user's home directory + the job directory
     for example "/lhcb/user/a/atsareg/1234/1234567", where 1234567 is the job ID;
-  - if given as path starting with "/", it will be appended to the user's home
-    directory;
+  - if given as a path starting with "/", it will be appended to the user's home
+    directory, e.g. outputPath = "/my/analysis" will make output files to go to the
+    "/lhcb/user/a/atsareg/my/analysis" directory
   - if given as "LFN:/output/path", it will be taken as an absolute path for
-    output files in the logical namespace.
+    output files in the logical namespace. It is the responsibility of the user to make
+    sure that this path is accessible for writing for the user's data.
 
 3. If multiple output SEs are specified, they will be tried one-by-one for each
    output file until a successful file upload.
