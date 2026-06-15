@@ -292,7 +292,7 @@ class JobState:
     def rescheduleJob(self, source=""):
         result = JobState.__db.tqDB.deleteJob(self.__jid)
         if not result["OK"]:
-            return S_ERROR(f"Cannot delete from TQ job {self.__jid}: {result['Message']}")
+            return S_ERROR(f"Cannot remove from TQ job {self.__jid}: {result['Message']}")
         result = JobState.__db.jobDB.rescheduleJob(self.__jid)
         if not result["OK"]:
             return S_ERROR(f"Cannot reschedule in JobDB job {self.__jid}: {result['Message']}")
@@ -309,7 +309,7 @@ class JobState:
             return S_ERROR(f"Cannot set the RescheduleCounter for job {self.__jid}: {result['Message']}")
         result = JobState.__db.tqDB.deleteJob(self.__jid)
         if not result["OK"]:
-            return S_ERROR(f"Cannot delete from TQ job {self.__jid}: {result['Message']}")
+            return S_ERROR(f"Cannot remove from TQ job {self.__jid}: {result['Message']}")
         result = JobState.__db.jobDB.rescheduleJob(self.__jid)
         if not result["OK"]:
             return S_ERROR(f"Cannot reschedule in JobDB job {self.__jid}: {result['Message']}")
