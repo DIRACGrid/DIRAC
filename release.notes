@@ -1,3 +1,31 @@
+[v9.1.12]
+
+*DataManagement/WorkloadManagement
+
+FIX: (#8612) Tidy up log entries using phrase 'delete from'
+
+*Core
+
+FIX: (#8611) Improve mysql logging
+FIX: (#8609) Use a random cookie secret
+FIX: (#8606) Check use of exec
+CHANGE: (#8601) Remove unused discoverInterfaces function
+
+*All
+
+FIX: (#8610) More bandit related checks
+FIX: (#8608) Tidy up bandit warnings for edge cases
+FIX: (#8605) Check more subprocess usage
+FIX: (#8600) Check pickle usage
+
+*Core/Resources
+
+FIX: (#8604) Remove other/group permissions in chmod
+
+*TransformationSystem
+
+FIX: (#8599) Tidy up https use in runjoblocal
+
 [v9.1.11]
 
 *WorkloadManagement
