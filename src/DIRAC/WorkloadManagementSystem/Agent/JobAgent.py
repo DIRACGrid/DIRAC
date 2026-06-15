@@ -499,7 +499,7 @@ class JobAgent(AgentModule):
                 ["dirac-proxy-info"],
                 stderr=subprocess.STDOUT,
                 text=True,
-            )
+            )  # nosec: B603
             if result.stdout:
                 self.log.error(f"dirac-proxy-info output:\n{result.stdout}\n")
             return S_ERROR("Error retrieving proxy")

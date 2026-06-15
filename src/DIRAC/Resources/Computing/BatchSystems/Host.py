@@ -102,13 +102,18 @@ exit 0
                 jobDir = os.path.expandvars(jobDir)
                 os.makedirs(jobDir)
                 os.chdir(jobDir)
+                cmd = [
+                    str(args["RunFile"]),
+                    str(args["Executable"]),
+                    "%(OutputDir)s/%(Stamp)s.out" % args,
+                    "%(ErrorDir)s/%(Stamp)s.err" % args,
+                ]
                 popenObject = subprocess.Popen(
-                    ["%(RunFile)s %(Executable)s %(OutputDir)s/%(Stamp)s.out %(ErrorDir)s/%(Stamp)s.err" % args],
+                    cmd,
                     stdout=subprocess.PIPE,
-                    shell=True,
                     env=envDict,
                     universal_newlines=True,
-                )
+                )  # nosec: B603
                 pid = popenObject.communicate()[0]
             except OSError as x:
                 output = str(x)
@@ -203,7 +208,7 @@ exit 0
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
-            )
+            )  # nosec: B603
             output, error = sp.communicate()
             if len(output.split("\n")) == 2 and "wrapper" in output:
                 running += 1
@@ -229,7 +234,7 @@ exit 0
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-        )
+        )  # nosec: B603
         output, error = sp.communicate()
         status = sp.returncode
         if status == 0 and len(output.split("\n")) == 2 and user in output:

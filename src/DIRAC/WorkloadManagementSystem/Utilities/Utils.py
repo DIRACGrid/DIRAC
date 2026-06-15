@@ -136,7 +136,8 @@ def __createCWLJobWrapper(jobID, wrapperPath, log, rootLocation):
     protoPath.unlink(missing_ok=True)
     log.info("Cloning JobWrapper from repository https://github.com/DIRACGrid/dirac-cwl.git into", protoPath)
     try:
-        subprocess.run(["git", "clone", "https://github.com/DIRACGrid/dirac-cwl.git", str(protoPath)], check=True)
+        cmd = ["git", "clone", "https://github.com/DIRACGrid/dirac-cwl.git", str(protoPath)]
+        subprocess.run(cmd, check=True)  # nosec: B603
     except subprocess.CalledProcessError:
         return S_ERROR("Failed to clone the JobWrapper repository")
     wrapperFound = glob(os.path.join(str(protoPath), "**", "job_wrapper_template.py"), recursive=True)

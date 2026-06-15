@@ -255,7 +255,7 @@ def runConfigurationWizard(params):
                 input=userPasswd,
                 encoding="utf-8",
                 check=False,
-            )
+            )  # nosec: B603
             if result.returncode == 0:
                 break
             print_formatted_text(HTML("<red>Wizard failed, retrying...</red> (press Control + C to exit)\n"))
@@ -287,7 +287,7 @@ def runConfigurationWizard(params):
         input=userPasswd,
         encoding="utf-8",
         check=False,
-    )
+    )  # nosec: B603
     sys.exit(result.returncode)
 
 

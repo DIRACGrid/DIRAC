@@ -452,7 +452,7 @@ class Subprocess:
                 universal_newlines=True,
                 preexec_fn=preexec_fn,
                 start_new_session=start_new_session,
-            )
+            )  # nosec: B602
             self.childPID = self.child.pid
             child_process = psutil.Process(self.childPID)
         except OSError as v:

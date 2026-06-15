@@ -10,7 +10,6 @@ from __future__ import division
 import os
 import re
 import subprocess
-import shlex
 import random
 
 
@@ -81,13 +80,14 @@ class SLURM(object):
                 cmd += "--gpus-per-task=%d " % int(numberOfGPUs)
             # Additional options
             cmd += "%s %s" % (submitOptions, executable)
+            # shell required for preamble
             sp = subprocess.Popen(
                 cmd,
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
-            )
+            )  # nosec: B602
             output, error = sp.communicate()
             status = sp.returncode
             if status != 0 or not output:
@@ -173,13 +173,17 @@ srun -l -k %(wrapper)s
         failed = []
         errors = ""
         for job in jobIDList:
-            cmd = "scancel --partition=%s %s" % (queue, job)
+            cmd = [
+                "scancel",
+                "--partition=%s" % queue,
+                str(job),
+            ]
             sp = subprocess.Popen(
-                shlex.split(cmd),
+                cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
-            )
+            )  # nosec: B603
             _, error = sp.communicate()
             status = sp.returncode
             if status != 0:
@@ -219,13 +223,13 @@ srun -l -k %(wrapper)s
         # -n to remove the header
         # -P to make the output parseable (remove tabs, spaces, columns)
         # --delimiter to specify character that splits the fields
-        cmd = "sacct -j %s -o JobID,STATE -X -n -P --delimiter=," % jobIDs
+        cmd = ["sacct", "-j", str(jobIDs), "-o", "JobID,STATE", "-X", "-n", "-P", "--delimiter=,"]
         sp = subprocess.Popen(
-            shlex.split(cmd),
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-        )
+        )  # nosec: B603
         output, error = sp.communicate()
         status = sp.returncode
         if status != 0:
@@ -284,13 +288,18 @@ srun -l -k %(wrapper)s
 
         queue = kwargs["Queue"]
 
-        cmd = "squeue --partition=%s --user=%s --format='%%j %%T' " % (queue, user)
+        cmd = [
+            "squeue",
+            "--partition=%s" % queue,
+            "--user=%s" % user,
+            "--format=%j %T",
+        ]
         sp = subprocess.Popen(
-            shlex.split(cmd),
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-        )
+        )  # nosec: B603
         output, error = sp.communicate()
         status = sp.returncode
         if status != 0:

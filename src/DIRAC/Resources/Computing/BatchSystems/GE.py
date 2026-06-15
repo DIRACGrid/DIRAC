@@ -18,7 +18,6 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 import re
-import shlex
 import subprocess
 import os
 
@@ -43,13 +42,14 @@ class GE(object):
         for _i in range(int(nJobs)):
             cmd = "%s; " % preamble if preamble else ""
             cmd += "qsub -o %(OutputDir)s -e %(ErrorDir)s -N DIRACPilot %(SubmitOptions)s %(Executable)s" % kwargs
+            # shell required for preamble
             sp = subprocess.Popen(
                 cmd,
                 shell=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
-            )
+            )  # nosec: B602
             output, error = sp.communicate()
             status = sp.returncode
             if status == 0:
@@ -93,11 +93,11 @@ class GE(object):
         errors = ""
         for job in jobIDList:
             sp = subprocess.Popen(
-                shlex.split("qdel %s" % job),
+                ["qdel", str(job)],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
-            )
+            )  # nosec: B603
             output, error = sp.communicate()
             status = sp.returncode
             if status != 0:
@@ -139,11 +139,11 @@ class GE(object):
             return resultDict
 
         sp = subprocess.Popen(
-            shlex.split("qstat -u %s" % user),
+            ["qstat", "-u", str(user)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-        )
+        )  # nosec: B603
         output, error = sp.communicate()
         status = sp.returncode
 
@@ -168,11 +168,11 @@ class GE(object):
                             jobDict[job] = "Waiting"
 
         sp = subprocess.Popen(
-            shlex.split("qstat -u %s -s -z" % user),
+            ["qstat", "-u", str(user), "-s", "-z"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-        )
+        )  # nosec: B603
         output, error = sp.communicate()
         status = sp.returncode
 
@@ -208,13 +208,12 @@ class GE(object):
             resultDict["Message"] = "No user name"
             return resultDict
 
-        cmd = "qstat -u %s" % user
         sp = subprocess.Popen(
-            shlex.split(cmd),
+            ["qstat", "-u", str(user)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-        )
+        )  # nosec: B603
         output, error = sp.communicate()
         status = sp.returncode
 

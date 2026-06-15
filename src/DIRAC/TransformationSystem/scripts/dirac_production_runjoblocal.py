@@ -96,7 +96,7 @@ def __configurePilot(basepath, vo):
             "-dd",
         ],
         check=False,
-    )
+    )  # nosec: B603
 
     diracdir = os.path.expanduser("~") + os.path.sep
     try:

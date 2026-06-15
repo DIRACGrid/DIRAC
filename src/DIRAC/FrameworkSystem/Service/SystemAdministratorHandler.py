@@ -382,7 +382,7 @@ class SystemAdministratorHandler(RequestHandler):
                 text=True,
                 check=False,
                 timeout=600,
-            )
+            )  # nosec: B603
             if r.returncode != 0:
                 stderr = [x for x in r.stderr.split("\n") if not x.startswith("Extracting : ")]
                 self.log.error("Installing DIRACOS2 failed with returncode", f"{r.returncode} and stdout: {stderr}")
@@ -415,7 +415,7 @@ class SystemAdministratorHandler(RequestHandler):
             text=True,
             check=False,
             timeout=600,
-        )
+        )  # nosec: B603
         if r.returncode != 0:
             self.log.error("Installing DIRACOS2 failed with returncode", f"{r.returncode} and stdout: {r.stderr}")
             return S_ERROR(f"Failed to install DIRACOS2 with message {r.stderr}")
