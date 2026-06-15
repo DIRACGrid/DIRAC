@@ -229,10 +229,10 @@ class PublisherHandlerMixin:
         elif not elementInDB["Value"]:
             return S_ERROR("Your selection has been modified. Please refresh.")
 
-        if token == "Acquire":
+        if token == "Acquire":  # nosec: B105
             tokenOwner = username
             tokenExpiration = datetime.utcnow() + timedelta(days=1)
-        elif token == "Release":
+        elif token == "Release":  # nosec: B105
             tokenOwner = "rs_svc"
             tokenExpiration = datetime.max
         else:

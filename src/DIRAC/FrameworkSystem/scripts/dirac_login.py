@@ -93,7 +93,7 @@ class Params:
 
     def useCertificate(self, _) -> dict:
         """Use certificate"""
-        os.environ["DIRAC_USE_ACCESS_TOKEN"] = "false"
+        os.environ["DIRAC_USE_ACCESS_TOKEN"] = "false"  # nosec
         self.authWith = "certificate"
         self.response = "proxy"
         return S_OK()
@@ -128,13 +128,13 @@ class Params:
 
     def setProxy(self, _) -> dict:
         """Return proxy"""
-        os.environ["DIRAC_USE_ACCESS_TOKEN"] = "false"
+        os.environ["DIRAC_USE_ACCESS_TOKEN"] = "false"  # nosec
         self.response = "proxy"
         return S_OK()
 
     def setToken(self, _) -> dict:
         """Return tokens"""
-        os.environ["DIRAC_USE_ACCESS_TOKEN"] = "true"
+        os.environ["DIRAC_USE_ACCESS_TOKEN"] = "true"  # nosec
         self.useDIRACAS(None)
         self.response = "token"
         return S_OK()

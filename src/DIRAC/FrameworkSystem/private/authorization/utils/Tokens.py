@@ -14,8 +14,8 @@ from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
 from authlib.oauth2.rfc6749.util import scope_to_list
 from authlib.oauth2.rfc6749.wrappers import OAuth2Token as _OAuth2Token
 
-BEARER_TOKEN_ENV = "BEARER_TOKEN"
-BEARER_TOKEN_FILE_ENV = "BEARER_TOKEN_FILE"
+BEARER_TOKEN_ENV = "BEARER_TOKEN"  # nosec: B105
+BEARER_TOKEN_FILE_ENV = "BEARER_TOKEN_FILE"  # nosec: B105
 
 
 def getTokenFileLocation(fileName=None):

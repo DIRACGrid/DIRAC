@@ -46,7 +46,7 @@ class SQLAlchemyDB(DIRACDB):
 
         dbParameters = result["Value"]
         db_param_redacted = dbParameters.copy()
-        db_param_redacted["Password"] = "**REDACTED**"
+        db_param_redacted["Password"] = "**REDACTED**"  # nosec
         self.log.debug(f"db parameters: {db_param_redacted}")
         self.host = dbParameters["Host"]
         self.port = dbParameters["Port"]

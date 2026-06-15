@@ -14,7 +14,7 @@ class RevocationEndpoint(_RevocationEndpoint):
 
         :return: dict
         """
-        if token_type_hint == "refresh_token":
+        if token_type_hint == "refresh_token":  # nosec: B105
             result = self.server.readToken(token)
             if not result["OK"]:
                 raise OAuth2Error(result["Message"])

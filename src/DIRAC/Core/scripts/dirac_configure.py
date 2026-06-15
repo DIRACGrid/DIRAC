@@ -164,7 +164,7 @@ class Params:
 
     def setIssuer(self, optionValue):
         # If the user selects the issuer, it means that there will be authorization through tokens
-        os.environ["DIRAC_USE_ACCESS_TOKEN"] = "True"
+        os.environ["DIRAC_USE_ACCESS_TOKEN"] = "True"  # nosec
         # Allow the user to enter only the server domain
         if not optionValue.startswith(("http://", "https://")):
             optionValue = f"https://{optionValue.lstrip('/')}"

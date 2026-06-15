@@ -91,7 +91,7 @@ class TornadoClient(TornadoBaseClient):
         :returns: S_OK/S_ERROR result of the remote RPC call
         """
         fileSize = getGlobbedTotalSize(filename)
-        token = ""
+        token = ""  # nosec: B105
 
         with open(filename, "br") as input:
             result = self.executeRPC("streamFromClient", *[fileID, token, fileSize, input.read()])

@@ -980,7 +980,7 @@ class StorageElementItem:
             try:
                 return storage.getWLCGTokenPath(lfn, wlcgTokenBasePath)
             except Exception:
-                continue
+                continue  # nosec: B112
         raise RuntimeError("Could not get WLCGTokenPath")
 
     def getURL(self, lfn, protocol=False, replicaDict=None):

@@ -56,7 +56,7 @@ class TornadoBaseClient:
     __threadConfig = ThreadConfig()
     VAL_EXTRA_CREDENTIALS_HOST = "hosts"
 
-    KW_USE_ACCESS_TOKEN = "useAccessToken"
+    KW_USE_ACCESS_TOKEN = "useAccessToken"  # nosec: B105
     KW_USE_CERTIFICATES = "useCertificates"
     KW_EXTRA_CREDENTIALS = "extraCredentials"
     KW_TIMEOUT = "timeout"

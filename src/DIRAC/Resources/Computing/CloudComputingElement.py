@@ -204,8 +204,8 @@ class CloudComputingElement(ComputingElement):
             raise RuntimeError(f"Invalid auth config for host {self.ceName}")
         # If the secret is set to the magic string "PROXY"
         # we instead return a path to a grid proxy file
-        if secret == "PROXY":
-            secret = ""
+        if secret == "PROXY":  # nosec: B105
+            secret = ""  # nosec: B105
             if self.proxy:
                 result = gProxyManager.dumpProxyToFile(self.proxy)
                 if result["OK"]:

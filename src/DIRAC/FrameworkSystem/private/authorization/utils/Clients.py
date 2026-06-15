@@ -16,7 +16,7 @@ DEFAULT_CLIENTS = {
         scope="proxy g: lifetime:",
         response_types=["device"],
         grant_types=["urn:ietf:params:oauth:grant-type:device_code", "refresh_token"],
-        token_endpoint_auth_method="none",
+        token_endpoint_auth_method="none",  # nosec: B106
         ProviderType="OAuth2",
         verify=Locations.getCAsLocation(),
     ),
