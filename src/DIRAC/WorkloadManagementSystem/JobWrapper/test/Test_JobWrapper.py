@@ -182,6 +182,8 @@ def test_preProcess_dirac_jobexec_with_args(setup_job_wrapper):
     )
     assert result["Value"]["env"]["DIRAC_PROCESSORS"] == "1"
     assert result["Value"]["env"]["DIRAC_WHOLENODE"] == "False"
+    if os.path.exists("DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK"):
+        os.remove("DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK")
 
 
 # -------------------------------------------------------------------------------------------------
@@ -639,8 +641,6 @@ def test_execute(mocker, executable, args, src, expectedResult):
 
     if os.path.exists("std.out"):
         os.remove("std.out")
-    if os.path.exists("DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK"):
-        os.remove("DISABLE_WATCHDOG_CPU_WALLCLOCK_CHECK")
 
 
 # -------------------------------------------------------------------------------------------------
