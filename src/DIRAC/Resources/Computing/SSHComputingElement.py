@@ -320,7 +320,8 @@ class SSHComputingElement(ComputingElement):
             self.log.error("Failed generating control script")
             return result
         localScript = result["Value"]
-        os.chmod(localScript, 0o755)
+        # Mark script as executable, but only for current user
+        os.chmod(localScript, 0o700)
 
         self.log.verbose(f"Uploading {self.batchSystem.__class__.__name__} script to {self.host}")
         remoteScript = f"{self.sharedArea}/execute_batch"
@@ -459,7 +460,8 @@ class SSHComputingElement(ComputingElement):
         # Copy the executable
         self.log.verbose(f"Copying executable to {self.host}")
         submitFile = os.path.join(self.executableArea, os.path.basename(executableFile))
-        os.chmod(executableFile, 0o755)
+        # Job file may contain bundled credentials, so make sure other users can't read it
+        os.chmod(executableFile, 0o700)
 
         result = self._put(connection, executableFile, submitFile)
         if not result["OK"]:
