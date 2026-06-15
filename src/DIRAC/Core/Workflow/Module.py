@@ -84,7 +84,10 @@ class ModuleDefinition(AttributeCollection):
             # Python 3.14+: exec() doesn't populate the calling scope when used inside a function
             # without explicit locals dict, so we need to capture the locals
             local_vars = {}
-            exec(self.getBody(), globals(), local_vars)
+            body = self.getBody()
+            global_vars = globals()
+            # This runs in the context of the workflow runtime, so executing code is expected!
+            exec(body, global_vars, local_vars)  # nosec: B102
             if self.getType() in local_vars:
                 self.main_class_obj = local_vars[self.getType()]  # save class object
             else:
