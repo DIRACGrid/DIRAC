@@ -57,8 +57,11 @@ def getJobParameters(jobIDs: list[int], parName: str | None, vo: str = "") -> di
             return res
         parameters = res["Value"]
     else:  # a service is connecting, no proxy, e.g. StalledJobAgent
-        q = f"SELECT JobID, VO FROM Jobs WHERE JobID IN ({','.join([str(jobID) for jobID in jobIDs])})"
-        res = jobDB._query(q)
+        q = "SELECT JobID, VO FROM Jobs WHERE JobID IN ("
+        q += ",".join(["%s"] * len(jobIDs))
+        q += ")"
+        args = [str(jobID) for jobID in jobIDs]
+        res = jobDB._query(q, args=args)
         if not res["OK"]:
             return res
         if not res["Value"]:
