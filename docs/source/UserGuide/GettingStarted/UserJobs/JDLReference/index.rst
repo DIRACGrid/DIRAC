@@ -70,11 +70,11 @@ In this section all the attributes that can be used in the DIRAC JDL job descrip
 +---------------------+---------------------------------------------+-------------------------------------------------------------------------------------+
 | *InputDataPolicy*   | Job input data policy                       | InputDataPolicy = ``"DIRAC.WorkloadManagementSystem.Client.DownloadInputData";``    |
 +---------------------+---------------------------------------------+-------------------------------------------------------------------------------------+
-| *OutputData*        | Job output data files                       | OutputData = ``{"output1","output2"};``                                             |
+| *OutputData* [1]    | Job output data files                       | OutputData = ``{"output1","output2"};``                                             |
 +---------------------+---------------------------------------------+-------------------------------------------------------------------------------------+
-| *OutputPath*        | The output data path in the File Catalog    | OutputPath = ``{"/myjobs/output"};``                                                |
+| *OutputPath* [2]    | The output data path in the File Catalog    | OutputPath = ``{"/myjobs/output"};``                                                |
 +---------------------+---------------------------------------------+-------------------------------------------------------------------------------------+
-| *OutputSE*          | The output data Storage Element             | OutputSE = ``{"DIRAC-USER"};``                                                      |
+| *OutputSE* [3]      | The output data Storage Element             | OutputSE = ``{"DIRAC-USER"};``                                                      |
 +---------------------+---------------------------------------------+-------------------------------------------------------------------------------------+
 |                                                                                                                                                         |
 |  :subtitle:`Parametric Jobs`                                                                                                                            |
@@ -91,3 +91,24 @@ In this section all the attributes that can be used in the DIRAC JDL job descrip
 +---------------------+---------------------------------------------+-------------------------------------------------------------------------------------+
 | *ParameterFactor*   | Parameter multiplier                        | ParameterFactor = 1.1; (default 1.)                                                 |
 +---------------------+---------------------------------------------+-------------------------------------------------------------------------------------+
+
+1. Elements of OutputData can be specified in several forms:
+
+  - file names; in this case files with the specified names will be looked for in the job directory and uploaded
+    to a location specified by the OutputPath;
+  - file names with wild cards; same after the file names expansion;
+  - file names in a form "LFN:/vo/full/destination/path/file.name"; in this case the file will be uploaded
+    to the specified LFN path without taking into account the OutputPath. Note that file.name here can be also
+    specified with wild cards.
+
+2. The OutputPath can be specified in several ways
+
+  - if not given it will be taken as the user's home directory + the job directory
+    for example "/lhcb/user/a/atsareg/1234/1234567", where 1234567 is the job ID;
+  - if given as path starting with "/", it will be appended to the user's home
+    directory;
+  - if given as "LFN:/output/path", it will be taken as an absolute path for
+    output files in the logical namespace.
+
+3. If multiple output SEs are specified, they will be tried one-by-one for each
+   output file until a successful file upload.
