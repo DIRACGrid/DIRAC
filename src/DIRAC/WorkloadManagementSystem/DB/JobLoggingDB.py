@@ -121,10 +121,10 @@ class JobLoggingDB(DB):
 
         cmd = (
             "SELECT Status,MinorStatus,ApplicationStatus,StatusTime,StatusSource FROM"
-            " LoggingInfo WHERE JobId=%d ORDER BY StatusTimeOrder,StatusTime" % int(jobID)
+            " LoggingInfo WHERE JobId=%s ORDER BY StatusTimeOrder,StatusTime"
         )
 
-        result = self._query(cmd)
+        result = self._query(cmd, args=(str(jobID),))
         if not result["OK"]:
             return result
         if result["OK"] and not result["Value"]:
@@ -160,7 +160,7 @@ class JobLoggingDB(DB):
             jobList = jobID
 
         sqlCmd = (
-            "CREATE TEMPORARY TABLE to_delete_LoggingInfo (JobID INTEGER NOT NULL, PRIMARY KEY (JobID)) ENGINE=MEMORY;"
+            "CREATE TEMPORARY TABLE to_delete_LoggingInfo (JobID INTEGER NOT NULL, PRIMARY KEY (JobID)) ENGINE=MEMORY"
         )
         returnValueOrRaise(self._update(sqlCmd))
         try:
@@ -182,8 +182,8 @@ class JobLoggingDB(DB):
         # self.log.debug('getWMSTimeStamps: Retrieving Timestamps for Job %d' % int(jobID))
 
         result = {}
-        cmd = "SELECT Status,StatusTimeOrder FROM LoggingInfo WHERE JobID=%d ORDER BY StatusTimeOrder" % int(jobID)
-        resCmd = self._query(cmd)
+        cmd = "SELECT Status,StatusTimeOrder FROM LoggingInfo WHERE JobID=%s ORDER BY StatusTimeOrder"
+        resCmd = self._query(cmd, args=(str(jobID),))
         if not resCmd["OK"]:
             return resCmd
         if not resCmd["Value"]:
@@ -193,8 +193,8 @@ class JobLoggingDB(DB):
             result[event] = str(etime + MAGIC_EPOC_NUMBER)
 
         # Get last date and time
-        cmd = "SELECT MAX(StatusTime) FROM LoggingInfo WHERE JobID=%d" % int(jobID)
-        resCmd = self._query(cmd)
+        cmd = "SELECT MAX(StatusTime) FROM LoggingInfo WHERE JobID=%s"
+        resCmd = self._query(cmd, args=(str(jobID),))
         if not resCmd["OK"]:
             return resCmd
         if resCmd["Value"]:
