@@ -77,11 +77,9 @@ class PilotAgentsDB(DB):
             if ref in pilotStampDict:
                 stamp = pilotStampDict[ref]
 
-            req = (
-                "INSERT INTO PilotAgents "
-                + "(PilotJobReference, VO, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp) "
-                + "VALUES (%s,%s,%s,UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted',%s)"
-            )
+            req = "INSERT INTO PilotAgents "
+            req += "(PilotJobReference, VO, GridType, SubmissionTime, LastUpdateTime, Status, PilotStamp) "
+            req += "VALUES (%s,%s,%s,UTC_TIMESTAMP(),UTC_TIMESTAMP(),'Submitted',%s)"
             args = (
                 ref,
                 VO,
@@ -148,7 +146,7 @@ class PilotAgentsDB(DB):
                     args.append(res["Value"][destination])
 
         set_string = ",".join(setList)
-        req = f"UPDATE PilotAgents SET {set_string} WHERE PilotJobReference=%s"
+        req = f"UPDATE PilotAgents SET {set_string} WHERE PilotJobReference=%s"  # nosec
         args.append(pilotRef)
         return self._update(req, args=args, conn=conn)
 
@@ -235,12 +233,12 @@ class PilotAgentsDB(DB):
 
         failed = []
 
-        result = self._escapeValues(pilotIDs)
-        if not result["OK"]:
-            return S_ERROR(f"Failed to remove pilot: {result['Value']}")
-        stringIDs = ",".join(result["Value"])
         for table in ["PilotOutput", "JobToPilotMapping", "PilotAgents"]:
-            result = self._update(f"DELETE FROM {table} WHERE PilotID in ({stringIDs})", conn=conn)
+            req = f"DELETE FROM {table} WHERE PilotID in ("  # nosec
+            req += ",".join(["%s"] * len(pilotIDs))
+            req += ")"
+            args = [str(x) for x in pilotIDs]
+            result = self._update(req, args=args, conn=conn)
             if not result["OK"]:
                 failed.append(table)
 
@@ -265,19 +263,23 @@ class PilotAgentsDB(DB):
 
         reqList = []
         reqList.append(
-            "SELECT PilotID FROM PilotAgents WHERE SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
-            % interval
+            (
+                "SELECT PilotID FROM PilotAgents WHERE SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %s DAY)",
+                (interval,),
+            )
         )
         reqList.append(
-            "SELECT PilotID FROM PilotAgents WHERE Status='Aborted' \
-AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
-            % aborted_interval
+            (
+                "SELECT PilotID FROM PilotAgents WHERE Status='Aborted' \
+AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %s DAY)",
+                (aborted_interval,),
+            )
         )
 
         idList = None
 
-        for req in reqList:
-            result = self._query(req)
+        for req, args in reqList:
+            result = self._query(req, args=args)
             if not result["OK"]:
                 self.log.warn("Error while clearing up pilots")
             else:
@@ -316,7 +318,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             if not col in self.ALLOWED_COLUMNS:
                 return S_ERROR(f"Unknown column: {col}")
 
-        cmd = f"SELECT {', '.join(parameters)} FROM PilotAgents"
+        cmd = f"SELECT {', '.join(parameters)} FROM PilotAgents"  # nosec
         condSQL = []
         for key, value in [
             ("PilotJobReference", pilotRef),
@@ -504,15 +506,14 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
     ##########################################################################################
     def getJobsForPilot(self, pilotID):
         """Get IDs of Jobs that were executed by a pilot"""
-        cmd = "SELECT pilotID,JobID FROM JobToPilotMapping "
-        args = []
         if isinstance(pilotID, list):
-            placeholders = ",".join(["%s"] * len(pilotID))
-            cmd = f"SELECT pilotID,JobID FROM JobToPilotMapping WHERE pilotID IN ({placeholders})"
+            cmd = "SELECT pilotID,JobID FROM JobToPilotMapping WHERE pilotID IN ("
+            cmd += ",".join(["%s"] * len(pilotID))
+            cmd += ")"
             args = [str(int(x)) for x in pilotID]
         else:
-            cmd = f"{cmd} WHERE pilotID = %s"
-            args.append(pilotID)
+            cmd = "SELECT pilotID,JobID FROM JobToPilotMapping WHERE pilotID = %s"
+            args = [str(pilotID)]
 
         result = self._query(cmd, args=args)
         if not result["OK"]:
@@ -1123,7 +1124,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         valueFields = ["COUNT(PilotID)"]
         defString = ", ".join(requestedFields)
         valueString = ", ".join(valueFields)
-        result = self._query(f"SELECT {defString}, {valueString} FROM PilotAgents GROUP BY {defString}")
+        result = self._query(f"SELECT {defString}, {valueString} FROM PilotAgents GROUP BY {defString}")  # nosec
         if not result["OK"]:
             return result
         return S_OK(((requestedFields + valueFields), result["Value"]))
@@ -1167,7 +1168,7 @@ class PivotedPilotSummaryTable:
 
         pvtable = "pivoted"
         innerGroupBy = (
-            "(SELECT %s, Status,\n "
+            "(SELECT %s, Status,\n "  # nosec: B608
             "count(CASE WHEN CurrentJobID=0  THEN 1 END) AS Empties,"
             "count(CASE WHEN LastUpdateTime > '%s' THEN 1 END) AS Last_Hour,"
             " count(*) AS qty FROM PilotAgents\n "
