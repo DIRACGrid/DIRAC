@@ -71,6 +71,7 @@ class TransformationCleaningAgent(AgentModule):
         self.pilotAgentsDB = None
         self.taskQueueDB = None
         self.storageManagementDB = None
+        self.sandboxDB = None
 
         # # transformations types
         self.transformationTypes = None
@@ -152,6 +153,18 @@ class TransformationCleaningAgent(AgentModule):
             self.storageManagementDB = result["Value"]()
         except RuntimeError:
             pass
+
+        # SandboxMetadataDB is optional: used only to unassign a transformation's
+        # input sandboxes at clean/archive time. A failure here must not stop the
+        # agent — sandbox unassignment simply becomes a no-op.
+        try:
+            result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.SandboxMetadataDB", "SandboxMetadataDB")
+            if result["OK"]:
+                self.sandboxDB = result["Value"](parentLogger=self.log)
+            else:
+                self.log.warn("Could not load SandboxMetadataDB; sandbox unassignment disabled", result["Message"])
+        except RuntimeError as excp:
+            self.log.warn("Could not connect to SandboxMetadataDB; sandbox unassignment disabled", str(excp))
 
         return S_OK()
 
@@ -514,6 +527,7 @@ class TransformationCleaningAgent(AgentModule):
         :param int transID: transformation ID
         """
         self.log.info(f"Archiving transformation {transID}")
+        self._unassignTransformationSandboxes(transID)
         # Clean the jobs in the WMS and any failover requests found
         res = self.cleanTransformationTasks(transID)
         if not res["OK"]:
@@ -531,11 +545,28 @@ class TransformationCleaningAgent(AgentModule):
         self.log.info(f"Updated status of transformation {transID} to Archived")
         return S_OK()
 
+    def _unassignTransformationSandboxes(self, transID):
+        """Best-effort removal of a transformation's input-sandbox assignment.
+
+        Drops the ``Transformation:<transID>`` mapping in the SandboxMetadataDB so
+        the sandbox store cleaner can reclaim the (now unused) sandboxes. Never
+        raises and never returns an error: a sandbox-DB problem must not block
+        transformation cleaning.
+
+        :param int transID: transformation ID
+        """
+        if not self.sandboxDB:
+            return
+        result = self.sandboxDB.unassignEntities([f"Transformation:{transID}"])
+        if not result["OK"]:
+            self.log.warn("Could not unassign sandboxes for transformation", f"{transID}: {result['Message']}")
+
     def cleanTransformation(self, transID):
         """This removes what was produced by the supplied transformation,
         leaving only some info and log in the transformation DB.
         """
         self.log.info("Cleaning transformation", transID)
+        self._unassignTransformationSandboxes(transID)
         res = self.getTransformationDirectories(transID)
         if not res["OK"]:
             self.log.error(
