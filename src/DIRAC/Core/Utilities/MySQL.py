@@ -701,7 +701,7 @@ class MySQL:
         """Just replaces password, if visible, with *********"""
         return command.replace(self.__passwd, "**********")
 
-    def _logCmd(self, cmd, args=None):
+    def _logCmd(self, cmd, args, cursor):
         """Return a copy of the SQL command with %s placeholders
         replaced by their actual values including basic string quoting.
         The formatting may not be perfect SQL in every case, but it should be
@@ -712,20 +712,11 @@ class MySQL:
         if args is None or not isinstance(args, (list, tuple)) or not args:
             return safe
 
-        subs = []
-        for v in args:
-            if v is None:
-                subs.append("NULL")
-            elif isinstance(v, (int, float)):
-                subs.append(str(v))
-            else:
-                escaped = str(v).replace('"', '""')
-                subs.append(f'"{escaped}"')
-
         try:
-            return safe % tuple(subs)
-        except TypeError:
+            mogrified = cursor.mogrify(safe, args)
+        except Exception:
             return safe
+        return mogrified.decode("UTF-8")
 
     def _connect(self):
         """
@@ -764,10 +755,6 @@ class MySQL:
         return S_ERROR upon error
         """
 
-        if logArgs is None:
-            logArgs = args
-        self.log.debug(f"_query: {self._logCmd(cmd, logArgs)}")
-
         if conn:
             connection = conn
         else:
@@ -778,6 +765,12 @@ class MySQL:
 
         try:
             cursor = connection.cursor()
+
+            if logArgs is None:
+                logArgs = args
+            if self.log.shown("DEBUG"):
+                self.log.debug(f"_query: {self._logCmd(cmd, logArgs, cursor)}")
+
             if cursor.execute(cmd, args=args):
                 res = cursor.fetchall()
             else:
@@ -818,9 +811,6 @@ class MySQL:
                  lastRowId: if set, added to the returned dictionary
         """
 
-        if logArgs is None:
-            logArgs = args
-        self.log.debug(f"_update: {self._logCmd(cmd, logArgs)}")
         if conn:
             connection = conn
         else:
@@ -831,6 +821,12 @@ class MySQL:
 
         try:
             cursor = connection.cursor()
+
+            if logArgs is None:
+                logArgs = args
+            if self.log.shown("DEBUG"):
+                self.log.debug(f"_update: {self._logCmd(cmd, logArgs, cursor)}")
+
             res = cursor.execute(cmd, args=args)
 
             retDict = S_OK(res)
@@ -865,11 +861,6 @@ class MySQL:
                  S_ERROR upon error.
         """
 
-        if logData is None:
-            logData = data
-        for idx, row in enumerate(logData, 1):
-            self.log.debug(f"_updatemany [{idx}]: {self._logCmd(cmd, row)}")
-
         if conn:
             connection = conn
         else:
@@ -880,6 +871,13 @@ class MySQL:
 
         try:
             cursor = connection.cursor()
+
+            if logData is None:
+                logData = data
+            if self.log.shown("DEBUG"):
+                for idx, row in enumerate(logData, 1):
+                    self.log.debug(f"_updatemany [{idx}]: {self._logCmd(cmd, row, cursor)}")
+
             res = cursor.executemany(cmd, data)
             retDict = S_OK(res)
             if cursor.lastrowid:
