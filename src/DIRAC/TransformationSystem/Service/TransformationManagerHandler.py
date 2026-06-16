@@ -9,9 +9,12 @@ from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import encode as jencode
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Workflow.Workflow import fromXMLString
 
 
 class TransformationManagerHandlerMixin:
+    sandboxDB = None
+
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         """Initialization of DB object"""
@@ -24,6 +27,15 @@ class TransformationManagerHandlerMixin:
 
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to TransformationDB: {excp}")
+
+        # SandboxMetadataDB is optional: used only to pin a transformation's input
+        # sandboxes so the sandbox-store cleaner does not remove them while the
+        # transformation is alive. A failure here must not stop the service.
+        try:
+            sbResult = ObjectLoader().loadObject("WorkloadManagementSystem.DB.SandboxMetadataDB", "SandboxMetadataDB")
+            cls.sandboxDB = sbResult["Value"](parentLogger=cls.log) if sbResult["OK"] else None
+        except RuntimeError:
+            cls.sandboxDB = None
 
         return S_OK()
 
@@ -119,7 +131,46 @@ class TransformationManagerHandlerMixin:
         )
         if res["OK"]:
             self.log.info("Added transformation", res["Value"])
+            self._assignInputSandboxesToTransformation(res["Value"], body, author, authorGroup)
         return res
+
+    def _assignInputSandboxesToTransformation(self, transID, body, author, authorGroup):
+        """Best-effort: pin a transformation's input sandboxes so the sandbox store
+        cleaner does not remove them while the transformation is alive.
+
+        Reads ``SB:`` references from the workflow body's ``InputSandbox`` parameter
+        and writes a ``Transformation:<id>`` mapping under the author's credentials
+        (the author uploaded the sandboxes, so ``getSandboxId`` authorises them).
+        Never raises and never affects transformation creation.
+
+        Note: ``assignSandboxesToEntities`` is best-effort — it returns S_ERROR (logged
+        here, never raised) if a referenced sandbox cannot be found or the author is not
+        authorised for it.
+
+        :param int transID: the created transformation ID
+        :param str body: the transformation body (workflow XML)
+        :param str author: requester username (the submitter/owner)
+        :param str authorGroup: requester group
+        """
+        if not self.sandboxDB or not body:
+            return
+        try:
+            workflow = fromXMLString(body)
+            param = workflow.parameters.find("InputSandbox")
+        except Exception as excp:  # pylint: disable=broad-except  # body may not be a workflow
+            self.log.verbose("Could not parse transformation body for InputSandbox", str(excp))
+            return
+        if not param:
+            return
+        sbRefs = [sb for sb in str(param.getValue()).split(";") if sb.startswith("SB:")]
+        if not sbRefs:
+            return
+        assignTo = {f"Transformation:{transID}": [(sb, "Input") for sb in sbRefs]}
+        result = self.sandboxDB.assignSandboxesToEntities(assignTo, author, authorGroup)
+        if not result["OK"]:
+            self.log.warn("Could not assign input sandboxes to transformation", f"{transID}: {result['Message']}")
+        else:
+            self.log.info("Assigned input sandboxes to transformation", f"{transID} ({result['Value']}/{len(sbRefs)})")
 
     types_deleteTransformation = [[int, str]]
 
