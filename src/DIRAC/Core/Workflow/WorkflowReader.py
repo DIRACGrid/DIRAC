@@ -8,6 +8,16 @@ from DIRAC.Core.Workflow.Step import *
 from DIRAC.Core.Workflow.Workflow import Workflow
 from DIRAC.Core.Utilities.SaferEval import saferEval
 
+# Non-string workflow parameters (lists, dicts, ...) are serialised to XML as the
+# repr() of their value and read back by evaluating that string. Legitimate values
+# (e.g. a listoutput or a BKProcessingPass dict) are KB-scale and routinely exceed
+# the saferEval default cap, so that default is too small here. We still bound the
+# size as defence-in-depth against pathological/malicious input: literal_eval blocks
+# code execution regardless of content, and this ceiling limits its object-allocation
+# blow-up. Legitimate workflow values never approach it, so hitting it means the input
+# is genuinely anomalous and should be rejected.
+MAX_PARAMETER_VALUE_LEN = 1024 * 1024  # 1 MiB
+
 
 class WorkflowXMLHandler(ContentHandler):
     def __init__(self, new_wf=None):
@@ -113,7 +123,7 @@ class WorkflowXMLHandler(ContentHandler):
             if self.stack[-1].isTypeString():
                 self.stack[-1].setValue(ch)
             else:
-                self.stack[-1].setValue(saferEval(ch))
+                self.stack[-1].setValue(saferEval(ch, max_len=MAX_PARAMETER_VALUE_LEN))
 
         # objects
         elif name == "Workflow":
