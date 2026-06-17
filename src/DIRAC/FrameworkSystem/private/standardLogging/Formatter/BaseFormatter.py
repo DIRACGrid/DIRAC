@@ -1,6 +1,7 @@
 """
 BaseFormatter
 """
+
 import logging
 import sys
 
@@ -62,6 +63,5 @@ class BaseFormatter(logging.Formatter):
 
         fmt += "%(message)s%(spacer)s%(varmessage)s"
 
-        self._style._fmt = fmt  # pylint: disable=no-member
-        self.datefmt = "%Y-%m-%d %H:%M:%S"
+        self._style = logging.PercentStyle(fmt)
         return super().format(record)
