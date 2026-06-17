@@ -6,6 +6,7 @@ from io import StringIO
 
 from DIRAC.FrameworkSystem.private.standardLogging.LoggingRoot import LoggingRoot
 from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging
+from DIRAC.FrameworkSystem.private.standardLogging.Formatter.BaseFormatter import BaseFormatter
 
 
 gLogger = LoggingRoot()
@@ -25,8 +26,22 @@ def captureBackend():
     Modify the output to capture logs of LoggingRoot
     """
     bufferDirac = StringIO()
-    if logging.getLogger("dirac").handlers:
-        logging.getLogger("dirac").handlers[0].stream = bufferDirac
+    diracLogger = logging.getLogger("dirac")
+    # Find an existing StreamHandler, redirect its stream, and ensure it's at index 0
+    # so it survives the `del handlers[1:]` in gLoggerReset
+    for i, handler in enumerate(diracLogger.handlers):
+        if hasattr(handler, "stream"):
+            handler.stream = bufferDirac
+            handler.setFormatter(BaseFormatter())
+            if i > 0:
+                # Move to index 0 so it survives del handlers[1:]
+                diracLogger.handlers.remove(handler)
+                diracLogger.handlers.insert(0, handler)
+            return bufferDirac
+    # No StreamHandler found, create one at index 0
+    handler = logging.StreamHandler(bufferDirac)
+    handler.setFormatter(BaseFormatter())
+    diracLogger.handlers.insert(0, handler)
     return bufferDirac
 
 
