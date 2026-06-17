@@ -1,3 +1,5 @@
+-- $Header: /tmp/libdirac/tmp.stZoy15380/dirac/DIRAC3/DIRAC/WorkloadManagementSystem/DB/PilotAgentsDB.sql,v 1.20 2009/08/26 09:39:53 rgracian Exp $
+
 -- ------------------------------------------------------------------------------
 --
 --  Schema definition for the PilotAgentsDB database - containing the Pilots status
@@ -55,4 +57,12 @@ CREATE TABLE `JobToPilotMapping` (
   `StartTime` DATETIME NOT NULL,
   KEY `JobID` (`JobID`),
   KEY `PilotID` (`PilotID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+DROP TABLE IF EXISTS `PilotOutput`;
+CREATE TABLE `PilotOutput` (
+  `PilotID` INT(11) UNSIGNED NOT NULL,
+  `StdOutput` MEDIUMTEXT,
+  `StdError` MEDIUMTEXT,
+  PRIMARY KEY (`PilotID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -1,19 +1,6 @@
 """PilotAgentsDB class is a front-end to the Pilot Agent Database.
 This database keeps track of all the submitted grid pilot jobs.
-It also registers the mapping of the DIRAC jobs to the pilot
-agents.
-
-Available methods are:
-
-addPilotReferences()
-setPilotStatus()
-deletePilot()
-clearPilots()
-setPilotDestinationSite()
-setJobForPilot()
-getPilotsSummary()
-getGroupedPilotSummary()
-
+It also registers the mapping of the DIRAC jobs to the pilot agents.
 """
 
 import datetime
@@ -151,25 +138,6 @@ class PilotAgentsDB(DB):
         args.append(pilotRef)
         return self._update(req, args=args, conn=conn)
 
-    # ###########################################################################################
-    # FIXME: this can't work ATM because of how the DB table is made. Maybe it would be useful later.
-    #   def setPilotStatusBulk(self, pilotRefsStatusDict=None, statusReason=None,
-    #                          conn=False):
-    #     """ Set pilot job status in a bulk
-    #     """
-    #     if not pilotRefsStatusDict:
-    #       return S_OK()
-
-    #     # Building the request with "ON DUPLICATE KEY UPDATE"
-    #     reqBase = "INSERT INTO PilotAgents (PilotJobReference, Status, StatusReason) VALUES "
-
-    #     for pilotJobReference, status in pilotRefsStatusDict.items():
-    #       req = reqBase + ','.join("('%s', '%s', '%s')" % (pilotJobReference, status, statusReason))
-    #       req += " ON DUPLICATE KEY UPDATE Status=VALUES(Status),StatusReason=VALUES(StatusReason)"
-
-    #     return self._update(req, conn=conn)
-
-    ##########################################################################################
     def selectPilots(
         self, condDict, older=None, newer=None, timeStamp="SubmissionTime", orderAttribute=None, limit=None
     ):
@@ -364,34 +332,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         return S_OK(resDict)
 
     ##########################################################################################
-    def setPilotDestinationSite(self, pilotRef, destination, conn=False):
-        """Set the pilot agent destination site"""
-
-        gridSite = "Unknown"
-        res = getCESiteMapping(destination)
-        if res["OK"] and res["Value"]:
-            gridSite = res["Value"][destination]
-
-        req = "UPDATE PilotAgents SET DestinationSite=%s, GridSite=%s WHERE PilotJobReference=%s"
-        args = (
-            destination,
-            gridSite,
-            pilotRef,
-        )
-        return self._update(req, args=args, conn=conn)
-
-    ##########################################################################################
-    def setPilotBenchmark(self, pilotRef, mark):
-        """Set the pilot agent benchmark"""
-
-        req = "UPDATE PilotAgents SET BenchMark=%s WHERE PilotJobReference=%s"
-        args = (
-            f"{mark:f}",
-            pilotRef,
-        )
-        return self._update(req, args=args)
-
-    ##########################################################################################
     def setAccountingFlag(self, pilotRef, mark="True"):
         """Set the pilot AccountingSent flag"""
 
@@ -401,6 +341,44 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             pilotRef,
         )
         return self._update(req, args=args)
+
+    ##########################################################################################
+    def storePilotOutput(self, pilotRef, output, error):
+        """Store standard output and error for a pilot with pilotRef"""
+        pilotID = self.__getPilotID(pilotRef)
+        if not pilotID:
+            return S_ERROR(f"Pilot reference not found {pilotRef}")
+
+        req = "INSERT INTO PilotOutput (PilotID,StdOutput,StdError) VALUES (%s, %s, %s)"
+        args = (
+            pilotID,
+            output,
+            error,
+        )
+        return self._update(req, args=args)
+
+    ##########################################################################################
+    def getPilotOutput(self, pilotRef):
+        """Retrieve standard output and error for pilot with pilotRef"""
+
+        req = "SELECT StdOutput, StdError FROM PilotOutput,PilotAgents WHERE "
+        req += "PilotOutput.PilotID = PilotAgents.PilotID AND PilotAgents.PilotJobReference=%s"
+        result = self._query(req, args=(pilotRef,))
+        if not result["OK"]:
+            return result
+        if not result["Value"]:
+            return S_ERROR(f"PilotJobReference {pilotRef} not found")
+        try:
+            stdout = result["Value"][0][0].decode()  # account for the use of BLOBs
+            error = result["Value"][0][1].decode()
+        except AttributeError:
+            stdout = result["Value"][0][0]
+            error = result["Value"][0][1]
+        if stdout == '""':
+            stdout = ""
+        if error == '""':
+            error = ""
+        return S_OK({"StdOut": stdout, "StdErr": error})
 
     ##########################################################################################
     def __getPilotID(self, pilotRef):
@@ -501,20 +479,6 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
         return S_OK([])
 
     ##########################################################################################
-    def getPilotCurrentJob(self, pilotRef):
-        """The job ID currently executed by the pilot"""
-        req = "SELECT CurrentJobID FROM PilotAgents WHERE PilotJobReference=%s"
-        result = self._query(req, args=(pilotRef,))
-        if not result["OK"]:
-            return result
-        if result["Value"]:
-            jobID = int(result["Value"][0][0])
-            return S_OK(jobID)
-        self.log.warn(f"Current job ID for pilot {pilotRef} is not known: pilot did not match jobs yet?")
-        return S_OK()
-
-    ##########################################################################################
-    # FIXME: investigate it getPilotSummaryShort can replace this method
     def getPilotSummary(self, startdate="", enddate=""):
         """Get summary of the pilot jobs status by site"""
         summary_dict = {}
