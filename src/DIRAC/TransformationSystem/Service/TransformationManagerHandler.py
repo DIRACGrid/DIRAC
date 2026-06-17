@@ -162,7 +162,11 @@ class TransformationManagerHandlerMixin:
             return
         if not param:
             return
-        sbRefs = [sb for sb in str(param.getValue()).split(";") if sb.startswith("SB:")]
+        # InputSandbox is canonically a ';'-joined string, but accept a list too in
+        # case a future producer stores it list-form.
+        value = param.getValue()
+        entries = value if isinstance(value, list) else str(value).split(";")
+        sbRefs = [sb for sb in entries if isinstance(sb, str) and sb.startswith("SB:")]
         if not sbRefs:
             return
         assignTo = {f"Transformation:{transID}": [(sb, "Input") for sb in sbRefs]}

@@ -1,5 +1,5 @@
 # pylint: disable=missing-docstring
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from DIRAC.Core.Workflow.Workflow import Workflow
 from DIRAC.Core.Workflow.Parameter import Parameter
@@ -79,4 +79,27 @@ def test_assign_multipleSBRefs():
         {"Transformation:321": [("SB:SE|/a.tar.bz2", "Input"), ("SB:SE|/b.tar.bz2", "Input")]},
         "alice",
         "lhcb_prod",
+    )
+
+
+def test_assign_acceptsListValuedInputSandbox():
+    # Belt-and-suspenders: if a producer ever stores InputSandbox list-form rather
+    # than the canonical ';'-joined string, we still extract the SB: refs.
+    sandboxDB = MagicMock()
+    sandboxDB.assignSandboxesToEntities.return_value = {"OK": True, "Value": 1}
+    handler = _make_handler(sandboxDB)
+
+    param = MagicMock()
+    param.getValue.return_value = ["SB:SE|/a.tar.bz2", "local.txt"]
+    workflow = MagicMock()
+    workflow.parameters.find.return_value = param
+
+    with patch(
+        "DIRAC.TransformationSystem.Service.TransformationManagerHandler.fromXMLString",
+        return_value=workflow,
+    ):
+        handler._assignInputSandboxesToTransformation(321, "<body/>", "alice", "lhcb_prod")
+
+    sandboxDB.assignSandboxesToEntities.assert_called_once_with(
+        {"Transformation:321": [("SB:SE|/a.tar.bz2", "Input")]}, "alice", "lhcb_prod"
     )
