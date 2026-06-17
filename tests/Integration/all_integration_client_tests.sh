@@ -14,7 +14,7 @@ echo -e "THIS_DIR=${THIS_DIR}" |& tee -a clientTestOutputs.txt
 if [[ -n "${INSTALLATION_BRANCH}" ]]; then
     echo -r "*** re-configure ***"
     dirac-proxy-init --nocs --no-upload
-    dirac-configure -S dirac-JenkinsSetup -C https://server:9135/Configuration/Server --SkipCAChecks
+    dirac-configure -C https://server:9135/Configuration/Server --SkipCAChecks
 fi
 
 echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a clientTestOutputs.txt
