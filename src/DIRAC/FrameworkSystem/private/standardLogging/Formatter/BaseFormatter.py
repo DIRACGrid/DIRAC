@@ -65,7 +65,7 @@ class BaseFormatter(logging.Formatter):
 
         fmt += "%(message)s%(spacer)s%(varmessage)s"
 
-        self._style._fmt = fmt  # pylint: disable=no-member
+        self._style = logging.PercentStyle(fmt)
         return super().format(record)
 
     def formatTime(self, record, datefmt=None):
