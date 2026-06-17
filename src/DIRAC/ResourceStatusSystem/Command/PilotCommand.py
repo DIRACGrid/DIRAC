@@ -1,14 +1,15 @@
-""" PilotCommand
+"""PilotCommand
 
-  The PilotCommand class is a command class to know about present pilots
-  efficiency.
+The PilotCommand class is a command class to know about present pilots
+efficiency.
 
 """
+
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping, getSites
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
+from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 
 
 class PilotCommand(Command):
@@ -19,11 +20,7 @@ class PilotCommand(Command):
     def __init__(self, args=None, clients=None):
         super().__init__(args, clients)
 
-        if "Pilots" in self.apis:
-            self.pilots = self.apis["Pilots"]
-        else:
-            self.pilots = PilotManagerClient()
-
+        self.pilots = PilotAgentsDB()
         if "ResourceManagementClient" in self.apis:
             self.rmClient = self.apis["ResourceManagementClient"]
         else:
