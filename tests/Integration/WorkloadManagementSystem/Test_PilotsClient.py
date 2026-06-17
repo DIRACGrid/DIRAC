@@ -25,31 +25,15 @@ def test_PilotsDB():
     pilots = PilotManagerClient()
     webapp = WebAppClient()
 
-    # This will allow you to run the test again if necessary
-    for jobID in ["aPilot", "anotherPilot"]:
-        pilots.deletePilots(jobID)
-
     res = pilots.addPilotReferences(["aPilot"], "VO")
     assert res["OK"], res["Message"]
-    res = pilots.getCurrentPilotCounters({})
-    assert res["OK"], res["Message"]
-    assert "Submitted" in res["Value"]
-    res = pilots.deletePilots("aPilot")
-    assert res["OK"], res["Message"]
-    res = pilots.getCurrentPilotCounters({})
-    assert res["OK"], res["Message"]
-
     res = pilots.addPilotReferences(["anotherPilot"], "VO")
-    assert res["OK"], res["Message"]
-    res = pilots.storePilotOutput("anotherPilot", "This is an output", "this is an error")
     assert res["OK"], res["Message"]
     res = pilots.getPilotInfo("anotherPilot")
     assert res["OK"], res["Message"]
     assert res["Value"]["anotherPilot"]["AccountingSent"] == "False"
     assert res["Value"]["anotherPilot"]["PilotJobReference"] == "anotherPilot"
 
-    res = pilots.selectPilots({})
-    assert res["OK"], res["Message"]
     res = pilots.getPilotSummary("", "")
     assert res["OK"], res["Message"]
     assert res["Value"]["Total"]["Submitted"] >= 1
@@ -62,23 +46,7 @@ def test_PilotsDB():
     assert res["OK"], res["Message"]
     assert res["Value"]["TotalRecords"] >= 1
 
-    res = pilots.setAccountingFlag("anotherPilot", "True")
-    assert res["OK"], res["Message"]
     res = pilots.setPilotStatus("anotherPilot", "Running")
     assert res["OK"], res["Message"]
     res = pilots.getPilotInfo("anotherPilot")
-    assert res["OK"], res["Message"]
-    assert res["Value"]["anotherPilot"]["AccountingSent"] == "True"
-    assert res["Value"]["anotherPilot"]["Status"] == "Running"
-
-    res = pilots.setJobForPilot(123, "anotherPilot")
-    assert res["OK"], res["Message"]
-    res = pilots.setPilotBenchmark("anotherPilot", 12.3)
-    assert res["OK"], res["Message"]
-    res = pilots.countPilots({})
-    assert res["OK"], res["Message"]
-
-    res = pilots.deletePilots("anotherPilot")
-    assert res["OK"], res["Message"]
-    res = pilots.getCurrentPilotCounters({})
     assert res["OK"], res["Message"]

@@ -1,4 +1,4 @@
-"""  The Pilot Status Agent updates the status of the pilot jobs in the
+"""The Pilot Status Agent updates the status of the pilot jobs in the
      PilotAgents database.
 
 .. literalinclude:: ../ConfigTemplate.cfg
@@ -7,6 +7,7 @@
   :dedent: 2
   :caption: PilotStatusAgent options
 """
+
 import datetime
 
 from DIRAC import S_OK
@@ -16,7 +17,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
-from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import killPilotsInQueues
@@ -52,7 +52,6 @@ class PilotStatusAgent(AgentModule):
         self.jobDB = JobDB()
         self.clearPilotsDelay = self.am_getOption("ClearPilotsDelay", 30)
         self.clearAbortedDelay = self.am_getOption("ClearAbortedPilotsDelay", 7)
-        self.pilots = PilotManagerClient()
 
         return S_OK()
 
@@ -70,7 +69,7 @@ class PilotStatusAgent(AgentModule):
         # Now handle pilots not updated in the last N days and declare them Deleted.
         result = self.handleOldPilots(connection)
 
-        result = self.pilots.clearPilots(self.clearPilotsDelay, self.clearAbortedDelay)
+        result = self.pilotDB.clearPilots(self.clearPilotsDelay, self.clearAbortedDelay)
         if not result["OK"]:
             self.log.warn("Failed to clear old pilots in the PilotAgentsDB")
 
