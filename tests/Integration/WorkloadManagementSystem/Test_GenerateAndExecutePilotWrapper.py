@@ -52,7 +52,7 @@ time.sleep(1)
 from PilotWrapper import pilotWrapperScript  # pylint: disable=import-error
 
 res = pilotWrapperScript(
-    pilotOptions="--setup=CI -N ce.dirac.org -Q DIRACQUEUE -n DIRAC.CI.ORG --debug",
+    pilotOptions="-N ce.dirac.org -Q DIRACQUEUE -n DIRAC.CI.ORG --debug",
     location=locc + "/,wrong.cern.ch",
 )
 
