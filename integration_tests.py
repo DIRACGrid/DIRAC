@@ -21,7 +21,7 @@ from packaging.version import Version
 from typer import colors as c
 
 # Editable configuration
-DEFAULT_HOST_OS = "cc7"
+DEFAULT_HOST_OS = "el9"
 DEFAULT_MYSQL_VER = "mysql:8.4.4"
 DEFAULT_ES_VER = "elasticsearch:7.9.1"
 DEFAULT_IAM_VER = "indigoiam/iam-login-service:v1.10.2"
@@ -112,7 +112,7 @@ The currently known features and their default values are:
   MYSQL_VER: {DEFAULT_MYSQL_VER!r}
   ES_VER: {DEFAULT_ES_VER!r}
   IAM_VER: {DEFAULT_IAM_VER!r}
-  {(os.linesep + '  ').join(['%s: %r' % x for x in FEATURE_VARIABLES.items()])}
+  {(os.linesep + "  ").join(["%s: %r" % x for x in FEATURE_VARIABLES.items()])}
 
 All features can be prefixed with "SERVER_" or "CLIENT_" to limit their scope.
 

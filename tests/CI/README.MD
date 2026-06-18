@@ -22,7 +22,7 @@ The command `docker-compose -f tests/CI/docker-compose.yml down -v` stops and re
 
 ### System requirements
 
-The officially supported operating system is CERN Centos 7 ([CC7](http://linux.web.cern.ch/linux/centos7/)), should you use another Linux distribution, please install the dependencies according to your distribution.
+The officially supported operating system is EL8.
 
 The following dependencies/softwares are required:
 * Docker v18+ (lower version should work, but no promises are made).
