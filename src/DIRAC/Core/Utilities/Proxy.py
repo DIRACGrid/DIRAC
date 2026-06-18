@@ -22,7 +22,7 @@ Utilities to execute one or more functions with a given proxy.
      print foo, os.environ.get('X509_USER_PROXY')
      return S_OK()
 
-  executeWithUserProxy(testFcn)(foo='baz', proxyUserName='atsareg', proxyUserGroup='biomed_user')
+  executeWithUserProxy(undecoratedFunction)(foo='baz', proxyUserName='atsareg', proxyUserGroup='biomed_user')
 
 
 :class:`UserProxy` context manager example::
