@@ -151,6 +151,7 @@ import collections
 import functools
 import json
 import os
+import re
 import time
 import threading
 import MySQLdb
@@ -163,6 +164,14 @@ from DIRAC.Core.Utilities import DErrno
 gInstancesCount = 0
 MAXCONNECTRETRY = 10
 RETRY_SLEEP_DURATION = 5
+
+# SQL identifier patterns
+# Identifiers are letter followed by zero or more letters or numbers
+SQL_IDENTIFIER_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+# Types names are identifiers followed by a number in brackets
+# and optinally a , + second number. These may be surrounded by
+# various spacing.
+SQL_TYPE_RE = re.compile(r"^[a-zA-Z][a-zA-Z0-9]*(?:\s*\(\s*[0-9]+(?:\s*,\s*[0-9]+)?\s*\))?$")
 
 
 def _checkFields(inFields, inValues):
@@ -656,6 +665,32 @@ class MySQL:
         # self.log.debug('_escapeString:', '"%s"' % str(myString))
 
         return self.__escapeString(myString)
+
+    @staticmethod
+    def _checkIdentifier(identifier):
+        """Validate a SQL identifier (table/column/field name).
+
+        Table and column names cannot be parameterized in SQL.
+        This function validates that the identifier contains only
+        safe characters (alphanumeric + underscore, starting with letter/underscore).
+
+        :param str identifier: SQL identifier to validate
+        :return: S_OK(identifier) if valid, S_ERROR otherwise
+        """
+        if not SQL_IDENTIFIER_RE.match(identifier):
+            return S_ERROR(f"Invalid SQL identifier: {identifier}")
+        return S_OK(identifier)
+
+    @staticmethod
+    def _checkType(valueType):
+        """Validate a SQL type name (e.g. VARCHAR(64), DECIMAL(10,2), INT).
+
+        :param str valueType: SQL type specification
+        :return: S_OK(valueType) if valid, S_ERROR otherwise
+        """
+        if not SQL_TYPE_RE.match(valueType):
+            return S_ERROR(f"Invalid SQL type: {valueType}")
+        return S_OK(valueType)
 
     def _escapeValues(self, inValues=None):
         """
