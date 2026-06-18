@@ -61,7 +61,7 @@ ONE_YEAR_IN_SECS = 3600 * 24 * 365
 TWENTY_YEARS_IN_SEC = 20 * ONE_YEAR_IN_SECS
 
 # Validity date wont go further than 2050, See RFC 5280 4.1.2.5 for more information.
-NO_LATER_THAN_2050_IN_SEC = int((datetime.strptime("2049-12-31", "%Y-%M-%d") - datetime.now()).total_seconds())
+NO_LATER_THAN_2050_IN_SEC = int((datetime.strptime("2049-12-31", "%Y-%m-%d") - datetime.now()).total_seconds())
 
 
 @fixture(scope="function", params=X509CHAINTYPES)
