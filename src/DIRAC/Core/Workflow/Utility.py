@@ -5,6 +5,15 @@
 import re
 from DIRAC.Core.Utilities.SaferEval import saferEval
 
+# Non-string workflow parameters (lists, dicts, ...) are evaluated from their repr()
+# after variable substitution. Legitimate values are KB-scale and routinely exceed the
+# saferEval default cap, so that default is too small here. We still bound the size as
+# defence-in-depth against pathological/malicious input: literal_eval blocks code
+# execution regardless of content, and this ceiling limits its object-allocation blow-up.
+# Legitimate workflow values never approach it, so hitting it means the input is
+# genuinely anomalous and should be rejected.
+MAX_PARAMETER_VALUE_LEN = 1024 * 1024  # 1 MiB
+
 
 def getSubstitute(param, skip_list=[]):
     """Get the variable name to which the given parameter is referring"""
@@ -24,7 +33,7 @@ def substitute(param, variable, value):
     tmp_string = str(param).replace("@{" + variable + "}", value)
     if isinstance(param, str):
         return tmp_string
-    return saferEval(tmp_string)
+    return saferEval(tmp_string, max_len=MAX_PARAMETER_VALUE_LEN)
 
 
 def resolveVariables(varDict):
