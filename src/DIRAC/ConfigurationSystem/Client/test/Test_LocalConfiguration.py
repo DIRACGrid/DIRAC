@@ -1,10 +1,9 @@
-""" Unit tests for PathFinder only for functions that I added
-"""
-from unittest import mock
+"""Unit tests for PathFinder only for functions that I added"""
+
 import pytest
 import random
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 import DIRAC.ConfigurationSystem.Client.LocalConfiguration
 
 
@@ -88,6 +87,9 @@ def localCFG(monkeypatch):
     localCFG = DIRAC.ConfigurationSystem.Client.LocalConfiguration.LocalConfiguration()
     # It's local test, do not contact Configuration Server
     localCFG.disableCS()
+    # These tests reset the logging while testing the script init
+    # This would cause an empty logger to persist post-test, so we mock away the __initLogger
+    monkeypatch.setattr(localCFG, "_LocalConfiguration__initLogger", lambda *a, **kw: None)
     return localCFG
 
 
