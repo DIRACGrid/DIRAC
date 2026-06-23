@@ -191,6 +191,9 @@ jobs:
           rm pixi.toml.bak
           sed -i.bak '/solve-group = "gubbins"/d' pixi.toml
           rm pixi.toml.bak
+          # Disable exclude-newer cutoff entirely for CI
+          sed -i.bak '/exclude-newer/d' pixi.toml
+          rm pixi.toml.bak
           # Add annotations to github actions
           pixi add --pypi --feature diracx-core pytest-github-actions-annotate-failures
           # Add the current DIRAC clone to the pixi.toml
