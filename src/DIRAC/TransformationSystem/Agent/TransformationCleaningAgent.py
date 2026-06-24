@@ -154,17 +154,20 @@ class TransformationCleaningAgent(AgentModule):
         except RuntimeError:
             pass
 
-        # SandboxMetadataDB is optional: used only to unassign a transformation's
-        # input sandboxes at clean/archive time. A failure here must not stop the
-        # agent — sandbox unassignment simply becomes a no-op.
+        # SandboxMetadataDB is used to unassign a transformation's input sandboxes at
+        # clean/archive time, releasing them for the sandbox-store cleaner. The agent
+        # keeps running if it can't load (the unassign step is skipped), but a failure
+        # to unassign during cleaning is logged loudly so a leaked assignment (which
+        # keeps the sandbox pinned forever) is noticed.
+        self.sandboxDB = None
         try:
             result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.SandboxMetadataDB", "SandboxMetadataDB")
             if result["OK"]:
                 self.sandboxDB = result["Value"](parentLogger=self.log)
             else:
-                self.log.warn("Could not load SandboxMetadataDB; sandbox unassignment disabled", result["Message"])
+                self.log.error("Could not load SandboxMetadataDB; sandbox unassignment disabled", result["Message"])
         except RuntimeError as excp:
-            self.log.warn("Could not connect to SandboxMetadataDB; sandbox unassignment disabled", str(excp))
+            self.log.error("Could not connect to SandboxMetadataDB; sandbox unassignment disabled", str(excp))
 
         return S_OK()
 
@@ -527,7 +530,12 @@ class TransformationCleaningAgent(AgentModule):
         :param int transID: transformation ID
         """
         self.log.info(f"Archiving transformation {transID}")
-        self._unassignTransformationSandboxes(transID)
+        # Release the input-sandbox pin first; if it fails, fail the whole archive so
+        # it is retried — otherwise the sandboxes stay pinned to a gone transformation
+        # and leak. unassignEntities is idempotent, so the retry is safe.
+        res = self._unassignTransformationSandboxes(transID)
+        if not res["OK"]:
+            return res
         # Clean the jobs in the WMS and any failover requests found
         res = self.cleanTransformationTasks(transID)
         if not res["OK"]:
@@ -546,27 +554,40 @@ class TransformationCleaningAgent(AgentModule):
         return S_OK()
 
     def _unassignTransformationSandboxes(self, transID):
-        """Best-effort removal of a transformation's input-sandbox assignment.
+        """Remove a transformation's input-sandbox assignment at clean/archive time.
 
-        Drops the ``Transformation:<transID>`` mapping in the SandboxMetadataDB so
-        the sandbox store cleaner can reclaim the (now unused) sandboxes. Never
-        raises and never returns an error: a sandbox-DB problem must not block
-        transformation cleaning.
+        Drops the ``Transformation:<transID>`` mapping in the SandboxMetadataDB so the
+        sandbox-store cleaner can reclaim the (now unused) sandboxes. Returns S_ERROR on
+        failure so the caller can fail the cleaning and retry: leaving the assignment in
+        place would pin the sandboxes forever and leak them. ``unassignEntities`` is
+        idempotent, so retrying — including after the mapping is already gone — is safe.
 
         :param int transID: transformation ID
+        :returns: S_OK / S_ERROR
         """
         if not self.sandboxDB:
-            return
-        result = self.sandboxDB.unassignEntities([f"Transformation:{transID}"])
+            return S_OK()
+        try:
+            result = self.sandboxDB.unassignEntities([f"Transformation:{transID}"])
+        except Exception as excp:  # pylint: disable=broad-except
+            self.log.exception("Unexpected error unassigning sandboxes for transformation", str(transID))
+            return S_ERROR(f"Unexpected error unassigning sandboxes for transformation {transID}: {excp}")
         if not result["OK"]:
-            self.log.warn("Could not unassign sandboxes for transformation", f"{transID}: {result['Message']}")
+            self.log.error("Could not unassign sandboxes for transformation", f"{transID}: {result['Message']}")
+            return S_ERROR(f"Could not unassign sandboxes for transformation {transID}: {result['Message']}")
+        return S_OK()
 
     def cleanTransformation(self, transID):
         """This removes what was produced by the supplied transformation,
         leaving only some info and log in the transformation DB.
         """
         self.log.info("Cleaning transformation", transID)
-        self._unassignTransformationSandboxes(transID)
+        # Release the input-sandbox pin first; if it fails, fail the whole clean so it
+        # is retried — otherwise the sandboxes stay pinned to a gone transformation and
+        # leak. unassignEntities is idempotent, so the retry is safe.
+        res = self._unassignTransformationSandboxes(transID)
+        if not res["OK"]:
+            return res
         res = self.getTransformationDirectories(transID)
         if not res["OK"]:
             self.log.error(
