@@ -30,21 +30,12 @@ class TransformationManagerHandlerMixin:
 
         # SandboxMetadataDB is used to pin a transformation's input sandboxes so the
         # sandbox-store cleaner does not remove them while the transformation is alive.
-        # We don't stop the service if it can't load (most transformations have no
-        # input sandboxes to pin), but a transformation that *does* reference sandboxes
-        # will be refused at creation time rather than left unpinned (see
-        # _assignInputSandboxesToTransformation).
         cls.sandboxDB = None
-        try:
-            sbResult = ObjectLoader().loadObject("WorkloadManagementSystem.DB.SandboxMetadataDB", "SandboxMetadataDB")
-            if sbResult["OK"]:
-                cls.sandboxDB = sbResult["Value"](parentLogger=cls.log)
-            else:
-                cls.log.error(
-                    "Could not load SandboxMetadataDB; input-sandbox pinning unavailable", sbResult["Message"]
-                )
-        except RuntimeError as excp:
-            cls.log.error("Could not connect to SandboxMetadataDB; input-sandbox pinning unavailable", str(excp))
+        sbResult = ObjectLoader().loadObject("WorkloadManagementSystem.DB.SandboxMetadataDB", "SandboxMetadataDB")
+        if sbResult["OK"]:
+            cls.sandboxDB = sbResult["Value"](parentLogger=cls.log)
+        else:
+            return result
 
         return S_OK()
 

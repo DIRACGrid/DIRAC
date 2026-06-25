@@ -160,14 +160,11 @@ class TransformationCleaningAgent(AgentModule):
         # to unassign during cleaning is logged loudly so a leaked assignment (which
         # keeps the sandbox pinned forever) is noticed.
         self.sandboxDB = None
-        try:
-            result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.SandboxMetadataDB", "SandboxMetadataDB")
-            if result["OK"]:
-                self.sandboxDB = result["Value"](parentLogger=self.log)
-            else:
-                self.log.error("Could not load SandboxMetadataDB; sandbox unassignment disabled", result["Message"])
-        except RuntimeError as excp:
-            self.log.error("Could not connect to SandboxMetadataDB; sandbox unassignment disabled", str(excp))
+        result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.SandboxMetadataDB", "SandboxMetadataDB")
+        if result["OK"]:
+            self.sandboxDB = result["Value"]()
+        else:
+            return result
 
         return S_OK()
 
