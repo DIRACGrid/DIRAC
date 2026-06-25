@@ -9,7 +9,7 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager.SEManagerBase
 
 class SEManagerDB(SEManagerBase):
     def _refreshSEs(self, connection=False):
-        req = "SELECT SEID,SEName FROM FC_StorageElements;"
+        req = "SELECT SEID,SEName FROM FC_StorageElements"
         res = self.db._query(req)
         if not res["OK"]:
             return res
@@ -91,8 +91,8 @@ class SEManagerDB(SEManagerBase):
         waitTime = time.time()
         gLogger.debug(f"SEManager RemoveSE lock created. Waited {waitTime - startTime:.3f} seconds. {seName}")
         seid = self.db.seNames.get(seName, "Missing")
-        req = f"DELETE FROM FC_StorageElements WHERE SEName='{seName}'"
-        res = self.db._update(req, conn=connection)
+        req = "DELETE FROM FC_StorageElements WHERE SEName=%s"
+        res = self.db._update(req, args=(seName,), conn=connection)
         if not res["OK"]:
             gLogger.debug(f"SEManager RemoveSE lock released. Used {time.time() - waitTime:.3f} seconds. {seName}")
             self.lock.release()
