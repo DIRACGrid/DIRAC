@@ -4,6 +4,7 @@ import os
 import stat
 import tempfile
 import time
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -203,6 +204,8 @@ def test_executeForVOBadConfig(pla, opsHelperValues, expectedRes):
 )
 def test_oldLogsCleaner(plaBase, filename, fileAge, ageLimit, expectedResult):
     """Testing old files removal"""
+    import os as _os
+
     plaBase.clearPilotsDelay = ageLimit
     filepath = tempfile.TemporaryDirectory().name
     os.makedirs(filepath, exist_ok=True)
@@ -211,8 +214,20 @@ def test_oldLogsCleaner(plaBase, filename, fileAge, ageLimit, expectedResult):
     fd.close()
     assert os.path.exists(testfile) is True
     # cannot patch os.stat globally because os.path.exists uses it !
+    # we also need to make sure we don't change the properties of the container dir
+    # as this could cause the cleanup checks to fail
+    real_stat = os.stat
     with patch("DIRAC.WorkloadManagementSystem.Agent.PilotLoggingAgent.os.stat") as mockOSStat:
-        mockOSStat.return_value.st_mtime = int(time.time() - fileAge * 86400)  # file older that fileAge in seconds
-        mockOSStat.return_value.st_mode = stat.S_IFREG | 0o755  # File type
+
+        def _stat_side_effect(path, *args, **kwargs):
+            result = real_stat(path, *args, **kwargs)
+            if Path(path) == Path(testfile):
+                # This is a stat of the test file
+                result = MagicMock()
+                result.st_mtime = int(time.time() - fileAge * 86400)
+                result.st_mode = stat.S_IFREG | 0o644  # Regular file
+            return result
+
+        mockOSStat.side_effect = _stat_side_effect
         plaBase.clearOldPilotLogs(filepath)
     assert os.path.exists(testfile) is expectedResult
