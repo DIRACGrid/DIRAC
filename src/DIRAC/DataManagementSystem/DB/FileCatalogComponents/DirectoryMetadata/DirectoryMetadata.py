@@ -55,10 +55,15 @@ class DirectoryMetadata:
         elif pType == "MetaSet":
             valueType = "VARCHAR(64)"
 
-        req = "CREATE TABLE FC_Meta_{} ( DirID INTEGER NOT NULL, Value {}, PRIMARY KEY (DirID), INDEX (Value) )".format(
-            pName,
-            valueType,
-        )
+        if not self.db._checkType(valueType)["OK"]:
+            return S_ERROR(f"Invalid parameter type: {pType}")
+        if not self.db._checkIdentifier(pName)["OK"]:
+            return S_ERROR(f"Invalid parameter name: {pName}")
+        req = "CREATE TABLE "
+        req += f"FC_Meta_{pName} "
+        req += "(DirID INTEGER NOT NULL, "
+        req += f"Value {valueType}, "
+        req += "PRIMARY KEY (DirID), INDEX (Value))"
         result = self.db._query(req)
         if not result["OK"]:
             return result
@@ -83,13 +88,16 @@ class DirectoryMetadata:
         :return: S_OK/S_ERROR
         """
 
-        req = f"DROP TABLE FC_Meta_{pName}"
+        if not self.db._checkIdentifier(pName)["OK"]:
+            return S_ERROR(f"Invalid parameter name: {pName}")
+        req = "DROP TABLE "
+        req += f"FC_Meta_{pName}"
         result = self.db._update(req)
         error = ""
         if not result["OK"]:
             error = result["Message"]
-        req = f"DELETE FROM FC_MetaFields WHERE MetaName='{pName}'"
-        result = self.db._update(req)
+        req = "DELETE FROM FC_MetaFields WHERE MetaName=%s"
+        result = self.db._update(req, args=(pName,))
         if not result["OK"]:
             if error:
                 result["Message"] = error + "; " + result["Message"]
@@ -146,12 +154,11 @@ class DirectoryMetadata:
 
         metaSetID = result["lastRowId"]
 
-        req = "INSERT INTO FC_MetaSets (MetaSetID,MetaKey,MetaValue) VALUES %s"
+        req = "INSERT INTO FC_MetaSets (MetaSetID,MetaKey,MetaValue) VALUES (%s,%s,%s)"
         vList = []
         for key, value in metaSetDict.items():
-            vList.append("(%d,'%s','%s')" % (metaSetID, key, str(value)))
-        vString = ",".join(vList)
-        result = self.db._update(req % vString)
+            vList.append((metaSetID, key, str(value)))
+        result = self.db._updatemany(req, data=vList)
         return result
 
     def getMetadataSet(self, metaSetName, expandFlag, credDict):
@@ -169,8 +176,8 @@ class DirectoryMetadata:
         metaTypeDict = result["Value"]
 
         req = "SELECT S.MetaKey,S.MetaValue FROM FC_MetaSets as S, FC_MetaSetNames as N "
-        req += f"WHERE N.MetaSetName='{metaSetName}' AND N.MetaSetID=S.MetaSetID"
-        result = self.db._query(req)
+        req += "WHERE N.MetaSetName=%s AND N.MetaSetID=S.MetaSetID"
+        result = self.db._query(req, args=(metaSetName,))
         if not result["OK"]:
             return result
 
@@ -227,6 +234,8 @@ class DirectoryMetadata:
         voName = Registry.getGroupOption(credDict["group"], "VO")
         forceIndex = Operations(vo=voName).getValue("DataManagement/ForceIndexedMetadata", False)
         for metaName, metaValue in metaDict.items():
+            if not self.db._checkIdentifier(metaName)["OK"]:
+                return S_ERROR(f"Invalid metadata name: {metaName}")
             if metaName not in metaFields:
                 if forceIndex:
                     return S_ERROR(f"Field {metaName} not indexed, but ForceIndexedMetadata is set", callStack=[])
@@ -240,8 +249,10 @@ class DirectoryMetadata:
             result = self.db.insertFields(f"FC_Meta_{metaName}", ["DirID", "Value"], [dirID, metaValue])
             if not result["OK"]:
                 if result["Message"].find("Duplicate") != -1:
-                    req = "UPDATE FC_Meta_%s SET Value='%s' WHERE DirID=%d" % (metaName, metaValue, dirID)
-                    result = self.db._update(req)
+                    req = "UPDATE "
+                    req += f"FC_Meta_{metaName} "
+                    req += "SET Value=%s WHERE DirID=%s"
+                    result = self.db._update(req, args=(metaValue, dirID))
                     if not result["OK"]:
                         return result
                 else:
@@ -273,15 +284,20 @@ class DirectoryMetadata:
         failedMeta = {}
         for meta in metaData:
             if meta in metaFields:
+                if not self.db._checkIdentifier(meta)["OK"]:
+                    failedMeta[meta] = f"Invalid metadata name: {meta}"
+                    continue
                 # Indexed meta case
-                req = "DELETE FROM FC_Meta_%s WHERE DirID=%d" % (meta, dirID)
-                result = self.db._update(req)
+                req = "DELETE FROM "
+                req += f"FC_Meta_{meta} "
+                req += "WHERE DirID=%s"
+                result = self.db._update(req, args=(dirID,))
                 if not result["OK"]:
                     failedMeta[meta] = result["Value"]
             else:
                 # Meta parameter case
-                req = "DELETE FROM FC_DirMeta WHERE MetaKey='%s' AND DirID=%d" % (meta, dirID)
-                result = self.db._update(req)
+                req = "DELETE FROM FC_DirMeta WHERE MetaKey=%s AND DirID=%s"
+                result = self.db._update(req, args=(meta, dirID))
                 if not result["OK"]:
                     failedMeta[meta] = result["Value"]
 
@@ -339,11 +355,14 @@ class DirectoryMetadata:
             pathIDs = [dirID]
 
         if len(pathIDs) > 1:
-            pathString = ",".join([str(x) for x in pathIDs])
-            req = f"SELECT DirID,MetaKey,MetaValue from FC_DirMeta where DirID in ({pathString})"
+            req = "SELECT DirID,MetaKey,MetaValue from FC_DirMeta where DirID in ("
+            req += ",".join(["%s"] * len(pathIDs))
+            req += ")"
+            args = pathIDs
         else:
-            req = "SELECT DirID,MetaKey,MetaValue from FC_DirMeta where DirID=%d " % dirID
-        result = self.db._query(req)
+            req = "SELECT DirID,MetaKey,MetaValue from FC_DirMeta where DirID=%s"
+            args = (dirID,)
+        result = self.db._query(req, args=args)
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -388,11 +407,16 @@ class DirectoryMetadata:
             pathIDs = pathIDs[-1:]
         if not ownData:
             pathIDs = pathIDs[:-1]
-        pathString = ",".join([str(x) for x in pathIDs])
 
         for meta in metaFields:
-            req = f"SELECT Value,DirID FROM FC_Meta_{meta} WHERE DirID in ({pathString})"
-            result = self.db._query(req)
+            if not self.db._checkIdentifier(meta)["OK"]:
+                return S_ERROR(f"Invalid metadata name: {meta}")
+            req = "SELECT Value,DirID FROM "
+            req += f"FC_Meta_{meta} "
+            req += "WHERE DirID in ("
+            req += ",".join(["%s"] * len(pathIDs))
+            req += ")"
+            result = self.db._query(req, args=pathIDs)
             if not result["OK"]:
                 return result
             if len(result["Value"]) > 1:
@@ -426,8 +450,8 @@ class DirectoryMetadata:
         :return: S_OK/S_ERROR
         """
 
-        req = f"SELECT DirID,MetaValue from FC_DirMeta WHERE MetaKey='{metaName}'"
-        result = self.db._query(req)
+        req = "SELECT DirID,MetaValue from FC_DirMeta WHERE MetaKey=%s"
+        result = self.db._query(req, args=(metaName,))
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -452,15 +476,17 @@ class DirectoryMetadata:
 
         insertValueList = []
         for dirID in dirList:
-            insertValueList.append("( %d,'%s' )" % (dirID, dirDict[dirID]))
+            insertValueList.append((dirID, dirDict[dirID]))
 
-        req = f"INSERT INTO FC_Meta_{metaName} (DirID,Value) VALUES {', '.join(insertValueList)}"
-        result = self.db._update(req)
+        req = "INSERT INTO "
+        req += f"FC_Meta_{metaName} "
+        req += "(DirID,Value) VALUES (%s,%s)"
+        result = self.db._updatemany(req, data=insertValueList)
         if not result["OK"]:
             return result
 
-        req = f"DELETE FROM FC_DirMeta WHERE MetaKey='{metaName}'"
-        result = self.db._update(req)
+        req = "DELETE FROM FC_DirMeta WHERE MetaKey=%s"
+        result = self.db._update(req, args=(metaName,))
         return result
 
     ############################################################################################
@@ -476,7 +502,6 @@ class DirectoryMetadata:
 
         :return: selection string
         """
-
         if isinstance(value, dict):
             selectList = []
             for operation, operand in value.items():
@@ -531,7 +556,10 @@ class DirectoryMetadata:
             return result
         selectString = result["Value"]
 
-        req = f" SELECT M.DirID FROM FC_Meta_{metaName} AS M"
+        if not self.db._checkIdentifier(metaName)["OK"]:
+            return S_ERROR(f"Invalid metaName: {metaName}")
+        req = " SELECT M.DirID FROM "
+        req += f"FC_Meta_{metaName} AS M"
         if pathSelection:
             req += f" JOIN ( {pathSelection} ) AS P WHERE M.DirID=P.DirID"
         if selectString:
@@ -576,12 +604,20 @@ class DirectoryMetadata:
             return result
         dirList = result["Value"]
         table = self.db.dtree.getTreeTable()
-        dirString = ",".join([str(x) for x in dirList])
+        if not self.db._checkIdentifier(table)["OK"]:
+            return S_ERROR(f"Invalid table name: {table}")
         if dirList:
-            req = f"SELECT DirID FROM {table} WHERE DirID NOT IN ( {dirString} )"
+            req = "SELECT DirID FROM "
+            req += table
+            req += " WHERE DirID NOT IN ("
+            req += ",".join(["%s"] * len(dirList))
+            req += ")"
+            args = dirList
         else:
-            req = f"SELECT DirID FROM {table}"
-        result = self.db._query(req)
+            req = "SELECT DirID FROM "
+            req += table
+            args = None
+        result = self.db._query(req, args=args)
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -641,14 +677,14 @@ class DirectoryMetadata:
             return result
         selectString = result["Value"]
 
+        if not self.db._checkIdentifier(metaName)["OK"]:
+            return S_ERROR(f"Invalid metaName: {metaName}")
+
+        req = "SELECT M.DirID FROM "
+        req += f"FC_Meta_{metaName} AS M "
+        req += f"WHERE M.DirID IN ({pathString})"
         if selectString:
-            req = "SELECT M.DirID FROM FC_Meta_{} AS M WHERE {} AND M.DirID IN ({})".format(
-                metaName,
-                selectString,
-                pathString,
-            )
-        else:
-            req = f"SELECT M.DirID FROM FC_Meta_{metaName} AS M WHERE M.DirID IN ({pathString})"
+            req += f" AND {selectString}"
         result = self.db._query(req)
         if not result["OK"]:
             return result
@@ -887,16 +923,22 @@ class DirectoryMetadata:
         :return: S_OK/S_ERROR, Value dictionary of metadata
         """
 
-        if dList:
-            dString = ",".join([str(x) for x in dList])
-        else:
-            dString = None
+        if not dList:
+            dList = []
         metaDict = {}
         for meta in metaList:
-            req = f"SELECT DISTINCT(Value) FROM FC_Meta_{meta}"
-            if dString:
-                req += f" WHERE DirID in ({dString})"
-            result = self.db._query(req)
+            tblName = f"FC_Meta_{meta}"
+            if not self.db._checkIdentifier(tblName)["OK"]:
+                return S_ERROR(f"Invalid meta name: {meta}")
+            req = "SELECT DISTINCT(Value) FROM "
+            req += tblName
+            args = []
+            if dList:
+                req += " WHERE DirID in ("
+                req += ",".join(["%s"] * len(dList))
+                req += ")"
+                args.extend(dList)
+            result = self.db._query(req, args=args)
             if not result["OK"]:
                 return result
             if result["Value"]:
@@ -992,8 +1034,6 @@ class DirectoryMetadata:
         if not isinstance(dirList, list):
             dirs = [dirList]
 
-        dirListString = ",".join([str(d) for d in dirs])
-
         # Get the list of metadata fields to inspect
         result = self._getMetadataFields(credDict)
         if not result["OK"]:
@@ -1001,8 +1041,15 @@ class DirectoryMetadata:
         metaFields = result["Value"]
 
         for meta in metaFields:
-            req = f"DELETE FROM FC_Meta_{meta} WHERE DirID in ( {dirListString} )"
-            result = self.db._query(req)
+            tblName = "FC_Meta_" + meta
+            if not self.db._checkIdentifier(tblName)["OK"]:
+                return S_ERROR(f"Invalid meta name: {meta}")
+            req = "DELETE FROM "
+            req += tblName
+            req += " WHERE DirID in ("
+            req += ",".join(["%s"] * len(dirs))
+            req += ")"
+            result = self.db._query(req, args=dirs)
             if not result["OK"]:
                 failed[meta] = result["Message"]
             else:
