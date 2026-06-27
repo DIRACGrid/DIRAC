@@ -23,20 +23,19 @@ class DirectoryNodeTree(DirectoryTreeBase):
         elements = dpath.split("/")
 
         req = " "
+        args = []
         for level in range(len(elements), 0, -1):
             if level > 1:
-                req += "SELECT DirID from FC_DirectoryTreeM WHERE Level=%d AND DirName='%s' AND Parent=(" % (
-                    level,
-                    elements[level - 1],
-                )
+                req += "SELECT DirID from FC_DirectoryTreeM WHERE Level=%s AND DirName=%s AND Parent=("
+                args.append(level)
+                args.append(elements[level - 1])
             else:
-                req += "SELECT DirID from FC_DirectoryTreeM WHERE Level=%d AND DirName='%s'" % (
-                    level,
-                    elements[level - 1],
-                )
+                req += "SELECT DirID from FC_DirectoryTreeM WHERE Level=%s AND DirName=%s"
+                args.append(level)
+                args.append(elements[level - 1])
         req += ")" * (len(elements) - 1)
         # print req
-        result = self.db._query(req)
+        result = self.db._query(req, args=args)
         # print "in findDir",result
         if not result["OK"]:
             return result
@@ -107,8 +106,8 @@ class DirectoryNodeTree(DirectoryTreeBase):
         if dirID == 0:
             return S_ERROR("Root directory ID given")
 
-        req = "SELECT Parent FROM FC_DirectoryTreeM WHERE DirID=%d" % dirID
-        result = self.db._query(req)
+        req = "SELECT Parent FROM FC_DirectoryTreeM WHERE DirID=%s"
+        result = self.db._query(req, args=(dirID,))
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -118,8 +117,8 @@ class DirectoryNodeTree(DirectoryTreeBase):
 
     def getDirectoryName(self, dirID):
         """Get directory name by directory ID"""
-        req = "SELECT DirName FROM FC_DirectoryTreeM WHERE DirID=%d" % int(dirID)
-        result = self.db._query(req)
+        req = "SELECT DirName FROM FC_DirectoryTreeM WHERE DirID=%s"
+        result = self.db._query(req, args=(dirID,))
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -177,8 +176,8 @@ class DirectoryNodeTree(DirectoryTreeBase):
         else:
             dirID = path
 
-        req = "SELECT DirID FROM FC_DirectoryTreeM WHERE Parent=%d" % dirID
-        result = self.db._query(req)
+        req = "SELECT DirID FROM FC_DirectoryTreeM WHERE Parent=%s"
+        result = self.db._query(req, args=(dirID,))
         if not result["OK"]:
             return result
         if not result["Value"]:
