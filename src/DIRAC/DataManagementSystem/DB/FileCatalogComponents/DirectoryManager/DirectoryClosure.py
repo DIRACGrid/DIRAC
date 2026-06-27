@@ -227,7 +227,8 @@ class DirectoryClosure(DirectoryTreeBase):
         """
 
         if requestString:
-            reqStr = f"SELECT ChildID FROM FC_DirectoryClosure WHERE ParentID = {dirID}"
+            reqStr = "SELECT ChildID FROM FC_DirectoryClosure "
+            reqStr += f"WHERE ParentID = {int(dirID)}"
             if not includeParent:
                 reqStr += " AND Depth != 0"
             return S_OK(reqStr)
