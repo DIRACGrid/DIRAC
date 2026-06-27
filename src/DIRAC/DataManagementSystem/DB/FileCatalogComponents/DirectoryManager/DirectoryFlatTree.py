@@ -5,7 +5,6 @@ import os
 import stat
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.List import stringListToString, intListToString
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.DirectoryTreeBase import DirectoryTreeBase
 
 
@@ -27,9 +26,14 @@ class DirectoryFlatTree(DirectoryTreeBase):
         failed = {}
         req = "SELECT DirName,DirID"
         if metadata:
-            req = f"{req},{intListToString(metadata)}"
-        req = f"{req} FROM DirectoryInfo WHERE DirName IN ({stringListToString(paths)})"
-        res = self.db._query(req)
+            for meta in metadata:
+                if not self.db._checkIdentifier(meta)["OK"]:
+                    return S_ERROR(f"Invalid metadata field: {meta}")
+            req += "," + ",".join(metadata)
+        req += " FROM DirectoryInfo WHERE DirName IN ("
+        req += ",".join(["%s"] * len(paths))
+        req += ")"
+        res = self.db._query(req, args=paths)
         if not res["OK"]:
             return res
         for tup in res["Value"]:
@@ -45,11 +49,15 @@ class DirectoryFlatTree(DirectoryTreeBase):
 
     def __findDirs(self, paths, metadata=["DirName"]):
         dirs = {}
-        req = "SELECT DirID,{} FROM DirectoryInfo WHERE DirName IN ({})".format(
-            intListToString(metadata),
-            stringListToString(paths),
-        )
-        res = self.db._query(req)
+        for meta in metadata:
+            if not self.db._checkIdentifier(meta)["OK"]:
+                return S_ERROR(f"Invalid metadata field: {meta}")
+        req = "SELECT DirID,"
+        req += ",".join(metadata)
+        req += " FROM DirectoryInfo WHERE DirName IN ("
+        req += ",".join(["%s"] * len(paths))
+        req += ")"
+        res = self.db._query(req, args=paths)
         if not res["OK"]:
             return res
         if not res["Value"]:
@@ -104,8 +112,8 @@ class DirectoryFlatTree(DirectoryTreeBase):
         if not res["Value"]:
             return S_OK()
         dirID = res["Value"]
-        req = "DELETE FROM DirectoryInfo WHERE DirID=%d" % dirID
-        return self.db._update(req)
+        req = "DELETE FROM DirectoryInfo WHERE DirID=%s"
+        return self.db._update(req, args=(dirID,))
 
     def makeDirectory(self, path, credDict, status=0):
         """Create a new directory.
@@ -131,12 +139,10 @@ class DirectoryFlatTree(DirectoryTreeBase):
             return res
         parentID = res["Value"]
 
-        req = (
-            "INSERT INTO DirectoryInfo (Parent,Status,DirName,UID,GID,Mode,CreationDate,ModificationDate)\
-    VALUES (%d,%d,'%s',%d,%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP());"
-            % (parentID, status, path, uid, gid, self.db.umask)
-        )
-        result = self.db._update(req)
+        req = "INSERT INTO DirectoryInfo (Parent,Status,DirName,UID,GID,Mode,CreationDate,ModificationDate) "
+        req += "VALUES (%s,%s,%s,%s,%s,%s,UTC_TIMESTAMP(),UTC_TIMESTAMP())"
+        args = (parentID, status, path, uid, gid, self.db.umask)
+        result = self.db._update(req, args=args)
         if not result["OK"]:
             self.removeDir(path)
             return S_ERROR(f"Failed to create directory {path}")
@@ -173,8 +179,8 @@ class DirectoryFlatTree(DirectoryTreeBase):
         """Get the ID of the parent of a directory specified by ID"""
         if dirID == 0:
             return S_ERROR("Root directory ID given")
-        req = "SELECT Parent FROM DirectoryInfo WHERE DirID=%d" % dirID
-        result = self.db._query(req)
+        req = "SELECT Parent FROM DirectoryInfo WHERE DirID=%s"
+        result = self.db._query(req, args=(dirID,))
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -183,8 +189,8 @@ class DirectoryFlatTree(DirectoryTreeBase):
 
     def getDirectoryPath(self, dirID):
         """Get directory name by directory ID"""
-        req = "SELECT DirName FROM DirectoryInfo WHERE DirID=%d" % int(dirID)
-        result = self.db._query(req)
+        req = "SELECT DirName FROM DirectoryInfo WHERE DirID=%s"
+        result = self.db._query(req, args=(dirID,))
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -208,8 +214,10 @@ class DirectoryFlatTree(DirectoryTreeBase):
             pelements.append(dPath)
 
         pathString = ["'" + p + "'" for p in pelements]
-        req = f"SELECT DirID FROM DirectoryInfo WHERE DirName in ({','.join(pathString)}) ORDER BY DirID"
-        result = self.db._query(req)
+        req = "SELECT DirID FROM DirectoryInfo WHERE DirName in ("
+        req += ",".join(["%s"] * len(pelements))
+        req += ") ORDER BY DirID"
+        result = self.db._query(req, args=pelements)
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -225,8 +233,8 @@ class DirectoryFlatTree(DirectoryTreeBase):
             dirID = result["Value"]
         else:
             dirID = path
-        req = "SELECT DirID FROM DirectoryInfo WHERE Parent=%d" % dirID
-        result = self.db._query(req)
+        req = "SELECT DirID FROM DirectoryInfo WHERE Parent=%s"
+        result = self.db._query(req, args=(dirID,))
         if not result["OK"]:
             return result
         if not result["Value"]:
