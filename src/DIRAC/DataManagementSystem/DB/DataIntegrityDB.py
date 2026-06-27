@@ -147,7 +147,8 @@ class DataIntegrityDB(DB):
 
     def getTransformationProblematics(self, transID):
         """Get problematic files matching a given production"""
-        req = "SELECT LFN,FileID FROM Problematics WHERE Status = 'New' AND LFN LIKE '%%/%08d/%%';" % transID
+        req = "SELECT LFN,FileID FROM Problematics WHERE Status = 'New' "
+        req += f"AND LFN LIKE '%/{transID:08d}/%'"
         res = self._query(req)
         if not res["OK"]:
             return res
@@ -158,8 +159,8 @@ class DataIntegrityDB(DB):
 
     def incrementProblematicRetry(self, fileID):
         """Increment retry count"""
-        req = f"UPDATE Problematics SET Retries=Retries+1, LastUpdate=UTC_TIMESTAMP() WHERE FileID = {fileID};"
-        res = self._update(req)
+        req = "UPDATE Problematics SET Retries=Retries+1, LastUpdate=UTC_TIMESTAMP() WHERE FileID = %s"
+        res = self._update(req, args=(fileID,))
         return res
 
     def removeProblematic(self, fileID):
