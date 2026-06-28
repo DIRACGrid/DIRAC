@@ -6,8 +6,7 @@
 
 import datetime
 from urllib import parse as urlparse
-from sqlalchemy import create_engine, desc, exc
-from sqlalchemy.engine.reflection import Inspector
+from sqlalchemy import create_engine, desc, exc, inspect
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.query import Query
 
@@ -61,7 +60,7 @@ class SQLAlchemyDB(DIRACDB):
             echo=self.log.getLevel() == "DEBUG",
         )
         self.sessionMaker_o = sessionmaker(bind=self.engine)
-        self.inspector = Inspector.from_engine(self.engine)
+        self.inspector = inspect(self.engine)
 
     def _createTablesIfNotThere(self, tablesList):
         """
