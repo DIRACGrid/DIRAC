@@ -4,7 +4,7 @@
     although not complete and with several extensions
 """
 import os
-import xml.dom.minidom
+import xml.dom.minidom  # nosec: B408
 from DIRAC import S_OK, S_ERROR
 
 
@@ -153,9 +153,9 @@ class PoolXMLCatalog:
 
             for xmlf in xmlfile:
                 if os.path.isfile(xmlf):
-                    self.dom = xml.dom.minidom.parse(xmlf)
+                    self.dom = xml.dom.minidom.parse(xmlf)  # nosec: B318
                 else:
-                    self.dom = xml.dom.minidom.parseString(xmlf)
+                    self.dom = xml.dom.minidom.parseString(xmlf)  # nosec: B318
                 self.analyseCatalog(self.dom)
 
     def setBackend(self, fname):

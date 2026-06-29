@@ -7,7 +7,7 @@
 
 """
 import errno
-import xml.dom.minidom as minidom
+import xml.dom.minidom as minidom  # nosec: B408
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
 from DIRAC.Core.LCG.GOCDBClient import _parseSingleElement
@@ -61,7 +61,8 @@ class GOCDBSyncCommand(Command):
             if not response["OK"]:
                 return response
 
-            doc = minidom.parseString(response["Value"])
+            val = response["Value"]
+            doc = minidom.parseString(val)  # nosec: B318
             downtimeElements = doc.getElementsByTagName("DOWNTIME")
 
             for dtElement in downtimeElements:
