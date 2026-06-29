@@ -133,7 +133,7 @@ class JobState:
 
         gLogger.verbose("Adding logging records", f" for {self.__jid}")
         for record, updateTime, source in jobLog:
-            gLogger.verbose("", f"Logging records for {self.__jid}: {record} {updateTime} {source}")
+            gLogger.verbose("Logging records for", f"{self.__jid}: {record} {updateTime} {source}")
             record["date"] = updateTime
             record["source"] = source
             result = self.__retryFunction(5, JobState.__db.logDB.addLoggingRecord, (self.__jid,), record)
