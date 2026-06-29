@@ -759,7 +759,7 @@ class MySQL:
 
         try:
             return safe % tuple(subs)
-        except TypeError:
+        except (TypeError, ValueError):
             return safe
 
     def _connect(self):
