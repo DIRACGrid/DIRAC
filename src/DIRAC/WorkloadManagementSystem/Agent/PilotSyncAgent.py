@@ -116,7 +116,7 @@ class PilotSyncAgent(AgentModule):
                         cert=self.certAndKeyLocation,
                         timeout=30,
                     )
-                    if res.status_code not in (200, 202):
+                    if res.status_code not in (200, 201, 202, 204):
                         self.log.error("Could not upload", f"to {server}: status {res.status_code}")
             else:  # Assumes this is a DIRAC SE
                 for tf in allFiles:
