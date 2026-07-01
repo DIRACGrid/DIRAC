@@ -122,16 +122,14 @@ class StompMQConnector(MQConnector):
 
         try:
             # Get IP addresses of brokers
-            # Start with the IPv6, and randomize it
-            ipv6_addrInfo = socket.getaddrinfo(host, port, socket.AF_INET6, socket.SOCK_STREAM)
-            random.shuffle(ipv6_addrInfo)
-            # Same with IPv4
-            ipv4_addrInfo = socket.getaddrinfo(host, port, socket.AF_INET, socket.SOCK_STREAM)
-            random.shuffle(ipv4_addrInfo)
+            addrInfo = socket.getaddrinfo(host, port, socket.AF_UNSPEC, socket.SOCK_STREAM)
+            random.shuffle(addrInfo)
+            # Prefer IPv6 while preserving the randomized order within each address family
+            addrInfo.sort(key=lambda address: address[0] != socket.AF_INET6)
 
-            # Create the host_port tuples, keeping the ipv6 in front
+            # Create the host_port tuples, keeping IPv6 in front
             host_and_ports = []
-            for _family, _socktype, _proto, _canonname, sockaddr in ipv6_addrInfo + ipv4_addrInfo:
+            for _family, _socktype, _proto, _canonname, sockaddr in addrInfo:
                 host_and_ports.append((sockaddr[0], sockaddr[1]))
 
             connectionArgs.update({"host_and_ports": host_and_ports})
