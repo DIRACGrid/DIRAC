@@ -50,13 +50,14 @@ For example::
      {
        User = test
        Password = password
+       IndexPrefix = mydirac-
      }
    }
 
 
-The following option can be set in `Systems/Monitoring/Databases/MonitoringDB`:
+The following global option can be set in `Systems/NoSQLDatabases`:
 
-   *IndexPrefix*:  Prefix used to prepend to indexes created in the ES instance.
+   *IndexPrefix*: Prefix prepended to all indexes created in the OpenSearch instance.
 
 For each monitoring types managed, the Period (how often a new index is created)
 can be defined with::

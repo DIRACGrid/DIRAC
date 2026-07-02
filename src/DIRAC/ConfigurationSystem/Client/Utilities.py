@@ -532,6 +532,9 @@ def getElasticDBParameters(fullname):
         if ca_certs:
             parameters["ca_certs"] = ca_certs
 
+    # Global index prefix for all OpenSearch databases
+    parameters["IndexPrefix"] = gConfig.getValue("/Systems/NoSQLDatabases/IndexPrefix", "")
+
     # Check optional parameters: Host, Port, SSL
     result = gConfig.getOption(cs_path + "/Host")
     if not result["OK"]:
