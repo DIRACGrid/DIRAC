@@ -1,5 +1,4 @@
 import os
-import re
 import time
 import gzip
 import queue
@@ -7,7 +6,7 @@ import shutil
 import threading
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Utilities.File import cleanDirectory, mkDir
 
 
 class SecurityFileLog(threading.Thread):
@@ -52,15 +51,18 @@ class SecurityFileLog(threading.Thread):
             fd.close()
 
     def __launchCleaningOldLogFiles(self):
-        nowEpoch = time.time()
-        self.__walkOldLogs(self.__basePath, nowEpoch, re.compile(r"^\d*\.security\.log\.csv$"), 86400, self.__zipOldLog)
-        self.__walkOldLogs(
-            self.__basePath,
-            nowEpoch,
-            re.compile(r"^\d*\.security\.log\.csv\.gz$"),
-            self.__secsToLog,
-            self.__unlinkOldLog,
+        self._cleanupLogs(self.__basePath, 86400, self.__zipOldLog, "*.security.log.csv")
+        self._cleanupLogs(self.__basePath, self.__secsToLog, self.__unlinkOldLog, "*.security.log.csv.gz")
+
+    def _cleanupLogs(self, basePath, maxSecs, functor, pattern):
+        """Clean old logs matching a pattern, optionally zipping first."""
+
+        errFiles = cleanDirectory(
+            basePath, maxSecs=maxSecs, filePatterns=[pattern], maxDepth=0, callbackFn=functor, delEmptyDirs=True
         )
+        if errFiles:
+            for fp in errFiles:
+                gLogger.error("Failed to clean security log", fp)
 
     def __unlinkOldLog(self, filePath):
         try:
@@ -68,8 +70,8 @@ class SecurityFileLog(threading.Thread):
             os.unlink(filePath)
         except Exception as e:
             gLogger.error("Can't unlink old log file", f"{filePath}: {str(e)}")
-            return 1
-        return 0
+            return False
+        return True
 
     def __zipOldLog(self, filePath):
         try:
@@ -79,30 +81,8 @@ class SecurityFileLog(threading.Thread):
                     shutil.copyfileobj(f_in, f_out)
         except Exception:
             gLogger.exception("Can't compress old log file", filePath)
-            return 1
-        return self.__unlinkOldLog(filePath) + 1
-
-    def __walkOldLogs(self, path, nowEpoch, reLog, executionInSecs, functor):
-        initialEntries = os.listdir(path)
-        numEntries = 0
-        for entry in initialEntries:
-            entryPath = os.path.join(path, entry)
-            if os.path.isdir(entryPath):
-                numEntries += 1
-                numEntriesSubDir = self.__walkOldLogs(entryPath, nowEpoch, reLog, executionInSecs, functor)
-                if numEntriesSubDir == 0:
-                    gLogger.info(f"Removing dir {entryPath}")
-                    try:
-                        os.rmdir(entryPath)
-                        numEntries -= 1
-                    except Exception as e:
-                        gLogger.error("Can't delete directory", f"{entryPath}: {str(e)}")
-            elif os.path.isfile(entryPath):
-                numEntries += 1
-                if reLog.match(entry):
-                    if nowEpoch - os.stat(entryPath)[8] > executionInSecs:
-                        numEntries += functor(entryPath) - 1
-        return numEntries
+            return False
+        return self.__unlinkOldLog(filePath)
 
     def logAction(self, msg):
         if len(msg) != len(self.__requiredFields):

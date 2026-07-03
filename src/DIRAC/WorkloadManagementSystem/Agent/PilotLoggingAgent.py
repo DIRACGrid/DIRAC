@@ -12,13 +12,13 @@
 # # imports
 import os
 import tempfile
-import time
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getVOMSAttributeForGroup, getVOs
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.File import cleanDirectory
 from DIRAC.Core.Utilities.Proxy import executeWithoutServerCertificate, getProxy
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.WorkloadManagementSystem.Client.TornadoPilotLoggingClient import TornadoPilotLoggingClient
@@ -202,23 +202,12 @@ class PilotLoggingAgent(AgentModule):
         Delete old pilot log files unconditionally. Assumes that pilotLogPath exists.
 
         :param str pilotLogPath: log files directory
-        :return: None
-        :rtype: None
         """
-
-        files = os.listdir(pilotLogPath)
-        seconds = int(self.clearPilotsDelay) * 86400
-        currentTime = time.time()
-
-        for file in files:
-            fullpath = os.path.join(pilotLogPath, file)
-            modifTime = os.stat(fullpath).st_mtime
-            if modifTime < currentTime - seconds:
-                self.log.debug(f" Deleting old log : {fullpath}")
-                try:
-                    os.remove(fullpath)
-                except Exception as excp:
-                    self.log.exception(f"Cannot remove an old log file after {fullpath}", lException=excp)
+        maxSecs = int(self.clearPilotsDelay) * 24 * 60 * 60
+        errFiles = cleanDirectory(pilotLogPath, maxSecs, filePatterns=["*.log"], maxDepth=1)
+        if errFiles:
+            for fp in errFiles:
+                self.log.exception(f"Cannot remove an old log file", fp)
 
     def _downloadProxy(self, vo, userDNs, proxyGroup, filename):
         """
