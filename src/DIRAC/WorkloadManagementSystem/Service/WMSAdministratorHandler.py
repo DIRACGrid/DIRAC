@@ -1,11 +1,12 @@
 """
 This is a DIRAC WMS administrator interface.
 """
+
 from DIRAC import S_ERROR, S_OK
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.MonitoringSystem.Client.WebAppClient import WebAppClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
 
@@ -27,6 +28,7 @@ class WMSAdministratorHandlerMixin:
         cls.elasticJobParametersDB = result["Value"]()
 
         cls.pilotManager = PilotManagerClient()
+        cls.web_app_manager = WebAppClient()
 
         return S_OK()
 
@@ -158,7 +160,7 @@ class WMSAdministratorHandlerMixin:
 
         outputs = {"StdOut": "", "StdErr": ""}
         for pilotRef in pilotJobReferences:
-            result = self.pilotManager.getPilotOutput(pilotRef)
+            result = self.web_app_manager.getPilotOutput(pilotRef)
             if not result["OK"]:
                 stdout = f"Could not retrieve output: {result['Message']}"
                 error = f"Could not retrieve error: {result['Message']}"
