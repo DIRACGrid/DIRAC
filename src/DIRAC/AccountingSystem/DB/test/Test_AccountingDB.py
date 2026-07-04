@@ -51,9 +51,9 @@ class TestCase(unittest.TestCase):
 class MakeQuery(TestCase):
     """testing making a query"""
 
-    def query(self, cmd, conn):  # pylint: disable=no-self-use,unused-argument
-        """Because we are not able to execute the query, the method returns the query"""
-        return cmd
+    def query(self, cmd, args=None, logArgs=None, conn=None):  # pylint: disable=no-self-use,unused-argument
+        """Because we are not able to execute the query, the method returns the query & args"""
+        return (cmd, args)
 
     ################################################################################
     def test_instantiate(self):
@@ -255,8 +255,7 @@ class MakeQuery(TestCase):
         self.assertTrue(retVal)
         expectedEndTime = retVal
 
-        expectedQuery = (
-            "SELECT `ac_key_DataOperation_Source`.`value`, \
+        expectedQuery = "SELECT `ac_key_DataOperation_Source`.`value`, \
 `ac_bucket_DataOperation`.`startTime`, \
 `ac_bucket_DataOperation`.`bucketLength`, \
 SUM(`ac_bucket_DataOperation`.`TransferOK`), \
@@ -269,9 +268,8 @@ AND `ac_bucket_DataOperation`.`startTime` <= %s \
 AND `ac_bucket_DataOperation`.`Source` = `ac_key_DataOperation_Source`.`id` \
 GROUP BY startTime, `ac_key_DataOperation_Source`.Value, bucketlength \
 ORDER BY startTime"
-            % (expectedStartTime, expectedEndTime)
-        )
-        retVal = module._AccountingDB__queryType(
+        expectedArgs = [expectedStartTime, expectedEndTime]
+        retVal, retArgs = module._AccountingDB__queryType(
             "DataOperation",  # pylint: disable=no-member
             startTime,
             endTime,
@@ -287,6 +285,7 @@ ORDER BY startTime"
 
         self.assertTrue(retVal)
         self.assertEqual(retVal, expectedQuery)
+        self.assertEqual(retArgs, expectedArgs)
 
     def test_queryType2(self):
         """Test the query creation for a given condition"""
@@ -381,8 +380,7 @@ ORDER BY startTime"
         self.assertTrue(retVal)
         expectedEndTime = retVal
 
-        expectedQuery = (
-            "SELECT `ac_key_DataOperation_Source`.`value`, \
+        expectedQuery = "SELECT `ac_key_DataOperation_Source`.`value`, \
 `ac_bucket_DataOperation`.`startTime`, \
 `ac_bucket_DataOperation`.`bucketLength`, \
 SUM(`ac_bucket_DataOperation`.`TransferOK`), \
@@ -395,10 +393,9 @@ AND `ac_bucket_DataOperation`.`startTime` <= %s \
 AND `ac_bucket_DataOperation`.`Source` = `ac_key_DataOperation_Source`.`id` \
 GROUP BY startTime, `ac_key_DataOperation_Source`.Value, bucketlength \
 ORDER BY startTime"
-            % (expectedStartTime, expectedEndTime)
-        )
+        expectedArgs = [expectedStartTime, expectedEndTime]
 
-        retVal = module._AccountingDB__queryType(
+        retVal, retArgs = module._AccountingDB__queryType(
             "DataOperation",  # pylint: disable=no-member
             startTime,
             endTime,
@@ -414,6 +411,7 @@ ORDER BY startTime"
 
         self.assertTrue(retVal)
         self.assertEqual(retVal, expectedQuery)
+        self.assertEqual(retArgs, expectedArgs)
 
 
 #############################################################################
