@@ -644,10 +644,7 @@ class TransformationDB(DB):
         if timeStamp:
             timeStamp = f"tf.{timeStamp}"
         if fixedCondDict or older or newer:
-            cond = self.buildCondition(fixedCondDict, older, newer, timeStamp, orderAttribute, limit, offset=offset)
-            # When buildCondition tries to quote the column names, it will fail due to the table alias
-            # So we need to move the single quotes to the right place
-            req += f" {cond.replace('`tf.', 'tf.`').replace('`df.', 'df.`')}"
+            req += self.buildCondition(fixedCondDict, older, newer, timeStamp, orderAttribute, limit, offset=offset)
 
         res = self._query(req, conn=connection)
         if not res["OK"]:
