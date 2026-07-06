@@ -144,25 +144,22 @@ class ProxyDB(DB):
         if not retVal["OK"]:
             return retVal
         allStr = reqStr + retVal["Value"]
-        try:
-            sUserDN = self._escapeString(userDN)["Value"]
-            sAllStr = self._escapeString(allStr)["Value"]
-        except KeyError:
-            return S_ERROR("Cannot escape DN")
-        cmd = "INSERT INTO `ProxyDB_Requests` ( Id, UserDN, Pem, ExpirationTime )"
-        cmd += " VALUES ( 0, %s, %s, TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() ) )" % (
-            sUserDN,
-            sAllStr,
-            int(self.__defaultRequestLifetime),
-        )
-        retVal = self._update(cmd, conn=connObj)
+        req = "INSERT INTO ProxyDB_Requests "
+        req += "(Id,UserDN,Pem,ExpirationTime)"
+        req += " VALUES (0,%s,%s,TIMESTAMPADD( SECOND, %s, UTC_TIMESTAMP()))"
+        args = (userDN, allStr, int(self.__defaultRequestLifetime))
+        logArgs = (userDN, "<removed>", int(self.__defaultRequestLifetime))
+        retVal = self._update(req, args=args, logArgs=logArgs, conn=connObj)
         if not retVal["OK"]:
             return retVal
         # 99% of the times we will stop here
         if "lastRowId" in retVal:
             return S_OK({"id": retVal["lastRowId"], "request": reqStr})
         # If the lastRowId hack does not work. Get it by hand
-        retVal = self._query(f"SELECT Id FROM `ProxyDB_Requests` WHERE Pem='{reqStr}'")
+        req = "SELECT Id FROM ProxyDB_Requests WHERE Pem=%s"
+        args = (allStr,)
+        logArgs = ("<removed>",)
+        retVal = self._query(req, args=args, logArgs=logArgs, conn=connObj)
         if not retVal["OK"]:
             return retVal
         data = retVal["Value"]
@@ -180,12 +177,8 @@ class ProxyDB(DB):
 
         :return: S_OK(str)/S_ERROR()
         """
-        try:
-            sUserDN = self._escapeString(userDN)["Value"]
-        except KeyError:
-            return S_ERROR("Cannot escape DN")
-        cmd = f"SELECT Pem FROM `ProxyDB_Requests` WHERE Id = {requestId} AND UserDN = {sUserDN}"
-        retVal = self._query(cmd)
+        req = "SELECT Pem FROM ProxyDB_Requests WHERE Id=%s AND UserDN=%s"
+        retVal = self._query(req, args=(requestId, userDN))
         if not retVal["OK"]:
             return retVal
         data = retVal["Value"]
@@ -202,8 +195,8 @@ class ProxyDB(DB):
 
         :return: S_OK()/S_ERROR()
         """
-        cmd = "DELETE FROM `ProxyDB_Requests` WHERE ExpirationTime < UTC_TIMESTAMP()"
-        return self._update(cmd)
+        req = "DELETE FROM ProxyDB_Requests WHERE ExpirationTime < UTC_TIMESTAMP()"
+        return self._update(req)
 
     def deleteRequest(self, requestId):
         """Delete a request from the db
@@ -212,8 +205,8 @@ class ProxyDB(DB):
 
         :return: S_OK()/S_ERROR()
         """
-        cmd = f"DELETE FROM `ProxyDB_Requests` WHERE Id={requestId}"
-        return self._update(cmd)
+        req = "DELETE FROM ProxyDB_Requests WHERE Id=%s"
+        return self._update(req, args=(requestId,))
 
     def completeDelegation(self, requestId, userDN, delegatedPem):
         """Complete a delegation and store it in the db
@@ -300,15 +293,10 @@ class ProxyDB(DB):
             "Storing proxy for credentials %s (%d:%02d:%02d:%02d left)" % (proxyIdentityDN, dLeft, hLeft, mLeft, sLeft)
         )
 
-        try:
-            sUserDN = self._escapeString(userDN)["Value"]
-            sTable = "ProxyDB_CleanProxies"
-        except KeyError:
-            return S_ERROR("Cannot escape DN")
         # Check what we have already got in the repository
-        cmd = "SELECT TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ), Pem "
-        cmd += f"FROM `{sTable}` WHERE UserDN={sUserDN} "
-        result = self._query(cmd)
+        req = "SELECT TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), ExpirationTime), Pem FROM ProxyDB_CleanProxies "
+        req += "WHERE UserDN=%s"
+        result = self._query(req, args=(userDN,))
         if not result["OK"]:
             return result
 
@@ -329,31 +317,32 @@ class ProxyDB(DB):
 
         pemChain = chain.dumpAllToString()["Value"]
         dValues = {
-            "UserName": self._escapeString(userName)["Value"],
-            "UserDN": sUserDN,
-            "Pem": self._escapeString(pemChain)["Value"],
+            "UserName": userName,
+            "UserDN": userDN,
+            "Pem": pemChain,
             "ExpirationTime": "TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )" % int(remainingSecs),
+            "ProxyProvider": proxyProvider,
         }
-        dValues["ProxyProvider"] = f"'{proxyProvider}'"
         if sqlInsert:
             sqlFields = []
             sqlValues = []
             for key in dValues:
                 sqlFields.append(key)
                 sqlValues.append(dValues[key])
-            cmd = f"INSERT INTO `{sTable}` ( {', '.join(sqlFields)} ) VALUES ( {', '.join(sqlValues)} )"
+            req = "INSERT INTO ProxyDB_CleanProxies "
+            req += "(UserName,UserDN,Pem,ExpirationTime,ProxyProvider) "
+            req += "VALUES (%s,%s,%s,TIMESTAMPADD(SECOND, %s, UTC_TIMESTAMP()),%s)"
+            args = (userName, userDN, pemChain, int(remainingSecs), proxyProvider)
+            logArgs = (userName, userDN, "<removed>", int(remainingSecs), proxyProvider)
         else:
-            sqlSet = []
-            sqlWhere = []
-            for k in dValues:
-                if k in ("UserDN", "ProxyProvider"):
-                    sqlWhere.append(f"{k} = {dValues[k]}")
-                else:
-                    sqlSet.append(f"{k} = {dValues[k]}")
-            cmd = f"UPDATE `{sTable}` SET {', '.join(sqlSet)} WHERE {' AND '.join(sqlWhere)}"
+            req = "UPDATE ProxyDB_CleanProxies SET "
+            req += "UserName=%s,Pem=%s,ExpirationTime=TIMESTAMPADD(SECOND, %s, UTC_TIMESTAMP()) "
+            req += "WHERE UserDN=%s AND ProxyProvider=%s"
+            args = (userName, pemChain, int(remainingSecs), userDN, proxyProvider)
+            logArgs = (userName, "<removed>", int(remainingSecs), userDN, proxyProvider)
 
         self.logAction("store proxy", userDN, userDN)
-        return self._update(cmd)
+        return self._update(req, args=args, logArgs=logArgs)
 
     def purgeExpiredProxies(self, sendNotifications=True):
         """Purge expired requests from the db
@@ -364,8 +353,10 @@ class ProxyDB(DB):
         """
         purged = 0
         for tableName in ("ProxyDB_CleanProxies", "ProxyDB_VOMSProxies"):
-            cmd = f"DELETE FROM `{tableName}` WHERE ExpirationTime < UTC_TIMESTAMP()"
-            result = self._update(cmd)
+            req = "DELETE FROM "
+            req += tableName
+            req += " WHERE ExpirationTime < UTC_TIMESTAMP()"
+            result = self._update(req)
             if not result["OK"]:
                 return result
             purged += result["Value"]
@@ -382,13 +373,9 @@ class ProxyDB(DB):
 
         :return: S_OK()/S_ERROR()
         """
-        try:
-            userDN = self._escapeString(userDN)["Value"]
-        except KeyError:
-            return S_ERROR("Invalid DN")
         errMsgs = []
-        req = f"DELETE FROM `ProxyDB_CleanProxies` WHERE UserDN={userDN}"
-        result = self._update(req)
+        req = "DELETE FROM ProxyDB_CleanProxies WHERE UserDN=%s"
+        result = self._update(req, args=(userDN,))
         if not result["OK"]:
             errMsgs.append(result["Message"])
         if errMsgs:
@@ -430,28 +417,25 @@ class ProxyDB(DB):
 
         :return: S_OK(tuple)/S_ERROR() -- tuple contain proxy as string and remaining seconds
         """
-        try:
-            sUserDN = self._escapeString(userDN)["Value"]
-            if userGroup:
-                sUserGroup = self._escapeString(userGroup)["Value"]
-            if vomsAttr:
-                sVomsAttr = self._escapeString(vomsAttr)["Value"]
-        except KeyError:
-            return S_ERROR("Invalid DN or Group")
         if proxyProvider:
-            sTable = "`ProxyDB_CleanProxies`"
+            sTable = "ProxyDB_CleanProxies"
         else:
-            sTable = "`ProxyDB_VOMSProxies`"
-        cmd = f"SELECT Pem, TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) from {sTable} "
-        cmd += f"WHERE UserDN={sUserDN} AND TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > 0"
+            sTable = "ProxyDB_VOMSProxies"
+        req = "SELECT Pem, TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), ExpirationTime) from "
+        req += sTable
+        req += " WHERE UserDN=%s AND TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), ExpirationTime) > 0"
+        args = [userDN]
         if proxyProvider:
-            cmd += f' AND ProxyProvider="{proxyProvider}"'
+            req += " AND ProxyProvider=%s"
+            args.append(proxyProvider)
         else:
             if userGroup:
-                cmd += f" AND UserGroup={sUserGroup}"
+                req += " AND UserGroup=%s"
+                args.append(userGroup)
             if vomsAttr:
-                cmd += f" AND VOMSAttr={sVomsAttr}"
-        retVal = self._query(cmd)
+                req += " AND VOMSAttr=%s"
+                args.append(vomsAttr)
+        retVal = self._query(req, args=args)
         if not retVal["OK"]:
             return retVal
         data = retVal["Value"]
@@ -691,26 +675,12 @@ class ProxyDB(DB):
             userName = ""
         else:
             userName = result["Value"]
-        try:
-            sUserName = self._escapeString(userName)["Value"]
-            sUserDN = self._escapeString(userDN)["Value"]
-            sUserGroup = self._escapeString(userGroup)["Value"]
-            sVomsAttr = self._escapeString(vomsAttr)["Value"]
-            sPemData = self._escapeString(pemData)["Value"]
-        except KeyError:
-            return S_ERROR("Could not escape some data")
-        cmd = (
-            "REPLACE INTO `ProxyDB_VOMSProxies` ( UserName, UserDN, UserGroup, VOMSAttr, Pem, ExpirationTime ) VALUES "
-        )
-        cmd += "( %s, %s, %s, %s, %s, TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() ) )" % (
-            sUserName,
-            sUserDN,
-            sUserGroup,
-            sVomsAttr,
-            sPemData,
-            secsLeft,
-        )
-        result = self._update(cmd, conn=connObj)
+        req = "REPLACE INTO ProxyDB_VOMSProxies "
+        req += "(UserName,UserDN,UserGroup,VOMSAttr,Pem,ExpirationTime) "
+        req += "VALUES (%s,%s,%s,%s,%s,TIMESTAMPADD(SECOND, %s, UTC_TIMESTAMP()))"
+        args = (userName, userDN, userGroup, vomsAttr, pemData, secsLeft)
+        logArgs = (userName, userDN, userGroup, vomsAttr, "<removed>", secsLeft)
+        result = self._update(req, args=args, logArgs=logArgs, conn=connObj)
         if not result["OK"]:
             return result
         return S_OK(secsLeft)
@@ -726,24 +696,26 @@ class ProxyDB(DB):
         """
         data = []
         sqlCond = []
+        condArgs = []
         if validSecondsLeft:
             try:
                 validSecondsLeft = int(validSecondsLeft)
             except ValueError:
                 return S_ERROR("Seconds left has to be an integer")
-            sqlCond.append("TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > %d" % validSecondsLeft)
+            sqlCond.append("TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), ExpirationTime) > %s")
+            condArgs.append(validSecondsLeft)
 
         if userMask:
-            try:
-                sUserName = self._escapeString(userMask)["Value"]
-            except KeyError:
-                return S_ERROR("Can't escape user name")
-            sqlCond.append(f"UserName = {sUserName}")
+            sqlCond.append("UserName=%s")
+            condArgs.append(userMask)
 
-        cmd = "SELECT UserName, UserDN, ExpirationTime FROM `ProxyDB_CleanProxies`"
+        req = "SELECT UserName,UserDN,ExpirationTime FROM ProxyDB_CleanProxies"
+        args = []
         if sqlCond:
-            cmd += f" WHERE {' AND '.join(sqlCond)}"
-        retVal = self._query(cmd)
+            req += " WHERE "
+            req += " AND ".join(sqlCond)
+            args.extend(condArgs)
+        retVal = self._query(req, args=args)
         if not retVal["OK"]:
             return retVal
         for record in retVal["Value"]:
@@ -769,18 +741,26 @@ class ProxyDB(DB):
         """
         data = []
         sqlWhere = ["Pem is not NULL"]
+        whereArgs = []
         fields = ("UserName", "UserDN", "ExpirationTime")
-        cmd = f"SELECT {', '.join(fields)} FROM `ProxyDB_CleanProxies`"
+        req = "SELECT "
+        req += ",".join(fields)
+        req += " FROM ProxyDB_CleanProxies"
+        args = []
         for field in selDict:
             if field not in fields:
                 continue
             fVal = selDict[field]
             if isinstance(fVal, (dict, tuple, list)):
-                sqlWhere.append(
-                    f"{field} in ({', '.join([self._escapeString(str(value))['Value'] for value in fVal])})"
-                )
+                wherePart = field
+                wherePart += " IN ("
+                wherePart += ",".join(["%s"] * len(fVal))
+                wherePart += ")"
+                sqlWhere.append(wherePart)
+                whereArgs.extend(fVal)
             else:
-                sqlWhere.append(f"{field} = {self._escapeString(str(fVal))['Value']}")
+                sqlWhere.append(f"{field}=%s")
+                whereArgs.append(str(fVal))
         sqlOrder = []
         if sortList:
             for sort in sortList:
@@ -794,17 +774,20 @@ class ProxyDB(DB):
                     return S_ERROR(f"Invalid sorting order {sort[1]}")
                 sqlOrder.append(f"{sort[0]} {sort[1]}")
         if sqlWhere:
-            cmd = f"{cmd} WHERE {' AND '.join(sqlWhere)}"
+            req += " WHERE "
+            req += " AND ".join(sqlWhere)
+            args.extend(whereArgs)
         if sqlOrder:
-            cmd = f"{cmd} ORDER BY {', '.join(sqlOrder)}"
+            req += " ORDER BY "
+            req += ",".join(sqlOrder)
         if limit:
             try:
                 start = int(start)
                 limit = int(limit)
             except ValueError:
                 return S_ERROR("start and limit have to be integers")
-            cmd += " LIMIT %d,%d" % (start, limit)
-        retVal = self._query(cmd)
+            req += f" LIMIT {start},{limit}"
+        retVal = self._query(req, args=args)
         if not retVal["OK"]:
             return retVal
         for record in retVal["Value"]:
@@ -822,15 +805,10 @@ class ProxyDB(DB):
 
         :return: S_ERROR()
         """
-        try:
-            sAction = self._escapeString(action)["Value"]
-            sIssuerDN = self._escapeString(issuerDN)["Value"]
-            sTargetDN = self._escapeString(targetDN)["Value"]
-        except KeyError:
-            return S_ERROR("Can't escape from death")
-        cmd = "INSERT INTO `ProxyDB_Log` ( Action, IssuerDN, IssuerGroup, TargetDN, TargetGroup, Timestamp ) VALUES "
-        cmd += f"( {sAction}, {sIssuerDN}, 'IssuerGroup', {sTargetDN}, 'TargetGroup', UTC_TIMESTAMP() )"
-        retVal = self._update(cmd)
+        req = "INSERT INTO ProxyDB_Log (Action,IssuerDN,IssuerGroup,TargetDN,TargetGroup,`Timestamp`) "
+        req += " VALUES (%s,%s,'IssuerGroup',%s,'TargetGroup',UTC_TIMESTAMP())"
+        args = (action, issuerDN, targetDN)
+        retVal = self._update(req, args=args)
         if not retVal["OK"]:
             self.log.error("Can't add a proxy action log: ", retVal["Message"])
 
@@ -840,7 +818,8 @@ class ProxyDB(DB):
         :return: S_OK()/S_ERROR()
         """
         return self._update(
-            "DELETE FROM `ProxyDB_Log` WHERE `Timestamp` < UTC_TIMESTAMP() - INTERVAL 15552000 SECOND LIMIT 50000"
+            # 15552000 = 180 days
+            "DELETE FROM ProxyDB_Log WHERE `Timestamp` < UTC_TIMESTAMP() - INTERVAL 15552000 SECOND LIMIT 50000"
         )
 
     def getLogsContent(self, selDict, sortList, start=0, limit=0):
@@ -849,38 +828,54 @@ class ProxyDB(DB):
           parameters are a filter to the db
         """
         fields = ("Action", "IssuerDN", "IssuerGroup", "TargetDN", "TargetGroup", "Timestamp")
-        cmd = f"SELECT {', '.join(fields)} FROM `ProxyDB_Log`"
+        lowerFields = (x.lower() for x in fields)
+        req = "SELECT "
+        # Timestamp is an SQL keyword so we have to be careful with backtick quoting
+        req += ",".join([f"`{x}`" for x in fields])
+        req += " FROM ProxyDB_Log"
+        args = []
+        whereStr = ""
+        whereArgs = []
         if selDict:
             qr = []
+            qrArgs = []
             if "beforeDate" in selDict:
-                qr.append(f"Timestamp < {self._escapeString(selDict['beforeDate'])['Value']}")
+                qr.append("`Timestamp` < %s")
+                qrArgs.append(selDict["beforeDate"])
                 del selDict["beforeDate"]
             if "afterDate" in selDict:
-                qr.append(f"Timestamp > {self._escapeString(selDict['afterDate'])['Value']}")
+                qr.append("`Timestamp` > %s")
+                qrArgs.append(selDict["afterDate"])
                 del selDict["afterDate"]
             for field in selDict:
-                qr.append(
-                    "(%s)"
-                    % " OR ".join(
-                        ["{}={}".format(field, self._escapeString(str(value))["Value"]) for value in selDict[field]]
-                    )
-                )
-            whereStr = f" WHERE {' AND '.join(qr)}"
-            cmd += whereStr
-        else:
-            whereStr = ""
+                if field.lower() not in lowerFields:
+                    return S_ERROR(f"Unknown field: {field}")
+                qr.append(" OR ".join([f"`{field}`=%s"] * len(selDict[field])))
+                qrArgs.extend(selDict[field])
+            whereStr = " WHERE "
+            whereStr += " AND ".join(qr)
+            whereArgs.extend(qrArgs)
+            req += whereStr
+            args.extend(whereArgs)
         if sortList:
-            cmd += f" ORDER BY {', '.join([f'{sort[0]} {sort[1]}' for sort in sortList])}"
+            for sort in sortList:
+                if not self._checkIdentifier(sort[0])["OK"]:
+                    return S_ERROR(f"Invalid sort field: {sort[0]}")
+                sortDir = sort[1].upper()
+                if sortDir not in ("ASC", "DESC"):
+                    return S_ERROR(f"Invalid sort direction: {sortDir}")
+            req += " ORDER BY "
+            req += ",".join(f"{x[0]} {x[1]}" for x in sortList)
         if limit:
-            cmd += " LIMIT %d,%d" % (start, limit)
-        retVal = self._query(cmd)
+            req += f" LIMIT {int(start)},{int(limit)}"
+        retVal = self._query(req, args=args)
         if not retVal["OK"]:
             return retVal
         data = retVal["Value"]
         totalRecords = len(data)
-        cmd = "SELECT COUNT( Timestamp ) FROM `ProxyDB_Log`"
+        cmd = "SELECT COUNT(`Timestamp`) FROM ProxyDB_Log"
         cmd += whereStr
-        retVal = self._query(cmd)
+        retVal = self._query(cmd, args=whereArgs)
         if retVal["OK"]:
             totalRecords = retVal["Value"][0][0]
         return S_OK({"ParameterNames": fields, "Records": data, "TotalRecords": totalRecords})
@@ -893,11 +888,12 @@ class ProxyDB(DB):
         notifLimits = sorted(int(x) for x in self.getCSOption("NotificationTimes", ProxyDB.NOTIFICATION_TIMES))
 
         for notifLimit in notifLimits:
-            sqlSel = "UserName, TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime )"
-            sqlCond = "TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) < %d" % notifLimit
-            sqlCond += " AND TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > %d" % (notifLimit - 86400)
-
-            if not (result := self._query(f"SELECT {sqlSel} FROM `ProxyDB_CleanProxies` WHERE {sqlCond}"))["OK"]:
+            req = "SELECT UserName,TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), ExpirationTime) "
+            req += "FROM ProxyDB_CleanProxies WHERE "
+            req += "TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), ExpirationTime) < %s "
+            req += "AND TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), ExpirationTime) > %s"
+            args = (notifLimit, notifLimit - 86400)
+            if not (result := self._query(req, args=args))["OK"]:
                 return result
             for userName, lTime in result["Value"]:
                 if not self._notifyProxyAboutToExpire(userName, lTime):
