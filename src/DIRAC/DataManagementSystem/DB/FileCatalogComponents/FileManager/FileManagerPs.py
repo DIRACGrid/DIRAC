@@ -533,7 +533,11 @@ class FileManagerPs(FileManagerBase):
                 repValues[lfn] = (fileID, seID, statusID, replicaType, pfn)
                 repDesc[(fileID, seID)] = lfn
 
-        allChunks = list(self.__chunks(list(lfns), chunkSize))
+        if len(lfns) == 1:
+            allChunks = []
+            lfnsToRetry = lfns
+        else:
+            allChunks = list(self.__chunks(list(lfns), chunkSize))
 
         for lfnChunk in allChunks:
             result = self.__insertMultipleReplicas(repValues, lfnChunk)
