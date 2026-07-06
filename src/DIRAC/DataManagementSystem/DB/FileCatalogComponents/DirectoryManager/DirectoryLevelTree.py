@@ -28,8 +28,8 @@ class DirectoryLevelTree(DirectoryTreeBase):
         if not dpath["OK"]:
             return dpath
         dpath = dpath["Value"]
-        req = f"SELECT DirID,Level from FC_DirectoryLevelTree WHERE DirName={dpath}"
-        result = self.db._query(req, conn=connection)
+        req = "SELECT DirID,Level from FC_DirectoryLevelTree WHERE DirName=%s"
+        result = self.db._query(req, conn=connection, args=(dpath,))
         if not result["OK"]:
             return result
 
@@ -48,9 +48,10 @@ class DirectoryLevelTree(DirectoryTreeBase):
             if not dpath["OK"]:
                 return dpath
             dpathList.append(dpath["Value"])
-        dpaths = ",".join(dpathList)
-        req = f"SELECT DirName,DirID from FC_DirectoryLevelTree WHERE DirName in ({dpaths})"
-        result = self.db._query(req, conn=connection)
+        req = "SELECT DirName,DirID from FC_DirectoryLevelTree WHERE DirName in ("
+        req += ",".join(["%s"] * len(dpathList))
+        req += ")"
+        result = self.db._query(req, args=dpathList, conn=connection)
         if not result["OK"]:
             return result
         dirDict = {}
@@ -71,16 +72,18 @@ class DirectoryLevelTree(DirectoryTreeBase):
             return res
 
         dirID = result["Value"]
-        req = "DELETE FROM FC_DirectoryLevelTree WHERE DirID=%d" % dirID
-        result = self.db._update(req)
+        req = "DELETE FROM FC_DirectoryLevelTree WHERE DirID=%s"
+        result = self.db._update(req, args=(dirID,))
         result["DirID"] = dirID
         return result
 
     def __getNumericPath(self, dirID, connection=False):
         """Get the enumerated path of the given directory"""
         epathString = ",".join(["LPATH%d" % (i + 1) for i in range(MAX_LEVELS)])
-        req = "SELECT LEVEL,%s FROM FC_DirectoryLevelTree WHERE DirID=%d" % (epathString, dirID)
-        result = self.db._query(req, conn=connection)
+        req = "SELECT LEVEL,"
+        req += epathString
+        req += " FROM FC_DirectoryLevelTree WHERE DirID=%s"
+        result = self.db._query(req, args=(dirID,), conn=connection)
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -167,19 +170,18 @@ class DirectoryLevelTree(DirectoryTreeBase):
             #       result = self.db._update(req, conn=conn)
             #       result = self.db._query("UNLOCK TABLES;", conn=conn)
             lPath = "LPATH%d" % (level)
-            req = " SELECT @tmpvar:=max(%s)+1 FROM FC_DirectoryLevelTree WHERE Parent=%d FOR UPDATE; " % (
-                lPath,
-                parentDirID,
-            )
-            resultLock = self.db._query("START TRANSACTION; ", conn=conn)
-            result = self.db._query(req, conn=conn)
-            req = "UPDATE FC_DirectoryLevelTree SET %s=@tmpvar WHERE DirID=%d; " % (lPath, dirID)
-            result = self.db._update(req, conn=conn)
-            result = self.db._query("COMMIT;", conn=conn)
+            req = f"SELECT @tmpvar:=max({lPath})+1 "
+            req += "FROM FC_DirectoryLevelTree WHERE Parent=%s FOR UPDATE"
+            resultLock = self.db._query("START TRANSACTION", conn=conn)
+            result = self.db._query(req, args=(parentDirID,), conn=conn)
+            req = "UPDATE FC_DirectoryLevelTree "
+            req += f"SET {lPath}=@tmpvar WHERE DirID=%s"
+            result = self.db._update(req, args=(dirID,), conn=conn)
+            result = self.db._query("COMMIT", conn=conn)
             if not result["OK"]:
                 return result
         else:
-            result = self.db._query("ROLLBACK;", conn=conn)
+            result = self.db._query("ROLLBACK", conn=conn)
 
         result = S_OK(dirID)
         result["NewDirectory"] = True
@@ -213,8 +215,8 @@ class DirectoryLevelTree(DirectoryTreeBase):
         if dirID == 0:
             return S_ERROR("Root directory ID given")
 
-        req = "SELECT Parent FROM FC_DirectoryLevelTree WHERE DirID=%d" % dirID
-        result = self.db._query(req)
+        req = "SELECT Parent FROM FC_DirectoryLevelTree WHERE DirID=%s"
+        result = self.db._query(req, args=(dirID,))
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -224,8 +226,8 @@ class DirectoryLevelTree(DirectoryTreeBase):
 
     def getDirectoryPath(self, dirID):
         """Get directory name by directory ID"""
-        req = "SELECT DirName FROM FC_DirectoryLevelTree WHERE DirID=%d" % int(dirID)
-        result = self.db._query(req)
+        req = "SELECT DirName FROM FC_DirectoryLevelTree WHERE DirID=%s"
+        result = self.db._query(req, args=(dirID,))
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -242,13 +244,14 @@ class DirectoryLevelTree(DirectoryTreeBase):
         if not dirs:
             return S_OK({})
 
-        dirListString = ",".join([str(d) for d in dirs])
-        req = f"SELECT DirID,DirName FROM FC_DirectoryLevelTree WHERE DirID in ( {dirListString} )"
-        result = self.db._query(req)
+        req = "SELECT DirID,DirName FROM FC_DirectoryLevelTree WHERE DirID in ("
+        req += ",".join(["%s"] * len(dirs))
+        req += ")"
+        result = self.db._query(req, args=dirs)
         if not result["OK"]:
             return result
         if not result["Value"]:
-            return S_ERROR(f"Directories not found: {dirListString}")
+            return S_ERROR(f"Directories not found: {str(dirs)}")
 
         resultDict = {}
         for row in result["Value"]:
@@ -281,9 +284,10 @@ class DirectoryLevelTree(DirectoryTreeBase):
             pelements.append(dPath)
         pelements.append("/")
 
-        pathString = ["'" + p + "'" for p in pelements]
-        req = f"SELECT DirID FROM FC_DirectoryLevelTree WHERE DirName in ({','.join(pathString)}) ORDER BY DirID"
-        result = self.db._query(req)
+        req = "SELECT DirID FROM FC_DirectoryLevelTree WHERE DirName in ("
+        req += ",".join(["%s"] * len(pelements))
+        req += ") ORDER BY DirID"
+        result = self.db._query(req, args=pelements)
         if not result["OK"]:
             return result
         if len(result["Value"]) != len(pelements):
@@ -323,7 +327,8 @@ class DirectoryLevelTree(DirectoryTreeBase):
             sel = " AND ".join(["Level=%d" % lev] + ["LPATH%d=%d" % (ll + 1, lpaths[ll]) for ll in range(lev)])
             lpathSelects.append(sel)
         selection = "(" + ") OR (".join(lpathSelects) + ")"
-        req = f"SELECT Level,DirID from FC_DirectoryLevelTree WHERE {selection} ORDER BY Level"
+        req = "SELECT Level,DirID from FC_DirectoryLevelTree "
+        req += f"WHERE {selection} ORDER BY Level"
         result = self.db._query(req)
         if not result["OK"]:
             return result
@@ -343,8 +348,8 @@ class DirectoryLevelTree(DirectoryTreeBase):
             dirID = result["Value"]
         else:
             dirID = path
-        req = "SELECT DirID FROM FC_DirectoryLevelTree WHERE Parent=%d" % dirID
-        result = self.db._query(req, conn=connection)
+        req = "SELECT DirID FROM FC_DirectoryLevelTree WHERE Parent=%s"
+        result = self.db._query(req, args=(dirID,), conn=connection)
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -354,8 +359,8 @@ class DirectoryLevelTree(DirectoryTreeBase):
 
     def getSubdirectoriesByID(self, dirID, requestString=False, includeParent=False):
         """Get all the subdirectories of the given directory at a given level"""
-        req = "SELECT Level FROM FC_DirectoryLevelTree WHERE DirID=%d" % dirID
-        result = self.db._query(req)
+        req = "SELECT Level FROM FC_DirectoryLevelTree WHERE DirID=%s"
+        result = self.db._query(req, args=(dirID,))
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -372,7 +377,10 @@ class DirectoryLevelTree(DirectoryTreeBase):
             for i in range(1, level + 1):
                 sPaths.append("LPATH%d" % i)
             pathString = ",".join(sPaths)
-            req += " JOIN (SELECT %s FROM FC_DirectoryLevelTree WHERE DirID=%d) AS F2 ON " % (pathString, dirID)
+            req += " JOIN (SELECT "
+            req += pathString
+            req += " FROM FC_DirectoryLevelTree "
+            req += f" WHERE DirID={int(dirID)}) AS F2 ON "
             sPaths = []
             for i in range(1, level + 1):
                 sPaths.append("F1.LPATH%d=F2.LPATH%d" % (i, i))
@@ -418,9 +426,10 @@ class DirectoryLevelTree(DirectoryTreeBase):
         parentList = dirs
         while parentList:
             subResult = []
-            dirListString = ",".join([str(d) for d in parentList])
-            req = f"SELECT DirID from FC_DirectoryLevelTree WHERE Parent in ( {dirListString} )"
-            result = self.db._query(req)
+            req = "SELECT DirID from FC_DirectoryLevelTree WHERE Parent in ("
+            req += ",".join(["%s"] * len(parentList))
+            req += ")"
+            result = self.db._query(req, args=parentList)
             if not result["OK"]:
                 return result
             for row in result["Value"]:
@@ -447,8 +456,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     def recoverOrphanDirectories(self, credDict):
         """Recover orphan directories"""
         # Find out orphan directories
-        treeTable = "FC_DirectoryLevelTree"
-        req = f"SELECT DirID,Parent,Level FROM {treeTable} WHERE Parent NOT IN ( SELECT DirID from {treeTable} )"
+        req = "SELECT DirID,Parent,Level FROM FC_DirectoryLevelTree WHERE Parent NOT IN (SELECT DirID from FC_DirectoryLevelTree)"
         result = self.db._query(req)
         if not result["OK"]:
             return result
@@ -482,12 +490,12 @@ class DirectoryLevelTree(DirectoryTreeBase):
                     continue
                 parentID = result["Value"]
                 # We have created a new directory but let's keep the old ID
-                req = f"UPDATE FC_DirectoryLevelTree SET DirID={oldParentID} WHERE DirID={parentID}"
-                result = self.db._update(req)
+                req = "UPDATE FC_DirectoryLevelTree SET DirID=%s WHERE DirID=%s"
+                result = self.db._update(req, args=(oldParentID, parentID))
                 if not result["OK"]:
                     continue
-                req = f"UPDATE FC_DirectoryInfo SET DirID={oldParentID} WHERE DirID={parentID}"
-                result = self.db._update(req)
+                req = "UPDATE FC_DirectoryInfo SET DirID=%s WHERE DirID=%s"
+                result = self.db._update(req, args=(oldParentID, parentID))
 
                 parentID = oldParentID
                 # We have to change also the ownership of the new directory to the most likely one
@@ -501,9 +509,11 @@ class DirectoryLevelTree(DirectoryTreeBase):
                     result = self._setDirectoryParameter(parentID, "UID", uid)
                     result = self._setDirectoryParameter(parentID, "GID", gid)
 
-            dirString = ",".join([str(dirID) for dirID in dirIDList])
-            req = f"UPDATE FC_DirectoryLevelTree SET Parent={parentID} WHERE DirID IN ({dirString})"
-            result = self.db._update(req)
+            req = "UPDATE FC_DirectoryLevelTree SET Parent=%s WHERE DirID IN ("
+            req += ",".join(["%s"] * len(dirIDList))
+            req += ")"
+            args = [parentID] + dirIDList
+            result = self.db._update(req, args=args)
             if not result["OK"]:
                 continue
 
@@ -544,8 +554,10 @@ class DirectoryLevelTree(DirectoryTreeBase):
             indexList[-1] += 1
             lpaths = ["LPATH%d=%d" % (i + 1, indexList[i]) for i in range(parentLevel + 1)]
             lpathString = "SET " + ",".join(lpaths)
-            req = f"UPDATE FC_DirectoryLevelTree {lpathString} WHERE DirID={dirID}"
-            result = self.db._update(req, conn=connection)
+            req = "UPDATE FC_DirectoryLevelTree "
+            req += lpathString
+            req += " WHERE DirID=%s"
+            result = self.db._update(req, args=(dirID,), conn=connection)
             if not result["OK"]:
                 return result
             result = self.__rebuildLevelIndexes(dirID, connection=connection)
