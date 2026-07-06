@@ -1,3 +1,22 @@
+[v9.0.23]
+
+*Core
+
+FIX: (#8647) Replace escape_string with alternatives
+FIX: (#8593) Find writeable cgroup2 in tree
+
+*TransformationSystem
+
+FIX: (#8647) Parameterise SQL in TransformationSystem
+
+*Workflow
+
+FIX: (#8630) increased saferEval limit to 1 MiB for Workflow XML handling
+
+*WorkloadManagement
+
+FIX: (#8586) Add missing pilotID column back in web pilot lookup
+
 [v9.0.22]
 
 *All
