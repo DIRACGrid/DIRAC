@@ -828,8 +828,13 @@ BEGIN
   DEALLOCATE PREPARE stmt;
 
 
-  SET @sql = CONCAT('INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) SELECT SQL_NO_CACHE f.DirID, 1, f.Size, 1 FROM FC_Files f WHERE ', fileDesc);
-  SET @sql = CONCAT(@sql, ' ON DUPLICATE KEY UPDATE SESize = SESize + f.Size, SEFiles = SEFiles + 1');
+  SET @sql = CONCAT(
+    'INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) ',
+    'SELECT SQL_NO_CACHE f.DirID, 1, SUM(f.Size), COUNT(*) ',
+    'FROM FC_Files f WHERE ', fileDesc,
+    ' GROUP BY f.DirID '
+  );
+  SET @sql = CONCAT(@sql, ' ON DUPLICATE KEY UPDATE SESize = SESize + VALUES(SESize), SEFiles = SEFiles + VALUES(SEFiles)');
 
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
@@ -1068,8 +1073,13 @@ BEGIN
   DEALLOCATE PREPARE stmt;
 
 
-  SET @sql = CONCAT('INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) SELECT SQL_NO_CACHE f.DirID, SEID, f.Size, 1 FROM FC_Files f, FC_Replicas r WHERE f.FileID = r.FileID AND (', replicaDesc);
-  SET @sql = CONCAT(@sql, ') ON DUPLICATE KEY UPDATE SESize = SESize + f.Size, SEFiles = SEFiles + 1');
+  SET @sql = CONCAT(
+    'INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) ',
+    'SELECT SQL_NO_CACHE f.DirID, r.SEID, SUM(f.Size), COUNT(*) ',
+    'FROM FC_Files f JOIN FC_Replicas r ON f.FileID = r.FileID WHERE (', replicaDesc,
+    ') GROUP BY f.DirID, r.SEID'
+  );
+  SET @sql = CONCAT(@sql, ' ON DUPLICATE KEY UPDATE SESize = SESize + VALUES(SESize), SEFiles = SEFiles + VALUES(SEFiles)');
   -- insert into FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) select f.DirID, 1, f.Size as size_diff, 1 as file_diff from FC_Files f where (DirID = 1 and FileName = 'a.txt') OR (DirID = 1 and FileName = '1.txt') on duplicate key update SESize = SESize + f.Size, SEFiles = SEFiles + 1;
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
