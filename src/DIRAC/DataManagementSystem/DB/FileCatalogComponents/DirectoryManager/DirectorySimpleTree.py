@@ -16,8 +16,8 @@ class DirectorySimpleTree(DirectoryTreeBase):
         self.treeTable = "FC_DirectoryTree"
 
     def findDir(self, path):
-        req = f"SELECT DirID from FC_DirectoryTree WHERE DirName='{path}'"
-        result = self.db._query(req)
+        req = "SELECT DirID from FC_DirectoryTree WHERE DirName=%s"
+        result = self.db._query(req, args=(path,))
         if not result["OK"]:
             return result
 
@@ -36,8 +36,8 @@ class DirectorySimpleTree(DirectoryTreeBase):
             return S_OK()
 
         dirID = result["Value"]
-        req = "DELETE FROM FC_DirectoryTree WHERE DirID=%d" % dirID
-        result = self.db._update(req)
+        req = "DELETE FROM FC_DirectoryTree WHERE DirID=%s"
+        result = self.db._update(req, args=(dirID,))
         return result
 
     def makeDir(self, path):
@@ -76,8 +76,8 @@ class DirectorySimpleTree(DirectoryTreeBase):
         if dirID == 0:
             return S_ERROR("Root directory ID given")
 
-        req = "SELECT Parent FROM FC_DirectoryTree WHERE DirID=%d" % dirID
-        result = self.db._query(req)
+        req = "SELECT Parent FROM FC_DirectoryTree WHERE DirID=%s"
+        result = self.db._query(req, args=(dirID,))
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -87,8 +87,8 @@ class DirectorySimpleTree(DirectoryTreeBase):
 
     def getDirectoryPath(self, dirID):
         """Get directory name by directory ID"""
-        req = "SELECT DirName FROM FC_DirectoryTree WHERE DirID=%d" % int(dirID)
-        result = self.db._query(req)
+        req = "SELECT DirName FROM FC_DirectoryTree WHERE DirID=%s"
+        result = self.db._query(req, args=(dirID,))
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -115,9 +115,10 @@ class DirectorySimpleTree(DirectoryTreeBase):
             dPath += "/" + el
             pelements.append(dPath)
 
-        pathString = ["'" + p + "'" for p in pelements]
-        req = f"SELECT DirID FROM FC_DirectoryTree WHERE DirName in ({pathString}) ORDER BY DirID"
-        result = self.db._query(req)
+        req = "SELECT DirID FROM FC_DirectoryTree WHERE DirName in ("
+        req += ",".join(["%s"] * len(pelements))
+        req += ") ORDER BY DirID"
+        result = self.db._query(req, args=pelements)
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -135,8 +136,8 @@ class DirectorySimpleTree(DirectoryTreeBase):
         else:
             dirID = path
 
-        req = "SELECD DirID FROM FC_DirectoryTree WHERE Parent=%d" % dirID
-        result = self.db._query(req)
+        req = "SELECT DirID FROM FC_DirectoryTree WHERE Parent=%s"
+        result = self.db._query(req, args=(dirID,))
         if not result["OK"]:
             return result
         if not result["Value"]:
