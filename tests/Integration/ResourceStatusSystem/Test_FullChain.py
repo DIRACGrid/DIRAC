@@ -45,6 +45,8 @@
           Unit               = GB
           Banned_threshold   = 10
           Degraded_threshold = 50
+          Banned_fraction    = 0.02
+          Degraded_fraction  = 0.10
           matchParams
           {
             element    = Resource

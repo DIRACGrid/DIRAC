@@ -36,6 +36,8 @@ POLICIESMETA = {  # DownTime POLICIES
             "unit": "TB",
             "Banned_threshold": 0.1,
             "Degraded_threshold": 5,
+            "Banned_fraction": 0.01,
+            "Degraded_fraction": 0.05,
             "onlyCache": True,
         },
     },

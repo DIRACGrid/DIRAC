@@ -72,7 +72,17 @@ class FreeDiskSpacePolicy_Success(FreeDiskSpacePolicy_TestCase):
         self.assertEqual("Key Free missing", res["Value"]["Reason"])
 
         res = module._evaluate(
-            {"OK": True, "Value": {"Total": 100, "Free": 0.0, "Banned_threshold": 0.1, "Degraded_threshold": 5}}
+            {
+                "OK": True,
+                "Value": {
+                    "Total": 100,
+                    "Free": 0.0,
+                    "Banned_threshold": 0.1,
+                    "Degraded_threshold": 5,
+                    "Banned_fraction": 0.01,
+                    "Degraded_fraction": 0.05,
+                },
+            }
         )
         self.assertTrue(res["OK"])
         self.assertEqual("Banned", res["Value"]["Status"])
@@ -81,7 +91,15 @@ class FreeDiskSpacePolicy_Success(FreeDiskSpacePolicy_TestCase):
         res = module._evaluate(
             {
                 "OK": True,
-                "Value": {"Total": 100, "Free": 4.0, "Guaranteed": 1, "Banned_threshold": 0.1, "Degraded_threshold": 5},
+                "Value": {
+                    "Total": 100,
+                    "Free": 4.0,
+                    "Guaranteed": 1,
+                    "Banned_threshold": 0.1,
+                    "Degraded_threshold": 5,
+                    "Banned_fraction": 0.01,
+                    "Degraded_fraction": 0.05,
+                },
             }
         )
         self.assertTrue(res["OK"])
@@ -91,12 +109,116 @@ class FreeDiskSpacePolicy_Success(FreeDiskSpacePolicy_TestCase):
         res = module._evaluate(
             {
                 "OK": True,
-                "Value": {"Total": 100, "Free": 100, "Guaranteed": 1, "Banned_threshold": 0.1, "Degraded_threshold": 5},
+                "Value": {
+                    "Total": 100,
+                    "Free": 100,
+                    "Guaranteed": 1,
+                    "Banned_threshold": 0.1,
+                    "Degraded_threshold": 5,
+                    "Banned_fraction": 0.01,
+                    "Degraded_fraction": 0.05,
+                },
             }
         )
         self.assertTrue(res["OK"])
         self.assertEqual("Active", res["Value"]["Status"])
         self.assertEqual("Enough free space", res["Value"]["Reason"])
+
+    def test_evaluate_fraction_thresholds(self):
+        """tests the method _evaluate with fraction-based thresholds"""
+
+        module = self.testClass()
+
+        # Free space is 0.5% of total (below Banned_fraction of 1%)
+        res = module._evaluate(
+            {
+                "OK": True,
+                "Value": {
+                    "Total": 1000,
+                    "Free": 5,
+                    "Banned_threshold": 100,
+                    "Degraded_threshold": 200,
+                    "Banned_fraction": 0.01,
+                    "Degraded_fraction": 0.05,
+                },
+            }
+        )
+        self.assertTrue(res["OK"])
+        self.assertEqual("Banned", res["Value"]["Status"])
+        self.assertEqual("Too little free space", res["Value"]["Reason"])
+
+        # Free space is 3% of total (below Degraded_fraction of 5%, above Banned_fraction)
+        # Absolute thresholds are set high enough to not trigger
+        res = module._evaluate(
+            {
+                "OK": True,
+                "Value": {
+                    "Total": 1000,
+                    "Free": 30,
+                    "Banned_threshold": 10,
+                    "Degraded_threshold": 20,
+                    "Banned_fraction": 0.01,
+                    "Degraded_fraction": 0.05,
+                },
+            }
+        )
+        self.assertTrue(res["OK"])
+        self.assertEqual("Degraded", res["Value"]["Status"])
+        self.assertEqual("Little free space", res["Value"]["Reason"])
+
+        # Free space is 10% of total (above both fractions and absolute thresholds)
+        res = module._evaluate(
+            {
+                "OK": True,
+                "Value": {
+                    "Total": 1000,
+                    "Free": 100,
+                    "Banned_threshold": 50,
+                    "Degraded_threshold": 80,
+                    "Banned_fraction": 0.05,
+                    "Degraded_fraction": 0.08,
+                },
+            }
+        )
+        self.assertTrue(res["OK"])
+        self.assertEqual("Active", res["Value"]["Status"])
+        self.assertEqual("Enough free space", res["Value"]["Reason"])
+
+        # Free space is above absolute thresholds but below fraction threshold (Banned wins)
+        res = module._evaluate(
+            {
+                "OK": True,
+                "Value": {
+                    "Total": 10000,
+                    "Free": 50,
+                    "Banned_threshold": 0.1,
+                    "Degraded_threshold": 5,
+                    "Banned_fraction": 0.01,
+                    "Degraded_fraction": 0.05,
+                },
+            }
+        )
+        self.assertTrue(res["OK"])
+        self.assertEqual("Banned", res["Value"]["Status"])
+        self.assertEqual("Too little free space", res["Value"]["Reason"])
+
+        # Zero total space should not cause division by error
+        res = module._evaluate(
+            {
+                "OK": True,
+                "Value": {
+                    "Total": 0,
+                    "Free": 0,
+                    "Banned_threshold": 0.1,
+                    "Degraded_threshold": 5,
+                    "Banned_fraction": 0.01,
+                    "Degraded_fraction": 0.05,
+                },
+            }
+        )
+        self.assertTrue(res["OK"])
+        self.assertEqual("Banned", res["Value"]["Status"])
+        self.assertEqual("Too little free space", res["Value"]["Reason"])
 
 
 ################################################################################

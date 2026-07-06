@@ -8,6 +8,8 @@ by the policy engine from ``POLICIESMETA`` defaults and any CS overrides:
 * ``unit``               — space unit for the occupancy query (``TB``, ``GB`` or ``MB``)
 * ``Banned_threshold``   — free-space value below which the SE is Banned
 * ``Degraded_threshold`` — free-space value below which the SE is Degraded
+* ``Banned_fraction``    — fraction of total space below which the SE is Banned
+* ``Degraded_fraction``  — fraction of total space below which the SE is Degraded
 
 Note: there are still many references to "space tokens" (e.g.
 ``ResourceManagementClient().selectSpaceTokenOccupancyCache(token=elementName)``).
@@ -57,9 +59,11 @@ class FreeDiskSpaceCommand(Command):
         * ``unit`` (str)                 — space unit: ``TB``, ``GB`` or ``MB``.
         * ``Banned_threshold`` (float)   — free space below which the SE is Banned.
         * ``Degraded_threshold`` (float) — free space below which the SE is Degraded.
+        * ``Banned_fraction`` (float)    — fraction of total space below which the SE is Banned.
+        * ``Degraded_fraction`` (float)  — fraction of total space below which the SE is Degraded.
 
-        :returns: S_OK tuple ``(elementName, unit, banned_threshold, degraded_threshold)``
-            or S_ERROR if ``name`` is missing.
+        :returns: S_OK tuple ``(elementName, unit, banned_threshold, degraded_threshold,
+            banned_fraction, degraded_fraction)`` or S_ERROR if ``name`` is missing.
         """
 
         if "name" not in self.args:
@@ -69,8 +73,10 @@ class FreeDiskSpaceCommand(Command):
         unit = self.args["unit"]
         banned_threshold = self.args["Banned_threshold"]
         degraded_threshold = self.args["Degraded_threshold"]
+        banned_fraction = self.args["Banned_fraction"]
+        degraded_fraction = self.args["Degraded_fraction"]
 
-        return S_OK((elementName, unit, banned_threshold, degraded_threshold))
+        return S_OK((elementName, unit, banned_threshold, degraded_threshold, banned_fraction, degraded_fraction))
 
     def doNew(self, masterParams=None):
         """
@@ -85,18 +91,27 @@ class FreeDiskSpaceCommand(Command):
             that overrides ``self.args``; otherwise ``None``.
 
         :returns: S_OK dict with keys ``Free``, ``Total``, ``Banned_threshold``,
-            ``Degraded_threshold`` (all in the configured unit), or S_ERROR.
+            ``Degraded_threshold``, ``Banned_fraction``, ``Degraded_fraction`` (all in the configured unit), or S_ERROR.
         """
 
         if masterParams is not None:
             elementName, unit = masterParams
             banned_threshold = self.args["Banned_threshold"]
             degraded_threshold = self.args["Degraded_threshold"]
+            banned_fraction = self.args["Banned_fraction"]
+            degraded_fraction = self.args["Degraded_fraction"]
         else:
             params = self._prepareCommand()
             if not params["OK"]:
                 return params
-            elementName, unit, banned_threshold, degraded_threshold = params["Value"]
+            (
+                elementName,
+                unit,
+                banned_threshold,
+                degraded_threshold,
+                banned_fraction,
+                degraded_fraction,
+            ) = params["Value"]
 
         se = StorageElement(elementName)
         occupancyResult = se.getOccupancy(unit=unit)
@@ -117,6 +132,8 @@ class FreeDiskSpaceCommand(Command):
                 "Total": total,
                 "Banned_threshold": banned_threshold,
                 "Degraded_threshold": degraded_threshold,
+                "Banned_fraction": banned_fraction,
+                "Degraded_fraction": degraded_fraction,
             }
         )
 
@@ -189,14 +206,15 @@ class FreeDiskSpaceCommand(Command):
         so that ``FreeDiskSpacePolicy`` can evaluate them without re-reading the CS.
 
         :returns: S_OK dict with keys ``Free``, ``Total``, ``Banned_threshold``,
-            ``Degraded_threshold`` (all in the configured unit), or S_ERROR if
-            no cached record exists or the unit is invalid.
+            ``Degraded_threshold``, ``Banned_fraction``, ``Degraded_fraction``
+            (all in the configured unit), or S_ERROR if no cached record exists
+            or the unit is invalid.
         """
 
         params = self._prepareCommand()
         if not params["OK"]:
             return params
-        elementName, unit, banned_threshold, degraded_threshold = params["Value"]
+        elementName, unit, banned_threshold, degraded_threshold, banned_fraction, degraded_fraction = params["Value"]
 
         result = self.rmClient.selectSpaceTokenOccupancyCache(token=elementName)
 
@@ -221,6 +239,8 @@ class FreeDiskSpaceCommand(Command):
                 "Total": total,
                 "Banned_threshold": banned_threshold,
                 "Degraded_threshold": degraded_threshold,
+                "Banned_fraction": banned_fraction,
+                "Degraded_fraction": degraded_fraction,
             }
         )
 
