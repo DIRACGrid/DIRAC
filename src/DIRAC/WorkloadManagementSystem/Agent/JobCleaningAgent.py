@@ -38,7 +38,7 @@ from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
-from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import getJobParameters
+from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import JobParametersDB
 from DIRAC.WorkloadManagementSystem.DB.StatusUtils import kill_delete_jobs
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_DELETE
 
@@ -333,8 +333,8 @@ class JobCleaningAgent(AgentModule):
         failed = {}
         successful = {}
 
-        jobIDs = [int(jobID) for jobID in jobIDList]
-        result = getJobParameters(jobIDs, "OutputSandboxLFN")
+        jobIDList = [int(jobID) for jobID in jobIDList]
+        result = JobParametersDB().getJobParameters(jobIDList, ["OutputSandboxLFN"])
         if not result["OK"]:
             return result
         osLFNDict = result["Value"]

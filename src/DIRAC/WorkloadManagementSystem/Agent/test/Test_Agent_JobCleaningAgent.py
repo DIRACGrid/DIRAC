@@ -136,11 +136,15 @@ def test_deleteJobOversizedSandbox(mocker, inputs, params, expected):
 
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.__init__")
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.am_getOption", return_value=mockAM)
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.getJobAttributes", return_value=S_OK(""))
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB", return_value=mockNone)
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.SandboxMetadataDB", return_value=mockNone)
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.ReqClient", return_value=mockNone)
     mocker.patch(
         "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.getDNForUsername", return_value=S_OK(["/bih/boh/DN"])
     )
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.getJobParameters", return_value=params)
+    mockJobParamsDB = mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobParametersDB")
+    mockJobParamsDB.return_value.getJobParameters.return_value = params
 
     def mock_load_object(module_path, class_name):
         mocks = {

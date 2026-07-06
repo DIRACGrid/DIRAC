@@ -111,53 +111,7 @@ class JobDB(DB):
         )
 
     #############################################################################
-    def getJobParameters(self, jobID, paramList=None):
-        """Get Job Parameters defined for jobID.
-        Returns a dictionary with the Job Parameters.
-        If parameterList is empty - all the parameters are returned.
-        """
-        jobIDList = [jobID] if isinstance(jobID, (str, int)) else jobID
 
-        resultDict = {}
-        if paramList:
-            if isinstance(paramList, str):
-                paramList = paramList.split(",")
-            cmd = "SELECT JobID, Name, Value FROM JobParameters WHERE JobID IN ("
-            cmd += ",".join(["%s"] * len(jobIDList))
-            args = jobIDList
-            cmd += ") AND Name IN ("
-            cmd += ",".join(["%s"] * len(paramList))
-            cmd += ")"
-            args.extend(paramList)
-            result = self._query(cmd, args=args)
-            if result["OK"]:
-                if result["Value"]:
-                    for res_jobID, res_name, res_value in result["Value"]:
-                        try:
-                            res_value = res_value.decode(errors="replace")  # account for use of BLOBs
-                        except AttributeError:
-                            pass
-                        resultDict.setdefault(int(res_jobID), {})[res_name] = res_value
-
-                return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
-            else:
-                return S_ERROR("JobDB.getJobParameters: failed to retrieve parameters")
-
-        else:
-            result = self.getFields("JobParameters", ["JobID", "Name", "Value"], {"JobID": jobID})
-            if not result["OK"]:
-                return result
-
-            for res_jobID, res_name, res_value in result["Value"]:
-                try:
-                    res_value = res_value.decode(errors="replace")  # account for use of BLOBs
-                except AttributeError:
-                    pass
-                resultDict.setdefault(int(res_jobID), {})[res_name] = res_value
-
-            return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
-
-    #############################################################################
     def getAtticJobParameters(self, jobID, paramList=None, rescheduleCounter=-1):
         """Get Attic Job Parameters defined for a job with jobID.
         Returns a dictionary with the Attic Job Parameters per each rescheduling cycle.
@@ -261,16 +215,6 @@ class JobDB(DB):
         if not result["OK"]:
             return result
         return S_OK(result["Value"].get(attribute))
-
-    #############################################################################
-    @deprecated("Use JobParametersDB instead")
-    def getJobParameter(self, jobID, parameter):
-        """Get the given parameter of a job specified by its jobID"""
-
-        result = self.getJobParameters(jobID, [parameter])
-        if not result["OK"]:
-            return result
-        return S_OK(result.get("Value", {}).get(int(jobID), {}).get(parameter))
 
     #############################################################################
     def getJobOptParameter(self, jobID, parameter):
@@ -907,7 +851,6 @@ class JobDB(DB):
 
             for table in [
                 "InputData",
-                "JobParameters",
                 "AtticJobParameters",
                 "HeartBeatLoggingInfo",
                 "OptimizerParameters",
@@ -979,10 +922,6 @@ class JobDB(DB):
                 result = self.setAtticJobParameter(jobID, key, value, rescheduleCounter - 1)
                 if not result["OK"]:
                     break
-
-        res = self._update("DELETE FROM JobParameters WHERE JobID=%s", args=(str(jobID),))
-        if not res["OK"]:
-            return res
 
         # Delete optimizer parameters
         if not self._update("DELETE FROM OptimizerParameters WHERE JobID=%s", args=(str(jobID),))["OK"]:
