@@ -688,7 +688,7 @@ class JobDB(DB):
     def setJobJDL(self, jobID, jdl=None, originalJDL=None):
         """Insert JDLs for job specified by jobID"""
 
-        req = f"SELECT OriginalJDL FROM JobJDLs WHERE JobID=%s"
+        req = "SELECT OriginalJDL FROM JobJDLs WHERE JobID=%s"
         result = self._query(req, args=(str(jobID),))
         updateFlag = False
         if result["OK"] and result["Value"]:
@@ -696,10 +696,10 @@ class JobDB(DB):
 
         if jdl:
             if updateFlag:
-                cmd = f"UPDATE JobJDLs Set JDL=%s WHERE JobID=%s"
+                cmd = "UPDATE JobJDLs Set JDL=%s WHERE JobID=%s"
                 args = (compressJDL(jdl), str(jobID))
             else:
-                cmd = f"INSERT INTO JobJDLs (JobID,JDL) VALUES (%s, %s)"
+                cmd = "INSERT INTO JobJDLs (JobID,JDL) VALUES (%s, %s)"
                 args = (str(jobID), compressJDL(jdl))
             result = self._update(cmd, args=args)
             if not result["OK"]:
