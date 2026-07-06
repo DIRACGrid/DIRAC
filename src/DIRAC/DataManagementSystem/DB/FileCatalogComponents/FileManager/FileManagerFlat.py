@@ -1,7 +1,6 @@
 import os
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.List import stringListToString, intListToString
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager.FileManagerBase import FileManagerBase
 
 
@@ -42,17 +41,29 @@ class FileManagerFlat(FileManagerBase):
         connection = self._getConnection(connection)
         # metadata can be any of
         # ['FileID','Size','UID','GID','Checksum','ChecksumType','Type','CreationDate','ModificationDate','Mode','Status']
-        req = "SELECT FileName,%s FROM FC_Files WHERE DirID=%d" % (intListToString(metadata), dirID)
+        for field in metadata:
+            if not self.db._checkIdentifier(field)["OK"]:
+                return S_ERROR(f"Invalid field name: {field}")
+        req = "SELECT FileName,"
+        req += ",".join(metadata)
+        req += " WHERE DirID=%s"
+        args = [dirID]
         if not allStatus:
             statusIDs = []
             res = self._getStatusInt("AprioriGood", connection=connection)
             if res["OK"]:
                 statusIDs.append(res["Value"])
             if statusIDs:
-                req = f"{req} AND Status IN ({intListToString(statusIDs)})"
+                req += " AND Status IN ("
+                req += ",".join(["%s"] * len(statusIDs))
+                req += ")"
+                args.extend(statusIDs)
         if fileNames:
-            req = f"{req} AND FileName IN ({stringListToString(fileNames)})"
-        res = self.db._query(req, conn=connection)
+            req += " AND FileName IN ("
+            req += ",".join(["%s"] * len(fileNames))
+            req += ")"
+            args.extend(fileNames)
+        res = self.db._query(req, args=args, conn=connection)
         if not res["OK"]:
             return res
         files = {}
@@ -89,12 +100,12 @@ class FileManagerFlat(FileManagerBase):
                 directoryFiles[dirName] = []
             directoryFiles[dirName].append(fileName)
             insertTuples.append(
-                "(%d,%d,%d,%d,%d,'%s','%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d)"
-                % (dirID, size, uid, gid, statusID, fileName, guid, checksum, checksumtype, self.db.umask)
+                (dirID, size, uid, gid, statusID, fileName, guid, checksum, checksumtype, self.db.umask)
             )
-        fields = "DirID,Size,UID,GID,Status,FileName,GUID,Checksum,ChecksumType,CreationDate,ModificationDate,Mode"
-        req = f"INSERT INTO FC_Files ({fields}) VALUES {','.join(insertTuples)}"
-        res = self.db._update(req, conn=connection)
+        req = "INSERT INTO FC_Files "
+        req += "(DirID,Size,UID,GID,Status,FileName,GUID,Checksum,ChecksumType,CreationDate,ModificationDate,Mode) "
+        req += "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%s)"
+        res = self.db._updatemany(req, data=insertTuples, conn=connection)
         if not res["OK"]:
             return res
         # Get the fileIDs for the inserted files
@@ -115,8 +126,10 @@ class FileManagerFlat(FileManagerBase):
             return S_OK({})
         if not isinstance(guid, (list, tuple)):
             guid = [guid]
-        req = f"SELECT FileID,GUID FROM FC_Files WHERE GUID IN ({stringListToString(guid)})"
-        res = self.db._query(req, conn=connection)
+        req = "SELECT FileID,GUID FROM FC_Files WHERE GUID IN ("
+        req += ",".join(["%s"] * len(guid))
+        req += ")"
+        res = self.db._query(req, args=guid, conn=connection)
         if not res["OK"]:
             return res
         guidDict = {}
@@ -143,15 +156,19 @@ class FileManagerFlat(FileManagerBase):
         connection = self._getConnection(connection)
         if not fileIDs:
             return S_OK()
-        req = f"DELETE FROM FC_Replicas WHERE FileID in ({intListToString(fileIDs)})"
-        return self.db._update(req, conn=connection)
+        req = "DELETE FROM FC_Replicas WHERE FileID in ("
+        req += ",".join(["%s"] * len(fileIDs))
+        req += ")"
+        return self.db._update(req, args=fileIDs, conn=connection)
 
     def __deleteFiles(self, fileIDs, connection=False):
         connection = self._getConnection(connection)
         if not fileIDs:
             return S_OK()
-        req = f"DELETE FROM FC_Files WHERE FileID in ({intListToString(fileIDs)})"
-        return self.db._update(req, conn=connection)
+        req = "DELETE FROM FC_Files WHERE FileID in ("
+        req += ",".join(["%s"] * len(fileIDs))
+        req += ")"
+        return self.db._update(req, args=fileIDs, conn=connection)
 
     ######################################################
     #
@@ -196,18 +213,13 @@ class FileManagerFlat(FileManagerBase):
                 directorySESizeDict[dirID][seID] = {"Files": 0, "Size": 0}
             directorySESizeDict[dirID][seID]["Size"] += lfns[lfn]["Size"]
             directorySESizeDict[dirID][seID]["Files"] += 1
-            insertTuples[lfn] = "(%d,%d,%d,'%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s')" % (
-                fileID,
-                seID,
-                statusID,
-                replicaType,
-                pfn,
-            )
+            insertTuples[lfn] = (fileID, seID, statusID, replicaType, pfn)
             deleteTuples.append((fileID, seID))
         if insertTuples:
-            fields = "FileID,SEID,Status,RepType,CreationDate,ModificationDate,PFN"
-            req = f"INSERT INTO FC_Replicas ({fields}) VALUES {','.join(insertTuples.values())}"
-            res = self.db._update(req, conn=connection)
+            req = "INSERT INTO FC_Replicas "
+            req += "(FileID,SEID,Status,RepType,CreationDate,ModificationDate,PFN) "
+            req += "VALUES (%s,%s,%s,%s,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%s)"
+            res = self.db._updatemany(req, data=insertTuples.values(), conn=connection)
             if not res["OK"]:
                 self.__deleteReplicas(deleteTuples, connection=connection)
                 for lfn in insertTuples.keys():
@@ -228,8 +240,8 @@ class FileManagerFlat(FileManagerBase):
             if not res["OK"]:
                 return res
             seID = res["Value"]
-        req = "SELECT FileID FROM FC_Replicas WHERE FileID=%d AND SEID=%d" % (fileID, seID)
-        result = self.db._query(req, conn=connection)
+        req = "SELECT FileID FROM FC_Replicas WHERE FileID=%s AND SEID=%s"
+        result = self.db._query(req, args=(fileID, seID), conn=connection)
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -285,9 +297,9 @@ class FileManagerFlat(FileManagerBase):
                 if not res["OK"]:
                     return res
                 seID = res["Value"]
-            deleteTuples.append("(%d,%d)" % (fileID, seID))
-        req = f"DELETE FROM FC_Replicas WHERE (FileID,SEID) IN ({intListToString(deleteTuples)})"
-        return self.db._update(req, conn=connection)
+            deleteTuples.append((fileID, seID))
+        req = "DELETE FROM FC_Replicas WHERE FileID=%s AND SEID=%s"
+        return self.db._updatemany(req, data=deleteTuples, conn=connection)
 
     ######################################################
     #
@@ -318,24 +330,26 @@ class FileManagerFlat(FileManagerBase):
             if not res["OK"]:
                 return res
             seID = res["Value"]
-        req = "UPDATE FC_Replicas SET %s='%s', ModificationDate=UTC_TIMESTAMP() WHERE FileID=%d AND SEID=%d;" % (
-            paramName,
-            paramValue,
-            fileID,
-            seID,
-        )
-        return self.db._update(req, conn=connection)
+        if not self.db._checkIdentifier(paramName)["OK"]:
+            return S_ERROR(f"Invalid paramName: {paramName}")
+        req = "UPDATE FC_Replicas SET "
+        req += f"{paramName}=%s, ModificationDate=UTC_TIMESTAMP() "
+        req += "WHERE FileID=%s AND SEID=%s"
+        args = (paramValue, fileID, seID)
+        return self.db._update(req, args=args, conn=connection)
 
     def _setFileParameter(self, fileID, paramName, paramValue, connection=False):
         connection = self._getConnection(connection)
         if not isinstance(fileID, (list, tuple)):
             fileID = [fileID]
-        req = "UPDATE FC_Files SET {}='{}', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN ({})".format(
-            paramName,
-            paramValue,
-            intListToString(fileID),
-        )
-        return self.db._update(req, conn=connection)
+        if not self.db._checkIdentifier(paramName)["OK"]:
+            return S_ERROR(f"Invalid paramName: {paramName}")
+        req = "UPDATE FC_Files SET "
+        req += f"{paramName}=%s, ModificationDate=UTC_TIMESTAMP() WHERE FileID IN ("
+        req += ",".join(["%s"] * len(fileID))
+        req += ")"
+        args = [paramValue] + fileID
+        return self.db._update(req, args=args, conn=connection)
 
     ######################################################
     #
@@ -346,11 +360,15 @@ class FileManagerFlat(FileManagerBase):
         connection = self._getConnection(connection)
         if not fileIDs:
             return S_ERROR("No such file or directory")
-        req = "SELECT FileID,SEID,Status,{} FROM FC_Replicas WHERE FileID IN ({});".format(
-            intListToString(fields),
-            intListToString(fileIDs),
-        )
-        res = self.db._query(req, conn=connection)
+        for field in fields:
+            if not self.db._checkIdentifier(field)["OK"]:
+                return S_ERROR(f"Invalid field name: {field}")
+        req = "SELECT FileID,SEID,Status,"
+        req += ",".join(fields)
+        req += " FROM FC_Replicas WHERE FileID IN ("
+        req += ",".join(["%s"] * len(fileIDs))
+        req += ")"
+        res = self.db._query(req, args=fileIDs, conn=connection)
         if not res["OK"]:
             return res
         replicas = {}
