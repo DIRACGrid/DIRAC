@@ -115,6 +115,8 @@ from DIRAC.Core.Utilities.Extensions import (
 )
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
+SQL_IDENTIFIER_RE = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_]*$")
+
 
 def _safeFloat(value):
     try:
@@ -2114,7 +2116,8 @@ exec dirac-webapp-run -p < /dev/null
         """
         Install requested DB in MySQL server
         """
-        dbName = MySQLdb.escape_string(dbName.encode()).decode()
+        if not SQL_IDENTIFIER_RE.match(dbName):
+            return S_ERROR(f"Invalid database name '{dbName}'")
         if not self.mysqlRootPwd:
             rootPwdPath = cfgInstallPath("Database", "RootPwd")
             return S_ERROR(f"Missing {rootPwdPath} in {self.cfgFile}")
