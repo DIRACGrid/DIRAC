@@ -14,6 +14,7 @@
 .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
 """
+
 # #
 # @file CleanReqDBAgent.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -26,7 +27,7 @@ import datetime
 # # from DIRAC
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 
 AGENT_NAME = "RequestManagement/CleanReqDBAgent"
 
@@ -53,14 +54,8 @@ class CleanReqDBAgent(AgentModule):
     # # remove failed requests flag
     DEL_FAILED = False
 
-    # # request client
-    __requestClient = None
-
-    def requestClient(self):
-        """request client getter"""
-        if not self.__requestClient:
-            self.__requestClient = ReqClient()
-        return self.__requestClient
+    # # request db
+    __requestDB = None
 
     def initialize(self):
         """initialization"""
@@ -81,6 +76,8 @@ class CleanReqDBAgent(AgentModule):
             self.cancelGraceDays = self.DEL_GRACE_DAYS - 1
             self.log.warn("Cancelled jobs grace period > delete period, capping to %u days" % self.cancelGraceDays)
 
+        self.__requestDB = RequestDB()
+
         return S_OK()
 
     def execute(self):
@@ -92,21 +89,22 @@ class CleanReqDBAgent(AgentModule):
 
         # # kick
         statusList = ["Assigned"]
-        requestIDsList = self.requestClient().getRequestIDsList(statusList, self.KICK_LIMIT)
+        requestIDsList = self.__requestDB.getRequestIDsList(statusList, self.KICK_LIMIT)
         if not requestIDsList["OK"]:
             self.log.error(f"execute: {requestIDsList['Message']}")
             return requestIDsList
 
         requestIDsList = requestIDsList["Value"]
+
         kicked = 0
         for requestID, status, lastUpdate in requestIDsList:
-            reqStatus = self.requestClient().getRequestStatus(requestID)
+            reqStatus = self.__requestDB.getRequestStatus(requestID)
             if not reqStatus["OK"]:
                 self.log.error(("execute: unable to get request status", reqStatus["Message"]))
                 continue
             status = reqStatus["Value"]
             if lastUpdate < kickTime and status == "Assigned":
-                getRequest = self.requestClient().peekRequest(requestID)
+                getRequest = self.__requestDB.peekRequest(requestID)
                 if not getRequest["OK"]:
                     self.log.error(f"execute: unable to read request '{requestID}': {getRequest['Message']}")
                     continue
@@ -116,7 +114,7 @@ class CleanReqDBAgent(AgentModule):
                         "execute: kick assigned request (%s/'%s') in status %s"
                         % (requestID, getRequest.RequestName, getRequest.Status)
                     )
-                    putRequest = self.requestClient().putRequest(getRequest)
+                    putRequest = self.__requestDB.putRequest(getRequest)
                     if not putRequest["OK"]:
                         self.log.error(
                             "execute: unable to put request (%s/'%s'): %s"
@@ -129,7 +127,7 @@ class CleanReqDBAgent(AgentModule):
 
         # # delete
         statusList = ["Done", "Failed", "Canceled"] if self.DEL_FAILED else ["Done"]
-        requestIDsList = self.requestClient().getRequestIDsList(statusList, self.DEL_LIMIT)
+        requestIDsList = self.__requestDB.getRequestIDsList(statusList, self.DEL_LIMIT)
         if not requestIDsList["OK"]:
             self.log.error(f"execute: {requestIDsList['Message']}")
             return requestIDsList
@@ -139,7 +137,7 @@ class CleanReqDBAgent(AgentModule):
         for requestID, status, lastUpdate in requestIDsList:
             if lastUpdate < rmTime:
                 self.log.info(f"execute: deleting request '{requestID}' with status {status}")
-                delRequest = self.requestClient().deleteRequest(requestID)
+                delRequest = self.__requestDB.deleteRequest(requestID)
                 if not delRequest["OK"]:
                     self.log.error("execute: unable to delete request", f"'{requestID}': {delRequest['Message']}")
                     continue
@@ -148,7 +146,7 @@ class CleanReqDBAgent(AgentModule):
         # optional: Set Scheduled requests to Cancelled if older than threshold
         if self.cancelGraceDays > 0:
             cancelTime = datetime.datetime.utcnow() - datetime.timedelta(days=self.cancelGraceDays)
-            result = self.requestClient().getRequestIDsList(["Scheduled"], self.DEL_LIMIT)
+            result = self.__requestDB.getRequestIDsList(["Scheduled"], self.DEL_LIMIT)
             if not result["OK"]:
                 self.log.error("Failed to get list of Scheduled requests:", result["Message"])
                 return result
@@ -157,7 +155,7 @@ class CleanReqDBAgent(AgentModule):
             for requestID, status, lastUpdate in requestIDsList:
                 if lastUpdate < cancelTime:
                     self.log.info("Cancelling overdue request", str(requestID))
-                    cancelReq = self.requestClient().cancelRequest(requestID)
+                    cancelReq = self.__requestDB.cancelRequest(requestID)
                     if not cancelReq["OK"]:
                         self.log.error("Unable to cancel request", f"'{requestID}': {cancelReq['Message']}")
                         continue

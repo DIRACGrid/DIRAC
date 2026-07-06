@@ -641,6 +641,8 @@ class ProcessPool:
         self.__draining = False
         # placeholder for daemon results processing
         self.__daemonProcess = False
+        # Ensure only one thread drains/calls callbacks at a time.
+        self.__resultsProcessingLock = threading.Lock()
 
         # create initial workers
         self.__spawnNeededWorkingProcesses()
@@ -895,61 +897,74 @@ class ProcessPool:
 
         :param self: self reference
         """
+        # Daemon mode and foreground callers can overlap (e.g. explicit flush in agents).
+        # Serialize access to avoid races around non-blocking get/qsize checks.
+        if not self.__resultsProcessingLock.acquire(blocking=False):
+            return 0
+
         processed = 0
         log = sLog.getSubLogger("WorkingProcess")
-        while True:
-            if (
-                not log.debug(
-                    "Start loop (t=0) queue size = %d, processed = %d" % (self.__resultsQueueApproxSize, processed)
-                )
-                and processed == 0
-                and self.__resultsQueueApproxSize
-            ):
-                log.debug("Process results, queue size = %d" % self.__resultsQueueApproxSize)
-            start = time.time()
-            self.__cleanDeadProcesses()
-            log.debug("__cleanDeadProcesses", f"t={time.time() - start:.2f}")
-            if self.__pendingQueueApproxSize:
-                self.__spawnNeededWorkingProcesses()
-                log.debug("__spawnNeededWorkingProcesses", f"t={time.time() - start:.2f}")
-            if not FAST_PROCESS_POOL:
-                # Preserve previous pacing unless explicitly disabled.
-                time.sleep(0.1)
-            try:
-                task = self.__resultsQueue.get(block=False)
-            except queue.Empty:
-                if self.__resultsQueueApproxSize:
-                    log.warn("Results queue is empty but has non zero size", "%d" % self.__resultsQueueApproxSize)
-                    # We only commit suicide if we reach a backlog greater than the maximum number of workers
-                    if self.__resultsQueueApproxSize > self.__maxSize:
-                        return -1
-                    else:
-                        return 0
-                if processed == 0:
-                    log.debug("Process results, but queue is empty...")
-                break
+        try:
+            while True:
+                if (
+                    not log.debug(
+                        "Start loop (t=0) queue size = %d, processed = %d" % (self.__resultsQueueApproxSize, processed)
+                    )
+                    and processed == 0
+                    and self.__resultsQueueApproxSize
+                ):
+                    log.debug("Process results, queue size = %d" % self.__resultsQueueApproxSize)
+                start = time.time()
+                self.__cleanDeadProcesses()
+                log.debug("__cleanDeadProcesses", f"t={time.time() - start:.2f}")
+                if self.__pendingQueueApproxSize:
+                    self.__spawnNeededWorkingProcesses()
+                    log.debug("__spawnNeededWorkingProcesses", f"t={time.time() - start:.2f}")
+                if not FAST_PROCESS_POOL:
+                    # Preserve previous pacing unless explicitly disabled.
+                    time.sleep(0.1)
+                try:
+                    task = self.__resultsQueue.get(block=False)
+                except queue.Empty:
+                    if self.__resultsQueueApproxSize:
+                        log.warn(
+                            "Results queue is empty but has non zero size",
+                            "%d" % self.__resultsQueueApproxSize,
+                        )
+                        # We only commit suicide if we reach a backlog greater than the maximum number of workers
+                        if self.__resultsQueueApproxSize > self.__maxSize:
+                            return -1
+                        else:
+                            return 0
+                        # # qsize is approximate and can race with another consumer; do not escalate to fatal.
+                        # return processed
+                    if processed == 0:
+                        log.debug("Process results, but queue is empty...")
+                    break
 
-            log.debug("__resultsQueue.get", f"t={time.time() - start:.2f}")
-            # execute callbacks
-            try:
-                task.doExceptionCallback()
-                task.doCallback()
-                log.debug("doCallback", f"t={time.time() - start:.2f}")
-                if task.usePoolCallbacks():
-                    if self.__poolExceptionCallback and task.exceptionRaised():
-                        self.__poolExceptionCallback(task.getTaskID(), task.taskException())
-                    if self.__poolCallback and task.taskResults():
-                        self.__poolCallback(task.getTaskID(), task.taskResults())
-                        log.debug("__poolCallback", f"t={time.time() - start:.2f}")
-            except Exception as error:
-                log.exception("Exception in callback", lException=error)
-                pass
-            processed += 1
-        if processed:
-            log.debug("Processed %d results" % processed)
-        else:
-            log.debug("No results processed")
-        return processed
+                log.debug("__resultsQueue.get", f"t={time.time() - start:.2f}")
+                # execute callbacks
+                try:
+                    task.doExceptionCallback()
+                    task.doCallback()
+                    log.debug("doCallback", f"t={time.time() - start:.2f}")
+                    if task.usePoolCallbacks():
+                        if self.__poolExceptionCallback and task.exceptionRaised():
+                            self.__poolExceptionCallback(task.getTaskID(), task.taskException())
+                        if self.__poolCallback and task.taskResults():
+                            self.__poolCallback(task.getTaskID(), task.taskResults())
+                            log.debug("__poolCallback", f"t={time.time() - start:.2f}")
+                except Exception as error:
+                    log.exception("Exception in callback", lException=error)
+                    pass
+                processed += 1
+            if processed:
+                log.debug("Processed %d results" % processed)
+            else:
+                log.debug("No results processed")
+            return processed
+        finally:
+            self.__resultsProcessingLock.release()
 
     def processAllResults(self, timeout=10):
         """

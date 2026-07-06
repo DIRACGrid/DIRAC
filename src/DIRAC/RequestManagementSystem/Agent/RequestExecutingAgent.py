@@ -20,6 +20,7 @@ The following options can be set for the RequestExecutingAgent. The configuratio
   :caption: RequestExecutingAgent options
 
 """
+
 # #
 # @file RequestExecutingAgent.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -41,9 +42,9 @@ from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool, FAST_PROCESS_POOL
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
-
 
 # # agent name
 AGENT_NAME = "RequestManagement/RequestExecutingAgent"
@@ -108,7 +109,7 @@ class RequestExecutingAgent(AgentModule):
         self.__operationTimeout = OPERATIONTIMEOUT
         self.__poolTimeout = POOLTIMEOUT
         self.__poolSleep = POOLSLEEP
-        self.__requestClient = None
+        self.__requestDB = None
         # Size of the bulk if use of getRequests. If 0, use getRequest
         self.__bulkRequest = BULKREQUEST
         self.__rmsMonitoring = False
@@ -133,12 +134,6 @@ class RequestExecutingAgent(AgentModule):
             self.__processPool.daemonize()
         return self.__processPool
 
-    def requestClient(self):
-        """RequestClient getter"""
-        if not self.__requestClient:
-            self.__requestClient = ReqClient()
-        return self.__requestClient
-
     def cacheRequest(self, request):
         """put request into requestCache
 
@@ -161,7 +156,7 @@ class RequestExecutingAgent(AgentModule):
         return S_OK()
 
     def putRequest(self, requestID, taskResult=None):
-        """put back :requestID: to RequestClient
+        """put back :requestID: to requestDB
 
         :param str requestID: request's id
         """
@@ -179,7 +174,7 @@ class RequestExecutingAgent(AgentModule):
                     for rmsFile in waitingOp.get("Value", []):
                         rmsFile.Attempt += 1
 
-            reset = self.requestClient().putRequest(request, useFailoverProxy=False, retryMainService=2)
+            reset = self.__requestDB.putRequest(request)
             if not reset["OK"]:
                 return S_ERROR(f"putRequest: unable to reset request {requestID}: {reset['Message']}")
         else:
@@ -187,7 +182,7 @@ class RequestExecutingAgent(AgentModule):
         return S_OK()
 
     def putAllRequests(self):
-        """put back all requests without callback called into requestClient
+        """put back all requests without callback called into requestDB
 
         :param self: self reference
         """
@@ -278,10 +273,12 @@ class RequestExecutingAgent(AgentModule):
         # # create request dict
         self.__requestCache = dict()
 
+        self.__requestDB = RequestDB()
+
         return S_OK()
 
     def execute(self):
-        """read requests from RequestClient and enqueue them into ProcessPool"""
+        """read requests from RequestDB and enqueue them into ProcessPool"""
         # # requests (and so tasks) counter
         taskCounter = 0
         while taskCounter < self.__requestsPerCycle:
@@ -291,7 +288,7 @@ class RequestExecutingAgent(AgentModule):
 
             if not self.__bulkRequest:
                 self.log.info("execute: ask for a single request")
-                getRequest = self.requestClient().getRequest()
+                getRequest = self.__requestDB.getRequest()
                 if not getRequest["OK"]:
                     self.log.error("execute:", f"{getRequest['Message']}")
                     break
@@ -302,17 +299,15 @@ class RequestExecutingAgent(AgentModule):
             else:
                 numberOfRequest = min(self.__bulkRequest, self.__requestsPerCycle - taskCounter)
                 self.log.info("execute: ask for requests", f"{numberOfRequest}")
-                getRequests = self.requestClient().getBulkRequests(numberOfRequest)
+                getRequests = self.__requestDB.getBulkRequests(numberOfRequest)
                 if not getRequests["OK"]:
                     self.log.error("execute:", f"{getRequests['Message']}")
                     break
                 if not getRequests["Value"]:
                     self.log.info("execute: no more 'Waiting' requests to process")
                     break
-                for rId in getRequests["Value"]["Failed"]:
-                    self.log.error("execute:", f"{getRequests['Value']['Failed'][rId]}")
 
-                requestsToExecute = list(getRequests["Value"]["Successful"].values())
+                requestsToExecute = list(getRequests["Value"].values())
 
             self.log.info("execute: will execute requests ", f"{len(requestsToExecute)}")
 
