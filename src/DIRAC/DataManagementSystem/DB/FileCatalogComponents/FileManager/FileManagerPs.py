@@ -748,12 +748,14 @@ class FileManagerPs(FileManagerBase):
         # In case this is a 'new' parameter, we have a failback solution, but we
         # should add a specific ps for it
         else:
-            req = "UPDATE FC_Files SET {}='{}', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN ({})".format(
-                paramName,
-                paramValue,
-                intListToString(fileID),
-            )
-            return self.db._update(req, conn=connection)
+            if not self.db._checkIdentifier(paramName)["OK"]:
+                return S_ERROR(f"ParamName is invalid: {paramName}")
+            req = "UPDATE FC_Files SET "
+            req += f"{paramName}=%s, ModificationDate=UTC_TIMESTAMP() WHERE FileID IN ("
+            req += ",".join(["%s"] * len(fileID))
+            req += ")"
+            args = [paramValue] + fileID
+            return self.db._update(req, args=args, conn=connection)
 
         return S_OK()
 
