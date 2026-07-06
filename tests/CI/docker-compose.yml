@@ -294,6 +294,7 @@ services:
       - DIRACX_DB_URL_SANDBOXMETADATADB=mysql+aiomysql://Dirac:Dirac@mysql/SandboxMetadataDB
       - DIRACX_DB_URL_PILOTAGENTSDB=mysql+aiomysql://Dirac:Dirac@mysql/PilotAgentsDB
       - DIRACX_DB_URL_TASKQUEUEDB=mysql+aiomysql://Dirac:Dirac@mysql/TaskQueueDB
+      - DIRACX_DB_URL_RESOURCESTATUSDB=mysql+aiomysql://Dirac:Dirac@mysql/ResourceStatusDB
       - DIRACX_SERVICE_AUTH_TOKEN_KEYSTORE=file:///keystore/jwks.json
       - DIRACX_SERVICE_AUTH_TOKEN_ISSUER=http://diracx:8000
       - DIRACX_SERVICE_AUTH_ALLOWED_REDIRECTS=["http://diracx:8000/docs/oauth2-redirect"]
