@@ -340,18 +340,14 @@ def test_Search():
     s = elasticSearchDB._Search(index_name)
     s = s.filter("bool", must=q)
     query = s.to_dict()
-    assert (
-        query
-        == {
-            "query": {
-                "bool": {
-                    "filter": [
-                        {"bool": {"must": [{"range": {"timestamp": {"gte": 1423497057518, "lte": 1423501337292}}}]}}
-                    ]
-                }
+    exp_query = {
+        "query": {
+            "bool": {
+                "filter": [{"bool": {"must": [{"range": {"timestamp": {"gte": 1423497057518, "lte": 1423501337292}}}]}}]
             }
-        },
-    )
+        }
+    }
+    assert query == exp_query
     result = s.execute()
     assert len(result.hits) == 0
 
@@ -359,18 +355,15 @@ def test_Search():
     s = elasticSearchDB._Search(index_name)
     s = s.filter("bool", must=q)
     query = s.to_dict()
-    assert (
-        query
-        == {
-            "query": {
-                "bool": {
-                    "filter": [
-                        {"bool": {"must": [{"range": {"timestamp": {"gte": 1423399451544, "lte": 1423631917911}}}]}}
-                    ]
-                }
+    exp_query = {
+        "query": {
+            "bool": {
+                "filter": [{"bool": {"must": [{"range": {"timestamp": {"gte": 1423399451544, "lte": 1423631917911}}}]}}]
             }
-        },
-    )
+        }
+    }
+    assert query == exp_query
+
     result = s.execute()
     assert len(result.hits) == 0
     tearDown(index_name)
