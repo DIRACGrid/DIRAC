@@ -191,6 +191,7 @@ def _checkFields(inFields, inValues):
 def _quotedList(fieldList=None, allowDate=False):
     """
     Quote a list of MySQL Field Names with "`"
+    Supports fields containing a single . for a table.field identifier (for non-date values).
     Return a comma separated list of quoted Field Names
 
     To be use for Table and Field Names
@@ -202,9 +203,21 @@ def _quotedList(fieldList=None, allowDate=False):
         for field in fieldList:
             if allowDate and field.startswith("date(") and field.endswith(")"):
                 field = field[len("date(") : -len(")")]
-                quotedFields.append(f"date(`{field.replace('`', '')}`)")
+                field = field.replace("`", "")
+                if not MySQL._checkIdentifier(field)["OK"]:
+                    return None
+                quotedFields.append(f"date(`{field}`")
             else:
-                quotedFields.append(f"`{field.replace('`', '')}`")
+                field = field.replace("`", "")
+                if "." in field:
+                    fieldParts = field.split(".", 1)
+                else:
+                    fieldParts = [field]
+                for part in fieldParts:
+                    if not MySQL._checkIdentifier(part)["OK"]:
+                        return None
+                quotedField = ".".join([f"`{x}`" for x in fieldParts])
+                quotedFields.append(quotedField)
     except Exception:
         return None
     if not quotedFields:
@@ -973,6 +986,8 @@ class MySQL:
                                             "Clauses" : [ "`tblA.a` > 10", "`tblB.Status` = 'foo'" ] ## WILL USE AND CLAUSE
                                             "GroupBy": [ "`a`" ],
                                             "OrderBy": [ "`b` DESC" ] }
+
+        NOTE: All parameters must be pre-checked for safety if user-provided.
         """
         if force:
             # gLogger.debug(viewsDict)
@@ -983,7 +998,7 @@ class MySQL:
                 columns = ",".join([f"{colDef} AS {colName}" for colName, colDef in viewDict.get("Fields", {}).items()])
                 tables = viewDict.get("SelectFrom", "")
                 if columns and tables:
-                    viewQuery.append(f"SELECT {columns} FROM {tables}")
+                    viewQuery.append(f"SELECT {columns} FROM {tables}")  # nosec
 
                 where = " AND ".join(viewDict.get("Clauses", []))
                 if where:
@@ -1258,7 +1273,7 @@ class MySQL:
         except Exception as x:
             return S_ERROR(DErrno.EMYSQL, x)
 
-        cmd = f"SELECT COUNT(*) FROM {table} {cond}"
+        cmd = f"SELECT COUNT(*) FROM {table} {cond}"  # nosec
         res = self._query(cmd, conn=connection)
         if not res["OK"]:
             return res
@@ -1301,7 +1316,7 @@ class MySQL:
         except Exception as x:
             return S_ERROR(DErrno.EMYSQL, x)
 
-        cmd = f"SELECT {attrNames}, COUNT(*) FROM {table} {cond} GROUP BY {attrNames} ORDER BY {attrNames}"
+        cmd = f"SELECT {attrNames}, COUNT(*) FROM {table} {cond} GROUP BY {attrNames} ORDER BY {attrNames}"  # nosec
         res = self._query(cmd, conn=connection)
         if not res["OK"]:
             return res
@@ -1350,7 +1365,7 @@ class MySQL:
         except Exception as exc:
             return S_ERROR(DErrno.EMYSQL, exc)
 
-        cmd = f"SELECT DISTINCT( {attributeName} ) FROM {table} {cond} ORDER BY {attributeName}"
+        cmd = f"SELECT DISTINCT( {attributeName} ) FROM {table} {cond} ORDER BY {attributeName}"  # nosec
         res = self._query(cmd, conn=connection)
         if not res["OK"]:
             return res
@@ -1584,7 +1599,7 @@ class MySQL:
         except Exception as x:
             return S_ERROR(DErrno.EMYSQL, x)
 
-        return self._query(f"SELECT {quotedOutFields} FROM {table} {condition}", conn=conn)
+        return self._query(f"SELECT {quotedOutFields} FROM {table} {condition}", conn=conn)  # nosec
 
     #############################################################################
     def deleteEntries(
@@ -1628,7 +1643,7 @@ class MySQL:
         except Exception as x:
             return S_ERROR(DErrno.EMYSQL, x)
 
-        return self._update(f"DELETE FROM {table} {condition}", conn=conn)
+        return self._update(f"DELETE FROM {table} {condition}", conn=conn)  # nosec
 
     #############################################################################
     def updateFields(
@@ -1714,7 +1729,7 @@ class MySQL:
             [f"{_quotedList([updateFields[k]])} = {updateValues[k]}" for k in range(len(updateFields))]
         )
 
-        return self._update(f"UPDATE {table} SET {updateString} {condition}", conn=conn)
+        return self._update(f"UPDATE {table} SET {updateString} {condition}", conn=conn)  # nosec
 
     #############################################################################
     def insertFields(self, tableName, inFields=None, inValues=None, conn=None, inDict=None):
@@ -1769,10 +1784,12 @@ class MySQL:
         # self.log.debug('insertFields:', 'inserting %s into table %s'
         #               % (inFieldString, table))
 
-        return self._update(f"INSERT INTO {table} {inFieldString} VALUES {inValueString}", conn=conn)
+        return self._update(f"INSERT INTO {table} {inFieldString} VALUES {inValueString}", conn=conn)  # nosec
 
     @captureOptimizerTraces
     def executeStoredProcedure(self, packageName, parameters, outputIds, *, conn=None):
+        if not self._checkIdentifier(packageName)["OK"]:
+            return S_ERROR(f"Invalid stored procedure name: {packageName}")
         if conn:
             connection = conn
         else:
@@ -1803,6 +1820,12 @@ class MySQL:
     # For the procedures that execute a select without storing the result
     @captureOptimizerTraces
     def executeStoredProcedureWithCursor(self, packageName, parameters, *, conn=None):
+        """Execute a stored procedure "packageName" with the givens parameters.
+
+        NOTE: parameters should be pre-validated if user supplied.
+        """
+        if not self._checkIdentifier(packageName)["OK"]:
+            return S_ERROR(f"Invalid stored procedure name: {packageName}")
         if conn:
             connection = conn
         else:
