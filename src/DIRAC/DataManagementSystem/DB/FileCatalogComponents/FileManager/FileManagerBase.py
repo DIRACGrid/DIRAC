@@ -34,39 +34,40 @@ class FileManagerBase:
         connection = self._getConnection(connection)
 
         resultDict = {}
-        req = "SELECT COUNT(*) FROM FC_Files;"
+        req = "SELECT COUNT(*) FROM FC_Files"
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["Files"] = res["Value"][0][0]
 
-        req = "SELECT COUNT(FileID) FROM FC_Files WHERE FileID NOT IN ( SELECT FileID FROM FC_Replicas )"
+        req = "SELECT COUNT(FileID) FROM FC_Files WHERE FileID NOT IN (SELECT FileID FROM FC_Replicas)"
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["Files w/o Replicas"] = res["Value"][0][0]
 
-        req = "SELECT COUNT(RepID) FROM FC_Replicas WHERE FileID NOT IN ( SELECT FileID FROM FC_Files )"
+        req = "SELECT COUNT(RepID) FROM FC_Replicas WHERE FileID NOT IN (SELECT FileID FROM FC_Files "
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["Replicas w/o Files"] = res["Value"][0][0]
 
         treeTable = self.db.dtree.getTreeTable()
-        req = f"SELECT COUNT(FileID) FROM FC_Files WHERE DirID NOT IN ( SELECT DirID FROM {treeTable})"
+        req = "SELECT COUNT(FileID) FROM FC_Files WHERE DirID NOT IN (SELECT DirID FROM "
+        req += f"{treeTable})"
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["Orphan Files"] = res["Value"][0][0]
 
-        req = "SELECT COUNT(FileID) FROM FC_Files WHERE FileID NOT IN ( SELECT FileID FROM FC_FileInfo)"
+        req = "SELECT COUNT(FileID) FROM FC_Files WHERE FileID NOT IN (SELECT FileID FROM FC_FileInfo)"
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             resultDict["Files w/o FileInfo"] = 0
         else:
             resultDict["Files w/o FileInfo"] = res["Value"][0][0]
 
-        req = "SELECT COUNT(FileID) FROM FC_FileInfo WHERE FileID NOT IN ( SELECT FileID FROM FC_Files)"
+        req = "SELECT COUNT(FileID) FROM FC_FileInfo WHERE FileID NOT IN (SELECT FileID FROM FC_Files)"
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             resultDict["FileInfo w/o Files"] = 0
@@ -79,7 +80,7 @@ class FileManagerBase:
         """Get a number of counters to verify the sanity of the Replicas in the catalog"""
 
         connection = self._getConnection(connection)
-        req = "SELECT COUNT(*) FROM FC_Replicas;"
+        req = "SELECT COUNT(*) FROM FC_Replicas"
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
@@ -168,15 +169,15 @@ class FileManagerBase:
 
     def _getFileLFNs(self, fileIDs):
         """Get the file LFNs for a given list of file IDs"""
-        stringIDs = intListToString(fileIDs)
         treeTable = self.db.dtree.getTreeTable()
 
-        req = (
-            "SELECT F.FileID, CONCAT(D.DirName,'/',F.FileName) from FC_Files as F,\
-        %s as D WHERE F.FileID IN ( %s ) AND F.DirID=D.DirID"
-            % (treeTable, stringIDs)
-        )
-        result = self.db._query(req)
+        if not self.db._checkIdentifier(treeTable)["OK"]:
+            return S_ERROR(f"Invalid treeTable value: {treeTable}")
+        req = "SELECT F.FileID, CONCAT(D.DirName,'/',F.FileName) from FC_Files as F,"
+        req += treeTable + " as D WHERE F.FileID IN ("
+        req += ",".join(["%s"] * len(fileIDs))
+        req += ") AND F.DirID=D.DirID"
+        result = self.db._query(req, args=fileIDs)
         if not result["OK"]:
             return result
 
@@ -367,6 +368,8 @@ class FileManagerBase:
 
     def _updateDirectoryUsage(self, directorySEDict, change, connection=False):
         connection = self._getConnection(connection)
+        if change not in ("+", "-"):
+            return S_ERROR(f"Invalid change value: {change}")
         for directoryID in directorySEDict.keys():
             result = self.db.dtree.getPathIDsByID(directoryID)
             if not result["OK"]:
@@ -379,15 +382,16 @@ class FileManagerBase:
                 size = seDict["Size"]
                 insertTuples = []
                 for dirID in parentIDs:
-                    insertTuples.append("(%d,%d,%d,%d,UTC_TIMESTAMP())" % (dirID, seID, size, files))
+                    insertTuples.append((dirID, seID, size, files))
 
                 req = "INSERT INTO FC_DirectoryUsage (DirID,SEID,SESize,SEFiles,LastUpdate) "
-                req += f"VALUES {','.join(insertTuples)}"
+                req += "VALUES (%s,%s,%s,%s,UTC_TIMESTAMP()) "
                 req += (
-                    " ON DUPLICATE KEY UPDATE SESize=SESize%s%d, SEFiles=SEFiles%s%d, LastUpdate=UTC_TIMESTAMP() "
+                    # Change is checked to be + or -, size & files are cast to ints with %d
+                    " ON DUPLICATE KEY UPDATE SESize=SESize%s%d, SEFiles=SEFiles%s%d, LastUpdate=UTC_TIMESTAMP()"
                     % (change, size, change, files)
                 )
-                res = self.db._update(req)
+                res = self.db._updatemany(req, data=insertTuples, conn=connection)
                 if not res["OK"]:
                     gLogger.warn("Failed to update FC_DirectoryUsage", res["Message"])
         return S_OK()
@@ -439,22 +443,24 @@ class FileManagerBase:
         connection = self._getConnection(connection)
         ancestorTuples = []
         for ancestorID, depth in ancestorDict.items():
-            ancestorTuples.append("(%d,%d,%d)" % (fileID, ancestorID, depth))
+            ancestorTuples.append((fileID, ancestorID, depth))
         if not ancestorTuples:
             return S_OK()
-        req = "INSERT INTO FC_FileAncestors (FileID, AncestorID, AncestorDepth) VALUES %s" % intListToString(
-            ancestorTuples
-        )
-        return self.db._update(req, conn=connection)
+        req = "INSERT INTO FC_FileAncestors (FileID, AncestorID, AncestorDepth) VALUES (%s,%s,%s)"
+        return self.db._updatemany(req, data=ancestorTuples, conn=connection)
 
     def _getFileAncestors(self, fileIDs, depths=[], connection=False):
         connection = self._getConnection(connection)
-        req = "SELECT FileID, AncestorID, AncestorDepth FROM FC_FileAncestors WHERE FileID IN (%s)" % intListToString(
-            fileIDs
-        )
+        req = "SELECT FileID, AncestorID, AncestorDepth FROM FC_FileAncestors WHERE FileID IN ("
+        req += ",".join(["%s"] * len(fileIDs))
+        req += ")"
+        args = fileIDs
         if depths:
-            req = f"{req} AND AncestorDepth IN ({intListToString(depths)});"
-        res = self.db._query(req, conn=connection)
+            req += " AND AncestorDepth IN ("
+            req += ",".join(["%s"] * len(depths))
+            req += ")"
+            args.extend(depths)
+        res = self.db._query(req, args=args, conn=connection)
         if not res["OK"]:
             return res
         fileIDAncestors = {}
@@ -466,13 +472,16 @@ class FileManagerBase:
 
     def _getFileDescendents(self, fileIDs, depths, connection=False):
         connection = self._getConnection(connection)
-        req = (
-            "SELECT AncestorID, FileID, AncestorDepth FROM FC_FileAncestors WHERE AncestorID IN (%s)"
-            % intListToString(fileIDs)
-        )
+        req = "SELECT AncestorID, FileID, AncestorDepth FROM FC_FileAncestors WHERE AncestorID IN ("
+        req += ",".join(["%s"] * len(fileIDs))
+        req += ")"
+        args = fileIDs
         if depths:
-            req = f"{req} AND AncestorDepth IN ({intListToString(depths)});"
-        res = self.db._query(req, conn=connection)
+            req += " AND AncestorDepth IN ("
+            req += ",".join(["%s"] * len(depths))
+            req += ")"
+            args.extend(depths)
+        res = self.db._query(req, args=args, conn=connection)
         if not res["OK"]:
             return res
         fileIDAncestors = {}
@@ -1056,14 +1065,14 @@ class FileManagerBase:
 
     def _getStatusInt(self, status, connection=False):
         connection = self._getConnection(connection)
-        req = f"SELECT StatusID FROM FC_Statuses WHERE Status = '{status}';"
-        res = self.db._query(req, conn=connection)
+        req = "SELECT StatusID FROM FC_Statuses WHERE Status = %s"
+        res = self.db._query(req, args=(status,), conn=connection)
         if not res["OK"]:
             return res
         if res["Value"]:
             return S_OK(res["Value"][0][0])
-        req = f"INSERT INTO FC_Statuses (Status) VALUES ('{status}');"
-        res = self.db._update(req, conn=connection)
+        req = "INSERT INTO FC_Statuses (Status) VALUES (%s)"
+        res = self.db._update(req, args=(status,), conn=connection)
         if not res["OK"]:
             return res
         return S_OK(res["lastRowId"])
