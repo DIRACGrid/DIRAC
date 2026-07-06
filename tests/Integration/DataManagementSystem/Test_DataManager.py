@@ -179,7 +179,7 @@ def test_registerFile(dm, tempFile):
     fileSize = 10000
     storageElementName = "SE-1"
     fileGuid = makeGuid()
-    checkSum = None
+    checkSum = "fakeCks"
     fileTuple = (lfn, physicalFile, fileSize, storageElementName, fileGuid, checkSum)
     registerRes = dm.registerFile(fileTuple)
     removeFileRes = dm.removeFile(lfn)
@@ -198,7 +198,7 @@ def test_registerReplica(dm, tempFile):
     fileSize = 10000
     storageElementName = "SE-1"
     fileGuid = makeGuid()
-    checkSum = None
+    checkSum = "fakeCks"
     fileTuple = (lfn, physicalFile, fileSize, storageElementName, fileGuid, checkSum)
     registerRes = dm.registerFile(fileTuple)
     seName = "SE-1"

@@ -4,7 +4,10 @@
 
 import os
 import stat
+import threading
 
+from cachetools import LRUCache, cachedmethod
+from cachetools.keys import hashkey
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.List import intListToString
 from DIRAC.Core.Utilities.Pfn import pfnunparse
@@ -16,6 +19,8 @@ class FileManagerBase:
     def __init__(self, database=None):
         self.db = database
         self.statusDict = {}
+        self.statusIntCache = LRUCache(maxsize=8)
+        self.statusIntCacheLock = threading.RLock()
 
     def _getConnection(self, connection):
         if connection:
@@ -1063,6 +1068,11 @@ class FileManagerBase:
     # General usage methods
     #
 
+    @cachedmethod(
+        lambda self: self.statusIntCache,
+        key=lambda _, status, *args, **kwargs: hashkey(status),
+        lock=lambda self: self.statusIntCacheLock,
+    )
     def _getStatusInt(self, status, connection=False):
         connection = self._getConnection(connection)
         req = "SELECT StatusID FROM FC_Statuses WHERE Status = %s"
@@ -1070,12 +1080,16 @@ class FileManagerBase:
         if not res["OK"]:
             return res
         if res["Value"]:
-            return S_OK(res["Value"][0][0])
+            statusID = res["Value"][0][0]
+            self.statusDict[statusID] = status
+            return S_OK(statusID)
         req = "INSERT INTO FC_Statuses (Status) VALUES (%s)"
         res = self.db._update(req, args=(status,), conn=connection)
         if not res["OK"]:
             return res
-        return S_OK(res["lastRowId"])
+        statusID = res["lastRowId"]
+        self.statusDict[statusID] = status
+        return S_OK(statusID)
 
     def _getIntStatus(self, statusID, connection=False):
         if statusID in self.statusDict:
