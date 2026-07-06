@@ -17,9 +17,8 @@ TABLESLISTWITHID = TABLESLISTWITHID + [list of new table names]
 """
 
 import datetime
-from sqlalchemy.orm import class_mapper
+from sqlalchemy.orm import class_mapper, declarative_base
 from sqlalchemy.orm.query import Query
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, DateTime, exc, BigInteger
 
 from DIRAC import S_OK, S_ERROR, gConfig

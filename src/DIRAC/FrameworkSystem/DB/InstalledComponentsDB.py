@@ -5,10 +5,8 @@ Classes and functions for easier management of the InstalledComponents database
 import re
 from urllib import parse as urlparse
 
-from sqlalchemy import Column, DateTime, Integer, MetaData, String, create_engine
-from sqlalchemy.engine.reflection import Inspector
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, scoped_session, sessionmaker
+from sqlalchemy import Column, DateTime, Integer, MetaData, String, create_engine, inspect
+from sqlalchemy.orm import declarative_base, relationship, scoped_session, sessionmaker
 from sqlalchemy.schema import ForeignKey
 from sqlalchemy.sql.expression import null
 
@@ -369,7 +367,7 @@ class InstalledComponentsDB:
             echo_pool=True,
         )
         self.session = scoped_session(sessionmaker(bind=self.engine))
-        self.inspector = Inspector.from_engine(self.engine)
+        self.inspector = inspect(self.engine)
 
     def __initializeDB(self):
         """

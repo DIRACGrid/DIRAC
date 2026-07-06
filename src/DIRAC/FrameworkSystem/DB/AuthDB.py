@@ -5,9 +5,8 @@ import time
 import pprint
 
 from sqlalchemy import Column, Integer, Text, String
-from sqlalchemy.orm import scoped_session
+from sqlalchemy.orm import declarative_base, scoped_session
 from sqlalchemy.orm.exc import MultipleResultsFound, NoResultFound
-from sqlalchemy.ext.declarative import declarative_base
 
 from authlib.jose import KeySet, JsonWebKey
 from authlib.common.security import generate_token

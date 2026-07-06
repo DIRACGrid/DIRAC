@@ -6,9 +6,8 @@ import time
 import pprint
 
 from sqlalchemy import Column, Integer, Text, String
-from sqlalchemy.orm import scoped_session
+from sqlalchemy.orm import declarative_base, scoped_session
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.ext.declarative import declarative_base
 
 from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 
