@@ -7,7 +7,7 @@ import socket
 import time
 from datetime import datetime, timedelta
 from urllib import parse
-from xml.dom import minidom
+from xml.dom import minidom  # nosec: B408
 
 import requests
 
@@ -319,7 +319,7 @@ class GOCDBClient:
 
     def _downTimeXMLParsing(self, dt, siteOrRes, entities=None, startDateMax=None):
         """Performs xml parsing from the dt string (returns a dictionary)"""
-        doc = minidom.parseString(dt)
+        doc = minidom.parseString(dt)  # nosec: B318
 
         downtimeElements = doc.getElementsByTagName("DOWNTIME")
         dtDict = {}
@@ -406,7 +406,7 @@ class GOCDBClient:
         """Performs xml parsing from the service endpoint string
         Returns a list.
         """
-        doc = minidom.parseString(serviceXML)
+        doc = minidom.parseString(serviceXML)  # nosec: B318
         services = doc.getElementsByTagName("SERVICE_ENDPOINT")
         services = [_parseSingleElement(s) for s in services]
         return services

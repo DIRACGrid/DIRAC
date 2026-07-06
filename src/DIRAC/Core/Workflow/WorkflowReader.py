@@ -1,6 +1,5 @@
 # try: # this part to import as part of the DIRAC framework
-import xml.sax
-from xml.sax.handler import ContentHandler
+from xml.sax.handler import ContentHandler  # nosec: B406
 
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *

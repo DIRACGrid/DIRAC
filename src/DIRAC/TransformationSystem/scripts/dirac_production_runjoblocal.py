@@ -9,7 +9,7 @@ import os
 import shutil
 import subprocess
 
-from xml.etree import ElementTree as et
+from xml.etree import ElementTree as et  # nosec: B405
 
 from urllib.request import urlopen
 
@@ -46,11 +46,12 @@ def __modifyJobDescription(jobID, basepath, downloadinputdata):
     uses InputDataByProtocol
     """
     if not downloadinputdata:
-        archive = et.parse(basepath + "InputSandbox" + str(jobID) + os.path.sep + "jobDescription.xml")
+        inputFile = os.path.join(basepath, f"InputSandbox{jobID}", "jobDescription.xml")
+        archive = et.parse(inputFile)  # nosec: B314
         for element in archive.iter():
             if element.text == "DIRAC.WorkloadManagementSystem.Client.DownloadInputData":
                 element.text = "DIRAC.WorkloadManagementSystem.Client.InputDataByProtocol"
-                archive.write(basepath + "InputSandbox" + str(jobID) + os.path.sep + "jobDescription.xml")
+                archive.write(inputFile)
 
 
 def __downloadPilotScripts():

@@ -2,7 +2,7 @@
     Workflow class is the main container of Steps and Modules
 """
 import os
-import xml.sax
+import xml.sax  # nosec: B406
 
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
@@ -402,7 +402,7 @@ def fromXMLString(xml_string, obj=None):
 
     # KGG !!! We need to reset Workflow if it exists
     handler = WorkflowXMLHandler(obj)
-    xml.sax.parseString(xml_string, handler)
+    xml.sax.parseString(xml_string, handler)  # nosec: B317
     return handler.root
 
 
@@ -412,5 +412,5 @@ def fromXMLFile(xml_file, obj=None):
 
     # KGG !!! We need to reset Workflow if it exists
     handler = WorkflowXMLHandler(obj)
-    xml.sax.parse(xml_file, handler)
+    xml.sax.parse(xml_file, handler)  # nosec: B317
     return handler.root
