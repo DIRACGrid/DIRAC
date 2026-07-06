@@ -97,15 +97,11 @@ class DirectoryTreeBase:
             return result
         dirID = result["Value"]
         if result["NewDirectory"]:
-            req = "INSERT INTO FC_DirectoryInfo (DirID,UID,GID,CreationDate,ModificationDate,Mode,Status) Values "
-            req = req + "(%d,%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (
-                dirID,
-                l_uid,
-                l_gid,
-                self.db.umask,
-                status,
-            )
-            result = self.db._update(req)
+            req = "INSERT INTO FC_DirectoryInfo "
+            req += "(DirID,UID,GID,CreationDate,ModificationDate,Mode,Status) "
+            req += "VALUES (%s,%s,%s,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%s,%s)"
+            args = (dirID, l_uid, l_gid, self.db.umask, status)
+            result = self.db._update(req, args=args)
             if result["OK"]:
                 resGet = self.getDirectoryParameters(dirID)
                 if resGet["OK"]:
@@ -291,9 +287,9 @@ class DirectoryTreeBase:
             return result
         dirID = result["Value"]
 
-        query = "SELECT DirID,UID,GID,Status,Mode,CreationDate,ModificationDate from FC_DirectoryInfo"
-        query = query + " WHERE DirID=%d" % dirID
-        resQuery = self.db._query(query)
+        req = "SELECT DirID,UID,GID,Status,Mode,CreationDate,ModificationDate from FC_DirectoryInfo"
+        req += " WHERE DirID=%s"
+        resQuery = self.db._query(req, args=(dirID,))
         if not resQuery["OK"]:
             return resQuery
 
@@ -342,12 +338,12 @@ class DirectoryTreeBase:
                 return result
 
         dirIDString = result["Value"]
-        req = "UPDATE FC_DirectoryInfo SET %s=%d, " "ModificationDate=UTC_TIMESTAMP() WHERE DirID IN ( %s )" % (
-            pname,
-            pvalue,
-            dirIDString,
-        )
-        result = self.db._update(req)
+        if not self.db._checkIdentifier(pname)["OK"]:
+            return S_ERROR(f"Invalid parameter name: {pname}")
+        req = "UPDATE FC_DirectoryInfo "
+        req += f"SET {pname}=%s, ModificationDate=UTC_TIMESTAMP() "
+        req += f"WHERE DirID IN {dirIDString}"
+        result = self.db._update(req, args=(pvalue,))
         return result
 
     #####################################################################
@@ -554,10 +550,10 @@ class DirectoryTreeBase:
         if not dirs:
             dirs = [-1]
 
-        dirListString = ",".join([str(dir) for dir in dirs])
-
-        req = f"SELECT COUNT( DirID ) FROM FC_Files USE INDEX (DirID) WHERE DirID IN ( {dirListString} )"
-        result = self.db._query(req)
+        req = "SELECT COUNT( DirID ) FROM FC_Files USE INDEX (DirID) WHERE DirID IN ("
+        req += ",".join(["%s"] * len(dirs))
+        req += ")"
+        result = self.db._query(req, args=dirs)
         if not result["OK"]:
             return result
 
@@ -568,8 +564,10 @@ class DirectoryTreeBase:
             result["TotalRecords"] = totalRecords
             return result
 
-        req = f"SELECT FileID FROM FC_Files WHERE DirID IN ( {dirListString} ) LIMIT {startItem}, {maxItems} "
-        result = self.db._query(req)
+        req = "SELECT FileID FROM FC_Files WHERE DirID IN ("
+        req += ",".join(["%s"] * len(dirs))
+        req += f") LIMIT {int(startItem)}, {int(maxItems)}"
+        result = self.db._query(req, args=dirs)
         if not result["OK"]:
             return result
         result = S_OK([fileId[0] for fileId in result["Value"]])
@@ -582,11 +580,14 @@ class DirectoryTreeBase:
         if not isinstance(dirID, list):
             dirs = [dirID]
 
-        dirListString = ",".join([str(dir) for dir in dirs])
         treeTable = self.getTreeTable()
-        req = "SELECT CONCAT(D.DirName,'/',F.FileName) FROM FC_Files as F, %s as D WHERE D.DirID IN ( %s ) and D.DirID=F.DirID"
-        req = req % (treeTable, dirListString)
-        result = self.db._query(req)
+        if not self.db._checkIdentifier(treeTable)["OK"]:
+            return S_ERROR(f"Invalid table name: {treeTable}")
+        req = "SELECT CONCAT(D.DirName,'/',F.FileName) FROM FC_Files as F, "
+        req += f"{treeTable} as D WHERE D.DirID IN ("
+        req += ",".join(["%s"] * len(dirs))
+        req += ") and D.DirID=F.DirID"
+        result = self.db._query(req, args=dirs)
         if not result["OK"]:
             return result
         lfnList = [x[0] for x in result["Value"]]
@@ -606,11 +607,14 @@ class DirectoryTreeBase:
         if not isinstance(dirIDList, list):
             dirs = [dirIDList]
 
-        dirListString = ",".join([str(dir_) for dir_ in dirs])
         treeTable = self.getTreeTable()
-        req = "SELECT D.DirName,F.FileName,F.FileID FROM FC_Files as F, %s as D WHERE D.DirID IN ( %s ) and D.DirID=F.DirID"
-        req = req % (treeTable, dirListString)
-        result = self.db._query(req)
+        if not self.db._checkIdentifier(treeTable)["OK"]:
+            return S_ERROR(f"Invalid table name: {treeTable}")
+        req = "SELECT D.DirName,F.FileName,F.FileID FROM FC_Files as F, "
+        req += f"{treeTable} as D WHERE D.DirID IN ("
+        req += ",".join(["%s"] * len(dirs))
+        req += ") and D.DirID=F.DirID"
+        result = self.db._query(req, args=dirs)
         if not result["OK"]:
             return result
 
@@ -851,9 +855,9 @@ class DirectoryTreeBase:
                 failed[path] = "Directory not found"
                 continue
             dirID = result["Value"]
-            req = "SELECT SESize, SEFiles FROM FC_DirectoryUsage WHERE SEID=0 AND DirID=%d" % dirID
+            req = "SELECT SESize, SEFiles FROM FC_DirectoryUsage WHERE SEID=0 AND DirID=%s"
 
-            result = self.db._query(req, conn=connection)
+            result = self.db._query(req, args=(dirID,), conn=connection)
             if not result["OK"]:
                 failed[path] = result["Message"]
             elif not result["Value"]:
@@ -886,10 +890,14 @@ class DirectoryTreeBase:
         successful = {}
         failed = {}
         treeTable = self.getTreeTable()
+        if not self.db._checkIdentifier(treeTable)["OK"]:
+            return S_ERROR(f"Invalid table name: {treeTable}")
+
         for path in lfns:
             if path == "/":
                 req = "SELECT SUM(Size),COUNT(*) FROM FC_Files"
-                reqDir = f"SELECT count(*) FROM {treeTable}"
+                reqDir = "SELECT count(*) FROM "
+                reqDir += treeTable
             else:
                 result = self.findDir(path)
                 if not result["OK"]:
@@ -905,10 +913,9 @@ class DirectoryTreeBase:
                     continue
                 else:
                     dirString = result["Value"]
-                    req = (
-                        "SELECT SUM(F.Size),COUNT(*) FROM FC_Files as F JOIN (%s) as T WHERE F.DirID=T.DirID"
-                        % dirString
-                    )
+                    req = "SELECT SUM(F.Size),COUNT(*) FROM FC_Files as F JOIN ("
+                    req += dirString
+                    req += ") as T WHERE F.DirID=T.DirID"
                     reqDir = dirString.replace("SELECT DirID FROM", "SELECT count(*) FROM")
 
             result = self.db._query(req, conn=connection)
@@ -954,8 +961,8 @@ class DirectoryTreeBase:
             dirID = result["Value"]
 
             req = "SELECT S.SEID, S.SEName, D.SESize, D.SEFiles FROM FC_DirectoryUsage as D, FC_StorageElements as S"
-            req += "  WHERE S.SEID=D.SEID AND D.DirID=%d" % dirID
-            result = self.db._query(req, conn=connection)
+            req += " WHERE S.SEID=D.SEID AND D.DirID=%s"
+            result = self.db._query(req, args=(dirID,), conn=connection)
             if not result["OK"]:
                 failed[path] = result["Message"]
             elif not result["Value"]:
@@ -970,8 +977,8 @@ class DirectoryTreeBase:
                         totalSize += seSize
                         totalFiles += seFiles
                     else:
-                        req = "DELETE FROM FC_DirectoryUsage WHERE SEID=%d AND DirID=%d" % (seID, dirID)
-                        result = self.db._update(req)
+                        req = "DELETE FROM FC_DirectoryUsage WHERE SEID=%s AND DirID=%s"
+                        result = self.db._update(req, args=(seID, dirID), conn=connection)
                         if not result["OK"]:
                             gLogger.error("Failed to delete entry from FC_DirectoryUsage", result["Message"])
                 seDict["TotalSize"] = int(totalSize)
@@ -1003,9 +1010,9 @@ class DirectoryTreeBase:
                 if not result["OK"]:
                     return result
                 subDirString = result["Value"]
-                req = "SELECT S.SEName, D.SESize, D.SEFiles FROM FC_DirectoryUsage as D, FC_StorageElements as S"
-                req += f" JOIN ({subDirString}) AS F"
-                req += " WHERE S.SEID=D.SEID AND D.DirID=F.DirID"
+                req = "SELECT S.SEName, D.SESize, D.SEFiles FROM FC_DirectoryUsage as D, FC_StorageElements as S JOIN ("
+                req += subDirString
+                req += ") AS F WHERE S.SEID=D.SEID AND D.DirID=F.DirID"
 
             result = self.db._query(req, conn=connection)
             if not result["OK"]:
@@ -1060,12 +1067,9 @@ class DirectoryTreeBase:
                     continue
                 else:
                     dirString = result["Value"]
-
-                    req = (
-                        "SELECT SUM(F.Size),COUNT(F.Size),S.SEName from FC_Files as F, FC_Replicas as R, FC_StorageElements as S JOIN (%s) as T "
-                        % dirString
-                    )
-                    req += "WHERE R.SEID=S.SEID AND F.FileID=R.FileID AND F.DirID=T.DirID "
+                    req = "SELECT SUM(F.Size),COUNT(F.Size),S.SEName from FC_Files as F, FC_Replicas as R, FC_StorageElements as S JOIN ("
+                    req += dirString
+                    req += ") as T WHERE R.SEID=S.SEID AND F.FileID=R.FileID AND F.DirID=T.DirID "
                     req += "GROUP BY S.SEID"
 
             result = self.db._query(req, conn=connection)
@@ -1137,8 +1141,8 @@ class DirectoryTreeBase:
 
             # Get the physical size
             req = "SELECT SUM(F.Size),COUNT(F.Size),R.SEID from FC_Files as F, FC_Replicas as R "
-            req += "WHERE F.FileID=R.FileID AND F.DirID=%d GROUP BY R.SEID" % int(dirID)
-            result = self.db._query(req)
+            req += "WHERE F.FileID=R.FileID AND F.DirID=%s GROUP BY R.SEID"
+            result = self.db._query(req, args=(dirID,))
             if not result["OK"]:
                 return result
             if not result["Value"]:
@@ -1149,19 +1153,17 @@ class DirectoryTreeBase:
                 result = self.db.insertFields("FC_DirectoryUsage", insertFields, insertValues)
                 if not result["OK"]:
                     if "Duplicate" in result["Message"]:
-                        req = "UPDATE FC_DirectoryUsage SET SESize=%d, SEFiles=%d, LastUpdate=UTC_TIMESTAMP()" % (
-                            seSize,
-                            seFiles,
-                        )
-                        req += f" WHERE DirID={dirID} AND SEID={seID}"
-                        result = self.db._update(req)
+                        req = "UPDATE FC_DirectoryUsage SET SESize=%s, SEFiles=%s, LastUpdate=UTC_TIMESTAMP()"
+                        req += " WHERE DirID=%s AND SEID=%s"
+                        args = (seSize, seFiles, dirID, seID)
+                        result = self.db._update(req, args=args)
                         if not result["OK"]:
                             return result
                     return result
 
             # Get the logical size
-            req = "SELECT SUM(Size),COUNT(Size) from FC_Files WHERE DirID=%d " % int(dirID)
-            result = self.db._query(req)
+            req = "SELECT SUM(Size),COUNT(Size) from FC_Files WHERE DirID=%s"
+            result = self.db._query(req, args=(dirID,))
             if not result["OK"]:
                 return result
             if not result["Value"]:
@@ -1171,12 +1173,10 @@ class DirectoryTreeBase:
             result = self.db.insertFields("FC_DirectoryUsage", insertFields, insertValues)
             if not result["OK"]:
                 if "Duplicate" in result["Message"]:
-                    req = "UPDATE FC_DirectoryUsage SET SESize=%d, SEFiles=%d, LastUpdate=UTC_TIMESTAMP()" % (
-                        seSize,
-                        seFiles,
-                    )
-                    req += f" WHERE DirID={dirID} AND SEID=0"
-                    result = self.db._update(req)
+                    req = "UPDATE FC_DirectoryUsage SET SESize=%s, SEFiles=%s, LastUpdate=UTC_TIMESTAMP()"
+                    req += " WHERE DirID=%s AND SEID=0"
+                    args = (seSize, seFiles, dirID)
+                    result = self.db._update(req, args=args)
                     if not result["OK"]:
                         return result
                 else:
@@ -1208,9 +1208,9 @@ class DirectoryTreeBase:
         for seID in resultDict:
             size = resultDict[seID]["Size"]
             files = resultDict[seID]["Files"]
-            req = "UPDATE FC_DirectoryUsage SET SESize=SESize+%d, SEFiles=SEFiles+%d WHERE DirID=%d AND SEID=%d"
-            req = req % (size, files, directoryID, seID)
-            result = self.db._update(req)
+            req = "UPDATE FC_DirectoryUsage SET SESize=SESize+%s, SEFiles=SEFiles+%s WHERE DirID=%s AND SEID=%s"
+            args = (size, files, directoryID, seID)
+            result = self.db._update(req, args=args)
             if not result["OK"]:
                 return result
             if not result["Value"]:
@@ -1219,8 +1219,8 @@ class DirectoryTreeBase:
                 if not result["OK"]:
                     return result
 
-        req = "SELECT SEID,SESize,SEFiles from FC_DirectoryUsage WHERE DirID=%d" % directoryID
-        result = self.db._query(req)
+        req = "SELECT SEID,SESize,SEFiles from FC_DirectoryUsage WHERE DirID=%s"
+        result = self.db._query(req, args=(directoryID,))
         if not result["OK"]:
             return result
 
@@ -1242,27 +1242,39 @@ class DirectoryTreeBase:
 
         treeTable = self.getTreeTable()
 
-        req = f"SELECT COUNT(DirID) FROM {treeTable} WHERE Parent NOT IN ( SELECT DirID from {treeTable} )"
-        req += " AND DirID <> 1"
+        if not self.db._checkIdentifier(treeTable)["OK"]:
+            return S_ERROR(f"Invalid table name: {treeTable}")
+
+        req = "SELECT COUNT(DirID) FROM "
+        req += treeTable
+        req += " WHERE Parent NOT IN (SELECT DirID from "
+        req += treeTable
+        req += ") AND DirID <> 1"
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["Orphan Directories"] = res["Value"][0][0]
 
-        req = f"SELECT COUNT(DirID) FROM {treeTable} WHERE DirID NOT IN ( SELECT Parent from {treeTable} )"
-        req += " AND DirID NOT IN ( SELECT DirID from FC_Files ) "
+        req = "SELECT COUNT(DirID) FROM "
+        req += treeTable
+        req += " WHERE DirID NOT IN (SELECT Parent from "
+        req += treeTable
+        req += ") AND DirID NOT IN (SELECT DirID from FC_Files)"
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["Empty Directories"] = res["Value"][0][0]
 
-        req = f"SELECT COUNT(DirID) FROM {treeTable} WHERE DirID NOT IN ( SELECT DirID FROM FC_DirectoryInfo )"
+        req = "SELECT COUNT(DirID) FROM "
+        req += treeTable
+        req += " WHERE DirID NOT IN (SELECT DirID FROM FC_DirectoryInfo)"
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
         resultDict["DirTree w/o DirInfo"] = res["Value"][0][0]
 
-        req = f"SELECT COUNT(DirID) FROM FC_DirectoryInfo WHERE DirID NOT IN ( SELECT DirID FROM {treeTable} )"
+        req = "SELECT COUNT(DirID) FROM FC_DirectoryInfo WHERE DirID NOT IN (SELECT DirID FROM "
+        req += treeTable + ")"
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
