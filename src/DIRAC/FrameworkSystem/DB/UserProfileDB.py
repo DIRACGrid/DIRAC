@@ -183,39 +183,55 @@ class UserProfileDB(DB):
             return result
         return self.deleteEntries("up_Users", {"Id": userId})
 
-    def __webProfileUserDataCond(self, userIds, sqlProfileName=False, sqlVarName=False):
+    def __webProfileUserDataCond(self, userIds, profileName=False, varName=False):
+        """Returns (sqlText, args): Input parameters can be untrusted."""
         condSQL = [
-            f"`up_ProfilesData`.UserId={userIds[0]}",
-            f"`up_ProfilesData`.GroupId={userIds[1]}",
-            f"`up_ProfilesData`.VOId={userIds[2]}",
+            "up_ProfilesData.UserId=%s",
+            "up_ProfilesData.GroupId=%s",
+            "up_ProfilesData.VOId=%s",
         ]
-        if sqlProfileName:
-            condSQL.append(f"`up_ProfilesData`.Profile={sqlProfileName}")
-        if sqlVarName:
-            condSQL.append(f"`up_ProfilesData`.VarName={sqlVarName}")
-        return " AND ".join(condSQL)
+        args = list(userIds[0:3])
+        if profileName:
+            condSQL.append("up_ProfilesData.Profile=%s")
+            args.append(profileName)
+        if varName:
+            condSQL.append("up_ProfilesData.VarName=%s")
+            args.append(varName)
+        sql = " AND ".join(condSQL)
+        return (sql, args)
 
-    def __webProfileReadAccessDataCond(self, userIds, ownerIds, sqlProfileName, sqlVarName=False, match=False):
+    def __webProfileReadAccessDataCond(self, userIds, ownerIds, profileName, varName=False, match=False):
+        """Returns (sqlText, args): Input parameters can be untrusted."""
+        # Keep the args for each list seperately so we can ensure ordering is correct
         permCondSQL = []
+        permCondArgs = []
         sqlCond = []
+        sqlCondArgs = []
 
         if match:
-            sqlCond.append(f"`up_ProfilesData`.UserId = {ownerIds[0]} AND `up_ProfilesData`.GroupId = {ownerIds[1]}")
+            sqlCond.append("up_ProfilesData.UserId=%s AND up_ProfilesData.GroupId = %s")
+            sqlCondArgs.extend((ownerIds[0], ownerIds[1]))
         else:
-            permCondSQL.append(
-                f"`up_ProfilesData`.UserId = {ownerIds[0]} AND `up_ProfilesData`.GroupId = {ownerIds[1]}"
-            )
+            permCondSQL.append("up_ProfilesData.UserId=%s AND up_ProfilesData.GroupId = %s")
+            permCondArgs.extend((ownerIds[0], ownerIds[1]))
 
-        permCondSQL.append(f'`up_ProfilesData`.GroupId={userIds[1]} AND `up_ProfilesData`.ReadAccess="GROUP"')
-        permCondSQL.append(f'`up_ProfilesData`.VOId={userIds[2]} AND `up_ProfilesData`.ReadAccess="VO"')
-        permCondSQL.append('`up_ProfilesData`.ReadAccess="ALL"')
+        permCondSQL.append("up_ProfilesData.GroupId=%s AND up_ProfilesData.ReadAccess=%s")
+        permCondArgs.extend((userIds[1], "GROUP"))
+        permCondSQL.append("up_ProfilesData.VOId=%s AND up_ProfilesData.ReadAccess=%s")
+        permCondArgs.extend((userIds[2], "VO"))
+        permCondSQL.append("up_ProfilesData.ReadAccess=%s")
+        permCondArgs.append("ALL")
 
-        sqlCond.append(f"`up_ProfilesData`.Profile = {sqlProfileName}")
-        if sqlVarName:
-            sqlCond.append(f"`up_ProfilesData`.VarName = {sqlVarName}")
+        sqlCond.append("up_ProfilesData.Profile=%s")
+        sqlCondArgs.append(profileName)
+        if varName:
+            sqlCond.append("up_ProfilesData.VarName=%s")
+            sqlCondArgs.append(varName)
         # Perms
         sqlCond.append(f"( ( {' ) OR ( '.join(permCondSQL)} ) )")
-        return " AND ".join(sqlCond)
+        sqlCondArgs.extend(permCondArgs)
+        req = " AND ".join(sqlCond)
+        return (req, sqlCondArgs)
 
     def __parsePerms(self, perms, addMissing=True):
         normPerms = {}
@@ -238,20 +254,13 @@ class UserProfileDB(DB):
         """
         Get a data entry for a profile
         """
-        result = self._escapeString(profileName)
-        if not result["OK"]:
-            return result
-        sqlProfileName = result["Value"]
-
-        result = self._escapeString(varName)
-        if not result["OK"]:
-            return result
-        sqlVarName = result["Value"]
-
-        sqlCond = self.__webProfileReadAccessDataCond(userIds, ownerIds, sqlProfileName, sqlVarName, True)
+        sqlCond, args = self.__webProfileReadAccessDataCond(userIds, ownerIds, profileName, varName, True)
         # when we retrieve the user profile we have to take into account the user.
-        selectSQL = f"SELECT data FROM `up_ProfilesData` WHERE {sqlCond}"
-        result = self._query(selectSQL)
+        req = "SELECT data FROM up_ProfilesData "
+        req += f"WHERE {sqlCond}"
+        print(req)
+        print(args)
+        result = self._query(req, args=args)
         if not result["OK"]:
             return result
         data = result["Value"]
@@ -264,14 +273,10 @@ class UserProfileDB(DB):
         """
         Get a data entry for a profile
         """
-        result = self._escapeString(profileName)
-        if not result["OK"]:
-            return result
-        sqlProfileName = result["Value"]
-
-        sqlCond = self.__webProfileUserDataCond(userIds, sqlProfileName)
-        selectSQL = f"SELECT varName, data FROM `up_ProfilesData` WHERE {sqlCond}"
-        result = self._query(selectSQL)
+        sqlCond, args = self.__webProfileUserDataCond(userIds, profileName)
+        req = "SELECT varName, data FROM up_ProfilesData "
+        req += f"WHERE {sqlCond}"
+        result = self._query(req, args=args)
         if not result["OK"]:
             return result
         data = result["Value"]
@@ -286,9 +291,10 @@ class UserProfileDB(DB):
         """
         Get all profiles and data for a user
         """
-        sqlCond = self.__webProfileUserDataCond(userIds)
-        selectSQL = f"SELECT Profile, varName, data FROM `up_ProfilesData` WHERE {sqlCond}"
-        result = self._query(selectSQL)
+        sqlCond, args = self.__webProfileUserDataCond(userIds)
+        req = "SELECT Profile, varName, data FROM up_ProfilesData "
+        req += f"WHERE {sqlCond}"
+        result = self._query(req, args=args)
         if not result["OK"]:
             return result
         dataDict = {}
@@ -306,19 +312,12 @@ class UserProfileDB(DB):
         """
         Get a data entry for a profile
         """
-        result = self._escapeString(profileName)
-        if not result["OK"]:
-            return result
-        sqlProfileName = result["Value"]
-
-        result = self._escapeString(varName)
-        if not result["OK"]:
-            return result
-        sqlVarName = result["Value"]
-
-        sqlCond = self.__webProfileReadAccessDataCond(userIds, ownerIds, sqlProfileName, sqlVarName)
-        selectSQL = f"SELECT {', '.join(self.__permAttrs)} FROM `up_ProfilesData` WHERE {sqlCond}"
-        result = self._query(selectSQL)
+        sqlCond, args = self.__webProfileReadAccessDataCond(userIds, ownerIds, profileName, varName)
+        req = "SELECT "
+        req += ",".join(self.__permAttrs)
+        req += " FROM up_ProfilesData WHERE "
+        req += sqlCond
+        result = self._query(req, args=args)
         if not result["OK"]:
             return result
         data = result["Value"]
@@ -331,19 +330,10 @@ class UserProfileDB(DB):
         """
         Remove a data entry for a profile
         """
-        result = self._escapeString(profileName)
-        if not result["OK"]:
-            return result
-        sqlProfileName = result["Value"]
-
-        result = self._escapeString(varName)
-        if not result["OK"]:
-            return result
-        sqlVarName = result["Value"]
-
-        sqlCond = self.__webProfileUserDataCond(userIds, sqlProfileName, sqlVarName)
-        selectSQL = f"DELETE FROM `up_ProfilesData` WHERE {sqlCond}"
-        return self._update(selectSQL)
+        sqlCond, args = self.__webProfileUserDataCond(userIds, profileName, varName)
+        req = "DELETE FROM up_ProfilesData "
+        req += f"WHERE {sqlCond}"
+        return self._update(req, args=args)
 
     def storeVarByUserId(self, userIds, profileName, varName, data, perms):
         """
@@ -356,65 +346,49 @@ class UserProfileDB(DB):
         sqlInsertKeys.append(("GroupId", userIds[1]))
         sqlInsertKeys.append(("VOId", userIds[2]))
 
-        result = self._escapeString(profileName)
-        if not result["OK"]:
-            return result
-        sqlProfileName = result["Value"]
-        sqlInsertKeys.append(("Profile", sqlProfileName))
-
-        result = self._escapeString(varName)
-        if not result["OK"]:
-            return result
-        sqlVarName = result["Value"]
-        sqlInsertKeys.append(("VarName", sqlVarName))
-
-        result = self._escapeString(data)
-        if not result["OK"]:
-            return result
-        sqlInsertValues.append(("Data", result["Value"]))
+        sqlInsertKeys.append(("Profile", profileName))
+        sqlInsertKeys.append(("VarName", varName))
+        sqlInsertValues.append(("Data", data))
 
         normPerms = self.__parsePerms(perms)
         for k in normPerms:
-            sqlInsertValues.append((k, f'"{normPerms[k]}"'))
+            sqlInsertValues.append((k, f"{normPerms[k]}"))
 
         sqlInsert = sqlInsertKeys + sqlInsertValues
-        insertSQL = "INSERT INTO `up_ProfilesData` ( {} ) VALUES ( {} )".format(
-            ", ".join([f[0] for f in sqlInsert]),
-            ", ".join([str(f[1]) for f in sqlInsert]),
-        )
-        result = self._update(insertSQL, debug=False)
+        req = "INSERT INTO up_ProfilesData ("
+        req += ",".join([x[0] for x in sqlInsert])
+        req += ") VALUES ("
+        req += ",".join(["%s"] * len(sqlInsert))
+        req += ")"
+        args = [x[1] for x in sqlInsert]
+        result = self._update(req, args=args, debug=False)
         if result["OK"]:
             return result
         # If error and not duplicate -> real error
         if "Duplicate entry" not in result["Message"]:
             return result
-        updateSQL = "UPDATE `up_ProfilesData` SET {} WHERE {}".format(
-            ", ".join(["%s=%s" % f for f in sqlInsertValues]),
-            self.__webProfileUserDataCond(userIds, sqlProfileName, sqlVarName),
-        )
-        return self._update(updateSQL)
+        sqlCond, condArgs = self.__webProfileUserDataCond(userIds, profileName, varName)
+        args = []
+        req = "UPDATE up_ProfilesData "
+        req += "SET "
+        req += ",".join([f"{x[0]}=%s" for x in sqlInsertValues])
+        args.extend([x[1] for x in sqlInsertValues])
+        req += f" WHERE {sqlCond}"
+        args.extend(condArgs)
+        return self._update(req, args=args)
 
     def setUserVarPermsById(self, userIds, profileName, varName, perms):
-        result = self._escapeString(profileName)
-        if not result["OK"]:
-            return result
-        sqlProfileName = result["Value"]
-
-        result = self._escapeString(varName)
-        if not result["OK"]:
-            return result
-        sqlVarName = result["Value"]
-
         nPerms = self.__parsePerms(perms, False)
         if not nPerms:
             return S_OK()
-        sqlPerms = ",".join(f"{k}='{nPerms[k]}'" for k in nPerms)
-
-        updateSql = "UPDATE `up_ProfilesData` SET {} WHERE {}".format(
-            sqlPerms,
-            self.__webProfileUserDataCond(userIds, sqlProfileName, sqlVarName),
-        )
-        return self._update(updateSql)
+        condSql, condArgs = self.__webProfileUserDataCond(userIds, profileName, varName)
+        req = "UPDATE up_ProfilesData SET "
+        req += ",".join(f"{k}=%s" for k in nPerms)
+        args = list(nPerms.values())
+        req += " WHERE "
+        req += condSql
+        args.extend(condArgs)
+        return self._update(req, args=args)
 
     def retrieveVar(self, userName, userGroup, ownerName, ownerGroup, profileName, varName):
         """
@@ -514,32 +488,31 @@ class UserProfileDB(DB):
             fieldName = "GroupId"
         else:
             fieldName = "VOId"
-        return f"`up_ProfilesData`.{fieldName} in ( {', '.join(str(iD) for iD in ids)} )"
+        sql = f"up_ProfilesData.{fieldName} IN ("
+        sql += ",".join(["%s"] * len(ids))
+        sql += ")"
+        return (sql, ids)
 
     def listVarsById(self, userIds, profileName, filterDict=None):
-        result = self._escapeString(profileName)
-        if not result["OK"]:
-            return result
-        sqlProfileName = result["Value"]
+        extConds, args = self.__webProfileReadAccessDataCond(userIds, userIds, profileName)
         sqlCond = [
-            "`up_Users`.Id = `up_ProfilesData`.UserId",
-            "`up_Groups`.Id = `up_ProfilesData`.GroupId",
-            "`up_VOs`.Id = `up_ProfilesData`.VOId",
-            self.__webProfileReadAccessDataCond(userIds, userIds, sqlProfileName),
+            "up_Users.Id = up_ProfilesData.UserId",
+            "up_Groups.Id = up_ProfilesData.GroupId",
+            "up_VOs.Id = up_ProfilesData.VOId",
+            extConds,
         ]
         if filterDict:
             filterDict = {k.lower(): filterDict[k] for k in filterDict}
             for k in ("user", "group", "vo"):
                 if k in filterDict:
-                    sqlCond.append(self.__profilesCondGenerator(filterDict[k], k))
+                    filterCond, filterArgs = self.__profilesCondGenerator(filterDict[k], k)
+                    sqlCond.append(filterCond)
+                    args.extend(filterArgs)
 
-        sqlVars2Get = ["`up_Users`.UserName", "`up_Groups`.UserGroup", "`up_VOs`.VO", "`up_ProfilesData`.VarName"]
-        sqlQuery = "SELECT {} FROM `up_Users`, `up_Groups`, `up_VOs`, `up_ProfilesData` WHERE {}".format(
-            ", ".join(sqlVars2Get),
-            " AND ".join(sqlCond),
-        )
-
-        result = self._query(sqlQuery)
+        req = "SELECT up_Users.UserName, up_Groups.UserGroup, up_VOs.VO, up_ProfilesData.VarName "
+        req += "FROM up_Users, up_Groups, up_VOs, up_ProfilesData WHERE "
+        req += " AND ".join(sqlCond)
+        result = self._query(req, args=args)
         if result["OK"]:
             # Convert returned tuples to lists to appease JEncode
             result = S_OK([list(x) for x in result["Value"]])
@@ -560,10 +533,9 @@ class UserProfileDB(DB):
         if not permissions:
             return S_OK([])
 
-        condition = ",".join(f"{k}='{permissions[k]}'" for k in permissions)
-
-        query = f"SELECT distinct Profile from `up_ProfilesData` where {condition}"
-        retVal = self._query(query)
+        query = "SELECT DISTINCT Profile FROM up_ProfilesData WHERE "
+        query += " AND ".join([f"{x}=%s" for x in permissions])
+        retVal = self._query(query, args=permissions.values())
         if not retVal["OK"]:
             return retVal
         return S_OK([i[0] for i in retVal["Value"]])
