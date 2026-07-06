@@ -1,3 +1,19 @@
+[v8.0.81]
+
+*Core
+
+FIX: (#8648) Replace escape_string with alternatives
+FIX: (#8590) MySQL - avoid massive warnings with newer versions of MySQL and MariaDB
+FIX: (#8589) Use python3.11 for flynt pre-commit module
+
+*TransformationSystem
+
+FIX: (#8648) Parameterise SQL in TransformationSystem
+
+*Workflow
+
+FIX: (#8629) increased saferEval limit to 1 MiB for Workflow XML handling
+
 [v8.0.80]
 
 
