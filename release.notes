@@ -1,3 +1,80 @@
+[v9.1.13]
+
+*DataManagementSystem
+
+CHANGE: (#8674) only use the multiple file/replica insertion path when there are more than one
+FIX: (#8665) Parameterise SQL in DatasetManager
+FIX: (#8664) Parameterise SQL in DirectoryTreeBase
+FIX: (#8663) Parameterise SQL in DirectorySimpleTree
+FIX: (#8662) Parameterise SQL in DataIntegrityDB
+FIX: (#8662) Parameterise SQL in DirectoryClosure
+FIX: (#8662) Parameterise SQL in FileManagerPs
+FIX: (#8661) Parameterise SQL in DirectoryLevelTree
+FIX: (#8660) Parameterise SQL in FileManagerFlat
+FIX: (#8659) Parameterise SQL in FileManagerBase
+FIX: (#8658) Parameterise SQL in DirectoryMetadata
+FIX: (#8657) Parameterise SQL in DirectoryTreeFlat
+FIX: (#8655) Parameterise SQL in DirectoryNodeTree
+FIX: (#8646) Parameterise SQL in DMS FileMetadata
+FIX: (#8643) Parameterise SQL in DMS SEManager & UserAndGroupManager
+
+*All
+
+FIX: (#8672) Replace sqlalchemy imports to remove deprecations
+FIX: (#8654) Check XML module usage for bandit
+
+*Core
+
+FIX: (#8671) Bandit fixups for MySQL
+FIX: (#8670) Fix asserts in ElasticSearchDB
+FIX: (#8645) Replace escape_string with alternatives
+FIX: (#8642) Catch ValueError when formatting SQL statement logs
+FIX: (#8634) Tiny typo in Test_X509Chain
+NEW: (#8625) Add MySQL checking functions for identifiers & types
+CHANGE: (#8584) Add cleanDirectory utility function for general directory clean-up
+
+*WorkloadManagement
+
+FIX: (#8668) Tidy up parameterised SQL in JobDB
+FIX: (#8622) Parameterise SQL in WMS JobDB
+FIX: (#8619) Move watchdog flag cleanup to correct place
+FIX: (#8618) Parameterise SQL in WMS SandboxMetadata
+FIX: (#8616) Parameterise SQL in WMS JobLogging
+FIX: (#8615) Parameterise SQL in WMS JobParameters
+
+*FrameworkSystem
+
+FIX: (#8667) Parameterise SQL in ProxyDB
+FIX: (#8666) Parameterise SQL in UserProfileDB
+
+*WorkloadManagementSystem
+
+FIX: (#8652) move getPilotOutput and getPilotLoggingInfo to WebAppHandler
+CHANGE: (#8638) Do not put empty strings in log message in the JobAgent
+
+*Workflow
+
+FIX: (#8635) Don't apply saferEval default length cap to workflow substitution
+FIX: (#8628) increased saferEval limit to 1 MiB for Workflow XML handling
+
+FIX: (#8633) Minor documentation typo
+
+*StorageManagamentSystem
+
+FIX: (#8623) Parameterise SQL in StorageManagement
+
+*ProductionSystem
+
+FIX: (#8614) Parameterise SQL in ProductionSystem
+
+*TransformationSystem
+
+FIX: (#8613) Parameterise SQL in TransformationSystem
+
+*RequestManagementSystem
+
+CHANGE: (#8598) optimize REA by using lock and call the DB directly
+
 [v9.1.12]
 
 *DataManagement/WorkloadManagement
