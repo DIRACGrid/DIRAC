@@ -69,7 +69,6 @@ Configuration example::
 
 The service provides:
 
-- ``getRegisteredTypes()``: Lists all registered accounting types
 - ``commit()``: Insert a single record
 - ``commitRegisters()``: Insert multiple records in a bundle
 

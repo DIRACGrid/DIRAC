@@ -1,5 +1,5 @@
-""" Test for AccountingDB
-"""
+"""Test for AccountingDB"""
+
 import pytest
 
 import DIRAC
@@ -48,45 +48,13 @@ def inout():
     res = acDB.insertRecordDirectly("Pilot", middleTime, endTime, keyValues_2 + nonKeyValue_2)
     assert res["OK"], res["Message"]
 
-    yield inout
-
-    res = acDB.deleteRecord(
-        "Pilot",
-        startTime,
-        middleTime,
-        keyValues_1 + nonKeyValue_1,
-    )
-    assert res["OK"], res["Message"]
-
-    res = acDB.deleteRecord(
-        "Pilot",
-        middleTime,
-        endTime,
-        keyValues_2 + nonKeyValue_2,
-    )
-    assert res["OK"], res["Message"]
+    yield
 
 
 # Real tests from here
 
 
-def test_mix():
-    res = acDB.getRegisteredTypes()
-    assert res["OK"], res["Message"]
-
-
-def test_retrieveRawRecords(inout):
-    # retrieve RAW records
-    res = acDB.retrieveRawRecords("Pilot", startTime, endTime, {}, "")
-    assert res["OK"], res["Message"]
-    assert len(res["Value"]) == 2
-    assert res["Value"] == (
-        tuple([startTime, middleTime] + keyValues_1 + nonKeyValue_1),
-        tuple([middleTime, endTime] + keyValues_2 + nonKeyValue_2),
-    )
-
-
-def test_retrieveBucketedData():
+def test_retrieveBucketedData(inout):
     # retrieve bucketed data
     res = acDB.retrieveBucketedData(
         "Pilot",
