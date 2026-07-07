@@ -1,14 +1,15 @@
-""" This is a test of using PilotManagerClient
+"""This is a test of using PilotManagerClient
 
-    In order to run this test we need the following DBs installed:
-    - PilotAgentsDB
+ In order to run this test we need the following DBs installed:
+ - PilotAgentsDB
 
-    And the following services should also be on:
-    - PilotManager
+ And the following services should also be on:
+ - PilotManager
 
-   this is pytest!
+this is pytest!
 
 """
+
 import DIRAC
 
 DIRAC.initialize()  # Initialize configuration
@@ -42,14 +43,6 @@ def test_PilotsDB():
     assert res["OK"], res["Message"]
     res = pilots.storePilotOutput("anotherPilot", "This is an output", "this is an error")
     assert res["OK"], res["Message"]
-    res = pilots.getPilotOutput("anotherPilot")
-    assert res["OK"], res["Message"]
-    assert res["Value"] == {
-        "VO": "VO",
-        "StdErr": "this is an error",
-        "FileList": [],
-        "StdOut": "This is an output",
-    }
     res = pilots.getPilotInfo("anotherPilot")
     assert res["OK"], res["Message"]
     assert res["Value"]["anotherPilot"]["AccountingSent"] == "False"

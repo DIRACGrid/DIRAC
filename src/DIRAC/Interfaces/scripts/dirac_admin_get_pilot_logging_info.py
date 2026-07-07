@@ -25,6 +25,7 @@ Example:
   - Seqcode   =  UI=000000:NS=0000000001:WM=000000:BH=0000000000:JSS=000000:LM=000000:LRMS=000000:APP=000000:LBS=000000
   - Source    =  NetworkServer
 """
+
 # pylint: disable=wrong-import-position
 from DIRAC.Core.Base.Script import Script
 
@@ -37,14 +38,14 @@ def main():
     _, args = Script.parseCommandLine(ignoreErrors=True)
 
     from DIRAC import exit as DIRACExit
-    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
+    from DIRAC.MonitoringSystem.Client.WebAppClient import WebAppClient
 
-    diracAdmin = DiracAdmin()
+    web_app_client = WebAppClient()
     exitCode = 0
     errorList = []
 
     for gridID in args:
-        result = diracAdmin.getPilotLoggingInfo(gridID)
+        result = web_app_client.getPilotLoggingInfo(gridID)
         if not result["OK"]:
             errorList.append((gridID, result["Message"]))
             exitCode = 2

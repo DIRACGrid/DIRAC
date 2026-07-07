@@ -3,16 +3,23 @@ The WebAppHandler module provides a class to handle web requests from the DIRAC 
 It is not indented to be used in diracx
 """
 
+import shutil
+
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_GET_INFO, JobPolicy
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import (
+    getPilotCE,
+    getPilotRef,
+    setPilotCredentials,
+)
 
 TASKS_STATE_NAMES = ["TotalCreated", "Created"] + sorted(
     set(JobStatus.JOB_STATES) | set(Request.ALL_STATES) | set(Operation.ALL_STATES)
@@ -54,6 +61,10 @@ class WebAppHandler(RequestHandler):
             cls.log.exception()
             return S_ERROR(f"Can't connect to DB: {excp}")
 
+        # prepare remote pilot plugin initialization
+        defaultOption, defaultClass = "DownloadPlugin", "FileCacheDownloadPlugin"
+        cls.configValue = getServiceOption(serviceInfoDict, defaultOption, defaultClass)
+        cls.loggingPlugin = None
         return S_OK()
 
     ##############################################################################
@@ -124,6 +135,175 @@ class WebAppHandler(RequestHandler):
         """Set the pilot agent status"""
 
         return cls.pilotAgentsDB.getCounters(table, keys, condDict, newer=newer, timeStamp=timeStamp)
+
+    types_getPilotOutput = [str]
+
+    @classmethod
+    def export_getPilotOutput(cls, pilotReference):
+        """
+        Get the pilot job standard output and standard error files for a pilot reference.
+        Handles both classic, CE-based logs and remote logs. The type of logs returned is determined
+        by the server.
+
+        :param str pilotReference: pilot reference (e.g. htcondorce://ce13.pic.es/19126986.5)
+        :return: S_OK or S_ERROR
+        :rtype: dict
+        """
+
+        result = cls.pilotAgentsDB.getPilotInfo(pilotReference)
+        if not result["OK"]:
+            cls.log.error("Failed to get info for pilot", f"{pilotReference}: {result['Message']}")
+            return S_ERROR("Failed to get info for pilot")
+        if not result["Value"]:
+            cls.log.warn("The pilot info is empty for", pilotReference)
+            return S_ERROR("Pilot info is empty")
+
+        pilotDict = result["Value"][pilotReference]
+        opsHelper = Operations(vo=pilotDict["VO"])
+        remote = opsHelper.getValue("Pilot/RemoteLogsPriority", False)
+        # classic logs first, by default
+        funcs = [cls._getPilotOutput, cls._getRemotePilotOutput]
+        if remote:
+            cls.log.info("Trying to retrieve output of pilot", f"{pilotReference} remotely first")
+            funcs.reverse()
+
+        result = funcs[0](pilotReference, pilotDict)
+        if not result["OK"]:
+            cls.log.warn(
+                "Failed getting output for pilot", f"{pilotReference}. Will try another approach: {result['Message']}"
+            )
+            result = funcs[1](pilotReference, pilotDict)
+            return result
+        else:
+            return result
+
+    @classmethod
+    def _getPilotOutput(cls, pilotReference, pilotDict):
+        """Get the pilot job standard output and standard error files for the Grid
+        job reference
+        """
+
+        # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
+        result = cls.pilotAgentsDB.getPilotOutput(pilotReference)
+        if result["OK"]:
+            stdout = result["Value"]["StdOut"]
+            error = result["Value"]["StdErr"]
+            if stdout or error:
+                resultDict = {}
+                resultDict["StdOut"] = stdout
+                resultDict["StdErr"] = error
+                resultDict["VO"] = pilotDict["VO"]
+                resultDict["FileList"] = []
+                return S_OK(resultDict)
+            else:
+                cls.log.warn("Empty pilot output found", f"for {pilotReference}")
+
+        result = getPilotCE(pilotDict)
+        if not result["OK"]:
+            return result
+
+        ce = result["Value"]
+        if not hasattr(ce, "getJobOutput"):
+            return S_ERROR(f"Pilot output not available for {pilotDict['GridType']} CEs")
+
+        # Set proxy or token for the CE
+        result = setPilotCredentials(ce, pilotDict)
+        if not result["OK"]:
+            return result
+
+        result = getPilotRef(pilotReference, pilotDict)
+        if not result["OK"]:
+            return result
+        pRef = result["Value"]
+
+        result = ce.getJobOutput(pRef)
+        if not result["OK"]:
+            shutil.rmtree(ce.ceParameters["WorkingDirectory"])
+            return result
+        stdout, error = result["Value"]
+        if stdout:
+            result = cls.pilotAgentsDB.storePilotOutput(pilotReference, stdout, error)
+            if not result["OK"]:
+                cls.log.error("Failed to store pilot output:", result["Message"])
+
+        resultDict = {}
+        resultDict["StdOut"] = stdout
+        resultDict["StdErr"] = error
+        resultDict["VO"] = pilotDict["VO"]
+        resultDict["FileList"] = []
+        shutil.rmtree(ce.ceParameters["WorkingDirectory"])
+        return S_OK(resultDict)
+
+    @classmethod
+    def _getRemotePilotOutput(cls, pilotReference, pilotDict):
+        """
+        Get remote pilot log files.
+
+        :param str pilotReference:
+        :return: S_OK Dirac object
+        :rtype: dict
+        """
+
+        pilotStamp = pilotDict["PilotStamp"]
+
+        if cls.loggingPlugin is None:
+            result = ObjectLoader().loadObject(
+                f"WorkloadManagementSystem.Client.PilotLoggingPlugins.{cls.configValue}", cls.configValue
+            )
+            if not result["OK"]:
+                cls.log.error("Failed to load LoggingPlugin", f"{cls.configValue}: {result['Message']}")
+                return result
+
+            componentClass = result["Value"]
+            cls.loggingPlugin = componentClass()
+            cls.log.info("Loaded: PilotLoggingPlugin class", cls.configValue)
+
+        res = cls.loggingPlugin.getRemotePilotLogs(pilotStamp, pilotDict["VO"])
+
+        if res["OK"]:
+            res["Value"]["VO"] = pilotDict["VO"]
+            res["Value"]["FileList"] = []
+        # return res, correct or not
+        return res
+
+    types_getPilotLoggingInfo = [str]
+
+    @classmethod
+    def export_getPilotLoggingInfo(cls, pilotReference):
+        """Get the pilot logging info for the Grid job reference"""
+        result = cls.pilotAgentsDB.getPilotInfo(pilotReference)
+        if not result["OK"]:
+            cls.log.error("Failed to get info for pilot", result["Message"])
+            return result
+        if not result["Value"]:
+            cls.log.warn("The pilot info is empty", pilotReference)
+            return S_ERROR("Pilot info is empty")
+
+        pilotDict = result["Value"][pilotReference]
+        if not (result := getPilotCE(pilotDict))["OK"]:
+            return result
+
+        ce = result["Value"]
+        if not hasattr(ce, "getJobLog"):
+            cls.log.info("Pilot logging not available for", f"{pilotDict['GridType']} CEs")
+            return S_ERROR(f"Pilot logging not available for {pilotDict['GridType']} CEs")
+
+        # Set proxy or token for the CE
+        if not (result := setPilotCredentials(ce, pilotDict))["OK"]:
+            return result
+
+        if not (result := getPilotRef(pilotReference, pilotDict))["OK"]:
+            return result
+        pRef = result["Value"]
+
+        result = ce.getJobLog(pRef)
+        if not result["OK"]:
+            shutil.rmtree(ce.ceParameters["WorkingDirectory"])
+            return result
+        loggingInfo = result["Value"]
+        shutil.rmtree(ce.ceParameters["WorkingDirectory"])
+
+        return S_OK(loggingInfo)
 
     ##############################################################################
     # Jobs

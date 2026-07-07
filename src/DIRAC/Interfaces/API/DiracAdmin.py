@@ -16,6 +16,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.MonitoringSystem.Client.WebAppClient import WebAppClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
@@ -400,7 +401,7 @@ class DiracAdmin(API):
         if not os.path.exists(directory):
             return self._errorReport(f"Directory {directory} does not exist")
 
-        result = PilotManagerClient().getPilotOutput(gridReference)
+        result = WebAppClient().getPilotOutput(gridReference)
         if not result["OK"]:
             return result
 
@@ -489,22 +490,6 @@ class DiracAdmin(API):
             pilotRefDict[queue]["GridType"] = gridType
 
         return killPilotsInQueues(pilotRefDict)
-
-    #############################################################################
-    def getPilotLoggingInfo(self, gridReference):
-        """Retrieve the pilot logging info for an existing job in the WMS.
-
-          >>> gLogger.notice(dirac.getPilotLoggingInfo(12345))
-          {'OK': True, 'Value': {"The output of the command"}}
-
-        :param gridReference: Gridp pilot job reference Id
-        :type gridReference: string
-        :return: S_OK,S_ERROR
-        """
-        if not isinstance(gridReference, str):
-            return self._errorReport("Expected string for pilot reference")
-
-        return PilotManagerClient().getPilotLoggingInfo(gridReference)
 
     #############################################################################
     def getJobPilots(self, jobID):
