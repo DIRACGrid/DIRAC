@@ -1,5 +1,5 @@
-""" Module for handling AccountingDB tables on multiple DBs (e.g. 2 MySQL servers)
-"""
+"""Module for handling AccountingDB tables on multiple DBs (e.g. 2 MySQL servers)"""
+
 from DIRAC import gConfig, S_OK, gLogger
 from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
 from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
@@ -44,9 +44,7 @@ class MultiAccountingDB:
             "registerType",
             "changeBucketsLength",
             "regenerateBuckets",
-            "deleteType",
             "insertRecordThroughQueue",
-            "deleteRecord",
             "getKeyValues",
             "retrieveBucketedData",
             "calculateBuckets",
@@ -64,7 +62,6 @@ class MultiAccountingDB:
             "compactBuckets",
             "markAllPendingRecordsAsNotTaken",
             "loadPendingRecords",
-            "getRegisteredTypes",
         ):
             (lambda closure: setattr(self, closure, lambda *x: self.__mimeMethod(closure, *x)))(methodName)
 

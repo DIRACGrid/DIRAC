@@ -46,7 +46,9 @@ class AccountingDB(DB):
         self.__loadCatalogFromDB()
 
         self.__compactTime = datetime.time(
-            hour=2, minute=random.randint(0, 59), second=random.randint(0, 59)  # nosec B311
+            hour=2,
+            minute=random.randint(0, 59),  # nosec B311
+            second=random.randint(0, 59),  # nosec B311
         )
         lcd = datetime.datetime.utcnow()
         lcd.replace(hour=self.__compactTime.hour + 1, minute=0, second=0)
@@ -370,23 +372,6 @@ class AccountingDB(DB):
         self.log.info(f"Registered type {name}")
         return S_OK(True)
 
-    def getRegisteredTypes(self):
-        """
-        Get list of registered types
-        """
-        retVal = self._query(
-            f"SELECT `name`, `keyFields`, `valueFields`, `bucketsLength` FROM `{self.catalogTableName}`"
-        )
-        if not retVal["OK"]:
-            return retVal
-        typesList = []
-        for name, keyFields, valueFields, bucketsLength in retVal["Value"]:
-            keyFields = List.fromChar(keyFields)
-            valueFields = List.fromChar(valueFields)
-            bucketsLength = DEncode.decode(bucketsLength.encode())
-            typesList.append([name, keyFields, valueFields, bucketsLength])
-        return S_OK(typesList)
-
     def getKeyValues(self, typeName, condDict, connObj=False):
         """
         Get all values for a given key field in a type
@@ -426,29 +411,6 @@ class AccountingDB(DB):
             keyValuesDict[keyName] = [r[0] for r in retVal["Value"]]
 
         return S_OK(keyValuesDict)
-
-    @gSynchro
-    def deleteType(self, typeName):
-        """
-        Deletes a type
-        """
-        if self.__readOnly:
-            return S_ERROR("ReadOnly mode enabled. No modification allowed")
-        if typeName not in self.dbCatalog:
-            return S_ERROR(f"Type {typeName} does not exist")
-        self.log.info("Deleting type", typeName)
-        tablesToDelete = []
-        for keyField in self.dbCatalog[typeName]["keys"]:
-            tablesToDelete.append(f"`{_getTableName('key', typeName, keyField)}`")
-        tablesToDelete.insert(0, f"`{_getTableName('type', typeName)}`")
-        tablesToDelete.insert(0, f"`{_getTableName('bucket', typeName)}`")
-        tablesToDelete.insert(0, f"`{_getTableName('in', typeName)}`")
-        retVal = self._query(f"DROP TABLE {', '.join(tablesToDelete)}")
-        if not retVal["OK"]:
-            return retVal
-        retVal = self._update(f"DELETE FROM `{_getTableName('catalog', 'Types')}` WHERE name='{typeName}'")
-        del self.dbCatalog[typeName]
-        return S_OK()
 
     def __getIdForKeyValue(self, typeName, keyName, keyValue, conn=False):
         """
@@ -650,73 +612,6 @@ class AccountingDB(DB):
             return retVal
         return self.__commitTransaction(connObj)
 
-    def deleteRecord(self, typeName, startTime, endTime, valuesList):
-        """
-        Delete an entry
-        """
-        if self.__readOnly:
-            return S_ERROR("ReadOnly mode enabled. No modification allowed")
-        if typeName not in self.dbCatalog:
-            return S_ERROR(f"Type {typeName} has not been defined in the db")
-
-        self.log.info(
-            "Deleting record",
-            "for type %s\n [%s -> %s]"
-            % (typeName, TimeUtilities.fromEpoch(startTime), TimeUtilities.fromEpoch(endTime)),
-        )
-        sqlValues = []
-        sqlValues.extend(valuesList)
-        # Discover key indexes
-        for keyPos, keyName in enumerate(self.dbCatalog[typeName]["keys"]):
-            keyValue = sqlValues[keyPos]
-            retVal = self.__addKeyValue(typeName, keyName, keyValue)
-            if not retVal["OK"]:
-                return retVal
-            self.log.verbose(f"Value {keyValue} for key {keyName} has id {retVal['Value']}")
-            sqlValues[keyPos] = retVal["Value"]
-        sqlCond = []
-        mainTable = _getTableName("type", typeName)
-        sqlValues.extend([startTime, endTime])
-        numKeyFields = len(self.dbCatalog[typeName]["keys"])
-        numValueFields = len(self.dbCatalog[typeName]["values"])
-        for i, value in enumerate(sqlValues):
-            needToRound = False
-            if i >= numKeyFields and i - numKeyFields < numValueFields:
-                vIndex = i - numKeyFields
-                if self.dbCatalog[typeName]["definition"]["values"][vIndex][1].find("FLOAT") > -1:
-                    needToRound = True
-            if needToRound:
-                compVal = [f"`{mainTable}`.`{self.dbCatalog[typeName]['typeFields'][i]}`", f"{value:f}"]
-                compVal = [f"CEIL( {v} * 1000 )" for v in compVal]
-                compVal = f"ABS( {' - '.join(compVal)} ) <= 1 "
-            else:
-                sqlCond.append(f"`{mainTable}`.`{self.dbCatalog[typeName]['typeFields'][i]}`={value}")
-        retVal = self._getConnection()
-        if not retVal["OK"]:
-            return retVal
-        connObj = retVal["Value"]
-        retVal = self.__startTransaction(connObj)
-        if not retVal["OK"]:
-            return retVal
-        retVal = self._update(f"DELETE FROM `{mainTable}` WHERE {' AND '.join(sqlCond)}", conn=connObj)
-        if not retVal["OK"]:
-            return retVal
-        numInsertions = retVal["Value"]
-        # Deleted from type, now the buckets
-        # HACK: One more record to split in the buckets to be able to count total entries
-        if numInsertions == 0:
-            return S_OK(0)
-        sqlValues.append(1)
-        retVal = self.__deleteFromBuckets(typeName, startTime, endTime, sqlValues, numInsertions, connObj=connObj)
-        if not retVal["OK"]:
-            self.__rollbackTransaction(connObj)
-            return retVal
-        retVal = self.__commitTransaction(connObj)
-        if not retVal["OK"]:
-            self.__rollbackTransaction(connObj)
-            return retVal
-        return S_OK(numInsertions)
-
     def __splitInBuckets(self, typeName, startTime, endTime, valuesList, connObj=False):
         """
         Bucketize a record
@@ -731,44 +626,6 @@ class AccountingDB(DB):
         valuesList = valuesList[numKeys:]
         self.log.debug("Splitting entry", f" in {len(buckets)} buckets")
         return self.__writeBuckets(typeName, buckets, keyValues, valuesList, connObj=connObj)
-
-    def __deleteFromBuckets(self, typeName, startTime, endTime, valuesList, numInsertions, connObj=False):
-        """
-        DeBucketize a record
-        """
-        # Calculate amount of buckets
-        buckets = self.calculateBuckets(typeName, startTime, endTime, self.__lastCompactionEpoch)
-        # Separate key values from normal values
-        numKeys = len(self.dbCatalog[typeName]["keys"])
-        keyValues = valuesList[:numKeys]
-        valuesList = valuesList[numKeys:]
-        self.log.verbose("Deleting bucketed entry", f"from {len(buckets)} buckets")
-        for bucketInfo in buckets:
-            bucketStartTime = bucketInfo[0]
-            bucketProportion = bucketInfo[1]
-            bucketLength = bucketInfo[2]
-            for _i in range(max(1, self.__deadLockRetries)):
-                retVal = self.__extractFromBucket(
-                    typeName,
-                    bucketStartTime,
-                    bucketLength,
-                    keyValues,
-                    valuesList,
-                    bucketProportion * numInsertions,
-                    connObj=connObj,
-                )
-                if not retVal["OK"]:
-                    # If failed because of dead lock try restarting
-                    if retVal["Message"].find("try restarting transaction"):
-                        continue
-                    return retVal
-                # If OK, break loop
-                if retVal["OK"]:
-                    break
-        return S_OK()
-
-    def getBucketsDef(self, typeName):
-        return self.dbBucketsLength[typeName]
 
     def __generateSQLConditionForKeys(self, typeName, keyValues):
         """
@@ -880,20 +737,6 @@ class AccountingDB(DB):
             if missing:
                 return S_ERROR(f"Order fields {', '.join(missing)} are not defined")
         return S_OK()
-
-    def retrieveRawRecords(self, typeName, startTime, endTime, condDict, orderFields):
-        """
-        Get RAW data from the DB
-        """
-        if typeName not in self.dbCatalog:
-            return S_ERROR(f"Type {typeName} not defined")
-        selectFields = [["%s", "%s"], ["startTime", "endTime"]]
-        for tK in ("keys", "values"):
-            for key in self.dbCatalog[typeName][tK]:
-                selectFields[0].append("%s")
-                selectFields[1].append(key)
-        selectFields[0] = ", ".join(selectFields[0])
-        return self.__queryType(typeName, startTime, endTime, selectFields, condDict, False, orderFields, "type")
 
     def retrieveBucketedData(
         self, typeName, startTime, endTime, selectFields, condDict, groupFields, orderFields, connObj=False
@@ -1083,7 +926,6 @@ class AccountingDB(DB):
             self.__doingCompaction = True
         finally:
             gSynchro.unlock()
-        slow = True
         for typeName in self.dbCatalog:
             if typeFilter and typeName.find(typeFilter) == -1:
                 self.log.info(f"[COMPACT] Skipping {typeName}")
@@ -1092,10 +934,7 @@ class AccountingDB(DB):
                 self.log.info(f"[COMPACT] Deleting records older that timespan for type {typeName}")
                 self.__deleteRecordsOlderThanDataTimespan(typeName)
             self.log.info(f"[COMPACT] Compacting {typeName}")
-            if slow:
-                self.__slowCompactBucketsForType(typeName)
-            else:
-                self.__compactBucketsForType(typeName)
+            self.__slowCompactBucketsForType(typeName)
         self.log.info("[COMPACT] Compaction finished")
         self.__lastCompactionEpoch = int(TimeUtilities.toEpoch())
         gSynchro.lock()
@@ -1140,51 +979,6 @@ class AccountingDB(DB):
         deleteSQL += f"`{tableName}`.`startTime` < '{timeLimit}' AND "
         deleteSQL += f"`{tableName}`.`bucketLength` = {bucketLength}"
         return self._update(deleteSQL, conn=connObj)
-
-    def __compactBucketsForType(self, typeName):
-        """
-        Compact all buckets for a given type
-        """
-        nowEpoch = TimeUtilities.toEpoch()
-        # retVal = self.__startTransaction(connObj)
-        # if not retVal[ 'OK' ]:
-        #  return retVal
-        for bPos in range(len(self.dbBucketsLength[typeName]) - 1):
-            self.log.info("[COMPACT] Query %d of %d" % (bPos + 1, len(self.dbBucketsLength[typeName]) - 1))
-            secondsLimit = self.dbBucketsLength[typeName][bPos][0]
-            bucketLength = self.dbBucketsLength[typeName][bPos][1]
-            timeLimit = (nowEpoch - nowEpoch % bucketLength) - secondsLimit
-            nextBucketLength = self.dbBucketsLength[typeName][bPos + 1][1]
-            self.log.info(
-                "[COMPACT] Compacting data newer that %s with bucket size %s"
-                % (TimeUtilities.fromEpoch(timeLimit), bucketLength)
-            )
-            # Retrieve the data
-            retVal = self.__selectForCompactBuckets(typeName, timeLimit, bucketLength, nextBucketLength)
-            if not retVal["OK"]:
-                # self.__rollbackTransaction(connObj)
-                return retVal
-            bucketsData = retVal["Value"]
-            self.log.info(f"[COMPACT] Got {len(bucketsData)} records to compact")
-            if len(bucketsData) == 0:
-                continue
-            retVal = self.__deleteForCompactBuckets(typeName, timeLimit, bucketLength)
-            if not retVal["OK"]:
-                # self.__rollbackTransaction( connObj )
-                return retVal
-            self.log.info(f"[COMPACT] Compacting {len(bucketsData)} records {bucketLength} seconds size for {typeName}")
-            # Add data
-            for record in bucketsData:
-                startTime = record[-2]
-                endTime = record[-1]
-                valuesList = record[:-2]
-                retVal = self.__splitInBuckets(typeName, startTime, endTime, valuesList)
-                if not retVal["OK"]:
-                    # self.__rollbackTransaction( connObj )
-                    self.log.error("[COMPACT] Error while compacting data for record", f"{typeName}: {retVal['Value']}")
-            self.log.info("[COMPACT] Finished compaction %d of %d" % (bPos, len(self.dbBucketsLength[typeName]) - 1))
-        # return self.__commitTransaction( connObj )
-        return S_OK()
 
     def __slowCompactBucketsForType(self, typeName):
         """

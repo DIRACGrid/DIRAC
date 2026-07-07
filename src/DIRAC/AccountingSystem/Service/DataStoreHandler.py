@@ -1,4 +1,4 @@
-""" DataStore is the service for inserting accounting reports (rows) in the Accounting DB
+"""DataStore is the service for inserting accounting reports (rows) in the Accounting DB
 
     This service CAN be duplicated iff the first is a "controller" and all the others are workers.
     See the information about :ref:`datastorehelpers`.
@@ -9,6 +9,7 @@
   :dedent: 2
   :caption: DataStore options
 """
+
 import datetime
 
 from DIRAC import S_ERROR, S_OK
@@ -37,14 +38,6 @@ class DataStoreHandler(RequestHandler):
                 return result
             gThreadScheduler.addPeriodicTask(60, cls.__acDB.loadPendingRecords)
         return S_OK()
-
-    types_getRegisteredTypes = []
-
-    def export_getRegisteredTypes(self):
-        """
-        Get a list of registered types (Only for all powerful admins)
-        """
-        return self.__acDB.getRegisteredTypes()
 
     types_commit = [str, datetime.datetime, datetime.datetime, list]
 

@@ -56,24 +56,3 @@ class AccountingCLI(CLI):
         print("Exception", type, ":", value)
         traceback.print_tb(sys.exc_info()[2])
         print("________________________\n")
-
-    def do_showRegisteredTypes(self, args):
-        """
-        Get a list of registered types
-          Usage : showRegisteredTypes
-        """
-        try:
-            acClient = DataStoreClient()
-            retVal = acClient.getRegisteredTypes()
-
-            print(retVal)
-
-            if not retVal["OK"]:
-                gLogger.error(f"Error: {retVal['Message']}")
-                return
-            for typeList in retVal["Value"]:
-                print(typeList[0])
-                print(" Key fields:\n  %s" % "\n  ".join(typeList[1]))
-                print(" Value fields:\n  %s" % "\n  ".join(typeList[2]))
-        except Exception:
-            self.showTraceback()
