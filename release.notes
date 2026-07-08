@@ -1,3 +1,29 @@
+[v9.1.14]
+
+*Core
+
+FIX: (#8680) compatibility with new version of python-json-logger
+
+*Subsystem
+
+FIX: (#8673) fix PilotSyncAgent put request uploading files to web servers
+
+*Accounting
+
+FIX: (#8669) Parameterise SQL in AccountingDB
+
+*Resources
+
+FIX: (#8649) Allow STOMP MQ connections to use IPv4-only broker hostnames.
+
+*WorkloadManagementSystem
+
+CHANGE: (#8624) Removed several RPCs and DB calls for PilotManager
+
+*WorkloadManagement
+
+FIX: (#8617) Parameterise SQL in WMS PilotAgents
+
 [v9.1.13]
 
 *DataManagementSystem
