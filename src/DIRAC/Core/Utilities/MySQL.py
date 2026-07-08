@@ -611,7 +611,8 @@ class MySQL:
             if not retDict["OK"]:
                 return retDict
             connection = retDict["Value"]
-
+        if myString is None:
+            return S_OK("NULL")
         if isinstance(myString, bytes):
             myString = myString.decode()
         try:
@@ -721,7 +722,9 @@ class MySQL:
             return S_OK(inEscapeValues)
 
         for value in inValues:
-            if isinstance(value, str):
+            if value is None:
+                inEscapeValues.append("NULL")
+            elif isinstance(value, str):
                 retDict = self.__escapeString(value, connection=connection)
                 if not retDict["OK"]:
                     return retDict
