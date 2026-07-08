@@ -611,7 +611,9 @@ class MySQL:
             if not retDict["OK"]:
                 return retDict
             connection = retDict["Value"]
-
+        if myString is None:
+            # handle NoneType correctly
+            return S_OK("NULL")
         if isinstance(myString, bytes):
             myString = myString.decode()
         try:
