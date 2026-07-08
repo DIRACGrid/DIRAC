@@ -11,14 +11,14 @@ class MicrosecondJsonFormatter(JsonFormatter):
         all the DIRAC spefic log formating instructions
         """
         if "reserved_attrs" not in kwargs:
-            kwargs["reserved_attrs"] = RESERVED_ATTRS + (
+            kwargs["reserved_attrs"] = list(RESERVED_ATTRS) + [
                 "spacer",
                 "headerIsShown",
                 "timeStampIsShown",
                 "contextIsShown",
                 "threadIDIsShown",
                 "color",
-            )
+            ]
         super().__init__(*args, **kwargs)
 
     def formatTime(self, record, datefmt=None):
