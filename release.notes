@@ -1,3 +1,13 @@
+[v8.0.82]
+
+*Core
+
+FIX: (#8682) compatibility with new version of python-json-logger
+
+*Resources
+
+FIX: (#8679) Allow STOMP MQ connections to use IPv4-only broker hostnames.
+
 [v8.0.81]
 
 *Core
