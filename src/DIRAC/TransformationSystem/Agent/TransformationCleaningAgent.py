@@ -154,17 +154,10 @@ class TransformationCleaningAgent(AgentModule):
         except RuntimeError:
             pass
 
-        # SandboxMetadataDB is used to unassign a transformation's input sandboxes at
-        # clean/archive time, releasing them for the sandbox-store cleaner. The agent
-        # keeps running if it can't load (the unassign step is skipped), but a failure
-        # to unassign during cleaning is logged loudly so a leaked assignment (which
-        # keeps the sandbox pinned forever) is noticed.
-        self.sandboxDB = None
         result = ObjectLoader().loadObject("WorkloadManagementSystem.DB.SandboxMetadataDB", "SandboxMetadataDB")
-        if result["OK"]:
-            self.sandboxDB = result["Value"]()
-        else:
+        if not result["OK"]:
             return result
+        self.sandboxDB = result["Value"]()
 
         return S_OK()
 

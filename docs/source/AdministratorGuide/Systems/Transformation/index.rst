@@ -51,7 +51,7 @@ Disadvantages:
 Several improvements have been made in the TS to handle scalability, and extensibility issues.
 While the system structure remains intact, "tricks" like threading and caching have been extensively applied.
 
-Local files can't be shipped through the Input Sandbox the way the Job API does for 'normal' Jobs; a transformation instead references already-uploaded sandboxes — see `Input Sandboxes`_.
+Local files can't be shipped through the Input Sandbox the way the Job API does for jobs; a transformation instead references already-uploaded sandboxes — see `Input Sandboxes`_.
 
 ------------
 Architecture
@@ -166,8 +166,6 @@ Transformation System **pins** these sandboxes to the transformation:
   otherwise the sandboxes would stay pinned to a gone transformation and leak.
   The unassignment is idempotent, so retrying is safe.
 
-This requires the ``SandboxMetadataDB`` to be reachable from both the
-``TransformationManager`` service and the ``TransformationCleaningAgent``.
 
 -------------
 Configuration
