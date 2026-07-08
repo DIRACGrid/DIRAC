@@ -137,6 +137,8 @@ sandboxes unpinned. Use the Job API::
 
     job.setInputSandbox(["SB:ProductionSandboxSE|/S3/.../payload.tar.bz2"])
 
+N.B. sandboxes can be uploaded using `SandboxClient.uploadFilesAsSandbox` in DIRAC and `diracx-client.jobs.initiate_sandbox_upload` in `diracx`.
+
 or add the parameter to the job's workflow directly::
 
     from DIRAC.Core.Workflow.Parameter import Parameter
