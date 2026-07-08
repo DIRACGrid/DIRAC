@@ -1,3 +1,17 @@
+[v9.0.24]
+
+*Subsystem
+
+FIX: (#8683) fix PilotSyncAgent put request uploading files to web servers
+
+*Core
+
+FIX: (#8681) compatibility with new version of python-json-logger
+
+*Resources
+
+FIX: (#8678) Allow STOMP MQ connections to use IPv4-only broker hostnames.
+
 [v9.0.23]
 
 *Core
