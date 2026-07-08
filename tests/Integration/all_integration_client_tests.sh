@@ -56,10 +56,8 @@ pytest --no-check-dirac-environment "${THIS_DIR}/ResourceStatusSystem/Test_Email
 echo -e "*** $(date -u)  **** WMS TESTS ****\n"
 
 pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_SandboxStoreClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-if [[ -z "${INSTALLATION_BRANCH}" ]]; then
-    pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_PilotsClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-    pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_Client_WMS.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-fi
+pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_PilotsClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
+pytest --no-check-dirac-environment "${THIS_DIR}/WorkloadManagementSystem/Test_Client_WMS.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 # Make sure we have the prod role for these tests to get the VmRpcOperator permission
 dirac-proxy-init -g prod "${DEBUG}" |& tee -a clientTestOutputs.txt
@@ -72,9 +70,7 @@ python "${THIS_DIR}/WorkloadManagementSystem/createJobXMLDescriptions.py" |& tee
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** MONITORING TESTS ****\n"
 pytest --no-check-dirac-environment "${THIS_DIR}/Monitoring/Test_MonitoringSystem.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-if [[ -z "${INSTALLATION_BRANCH}" ]]; then
-    pytest --no-check-dirac-environment "${THIS_DIR}/Monitoring/Test_WebAppClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
-fi
+pytest --no-check-dirac-environment "${THIS_DIR}/Monitoring/Test_WebAppClient.py" |& tee -a clientTestOutputs.txt; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** TS TESTS ****\n"

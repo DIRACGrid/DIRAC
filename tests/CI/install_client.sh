@@ -58,35 +58,33 @@ echo -e "*** $(date -u) **** Client INSTALLATION START ****\n"
 
 installDIRAC
 
-if [[ -z "${INSTALLATION_BRANCH}" ]]; then
-    echo 'Generate a pilot proxy, to be used by the pilot'
-    dirac-proxy-init -g pilot -C /ca/certs/pilot.pem -K /ca/certs/pilot.key "${DEBUG}"
-    mv /tmp/x509up_u$UID /ca/certs/pilot_proxy
+echo 'Generate a pilot proxy, to be used by the pilot'
+dirac-proxy-init -g pilot -C /ca/certs/pilot.pem -K /ca/certs/pilot.key "${DEBUG}"
+mv /tmp/x509up_u$UID /ca/certs/pilot_proxy
 
-    echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a clientTestOutputs.txt
-    dirac-proxy-init "${DEBUG}" |& tee -a clientTestOutputs.txt
+echo -e "*** $(date -u)  Getting a non privileged user\n" |& tee -a clientTestOutputs.txt
+dirac-proxy-init "${DEBUG}" |& tee -a clientTestOutputs.txt
 
-    #-------------------------------------------------------------------------------#
-    echo -e "*** $(date -u) **** Submit a job ****\n"
+#-------------------------------------------------------------------------------#
+echo -e "*** $(date -u) **** Submit a job ****\n"
 
-    echo -e '[\n    Arguments = "Hello World";\n    Executable = "echo";\n    Site = "DIRAC.Jenkins.ch";' > test.jdl
-    echo "    JobName = \"${GITHUB_JOB}_$(date +"%Y-%m-%d_%T" | sed 's/://g')\"" >> test.jdl
-    echo "]" >> test.jdl
-    dirac-wms-job-submit test.jdl "${DEBUG}" |& tee -a clientTestOutputs.txt
+echo -e '[\n    Arguments = "Hello World";\n    Executable = "echo";\n    Site = "DIRAC.Jenkins.ch";' > test.jdl
+echo "    JobName = \"${GITHUB_JOB}_$(date +"%Y-%m-%d_%T" | sed 's/://g')\"" >> test.jdl
+echo "]" >> test.jdl
+dirac-wms-job-submit test.jdl "${DEBUG}" |& tee -a clientTestOutputs.txt
 
-    #-------------------------------------------------------------------------------#
-    echo -e "*** $(date -u) **** add a file ****\n"
+#-------------------------------------------------------------------------------#
+echo -e "*** $(date -u) **** add a file ****\n"
 
-    echo "${CLIENT_UPLOAD_BASE64}" > b64_lfn
-    base64 b64_lfn --decode > "${CLIENT_UPLOAD_FILE}"
-    dirac-dms-add-file "${CLIENT_UPLOAD_LFN}" "${CLIENT_UPLOAD_FILE}" S3-DIRECT
-    echo $?
+echo "${CLIENT_UPLOAD_BASE64}" > b64_lfn
+base64 b64_lfn --decode > "${CLIENT_UPLOAD_FILE}"
+dirac-dms-add-file "${CLIENT_UPLOAD_LFN}" "${CLIENT_UPLOAD_FILE}" S3-DIRECT
+echo $?
 
-    #-------------------------------------------------------------------------------#
-    echo -e "*** $(date -u) **** Submit a job with an input ****\n"
+#-------------------------------------------------------------------------------#
+echo -e "*** $(date -u) **** Submit a job with an input ****\n"
 
-    echo -e '[\n    Arguments = "Hello World";\n    Executable = "echo";\n    Site = "DIRAC.Jenkins.ch";\n    InputData = "/vo/test_lfn.txt";' > test_dl.jdl
-    echo "    JobName = \"${GITHUB_JOB}_$(date +"%Y-%m-%d_%T" | sed 's/://g')\"" >> test_dl.jdl
-    echo "]" >> test_dl.jdl
-    dirac-wms-job-submit test_dl.jdl "${DEBUG}" |& tee -a clientTestOutputs.txt
-fi
+echo -e '[\n    Arguments = "Hello World";\n    Executable = "echo";\n    Site = "DIRAC.Jenkins.ch";\n    InputData = "/vo/test_lfn.txt";' > test_dl.jdl
+echo "    JobName = \"${GITHUB_JOB}_$(date +"%Y-%m-%d_%T" | sed 's/://g')\"" >> test_dl.jdl
+echo "]" >> test_dl.jdl
+dirac-wms-job-submit test_dl.jdl "${DEBUG}" |& tee -a clientTestOutputs.txt

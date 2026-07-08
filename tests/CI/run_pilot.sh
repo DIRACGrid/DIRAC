@@ -11,12 +11,6 @@ set -x
 echo "Starting run_pilot.sh"
 source CONFIG
 
-if [[ -n "${INSTALLATION_BRANCH}" ]]; then
-  # Do not run this
-  echo "Not running the DIRAC Pilot"
-  exit
-fi
-
 # Creating "the worker node"
 mkdir -p /home/dirac/etc/grid-security/certificates
 mkdir -p /home/dirac/etc/grid-security/vomsdir

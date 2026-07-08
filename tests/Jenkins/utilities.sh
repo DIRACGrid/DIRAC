@@ -412,6 +412,11 @@ diracUserAndGroup() {
     exit 1
   fi
 
+  if ! dirac-admin-add-user -N adminusername -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=adminusername -M lhcb-dirac-ci@cern.ch -G dirac_user -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
+    echo 'ERROR: dirac-admin-add-user failed  ' >&2
+    exit 1
+  fi
+
   if ! dirac-admin-add-user -N pilot -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=pilot -M lhcb-dirac-ci@cern.ch -G dirac_user -o /DIRAC/Security/UseServerCertificate=True "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-user failed' >&2
     exit 1
