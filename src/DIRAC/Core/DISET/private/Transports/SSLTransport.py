@@ -168,21 +168,9 @@ def getPeerInfo(sslSocket):
         raise RuntimeError(f"Failed to get SSL peer info ({creds['Message']}).")
     peer = creds["Value"]
 
+    # getCredentials already resolves DN (identity for proxies, subject
+    # otherwise), isProxy and isLimitedProxy
     peer["x509Chain"] = chain
-    isProxy = chain.isProxy()
-    if not isProxy["OK"]:
-        raise RuntimeError(f"Failed to get SSL peer isProxy ({isProxy['Message']}).")
-    peer["isProxy"] = isProxy["Value"]
-
-    if peer["isProxy"]:
-        peer["DN"] = creds["Value"]["identity"]
-    else:
-        peer["DN"] = creds["Value"]["subject"]
-
-    isLimited = chain.isLimitedProxy()
-    if not isLimited["OK"]:
-        raise RuntimeError(f"Failed to get SSL peer isLimitedProxy ({isLimited['Message']}).")
-    peer["isLimitedProxy"] = isLimited["Value"]
 
     return peer
 

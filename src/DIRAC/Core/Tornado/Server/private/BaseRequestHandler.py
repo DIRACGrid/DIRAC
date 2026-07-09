@@ -766,21 +766,9 @@ class BaseRequestHandler(RequestHandler):
 
         credDict = res["Value"]
 
+        # getCredentials already resolves DN (identity for proxies, subject
+        # otherwise), isProxy and isLimitedProxy
         credDict["x509Chain"] = peerChain
-        res = peerChain.isProxy()
-        if not res["OK"]:
-            return res
-        credDict["isProxy"] = res["Value"]
-
-        if credDict["isProxy"]:
-            credDict["DN"] = credDict["identity"]
-        else:
-            credDict["DN"] = credDict["subject"]
-
-        res = peerChain.isLimitedProxy()
-        if not res["OK"]:
-            return res
-        credDict["isLimitedProxy"] = res["Value"]
 
         # We check if client sends extra credentials...
         if "extraCredentials" in self.request.arguments:
