@@ -384,7 +384,7 @@ class TransformationDB(DB):
     def getTransformationWithStatus(self, status, connection=False):
         """Gets a list of the transformations with the supplied status"""
         req = "SELECT TransformationID FROM Transformations WHERE Status = %s"
-        res = self._query(req, args=(status), conn=connection)
+        res = self._query(req, args=(status,), conn=connection)
         if not res["OK"]:
             return res
         transIDs = [tupleIn[0] for tupleIn in res["Value"]]
