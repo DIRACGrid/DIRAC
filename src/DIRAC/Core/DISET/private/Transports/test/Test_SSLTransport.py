@@ -198,6 +198,27 @@ def test_simpleMessage(create_serverAndClient):
     assert serverAnswer == MAGIC_ANSWER
 
 
+def test_clientContextCache(tmp_path):
+    """Client SSL contexts are shared until the credential file changes"""
+    from DIRAC.Core.DISET.private.Transports.SSLTransport import _CLIENT_CTX_CACHE, _getClientSSLContext
+
+    proxyCopy = tmp_path / "proxy.pem"
+    proxyCopy.write_bytes(open(proxyFile, "rb").read())
+
+    _CLIENT_CTX_CACHE.clear()
+    ctx1 = _getClientSSLContext(proxyLocation=str(proxyCopy), skipCACheck=True)
+    ctx2 = _getClientSSLContext(proxyLocation=str(proxyCopy), skipCACheck=True)
+    assert ctx1 is ctx2
+
+    # Changing the credential file invalidates the cache entry
+    st = os.stat(proxyCopy)
+    os.utime(proxyCopy, ns=(st.st_atime_ns, st.st_mtime_ns + 10**9))
+    ctx3 = _getClientSSLContext(proxyLocation=str(proxyCopy), skipCACheck=True)
+    assert ctx3 is not ctx1
+
+    _CLIENT_CTX_CACHE.clear()
+
+
 def test_getRemoteInfo(create_serverAndClient):
     """Check the information from remote peer"""
     serv, client = create_serverAndClient
