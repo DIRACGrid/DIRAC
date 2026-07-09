@@ -319,7 +319,7 @@ class ComponentSupervisionAgent(AgentModule):
 
     def checkService(self, serviceName, options):
         """Ping the service, restart if the ping does not respond."""
-        if serviceName == "Tornado":
+        if serviceName == "Tornado__Tornado":
             return S_OK()
         url = self._getURL(serviceName, options)
         self.log.info("Pinging service", url)
