@@ -394,6 +394,12 @@ class TestComponentSupervisionAgent(unittest.TestCase):
         self.assertFalse(res["OK"])
         self.restartAgent.restartInstance.assert_called_once_with(int(pid), agentName, True)
 
+        client = MagicMock()
+        with patch("DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.Client", new=client):
+            res = self.restartAgent.checkService("Tornado__Tornado", options)
+        self.assertTrue(res["OK"])
+        client.assert_not_called()
+
     def test_get_last_access_time(self):
         """Test for the getLastAccessTime function."""
         self.agent.os.path.getmtime = MagicMock()
