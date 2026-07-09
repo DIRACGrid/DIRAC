@@ -51,7 +51,7 @@ Disadvantages:
 Several improvements have been made in the TS to handle scalability, and extensibility issues.
 While the system structure remains intact, "tricks" like threading and caching have been extensively applied.
 
-It's not possible to use ISB (Input Sandbox) to ship local files as for 'normal' Jobs (this should not be considered, anyway, a disadvantage).
+Local files can't be shipped through the Input Sandbox the way the Job API does for jobs; a transformation instead references already-uploaded sandboxes — see `Input Sandboxes`_.
 
 ------------
 Architecture
@@ -120,6 +120,54 @@ The complete list can be found in the `DIRAC project GitHub repository <https://
   * TransformationClient: class that contains client access to the transformation DB handler (main client to the service/DB). It exposes the functionalities available in the DIRAC/TransformationHandler. This inherits the DIRAC base Client for direct execution of server functionality
 
   * Transformation: it wraps some functionalities mostly to use the 'TransformationClient' client
+
+---------------
+Input Sandboxes
+---------------
+
+A transformation's input sandboxes are the ``SB:`` PFNs listed in its body's
+``InputSandbox`` workflow parameter (``;``-joined). The sandboxes must already be
+uploaded to the SandboxStore; the body references them by PFN, and every job the
+transformation creates receives them — so a production can share one pre-built
+payload (a compiled binary, a large config) across all its jobs.
+
+Set the ``InputSandbox`` parameter on the body **before** the transformation is
+created — it is pinned at creation, so adding it afterwards would leave the
+sandboxes unpinned. Use the Job API::
+
+    job.setInputSandbox(["SB:ProductionSandboxSE|/S3/.../payload.tar.bz2"])
+
+N.B. sandboxes can be uploaded using `SandboxClient.uploadFilesAsSandbox` in DIRAC and `diracx-client.jobs.initiate_sandbox_upload` in `diracx`.
+
+or add the parameter to the job's workflow directly::
+
+    from DIRAC.Core.Workflow.Parameter import Parameter
+    job.workflow.addParameter(
+        Parameter("InputSandbox", ";".join(sbPFNs), "JDL", "", "", True, False, "Input sandbox file list")
+    )
+
+then use that body to create the transformation, which pins the sandboxes::
+
+    t.setBody(job.workflow.toXML())
+    t.addTransformation()
+
+Because a transformation may keep submitting jobs for a long time while the
+SandboxStore cleaner reclaims any sandbox not assigned to an entity, the
+Transformation System **pins** these sandboxes to the transformation:
+
+- On creation, ``TransformationManager`` assigns each ``SB:`` reference in the
+  body to the entity ``Transformation:<id>`` in the ``SandboxMetadataDB``. While
+  that mapping exists the cleaner will not remove the sandbox.
+- Pinning is mandatory: if it fails (``SandboxMetadataDB`` unreachable, or the
+  author is not authorised for a referenced sandbox), the transformation is
+  **rolled back and creation fails** — a created-but-unpinned transformation
+  would have its sandbox cleaned and then break every job submitted afterwards.
+- On clean/archive, ``TransformationCleaningAgent`` unassigns
+  ``Transformation:<id>`` so the cleaner can reclaim the now-unused sandboxes. If
+  the unassignment fails, the transformation's cleaning fails and is retried —
+  otherwise the sandboxes would stay pinned to a gone transformation and leak.
+  The unassignment is idempotent, so retrying is safe.
+
 
 -------------
 Configuration

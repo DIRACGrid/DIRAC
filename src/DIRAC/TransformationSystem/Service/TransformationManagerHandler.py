@@ -9,9 +9,12 @@ from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import encode as jencode
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Workflow.Workflow import fromXMLString
 
 
 class TransformationManagerHandlerMixin:
+    sandboxDB = None
+
     @classmethod
     def initializeHandler(cls, serviceInfoDict):
         """Initialization of DB object"""
@@ -24,6 +27,15 @@ class TransformationManagerHandlerMixin:
 
         except RuntimeError as excp:
             return S_ERROR(f"Can't connect to TransformationDB: {excp}")
+
+        # SandboxMetadataDB is used to pin a transformation's input sandboxes so the
+        # sandbox-store cleaner does not remove them while the transformation is alive.
+        cls.sandboxDB = None
+        sbResult = ObjectLoader().loadObject("WorkloadManagementSystem.DB.SandboxMetadataDB", "SandboxMetadataDB")
+        if sbResult["OK"]:
+            cls.sandboxDB = sbResult["Value"](parentLogger=cls.log)
+        else:
+            return result
 
         return S_OK()
 
@@ -117,9 +129,79 @@ class TransformationManagerHandlerMixin:
             inputMetaQuery=inputMetaQuery,
             outputMetaQuery=outputMetaQuery,
         )
-        if res["OK"]:
-            self.log.info("Added transformation", res["Value"])
+        if not res["OK"]:
+            return res
+        transID = res["Value"]
+        self.log.info("Added transformation", transID)
+
+        # Pin any input sandboxes to the transformation. If this fails we must not
+        # leave a created-but-unpinned transformation: the sandbox would be cleaned
+        # on the usual timescale and every (1000s-10000s of) job submitted afterwards
+        # would fail to find it. Roll the transformation back and report the error.
+        assignRes = self._assignInputSandboxesToTransformation(transID, body, author, authorGroup)
+        if not assignRes["OK"]:
+            self.log.error(
+                "Could not pin input sandboxes; rolling back transformation", f"{transID}: {assignRes['Message']}"
+            )
+            delRes = self.transformationDB.deleteTransformation(transID, author=author)
+            if not delRes["OK"]:
+                self.log.error("Rollback failed; transformation left unpinned", f"{transID}: {delRes['Message']}")
+                return S_ERROR(
+                    f"Could not pin input sandboxes ({assignRes['Message']}) and rollback failed "
+                    f"({delRes['Message']}); transformation {transID} is orphaned and unpinned"
+                )
+            return S_ERROR(
+                f"Could not pin input sandboxes; transformation {transID} rolled back: {assignRes['Message']}"
+            )
         return res
+
+    def _assignInputSandboxesToTransformation(self, transID, body, author, authorGroup):
+        """Pin a transformation's input sandboxes so the sandbox-store cleaner does
+        not remove them while the transformation is alive.
+
+        Reads ``SB:`` references from the workflow body's ``InputSandbox`` parameter
+        and writes a ``Transformation:<id>`` mapping under the author's credentials
+        (the author uploaded the sandboxes, so ``getSandboxId`` authorises them).
+
+        Returns ``S_OK`` when there is nothing to pin (no body, no ``InputSandbox``
+        parameter, or no ``SB:`` references). When the body *does* reference sandboxes,
+        a failure to pin them is fatal and returned as ``S_ERROR``: an unpinned sandbox
+        is cleaned on the usual timescale and breaks every job submitted afterwards, so
+        the caller must roll the transformation back rather than create it unpinned.
+
+        :param int transID: the created transformation ID
+        :param str body: the transformation body (workflow XML)
+        :param str author: requester username (the submitter/owner)
+        :param str authorGroup: requester group
+        """
+        if not body:
+            return S_OK()
+        try:
+            workflow = fromXMLString(body)
+            param = workflow.parameters.find("InputSandbox")
+        except Exception as excp:  # pylint: disable=broad-except  # body may not be a workflow
+            self.log.verbose("Could not parse transformation body for InputSandbox", str(excp))
+            return S_OK()
+        if not param:
+            return S_OK()
+        # InputSandbox is canonically a ';'-joined string, but accept a list too in
+        # case a future producer stores it list-form.
+        value = param.getValue()
+        entries = value if isinstance(value, list) else str(value).split(";")
+        sbRefs = [sb for sb in entries if isinstance(sb, str) and sb.startswith("SB:")]
+        if not sbRefs:
+            return S_OK()
+
+        # From here the transformation has sandboxes that MUST be pinned.
+        if not self.sandboxDB:
+            return S_ERROR("SandboxMetadataDB unavailable; cannot pin input sandboxes")
+        result = self.sandboxDB.assignSandboxesToEntities(
+            {f"Transformation:{transID}": [(sb, "Input") for sb in sbRefs]}, author, authorGroup
+        )
+        if not result["OK"]:
+            return S_ERROR(f"Could not assign input sandboxes: {result['Message']}")
+        self.log.info("Assigned input sandboxes to transformation", f"{transID} ({result['Value']}/{len(sbRefs)})")
+        return S_OK()
 
     types_deleteTransformation = [[int, str]]
 
