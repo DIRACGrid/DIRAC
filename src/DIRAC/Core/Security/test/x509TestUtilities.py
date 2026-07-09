@@ -298,7 +298,7 @@ def deimportDIRAC():
     #     sys.modules.pop(mod)
 
 
-X509CHAINTYPES = ("M2_X509Chain",)
+X509CHAINTYPES = ("PYCA_X509Chain",)
 
 # This fixture will return a pyGSI or M2Crypto X509Chain class
 # https://docs.pytest.org/en/latest/fixture.html#automatic-grouping-of-tests-by-fixture-instances
@@ -314,8 +314,8 @@ def get_X509Chain_class(request):
 
     x509Class = request.param
 
-    if x509Class == "M2_X509Chain":
-        from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
+    if x509Class == "PYCA_X509Chain":
+        from DIRAC.Core.Security.X509Chain import X509Chain
     else:
         raise NotImplementedError()
 
@@ -325,7 +325,7 @@ def get_X509Chain_class(request):
     deimportDIRAC()
 
 
-X509REQUESTTYPES = ("M2_X509Request",)
+X509REQUESTTYPES = ("PYCA_X509Request",)
 
 # This fixture will return a X509Request class
 # https://docs.pytest.org/en/latest/fixture.html#automatic-grouping-of-tests-by-fixture-instances
@@ -341,8 +341,8 @@ def get_X509Request(request):
 
     x509Class = request.param
 
-    if x509Class == "M2_X509Request":
-        from DIRAC.Core.Security.m2crypto.X509Request import X509Request
+    if x509Class == "PYCA_X509Request":
+        from DIRAC.Core.Security.X509Request import X509Request
     else:
         raise NotImplementedError()
 
@@ -368,8 +368,8 @@ def get_X509Chain_from_X509Request(x509ReqObj):
     """
 
     # In principle, we should deimport Dirac everywhere, but I am not even sure it makes any difference
-    if "m2crypto" in x509ReqObj.__class__.__module__:
-        from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
+    if "X509Request" in x509ReqObj.__class__.__module__:
+        from DIRAC.Core.Security.X509Chain import X509Chain
     else:
         raise NotImplementedError()
 

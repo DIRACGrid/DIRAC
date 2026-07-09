@@ -1,11 +1,12 @@
 """ X509CRL is a class for managing X509CRL
 This class is used to manage the revoked certificates....
 """
-import re
 import datetime
 
-import M2Crypto.X509
+from cryptography import x509
+
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Security import asn1_utils
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.File import secureOpenForWrite
 
@@ -38,13 +39,13 @@ class X509CRL:
         """
         self.__loadedCert = False
         try:
-            self.__revokedCert = M2Crypto.X509.load_crl(crlLocation)
+            with open(crlLocation, "rb") as crlFile:
+                pemData = crlFile.read()
+            self.__revokedCert = x509.load_pem_x509_crl(pemData)
         except Exception as e:
             return S_ERROR(DErrno.ECERTREAD, f"{repr(e).replace(',)', ')')}")
         self.__loadedCert = True
-        with open(crlLocation) as crlFile:
-            pemData = crlFile.read()
-        self.__pemData = pemData
+        self.__pemData = pemData.decode("ascii")
         return S_OK()
 
     def __bytes__(self):
@@ -79,24 +80,19 @@ class X509CRL:
     def hasExpired(self):
         if not self.__loadedCert:
             return S_ERROR("No certificate loaded")
-        # XXX It should be done better, for now M2Crypto doesn't offer access to fields like Next Update
-        txt = self.__revokedCert.as_text()
-        pattern = r"Next Update: (?P<nextUpdate>.*)\n"
-        dateStr = re.search(pattern, txt).group("nextUpdate")
-        nextUpdate = datetime.datetime.strptime(dateStr, "%b %d %H:%M:%S %Y GMT")
-        return S_OK(datetime.datetime.now() > nextUpdate)
+        nextUpdate = self.__revokedCert.next_update_utc
+        if nextUpdate is None:
+            return S_OK(False)
+        return S_OK(datetime.datetime.now(datetime.timezone.utc) > nextUpdate)
 
     def getIssuer(self):
         if not self.__loadedCert:
             return S_ERROR("No certificate loaded")
-        # XXX It should be done better, for now M2Crypto doesn't offer access to fields like Issuer
-        txt = self.__revokedCert.as_text()
-        pattern = r"Issuer: (?P<issuer>.*)\n"
-        return S_OK(re.search(pattern, txt).group("issuer"))
+        return S_OK(asn1_utils.nameToDN(self.__revokedCert.issuer))
 
     def __repr__(self):
         repStr = "<X509CRL"
         if self.__loadedCert:
-            repStr += ""  # self.__revokedCert.get_issuer().one_line()  # Why issuer?! XXX
+            repStr += self.getIssuer().get("Value", "")
         repStr += ">"
         return repStr

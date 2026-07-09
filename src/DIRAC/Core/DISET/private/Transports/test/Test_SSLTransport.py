@@ -7,7 +7,7 @@ from diraccfg import CFG
 from pytest import fixture
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.DISET.private.Transports import M2SSLTransport, PlainTransport
+from DIRAC.Core.DISET.private.Transports import PlainTransport, SSLTransport
 from DIRAC.Core.Security.test.x509TestUtilities import CERTDIR, USERCERT, getCertOption
 
 # TODO: Expired hostcert
@@ -38,7 +38,7 @@ PORT_NUMBER = 50000
 # Transports are now tested in pairs:
 # "Server-Client"
 # Each pair is defined as a string.
-TRANSPORTTESTS = ("Plain-Plain", "M2-M2")
+TRANSPORTTESTS = ("Plain-Plain", "SSL-SSL")
 
 
 # https://www.ibm.com/developerworks/linux/library/l-openssl/index.html
@@ -121,8 +121,8 @@ def transportByName(transport):
     """helper function to get a transport class by 'friendly' name."""
     if transport.lower() == "plain":
         return PlainTransport.PlainTransport
-    elif transport.lower() == "m2":
-        return M2SSLTransport.SSLTransport
+    elif transport.lower() == "ssl":
+        return SSLTransport.SSLTransport
     raise RuntimeError(f"Unknown Transport Name: {transport}")
 
 

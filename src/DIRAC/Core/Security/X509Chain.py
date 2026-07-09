@@ -12,12 +12,21 @@ import os
 import re
 from collections import OrderedDict
 
-import M2Crypto.X509
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Security.m2crypto import DEFAULT_PROXY_STRENGTH, DIRAC_GROUP_OID, LIMITED_PROXY_OID, PROXY_OID
-from DIRAC.Core.Security.m2crypto.X509Certificate import X509Certificate
+from DIRAC.Core.Security import (
+    DEFAULT_PROXY_STRENGTH,
+    DIRAC_GROUP_OID,
+    LIMITED_PROXY_OID,
+    PROXY_CERT_INFO_EXTENSION_OID,
+    PROXY_OID,
+)
+from DIRAC.Core.Security import asn1_utils
+from DIRAC.Core.Security.X509Certificate import X509Certificate
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.Decorators import executeOnlyIf
 from DIRAC.Core.Utilities.File import secureOpenForWrite
@@ -31,17 +40,30 @@ needPKey = executeOnlyIf("_keyObj", S_ERROR(DErrno.ENOPKEY))
 _PROXY_LOAD_CACHE: OrderedDict[tuple, dict] = OrderedDict()
 _PROXY_LOAD_CACHE_MAX = 8
 
+_PEM_KEY_PATTERN = r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----(?:.|\n)*?-----END [A-Z0-9 ]*PRIVATE KEY-----"
+
+
+def dumpPrivateKeyPEM(keyObj):
+    """Serialize a private key as an unencrypted PKCS8 PEM string
+
+    :param keyObj: cryptography private key object
+
+    :returns: PEM encoded string
+    """
+    return keyObj.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    ).decode("ascii")
+
 
 class X509Chain:
     """
-    An X509Chain is basically a list of X509Certificate object, as well as a PKey object,
+    An X509Chain is basically a list of X509Certificate object, as well as a private key object,
     which is associated to the X509Certificate the lowest in the chain.
 
     This is what you will want to use for user certificate (because they will turn into proxy....), and for
     proxy.
-
-    A priori, once we get rid of pyGSI, we could even meld the X509Certificate into this one, and use the X509Chain
-    for host certificates. After all, a certificate is nothing but a chain of length 1...
 
     There are normally 4 ways you would instanciate an X509Chain object:
 
@@ -82,8 +104,8 @@ class X509Chain:
 
     Getting information from a peer in an SSL Connection::
 
-      # conn is an M2Crypto.SSL.Connection instance
-      chain = X509Chain.generateX509ChainFromSSLConnection(conn)
+      # derList is the verified peer chain from ssl.SSLSocket.get_verified_chain()
+      chain = X509Chain.generateX509ChainFromDERList(derList)
       creds = chain.getCredentials()
 
 
@@ -131,7 +153,7 @@ class X509Chain:
         C'tor
 
         :param certList: list of X509Certificate to constitute the chain
-        :param keyObj: ~M2Crypto.EVP.PKey object. The public or public/private key associated to
+        :param keyObj: cryptography private key object. The public or public/private key associated to
                        the last certificate of the chain
 
         """
@@ -153,7 +175,7 @@ class X509Chain:
         # The certificate in position N has been generated from the (N+1)
         self._certList = []
 
-        # Place holder for the EVP.PKey object
+        # Place holder for the private key object
         self._keyObj = None
 
         if certList:
@@ -166,25 +188,16 @@ class X509Chain:
             self._keyObj = keyObj
 
     @staticmethod
-    def generateX509ChainFromSSLConnection(sslConnection):
-        """Returns an instance of X509Chain from the SSL connection
+    def generateX509ChainFromDERList(derList):
+        """Returns an instance of X509Chain from a list of DER encoded certificates,
+        as returned by ssl.SSLSocket.get_verified_chain()
 
-        :param sslConnection: ~M2Crypto.SSl.Connection instance
+        :param derList: iterable of DER encoded certificates, leaf first
 
         :returns: a X509Chain instance
         """
-        certList = []
-
-        certStack = sslConnection.get_peer_cert_chain()
-        for cert in certStack:
-            certList.append(X509Certificate(x509Obj=cert))
-
-        # Servers don't receive the whole chain, the last cert comes alone
-        # if not self.infoDict['clientMode']:
-        certList.insert(0, X509Certificate(x509Obj=sslConnection.get_peer_cert()))
-        peerChain = X509Chain(certList=certList)
-
-        return peerChain
+        certList = [X509Certificate(x509Obj=x509.load_der_x509_certificate(der)) for der in derList]
+        return X509Chain(certList=certList)
 
     def loadChainFromFile(self, chainLocation):
         """
@@ -231,18 +244,12 @@ class X509Chain:
         certList = []
         pattern = r"(-----BEGIN CERTIFICATE-----((.|\n)*?)-----END CERTIFICATE-----)"
         for cert in re.findall(pattern, certString):
-            certList.append(X509Certificate(certString=cert[0]))
+            certObj = X509Certificate()
+            result = certObj.loadFromString(cert[0])
+            if not result["OK"]:
+                raise ValueError(result["Message"])
+            certList.append(certObj)
         return certList
-
-    # Not used in m2crypto version
-    # def setChain(self, certList):
-    #   """
-    #   Set the chain
-    #   Return : S_OK / S_ERROR
-    #   """
-    #   self._certList = certList
-    #   self.__loadedChain = True
-    #   return S_OK()
 
     def loadKeyFromFile(self, chainLocation, password=False):
         """
@@ -270,12 +277,29 @@ class X509Chain:
         :returns: S_OK / S_ERROR
         """
         self._keyObj = None
-        if not isinstance(pemData, bytes):
-            pemData = pemData.encode("ascii")
+        if isinstance(pemData, bytes):
+            pemData = pemData.decode("ascii")
+
+        # The pem data may contain certificates as well (e.g. a proxy file),
+        # so extract the key block
+        keyBlocks = re.findall(_PEM_KEY_PATTERN, pemData)
+        if not keyBlocks:
+            return S_ERROR(DErrno.ECERTREAD, "No private key found in the pem data")
+
         if password:
-            password = password.encode()
+            password = password.encode() if isinstance(password, str) else password
+        else:
+            password = None
+
         try:
-            self._keyObj = M2Crypto.EVP.load_key_string(pemData, lambda x: password)
+            try:
+                self._keyObj = serialization.load_pem_private_key(keyBlocks[0].encode("ascii"), password=password)
+            except TypeError:
+                # A password was supplied but the key is not encrypted:
+                # be tolerant, like the previous implementations
+                if password is None:
+                    raise
+                self._keyObj = serialization.load_pem_private_key(keyBlocks[0].encode("ascii"), password=None)
         except Exception as e:
             return S_ERROR(DErrno.ECERTREAD, f"{repr(e).replace(',)', ')')} (Probably bad pass phrase?)")
 
@@ -350,36 +374,46 @@ class X509Chain:
     @staticmethod
     def __getProxyExtensionList(diracGroup=False, rfcLimited=False):
         """
-        Get an extension stack containing the necessary extension for a proxy.
+        Get the list of extensions necessary for a proxy.
         Basically the keyUsage, the proxyCertInfo, and eventually the diracGroup
 
         :param diracGroup: name of the dirac group for the proxy
         :param rfcLimited: boolean to generate for a limited proxy
 
-        :returns: M2Crypto.X509.X509_Extension_Stack object.
+        :returns: list of (cryptography.x509.ExtensionType, critical) tuples
         """
 
-        extStack = M2Crypto.X509.X509_Extension_Stack()
+        extensions = []
 
         # Standard certificate extensions
-        kUext = M2Crypto.X509.new_extension(
-            "keyUsage", "digitalSignature, keyEncipherment, dataEncipherment", critical=1
+        keyUsage = x509.KeyUsage(
+            digital_signature=True,
+            content_commitment=False,
+            key_encipherment=True,
+            data_encipherment=True,
+            key_agreement=False,
+            key_cert_sign=False,
+            crl_sign=False,
+            encipher_only=False,
+            decipher_only=False,
         )
-        extStack.push(kUext)
+        extensions.append((keyUsage, True))
 
         # Mandatory extension to be a proxy
         policyOID = LIMITED_PROXY_OID if rfcLimited else PROXY_OID
-        ext = M2Crypto.X509.new_extension("proxyCertInfo", f"critical, language:{policyOID}", critical=1)
-        extStack.push(ext)
+        proxyCertInfo = x509.UnrecognizedExtension(
+            x509.ObjectIdentifier(PROXY_CERT_INFO_EXTENSION_OID), asn1_utils.encodeProxyCertInfo(policyOID)
+        )
+        extensions.append((proxyCertInfo, True))
 
         # Add a dirac group
         if diracGroup and isinstance(diracGroup, str):
-            # the str cast is needed because M2Crypto does not play it cool with unicode here it seems
-            # Also one needs to specify the ASN1 type. That's what it is...
-            dGext = M2Crypto.X509.new_extension(DIRAC_GROUP_OID, str(f"ASN1:IA5:{diracGroup}"))
-            extStack.push(dGext)
+            diracGroupExt = x509.UnrecognizedExtension(
+                x509.ObjectIdentifier(DIRAC_GROUP_OID), asn1_utils.encodeDIRACGroup(diracGroup)
+            )
+            extensions.append((diracGroupExt, False))
 
-        return extStack
+        return extensions
 
     @needCertList
     def getCertInChain(self, certPos=0):
@@ -426,15 +460,13 @@ class X509Chain:
         """
         Generate a proxy and get it as a string.
 
-        Check here: https://github.com/eventbrite/m2crypto/blob/master/demo/x509/ca.py#L45
-
         Args:
             lifetime (int): expected lifetime in seconds of proxy
             diracGroup (str): diracGroup to add to the certificate
             strength (int): length in bits of the pair if proxyKey not given (default 2048)
             limited (bool): Create a limited proxy (default False)
-            proxyKey: M2Crypto.EVP.PKey instance with private and public key. If not given, generate one
-            rfc: placeholder for backward compatibility and ignored
+            proxyKey: cryptography key object (public, or private with public part) to certify.
+                      If not given, generate one
 
         :returns: S_OK(PEM encoded string), S_ERROR. The PEM string contains all the certificates in the chain
                   and the private key associated to the last X509Certificate just generated.
@@ -444,29 +476,30 @@ class X509Chain:
 
         # If this is a certificate signing request then the private key will be
         # appended by the server and we don't need to include it in the proxy
-        include_private_key = not proxyKey
+        proxyPrivateKey = None
         if not proxyKey:
-            # Generating key is a two step process: create key object and then assign RSA key.
-            # This contains both the private and public key
-            proxyKey = M2Crypto.EVP.PKey()
-            proxyKey.assign_rsa(M2Crypto.RSA.gen_key(strength, 65537, callback=M2Crypto.util.quiet_genparam_callback))
+            proxyPrivateKey = rsa.generate_private_key(public_exponent=65537, key_size=strength)
+            proxyPublicKey = proxyPrivateKey.public_key()
+        elif hasattr(proxyKey, "public_key"):
+            # A private key object was given
+            proxyPublicKey = proxyKey.public_key()
+        else:
+            proxyPublicKey = proxyKey
 
-        # Generate a new X509Certificate object
+        # Generate a new X509Certificate object, signed with one owns key
         proxyExtensions = self.__getProxyExtensionList(diracGroup, limited)
-        res = X509Certificate.generateProxyCertFromIssuer(issuerCert, proxyExtensions, proxyKey, lifetime=lifetime)
+        res = X509Certificate.generateProxyCertFromIssuer(
+            issuerCert, proxyExtensions, proxyPublicKey, self._keyObj, lifetime=lifetime
+        )
         if not res["OK"]:
             return res
         proxyCert = res["Value"]
 
-        # Sign it with one owns key
-        proxyCert.sign(self._keyObj, "sha256")
-
         # Generate the proxy string
         proxyString = proxyCert.asPem()
-        if include_private_key:
-            proxyString += proxyKey.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode("ascii")
-        for i in range(len(self._certList)):
-            crt = self._certList[i]
+        if proxyPrivateKey:
+            proxyString += dumpPrivateKeyPEM(proxyPrivateKey)
+        for crt in self._certList:
             proxyString += crt.asPem()
         return S_OK(proxyString)
 
@@ -481,7 +514,6 @@ class X509Chain:
             diracGroup: diracGroup to add to the certificate
             strength: length in bits of the pair
             limited: Create a limited proxy
-            rfc: placeholder and ignored
         """
         retVal = self.generateProxyToString(lifetime, diracGroup, strength, limited)
         if not retVal["OK"]:
@@ -567,7 +599,7 @@ class X509Chain:
         """
         Returns the voms data.
 
-        :returns: See :py:func:`~DIRAC.Core.Security.m2crypto.X509Certificate.getVOMSData`
+        :returns: See :py:func:`~DIRAC.Core.Security.X509Certificate.X509Certificate.getVOMSData`
                   If no VOMS data is available, return DErrno.EVOMS
         :warning: In case the chain is not a proxy, this method will return False.
                   Yes, it's stupid, but it is for compatibility...
@@ -661,21 +693,12 @@ class X509Chain:
         # For non-RFC proxy, the proxy always had these two strings in the CN
         if lastEntry[1] not in ("proxy", "limited proxy"):
             # for RFC proxy, one has to check the extension.
-            ext = self._certList[certStep].getExtension("proxyCertInfo")
-            if not ext["OK"]:
+            try:
+                proxyCertInfo = asn1_utils.decodeProxyCertInfo(self._certList[certStep]._certObj)
+            except (LookupError, ValueError):
                 return 0
 
-            ext = ext["Value"]
-
-            # Check the RFC
-            contraint = [
-                line.split(":")[1].strip()
-                for line in ext.get_value().split("\n")
-                if line.split(":")[0] == "Policy Language"
-            ]
-            if not contraint:
-                return 0
-            if contraint[0] == LIMITED_PROXY_OID:
+            if proxyCertInfo.proxyPolicy.policyLanguage.dotted_string == LIMITED_PROXY_OID:
                 limited = True
         else:
             if lastEntry[1] == "limited proxy":
@@ -691,7 +714,7 @@ class X509Chain:
         :param certStep: position of the certificate in self.__certList
         :param issuerStep: position of the issuer certificate
 
-        :returns: S_OK(boolean)
+        :returns: boolean
 
         """
         issuerCert = self._certList[issuerStep]
@@ -775,22 +798,22 @@ class X509Chain:
     def generateProxyRequest(self, bitStrength=DEFAULT_PROXY_STRENGTH, limited=False):
         """
         Generate a proxy request.
-        See :py:meth:`DIRAC.Core.Security.m2crypto.X509Certificate.X509Certificate.generateProxyRequest`
+        See :py:meth:`DIRAC.Core.Security.X509Certificate.X509Certificate.generateProxyRequest`
 
         Return S_OK( X509Request ) / S_ERROR
         """
 
         # We use the first certificate of the chain to do the proxy request
-        x509 = self._certList[0]
-        return x509.generateProxyRequest(bitStrength, limited)
+        x509Cert = self._certList[0]
+        return x509Cert.generateProxyRequest(bitStrength, limited)
 
     @needCertList
     def getStrength(self):
         """
         Returns the strength in bit of the key of the first certificate in the chain
         """
-        x509 = self._certList[0]
-        return x509.getStrength()
+        x509Cert = self._certList[0]
+        return x509Cert.getStrength()
 
     @needCertList
     @needPKey
@@ -802,15 +825,15 @@ class X509Chain:
         :param lifetime: lifetime of the delegated proxy in seconds (default 1 day)
         :param requireLimited: if True, requires a limited proxy
         :param diracGroup: DIRAC group to put in the proxy
-        :param rfc: placeholder for compatibility, ignored
 
         :returns: S_OK( X509 chain pem encoded string ) / S_ERROR. The new chain will have been signed
                   with the public key included in the request
 
         """
+        if not isinstance(pemData, bytes):
+            pemData = pemData.encode("ascii")
         try:
-            req = M2Crypto.X509.load_request_string(pemData, format=M2Crypto.X509.FORMAT_PEM)
-
+            req = x509.load_pem_x509_csr(pemData)
         except Exception as e:
             return S_ERROR(DErrno.ECERTREAD, f"Can't load request data: {repr(e).replace(',)', ')')}")
 
@@ -818,7 +841,7 @@ class X509Chain:
         # You can't request a limit proxy if you are yourself not limited ?!
         # I think it should be a "or" instead of "and"
         limited = requireLimited and self.isLimitedProxy().get("Value", False)
-        return self.generateProxyToString(lifetime, diracGroup, DEFAULT_PROXY_STRENGTH, limited, req.get_pubkey())
+        return self.generateProxyToString(lifetime, diracGroup, DEFAULT_PROXY_STRENGTH, limited, req.public_key())
 
     @needCertList
     def getRemainingSecs(self):
@@ -848,7 +871,7 @@ class X509Chain:
         """
         data = self._certList[0].asPem()
         if self._keyObj:
-            data += self._keyObj.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode("ascii")
+            data += dumpPrivateKeyPEM(self._keyObj)
         for cert in self._certList[1:]:
             data += cert.asPem()
         return S_OK(data)
@@ -889,7 +912,7 @@ class X509Chain:
         :returns: S_OK(PEM encoded key)
 
         """
-        return S_OK(self._keyObj.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback).decode("ascii"))
+        return S_OK(dumpPrivateKeyPEM(self._keyObj))
 
     def __str__(self):
         """String representation"""

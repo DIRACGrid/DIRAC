@@ -6,7 +6,7 @@ import sys
 from prompt_toolkit import prompt
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Script import Script
-from DIRAC.Core.Security.m2crypto import DEFAULT_PROXY_STRENGTH
+from DIRAC.Core.Security import DEFAULT_PROXY_STRENGTH
 
 
 class CLIParams:

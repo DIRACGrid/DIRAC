@@ -29,7 +29,7 @@ from pytest import mark, fixture, skip
 
 parametrize = mark.parametrize
 
-X509CERTTYPES = ("M2_X509Certificate",)
+X509CERTTYPES = ("PYCA_X509Certificate",)
 
 # This fixture will return a X509Certificate class
 # https://docs.pytest.org/en/latest/fixture.html#automatic-grouping-of-tests-by-fixture-instances
@@ -45,8 +45,8 @@ def get_X509Certificate_class(request):
 
     x509Class = request.param
 
-    if x509Class == "M2_X509Certificate":
-        from DIRAC.Core.Security.m2crypto.X509Certificate import X509Certificate
+    if x509Class == "PYCA_X509Certificate":
+        from DIRAC.Core.Security.X509Certificate import X509Certificate
     else:
         raise NotImplementedError()
 

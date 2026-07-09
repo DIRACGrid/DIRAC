@@ -736,30 +736,28 @@ class BaseRequestHandler(RequestHandler):
         :return: S_OK(dict)/S_ERROR()
         """
         try:
-            derCert = self.request.get_ssl_certificate()
+            # The peer chain, as sent by the client (leaf first, DER encoded).
+            # It was validated by OpenSSL during the TLS handshake
+            derChain = self.request.connection.stream.socket.get_unverified_chain()
         except Exception:
-            # If 'IOStream' object has no attribute 'get_ssl_certificate'
-            derCert = None
+            # Plain HTTP connection, or no client certificate presented
+            derChain = None
 
         # Boolean whether we are behind a balancer and can trust headers
         balancer = gConfig.getValue("/WebApp/Balancer", "none") != "none"
 
-        # Get client certificate as pem
-        if derCert:
-            chainAsText = derCert.as_pem().decode("ascii")
-            # Read all certificate chain
-            chainAsText += "".join([cert.as_pem().decode("ascii") for cert in self.request.get_ssl_certificate_chain()])
+        # Get the client certificate chain
+        if derChain:
+            peerChain = X509Chain.generateX509ChainFromDERList(derChain)
         elif balancer:
             if self.request.headers.get("X-Ssl_client_verify") == "SUCCESS" and self.request.headers.get("X-SSL-CERT"):
                 chainAsText = unquote(self.request.headers.get("X-SSL-CERT"))
+                peerChain = X509Chain()
+                peerChain.loadChainFromString(chainAsText)
             else:
                 return S_ERROR(DErrno.ECERTFIND, "Valid certificate not found.")
         else:
             return S_ERROR(DErrno.ECERTFIND, "Valid certificate not found.")
-
-        # Load full certificate chain
-        peerChain = X509Chain()
-        peerChain.loadChainFromString(chainAsText)
 
         # Retrieve the credentials
         res = peerChain.getCredentials(withRegistryInfo=False)
