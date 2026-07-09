@@ -581,8 +581,8 @@ class MySQL:
             if e.args and e.args[0] in self.__CONNECTION_LOST_ERRNOS:
                 self.__connectionPool.discardCurrentThreadConn()
             if debug:
-                self.log.error(f"{methodName} ({self._safeCmd(cmd)}): {err}", "%d: %s" % (e.args[0], e.args[1]))
-            return S_ERROR(DErrno.EMYSQL, "%s: ( %d: %s )" % (err, e.args[0], e.args[1]))
+                self.log.error(f"{methodName} ({self._safeCmd(cmd)}): {err}", f"{e.args}")
+            return S_ERROR(DErrno.EMYSQL, f"{err}: ({e.args} )")
         except Exception as e:
             if debug:
                 self.log.error(f"{methodName} ({self._safeCmd(cmd)}): {err}", repr(e))
