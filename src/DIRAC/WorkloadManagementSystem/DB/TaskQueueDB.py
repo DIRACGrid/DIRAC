@@ -1243,7 +1243,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId"
             # If group has JobSharing just set prio for that entry, user is irrelevant
             return self.__setPrioritiesForEntity(user, userGroup, share, connObj=connObj)
 
-        selSQL = f"SELECT Owner, COUNT(Owner) FROM `tq_TaskQueues` WHERE OwnerGroup='{userGroup}' GROUP BY Owner"
+        selSQL = f"SELECT Owner, COUNT(Owner) FROM `tq_TaskQueues` WHERE OwnerGroup={userGroup} GROUP BY Owner"
         result = self._query(selSQL, conn=connObj)
         if not result["OK"]:
             return result
@@ -1275,7 +1275,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId"
         Set the priority for a user/userGroup combo given a splitted share
         """
         self.log.info("Setting priorities", f"to {user}@{userGroup} TQs")
-        tqCond = [f"t.OwnerGroup='{userGroup}'"]
+        tqCond = [f"t.OwnerGroup={userGroup}"]
         allowBgTQs = gConfig.getValue(f"/Registry/Groups/{userGroup}/AllowBackgroundTQs", False)
         if Properties.JOB_SHARING not in Registry.getPropertiesForGroup(userGroup):
             res = self._escapeString(user)

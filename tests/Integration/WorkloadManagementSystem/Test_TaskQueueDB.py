@@ -1359,7 +1359,7 @@ def test_TQ(tq_cleanup):
         "Jobs": 1,
         "OwnerGroup": "myGroup",
         "CPUTime": 86400,
-        "Priority": 1.0,
+        "Priority": 1000.0,
     }
     result = tqDB.findOrphanJobs()
     assert result["OK"]
