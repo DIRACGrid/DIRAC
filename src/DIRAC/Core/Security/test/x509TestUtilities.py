@@ -3,7 +3,20 @@ import os
 import sys
 
 from datetime import datetime
-from pytest import fixture
+from pytest import fixture, mark, param
+
+# The M2Crypto based implementation is only tested if its (optional)
+# dependencies are installed
+try:
+    import M2Crypto  # noqa pylint: disable=unused-import
+    import pyasn1  # noqa pylint: disable=unused-import
+    import pyasn1_modules  # noqa pylint: disable=unused-import
+
+    M2CRYPTO_AVAILABLE = True
+except ImportError:
+    M2CRYPTO_AVAILABLE = False
+
+skipm2 = mark.skipif(not M2CRYPTO_AVAILABLE, reason="M2Crypto and/or pyasn1 are not installed")
 
 # We use certificates stored in the same folder as this test file
 CERTDIR = os.path.join(os.path.dirname(__file__), "certs")
@@ -283,24 +296,20 @@ def getCertOption(cert, optionName):
 def deimportDIRAC():
     """clean all what has already been imported from DIRAC.
 
-    This method is extremely fragile, but hopefully, we can get ride of all these
-    messy tests soon, when PyGSI has gone.
+    Nothing needs to be done anymore: the two X509 implementations are
+    imported through their fully qualified subpackage paths
+    (DIRAC.Core.Security.pyca and DIRAC.Core.Security.m2crypto), so they can
+    coexist in the same process, whatever DIRAC_USE_M2CRYPTO says.
     """
-    if len(X509CHAINTYPES) != 1 or len(X509REQUESTTYPES) != 1:
-        raise NotImplementedError(
-            "This no longer de-imports DIRAC, if we want to test another SSL wrapper "
-            "we will have to find another way of doing this or run a separate pytest "
-            "process again"
-        )
     # for mod in list(sys.modules):
     #   # You should be careful with what you remove....
     #   if (mod == 'DIRAC' or mod.startswith('DIRAC.')) and not mod.startswith('DIRAC.Core.Security.test'):
     #     sys.modules.pop(mod)
 
 
-X509CHAINTYPES = ("PYCA_X509Chain",)
+X509CHAINTYPES = ("PYCA_X509Chain", param("M2_X509Chain", marks=skipm2))
 
-# This fixture will return a pyGSI or M2Crypto X509Chain class
+# This fixture will return a pyca/cryptography or M2Crypto X509Chain class
 # https://docs.pytest.org/en/latest/fixture.html#automatic-grouping-of-tests-by-fixture-instances
 
 
@@ -315,7 +324,9 @@ def get_X509Chain_class(request):
     x509Class = request.param
 
     if x509Class == "PYCA_X509Chain":
-        from DIRAC.Core.Security.X509Chain import X509Chain
+        from DIRAC.Core.Security.pyca.X509Chain import X509Chain
+    elif x509Class == "M2_X509Chain":
+        from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
     else:
         raise NotImplementedError()
 
@@ -325,7 +336,7 @@ def get_X509Chain_class(request):
     deimportDIRAC()
 
 
-X509REQUESTTYPES = ("PYCA_X509Request",)
+X509REQUESTTYPES = ("PYCA_X509Request", param("M2_X509Request", marks=skipm2))
 
 # This fixture will return a X509Request class
 # https://docs.pytest.org/en/latest/fixture.html#automatic-grouping-of-tests-by-fixture-instances
@@ -342,7 +353,9 @@ def get_X509Request(request):
     x509Class = request.param
 
     if x509Class == "PYCA_X509Request":
-        from DIRAC.Core.Security.X509Request import X509Request
+        from DIRAC.Core.Security.pyca.X509Request import X509Request
+    elif x509Class == "M2_X509Request":
+        from DIRAC.Core.Security.m2crypto.X509Request import X509Request
     else:
         raise NotImplementedError()
 
@@ -368,8 +381,10 @@ def get_X509Chain_from_X509Request(x509ReqObj):
     """
 
     # In principle, we should deimport Dirac everywhere, but I am not even sure it makes any difference
-    if "X509Request" in x509ReqObj.__class__.__module__:
-        from DIRAC.Core.Security.X509Chain import X509Chain
+    if "m2crypto" in x509ReqObj.__class__.__module__:
+        from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
+    elif "pyca" in x509ReqObj.__class__.__module__:
+        from DIRAC.Core.Security.pyca.X509Chain import X509Chain
     else:
         raise NotImplementedError()
 

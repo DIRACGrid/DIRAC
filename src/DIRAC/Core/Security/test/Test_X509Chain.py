@@ -80,7 +80,9 @@ def get_proxy(request):
     x509Class = request.param
 
     if x509Class == "PYCA_X509Chain":
-        from DIRAC.Core.Security.X509Chain import X509Chain
+        from DIRAC.Core.Security.pyca.X509Chain import X509Chain
+    elif x509Class == "M2_X509Chain":
+        from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
     else:
         raise NotImplementedError()
 

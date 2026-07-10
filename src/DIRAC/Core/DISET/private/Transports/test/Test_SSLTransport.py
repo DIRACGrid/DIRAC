@@ -1,14 +1,15 @@
 """ Test the SSLTransport mechanism """
 import os
 import selectors
+import sys
 import threading
 
 from diraccfg import CFG
-from pytest import fixture
+from pytest import fixture, mark, param
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.DISET.private.Transports import PlainTransport, StdSSLTransport
-from DIRAC.Core.Security.test.x509TestUtilities import CERTDIR, USERCERT, getCertOption
+from DIRAC.Core.Security.test.x509TestUtilities import CERTDIR, USERCERT, getCertOption, skipm2
 
 # TODO: Expired hostcert
 # TODO: Expired usercert
@@ -38,7 +39,16 @@ PORT_NUMBER = 50000
 # Transports are now tested in pairs:
 # "Server-Client"
 # Each pair is defined as a string.
-TRANSPORTTESTS = ("Plain-Plain", "SSL-SSL")
+TRANSPORTTESTS = (
+    "Plain-Plain",
+    # The server side of the standard library ssl transport needs
+    # SSLSocket.get_unverified_chain, which was added in python 3.13
+    param(
+        "SSL-SSL",
+        marks=mark.skipif(sys.version_info < (3, 13), reason="needs python >= 3.13 (ssl get_unverified_chain)"),
+    ),
+    param("M2-M2", marks=skipm2),
+)
 
 
 # https://www.ibm.com/developerworks/linux/library/l-openssl/index.html
@@ -123,6 +133,11 @@ def transportByName(transport):
         return PlainTransport.PlainTransport
     elif transport.lower() == "ssl":
         return StdSSLTransport.SSLTransport
+    elif transport.lower() == "m2":
+        # Imported lazily as M2Crypto may not be installed
+        from DIRAC.Core.DISET.private.Transports import M2SSLTransport
+
+        return M2SSLTransport.SSLTransport
     raise RuntimeError(f"Unknown Transport Name: {transport}")
 
 
