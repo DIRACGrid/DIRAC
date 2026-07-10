@@ -538,8 +538,13 @@ class TransformationDB(DB):
             return S_ERROR("Failed to parse parameter value")
         paramValue = res["Value"]
         paramType = "StringType"
-        if isinstance(paramValue, int):
-            paramType = "IntType"
+        match paramValue:
+            case int():
+                paramType = "IntType"
+            case dict():
+                paramType = "DictType"
+            case list():
+                paramType = "ListType"
         fields = ", ".join(self.ADDITIONALPARAMETERS)
         req = f"INSERT INTO AdditionalParameters ({fields}) VALUES (%s, %s, %s, %s)"  # nosec
         args = (transID, str(paramName), str(paramValue), str(paramType))
@@ -555,6 +560,14 @@ class TransformationDB(DB):
         for _transID, parameterName, parameterValue, parameterType in res["Value"]:
             if parameterType in ("IntType", "LongType"):
                 parameterValue = int(parameterValue)
+            elif parameterType in ("DictType", "ListType"):
+                parameterValue = saferEval(parameterValue)
+            # Shim to recover what's already in the DB
+            elif parameterType == "StringType":
+                try:
+                    parameterValue = saferEval(parameterValue)
+                except ValueError:
+                    pass
             paramDict[parameterName] = parameterValue
         return S_OK(paramDict)
 
