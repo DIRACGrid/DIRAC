@@ -1508,7 +1508,12 @@ class MySQL:
                 # self.log.debug('buildCondition:', error)
                 raise Exception(error)
 
-            orderField = _quotedList(orderAttr.split(":")[:1])
+            # Do not escape the special RAND case
+            if orderAttr.split(":")[:1] == ["RAND()"]:
+                orderField = "RAND()"
+            else:
+                orderField = _quotedList(orderAttr.split(":")[:1])
+
             if not orderField:
                 error = "Invalid orderAttribute argument"
                 # self.log.debug('buildCondition:', error)
