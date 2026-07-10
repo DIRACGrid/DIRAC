@@ -10,8 +10,8 @@ from cryptography.x509.oid import NameOID
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security import DEFAULT_PROXY_STRENGTH
-from DIRAC.Core.Security import asn1_utils
-from DIRAC.Core.Security.X509Chain import _PEM_KEY_PATTERN, dumpPrivateKeyPEM
+from DIRAC.Core.Security.pyca import asn1_utils
+from DIRAC.Core.Security.pyca.X509Chain import _PEM_KEY_PATTERN, dumpPrivateKeyPEM
 from DIRAC.Core.Utilities import DErrno
 
 # pylint: disable=broad-except

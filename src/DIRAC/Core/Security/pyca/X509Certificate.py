@@ -18,7 +18,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security import DEFAULT_PROXY_STRENGTH, DIRAC_GROUP_OID, PROXY_CERT_INFO_EXTENSION_OID
-from DIRAC.Core.Security import asn1_utils
+from DIRAC.Core.Security.pyca import asn1_utils
 from DIRAC.Core.Utilities.Decorators import executeOnlyIf
 
 # Decorator to execute the method only of the certificate has been loaded

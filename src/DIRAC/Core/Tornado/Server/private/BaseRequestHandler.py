@@ -4,6 +4,7 @@
 
    This module is basic for each of these components and describes the basic concept of access to them.
 """
+import os
 import time
 import inspect
 import threading
@@ -27,6 +28,10 @@ from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.IdProvider.Utilities import getIdProviderIdentifiers
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+
+# Whether the legacy M2Crypto based TLS implementation is used instead of the
+# default one, based on the standard library ssl module (see TornadoServer)
+DIRAC_USE_M2CRYPTO = os.getenv("DIRAC_USE_M2CRYPTO", "No").lower() in ("yes", "true")
 
 
 def set_attribute(attr, val):
@@ -735,6 +740,9 @@ class BaseRequestHandler(RequestHandler):
 
         :return: S_OK(dict)/S_ERROR()
         """
+        if DIRAC_USE_M2CRYPTO:
+            return self._authzSSLM2()
+
         try:
             # The peer chain, as sent by the client (leaf first, DER encoded).
             # It was validated by OpenSSL during the TLS handshake
@@ -769,6 +777,68 @@ class BaseRequestHandler(RequestHandler):
         # getCredentials already resolves DN (identity for proxies, subject
         # otherwise), isProxy and isLimitedProxy
         credDict["x509Chain"] = peerChain
+
+        # We check if client sends extra credentials...
+        if "extraCredentials" in self.request.arguments:
+            extraCred = self.get_argument("extraCredentials")
+            if extraCred:
+                credDict["extraCredentials"] = self.decode(extraCred)[0]
+        return S_OK(credDict)
+
+    def _authzSSLM2(self):
+        """Load client certchain in DIRAC and extract information, using the
+        legacy M2Crypto based TLS implementation (DIRAC_USE_M2CRYPTO=Yes).
+
+        :return: S_OK(dict)/S_ERROR()
+        """
+        try:
+            derCert = self.request.get_ssl_certificate()
+        except Exception:
+            # If 'IOStream' object has no attribute 'get_ssl_certificate'
+            derCert = None
+
+        # Boolean whether we are behind a balancer and can trust headers
+        balancer = gConfig.getValue("/WebApp/Balancer", "none") != "none"
+
+        # Get client certificate as pem
+        if derCert:
+            chainAsText = derCert.as_pem().decode("ascii")
+            # Read all certificate chain
+            chainAsText += "".join([cert.as_pem().decode("ascii") for cert in self.request.get_ssl_certificate_chain()])
+        elif balancer:
+            if self.request.headers.get("X-Ssl_client_verify") == "SUCCESS" and self.request.headers.get("X-SSL-CERT"):
+                chainAsText = unquote(self.request.headers.get("X-SSL-CERT"))
+            else:
+                return S_ERROR(DErrno.ECERTFIND, "Valid certificate not found.")
+        else:
+            return S_ERROR(DErrno.ECERTFIND, "Valid certificate not found.")
+
+        # Load full certificate chain
+        peerChain = X509Chain()
+        peerChain.loadChainFromString(chainAsText)
+
+        # Retrieve the credentials
+        res = peerChain.getCredentials(withRegistryInfo=False)
+        if not res["OK"]:
+            return res
+
+        credDict = res["Value"]
+
+        credDict["x509Chain"] = peerChain
+        res = peerChain.isProxy()
+        if not res["OK"]:
+            return res
+        credDict["isProxy"] = res["Value"]
+
+        if credDict["isProxy"]:
+            credDict["DN"] = credDict["identity"]
+        else:
+            credDict["DN"] = credDict["subject"]
+
+        res = peerChain.isLimitedProxy()
+        if not res["OK"]:
+            return res
+        credDict["isLimitedProxy"] = res["Value"]
 
         # We check if client sends extra credentials...
         if "extraCredentials" in self.request.arguments:

@@ -9,6 +9,22 @@ import asyncio
 import psutil
 import secrets
 
+# With the legacy M2Crypto implementation (DIRAC_USE_M2CRYPTO=Yes), tornado
+# must be configured to use the M2Crypto based iostream (from
+# tornado_m2crypto, which requires the patched DIRACGrid tornado fork) before
+# anything instantiates an SSLIOStream. With the default implementation
+# neither M2Crypto nor tornado_m2crypto may be imported.
+DIRAC_USE_M2CRYPTO = os.getenv("DIRAC_USE_M2CRYPTO", "No").lower() in ("yes", "true")
+
+if DIRAC_USE_M2CRYPTO:
+    import M2Crypto.SSL
+
+    import tornado.iostream
+
+    tornado.iostream.SSLIOStream.configure(  # pylint: disable=no-member
+        "tornado_m2crypto.m2iostream.M2IOStream"
+    )  # pylint: disable=wrong-import-position
+
 import tornado.platform.asyncio
 import tornado.ioloop
 from tornado.httpserver import HTTPServer
@@ -22,6 +38,7 @@ from DIRAC.Core.Tornado.Server.HandlerManager import HandlerManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 sLog = gLogger.getSubLogger(__name__)
+DEBUG_M2CRYPTO = os.getenv("DIRAC_DEBUG_M2CRYPTO", "No").lower() in ("yes", "true")
 
 
 class NotFoundHandler(RequestHandler):
@@ -180,16 +197,30 @@ class TornadoServer:
 
         sLog.debug("Starting Tornado")
 
-        # Prepare SSL settings.
-        # The client certificate is optional: some requests are authenticated
-        # with a token or as visitor instead (see BaseRequestHandler)
-        try:
-            ssl_options = getSSLContext(bServerMode=True, optionalClientCert=True)
-        except RuntimeError as e:
-            sLog.fatal("Unable to prepare the TLS settings ! Can't start the Server", repr(e))
-            raise ImportError(f"Unable to prepare the TLS settings: {e}") from e
-        certs = Locations.getHostCertificateAndKeyLocation()
-        ca = Locations.getCAsLocation()
+        # Prepare SSL settings
+        if DIRAC_USE_M2CRYPTO:
+            certs = Locations.getHostCertificateAndKeyLocation()
+            if certs is False:
+                sLog.fatal("Host certificates not found ! Can't start the Server")
+                raise ImportError("Unable to load certificates")
+            ca = Locations.getCAsLocation()
+            ssl_options = {
+                "certfile": certs[0],
+                "keyfile": certs[1],
+                "cert_reqs": M2Crypto.SSL.verify_peer,
+                "ca_certs": ca,
+                "sslDebug": DEBUG_M2CRYPTO,  # Set to true if you want to see the TLS debug messages
+            }
+        else:
+            # The client certificate is optional: some requests are authenticated
+            # with a token or as visitor instead (see BaseRequestHandler)
+            try:
+                ssl_options = getSSLContext(bServerMode=True, optionalClientCert=True)
+            except RuntimeError as e:
+                sLog.fatal("Unable to prepare the TLS settings ! Can't start the Server", repr(e))
+                raise ImportError(f"Unable to prepare the TLS settings: {e}") from e
+            certs = Locations.getHostCertificateAndKeyLocation()
+            ca = Locations.getCAsLocation()
 
         # Init monitoring
         if self.activityMonitoring:

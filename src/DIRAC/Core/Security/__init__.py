@@ -1,10 +1,18 @@
 """
-DIRAC X509 security infrastructure, based on pyca/cryptography.
+DIRAC X509 security infrastructure.
 
 This package provides the X509Certificate, X509Chain, X509Request and X509CRL
 classes as submodules, as well as a set of OID constants used for handling
 proxies and VOMS extensions.
+
+Two implementations of the X509 classes are available: the default one, based
+on pyca/cryptography (in the ``pyca`` subpackage), and the legacy one, based
+on M2Crypto and pyasn1 (in the ``m2crypto`` subpackage). The implementation is
+selected once, at import time, with the DIRAC_USE_M2CRYPTO environment
+variable (default No).
 """
+import os
+from pkgutil import extend_path
 
 # List of OIDs used in handling VOMS extension.
 # VOMS extension is encoded in ASN.1 format and it's surprisingly hard to decode. OIDs describe content of sections
@@ -54,3 +62,33 @@ DN_MAPPING = {
 
 #: Default strength of the proxy in bit
 DEFAULT_PROXY_STRENGTH = 2048
+
+
+#####
+# SUPER DISGUSTING HACK
+# We define these variables, and then remove them immediately.
+# it is to allow something like 'from DIRAC.Core.Security import X509Chain'
+# But pylint would complain just like that
+# I've spent a lot of time trying to get pylint to work, but...
+# https://github.com/PyCQA/pylint/issues/2474
+
+X509Chain = None
+X509CRL = None
+X509Certificate = None
+X509Request = None
+
+locals().pop("X509Chain")
+locals().pop("X509CRL")
+locals().pop("X509Certificate")
+locals().pop("X509Request")
+####
+
+
+# If we want to use M2Crypto, we add the m2crypto subpackage to the search path,
+# otherwise the default pyca/cryptography based subpackage is used.
+# This allows imports like 'from DIRAC.Core.Security.X509Chain...' to work transparently
+# Nice kind of tricks you find in libraries like xml...
+if os.getenv("DIRAC_USE_M2CRYPTO", "No").lower() in ("yes", "true"):
+    __path__ = extend_path(__path__, __name__ + ".m2crypto")
+else:
+    __path__ = extend_path(__path__, __name__ + ".pyca")

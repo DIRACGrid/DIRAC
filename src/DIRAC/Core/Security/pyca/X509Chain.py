@@ -25,8 +25,8 @@ from DIRAC.Core.Security import (
     PROXY_CERT_INFO_EXTENSION_OID,
     PROXY_OID,
 )
-from DIRAC.Core.Security import asn1_utils
-from DIRAC.Core.Security.X509Certificate import X509Certificate
+from DIRAC.Core.Security.pyca import asn1_utils
+from DIRAC.Core.Security.pyca.X509Certificate import X509Certificate
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.Decorators import executeOnlyIf
 from DIRAC.Core.Utilities.File import secureOpenForWrite

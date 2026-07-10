@@ -9,7 +9,7 @@ src/DIRAC/Core/Base/Client.py
 src/DIRAC/Core/DISET/private/BaseClient.py
 src/DIRAC/Core/DISET/private/Service.py
 src/DIRAC/Core/DISET/RequestHandler.py
-src/DIRAC/Core/Security/X509Chain.py
+src/DIRAC/Core/Security/pyca/X509Chain.py
 src/DIRAC/Core/Tornado
 src/DIRAC/DataManagementSystem/Service/TornadoFileCatalogHandler.py
 src/DIRAC/FrameworkSystem/Client/ComponentInstaller.py

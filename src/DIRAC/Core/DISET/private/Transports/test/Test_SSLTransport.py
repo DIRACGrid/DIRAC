@@ -7,7 +7,7 @@ from diraccfg import CFG
 from pytest import fixture
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.DISET.private.Transports import PlainTransport, SSLTransport
+from DIRAC.Core.DISET.private.Transports import PlainTransport, StdSSLTransport
 from DIRAC.Core.Security.test.x509TestUtilities import CERTDIR, USERCERT, getCertOption
 
 # TODO: Expired hostcert
@@ -122,7 +122,7 @@ def transportByName(transport):
     if transport.lower() == "plain":
         return PlainTransport.PlainTransport
     elif transport.lower() == "ssl":
-        return SSLTransport.SSLTransport
+        return StdSSLTransport.SSLTransport
     raise RuntimeError(f"Unknown Transport Name: {transport}")
 
 
@@ -200,7 +200,7 @@ def test_simpleMessage(create_serverAndClient):
 
 def test_clientContextCache(tmp_path):
     """Client SSL contexts are shared until the credential file changes"""
-    from DIRAC.Core.DISET.private.Transports.SSLTransport import _CLIENT_CTX_CACHE, _getClientSSLContext
+    from DIRAC.Core.DISET.private.Transports.StdSSLTransport import _CLIENT_CTX_CACHE, _getClientSSLContext
 
     proxyCopy = tmp_path / "proxy.pem"
     proxyCopy.write_bytes(open(proxyFile, "rb").read())
