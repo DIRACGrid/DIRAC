@@ -11,7 +11,7 @@ from DIRAC.Core.Utilities.Plotting.Plots import (
     generateNoDataPlot,
     generatePiePlot,
 )
-from DIRAC.tests.Utilities.plots import compare
+from DIRAC.tests.Utilities.plots import compareToReferences, referenceImages
 
 plots_directory = os.path.join(os.path.dirname(__file__), "plots")
 filename = "plot.png"
@@ -25,7 +25,7 @@ def test_histogram():
     res = generateHistogram(filename, [2, 2, 3, 4, 5, 5], {})
     assert res["OK"] is True
 
-    res = compare(filename, os.path.join(plots_directory, "histogram1.png"))
+    res = compareToReferences(filename, referenceImages(plots_directory, "histogram1"))
     assert res == 0.0
 
     res = generateHistogram(
@@ -33,13 +33,13 @@ def test_histogram():
     )
     assert res["OK"] is True
 
-    res = compare(filename, os.path.join(plots_directory, "histogram2.png"))
+    res = compareToReferences(filename, referenceImages(plots_directory, "histogram2"))
     assert res == 0.0
 
     res = generateHistogram(filename, [{"a": [1]}, {"b": [2, 3, 3, 5, 5]}], {})
     assert res["OK"] is True
 
-    res = compare(filename, os.path.join(plots_directory, "histogram3.png"))
+    res = compareToReferences(filename, referenceImages(plots_directory, "histogram3"))
     assert res == 0.0
 
 
@@ -50,7 +50,7 @@ def test_piechartplot():
     res = generatePiePlot(filename, {"a": 16.0, "b": 56.0, "c": 15, "d": 20}, {})
     assert res["OK"] is True
 
-    res = compare(filename, os.path.join(plots_directory, "piechart.png"))
+    res = compareToReferences(filename, referenceImages(plots_directory, "piechart"))
     assert res == 0.0
 
 
@@ -61,7 +61,7 @@ def test_nodataplot():
 
     res = generateNoDataPlot(filename, {}, {"title": "Test plot"})
     assert res["OK"] is True
-    res = compare(filename, os.path.join(plots_directory, "nodata.png"))
+    res = compareToReferences(filename, referenceImages(plots_directory, "nodata"))
     assert res == 0.0
 
 
@@ -74,5 +74,5 @@ def test_error():
     with open(filename, "wb") as out:
         out.write(res)
 
-    res = compare(filename, os.path.join(plots_directory, "error.png"))
+    res = compareToReferences(filename, referenceImages(plots_directory, "error"))
     assert res == 0.0
