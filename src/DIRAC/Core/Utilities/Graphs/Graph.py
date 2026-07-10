@@ -6,6 +6,7 @@
 """
 
 import datetime
+import importlib
 import time
 import os
 
@@ -274,18 +275,13 @@ class Graph:
         for i in range(nPlots):
             plot_type = plot_prefs[i]["plot_type"]
             try:
-                # TODO: Remove when we moved to python3
-                exec(f"import {plot_type}")
-            except ImportError:
-                print("Trying to use python like import")
-                try:
-                    exec(f"from . import  {plot_type}")
-                except ImportError as x:
-                    print(f"Failed to import graph type {plot_type}: {str(x)}")
-                    return None
+                plotModule = importlib.import_module(f"DIRAC.Core.Utilities.Graphs.{plot_type}")
+            except ModuleNotFoundError as x:
+                print(f"Failed to import graph type {plot_type}: {str(x)}")
+                return None
 
             ax = plot_axes[i]
-            plot = eval(f"{plot_type}.{plot_type}(graphData[i],ax,plot_prefs[i])")
+            plot = getattr(plotModule, plot_type)(graphData[i], ax, plot_prefs[i])
             plot.draw()
 
         if DEBUG:
