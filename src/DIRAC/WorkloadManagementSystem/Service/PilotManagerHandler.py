@@ -2,13 +2,9 @@
 This is the interface to DIRAC PilotAgentsDB.
 """
 
-import datetime
-
-import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 
 
 class PilotManagerHandler(RequestHandler):
@@ -51,14 +47,6 @@ class PilotManagerHandler(RequestHandler):
     def export_selectPilots(cls, condDict):
         """Select pilots given the selection conditions"""
         return cls.pilotAgentsDB.selectPilots(condDict)
-
-    ##############################################################################
-    types_storePilotOutput = [str, str, str]
-
-    @classmethod
-    def export_storePilotOutput(cls, pilotReference, output, error):
-        """Store the pilot output and error"""
-        return cls.pilotAgentsDB.storePilotOutput(pilotReference, output, error)
 
     ##############################################################################
     types_getPilotSummary = []
