@@ -62,6 +62,7 @@ class JobAgent(AgentModule):
         # Localsite options
         self.siteName = "Unknown"
         self.pilotReference = "Unknown"
+        self.pilotStamp = self.pilotReference
         self.defaultProxyLength = 86400 * 5
 
         # Agent options
@@ -116,6 +117,7 @@ class JobAgent(AgentModule):
         # Localsite options
         self.siteName = siteName()
         self.pilotReference = gConfig.getValue("/LocalSite/PilotReference", self.pilotReference)
+        self.pilotStamp = os.environ.get("DIRAC_PILOT_STAMP", self.pilotReference)
         self.defaultProxyLength = gConfig.getValue("/Registry/DefaultProxyLifeTime", self.defaultProxyLength)
         # Agent options
         # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
@@ -895,7 +897,13 @@ class JobAgent(AgentModule):
         gridCE = gConfig.getValue("/LocalSite/GridCE", "")
         queue = gConfig.getValue("/LocalSite/CEQueue", "")
         result = PilotManagerClient().setPilotStatus(
-            str(self.pilotReference), PilotStatus.DONE, gridCE, "Report from JobAgent", self.siteName, queue
+            str(self.pilotReference),
+            PilotStatus.DONE,
+            gridCE,
+            "Report from JobAgent",
+            self.siteName,
+            queue,
+            self.pilotStamp,
         )
         if not result["OK"]:
             self.log.warn("Issue setting the pilot status", result["Message"])
