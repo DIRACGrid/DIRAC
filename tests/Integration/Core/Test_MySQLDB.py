@@ -393,3 +393,11 @@ def test_escape_string_accepts_bytes():
     result = mysqlDB._escapeString(b"hello bytes")
     assert result["OK"], result["Message"]
     _expect_quoted("hello bytes", result["Value"])
+
+
+def test_escape_string_null():
+    """Escape string should return NULL if given None."""
+    mysqlDB = setupDB()
+    result = mysqlDB._escapeString(None)
+    assert result["OK"], result["Message"]
+    assert result["Value"] == "NULL"
