@@ -110,8 +110,8 @@ class testMetadata(TestUserMetadataBasicTestCase):
         # meta show
         result = self.fc.getMetadataFields()
         self.assertTrue(result["OK"])
-        self.assertDictContainsSubset({"MetaInt6": "INT"}, result["Value"]["FileMetaFields"])
-        self.assertDictContainsSubset({"TestDirectory6": "INT"}, result["Value"]["DirectoryMetaFields"])
+        self.assertLessEqual({"MetaInt6": "INT"}.items(), result["Value"]["FileMetaFields"].items())
+        self.assertLessEqual({"TestDirectory6": "INT"}.items(), result["Value"]["DirectoryMetaFields"].items())
 
         # meta set
         metaDict6 = {"MetaInt6": 13}
@@ -135,7 +135,7 @@ class testMetadata(TestUserMetadataBasicTestCase):
         # API call only
         result = self.fc.getFileUserMetadata(self.lfn5)
         self.assertTrue(result["OK"])
-        self.assertDictContainsSubset({"MetaInt6": 13}, result["Value"])
+        self.assertLessEqual({"MetaInt6": 13}.items(), result["Value"].items())
         # file: expect a failure
         result = self.fc.getDirectoryUserMetadata(self.lfn5)
         self.assertFalse(result["OK"])
@@ -143,7 +143,7 @@ class testMetadata(TestUserMetadataBasicTestCase):
         # directory
         result = self.fc.getDirectoryUserMetadata(self.dir5)
         self.assertTrue(result["OK"])
-        self.assertDictContainsSubset({"TestDirectory6": 126}, result["Value"])
+        self.assertLessEqual({"TestDirectory6": 126}.items(), result["Value"].items())
 
         # finally remove
         # meta remove lfn5 MetaInt6
