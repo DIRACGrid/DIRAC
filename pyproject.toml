@@ -99,3 +99,14 @@ disable = ["R0903","I0011","c-extension-no-member"]
 # and msvs (visual studio). You can also give a reporter class, e.g.
 # mypackage.mymodule.MyReporterClass.
 output-format = "colorized"
+
+[tool.bandit]
+exclude_dirs = [".github", "docs", "test", "tests"]
+skips = [
+  # DIRAC uses subprocess to start subcommands fairly extensively
+  # These are fairly safe on their own and will trigger other tests
+  # that need checking
+  "B404", # import_subprocess
+  "B606", # start_process_with_no_shell
+  "B607", # start_process_with_partial_path
+]
