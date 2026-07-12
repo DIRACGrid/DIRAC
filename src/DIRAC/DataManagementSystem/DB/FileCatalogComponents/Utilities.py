@@ -1,7 +1,6 @@
 """ DIRAC FileCatalog utilities
 """
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.List import intListToString
 
 
 def getIDSelectString(ids):
@@ -14,7 +13,8 @@ def getIDSelectString(ids):
     elif isinstance(ids, int):
         idString = "%d" % ids
     elif isinstance(ids, (tuple, list)):
-        idString = intListToString(ids)
+        # cast to int to minimise SQL injection risk
+        idString = ",".join([f"{int(x)}" for x in ids])
     else:
         return S_ERROR("Illegal fileID")
 

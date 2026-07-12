@@ -81,14 +81,21 @@ class FileManager(FileManagerBase):
                 directoryPaths[directoryIDs[dirPath]] = dirPath
 
         for dirIDs in breakListIntoChunks(list(directoryIDs), 1000):
+            args = []
             wheres = []
             for dirPath in dirIDs:
                 fileNames = dirDict[dirPath]
                 dirID = directoryIDs[dirPath]
-                wheres.append("( DirID=%d AND FileName IN (%s) )" % (dirID, stringListToString(fileNames)))
+                whereStr = "( DirID=%s AND FileName IN ("
+                whereStr += ",".join(["%s"] * len(fileNames))
+                whereStr += ")"
+                args.append(dirID)
+                args.extend(fileNames)
+                wheres.append(whereStr)
 
-            req = f"SELECT FileName,DirID,FileID FROM FC_Files WHERE {' OR '.join(wheres)}"
-            result = self.db._query(req, conn=connection)
+            req = "SELECT FileName,DirID,FileID FROM FC_Files WHERE "
+            req += " OR ".join(wheres)
+            result = self.db._query(req, args=args, conn=connection)
             if not result["OK"]:
                 return result
             for fileName, dirID, fileID in result["Value"]:
@@ -109,7 +116,8 @@ class FileManager(FileManagerBase):
         connection = self._getConnection(connection)
         # metadata can be any of ['FileID','Size','UID','GID','Status','Checksum','ChecksumType',
         # 'Type','CreationDate','ModificationDate','Mode']
-        req = "SELECT FileName,DirID,FileID,Size,UID,GID,Status FROM FC_Files WHERE DirID=%d" % (dirID)
+        req = "SELECT FileName,DirID,FileID,Size,UID,GID,Status FROM FC_Files WHERE DirID=%s"
+        args = [str(dirID)]
         if not allStatus:
             statusIDs = []
             for status in self.db.visibleFileStatus:
@@ -117,10 +125,16 @@ class FileManager(FileManagerBase):
                 if res["OK"]:
                     statusIDs.append(res["Value"])
             if statusIDs:
-                req = f"{req} AND Status IN ({intListToString(statusIDs)})"
+                req += " AND Status IN ("
+                req += ",".join(["%s"] * len(statusIDs))
+                req += ")"
+                args.extend(statusIDs)
         if fileNames:
-            req = f"{req} AND FileName IN ({stringListToString(fileNames)})"
-        res = self.db._query(req, conn=connection)
+            req += " AND FileName IN ("
+            req += ",".join(["%s"] * len(fileNames))
+            req += ")"
+            args.extend(fileNames)
+        res = self.db._query(req, args=args, conn=connection)
         if not res["OK"]:
             return res
         fileNameIDs = res["Value"]
@@ -172,11 +186,15 @@ class FileManager(FileManagerBase):
                 metadata.remove(element)
         metadata.append("FileID")
         metadata.reverse()
-        req = "SELECT {} FROM FC_FileInfo WHERE FileID IN ({})".format(
-            intListToString(metadata),
-            intListToString(filesDict.keys()),
-        )
-        res = self.db._query(req, conn=connection)
+        for field in metadata:
+            if not self.db._checkIdentifier(field)["OK"]:
+                return S_ERROR(f"Bad metadata field name: {field}")
+        req = "SELECT "
+        req += ",".join(metadata)
+        req += " FROM FC_FileInfo WHERE FileID IN ("
+        req += ",".join(["%s"] * len(filesDict))
+        req += ")"
+        res = self.db._query(req, args=filesDict.keys(), conn=connection)
         if not res["OK"]:
             return res
         for tuple_ in res["Value"]:
@@ -199,18 +217,28 @@ class FileManager(FileManagerBase):
         dirListString = result["Value"]
 
         if requestString:
-            req = f"SELECT FileID FROM FC_Files WHERE DirID IN ( {dirListString} )"
+            # TODO: Mogrify this instead of using string construction!
+            req = "SELECT FileID FROM FC_Files WHERE DirID IN ("
+            req += dirListString
+            req += ")"
             return S_OK(req)
 
-        req = f"SELECT FileID,DirID,FileName FROM FC_Files WHERE DirID IN ( {dirListString} )"
-        result = self.db._query(req)
+        if not isinstance(dirID, (list, tuple)):
+            dirList = [dirID]
+        else:
+            dirList = dirID
+        req = "SELECT FileID,DirID,FileName FROM FC_Files WHERE DirID IN ("
+        req += ",".join(["%s"] * len(dirList))
+        req += ")"
+        result = self.db._query(req, args=dirList)
         return result
 
     def _getFileMetadataByID(self, fileIDs, connection=False):
         """Get standard file metadata for a list of files specified by FileID"""
-        stringIDs = ",".join([f"{id_}" for id_ in fileIDs])
-        req = f"SELECT FileID,Size,UID,GID,Status FROM FC_Files WHERE FileID in ( {stringIDs} )"
-        result = self.db._query(req, conn=connection)
+        req = "SELECT FileID,Size,UID,GID,Status FROM FC_Files WHERE FileID in ("
+        req += ",".join(["%s"] * len(fileIDs))
+        req += ")"
+        result = self.db._query(req, args=fileIDs, conn=connection)
         if not result["OK"]:
             return result
         resultDict = {}
@@ -222,8 +250,10 @@ class FileManager(FileManagerBase):
                 "Status": self._getIntStatus(status).get("Value", status),
             }
 
-        req = f"SELECT FileID,GUID,CreationDate from FC_FileInfo WHERE FileID in ( {stringIDs} )"
-        result = self.db._query(req, conn=connection)
+        req = "SELECT FileID,GUID,CreationDate from FC_FileInfo WHERE FileID in ("
+        req += ",".join(["%s"] * len(fileIDs))
+        req += ")"
+        result = self.db._query(req, args=fileIDs, conn=connection)
         if not result["OK"]:
             return result
         for fileID, guid, date in result["Value"]:
@@ -259,14 +289,14 @@ class FileManager(FileManagerBase):
                 result = self.db.ugManager.getUserAndGroupID(ownerDict)
                 if result["OK"]:
                     s_uid, s_gid = result["Value"]
-            insertTuples.append("(%d,%d,%d,%d,%d,'%s')" % (dirID, size, s_uid, s_gid, statusID, fileName))
+            insertTuples.append((dirID, size, s_uid, s_gid, statusID, fileName))
             directorySESizeDict.setdefault(dirID, {})
             directorySESizeDict[dirID].setdefault(0, {"Files": 0, "Size": 0})
             directorySESizeDict[dirID][0]["Size"] += lfns[lfn]["Size"]
             directorySESizeDict[dirID][0]["Files"] += 1
 
-        req = f"INSERT INTO FC_Files (DirID,Size,UID,GID,Status,FileName) VALUES {','.join(insertTuples)}"
-        res = self.db._update(req, conn=connection)
+        req = "INSERT INTO FC_Files (DirID,Size,UID,GID,Status,FileName) VALUES (%s,%s,%s,%s,%s,%s)"
+        res = self.db._updatemany(req, data=insertTuples, conn=connection)
         if not res["OK"]:
             return res
         # Get the fileIDs for the inserted files
@@ -292,13 +322,14 @@ class FileManager(FileManagerBase):
             guid = fileInfo.get("GUID", "")
             mode = fileInfo.get("Mode", self.db.umask)
             toDelete.append(fileID)
-            insertTuples.append(
-                "(%d,'%s','%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d)" % (fileID, guid, checksum, checksumtype, mode)
-            )
+            insertTuples.append((fileID, guid, checksum, checksumtype, mode))
         if insertTuples:
-            fields = "FileID,GUID,Checksum,ChecksumType,CreationDate,ModificationDate,Mode"
-            req = f"INSERT INTO FC_FileInfo ({fields}) VALUES {','.join(insertTuples)}"
-            res = self.db._update(req, conn=connection)
+            req = (
+                "INSERT INTO FC_FileInfo ("
+                "FileID,GUID,Checksum,ChecksumType,CreationDate,ModificationDate,Mode"
+                ") VALUES (%s, %s, %s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP(), %s)"
+            )
+            res = self.db._updatemany(req, data=insertTuples, conn=connection)
             if not res["OK"]:
                 self._deleteFiles(toDelete, connection=connection)
                 for lfn in list(lfns):
@@ -318,8 +349,10 @@ class FileManager(FileManagerBase):
             return S_OK({})
         if not isinstance(guid, (list, tuple)):
             guid = [guid]
-        req = f"SELECT FileID,GUID FROM FC_FileInfo WHERE GUID IN ({stringListToString(guid)})"
-        res = self.db._query(req, conn=connection)
+        req = "SELECT FileID,GUID FROM FC_FileInfo WHERE GUID IN ("
+        req += ",".join(["%s"] * len(guid))
+        req += ")"
+        res = self.db._query(req, args=guid, conn=connection)
         if not res["OK"]:
             return res
         guidDict = {}
@@ -336,8 +369,10 @@ class FileManager(FileManagerBase):
         if not isinstance(guids, (list, tuple)):
             guids = [guids]
         req = "SELECT f.FileID, f.FileName, fi.GUID, f.DirID FROM FC_FileInfo fi"
-        req += f" JOIN FC_Files f on fi.FileID = f.FileID WHERE GUID IN ({stringListToString(guids)})"
-        res = self.db._query(req, conn=connection)
+        req += " JOIN FC_Files f on fi.FileID = f.FileID WHERE GUID IN ("
+        req += ",".join(["%s"] * len(guids))
+        req += ")"
+        res = self.db._query(req, args=guids, conn=connection)
         if not res["OK"]:
             return res
 
@@ -393,11 +428,14 @@ class FileManager(FileManagerBase):
             fileIDs = [fileIDs]
         if not fileIDs:
             return S_OK()
-        fileIDString = intListToString(fileIDs)
         failed = []
         for table in ["FC_Files", "FC_FileInfo"]:
-            req = f"DELETE FROM {table} WHERE FileID in ({fileIDString})"
-            res = self.db._update(req, conn=connection)
+            req = "DELETE FROM "
+            req += table
+            req += " WHERE FileID in ("
+            req += ",".join(["%s"] * len(fileIDs))
+            req += ")"
+            res = self.db._update(req, args=fileIDs, conn=connection)
             if not res["OK"]:
                 gLogger.error(f"Failed to remove files from table {table}", res["Message"])
                 failed.append(table)
@@ -451,10 +489,10 @@ class FileManager(FileManagerBase):
         if not insertTuples:
             return S_OK({"Successful": successful, "Failed": failed})
 
-        req = "INSERT INTO FC_Replicas (FileID,SEID,Status) VALUES %s" % (
-            ",".join(["(%d,%d,%d)" % (tuple_[0], tuple_[1], statusID) for tuple_ in insertTuples])
-        )
-        res = self.db._update(req, conn=connection)
+        req = "INSERT INTO FC_Replicas "
+        req += "(FileID,SEID,Status) VALUES (%s,%s,%s)"
+        args = tuple((x[0], x[1], statusID) for x in insertTuples)
+        res = self.db._updatemany(req, data=args, conn=connection)
         if not res["OK"]:
             return res
         res = self._getRepIDsForReplica(insertTuples, connection=connection)
@@ -483,12 +521,12 @@ class FileManager(FileManagerBase):
             if repID:
                 pfn = fileDict["PFN"]
                 toDelete.append(repID)
-                insertReplicas.append("(%d,'%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s')" % (repID, replicaType, pfn))
+                insertReplicas.append((str(repID), replicaType, pfn))
         if insertReplicas:
-            req = "INSERT INTO FC_ReplicaInfo (RepID,RepType,CreationDate,ModificationDate,PFN) VALUES %s" % (
-                ",".join(insertReplicas)
-            )
-            res = self.db._update(req, conn=connection)
+            req = "INSERT INTO FC_ReplicaInfo "
+            req += "(RepID,RepType,CreationDate,ModificationDate,PFN) "
+            req += "VALUES (%s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP(), %s)"
+            res = self.db._updatemany(req, data=insertReplicas, conn=connection)
             if not res["OK"]:
                 for lfn in lfns.keys():
                     failed[lfn] = res["Message"]
@@ -504,9 +542,13 @@ class FileManager(FileManagerBase):
         connection = self._getConnection(connection)
         queryTuples = []
         for fileID, seID in replicaTuples:
-            queryTuples.append("(%d,%d)" % (fileID, seID))
-        req = f"SELECT RepID,FileID,SEID FROM FC_Replicas WHERE (FileID,SEID) IN ({intListToString(queryTuples)})"
-        res = self.db._query(req, conn=connection)
+            queryTuples.append((fileID, seID))
+        req = "SELECT RepID,FileID,SEID FROM FC_Replicas WHERE (FileID,SEID) IN ("
+        req += ",".join(["%s,%s"] * len(queryTuples))
+        req += ")"
+        # Flatten queryTuples into args
+        args = tuple(f for t in queryTuples for f in t)
+        res = self.db._query(req, args=args, conn=connection)
         if not res["OK"]:
             return res
         replicaDict = {}
@@ -578,11 +620,14 @@ class FileManager(FileManagerBase):
             repIDs = [repIDs]
         if not repIDs:
             return S_OK()
-        repIDString = intListToString(repIDs)
         failed = []
         for table in ["FC_Replicas", "FC_ReplicaInfo"]:
-            req = f"DELETE FROM {table} WHERE RepID in ({repIDString})"
-            res = self.db._update(req, conn=connection)
+            req = "DELETE FROM "
+            req += table
+            req += " WHERE RepID in ("
+            req += ",".join(["%s"] * len(repIDs))
+            req += ")"
+            res = self.db._update(req, args=repIDs, conn=connection)
             if not res["OK"]:
                 gLogger.error(f"Failed to remove replicas from table {table}", res["Message"])
                 failed.append(table)
@@ -612,8 +657,8 @@ class FileManager(FileManagerBase):
         if not res["Value"]:
             return res
         repID = res["Value"]
-        req = "UPDATE FC_Replicas SET Status=%d WHERE RepID=%d" % (statusID, repID)
-        return self.db._update(req, conn=connection)
+        req = "UPDATE FC_Replicas SET Status=%s WHERE RepID=%s"
+        return self.db._update(req, args=(statusID, repID), conn=connection)
 
     def _setReplicaHost(self, fileID, se, newSE, connection=False):
         connection = self._getConnection(connection)
@@ -627,8 +672,8 @@ class FileManager(FileManagerBase):
         if not res["Value"]:
             return res
         repID = res["Value"]
-        req = "UPDATE FC_Replicas SET SEID=%d WHERE RepID = %d;" % (newSE, repID)
-        return self.db._update(req, conn=connection)
+        req = "UPDATE FC_Replicas SET SEID=%s WHERE RepID = %s"
+        return self.db._update(req, args=(newSE, repID), conn=connection)
 
     def _setReplicaParameter(self, fileID, se, paramName, paramValue, connection=False):
         connection = self._getConnection(connection)
@@ -638,14 +683,17 @@ class FileManager(FileManagerBase):
         if not res["Value"]:
             return res
         repID = res["Value"]
-        req = "UPDATE FC_ReplicaInfo SET %s='%s', ModificationDate = UTC_TIMESTAMP() WHERE RepID IN (%d)" % (
-            paramName,
-            paramValue,
-            repID,
-        )
-        return self.db._update(req, conn=connection)
+        if not self.db._checkIdentifier(paramName)["OK"]:
+            return S_ERROR(f"Invalid paramName: {paramName}")
+        req = "UPDATE FC_ReplicaInfo "
+        req += f"SET {paramName}=%s, ModificationDate=UTC_TIMESTAMP() "
+        req += "WHERE RepID = %s"
+        args = (paramValue, repID)
+        return self.db._update(req, args=args, conn=connection)
 
     def _setFileParameter(self, fileID, paramName, paramValue, connection=False):
+        # TODO: This function should really be split into a version that takes a fileID list
+        #       and a version that can take an SQL select statement
         connection = self._getConnection(connection)
 
         result = getIDSelectString(fileID)
@@ -653,36 +701,44 @@ class FileManager(FileManagerBase):
             return result
         fileIDString = result["Value"]
 
+        args = []
         if paramName in ["UID", "GID", "Status", "Size"]:
             # Treat primary file attributes specially
             # Different statement for the fileIDString with SELECT is for performance optimization
             # since in this case the MySQL engine manages to use index on FileID.
             if "select" in fileIDString.lower():
-                tmpreq = "UPDATE FC_Files as FF1, ( %s ) as FF2 %%s WHERE FF1.FileID=FF2.FileID" % fileIDString
+                tmpreq = f"UPDATE FC_Files as FF1, ( {fileIDString} ) as FF2 "
+                tmpreq += f"SET {paramName}=%s WHERE FF1.FileID=FF2.FileID"
+                tmpargs = [paramValue]
             else:
-                tmpreq = "UPDATE FC_Files %%s WHERE FileID IN (%s)" % fileIDString
-            req = tmpreq % f"SET {paramName}='{paramValue}'"
-            result = self.db._update(req, conn=connection)
+                tmpreq = "UPDATE FC_Files "
+                tmpreq += f"SET {paramName}=%s "
+                tmpreq += f"WHERE FileID IN ({fileIDString})"
+                tmpargs = [paramValue]
+            result = self.db._update(tmpreq, args=tmpargs, conn=connection)
             if not result["OK"]:
                 return result
             if "select" in fileIDString.lower():
                 req = f"UPDATE FC_FileInfo as FF1, ( {fileIDString} ) as FF2"
                 req += " SET ModificationDate=UTC_TIMESTAMP() WHERE FF1.FileID=FF2.FileID"
             else:
-                req = f"UPDATE FC_FileInfo SET ModificationDate=UTC_TIMESTAMP() WHERE FileID IN ({fileIDString})"
+                req = "UPDATE FC_FileInfo SET ModificationDate=UTC_TIMESTAMP() WHERE FileID IN ("
+                req += fileIDString
+                req += ")"
         else:
             # Different statement for the fileIDString with SELECT is for performance optimization
             # since in this case the MySQL engine manages to use index on FileID.
             if "select" in fileIDString.lower():
-                req = f"UPDATE FC_FileInfo as FF1, ( {fileIDString} ) as FF2 SET {paramName}='{paramValue}', "
-                req += "ModificationDate=UTC_TIMESTAMP() WHERE FF1.FileID=FF2.FileID"
+                req = f"UPDATE FC_FileInfo as FF1, ( {fileIDString} ) as FF2 "
+                req += f"SET {paramName}=%s, ModificationDate=UTC_TIMESTAMP() "
+                req += "WHERE FF1.FileID=FF2.FileID"
+                args.append(paramValue)
             else:
-                req = "UPDATE FC_FileInfo SET {}='{}', ModificationDate=UTC_TIMESTAMP() WHERE FileID IN ({})".format(
-                    paramName,
-                    paramValue,
-                    fileIDString,
-                )
-        return self.db._update(req, conn=connection)
+                req = "UPDATE FC_FileInfo "
+                req += f"SET {paramName}=%s, ModificationDate=UTC_TIMESTAMP() "
+                req += f"WHERE FileID IN ({fileIDString})"
+                args.append(paramValue)
+        return self.db._update(req, args=args, conn=connection)
 
     def __getRepIDForReplica(self, fileID, seID, connection=False):
         connection = self._getConnection(connection)
@@ -720,11 +776,15 @@ class FileManager(FileManagerBase):
                 fields.remove("Status")
             repIDDict = {}
             if fields:
-                req = "SELECT RepID,{} FROM FC_ReplicaInfo WHERE RepID IN ({});".format(
-                    intListToString(fields),
-                    intListToString(fileIDDict.keys()),
-                )
-                res = self.db._query(req, conn=connection)
+                for field in fields:
+                    if not self.db._checkIdentifier(field)["OK"]:
+                        return S_ERROR(f"Invalid field name: {field}")
+                req = "SELECT "
+                req += ",".join(["RepID"] + fields)
+                req += " FROM FC_ReplicaInfo WHERE RepID IN ("
+                req += ",".join(["%s"] * len(fileIDDict))
+                req += ")"
+                res = self.db._query(req, args=fileIDDict.keys(), conn=connection)
                 if not res["OK"]:
                     return res
                 for tuple_ in res["Value"]:
@@ -766,15 +826,21 @@ class FileManager(FileManagerBase):
         connection = self._getConnection(connection)
         if not fileIDs:
             return S_ERROR("No such file or directory")
-        req = f"SELECT FileID,SEID,RepID,Status FROM FC_Replicas WHERE FileID IN ({intListToString(fileIDs)})"
+        req = "SELECT FileID,SEID,RepID,Status FROM FC_Replicas WHERE FileID IN ("
+        req += ",".join(["%s"] * len(fileIDs))
+        req += ")"
+        args = fileIDs
         if not allStatus:
             statusIDs = []
             for status in self.db.visibleReplicaStatus:
                 result = self._getStatusInt(status, connection=connection)
                 if result["OK"]:
                     statusIDs.append(result["Value"])
-            req += f" AND Status in ({intListToString(statusIDs)})"
-        res = self.db._query(req, conn=connection)
+            req += " AND Status IN ("
+            req += ",".join(["%s"] * len(statusIDs))
+            req += ")"
+            args.extend(statusIDs)
+        res = self.db._query(req, args=args, conn=connection)
         if not res["OK"]:
             return res
         fileIDDict = {}
@@ -800,21 +866,35 @@ class FileManager(FileManagerBase):
         if not self.db.lfnPfnConvention or self.db.lfnPfnConvention == "Weak":
             req = "SELECT FF.FileName,FR.FileID,FR.SEID,FI.PFN FROM FC_Files as FF,"
             req += " FC_Replicas as FR, FC_ReplicaInfo as FI"
-            req += " WHERE FF.FileID=FR.FileID AND FR.RepID=FI.RepID AND FF.DirID=%d " % dirID
+            req += " WHERE FF.FileID=FR.FileID AND FR.RepID=FI.RepID AND FF.DirID=%s "
+            args = [str(dirID)]
             if replicaStatusIDs:
-                req += f" AND FR.Status in ({intListToString(replicaStatusIDs)})"
+                req += " AND FR.Status in ("
+                req += ",".join(["%s"] * len(replicaStatusIDs))
+                req += ")"
+                args.extend(replicaStatusIDs)
             if fileStatusIDs:
-                req += f" AND FF.Status in ({intListToString(fileStatusIDs)})"
+                req += " AND FF.Status in ("
+                req += ",".join(["%s"] * len(fileStatusIDs))
+                req += ")"
+                args.extend(fileStatusIDs)
         else:
             req = "SELECT FF.FileName,FR.FileID,FR.SEID,'' FROM FC_Files as FF,"
             req += " FC_Replicas as FR"
-            req += " WHERE FF.FileID=FR.FileID AND FF.DirID=%d " % dirID
+            req += " WHERE FF.FileID=FR.FileID AND FF.DirID=%s "
+            args = [str(dirID)]
             if replicaStatusIDs:
-                req += f" AND FR.Status in ({intListToString(replicaStatusIDs)})"
+                req += " AND FR.Status in ("
+                req += ",".join(["%s"] * len(replicaStatusIDs))
+                req += ")"
+                args.extend(replicaStatusIDs)
             if fileStatusIDs:
-                req += f" AND FF.Status in ({intListToString(fileStatusIDs)})"
+                req += " AND FF.Status in ("
+                req += ",".join(["%s"] * len(fileStatusIDs))
+                req += ")"
+                args.extend(fileStatusIDs)
 
-        result = self.db._query(req, conn=connection)
+        result = self.db._query(req, args=args, conn=connection)
         return result
 
     def repairFileTables(self, connection=False):
@@ -837,11 +917,12 @@ class FileManager(FileManagerBase):
         insertTuples = []
         for fileID in fileIDsToAdd:
             guid = makeGuid()
-            insertTuples.append("(%d,'%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d)" % (int(fileID), guid, self.db.umask))
+            insertTuples.append((str(fileID), guid, self.db.umask))
 
-        fields = "FileID,GUID,CreationDate,ModificationDate,Mode"
-        req = f"INSERT INTO FC_FileInfo ({fields}) VALUES {','.join(insertTuples)}"
-        result = self.db._update(req, conn=connection)
+        req = "INSERT INTO FC_FileInfo "
+        req += "(FileID,GUID,CreationDate,ModificationDate,Mode) "
+        req += "VALUES (%s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP(), %s)"
+        result = self.db._updatemany(req, data=insertTuples, conn=connection)
         if not result["OK"]:
             return result
 
