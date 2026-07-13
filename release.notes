@@ -1,3 +1,58 @@
+[v9.1.15]
+
+*DataManagementSystem
+
+FIX: (#8709) correct parameterised replica/file queries in FileManager (unbalanced IN parentheses, scalar list bound against the (FileID,SEID) row constructor, and argument-list aliasing that corrupted getReplicas)
+FIX: (#8709) repair getFileCounters and the file ancestor/descendent queries in FileManagerBase
+FIX: (#8709) restore the missing FROM clause in FileManagerFlat directory file listing
+FIX: (#8709) correct DatasetManager queries (keyword args to _query, comma-separated multi-row insert, and wildcard LIKE matching)
+FIX: (#8709) restore the IN-list parentheses when setting directory parameters in DirectoryTreeBase
+FIX: (#8708) escape user-supplied metadata values in DirectoryMetadata
+FIX: (#8704) Parameterise SQL in FileManager
+FIX: (#8699) Remove extra escapeString from DirectoryLevelTree
+
+*FrameworkSystem
+
+FIX: (#8709) correct getLogsContent field validation and OR-condition grouping in ProxyDB
+FIX: (#8709) remove stray debug prints from UserProfileDB.retrieveVarById
+FIX: (#8688) skip the Tornado server in ComponentSupervisionAgent service checks
+
+*StorageManagementSystem
+
+FIX: (#8709) pass the query arguments when updating stage request status in StorageManagementDB
+
+*WorkloadManagementSystem
+
+FIX: (#8709) report unknown job attributes as an error (instead of a masked S_OK) and skip empty input-data LFNs in JobDB
+FIX: (#8694) MySQL does not escape RAND() as an order attribute
+
+*Accounting
+
+FIX: (#8709) correct AccountingDB bucket writing (multi-bucket records were silently dropped), rebucketing, key-value listing and bucket-compaction paging
+
+*WorkloadManagement
+
+FIX: (#8707) getInputData bulk query with duplicate jobIDs
+FIX: (#8656) Parameterise SQL in TaskQueueDB
+FIX: (#8651) Fix SQL escaping in TaskQueueDB priority calculation
+
+*Tests
+
+CHANGE: (#8705) Add bandit pre-commit
+
+*Core
+
+CHANGE: (#8703) SQL escaping tidyups
+FIX: (#8692) do not expect an error ID in all MySQL exception
+FIX: (#8684) handle NoneType correctly inside __escapeString, _escapeValues
+NEW: (#8636) Add non-deprecated UTC timezone utilities
+
+*TransformationSystem
+
+FIX: (#8698) Drop extra escaping in TransformationDB
+FIX: (#8692) bad tupling in getTransformationWithStatus
+FIX: (#8621) ensure input sandboxes assigned to transformations
+
 [v9.1.14]
 
 *Core
