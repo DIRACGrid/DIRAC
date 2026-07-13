@@ -352,7 +352,7 @@ class StorageManagementDB(DB):
         req += ",".join(["%s"] * len(toUpdate))
         req += ") AND Status != %s"
         args = [newStageStatus] + toUpdate + [newStageStatus]
-        res = self._update(req, conn=connection)
+        res = self._update(req, args=args, conn=connection)
         if not res["OK"]:
             return res
 
