@@ -24,10 +24,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     def findDir(self, path, connection=False):
         """Find directory ID for the given path"""
 
-        dpath = self.db._escapeString(os.path.normpath(path))
-        if not dpath["OK"]:
-            return dpath
-        dpath = dpath["Value"]
+        dpath = os.path.normpath(path)
         req = "SELECT DirID,Level from FC_DirectoryLevelTree WHERE DirName=%s"
         result = self.db._query(req, conn=connection, args=(dpath,))
         if not result["OK"]:
@@ -42,12 +39,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
 
     def findDirs(self, paths, connection=False):
         """Find DirIDs for the given path list"""
-        dpathList = []
-        for path in paths:
-            dpath = self.db._escapeString(os.path.normpath(path))
-            if not dpath["OK"]:
-                return dpath
-            dpathList.append(dpath["Value"])
+        dpathList = [os.path.normpath(x) for x in paths]
         req = "SELECT DirName,DirID from FC_DirectoryLevelTree WHERE DirName in ("
         req += ",".join(["%s"] * len(dpathList))
         req += ")"
