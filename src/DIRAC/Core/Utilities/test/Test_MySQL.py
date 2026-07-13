@@ -3,7 +3,7 @@
 
 import pytest
 
-from DIRAC.Core.Utilities.MySQL import MySQL
+from DIRAC.Core.Utilities.MySQL import MySQL, _quotedList
 
 
 class TestCheckIdentifierValid:
@@ -254,3 +254,44 @@ class TestCheckTypeInvalid:
     def test_invalid(self, value_type):
         result = MySQL._checkType(value_type)
         assert not result["OK"]
+
+
+class TestQuotedList:
+    """Test quotedList escapes/rejects things correctly."""
+
+    @pytest.mark.parametrize(
+        "value,allowFuncs,expected",
+        [
+            # Simple cases
+            ([""], None, None),
+            (["myfield"], None, "`myfield`"),
+            (["myField"], None, "`myField`"),
+            (["abc", "def", "ghi"], None, "`abc`, `def`, `ghi`"),
+            (["bad#name"], None, None),
+            (["abc", "--invalid"], None, None),
+            # Qualified names
+            (["abc.def"], None, "`abc`.`def`"),
+            (["`abc`.`def`"], None, "`abc`.`def`"),
+            (["abc", "tbl.def"], None, "`abc`, `tbl`.`def`"),
+            (["`abc`.`--bad`"], None, None),
+            (["a.b.c"], None, None),  # Only one qualifier is allowed
+            # Function handling
+            (["date(myfield)"], ["DATE"], "DATE(`myfield`)"),
+            (["DATE(myfield)"], ["DATE"], "DATE(`myfield`)"),
+            (["date(myfield)"], ["date"], "DATE(`myfield`)"),
+            (["date(--bad)"], ["DATE"], None),
+            (["date(myfield)"], None, None),
+            (["date(tbl.myfield)"], ["DATE"], "DATE(`tbl`.`myfield`)"),
+            (["date(`tbl`.`myfield`)"], ["DATE"], "DATE(`tbl`.`myfield`)"),
+            (["rand()"], ["RAND"], "RAND()"),
+            (["RAND()"], ["rand"], "RAND()"),
+            (["RAND()"], ["RAND"], "RAND()"),
+            (["RAND())"], ["RAND"], None),
+            (["OTHER()"], ["RAND"], None),
+            (["RAND()", "DATE(mycol)", "plain"], ["RAND", "DATE"], "RAND(), DATE(`mycol`), `plain`"),
+            (["RAND()", "OTH(mycol)", "plain"], ["RAND", "DATE"], None),
+        ],
+    )
+    def test_quotedList(self, value, allowFuncs, expected):
+        res = _quotedList(value, allowFuncs)
+        assert res == expected

@@ -188,35 +188,55 @@ def _checkFields(inFields, inValues):
     return S_OK()
 
 
-def _quotedList(fieldList=None, allowDate=False):
+def _quotedList(fieldList=None, allowFuncs=None):
     """
     Quote a list of MySQL Field Names with "`"
     Supports fields containing a single . for a table.field identifier (for non-date values).
+    allowFuncs - A list of function names to allow, should not include brackets.
+                 Supports functions that take one or zero arguments.
     Return a comma separated list of quoted Field Names
 
     To be use for Table and Field Names
     """
+
+    def __checkField(field):
+        field = field.replace("`", "")
+        if "." in field:
+            fieldParts = field.split(".", 1)
+        else:
+            fieldParts = [field]
+        for part in fieldParts:
+            if not MySQL._checkIdentifier(part)["OK"]:
+                return None
+        return ".".join([f"`{x}`" for x in fieldParts])
+
     if fieldList is None:
         return None
+    funcList = []
+    if allowFuncs:
+        # Ensure all function names are upper case
+        funcList.extend([x.upper() for x in allowFuncs])
     quotedFields = []
     try:
         for field in fieldList:
-            if allowDate and field.startswith("date(") and field.endswith(")"):
-                field = field[len("date(") : -len(")")]
-                field = field.replace("`", "")
-                if not MySQL._checkIdentifier(field)["OK"]:
+            if "(" in field and field.endswith(")"):  # contains a function call
+                funcName = field.split("(")[0].upper()
+                if funcName not in funcList:
+                    # function name isn't in the allowed list
                     return None
-                quotedFields.append(f"date(`{field}`")
-            else:
-                field = field.replace("`", "")
-                if "." in field:
-                    fieldParts = field.split(".", 1)
+                field = field.split("(")[1][:-1]
+                # Field is the argument, may be empty string
+                if field:
+                    quotedField = __checkField(field)
+                    if not quotedField:
+                        return None  # Function argument was invalid
+                    quotedFields.append(f"{funcName.upper()}({quotedField})")
                 else:
-                    fieldParts = [field]
-                for part in fieldParts:
-                    if not MySQL._checkIdentifier(part)["OK"]:
-                        return None
-                quotedField = ".".join([f"`{x}`" for x in fieldParts])
+                    quotedFields.append(f"{funcName.upper()}()")
+            else:  # Non-function call case
+                quotedField = __checkField(field)
+                if not quotedField:
+                    return None  # Field name was invalid
                 quotedFields.append(quotedField)
     except Exception:
         return None
@@ -1306,7 +1326,7 @@ class MySQL:
             # self.log.debug('getCounters:', error)
             return S_ERROR(DErrno.EMYSQL, error)
 
-        attrNames = _quotedList(attrList, allowDate=True)
+        attrNames = _quotedList(attrList, allowFuncs=["DATE"])
         if attrNames is None:
             error = "Invalid updateFields argument"
             # self.log.debug('getCounters:', error)
@@ -1508,12 +1528,8 @@ class MySQL:
                 # self.log.debug('buildCondition:', error)
                 raise Exception(error)
 
-            # Do not escape the special RAND case
-            if orderAttr.split(":")[:1] == ["RAND()"]:
-                orderField = "RAND()"
-            else:
-                orderField = _quotedList(orderAttr.split(":")[:1])
-
+            # Allow field names and/or RAND() in the sort list
+            orderField = _quotedList(orderAttr.split(":")[:1], allowFuncs=["RAND"])
             if not orderField:
                 error = "Invalid orderAttribute argument"
                 # self.log.debug('buildCondition:', error)
@@ -1528,6 +1544,7 @@ class MySQL:
                     # self.log.debug('buildCondition:', error)
                     raise Exception(error)
             else:
+                # orderAttr is safe here as it was checked by _quotedList
                 orderList.append(orderAttr)
 
         if orderList:
