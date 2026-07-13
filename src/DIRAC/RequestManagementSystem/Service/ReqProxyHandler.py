@@ -1,19 +1,4 @@
-########################################################################
-# File: ReqProxyHandler.py
-# Author: Krzysztof.Ciba@NOSPAMgmail.com
-# Date: 2013/06/04 13:18:41
-########################################################################
-
 """
-:mod: RequestProxyHandler
-
-.. module: ReqtProxyHandler
-  :synopsis: ReqProxy service
-
-.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
-
-Careful with that axe, Eugene! Some 'transfer' requests are using local fs
-and they never should be forwarded to the central RequestManager.
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN ReqProxy
@@ -22,13 +7,7 @@ and they never should be forwarded to the central RequestManager.
   :caption: ReqProxy options
 
 """
-# #
-# @file RequestProxyHandler.py
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2012/07/20 13:18:58
-# @brief Definition of RequestProxyHandler class.
 
-# # imports
 import os
 import json
 
@@ -40,6 +19,7 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.RequestManagementSystem.Client.Request import Request
 
@@ -50,7 +30,7 @@ def initializeReqProxyHandler(serviceInfo):
     :param serviceInfo: whatever
     """
     gLogger.info("Initalizing ReqProxyHandler")
-    gThreadScheduler.addPeriodicTask(120, ReqProxyHandler.sweeper)
+    gThreadScheduler.addPeriodicTask(60, ReqProxyHandler.sweeper)
     return S_OK()
 
 
@@ -61,11 +41,9 @@ class ReqProxyHandler(RequestHandler):
     """
     .. class:: ReqProxyHandler
 
-    :param RPCCLient requestManager: a RPCClient to RequestManager
     :param str cacheDir: os.path.join( workDir, "requestCache" )
     """
 
-    __requestManager = None
     __cacheDir = None
 
     @classmethod
@@ -74,14 +52,15 @@ class ReqProxyHandler(RequestHandler):
         gLogger.notice(f"CacheDirectory: {cls.cacheDir()}")
         cls.sweepSize = getServiceOption(serviceInfoDict, "SweepSize", 10)
         gLogger.notice(f"SweepSize: {cls.sweepSize}")
-        return S_OK()
 
-    @classmethod
-    def requestManager(cls):
-        """get request manager"""
-        if not cls.__requestManager:
-            cls.__requestManager = Client(url="RequestManagement/ReqManager")
-        return cls.__requestManager
+        try:
+            req_db = RequestDB()
+            cls._putRequest = lambda reqJSON: req_db.putRequest(Request(reqJSON))
+        except Exception as e:
+            gLogger.info("DB not available, using client", e)
+            req_client = Client(url="RequestManagement/ReqManager")
+            cls._putRequest = lambda reqJSON: req_client.putRequest(reqJSON)
+        return S_OK()
 
     @classmethod
     def cacheDir(cls):
@@ -122,7 +101,7 @@ class ReqProxyHandler(RequestHandler):
                     requestJSON = "".join(open(cachedFile).readlines())
                     cachedRequest = json.loads(requestJSON)
                     cachedName = cachedRequest.get("RequestName", "***UNKNOWN***")
-                    putRequest = cls.requestManager().putRequest(requestJSON)
+                    putRequest = cls._putRequest(requestJSON)
                     if not putRequest["OK"]:
                         gLogger.error(
                             "sweeper: unable to set request", f"{cachedName} @ ReqManager: {putRequest['Message']}"
