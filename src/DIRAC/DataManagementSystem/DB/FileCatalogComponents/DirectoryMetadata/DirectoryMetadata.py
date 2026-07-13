@@ -513,28 +513,49 @@ class DirectoryMetadata:
                     elif isinstance(operand, float):
                         selectList.append(f"{table}Value{operation}{operand:f}")
                     else:
-                        selectList.append(f"{table}Value{operation}'{operand}'")
+                        result = self.db._escapeString(operand)
+                        if not result["OK"]:
+                            return result
+                        selectList.append(f"{table}Value{operation}{result['Value']}")
                 elif operation == "in" or operation == "=":
                     if isinstance(operand, list):
-                        vString = ",".join(["'" + str(x) + "'" for x in operand])
+                        result = self.db._escapeValues(operand)
+                        if not result["OK"]:
+                            return result
+                        vString = ",".join(result["Value"])
                         selectList.append(f"{table}Value IN ({vString})")
                     else:
-                        selectList.append(f"{table}Value='{operand}'")
+                        result = self.db._escapeString(operand)
+                        if not result["OK"]:
+                            return result
+                        selectList.append(f"{table}Value={result['Value']}")
                 elif operation == "nin" or operation == "!=":
                     if isinstance(operand, list):
-                        vString = ",".join(["'" + str(x) + "'" for x in operand])
+                        result = self.db._escapeValues(operand)
+                        if not result["OK"]:
+                            return result
+                        vString = ",".join(result["Value"])
                         selectList.append(f"{table}Value NOT IN ({vString})")
                     else:
-                        selectList.append(f"{table}Value!='{operand}'")
+                        result = self.db._escapeString(operand)
+                        if not result["OK"]:
+                            return result
+                        selectList.append(f"{table}Value!={result['Value']}")
                 selectString = " AND ".join(selectList)
         elif isinstance(value, list):
-            vString = ",".join(["'" + str(x) + "'" for x in value])
+            result = self.db._escapeValues(value)
+            if not result["OK"]:
+                return result
+            vString = ",".join(result["Value"])
             selectString = f"{table}Value in ({vString})"
         else:
             if value == "Any":
                 selectString = ""
             else:
-                selectString = f"{table}Value='{value}' "
+                result = self.db._escapeString(value)
+                if not result["OK"]:
+                    return result
+                selectString = f"{table}Value={result['Value']} "
 
         return S_OK(selectString)
 
