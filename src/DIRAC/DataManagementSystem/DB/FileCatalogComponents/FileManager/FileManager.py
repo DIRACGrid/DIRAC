@@ -88,7 +88,7 @@ class FileManager(FileManagerBase):
                 dirID = directoryIDs[dirPath]
                 whereStr = "( DirID=%s AND FileName IN ("
                 whereStr += ",".join(["%s"] * len(fileNames))
-                whereStr += ")"
+                whereStr += ") )"
                 args.append(dirID)
                 args.extend(fileNames)
                 wheres.append(whereStr)
@@ -543,8 +543,10 @@ class FileManager(FileManagerBase):
         queryTuples = []
         for fileID, seID in replicaTuples:
             queryTuples.append((fileID, seID))
+        if not queryTuples:
+            return S_OK({})
         req = "SELECT RepID,FileID,SEID FROM FC_Replicas WHERE (FileID,SEID) IN ("
-        req += ",".join(["%s,%s"] * len(queryTuples))
+        req += ",".join(["(%s,%s)"] * len(queryTuples))
         req += ")"
         # Flatten queryTuples into args
         args = tuple(f for t in queryTuples for f in t)
@@ -829,7 +831,7 @@ class FileManager(FileManagerBase):
         req = "SELECT FileID,SEID,RepID,Status FROM FC_Replicas WHERE FileID IN ("
         req += ",".join(["%s"] * len(fileIDs))
         req += ")"
-        args = fileIDs
+        args = list(fileIDs)
         if not allStatus:
             statusIDs = []
             for status in self.db.visibleReplicaStatus:
