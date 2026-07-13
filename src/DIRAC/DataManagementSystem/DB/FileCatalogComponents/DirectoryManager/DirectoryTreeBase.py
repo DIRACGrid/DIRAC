@@ -342,7 +342,7 @@ class DirectoryTreeBase:
             return S_ERROR(f"Invalid parameter name: {pname}")
         req = "UPDATE FC_DirectoryInfo "
         req += f"SET {pname}=%s, ModificationDate=UTC_TIMESTAMP() "
-        req += f"WHERE DirID IN {dirIDString}"
+        req += f"WHERE DirID IN ({dirIDString})"
         result = self.db._update(req, args=(pvalue,))
         return result
 
