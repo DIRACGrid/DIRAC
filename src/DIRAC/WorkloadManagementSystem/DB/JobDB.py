@@ -326,10 +326,11 @@ class JobDB(DB):
             result = []
         else:
             # jobID is actually a list of jobIDs
+            jobIDs = {str(x) for x in jobID}
             cmd += " WHERE JobID IN ("
-            cmd += ",".join(["%s"] * len(jobID))
+            cmd += ",".join(["%s"] * len(jobIDs))
             cmd += ")"
-            args.extend({str(x) for x in jobID})
+            args.extend(jobIDs)
             result = {int(i): [] for i in jobID}
         res = self._query(cmd, args=args)
         if not res["OK"]:
