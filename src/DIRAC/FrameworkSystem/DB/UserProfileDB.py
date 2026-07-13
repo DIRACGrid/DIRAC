@@ -258,8 +258,6 @@ class UserProfileDB(DB):
         # when we retrieve the user profile we have to take into account the user.
         req = "SELECT data FROM up_ProfilesData "
         req += f"WHERE {sqlCond}"
-        print(req)
-        print(args)
         result = self._query(req, args=args)
         if not result["OK"]:
             return result
