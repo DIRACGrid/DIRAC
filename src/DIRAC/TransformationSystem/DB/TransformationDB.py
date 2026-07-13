@@ -533,10 +533,6 @@ class TransformationDB(DB):
         res = self._update(req, args=(transID, paramName), conn=connection)
         if not res["OK"]:
             return res
-        res = self._escapeString(paramValue)
-        if not res["OK"]:
-            return S_ERROR("Failed to parse parameter value")
-        paramValue = res["Value"]
         paramType = "StringType"
         if isinstance(paramValue, int):
             paramType = "IntType"
@@ -1158,10 +1154,6 @@ class TransformationDB(DB):
             return res
         connection = res["Value"]["Connection"]
         transID = res["Value"]["TransformationID"]
-        res = self._escapeString(queryType)
-        if not res["OK"]:
-            return S_ERROR("Failed to parse the transformation query type")
-        queryType = res["Value"]
         req = "DELETE FROM TransformationMetaQueries WHERE TransformationID=%s AND QueryType=%s"
         res = self._update(req, args=(transID, queryType), conn=connection)
         if not res["OK"]:
@@ -1186,13 +1178,9 @@ class TransformationDB(DB):
             return res
         connection = res["Value"]["Connection"]
         transID = res["Value"]["TransformationID"]
-        res = self._escapeString(queryType)
-        if not res["OK"]:
-            return S_ERROR("Failed to parse the transformation query type")
-        queryType = res["Value"]
         req = "SELECT MetaDataName,MetaDataValue,MetaDataType FROM TransformationMetaQueries"
-        req += f" WHERE TransformationID={transID} AND QueryType={queryType}"
-        res = self._query(req, conn=connection)
+        req += " WHERE TransformationID=%s AND QueryType=%s"
+        res = self._query(req, args=(transID, queryType), conn=connection)
         if not res["OK"]:
             return res
         queryDict = {}
