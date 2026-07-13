@@ -416,6 +416,7 @@ class AccountingDB(DB):
             req += ",".join(allKeyTables)
             if sqlCond:
                 req += f",{mainTable} WHERE "
+                req += f"{keyTable}.id = {mainTable}.`{keyName}` AND "
                 req += " AND ".join(sqlCond)
             retVal = self._query(req, args=condArgs, conn=connObj)
             if not retVal["OK"]:
@@ -688,24 +689,30 @@ class AccountingDB(DB):
         sqlFields.extend(self.dbCatalog[typeName]["values"])
         sqlUpData = ["entriesInBucket=entriesInBucket+VALUES(entriesInBucket)"]
         sqlUpData.extend([f"{x}={x}+VALUES({x})" for x in self.dbCatalog[typeName]["values"]])
+        valueGroups = []
         sqlValues = []
         for bucketInfo in buckets:
             bStartTime = bucketInfo[0]
             bProportion = bucketInfo[1]
             bLength = bucketInfo[2]
-            sqlValues = [bStartTime, bLength, valuesList[-1] * bProportion]
+            rowValues = [bStartTime, bLength, valuesList[-1] * bProportion]
             for keyPos in range(len(self.dbCatalog[typeName]["keys"])):
-                sqlValues.append(keyValues[keyPos])
+                rowValues.append(keyValues[keyPos])
             for valPos in range(len(self.dbCatalog[typeName]["values"])):
-                sqlValues.append(valuesList[valPos] * bProportion)
+                rowValues.append(valuesList[valPos] * bProportion)
+            valueGroups.append("(" + ",".join(["%s"] * len(rowValues)) + ")")
+            sqlValues.extend(rowValues)
+
+        if not valueGroups:
+            return S_OK()
 
         req = "INSERT INTO "
         req += self._getTableName("bucket", typeName)
         req += " ("
         req += ",".join(sqlFields)
-        req += ") VALUES ("
-        req += ",".join(["%s"] * len(sqlValues))
-        req += ") ON DUPLICATE KEY UPDATE "
+        req += ") VALUES "
+        req += ",".join(valueGroups)
+        req += " ON DUPLICATE KEY UPDATE "
         req += ",".join(sqlUpData)
 
         for _i in range(max(1, self.__deadLockRetries)):
@@ -985,7 +992,7 @@ class AccountingDB(DB):
             sqlGroupList.append(field)
         req += " GROUP BY "
         req += ",".join(sqlGroupList)
-        return self._query(req, conn=connObj)
+        return self._query(req, args=args, conn=connObj)
 
     def __deleteForCompactBuckets(self, typeName, timeLimit, bucketLength, connObj=False):
         """
@@ -1081,6 +1088,7 @@ class AccountingDB(DB):
         req += " FROM "
         req += self._getTableName("bucket", typeName)
         req += " WHERE startTime < %s AND bucketLength = %s"
+        req += f" LIMIT {int(querySize)}"
         return self._query(req, args=(timeLimit, bucketLength), conn=connObj)
 
     def __deleteIndividualForCompactBuckets(self, typeName, bucketsData, connObj=False):
@@ -1300,4 +1308,7 @@ class AccountingDB(DB):
 
 
 def _bucketizeDataField(dataField, bucketLength):
-    return f"{dataField} - ( {dataField} % {int(bucketLength)} )"
+    # '%%' is a literal MySQL modulo operator, doubled because every query that
+    # embeds this expression is executed with bound args, i.e. through the
+    # driver's "cmd % args" formatting which collapses '%%' back to '%'.
+    return f"{dataField} - ( {dataField} %% {int(bucketLength)} )"
