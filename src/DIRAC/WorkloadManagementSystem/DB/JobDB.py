@@ -208,7 +208,7 @@ class JobDB(DB):
                 attrList = attrList.replace(" ", "").split(",")
             for attrName in attrList:
                 if attrName.lower() not in [x.lower() for x in self.jobAttributeNames]:
-                    return S_ERROR(f"Unknown job attribute: {attrName}")
+                    raise SErrorException(f"Unknown job attribute: {attrName}")
         else:
             attrList = self.jobAttributeNames
         attrList.sort()
@@ -855,7 +855,9 @@ class JobDB(DB):
         values = []
 
         for lfn in inputData:
-            values.append((jobID, lfn))
+            if not lfn:
+                continue
+            values.append((jobID, lfn.strip()))
 
         if values:
             cmd = "INSERT INTO InputData (JobID,LFN) VALUES (%s, %s)"

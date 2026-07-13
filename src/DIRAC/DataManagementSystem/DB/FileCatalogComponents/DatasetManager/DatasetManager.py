@@ -529,13 +529,15 @@ class DatasetManager:
         req += parameterString
         req += " FROM FC_MetaDatasets"
         dsName = os.path.basename(datasetName)
+        args = []
         if "*" in dsName:
-            dName = dsName.replace("_", "\\_").replace("*", "%")
+            args.append(dsName.replace("_", "\\_").replace("*", "%"))
             req += " WHERE DatasetName LIKE %s"
         elif dsName:
+            args.append(dsName)
             req += " WHERE DatasetName=%s"
 
-        result = self.db._query(req, args=(dsName,))
+        result = self.db._query(req, args=args)
         if not result["OK"]:
             return result
 
@@ -697,7 +699,7 @@ class DatasetManager:
             dsName,
             dirID,
         )
-        result = self.db._query(req, args)
+        result = self.db._query(req, args=args)
         if not result["OK"]:
             return result
 
@@ -836,15 +838,16 @@ class DatasetManager:
         if not result["OK"]:
             return result
         fileIDList = result["FileIDList"]
-        req = "INSERT INTO FC_MetaDatasetFiles (DatasetID,FileID) VALUES "
-        args = []
-        for fileID in fileIDList:
-            req += "(%s,%s)"
-            args.append(datasetID)
-            args.append(fileID)
-        result = self.db._update(req, args=args)
-        if not result["OK"]:
-            return result
+        if fileIDList:
+            req = "INSERT INTO FC_MetaDatasetFiles (DatasetID,FileID) VALUES "
+            req += ",".join(["(%s,%s)"] * len(fileIDList))
+            args = []
+            for fileID in fileIDList:
+                args.append(datasetID)
+                args.append(fileID)
+            result = self.db._update(req, args=args)
+            if not result["OK"]:
+                return result
 
         result = self.setDatasetStatus(datasetName, "Frozen")
         return result

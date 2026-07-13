@@ -828,7 +828,7 @@ class ProxyDB(DB):
           parameters are a filter to the db
         """
         fields = ("Action", "IssuerDN", "IssuerGroup", "TargetDN", "TargetGroup", "Timestamp")
-        lowerFields = (x.lower() for x in fields)
+        lowerFields = [x.lower() for x in fields]
         req = "SELECT "
         # Timestamp is an SQL keyword so we have to be careful with backtick quoting
         req += ",".join([f"`{x}`" for x in fields])
@@ -850,7 +850,7 @@ class ProxyDB(DB):
             for field in selDict:
                 if field.lower() not in lowerFields:
                     return S_ERROR(f"Unknown field: {field}")
-                qr.append(" OR ".join([f"`{field}`=%s"] * len(selDict[field])))
+                qr.append("(" + " OR ".join([f"`{field}`=%s"] * len(selDict[field])) + ")")
                 qrArgs.extend(selDict[field])
             whereStr = " WHERE "
             whereStr += " AND ".join(qr)

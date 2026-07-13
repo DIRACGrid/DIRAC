@@ -51,7 +51,7 @@ class FileManagerBase:
             return res
         resultDict["Files w/o Replicas"] = res["Value"][0][0]
 
-        req = "SELECT COUNT(RepID) FROM FC_Replicas WHERE FileID NOT IN (SELECT FileID FROM FC_Files "
+        req = "SELECT COUNT(RepID) FROM FC_Replicas WHERE FileID NOT IN (SELECT FileID FROM FC_Files)"
         res = self.db._query(req, conn=connection)
         if not res["OK"]:
             return res
@@ -459,7 +459,7 @@ class FileManagerBase:
         req = "SELECT FileID, AncestorID, AncestorDepth FROM FC_FileAncestors WHERE FileID IN ("
         req += ",".join(["%s"] * len(fileIDs))
         req += ")"
-        args = fileIDs
+        args = list(fileIDs)
         if depths:
             req += " AND AncestorDepth IN ("
             req += ",".join(["%s"] * len(depths))
@@ -480,7 +480,7 @@ class FileManagerBase:
         req = "SELECT AncestorID, FileID, AncestorDepth FROM FC_FileAncestors WHERE AncestorID IN ("
         req += ",".join(["%s"] * len(fileIDs))
         req += ")"
-        args = fileIDs
+        args = list(fileIDs)
         if depths:
             req += " AND AncestorDepth IN ("
             req += ",".join(["%s"] * len(depths))

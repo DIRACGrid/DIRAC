@@ -46,7 +46,7 @@ class FileManagerFlat(FileManagerBase):
                 return S_ERROR(f"Invalid field name: {field}")
         req = "SELECT FileName,"
         req += ",".join(metadata)
-        req += " WHERE DirID=%s"
+        req += " FROM FC_Files WHERE DirID=%s"
         args = [dirID]
         if not allStatus:
             statusIDs = []
