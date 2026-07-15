@@ -4,7 +4,7 @@ import os
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager.FileManagerBase import FileManagerBase
-from DIRAC.Core.Utilities.List import stringListToString, intListToString, breakListIntoChunks
+from DIRAC.Core.Utilities.List import intListToString, breakListIntoChunks
 from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 # The logic of some methods is basically a copy/paste from the FileManager class,
@@ -67,13 +67,17 @@ class FileManagerPs(FileManagerBase):
         if len(lfns) == 1:
             lfn = list(lfns)[0]  # if lfns is a dict, list(lfns) returns lfns.keys()
             pathPart, filePart = os.path.split(lfn)
-            result = self.db.executeStoredProcedure(
-                "ps_get_file_id_from_lfn", (pathPart, filePart, "ret1"), outputIds=[2]
+            req = (
+                "SELECT f.FileID "
+                "FROM FC_Files f "
+                "JOIN FC_DirectoryList d ON d.DirID = f.DirID "
+                "WHERE d.Name = %s AND f.FileName = %s"
             )
+            result = self.db._query(req, args=(pathPart, filePart), conn=connection)
             if not result["OK"]:
                 return result
 
-            fileId = result["Value"][0]
+            fileId = result["Value"][0][0] if result["Value"] else 0
 
             if not fileId:
                 failed[lfn] = "No such file or directory"
@@ -95,11 +99,10 @@ class FileManagerPs(FileManagerBase):
                 fileNames = filesInDirDict[dirPath]
                 dirID = directoryPathToIds[dirPath]
 
-                formatedFileNames = stringListToString(fileNames)
-
-                result = self.db.executeStoredProcedureWithCursor(
-                    "ps_get_file_ids_from_dir_id", (dirID, formatedFileNames)
-                )
+                req = "SELECT FileID, FileName FROM FC_Files WHERE DirID = %s AND FileName IN ("
+                req += ",".join(["%s"] * len(fileNames))
+                req += ")"
+                result = self.db._query(req, args=(dirID, *fileNames), conn=connection)
                 if not result["OK"]:
                     return result
                 for fileID, fileName in result["Value"]:
@@ -135,14 +138,26 @@ class FileManagerPs(FileManagerBase):
         if "FileID" not in metadata:
             metadata.append("FileID")
 
-        # Format the filenames and status to be used in a IN clause in the sotred procedure
-        formatedFileNames = stringListToString(fileNames)
-        fStatus = stringListToString(self.db.visibleFileStatus)
+        req = """SELECT FileName, DirID, f.FileID, Size, f.uid, UserName, f.gid, GroupName, s.Status,
+                     GUID, Checksum, ChecksumType, Type, CreationDate, ModificationDate, Mode
+                    FROM FC_Files f
+                    JOIN FC_Users u ON f.UID = u.UID
+                    JOIN FC_Groups g ON f.GID = g.GID
+                    JOIN FC_Statuses s ON f.Status = s.StatusID
+                    WHERE DirID = %s"""
+        args = [dirID]
+        if not allStatus:
+            req += " AND s.Status IN ("
+            req += ",".join(["%s"] * len(self.db.visibleFileStatus))
+            req += ")"
+            args.extend(self.db.visibleFileStatus)
+        if fileNames:
+            req += " AND f.FileName IN ("
+            req += ",".join(["%s"] * len(fileNames))
+            req += ")"
+            args.extend(fileNames)
 
-        specificFiles = True if len(fileNames) else False
-        result = self.db.executeStoredProcedureWithCursor(
-            "ps_get_all_info_for_files_in_dir", (dirID, specificFiles, formatedFileNames, allStatus, fStatus)
-        )
+        result = self.db._query(req, args=args, conn=connection)
 
         if not result["OK"]:
             return result
@@ -187,9 +202,13 @@ class FileManagerPs(FileManagerBase):
                             ["FileID", "Size", "UID", "GID", "s.Status", "GUID", "CreationDate"]
         """
 
-        # Format the filenames and status to be used in a IN clause in the sotred procedure
-        formatedFileIds = intListToString(fileIDs)
-        result = self.db.executeStoredProcedureWithCursor("ps_get_all_info_for_file_ids", (formatedFileIds,))
+        req = """SELECT f.FileID, Size, UID, GID, s.Status, GUID, CreationDate
+                     FROM FC_Files f
+                     JOIN FC_Statuses s ON f.Status = s.StatusID
+                     WHERE f.FileID IN ("""
+        req += ",".join(["%s"] * len(fileIDs))
+        req += ")"
+        result = self.db._query(req, args=fileIDs, conn=connection)
         if not result["OK"]:
             return result
 
@@ -346,9 +365,10 @@ class FileManagerPs(FileManagerBase):
         if not isinstance(guids, (list, tuple)):
             guids = [guids]
 
-        #     formatedGuids = ','.join( [ '"%s"' % guid for guid in guids ] )
-        formatedGuids = stringListToString(guids)
-        result = self.db.executeStoredProcedureWithCursor("ps_get_file_ids_from_guids", (formatedGuids,))
+        req = "SELECT GUID, FileID FROM FC_Files WHERE GUID IN ("
+        req += ",".join(["%s"] * len(guids))
+        req += ")"
+        result = self.db._query(req, args=guids, conn=connection)
 
         if not result["OK"]:
             return result
@@ -366,8 +386,15 @@ class FileManagerPs(FileManagerBase):
         if not isinstance(guids, (list, tuple)):
             guids = [guids]
 
-        formatedGuids = stringListToString(guids)
-        result = self.db.executeStoredProcedureWithCursor("ps_get_lfns_from_guids", (formatedGuids,))
+        req = (
+            'SELECT GUID, CONCAT(d.Name, "/", f.FileName) '
+            "FROM FC_Files f "
+            "JOIN FC_DirectoryList d on f.DirID = d.DirID "
+            "WHERE GUID IN ("
+        )
+        req += ",".join(["%s"] * len(guids))
+        req += ")"
+        result = self.db._query(req, args=guids, conn=connection)
 
         if not result["OK"]:
             return result
@@ -578,16 +605,19 @@ class FileManagerPs(FileManagerBase):
 
         replicaDict = {}
 
-        for fileID, seID in replicaTuples:
-            result = self.db.executeStoredProcedure("ps_get_replica_id", (fileID, seID, "repIdOut"), outputIds=[2])
-            if not result["OK"]:
-                return result
+        if not replicaTuples:
+            return S_OK(replicaDict)
 
-            repID = result["Value"][0]
+        req = "SELECT RepID, FileID, SEID FROM FC_Replicas WHERE (FileID, SEID) IN ("
+        req += ",".join(["(%s,%s)"] * len(replicaTuples))
+        req += ")"
+        args = tuple(value for replicaTuple in replicaTuples for value in replicaTuple)
+        result = self.db._query(req, args=args, conn=connection)
+        if not result["OK"]:
+            return result
 
-            # if the replica exists, we add it to the dict
-            if repID:
-                replicaDict.setdefault(fileID, {}).setdefault(seID, repID)
+        for repID, fileID, seID in result["Value"]:
+            replicaDict.setdefault(fileID, {}).setdefault(seID, repID)
 
         return S_OK(replicaDict)
 
@@ -674,11 +704,12 @@ class FileManagerPs(FileManagerBase):
             return res
         seID = res["Value"]
 
-        result = self.db.executeStoredProcedureWithCursor("ps_set_replica_status", (fileID, seID, statusID))
+        req = "UPDATE FC_Replicas SET Status = %s WHERE FileID = %s AND SEID = %s"
+        result = self.db._update(req, args=(statusID, fileID, seID), conn=connection)
         if not result["OK"]:
             return result
 
-        affected = result["Value"][0][0]  # Affected is the number of raws updated
+        affected = result["Value"]
 
         if not affected:
             return S_ERROR("Replica does not exist")
@@ -734,36 +765,18 @@ class FileManagerPs(FileManagerBase):
         """
         connection = self._getConnection(connection)
 
-        # The PS associated with a given parameter
-        psNames = {
-            "UID": "ps_set_file_uid",
-            "GID": "ps_set_file_gid",
-            "Status": "ps_set_file_status",
-            "Mode": "ps_set_file_mode",
-        }
-
-        psName = psNames.get(paramName, None)
-
-        # If there is an associated procedure, we go for it
-        if psName:
-            result = self.db.executeStoredProcedureWithCursor(psName, (fileID, paramValue))
-            if not result["OK"]:
-                return result
-
-            _affected = result["Value"][0][0]
-            # If affected = 0, the file does not exist, but who cares...
-
-        # In case this is a 'new' parameter, we have a failback solution, but we
-        # should add a specific ps for it
-        else:
-            if not self.db._checkIdentifier(paramName)["OK"]:
-                return S_ERROR(f"ParamName is invalid: {paramName}")
-            req = "UPDATE FC_Files SET "
-            req += f"{paramName}=%s, ModificationDate=UTC_TIMESTAMP() WHERE FileID IN ("
-            req += ",".join(["%s"] * len(fileID))
-            req += ")"
-            args = [paramValue] + fileID
-            return self.db._update(req, args=args, conn=connection)
+        if not isinstance(fileID, (list, tuple)):
+            fileID = [fileID]
+        if not self.db._checkIdentifier(paramName)["OK"]:
+            return S_ERROR(f"ParamName is invalid: {paramName}")
+        req = "UPDATE FC_Files SET "
+        req += f"{paramName}=%s, ModificationDate=UTC_TIMESTAMP() WHERE FileID IN ("
+        req += ",".join(["%s"] * len(fileID))
+        req += ")"
+        args = [paramValue] + fileID
+        result = self.db._update(req, args=args, conn=connection)
+        if not result["OK"]:
+            return result
 
         return S_OK()
 
@@ -796,17 +809,23 @@ class FileManagerPs(FileManagerBase):
         # non existing replicas
         replicas = {fileID: {} for fileID in fileIDs}
 
-        # Format the status to be used in a IN clause in the stored procedure
-        fStatus = stringListToString(self.db.visibleReplicaStatus)
-
         fieldNames = ["FileID", "SE", "Status", "RepType", "CreationDate", "ModificationDate", "PFN"]
 
         for chunks in breakListIntoChunks(fileIDs, 1000):
-            # Format the FileIDs to be used in a IN clause in the stored procedure
-            formatedFileIds = intListToString(chunks)
-            result = self.db.executeStoredProcedureWithCursor(
-                "ps_get_all_info_of_replicas_bulk", (formatedFileIds, allStatus, fStatus)
-            )
+            req = """SELECT FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
+                    FROM FC_Replicas r
+                    JOIN FC_StorageElements se on r.SEID = se.SEID
+                    JOIN FC_Statuses st on r.Status = st.StatusID
+                    WHERE FileID IN ("""
+            req += ",".join(["%s"] * len(chunks))
+            req += ")"
+            args = list(chunks)
+            if not allStatus:
+                req += " AND st.Status IN ("
+                req += ",".join(["%s"] * len(self.db.visibleReplicaStatus))
+                req += ")"
+                args.extend(self.db.visibleReplicaStatus)
+            result = self.db._query(req, args=args, conn=connection)
 
             if not result["OK"]:
                 return result
@@ -829,11 +848,12 @@ class FileManagerPs(FileManagerBase):
         :returns: S_OK(value) or S_ERROR
         """
 
-        result = self.db.executeStoredProcedure("ps_count_files_in_dir", (dirId, "ret1"), outputIds=[1])
+        req = "SELECT count(FileID) FROM FC_Files WHERE DirID = %s"
+        result = self.db._query(req, args=(dirId,))
         if not result["OK"]:
             return result
 
-        res = S_OK(result["Value"][0])
+        res = S_OK(result["Value"][0][0] if result["Value"] else 0)
         return res
 
     ##########################################################################
@@ -880,16 +900,24 @@ class FileManagerPs(FileManagerBase):
                                values from the configuration
         """
 
-        # We format the visible file/replica satus so we can give it as argument to the ps
-        # It is used in an IN clause, so it looks like --'"AprioriGood","Trash"'--
-        #     fStatus = ','.join( [ '"%s"' % status for status in self.db.visibleFileStatus ] )
-        #     rStatus = ','.join( [ '"%s"' % status for status in self.db.visibleReplicaStatus ] )
-        fStatus = stringListToString(self.db.visibleFileStatus)
-        rStatus = stringListToString(self.db.visibleReplicaStatus)
+        req = """SELECT f.FileName, f.FileID, s.SEName, r.PFN
+                FROM FC_Replicas r
+                JOIN FC_Files f on f.FileID = r.FileID
+                JOIN FC_StorageElements s on s.SEID = r.SEID
+                JOIN FC_Statuses fst on f.Status = fst.StatusID
+                JOIN FC_Statuses rst on r.Status = rst.StatusID
+                WHERE DirID = %s"""
+        args = [dirID]
+        if not allStatus:
+            req += " AND fst.Status IN ("
+            req += ",".join(["%s"] * len(self.db.visibleFileStatus))
+            req += ") AND rst.Status IN ("
+            req += ",".join(["%s"] * len(self.db.visibleReplicaStatus))
+            req += ")"
+            args.extend(self.db.visibleFileStatus)
+            args.extend(self.db.visibleReplicaStatus)
 
-        result = self.db.executeStoredProcedureWithCursor(
-            "ps_get_replicas_for_files_in_dir", (dirID, allStatus, fStatus, rStatus)
-        )
+        result = self.db._query(req, args=args, conn=connection)
         if not result["OK"]:
             return result
 
@@ -906,9 +934,13 @@ class FileManagerPs(FileManagerBase):
 
         successful = {}
         for chunks in breakListIntoChunks(fileIDs, 1000):
-            # Format the filenames and status to be used in a IN clause in the sotred procedure
-            formatedFileIds = intListToString(chunks)
-            result = self.db.executeStoredProcedureWithCursor("ps_get_full_lfn_for_file_ids", (formatedFileIds,))
+            req = """SELECT f.FileID, CONCAT(d.Name, "/", f.FileName)
+                     FROM FC_Files f
+                     JOIN FC_DirectoryList d ON f.DirID = d.DirID
+                     WHERE f.FileID IN ("""
+            req += ",".join(["%s"] * len(chunks))
+            req += ")"
+            result = self.db._query(req, args=chunks)
             if not result["OK"]:
                 return result
 
@@ -938,6 +970,13 @@ class FileManagerPs(FileManagerBase):
                 return res
             seIDs.append(res["Value"])
 
-        formatedSEIds = intListToString(seIDs)
+        req = """SELECT SEName, CONCAT(d.Name, "/", f.FileName), f.Checksum, f.Size
+        FROM FC_Files f
+        JOIN FC_Replicas r on f.FileID = r.FileID
+        JOIN FC_DirectoryList d on d.DirID = f.DirID
+        JOIN FC_StorageElements s on r.SEID = s.SEID
+        WHERE s.SEID IN ("""
+        req += ",".join(["%s"] * len(seIDs))
+        req += ")"
 
-        return self.db.executeStoredProcedureWithCursor("ps_get_se_dump", (formatedSEIds,))
+        return self.db._query(req, args=seIDs)
