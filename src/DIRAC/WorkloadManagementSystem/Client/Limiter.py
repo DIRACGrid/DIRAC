@@ -132,9 +132,13 @@ class Limiter:
                     negCond[attr].append(value)
         return negCond
 
-    def __extractCSData(self, section):
+    def __extractCSData(self, section, cast=int):
         """Extract limiting information from the CS in the form:
         { 'JobType' : { 'Merge' : 20, 'MCGen' : 1000 } }
+
+        :param cast: callable used to convert each value. ``int`` for job-count
+            limits (RunningLimit) and ``float`` for delays in seconds (MatchingDelay),
+            which may be sub-second.
         """
         stuffDict = self.csDictCache.get(section)
         if stuffDict:
@@ -153,7 +157,7 @@ class Limiter:
                 return result
             attLimits = result["Value"]
             try:
-                attLimits = {k: int(attLimits[k]) for k in attLimits}
+                attLimits = {k: cast(attLimits[k]) for k in attLimits}
             except Exception as excp:
                 errMsg = f"{section}/{attName} has to contain numbers: {str(excp)}"
                 self.log.error(errMsg)
@@ -200,7 +204,7 @@ class Limiter:
     def updateDelayCounters(self, siteName, jid):
         # Get the info from the CS
         siteSection = f"{self.__matchingDelaySection}/{siteName}"
-        result = self.__extractCSData(siteSection)
+        result = self.__extractCSData(siteSection, cast=float)
         if not result["OK"]:
             return result
         delayDict = result["Value"]

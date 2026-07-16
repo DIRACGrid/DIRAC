@@ -42,6 +42,8 @@ running`_. But instead of defining the maximum amount of jobs that can run at a 
 For instance *JobScheduling/MatchingDelay/DIRAC.Somewhere.co/JobType/MonteCarlo=10* won't allow jobs with *JobType=MonteCarlo* to start at
 site *DIRAC.Somewhere.co* with less than 10 seconds between them.
 
+The value may be fractional (e.g. ``0.5``) to allow more than one job to start per second.
+
 Example
 ========
 
