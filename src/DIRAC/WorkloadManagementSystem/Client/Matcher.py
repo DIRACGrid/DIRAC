@@ -97,7 +97,7 @@ class Matcher:
                 return {}
 
             jobID = result["jobId"]
-            resAtt = self.jobDB.getJobAttributes(jobID, ["Status"])
+            resAtt = self.jobDB.getJobAttributes(jobID, ["Status", "JobType"])
             if not resAtt["OK"]:
                 raise RuntimeError("Could not retrieve job attributes")
             if not resAtt["Value"]:
@@ -108,6 +108,12 @@ class Matcher:
                 if not result["OK"]:
                     raise RuntimeError(result["Message"])
                 raise RuntimeError(f"Job {str(jobID)} is not in Waiting state")
+
+            # Arm the matching-delay counter right after the match is confirmed, to keep the window
+            # in which concurrent requests can slip past the delay as small as possible. Reuse the
+            # attributes just fetched (JobType) so this does not add a DB query.
+            if self.opsHelper.getValue("JobScheduling/CheckMatchingDelay", True):
+                self.limiter.updateDelayCounters(resourceDict["Site"], jobID, knownAtts=resAtt["Value"])
 
             self._reportStatus(resourceDict, jobID)
 
@@ -132,9 +138,6 @@ class Matcher:
                 raise RuntimeError("Could not retrieve job attributes")
             if not resAtt["Value"]:
                 raise RuntimeError("No attributes returned for job")
-
-            if self.opsHelper.getValue("JobScheduling/CheckMatchingDelay", True):
-                self.limiter.updateDelayCounters(resourceDict["Site"], jobID)
 
             pilotInfoReportedFlag = resourceDict.get("PilotInfoReportedFlag", False)
             if not pilotInfoReportedFlag:
