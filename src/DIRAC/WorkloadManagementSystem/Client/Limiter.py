@@ -201,7 +201,7 @@ class Limiter:
         # negCond is something like : {'JobType': ['Merge']}
         return S_OK(negCond)
 
-    def updateDelayCounters(self, siteName, jid):
+    def updateDelayCounters(self, siteName, jid, knownAtts=None):
         # Get the info from the CS
         siteSection = f"{self.__matchingDelaySection}/{siteName}"
         result = self.__extractCSData(siteSection, cast=float)
@@ -217,11 +217,17 @@ class Limiter:
                 self.log.error("Attribute does not exist in the JobDB. Please fix it!", f"({attName})")
             else:
                 attNames.append(attName)
-        result = self.jobDB.getJobAttributes(jid, attNames)
-        if not result["OK"]:
-            self.log.error("Error while retrieving attributes", f"coming from {siteSection}: {result['Message']}")
-            return result
-        atts = result["Value"]
+        # Reuse any attributes the caller already fetched; only query the DB for the missing ones.
+        # This lets the caller arm the counter right after matching without an extra round trip.
+        knownAtts = knownAtts or {}
+        atts = {attName: knownAtts[attName] for attName in attNames if attName in knownAtts}
+        missing = [attName for attName in attNames if attName not in atts]
+        if missing:
+            result = self.jobDB.getJobAttributes(jid, missing)
+            if not result["OK"]:
+                self.log.error("Error while retrieving attributes", f"coming from {siteSection}: {result['Message']}")
+                return result
+            atts.update(result["Value"])
         # Create the DictCache if not there
         if siteName not in self.delayMem:
             self.delayMem[siteName] = DictCache()
