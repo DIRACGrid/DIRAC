@@ -4,6 +4,7 @@ import os
 import shutil
 import pytest
 from unittest.mock import MagicMock
+from pathlib import Path
 
 from DIRAC import gLogger
 
@@ -16,6 +17,14 @@ from DIRAC.WorkloadManagementSystem.Client import JobStatus, JobMinorStatus
 
 getSystemSectionMock = MagicMock()
 getSystemSectionMock.return_value = "aValue"
+uploadSandboxMock = MagicMock()
+uploadSandboxMock.return_value = {"OK": True}
+
+
+def uploadFileMockFunc(**kwargs):
+    destinationSEList = kwargs["destinationSEList"]
+    return {"OK": True, "Value": {"uploadedSE": destinationSEList[0]}}
+
 
 gLogger.setLevel("DEBUG")
 
@@ -46,6 +55,124 @@ def test_InputData(mocker):
     jw.fc = fc_mock
     res = jw.resolveInputData()
     assert res["OK"]
+
+
+@pytest.fixture
+def jobIDPath():
+    """Return the path to the job ID file."""
+    # Create a temporary directory named ./123123/
+    jobid = "123123"
+    p = Path(jobid)
+    if p.exists():
+        shutil.rmtree(jobid)
+    p.mkdir()
+
+    # Output sandbox files
+    (p / "std.out").touch()
+    (p / "std.err").touch()
+    # Output data files
+    (p / "00232454_00000244.xml").touch()
+    (p / "result_dir").mkdir()
+    (p / "result_dir" / "output.xml").touch()
+    (p / "result_dir" / "output.txt").touch()
+    (p / "00232454_00000244_1.sim").touch()
+    (p / "1720442808testFileUpload.txt").touch()
+    (p / "testFileUploadFullLFN.txt").touch()
+
+    yield int(jobid)
+
+    # Remove the temporary directory
+    shutil.rmtree(jobid)
+
+
+@pytest.mark.parametrize(
+    "outputData, outputPath, expectedResult",
+    [
+        (
+            "00232454_00000244.xml",
+            None,
+            "/dirac/user/u/unknown/123/123123/00232454_00000244.xml",
+        ),
+        (
+            "00232454_00000244*",
+            None,
+            "/dirac/user/u/unknown/123/123123/00232454_00000244.xml, "
+            "/dirac/user/u/unknown/123/123123/00232454_00000244_1.sim",
+        ),
+        (
+            "*.txt",
+            None,
+            "/dirac/user/u/unknown/123/123123/1720442808testFileUpload.txt, "
+            "/dirac/user/u/unknown/123/123123/testFileUploadFullLFN.txt",
+        ),
+        (
+            "00232454_00000244.xml",
+            "/my_output_dir/00232454",
+            "/dirac/user/u/unknown/my_output_dir/00232454/00232454_00000244.xml",
+        ),
+        (
+            "00232454_00000244.xml",
+            "LFN:/dirac/prod/00232454",
+            "/dirac/prod/00232454/00232454_00000244.xml",
+        ),
+        (
+            "LFN:/dirac/prod/00232454/00232454_00000244.xml",
+            None,
+            "/dirac/prod/00232454/00232454_00000244.xml",
+        ),
+        (
+            "LFN:/dirac/prod/00232454/00232454_00000244.xml",
+            "/my_output_dir/00232454",
+            "/dirac/prod/00232454/00232454_00000244.xml",
+        ),
+        (
+            "result_dir",
+            None,
+            "/dirac/user/u/unknown/123/123123/output.xml, /dirac/user/u/unknown/123/123123/output.txt",
+        ),
+        (
+            "result_dir/*.xml",
+            None,
+            "/dirac/user/u/unknown/123/123123/output.xml",
+        ),
+        (
+            "result_dir/*.xml",
+            "/my_output_dir/00232454",
+            "/dirac/user/u/unknown/my_output_dir/00232454/output.xml",
+        ),
+    ],
+)
+def test_OutputData(mocker, jobIDPath, outputData, outputPath, expectedResult):
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getSystemSection", side_effect=getSystemSectionMock
+    )
+    mocker.patch(
+        "DIRAC.DataManagementSystem.Client.FailoverTransfer.FailoverTransfer.transferAndRegisterFile",
+        side_effect=uploadFileMockFunc,
+    )
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient.SandboxStoreClient.uploadFilesAsSandboxForJob",
+        side_effect=uploadSandboxMock,
+    )
+
+    jw = JobWrapper(jobIDPath)
+    os.chdir(str(jw.jobID))
+    jw.jobArgs = {
+        "OutputData": outputData,
+        "OutputPath": outputPath,
+        "Owner": "duser",
+        "OutputSE": "DIRAC-disk",
+        "OutputSandbox": ["std.out", "std.err"],
+    }
+
+    jw.failedFlag = False
+    jw.dm = dm_mock
+    jw.fc = fc_mock
+
+    result = jw.processJobOutputs()
+    os.chdir(jw.root)
+    assert result["OK"]
+    assert jw.jobReport.jobParameters[0][1] == expectedResult
 
 
 def test_performChecks():
