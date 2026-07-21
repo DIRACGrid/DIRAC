@@ -96,14 +96,22 @@ def jobIDPath():
         (
             "00232454_00000244*",
             None,
-            "/dirac/user/u/unknown/123/123123/00232454_00000244.xml, "
-            "/dirac/user/u/unknown/123/123123/00232454_00000244_1.sim",
+            [
+                "/dirac/user/u/unknown/123/123123/00232454_00000244.xml, "
+                "/dirac/user/u/unknown/123/123123/00232454_00000244_1.sim",
+                "/dirac/user/u/unknown/123/123123/00232454_00000244_1.sim, "
+                "/dirac/user/u/unknown/123/123123/00232454_00000244.xml",
+            ],
         ),
         (
             "*.txt",
             None,
-            "/dirac/user/u/unknown/123/123123/1720442808testFileUpload.txt, "
-            "/dirac/user/u/unknown/123/123123/testFileUploadFullLFN.txt",
+            [
+                "/dirac/user/u/unknown/123/123123/1720442808testFileUpload.txt, "
+                "/dirac/user/u/unknown/123/123123/testFileUploadFullLFN.txt",
+                "/dirac/user/u/unknown/123/123123/testFileUploadFullLFN.txt, "
+                "/dirac/user/u/unknown/123/123123/1720442808testFileUpload.txt",
+            ],
         ),
         (
             "00232454_00000244.xml",
@@ -128,7 +136,10 @@ def jobIDPath():
         (
             "result_dir",
             None,
-            "/dirac/user/u/unknown/123/123123/output.xml, /dirac/user/u/unknown/123/123123/output.txt",
+            [
+                "/dirac/user/u/unknown/123/123123/output.xml, /dirac/user/u/unknown/123/123123/output.txt",
+                "/dirac/user/u/unknown/123/123123/output.txt, /dirac/user/u/unknown/123/123123/output.xml",
+            ],
         ),
         (
             "result_dir/*.xml",
@@ -172,7 +183,7 @@ def test_OutputData(mocker, jobIDPath, outputData, outputPath, expectedResult):
     result = jw.processJobOutputs()
     os.chdir(jw.root)
     assert result["OK"]
-    assert jw.jobReport.jobParameters[0][1] == expectedResult
+    assert jw.jobReport.jobParameters[0][1] in expectedResult
 
 
 def test_performChecks():
