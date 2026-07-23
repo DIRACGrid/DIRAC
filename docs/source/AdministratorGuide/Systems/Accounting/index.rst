@@ -74,6 +74,14 @@ For instance::
 With the previous configuration all accounting data will be stored and retrieved from the usual database except for the _WMSHistory_ type that will be stored and retrieved from the _Acc2_ database.
 
 
+Dedicated DataStore accounting
+==============================
+
+It is possible to run multiple DataStore, each bucketing only certain type of accounting. It can be useful in case of backlog for certain types of accounting. It is however not recommended to run like that.
+
+For that you just have to define ``AccountingTypes=DataOperation,DataStore,etc`` for all the DataStore services. This has the drawback of needing you to make sure that each type of accounting is defined exactly once (i.e. no multiple agents operate on the same type, and every type appears in one agent).
+
+
 .. _datastorehelpers:
 
 DataStore Helpers

@@ -28,7 +28,10 @@ class DataStoreHandler(RequestHandler):
     @classmethod
     def initializeHandler(cls, svcInfoDict):
         multiPath = PathFinder.getDatabaseSection("Accounting/MultiDB")
-        cls.__acDB = MultiAccountingDB(multiPath)
+        # we can focus on only some of the accoutning type
+        cls.accounting_types = getServiceOption(svcInfoDict, "AccountingTypes", [])
+
+        cls.__acDB = MultiAccountingDB(multiPath, accounting_types=cls.accounting_types)
         # we can run multiple services in read only mode. In that case we do not bucket
         cls.runBucketing = getServiceOption(svcInfoDict, "RunBucketing", True)
         if cls.runBucketing:

@@ -16,11 +16,12 @@ gSynchro = ThreadSafe.Synchronizer()
 
 
 class AccountingDB(DB):
-    def __init__(self, name="Accounting/AccountingDB", readOnly=False, parentLogger=None):
+    def __init__(self, name="Accounting/AccountingDB", readOnly=False, parentLogger=None, accounting_types=None):
         DB.__init__(self, "AccountingDB", name, parentLogger=parentLogger)
         self.maxBucketTime = 604800  # 1 w
         self.autoCompact = False
         self.__readOnly = readOnly
+        self.__accounting_types = accounting_types if accounting_types else []
         self.__doingCompaction = False
         self.__doingPendingLockTime = 0
         self.__deadLockRetries = 2
@@ -129,6 +130,9 @@ class AccountingDB(DB):
             raise Exception(retVal["Message"])
         for typesEntry in retVal["Value"]:
             typeName = typesEntry[0]
+            if self.__accounting_types and typeName not in self.__accounting_types:
+                self.log.info("Ignoring accounting type as not in the list", typeName)
+                continue
             keyFields = List.fromChar(typesEntry[1], ",")
             valueFields = List.fromChar(typesEntry[2], ",")
             bucketsLength = DEncode.decode(typesEntry[3].encode())[0]
@@ -279,6 +283,9 @@ class AccountingDB(DB):
         """
         Register a new type
         """
+        if self.__accounting_types and name not in self.__accounting_types:
+            self.log.info("Not registering accounting type as not in the list", name)
+            return S_OK(False)
 
         result = self.__loadTablesCreated()
         if not result["OK"]:

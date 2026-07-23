@@ -6,10 +6,11 @@ from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
 
 
 class MultiAccountingDB:
-    def __init__(self, csPath, readOnly=False):
+    def __init__(self, csPath, readOnly=False, accounting_types=None):
         self.__csPath = csPath
         self.__readOnly = readOnly
         self.__dbByType = {}
+        self.__accountingTypes = accounting_types if accounting_types else []
         self.__defaultDB = "AccountingDB/AccountingDB"
         self.__log = gLogger.getSubLogger(self.__class__.__name__)
         self.__generateDBs()
@@ -17,7 +18,9 @@ class MultiAccountingDB:
 
     def __generateDBs(self):
         self.__log.notice("Creating default AccountingDB...")
-        self.__allDBs = {self.__defaultDB: AccountingDB(readOnly=self.__readOnly)}
+        self.__allDBs = {
+            self.__defaultDB: AccountingDB(readOnly=self.__readOnly, accounting_types=self.__accountingTypes)
+        }
         result = gConfig.getOptionsDict(self.__csPath)
         if not result["OK"]:
             gLogger.verbose("No extra databases defined", f"in {self.__csPath}")
