@@ -205,7 +205,7 @@ class AccountingDB(DB):
                 % self.getWaitingRecordsLifeTime()
             )
             req = "SELECT "
-            req += ",".join(sqlFields)
+            req += ", ".join([f"`{f}`" for f in sqlFields])
             req += f" FROM {sqlTableName} "
             req += "WHERE taken = 0 or TIMESTAMPDIFF( SECOND, takenSince, UTC_TIMESTAMP() ) > %s "
             args = [self.getWaitingRecordsLifeTime()]
@@ -713,7 +713,7 @@ class AccountingDB(DB):
         sqlFields.extend(self.dbCatalog[typeName]["keys"])
         sqlFields.extend(self.dbCatalog[typeName]["values"])
         sqlUpData = ["entriesInBucket=entriesInBucket+VALUES(entriesInBucket)"]
-        sqlUpData.extend([f"{x}={x}+VALUES({x})" for x in self.dbCatalog[typeName]["values"]])
+        sqlUpData.extend([f"`{x}`=`{x}`+VALUES(`{x}`)" for x in self.dbCatalog[typeName]["values"]])
         valueGroups = []
         sqlValues = []
         for bucketInfo in buckets:
@@ -734,7 +734,7 @@ class AccountingDB(DB):
         req = "INSERT INTO "
         req += self._getTableName("bucket", typeName)
         req += " ("
-        req += ",".join(sqlFields)
+        req += ", ".join([f"`{f}`" for f in sqlFields])
         req += ") VALUES "
         req += ",".join(valueGroups)
         req += " ON DUPLICATE KEY UPDATE "
