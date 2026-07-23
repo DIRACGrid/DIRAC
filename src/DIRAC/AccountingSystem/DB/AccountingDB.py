@@ -217,6 +217,7 @@ class AccountingDB(DB):
                     "[PENDING] Error when trying to get pending records",
                     f"for {typeName} : {result['Message']}",
                 )
+                self.__doingPendingLockTime = 0
                 return result
             self.log.info(f"[PENDING] Got {len(result['Value'])} pending records for type {typeName}")
             dbData = result["Value"]
