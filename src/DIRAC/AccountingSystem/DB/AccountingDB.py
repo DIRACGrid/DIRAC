@@ -5,6 +5,9 @@ import random
 import threading
 import time
 
+from cachetools import cachedmethod, LRUCache, TTLCache, cached
+
+
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DEncode, List, ThreadSafe, TimeUtilities
@@ -14,10 +17,20 @@ from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 gSynchro = ThreadSafe.Synchronizer()
 
+ADDKEYVALUE_CACHE_SIZE = 2048
+GETTABLENAME_CACHE_SIZE = 128
+
 
 class AccountingDB(DB):
     def __init__(self, name="Accounting/AccountingDB", readOnly=False, parentLogger=None, accounting_types=None):
         DB.__init__(self, "AccountingDB", name, parentLogger=parentLogger)
+
+        # Cached method
+        self._addkeyvalue_cache = LRUCache(maxsize=ADDKEYVALUE_CACHE_SIZE)
+        self._addkeyvalue_lock = threading.Lock()
+        self._gettablename_cache = LRUCache(maxsize=GETTABLENAME_CACHE_SIZE)
+        self._gettablename_lock = threading.Lock()
+
         self.maxBucketTime = 604800  # 1 w
         self.autoCompact = False
         self.__readOnly = readOnly
@@ -163,6 +176,8 @@ class AccountingDB(DB):
         """
         Load all records pending to insertion and generate threaded jobs
         """
+        self.log.info("addkeyvalue cache", f"{self.__addKeyValue.cache.currsize}/{self.__addKeyValue.cache.maxsize}")
+        self.log.info("gettablename cache", f"{self._getTableName.cache.currsize}/{self._getTableName.cache.maxsize}")
         gSynchro.lock()
         try:
             now = time.time()
@@ -447,6 +462,7 @@ class AccountingDB(DB):
             return S_OK(retVal["Value"][0][0])
         return S_ERROR(f"Key id {keyName} for value {keyValue} does not exist although it should")
 
+    @cachedmethod(lambda self: self._addkeyvalue_cache, lock=lambda self: self._addkeyvalue_lock)
     def __addKeyValue(self, typeName, keyName, keyValue):
         """
         Adds a key value to a key table if not existant
@@ -573,10 +589,12 @@ class AccountingDB(DB):
         """
         Do the real insert and delete from the in buffer table
         """
+        if self.__readOnly:
+            return S_ERROR("ReadOnly mode enabled. No modification allowed")
         self.log.verbose("Received bundle to process", f"of {len(recordTuples)} elements")
         for record in recordTuples:
             iD, typeName, startTime, endTime, valuesList, insertionEpoch = record
-            result = self.insertRecordDirectly(typeName, startTime, endTime, valuesList)
+            result = self._insertRecordDirectly(typeName, startTime, endTime, valuesList)
             if not result["OK"]:
                 req = "UPDATE "
                 req += self._getTableName("in", typeName)
@@ -591,12 +609,10 @@ class AccountingDB(DB):
             if not result["OK"]:
                 self.log.error("Can't delete row from the IN table", result["Message"])
 
-    def insertRecordDirectly(self, typeName, startTime, endTime, valuesList):
+    def _insertRecordDirectly(self, typeName, startTime, endTime, valuesList):
         """
         Add an entry to the type contents
         """
-        if self.__readOnly:
-            return S_ERROR("ReadOnly mode enabled. No modification allowed")
         self.log.info(
             "Adding record",
             "for type %s\n [%s -> %s]"
@@ -1299,6 +1315,7 @@ class AccountingDB(DB):
     def __rollbackTransaction(self, connObj):
         return self._query("ROLLBACK", conn=connObj)
 
+    @cachedmethod(lambda self: self._gettablename_cache, lock=lambda self: self._gettablename_lock)
     def _getTableName(self, tableType, typeName, keyName=None):
         """
         Generate table name
