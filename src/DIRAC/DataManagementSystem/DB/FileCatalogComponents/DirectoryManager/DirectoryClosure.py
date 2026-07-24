@@ -283,8 +283,11 @@ class DirectoryClosure(DirectoryTreeBase):
         if not isinstance(dirIdList, list):
             dirs = [dirIdList]
 
-        dIds = intListToString(dirs)
-        result = self.db.executeStoredProcedureWithCursor("ps_get_multiple_sub_directories", (dIds,))
+        # TODO: Deprecated stored procedure ps_get_multiple_sub_directories, replace with direct query
+        req = "SELECT DISTINCT ChildID FROM FC_DirectoryClosure WHERE ParentID IN ("
+        req += ",".join(["%s"] * len(dirs))
+        req += ")"
+        result = self.db._query(req, args=dirs)
 
         if not result["OK"]:
             return result
