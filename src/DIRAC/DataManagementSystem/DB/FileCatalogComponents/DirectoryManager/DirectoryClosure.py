@@ -205,7 +205,9 @@ class DirectoryClosure(DirectoryTreeBase):
 
         """
 
-        result = self.db.executeStoredProcedureWithCursor("ps_get_parentIds_from_id", (dirID,))
+        # TODO: Deprecated stored procedure ps_get_parentIds_from_id, replace with direct query
+        req = "SELECT ParentID FROM FC_DirectoryClosure WHERE ChildID = %s ORDER BY Depth DESC"
+        result = self.db._query(req, args=(dirID,))
 
         if not result["OK"]:
             return result
