@@ -11,7 +11,6 @@ import errno
 import os
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.List import intListToString, stringListToString
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.DirectoryTreeBase import DirectoryTreeBase
 
 
