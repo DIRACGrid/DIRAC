@@ -24,6 +24,7 @@ from sqlalchemy import (
     DateTime,
     Enum,
     ForeignKey,
+    Index,
     Integer,
     MetaData,
     String,
@@ -155,6 +156,7 @@ requestTable = Table(
     Column("RequestID", Integer, primary_key=True),
     Column("SourceComponent", String(255)),
     Column("NotBefore", DateTime),
+    Index("idx_request_status_notbefore_lastupdate", "Status", "NotBefore", "LastUpdate"),
     mysql_engine="InnoDB",
 )
 
