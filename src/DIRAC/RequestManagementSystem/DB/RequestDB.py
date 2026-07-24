@@ -14,6 +14,7 @@ db holding Request, Operation and File
 
 import errno
 import random
+import uuid
 from urllib.parse import quote_plus
 
 from sqlalchemy import (
@@ -30,6 +31,7 @@ from sqlalchemy import (
     create_engine,
     distinct,
     func,
+    insert,
     inspect,
 )
 from sqlalchemy.exc import SQLAlchemyError
@@ -622,6 +624,114 @@ class RequestDB:
             session.close()
 
         return S_OK()
+
+    def aggregateAccountingDataStoreRequests(self, batch_size=100, max_requests=10000):
+        """Aggregate Accounting.DataStore requests with ForwardDISET operations into batches.
+
+        Groups requests by Owner/OwnerGroup and processes up to batch_size operations per new request.
+        ForwardDISET operations are copied to the new aggregated request. Original requests are set to
+        "Assigned" then "Canceled", with guarded state transitions.
+
+        :param int batch_size: Number of operations to batch together (default: 100)
+        :param int max_requests: Maximum number of source requests to process per execution (default: 10000)
+        :return: S_OK({"created_requests": [new_request_ids], "canceled_requests": [old_request_ids]}) or S_ERROR
+        """
+        created_requests = []
+        canceled_requests = []
+        session = self.DBSession()
+        try:
+            now = DiracTime.utcnow()
+
+            rows = (
+                session.query(
+                    requestTable.c.RequestID.label("old_request_id"),
+                    requestTable.c.Owner,
+                    requestTable.c.OwnerGroup,
+                    operationTable.c.OperationID,
+                    operationTable.c.TargetSE,
+                    operationTable.c.CreationTime,
+                    operationTable.c.SourceSE,
+                    operationTable.c.Arguments,
+                    operationTable.c.Error,
+                    operationTable.c.Type,
+                    operationTable.c.Status,
+                    operationTable.c.LastUpdate,
+                    operationTable.c.SubmitTime,
+                    operationTable.c.Catalog,
+                )
+                .join(operationTable, requestTable.c.RequestID == operationTable.c.RequestID)
+                .filter(requestTable.c.RequestName.like("Accounting.DataStore%"))
+                .filter(requestTable.c.Status == "Waiting")
+                .order_by(requestTable.c.Owner, requestTable.c.OwnerGroup, requestTable.c.RequestID)
+                .with_for_update(skip_locked=True)
+                .limit(max_requests)
+                .all()
+            )
+            if not rows:
+                return S_OK({"created_requests": [], "canceled_requests": []})
+
+            grouped_rows = {}
+            for row in rows:
+                grouped_rows.setdefault((row.Owner, row.OwnerGroup), []).append(row)
+            for (owner, owner_group), group_rows in grouped_rows.items():
+                for i in range(0, len(group_rows), batch_size):
+                    batch = group_rows[i : i + batch_size]
+                    old_request_ids = sorted({row.old_request_id for row in batch})
+
+                    new_request_id = session.execute(
+                        insert(requestTable).values(
+                            RequestName=f"Aggregated_Accounting.DataStore_{uuid.uuid4()}",
+                            Status="Waiting",
+                            Owner=owner,
+                            OwnerGroup=owner_group,
+                            CreationTime=now,
+                            LastUpdate=now,
+                            SubmitTime=now,
+                            NotBefore=now,
+                            SourceComponent="Aggregation",
+                        )
+                    ).inserted_primary_key[0]
+
+                    operation_rows = [
+                        {
+                            "TargetSE": row.TargetSE,
+                            "CreationTime": row.CreationTime,
+                            "SourceSE": row.SourceSE,
+                            "Arguments": row.Arguments,
+                            "Error": row.Error,
+                            "Type": row.Type,
+                            "Order": order,
+                            "Status": row.Status,
+                            "LastUpdate": row.LastUpdate,
+                            "SubmitTime": row.SubmitTime,
+                            "Catalog": row.Catalog,
+                            "RequestID": new_request_id,
+                        }
+                        for order, row in enumerate(batch)
+                    ]
+                    session.execute(insert(operationTable), operation_rows)
+
+                    canceled_result = session.execute(
+                        update(requestTable)
+                        .where(requestTable.c.RequestID.in_(old_request_ids))
+                        .values(Status="Canceled", LastUpdate=now)
+                    )
+
+                    if canceled_result.rowcount != len(old_request_ids):
+                        raise RuntimeError("State transition mismatch while canceling requests")
+
+                    created_requests.append(new_request_id)
+                    canceled_requests.extend(old_request_ids)
+
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            self.log.exception("aggregateAccountingDataStoreRequests: unexpected exception", lException=e)
+            return S_ERROR(f"aggregateAccountingDataStoreRequests: unexpected exception {e}")
+        finally:
+            session.close()
+
+        return S_OK({"created_requests": created_requests, "canceled_requests": canceled_requests})
 
     def getDBSummary(self):
         """get db summary"""

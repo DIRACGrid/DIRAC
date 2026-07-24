@@ -1,5 +1,6 @@
-""" This runs the RMS scenari as unit test for the DB. For that,
-it replaces the normal MySQL connection with an inmemory SQLite db
+"""This runs the RMS scenari as unit test for the DB.
+
+For that, it replaces the normal MySQL connection with an in-memory SQLite db.
 """
 
 # pylint: disable=invalid-name,wrong-import-position
@@ -76,3 +77,51 @@ def test_web_queries_reject_unknown_attributes(reqDB):
     invalid_distinct = reqDB.getDistinctValues("Request", "__class__")
     assert not invalid_distinct["OK"], invalid_distinct
     assert invalid_distinct["Message"] == "Unknown Request attribute '__class__'"
+
+
+def _create_accounting_request(reqDB, suffix):
+    request = Request({"RequestName": f"Accounting.DataStore.{suffix}", "Owner": "owner", "OwnerGroup": "group"})
+    operation = Operation({"Type": "ForwardDISET", "Arguments": f"payload-{suffix}", "TargetSE": "CERN-USER"})
+    request += operation
+
+    result = reqDB.putRequest(request)
+    assert result["OK"], result
+    return result["Value"]
+
+
+def test_aggregate_accounting_requests_copy_forwarddiset_operations(reqDB):
+    original_request_id = _create_accounting_request(reqDB, "direct-db")
+
+    result = reqDB.aggregateAccountingDataStoreRequests(batch_size=100, max_requests=10000)
+    assert result["OK"], result
+    assert len(result["Value"]["created_requests"]) == 1, result
+    assert result["Value"]["canceled_requests"] == [original_request_id], result
+
+    aggregated_request_id = result["Value"]["created_requests"][0]
+
+    session = reqDB.DBSession()
+    try:
+        requests = session.query(Request).order_by(Request.RequestID).all()  # pylint: disable=no-member
+        assert len(requests) == 2
+
+        original_request = next(req for req in requests if req.RequestID == original_request_id)
+        aggregated_request = next(req for req in requests if req.RequestID == aggregated_request_id)
+
+        assert original_request._Status == "Canceled"
+        assert aggregated_request._Status == "Waiting"
+        assert len(original_request.__operations__) == 1
+        assert len(aggregated_request.__operations__) == 1
+
+        original_operation = original_request.__operations__[0]
+        aggregated_operation = aggregated_request.__operations__[0]
+
+        assert original_operation.OperationID != aggregated_operation.OperationID
+        assert original_operation.RequestID == original_request_id
+        assert aggregated_operation.RequestID == aggregated_request_id
+        assert original_operation.Type == aggregated_operation.Type == "ForwardDISET"
+        assert original_operation.Arguments == aggregated_operation.Arguments
+        assert original_operation.TargetSE == aggregated_operation.TargetSE
+        assert len(original_operation.__files__) == 0
+        assert len(aggregated_operation.__files__) == 0
+    finally:
+        session.close()
