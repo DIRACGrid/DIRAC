@@ -37,15 +37,24 @@ class DirectoryClosure(DirectoryTreeBase):
         """
 
         dpath = os.path.normpath(path)
-        result = self.db.executeStoredProcedure("ps_find_dir", (dpath, "ret1", "ret2"), outputIds=[1, 2])
+        # TODO: Deprecated stored procedure ps_find_dir, replace with direct query
+        req = "SELECT DirID FROM FC_DirectoryList WHERE Name = %s"
+        result = self.db._query(req, args=(dpath,), conn=connection)
         if not result["OK"]:
             return result
 
         if not result["Value"]:
             return S_OK(0)
 
-        res = S_OK(result["Value"][0])
-        res["Level"] = result["Value"][1]
+        dir_id = result["Value"][0][0]
+        req = "SELECT max(Depth) FROM FC_DirectoryClosure WHERE ChildID = %s"
+        result = self.db._query(req, args=(dir_id,), conn=connection)
+        if not result["OK"]:
+            return result
+
+        depth = result["Value"][0][0] if result["Value"] else 0
+        res = S_OK(dir_id)
+        res["Level"] = depth
         return res
 
     def findDirs(self, paths, connection=False):
