@@ -68,8 +68,12 @@ class DirectoryClosure(DirectoryTreeBase):
         dirDict = {}
         if not paths:
             return S_OK(dirDict)
-        dpaths = stringListToString([os.path.normpath(path) for path in paths])
-        result = self.db.executeStoredProcedureWithCursor("ps_find_dirs", (dpaths,))
+        # TODO: Deprecated stored procedure ps_find_dirs, replace with direct query
+        normPaths = [os.path.normpath(path) for path in paths]
+        req = "SELECT Name, DirID FROM FC_DirectoryList WHERE Name IN ("
+        req += ",".join(["%s"] * len(normPaths))
+        req += ")"
+        result = self.db._query(req, args=normPaths, conn=connection)
         if not result["OK"]:
             return result
         for dirName, dirID in result["Value"]:
