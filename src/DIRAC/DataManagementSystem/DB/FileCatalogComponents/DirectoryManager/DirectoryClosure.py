@@ -465,21 +465,7 @@ class DirectoryClosure(DirectoryTreeBase):
         :returns: S_OK(dict), where dict has the following keys:
                         "DirID", "UID", "Owner", "GID", "OwnerGroup", "Status", "Mode", "CreationDate", "ModificationDate"
         """
-        # Which procedure to use
-        psName = None
-        # it is a path ...
-        if isinstance(pathOrDirId, str):
-            psName = "ps_get_all_directory_info"
-        # it is the dirId
-        elif isinstance(pathOrDirId, ((list,) + (int,))):
-            psName = "ps_get_all_directory_info_from_id"
-        else:
-            return S_ERROR(f"Unknown type of pathOrDirId {type(pathOrDirId)}")
-
-        result = self.db.executeStoredProcedureWithCursor(psName, (pathOrDirId,))
-        if not result["OK"]:
-            return result
-
+        # TODO: Deprecated stored procedures ps_get_all_directory_info and ps_get_all_directory_info_from_id, replace with direct query
         # All the fields returned
         fieldNames = [
             "DirID",
@@ -492,6 +478,27 @@ class DirectoryClosure(DirectoryTreeBase):
             "CreationDate",
             "ModificationDate",
         ]
+
+        # Build the query based on input type
+        req = """SELECT d.DirID, d.UID, u.UserName, d.GID, g.GroupName, d.Status, d.Mode, d.CreationDate, d.ModificationDate
+           FROM FC_DirectoryList d
+           JOIN FC_Users u ON d.UID = u.UID
+           JOIN FC_Groups g ON d.GID = g.GID
+           WHERE """
+        if isinstance(pathOrDirId, str):
+            # TODO: Deprecated stored procedure ps_get_all_directory_info, replace with direct query
+            req += "d.Name = %s"
+            args = (pathOrDirId,)
+        elif isinstance(pathOrDirId, ((list,) + (int,))):
+            # TODO: Deprecated stored procedure ps_get_all_directory_info_from_id, replace with direct query
+            req += "d.DirID = %s"
+            args = (pathOrDirId,)
+        else:
+            return S_ERROR(f"Unknown type of pathOrDirId {type(pathOrDirId)}")
+
+        result = self.db._query(req, args=args)
+        if not result["OK"]:
+            return result
 
         if not result["Value"]:
             return S_ERROR(f"Directory does not exist {pathOrDirId}")
