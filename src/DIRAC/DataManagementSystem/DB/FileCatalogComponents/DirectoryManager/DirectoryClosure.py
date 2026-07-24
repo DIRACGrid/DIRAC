@@ -255,7 +255,16 @@ class DirectoryClosure(DirectoryTreeBase):
                 reqStr += " AND Depth != 0"
             return S_OK(reqStr)
 
-        result = self.db.executeStoredProcedureWithCursor("ps_get_sub_directories", (dirID, includeParent))
+        # TODO: Deprecated stored procedure ps_get_sub_directories, replace with direct query
+        req = """SELECT c1.ChildID, max(c1.Depth) AS lvl
+           FROM FC_DirectoryClosure c1
+           JOIN FC_DirectoryClosure c2 ON c1.ChildID = c2.ChildID
+           WHERE c2.ParentID = %s"""
+        args = [dirID]
+        if not includeParent:
+            req += " AND c2.Depth != 0"
+        req += " GROUP BY c1.ChildID"
+        result = self.db._query(req, args=args)
         if not result["OK"]:
             return result
         if not result["Value"]:
