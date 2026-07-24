@@ -103,7 +103,9 @@ class DirectoryClosure(DirectoryTreeBase):
             return res
 
         dirId = result["Value"]
-        result = self.db.executeStoredProcedure("ps_remove_dir", (dirId,), outputIds=[])
+        # TODO: Deprecated stored procedure ps_remove_dir, replace with direct query
+        req = "DELETE FROM FC_DirectoryList WHERE DirID = %s"
+        result = self.db._update(req, args=(dirId,))
         if not result["OK"]:
             return result
 
