@@ -322,13 +322,17 @@ class DirectoryClosure(DirectoryTreeBase):
         :returns: S_OK(value)
         """
 
-        result = self.db.executeStoredProcedure(
-            "ps_count_sub_directories", (dirId, includeParent, "ret1"), outputIds=[2]
-        )
+        # TODO: Deprecated stored procedure ps_count_sub_directories, replace with direct query
+        req = "SELECT count(ChildID) FROM FC_DirectoryClosure WHERE ParentID = %s"
+        result = self.db._query(req, args=(dirId,))
         if not result["OK"]:
             return result
 
-        res = S_OK(result["Value"][0])
+        count = result["Value"][0][0] if result["Value"] else 0
+        # The stored procedure subtracts 1 if not includeParent
+        if not includeParent:
+            count = max(0, count - 1)
+        res = S_OK(count)
         return res
 
     ########################################################################################################
