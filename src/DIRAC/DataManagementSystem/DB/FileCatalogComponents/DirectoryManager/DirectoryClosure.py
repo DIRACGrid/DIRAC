@@ -525,6 +525,9 @@ class DirectoryClosure(DirectoryTreeBase):
                 S_ERROR if the directory does not exist
         """
 
+        # TODO: Deprecated stored procedures ps_set_dir_uid, ps_set_dir_gid, ps_set_dir_status, ps_set_dir_mode
+        # and their recursive versions, replace with direct queries
+
         # The PS associated with a given parameter
         psNames = {
             "UID": "ps_set_dir_uid",
@@ -535,21 +538,71 @@ class DirectoryClosure(DirectoryTreeBase):
 
         psName = psNames.get(pname, None)
 
-        # If we have a recursive procedure and it is wanted, call it
-        if recursive and pname in ["UID", "GID", "Mode"] and psName:
-            psName += "_recursive"
-
         # If there is an associated procedure, we go for it
         if psName:
-            result = self.db.executeStoredProcedureWithCursor(psName, (path, pvalue))
+            # Build the query based on whether it's recursive and which parameter
+            if recursive and pname in ["UID", "GID", "Mode"]:
+                # Recursive update: update directory and all its children
+                # First, get the directory ID
+                dirResult = self.findDir(path)
+                if not dirResult["OK"]:
+                    return dirResult
+                dirId = dirResult["Value"]
+                if not dirId:
+                    return S_ERROR(errno.ENOENT, f"Directory does not exist: {path}")
+                
+                # Update directories recursively
+                if pname == "UID":
+                    req = """UPDATE FC_DirectoryList d
+                       JOIN FC_DirectoryClosure c ON d.DirID = c.ChildID
+                       SET d.UID = %s, d.ModificationDate = UTC_TIMESTAMP()
+                       WHERE c.ParentID = %s"""
+                    result = self.db._update(req, args=(pvalue, dirId))
+                    # Also update files
+                    req_files = """UPDATE FC_Files f
+                       JOIN FC_DirectoryClosure c ON f.DirID = c.ChildID
+                       SET f.UID = %s, f.ModificationDate = UTC_TIMESTAMP()
+                       WHERE c.ParentID = %s"""
+                    resultFiles = self.db._update(req_files, args=(pvalue, dirId))
+                elif pname == "GID":
+                    req = """UPDATE FC_DirectoryList d
+                       JOIN FC_DirectoryClosure c ON d.DirID = c.ChildID
+                       SET d.GID = %s, d.ModificationDate = UTC_TIMESTAMP()
+                       WHERE c.ParentID = %s"""
+                    result = self.db._update(req, args=(pvalue, dirId))
+                    # Also update files
+                    req_files = """UPDATE FC_Files f
+                       JOIN FC_DirectoryClosure c ON f.DirID = c.ChildID
+                       SET f.GID = %s, f.ModificationDate = UTC_TIMESTAMP()
+                       WHERE c.ParentID = %s"""
+                    resultFiles = self.db._update(req_files, args=(pvalue, dirId))
+                else:  # Mode
+                    req = """UPDATE FC_DirectoryList d
+                       JOIN FC_DirectoryClosure c ON d.DirID = c.ChildID
+                       SET d.Mode = %s, d.ModificationDate = UTC_TIMESTAMP()
+                       WHERE c.ParentID = %s"""
+                    result = self.db._update(req, args=(pvalue, dirId))
+                    resultFiles = S_OK(0)  # Mode doesn't apply to files
+            else:
+                # Non-recursive update
+                if pname == "UID":
+                    req = "UPDATE FC_DirectoryList SET UID = %s, ModificationDate = UTC_TIMESTAMP() WHERE Name = %s"
+                elif pname == "GID":
+                    req = "UPDATE FC_DirectoryList SET GID = %s, ModificationDate = UTC_TIMESTAMP() WHERE Name = %s"
+                elif pname == "Status":
+                    req = "UPDATE FC_DirectoryList SET Status = %s, ModificationDate = UTC_TIMESTAMP() WHERE Name = %s"
+                elif pname == "Mode":
+                    req = "UPDATE FC_DirectoryList SET Mode = %s, ModificationDate = UTC_TIMESTAMP() WHERE Name = %s"
+                result = self.db._update(req, args=(pvalue, path))
+                resultFiles = S_OK(0)  # Non-recursive doesn't update files
 
             if not result["OK"]:
                 return result
+            if not resultFiles["OK"]:
+                return resultFiles
 
-            errno, affected, errMsg = result["Value"][0]
-            if errno:
-                return S_ERROR(errMsg)
-
+            affected = result["Value"]
+            
             if not affected:
                 # Either there were no changes, or the directory does not exist
                 exists = self.existsDir(path).get("Value", {}).get("Exists")
