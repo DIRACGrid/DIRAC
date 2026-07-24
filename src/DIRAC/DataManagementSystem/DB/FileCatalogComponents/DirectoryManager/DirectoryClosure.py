@@ -775,7 +775,18 @@ class DirectoryClosure(DirectoryTreeBase):
         if not dirID:
             return S_ERROR(errno.ENOENT, f"{path} does not exist")
 
-        result = self.db.executeStoredProcedureWithCursor("ps_get_directory_dump", (dirID,))
+        # TODO: Deprecated stored procedure ps_get_directory_dump, replace with direct query
+        req = """(SELECT d.Name, NULL, d.CreationDate
+           FROM FC_DirectoryList d
+           JOIN FC_DirectoryClosure c ON d.DirID = c.ChildID
+           WHERE c.ParentID = %s AND Depth != 0)
+           UNION ALL
+           (SELECT CONCAT(d.Name, '/', f.FileName), Size, f.CreationDate
+           FROM FC_Files f
+           JOIN FC_DirectoryList d ON f.DirID = d.DirID
+           JOIN FC_DirectoryClosure c ON c.ChildID = f.DirID
+           WHERE ParentID = %s)"""
+        result = self.db._query(req, args=(dirID, dirID))
 
         if not result["OK"]:
             return result
