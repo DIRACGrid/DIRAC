@@ -581,7 +581,12 @@ class DirectoryClosure(DirectoryTreeBase):
                        SET d.Mode = %s, d.ModificationDate = UTC_TIMESTAMP()
                        WHERE c.ParentID = %s"""
                     result = self.db._update(req, args=(pvalue, dirId))
-                    resultFiles = S_OK(0)  # Mode doesn't apply to files
+                    # Also update files
+                    req_files = """UPDATE FC_Files f
+                       JOIN FC_DirectoryClosure c ON f.DirID = c.ChildID
+                       SET f.Mode = %s, f.ModificationDate = UTC_TIMESTAMP()
+                       WHERE c.ParentID = %s"""
+                    resultFiles = self.db._update(req_files, args=(pvalue, dirId))
             else:
                 # Non-recursive update
                 if pname == "UID":
