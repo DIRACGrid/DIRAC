@@ -138,15 +138,16 @@ class DirectoryClosure(DirectoryTreeBase):
 
         """
 
-        result = self.db.executeStoredProcedure("ps_get_dirName_from_id", (dirID, "out"), outputIds=[1])
+        # TODO: Deprecated stored procedure ps_get_dirName_from_id, replace with direct query
+        req = "SELECT Name FROM FC_DirectoryList WHERE DirID = %s"
+        result = self.db._query(req, args=(dirID,))
         if not result["OK"]:
             return result
 
-        dirName = result["Value"][0]
-
-        if not dirName:
+        if not result["Value"]:
             return S_ERROR("Directory with id %d not found" % int(dirID))
 
+        dirName = result["Value"][0][0]
         return S_OK(dirName)
 
     def getDirectoryPaths(self, dirIDList):
