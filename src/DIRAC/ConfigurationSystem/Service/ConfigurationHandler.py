@@ -52,6 +52,7 @@ class ConfigurationHandler(RequestHandler):
         return S_OK(retDict)
 
     types_publishSlaveServer = [str]
+    auth_publishSlaveServer = ["TrustedHost"]
 
     @classmethod
     def export_publishSlaveServer(cls, sURL):
