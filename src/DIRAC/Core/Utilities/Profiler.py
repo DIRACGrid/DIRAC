@@ -7,6 +7,7 @@ import psutil
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import EEZOMBIE, EENOPID, EEEXCEPTION
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 
 def checkInvocation(func):
@@ -192,7 +193,7 @@ class Profiler:
         """
         data = {}
 
-        data["datetime"] = datetime.datetime.utcnow()
+        data["datetime"] = DiracTime.utcnow()
         data["stats"] = {}
 
         result = self.pid()

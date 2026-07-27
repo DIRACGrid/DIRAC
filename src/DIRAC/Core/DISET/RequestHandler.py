@@ -1,13 +1,14 @@
 """ Base class for all services
 """
 import os
-import time, datetime
+import time
 import psutil
 
 import DIRAC
 
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Security.Properties import CS_ADMINISTRATOR
@@ -494,12 +495,12 @@ class RequestHandler:
     def export_ping(self):
         dInfo = {}
         dInfo["version"] = DIRAC.version
-        dInfo["time"] = datetime.datetime.utcnow()
+        dInfo["time"] = DiracTime.utcnow()
         # Uptime
         dInfo["host uptime"] = int(time.time() - psutil.boot_time())
         startTime = self.serviceInfoDict["serviceStartTime"]
         dInfo["service start time"] = self.serviceInfoDict["serviceStartTime"]
-        serviceUptime = datetime.datetime.utcnow() - startTime
+        serviceUptime = DiracTime.utcnow() - startTime
         dInfo["service uptime"] = int(serviceUptime.total_seconds())
         # Load average
         dInfo["load"] = " ".join([str(lx) for lx in os.getloadavg()])

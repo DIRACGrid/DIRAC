@@ -19,6 +19,7 @@ from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.AccountingSystem.private.Policies import gPoliciesList
 from DIRAC.Core.Utilities.Plotting.Plots import generateErrorMessagePlot
 from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 
@@ -76,13 +77,13 @@ class ReportGeneratorHandler(RequestHandler):
                 return S_ERROR("Value Error")
             if lastSeconds < 3600:
                 return S_ERROR("lastSeconds must be more than 3600")
-            now = datetime.datetime.utcnow()
+            now = DiracTime.utcnow()
             reportRequest["endTime"] = now
             reportRequest["startTime"] = now - datetime.timedelta(seconds=lastSeconds)
         else:
             # if enddate is not there, just set it to now
             if not reportRequest.get("endTime", False):
-                reportRequest["endTime"] = datetime.datetime.utcnow()
+                reportRequest["endTime"] = DiracTime.utcnow()
         # Check keys
         for key, keyType in self.__reportRequestDict.items():
             if key not in reportRequest:

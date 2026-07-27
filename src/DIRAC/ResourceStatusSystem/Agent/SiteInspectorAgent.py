@@ -16,6 +16,7 @@ import concurrent.futures
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 
 AGENT_NAME = "ResourceStatus/SiteInspectorAgent"
@@ -72,7 +73,7 @@ class SiteInspectorAgent(AgentModule):
         It gets the sites from the Database which are eligible to be re-checked.
         """
 
-        utcnow = datetime.datetime.utcnow().replace(microsecond=0)
+        utcnow = DiracTime.utcnow().replace(microsecond=0)
         future_to_element = {}
 
         # get the current status

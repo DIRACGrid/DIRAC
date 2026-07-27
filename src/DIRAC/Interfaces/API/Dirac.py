@@ -13,7 +13,6 @@
     - Local execution of workflows for testing purposes.
 
 """
-import datetime
 import glob
 import io
 import os
@@ -39,6 +38,7 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.PrettyPrint import printDict, printTable
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -1778,7 +1778,7 @@ class Dirac(API):
             except Exception as x:
                 return self._errorReport(str(x), "Expected yyyy-mm-dd string for date")
         else:
-            date = str(datetime.datetime.utcnow().date())
+            date = str(DiracTime.utcnow().date())
             self.log.verbose(f"Setting date to {date}")
 
         self.log.verbose(f"Will select jobs with last update {date} and following conditions")

@@ -18,10 +18,11 @@
   :caption: SummarizeLogsAgent options
 """
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
 AGENT_NAME = "ResourceStatus/SummarizeLogsAgent"
@@ -245,7 +246,7 @@ class SummarizeLogsAgent(AgentModule):
 
         :return: S_OK / S_ERROR
         """
-        toRemove = datetime.utcnow().replace(microsecond=0) - timedelta(days=30 * months)
+        toRemove = DiracTime.utcnow().replace(microsecond=0) - timedelta(days=30 * months)
         self.log.info("Removing history entries", f"older than {toRemove}")
 
         deleteResult = self.rsClient.deleteStatusElement(

@@ -10,12 +10,13 @@
 
 import errno
 import sys
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.StorageOccupancy import StorageOccupancy
 from DIRAC.Core.Utilities.File import convertSizeUnits
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
@@ -101,7 +102,7 @@ class FreeDiskSpaceCommand(Command):
         # Stores in cache
         res = self.rmClient.addOrModifySpaceTokenOccupancyCache(
             endpoint=results["Endpoint"],
-            lastCheckTime=datetime.utcnow(),
+            lastCheckTime=DiracTime.utcnow(),
             free=results["Free"],
             total=results["Total"],
             token=results["ElementName"],
@@ -200,7 +201,7 @@ class FreeDiskSpaceCommand(Command):
             toDelete = []
 
             res = self.rmClient.selectSpaceTokenOccupancyCache(
-                meta={"older": ["LastCheckTime", datetime.utcnow() - timedelta(hours=6)]}
+                meta={"older": ["LastCheckTime", DiracTime.utcnow() - timedelta(hours=6)]}
             )
             if not res["OK"]:
                 return res

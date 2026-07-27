@@ -5,7 +5,6 @@ these are incorporated to the file.
 The module uploads to a web server the latest version of the pilot scripts.
 """
 
-import datetime
 import glob
 import os
 import shutil
@@ -18,6 +17,7 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.Core.Utilities.ReturnValues import DOKReturnType, DReturnType
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 import socket
 from urllib.parse import urlparse
@@ -131,7 +131,7 @@ class PilotCStoJSONSynchronizer:
         """
 
         pilotDict = {
-            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "timestamp": DiracTime.utcnow().isoformat(),
             "CEs": {},
             "GenericPilotDNs": [],
         }

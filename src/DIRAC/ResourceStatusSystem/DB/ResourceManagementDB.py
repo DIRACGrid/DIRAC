@@ -16,7 +16,6 @@ TABLESLIST = TABLESLIST + [list of new table names]
 
 """
 
-import datetime
 from sqlalchemy.orm import class_mapper, declarative_base
 from sqlalchemy.orm.query import Query
 from sqlalchemy import Column, String, DateTime, exc, Integer, Float
@@ -24,6 +23,7 @@ from sqlalchemy import Column, String, DateTime, exc, Integer, Float
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 # Defining the tables
 
@@ -76,13 +76,13 @@ class DowntimeCache(rmsBase):
             "DateEffective",
             self.dateeffective.replace(microsecond=0)
             if self.dateeffective
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            else DiracTime.utcnow().replace(microsecond=0),
         )
         self.lastchecktime = dictionary.get(
             "LastCheckTime",
             self.lastchecktime.replace(microsecond=0)
             if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            else DiracTime.utcnow().replace(microsecond=0),
         )
 
     def toList(self):
@@ -130,7 +130,7 @@ class GGUSTicketsCache(rmsBase):
             "LastCheckTime",
             self.lastchecktime.replace(microsecond=0)
             if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            else DiracTime.utcnow().replace(microsecond=0),
         )
 
     def toList(self):
@@ -163,7 +163,7 @@ class JobCache(rmsBase):
             "LastCheckTime",
             self.lastchecktime.replace(microsecond=0)
             if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            else DiracTime.utcnow().replace(microsecond=0),
         )
 
     def toList(self):
@@ -205,7 +205,7 @@ class PilotCache(rmsBase):
             "LastCheckTime",
             self.lastchecktime.replace(microsecond=0)
             if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            else DiracTime.utcnow().replace(microsecond=0),
         )
 
     def toList(self):
@@ -248,13 +248,13 @@ class PolicyResult(rmsBase):
             "DateEffective",
             self.dateeffective.replace(microsecond=0)
             if self.dateeffective
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            else DiracTime.utcnow().replace(microsecond=0),
         )
         self.lastchecktime = dictionary.get(
             "LastCheckTime",
             self.lastchecktime.replace(microsecond=0)
             if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            else DiracTime.utcnow().replace(microsecond=0),
         )
 
     def toList(self):
@@ -302,7 +302,7 @@ class SpaceTokenOccupancyCache(rmsBase):
             "LastCheckTime",
             self.lastchecktime.replace(microsecond=0)
             if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            else DiracTime.utcnow().replace(microsecond=0),
         )
 
     def toList(self):
@@ -338,7 +338,7 @@ class TransferCache(rmsBase):
             "LastCheckTime",
             self.lastchecktime.replace(microsecond=0)
             if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            else DiracTime.utcnow().replace(microsecond=0),
         )
 
     def toList(self):
@@ -423,9 +423,9 @@ class ResourceManagementDB(SQLAlchemyDB):
             # now we assume we need to modify
             for columnName, columnValue in params.items():
                 if columnName == "LastCheckTime" and not columnValue:  # we always update lastCheckTime
-                    columnValue = datetime.datetime.utcnow().replace(microsecond=0)
+                    columnValue = DiracTime.utcnow().replace(microsecond=0)
                 if columnName == "DateEffective" and not columnValue:  # we always update DateEffective, if there
-                    columnValue = datetime.datetime.utcnow().replace(microsecond=0)
+                    columnValue = DiracTime.utcnow().replace(microsecond=0)
                 if columnValue:
                     setattr(res, columnName.lower(), columnValue)
 

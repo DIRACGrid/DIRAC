@@ -5,7 +5,6 @@
     $ dstat -a -u your.dirac.username
 
 """
-import datetime
 
 from DIRAC import exit as DIRACExit, S_OK, S_ERROR
 from DIRAC import gLogger
@@ -13,7 +12,7 @@ from DIRAC.Interfaces.Utilities.DCommands import DSession
 from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache
 from DIRAC.Interfaces.Utilities.DCommands import ArrayFormatter
 from DIRAC.Core.Base.Script import Script
-from DIRAC.Core.Utilities.TimeUtilities import toString, day
+from DIRAC.Core.Utilities.TimeUtilities import toString, day, DiracTime
 from DIRAC.Core.Utilities.SaferEval import saferEval
 from DIRAC.WorkloadManagementSystem.Client.JobStatus import JOB_STATES, JOB_FINAL_STATES
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import (
@@ -208,7 +207,7 @@ def main():
 
     if not jobs:
         # time interval
-        jobDate = toString(datetime.datetime.utcnow().date() - params.getJobDate() * day)
+        jobDate = toString(DiracTime.utcnow().date() - params.getJobDate() * day)
 
         # job owner
         userName = params.getUser()

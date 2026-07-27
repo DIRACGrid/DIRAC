@@ -1,11 +1,11 @@
 """ For reporting messages to security log service
 """
 import syslog
-import datetime
 
 from DIRAC import gLogger, gConfig
 from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 
 class SecurityLogClient:
@@ -30,7 +30,7 @@ class SecurityLogClient:
         timestamp=False,
     ):
         if not timestamp:
-            timestamp = datetime.datetime.utcnow()
+            timestamp = DiracTime.utcnow()
         msg = [
             timestamp,
             success,

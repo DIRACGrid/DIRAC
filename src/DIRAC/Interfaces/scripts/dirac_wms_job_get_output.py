@@ -12,7 +12,6 @@ Example:
 """
 import os
 import shutil
-import datetime
 
 import DIRAC
 from DIRAC.Core.Base.Script import Script
@@ -28,7 +27,7 @@ def main():
     sws, args = Script.parseCommandLine(ignoreErrors=True)
 
     from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
-    from DIRAC.Core.Utilities.TimeUtilities import toString, day
+    from DIRAC.Core.Utilities.TimeUtilities import toString, day, DiracTime
     from DIRAC.Core.Utilities.File import mkDir
 
     dirac = Dirac()
@@ -48,7 +47,7 @@ def main():
                 jFile.close()
         elif sw.lower() in ("g", "jobgroup"):
             group = value
-            jobDate = toString(datetime.datetime.utcnow().date() - 30 * day)
+            jobDate = toString(DiracTime.utcnow().date() - 30 * day)
 
             # Choose jobs in final state, no more than 30 days old
             result = dirac.selectJobs(jobGroup=value, date=jobDate, status="Done")

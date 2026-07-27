@@ -11,11 +11,11 @@ Example:
   $ dirac-admin-sort-cs-sites -C CLOUDS DIRAC
   sort site names by country postfix in '/Resources/Sites/CLOUDS' and '/Resources/Sites/DIRAC' subsection
 """
-from datetime import datetime
 
 from DIRAC import gLogger, exit as DIRACExit
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getPropertiesForGroup
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
@@ -112,7 +112,7 @@ def main():
         gLogger.notice("Nothing to do, site names are already sorted")
         DIRACExit(0)
 
-    timestamp = str(datetime.utcnow())
+    timestamp = str(DiracTime.utcnow())
     stamp = f"Site names are sorted by {Script.scriptName} script at {timestamp}"
     cs.setOptionComment("/Resources/Sites", stamp)
 

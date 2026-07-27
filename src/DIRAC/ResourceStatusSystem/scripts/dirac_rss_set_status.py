@@ -11,6 +11,7 @@ from DIRAC import S_OK, gLogger
 from DIRAC import exit as DIRACExit
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
 
@@ -167,7 +168,7 @@ def setStatus(switchDict, tokenOwner):
     if tokenLifetime <= 0:
         tokenExpiration = datetime.max
     else:
-        tokenExpiration = datetime.utcnow().replace(microsecond=0) + timedelta(days=tokenLifetime)
+        tokenExpiration = DiracTime.utcnow().replace(microsecond=0) + timedelta(days=tokenLifetime)
 
     for status, statusType in elements:
         gLogger.debug(f"{status} {statusType}")

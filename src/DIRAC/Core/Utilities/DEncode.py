@@ -22,6 +22,7 @@ from collections import defaultdict
 from pprint import pformat
 
 from DIRAC import gLogger
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 
 def _ord(char):
@@ -217,7 +218,7 @@ def printDebugCallstack(headerMessage):
     gLogger.info("\n".join(lines))
 
 
-_dateTimeObject = datetime.datetime.utcnow()
+_dateTimeObject = DiracTime.utcnow()
 _dateTimeType = type(_dateTimeObject)
 _dateType = type(_dateTimeObject.date())
 _timeType = type(_dateTimeObject.time())

@@ -1,7 +1,6 @@
 """
   Base class for all agent modules
 """
-import datetime
 import importlib.metadata
 import inspect
 import os
@@ -20,6 +19,7 @@ from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 
 class AgentModule:
@@ -233,7 +233,7 @@ class AgentModule:
     def am_createStopAgentFile(self):
         try:
             with open(self.am_getStopAgentFile(), "w") as fd:
-                fd.write(f"Dirac site agent Stopped at {str(datetime.datetime.utcnow())}")
+                fd.write(f"Dirac site agent Stopped at {str(DiracTime.utcnow())}")
         except Exception as err:
             self.log.info(f"Failed to write stop file: {str(err)}")
 

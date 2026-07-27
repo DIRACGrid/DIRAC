@@ -4,7 +4,7 @@
     GOCDB downtimes that are modified or deleted are also synced.
 """
 import re
-from datetime import datetime, timedelta
+from datetime import timedelta
 from operator import itemgetter
 from urllib.error import URLError
 
@@ -19,6 +19,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import (
 )
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
 from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts, getStorageElementsHosts
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
@@ -87,7 +88,7 @@ class DowntimeCommand(Command):
 
             uniformResult = [dict(zip(result["Columns"], res)) for res in result["Value"]]
 
-            currentDate = datetime.utcnow()
+            currentDate = DiracTime.utcnow()
 
             if not uniformResult:
                 continue
@@ -311,7 +312,7 @@ class DowntimeCommand(Command):
         uniformResult = [dict(zip(result["Columns"], res)) for res in result["Value"]]
 
         # 'targetDate' can be either now or in some 'hours' from now
-        targetDate = datetime.utcnow()
+        targetDate = DiracTime.utcnow()
 
         # dtOverlapping is a buffer to assure only one dt is returned
         # when there are overlapping outage/warning dt for same element

@@ -29,6 +29,7 @@ from matplotlib.dates import (
 )
 from dateutil.relativedelta import relativedelta
 from DIRAC.Core.Utilities.SaferEval import saferEval
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 # This is a hack to workaround the use of float(ScalarFormatter.__call__(...))
 rcParams["axes.unicode_minus"] = False
@@ -72,7 +73,7 @@ def convert_to_datetime(dstring):
             results = saferEval(dstring)
         if isinstance(results, (int, float)):
             # Use utcfromtimestamp for UTC time
-            results = datetime.datetime.utcfromtimestamp(int(results))
+            results = DiracTime.utcfromtimestamp(int(results))
         elif isinstance(results, datetime.datetime):
             if results.tzinfo is not None:
                 # non-naive datetime: convert to UTC
@@ -88,7 +89,7 @@ def convert_to_datetime(dstring):
             try:
                 t = time.strptime(dstring, dateformat)
                 timestamp = calendar.timegm(t)  # Convert to UTC timestamp
-                results = datetime.datetime.utcfromtimestamp(timestamp)
+                results = DiracTime.utcfromtimestamp(timestamp)
                 break
             except Exception:
                 pass  # nosec
@@ -97,7 +98,7 @@ def convert_to_datetime(dstring):
                 dstring = dstring.split(".", 1)[0]
                 t = time.strptime(dstring, dateformat)
                 timestamp = calendar.timegm(t)  # Convert to UTC timestamp
-                results = datetime.datetime.utcfromtimestamp(timestamp)
+                results = DiracTime.utcfromtimestamp(timestamp)
             except Exception:
                 raise ValueError(
                     "Unable to create time from string!\nExpecting "

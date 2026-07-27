@@ -1,5 +1,5 @@
-import datetime
 from DIRAC.Core.Utilities.JEncode import JSerializable
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 
 class FTS3File(JSerializable):
@@ -63,7 +63,7 @@ class FTS3File(JSerializable):
         self.status = FTS3File.INIT_STATE
         self.attempt = 0
 
-        now = datetime.datetime.utcnow().replace(microsecond=0)
+        now = DiracTime.utcnow().replace(microsecond=0)
 
         self.creationTime = now
         self.lastUpdate = now

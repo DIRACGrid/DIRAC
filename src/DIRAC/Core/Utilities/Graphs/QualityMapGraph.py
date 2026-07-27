@@ -4,7 +4,6 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-import datetime
 from pylab import setp
 from matplotlib.colors import Normalize
 import matplotlib.cm as cm
@@ -20,6 +19,7 @@ from DIRAC.Core.Utilities.Graphs.GraphUtilities import (
     PrettyDateFormatter,
     PrettyScalarFormatter,
 )
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 cdict = {
     "red": ((0.0, 1.0, 1.0), (0.5, 0.0, 0.0), (1.0, 0.0, 0.0)),
@@ -113,8 +113,8 @@ class QualityMapGraph(PlotBase):
         start_plot = 0
         end_plot = 0
         if "starttime" in self.prefs and "endtime" in self.prefs:
-            start_plot = date2num(datetime.datetime.utcfromtimestamp(to_timestamp(self.prefs["starttime"])))
-            end_plot = date2num(datetime.datetime.utcfromtimestamp(to_timestamp(self.prefs["endtime"])))
+            start_plot = date2num(DiracTime.utcfromtimestamp(to_timestamp(self.prefs["starttime"])))
+            end_plot = date2num(DiracTime.utcfromtimestamp(to_timestamp(self.prefs["endtime"])))
 
         labels = self.gdata.getLabels()
         nKeys = self.gdata.getNumberOfKeys()

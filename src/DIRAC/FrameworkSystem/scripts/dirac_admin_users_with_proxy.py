@@ -17,11 +17,11 @@ Example:
   group      : dirac_user
   not after  : 2011-06-29 12:04:30
 """
-import datetime
 
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Utilities import TimeUtilities
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 
@@ -56,7 +56,7 @@ def main():
     keys = result["Value"]["ParameterNames"]
     records = result["Value"]["Records"]
     dataDict = {}
-    now = datetime.datetime.utcnow()
+    now = DiracTime.utcnow()
     for record in records:
         expirationDate = record[3]
         dt = expirationDate - now

@@ -1,17 +1,17 @@
 """ Module for dealing with VOMS (Virtual Organization Membership Service)
 """
 
-from datetime import datetime
 import os
 import tempfile
 import shutil
 
-from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.Core.Utilities import List
 
 # This is a variable so it can be monkeypatched in tests
@@ -167,11 +167,11 @@ class VOMS:
             data = res["Value"]
 
             if option == "actimeleft":
-                now = datetime.utcnow()
+                now = DiracTime.utcnow()
                 left = data["notAfter"] - now
                 return S_OK("%d\n" % left.total_seconds())
             if option == "timeleft":
-                now = datetime.utcnow()
+                now = DiracTime.utcnow()
                 left = proxyDict["chain"].getNotAfterDate()["Value"] - now
                 return S_OK("%d\n" % left.total_seconds())
             if option == "identity":
@@ -206,7 +206,7 @@ class VOMS:
                     lines.append(f"attribute : {fqan}")
                 if "attribute" in data:
                     lines.append(f"attribute : {data['attribute']}")
-                now = datetime.utcnow()
+                now = DiracTime.utcnow()
                 left = (data["notAfter"] - now).total_seconds()
                 h = int(left / 3600)
                 m = int(left / 60) - h * 60

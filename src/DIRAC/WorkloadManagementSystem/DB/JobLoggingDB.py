@@ -12,6 +12,7 @@ from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.ReturnValues import returnValueOrRaise, convertToReturnValue
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.FrameworkSystem.Client.Logger import contextLogger
 
 MAGIC_EPOC_NUMBER = 1270000000
@@ -62,7 +63,7 @@ class JobLoggingDB(DB):
             # assumes local time while we mean UTC.
             if not date:
                 # Make the UTC datetime
-                return datetime.datetime.utcnow()
+                return DiracTime.utcnow()
             elif isinstance(date, str):
                 # The date is provided as a string in UTC
                 return TimeUtilities.fromString(date)
@@ -79,12 +80,12 @@ class JobLoggingDB(DB):
                         _date.append(_get_date(d))
                     except Exception:
                         self.log.exception("Exception while date evaluation")
-                        _date.append(datetime.datetime.utcnow())
+                        _date.append(DiracTime.utcnow())
             else:
                 _date = _get_date(date)
         except Exception:
             self.log.exception("Exception while date evaluation")
-            _date = [datetime.datetime.utcnow()]
+            _date = [DiracTime.utcnow()]
 
         cmd = (
             "INSERT INTO LoggingInfo (JobId, Status, MinorStatus, ApplicationStatus, "

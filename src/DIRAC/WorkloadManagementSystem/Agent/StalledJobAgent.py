@@ -19,7 +19,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.Core.Utilities.TimeUtilities import fromString, second, toEpoch
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime, fromString, second, toEpoch
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
 from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import getJobParameters
 from DIRAC.WorkloadManagementSystem.DB.StatusUtils import kill_delete_jobs
@@ -130,7 +130,7 @@ class StalledJobAgent(AgentModule):
 
         # 1) Queueing the jobs that might be marked Stalled
         # This is the minimum time we wait for declaring a job Stalled, therefore it is safe
-        checkTime = datetime.datetime.utcnow() - self.stalledTime * second
+        checkTime = DiracTime.utcnow() - self.stalledTime * second
         checkedStatuses = [JobStatus.RUNNING, JobStatus.COMPLETING]
         # Only get jobs whose HeartBeat is older than the stalledTime
         result = self.jobDB.selectJobs({"Status": checkedStatuses}, older=checkTime, timeStamp="HeartBeatTime")
@@ -546,16 +546,16 @@ class StalledJobAgent(AgentModule):
             startTime = fromString(startTime)
             if startTime is None:
                 self.log.error("Wrong timestamp in DB", items[3])
-                startTime = datetime.datetime.utcnow()
+                startTime = DiracTime.utcnow()
 
-        endTime = datetime.datetime.utcnow()
+        endTime = DiracTime.utcnow()
         # status, minor, app, stime, source
         for items in logList:
             if items[0] == "Stalled":
                 endTime = fromString(items[3])
         if endTime is None:
             self.log.error("Wrong timestamp in DB", items[3])
-            endTime = datetime.datetime.utcnow()
+            endTime = DiracTime.utcnow()
 
         return startTime, endTime
 
@@ -564,7 +564,7 @@ class StalledJobAgent(AgentModule):
 
         message = ""
 
-        checkTime = datetime.datetime.utcnow() - self.matchedTime * second
+        checkTime = DiracTime.utcnow() - self.matchedTime * second
         result = self.jobDB.selectJobs({"Status": JobStatus.MATCHED}, older=checkTime)
         if not result["OK"]:
             self.log.error("Failed to select jobs", result["Message"])
@@ -578,7 +578,7 @@ class StalledJobAgent(AgentModule):
                 message = f"Failed to reschedule jobs stuck in {JobStatus.MATCHED} status"
                 message += "\n" + result["Message"]
 
-        checkTime = datetime.datetime.utcnow() - self.rescheduledTime * second
+        checkTime = DiracTime.utcnow() - self.rescheduledTime * second
         result = self.jobDB.selectJobs({"Status": JobStatus.RESCHEDULED}, older=checkTime)
         if not result["OK"]:
             self.log.error("Failed to select jobs", result["Message"])
@@ -603,7 +603,7 @@ class StalledJobAgent(AgentModule):
         """
 
         # Get old Submitting Jobs
-        checkTime = datetime.datetime.utcnow() - self.submittingTime * second
+        checkTime = DiracTime.utcnow() - self.submittingTime * second
         result = self.jobDB.selectJobs({"Status": JobStatus.SUBMITTING}, older=checkTime)
         if not result["OK"]:
             self.log.error("Failed to select jobs", result["Message"])

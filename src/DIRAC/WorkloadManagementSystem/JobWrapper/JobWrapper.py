@@ -12,7 +12,6 @@ and a Watchdog Agent that can monitor its progress.
 """
 
 import contextlib
-import datetime
 import glob
 import json
 import os
@@ -37,6 +36,7 @@ from DIRAC.Core.Utilities.File import getGlobbedFiles, getGlobbedTotalSize
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Utilities.Subprocess import Subprocess, systemCall
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.Core.Utilities.Version import getCurrentVersion
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.Client.FailoverTransfer import FailoverTransfer
@@ -664,7 +664,7 @@ class JobWrapper:
 
         header = "Last {} lines of application output from JobWrapper on {} :".format(
             lines,
-            str(datetime.datetime.utcnow()),
+            str(DiracTime.utcnow()),
         )
         border = "=" * len(header)
 

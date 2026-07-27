@@ -24,9 +24,9 @@ timeThis = partial(timeThis, logger_info=gLogger.info)
 class DiracTime:
     """datetime tools for DIRAC:
     There are a number of facilities in DIRAC which can't handle timezone aware
-    dateetime objects: These don't serialise, don't fit in database schemas, etc.
+    datetime objects: These don't serialise, don't fit in database schemas, etc.
     As the python non-timezone aware helper functions are being deprecated we
-    provider our own equivalents here.
+    provide our own equivalents here.
     """
 
     @staticmethod

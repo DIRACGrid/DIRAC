@@ -11,9 +11,9 @@ from DIRAC.Core.Utilities.Graphs.GraphUtilities import (
     PrettyDateFormatter,
     PrettyScalarFormatter,
 )
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from matplotlib.patches import Polygon
 from matplotlib.dates import date2num
-import datetime
 
 
 class LineGraph(PlotBase):
@@ -49,8 +49,8 @@ class LineGraph(PlotBase):
         start_plot = 0
         end_plot = 0
         if "starttime" in self.prefs and "endtime" in self.prefs:
-            start_plot = date2num(datetime.datetime.utcfromtimestamp(to_timestamp(self.prefs["starttime"])))
-            end_plot = date2num(datetime.datetime.utcfromtimestamp(to_timestamp(self.prefs["endtime"])))
+            start_plot = date2num(DiracTime.utcfromtimestamp(to_timestamp(self.prefs["starttime"])))
+            end_plot = date2num(DiracTime.utcfromtimestamp(to_timestamp(self.prefs["endtime"])))
 
         self.polygons = []
         seq_b = [(self.gdata.max_num_key, 0.0), (self.gdata.min_num_key, 0.0)]

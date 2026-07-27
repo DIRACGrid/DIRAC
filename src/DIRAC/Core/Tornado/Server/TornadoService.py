@@ -5,13 +5,13 @@ It directly inherits from :py:class:`tornado.web.RequestHandler`
 
 
 import os
-from datetime import datetime
 from tornado.web import url as TornadoURL
 
 import DIRAC
 
-from DIRAC import gLogger, S_OK
+from DIRAC import S_OK
 from DIRAC.Core.Tornado.Server.private.BaseRequestHandler import BaseRequestHandler
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
 
@@ -182,7 +182,7 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
         # COPY FROM DIRAC.Core.DISET.RequestHandler
         dInfo = {}
         dInfo["version"] = DIRAC.version
-        dInfo["time"] = datetime.utcnow()
+        dInfo["time"] = DiracTime.utcnow()
         # Uptime
         try:
             with open("/proc/uptime") as oFD:
@@ -192,7 +192,7 @@ class TornadoService(BaseRequestHandler):  # pylint: disable=abstract-method
             pass  # nosec B110
         startTime = self._startTime
         dInfo["service start time"] = self._startTime
-        serviceUptime = datetime.utcnow() - startTime
+        serviceUptime = DiracTime.utcnow() - startTime
         dInfo["service uptime"] = int(serviceUptime.total_seconds())
         # Load average
         try:

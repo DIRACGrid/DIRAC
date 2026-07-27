@@ -9,7 +9,6 @@ also interprets control signals from the WMS e.g. to kill a running
 job.
 """
 
-import datetime
 import errno
 import getpass
 import math
@@ -24,6 +23,7 @@ from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities.Os import getDiskSpace
 from DIRAC.Core.Utilities.Profiler import Profiler
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
@@ -308,7 +308,7 @@ class Watchdog:
                 size = len(outputList)
                 recentStdOut = "Last {} lines of application output from Watchdog on {} [UTC]:".format(
                     size,
-                    datetime.datetime.utcnow(),
+                    DiracTime.utcnow(),
                 )
                 border = "=" * len(recentStdOut)
                 cpuTotal = f"Last reported CPU consumed for job is {hmsCPU} (h:m:s)"

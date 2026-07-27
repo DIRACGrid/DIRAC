@@ -17,6 +17,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.Dictionaries import breakDictionaryIntoChunks
 from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
 from DIRAC.TransformationSystem.Client.FileReport import FileReport
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -336,7 +337,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
             ],
         )
         condDict = {"TransformationID": transID, "ExternalStatus": updateStatus}
-        timeStamp = str(datetime.datetime.utcnow() - datetime.timedelta(minutes=10))
+        timeStamp = str(DiracTime.utcnow() - datetime.timedelta(minutes=10))
 
         # Get transformation tasks
         transformationTasks = clients["TransformationClient"].getTransformationTasks(
@@ -408,7 +409,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         transID = transDict["TransformationID"]
         method = "updateFileStatus"
 
-        timeStamp = str(datetime.datetime.utcnow() - datetime.timedelta(minutes=10))
+        timeStamp = str(DiracTime.utcnow() - datetime.timedelta(minutes=10))
 
         # get transformation files
         condDict = {"TransformationID": transID, "Status": ["Assigned"]}
@@ -491,7 +492,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
 
         # Select the tasks which have been in Reserved status for more than 1 hour for selected transformations
         condDict = {"TransformationID": transID, "ExternalStatus": "Reserved"}
-        time_stamp_older = str(datetime.datetime.utcnow() - datetime.timedelta(hours=1))
+        time_stamp_older = str(DiracTime.utcnow() - datetime.timedelta(hours=1))
 
         res = clients["TransformationClient"].getTransformationTasks(condDict=condDict, older=time_stamp_older)
         self._logDebug(f"getTransformationTasks({condDict}) return value:", res, method=method, transID=transID)

@@ -1,12 +1,12 @@
 import random
 import threading
-import datetime
 from hashlib import md5
 
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
 from DIRAC.Core.DISET.private.MessageBroker import getGlobalMessageBroker
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.Core.Utilities import Network
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
@@ -29,7 +29,7 @@ class MessageClient(BaseClient):
 
     def __generateUniqueClientName(self):
         hashStr = ":".join(
-            (str(datetime.datetime.utcnow()), str(random.random()), Network.getFQDN(), gLogger.getName())  # nosec B311
+            (str(DiracTime.utcnow()), str(random.random()), Network.getFQDN(), gLogger.getName())  # nosec B311
         )
         hexHash = md5(hashStr.encode(), usedforsecurity=False).hexdigest()
         return hexHash

@@ -19,6 +19,8 @@ import json
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import checkGuid
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
+
 from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
 
@@ -144,7 +146,7 @@ class File:
 
         updateTime = self._Status != value
         if updateTime and self._parent:
-            self._parent.LastUpdate = datetime.datetime.utcnow().replace(microsecond=0)
+            self._parent.LastUpdate = DiracTime.utcnow().replace(microsecond=0)
 
         self._Status = value
 

@@ -18,6 +18,7 @@ import math
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 
 # # from RMS
@@ -108,7 +109,7 @@ class ReqManagerHandlerMixin:
 
         # If NotBefore is not set or user defined, we calculate its value
 
-        now = datetime.datetime.utcnow().replace(microsecond=0)
+        now = DiracTime.utcnow().replace(microsecond=0)
         extraDelay = datetime.timedelta(0)
         if request.Status not in Request.FINAL_STATES and (not request.NotBefore or request.NotBefore < now):
             # We don't delay if it is the first insertion

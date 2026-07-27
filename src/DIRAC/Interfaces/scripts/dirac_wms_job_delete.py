@@ -10,7 +10,6 @@ Example:
   $ dirac-wms-job-delete 12
   Deleted job 12
 """
-import datetime
 import os.path
 
 from DIRAC.Core.Base.Script import Script
@@ -26,7 +25,7 @@ def main():
 
     import DIRAC
     from DIRAC.Interfaces.API.Dirac import Dirac, parseArguments
-    from DIRAC.Core.Utilities.TimeUtilities import toString, day
+    from DIRAC.Core.Utilities.TimeUtilities import toString, day, DiracTime
 
     dirac = Dirac()
 
@@ -39,7 +38,7 @@ def main():
                 jFile.close()
         elif sw.lower() in ("g", "jobgroup"):
             group = value
-            jobDate = toString(datetime.datetime.utcnow().date() - 30 * day)
+            jobDate = toString(DiracTime.utcnow().date() - 30 * day)
             result = dirac.selectJobs(jobGroup=value, date=jobDate)
             if not result["OK"]:
                 if "No jobs selected" not in result["Message"]:

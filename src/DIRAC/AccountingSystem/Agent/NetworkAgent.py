@@ -15,6 +15,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.AccountingSystem.Client.Types.Network import Network
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 
 
@@ -165,7 +166,7 @@ class NetworkAgent(AgentModule):
         timestamps = sorted(body["datapoints"])
         for timestamp in timestamps:
             try:
-                date = datetime.utcfromtimestamp(float(timestamp))
+                date = DiracTime.utcfromtimestamp(float(timestamp))
 
                 # create a key that allows to join packet-loss-rate and one-way-delay
                 # metrics in one network accounting record

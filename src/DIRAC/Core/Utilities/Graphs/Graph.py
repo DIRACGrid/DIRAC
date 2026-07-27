@@ -5,7 +5,6 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-import datetime
 import importlib
 import os
 import time
@@ -16,6 +15,7 @@ from DIRAC import gLogger
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import add_time_to_title, evalPrefs, pixelToPoint, to_timestamp
 from DIRAC.Core.Utilities.Graphs.Legend import Legend
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 DEBUG = 0
 
@@ -103,7 +103,7 @@ class Graph:
         # Make the plot time stamp if requested
         flag = prefs.get("graph_time_stamp", True)
         if flag:
-            timeString = "Generated on " + datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S ") + "UTC"
+            timeString = "Generated on " + DiracTime.utcnow().strftime("%Y-%m-%d %H:%M:%S ") + "UTC"
             time_size = prefs["text_size"] * 0.8
             figure.text(
                 0.995, 0.005, timeString, ha="right", va="bottom", size=pixelToPoint(time_size, dpi), fontstyle="italic"

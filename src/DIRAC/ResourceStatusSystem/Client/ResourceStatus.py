@@ -7,11 +7,12 @@ The status is kept in the RSSCache object, which is a small wrapper on top of Di
 """
 
 import math
-from datetime import datetime, timedelta
+from datetime import timedelta
 from time import sleep
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import getPoliciesThatApply
 from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
@@ -171,7 +172,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
         Sets on the RSS the Elements status
         """
 
-        expiration = datetime.utcnow() + timedelta(days=1)
+        expiration = DiracTime.utcnow() + timedelta(days=1)
 
         self.rssCache.acquireLock()
         try:

@@ -9,6 +9,7 @@ from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import encode as jencode
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.Core.Workflow.Workflow import fromXMLString
 
 
@@ -484,7 +485,7 @@ class TransformationManagerHandlerMixin:
         submitDict = {}
 
         # Apply a delay to avoid race conditions
-        older = datetime.datetime.utcnow() - datetime.timedelta(seconds=30)
+        older = DiracTime.utcnow() - datetime.timedelta(seconds=30)
 
         # Retrieve tasks that are ready for submission
         res = self.transformationDB.getTasksForSubmission(

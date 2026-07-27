@@ -1,5 +1,4 @@
 # We disable pylint no-callable because of https://github.com/PyCQA/pylint/issues/8138
-
 """Frontend for ReqDB
 
 :mod: RequestDB
@@ -13,7 +12,6 @@
 db holding Request, Operation and File
 """
 
-import datetime
 import errno
 import random
 from urllib.parse import quote_plus
@@ -42,6 +40,7 @@ from sqlalchemy.sql import update
 # # from DIRAC
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -277,7 +276,7 @@ class RequestDB:
                 .values(
                     {
                         Request._Status: "Canceled",  # pylint: disable=no-member
-                        Request._LastUpdate: datetime.datetime.utcnow(),  # pylint: disable=no-member
+                        Request._LastUpdate: DiracTime.utcnow(),  # pylint: disable=no-member
                     }
                 )
                 .execution_options(synchronize_session=False)
@@ -400,7 +399,7 @@ class RequestDB:
                     return S_ERROR(f"getRequest: status of request '{reqID}' is 'Assigned', request cannot be selected")
 
             else:
-                now = datetime.datetime.utcnow().replace(microsecond=0)
+                now = DiracTime.utcnow().replace(microsecond=0)
                 reqIDs = set()
                 try:
                     reqAscIDs = (
@@ -459,7 +458,7 @@ class RequestDB:
                     .values(
                         {
                             Request._Status: "Assigned",  # pylint: disable=no-member
-                            Request._LastUpdate: datetime.datetime.utcnow(),  # pylint: disable=no-member
+                            Request._LastUpdate: DiracTime.utcnow(),  # pylint: disable=no-member
                         }
                     )
                 )
@@ -508,7 +507,7 @@ class RequestDB:
             # If we are here, the request MUST exist, so no try catch
             # the joinedload is to force the non-lazy loading of all the attributes, especially _parent
             try:
-                now = datetime.datetime.utcnow().replace(microsecond=0)
+                now = DiracTime.utcnow().replace(microsecond=0)
                 requestIDs = (
                     session.query(Request.RequestID)  # pylint: disable=no-member
                     .with_for_update()
@@ -543,7 +542,7 @@ class RequestDB:
                     .values(
                         {
                             Request._Status: "Assigned",  # pylint: disable=no-member
-                            Request._LastUpdate: datetime.datetime.utcnow(),  # pylint: disable=no-member
+                            Request._LastUpdate: DiracTime.utcnow(),  # pylint: disable=no-member
                         }
                     )
                 )

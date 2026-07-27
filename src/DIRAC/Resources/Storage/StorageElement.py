@@ -3,7 +3,6 @@
 
 # # custom duty
 
-
 from copy import deepcopy
 import datetime
 import errno
@@ -22,7 +21,7 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.File import convertSizeUnits
 from DIRAC.Core.Utilities.List import getIndexInList
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult, convertToReturnValue
-from DIRAC.Core.Utilities.TimeUtilities import toEpochMilliSeconds
+from DIRAC.Core.Utilities.TimeUtilities import toEpochMilliSeconds, DiracTime
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
@@ -1317,7 +1316,7 @@ class StorageElementItem:
                 for url in urlDict:
                     urlsToUse[url] = lfnDict[urlDict[url]]
 
-                startDate = datetime.datetime.utcnow()
+                startDate = DiracTime.utcnow()
                 startTime = time.time()
                 res = fcn(urlsToUse, *args, **kwargs)
                 elapsedTime = time.time() - startTime

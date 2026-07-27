@@ -4,6 +4,7 @@ Show request given its ID, a jobID or a transformation and a task
 """
 import datetime
 import os
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.Core.Base.Script import Script
 
 
@@ -15,7 +16,7 @@ def convertDate(date):
     except (ValueError, TypeError):
         pass
     try:
-        value = datetime.datetime.utcnow() - datetime.timedelta(hours=int(24 * float(date)))
+        value = DiracTime.utcnow() - datetime.timedelta(hours=int(24 * float(date)))
     except Exception:
         from DIRAC import gLogger
 
@@ -151,7 +152,7 @@ def main():
         verbose = True
     if status:
         if not until:
-            until = datetime.datetime.utcnow()
+            until = DiracTime.utcnow()
         if not since:
             since = until - datetime.timedelta(hours=24)
     from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient

@@ -6,7 +6,6 @@
 
 """
 
-import datetime
 import json
 import os
 import random
@@ -22,6 +21,7 @@ from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.List import fromChar, randomize
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.ReturnValues import returnValueOrRaise
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
@@ -469,7 +469,7 @@ class ReqClient(Client):
                         op.Status = "Waiting"
 
             # Reset also NotBefore
-            req.NotBefore = datetime.datetime.utcnow().replace(microsecond=0)
+            req.NotBefore = DiracTime.utcnow().replace(microsecond=0)
             return self.putRequest(req)
         return S_OK("Not reset")
 

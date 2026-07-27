@@ -48,11 +48,9 @@ When using a local condor_schedd look at the HTCondor documentation for enabling
 # created documentation, there should only be one slash when setting the option,
 # but "\n" gets rendered as a linebreak in sphinx
 
-import datetime
 import errno
 import json
 import os
-import subprocess
 import tempfile
 import textwrap
 import threading
@@ -63,6 +61,7 @@ from DIRAC.Core.Security.Locations import getCAsLocation
 from DIRAC.Core.Utilities.File import cleanDirectory, mkDir
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Subprocess import systemCall
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import writeToTokenFile
 from DIRAC.Resources.Computing.BatchSystems.Condor import (
     HOLD_REASON_SUBCODE,
@@ -85,7 +84,7 @@ class HTCondorCEComputingElement(ComputingElement):
     """
 
     # static variables to ensure single cleanup every minute
-    _lastCleanupTime = datetime.datetime.utcnow()
+    _lastCleanupTime = DiracTime.utcnow()
     _cleanupLock = threading.Lock()
 
     #############################################################################
@@ -573,7 +572,7 @@ class HTCondorCEComputingElement(ComputingElement):
         if not HTCondorCEComputingElement._cleanupLock.acquire(False):
             return
 
-        now = datetime.datetime.utcnow()
+        now = DiracTime.utcnow()
         if (now - HTCondorCEComputingElement._lastCleanupTime).total_seconds() < 60:
             HTCondorCEComputingElement._cleanupLock.release()
             return
