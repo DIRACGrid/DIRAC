@@ -2,9 +2,14 @@
 This module contains helper methods for accessing operational attributes or parameters of DMS objects
 
 """
+
 from __future__ import annotations
 
+from cachetools import LRUCache, cachedmethod
+from cachetools.keys import hashkey
+
 from collections import defaultdict
+from threading import Lock
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
@@ -127,6 +132,12 @@ class DMSHelpers:
         self.archiveSEs = None
         self.notForJobSEs = None
         self.__csVersion = currentVersion
+
+        self._isSameSiteSE_cache = LRUCache(maxsize=256)
+        self._isSameSiteSE_lock = Lock()
+
+        self._getLocalSitesForSE_cache = LRUCache(maxsize=256)
+        self._getLocalSitesForSE_lock = Lock()
 
     def getSiteSEMapping(self):
         """Returns a dictionary of all sites and their localSEs as a list, e.g.
@@ -311,6 +322,10 @@ class DMSHelpers:
             return S_OK(None)
         return S_OK(sites["Value"][0])
 
+    @cachedmethod(
+        lambda self: self._getLocalSitesForSE_cache,
+        lock=lambda self: self._getLocalSitesForSE_lock,
+    )
     def _getLocalSitesForSE(self, se):
         """Extract the list of sites that declare this SE"""
         mapping = self.getSiteSEMapping()
@@ -386,6 +401,12 @@ class DMSHelpers:
         """Get local SEs"""
         return self.getSEsForSite(site, connectionLevel=LOCAL)
 
+    @cachedmethod(
+        lambda self: self._isSameSiteSE_cache,
+        # checking for A and B is the same as for B and A
+        key=lambda _, a, b: hashkey(*sorted((a, b))),
+        lock=lambda self: self._isSameSiteSE_lock,
+    )
     def isSameSiteSE(self, se1, se2):
         """Are these 2 SEs at the same site"""
         res = self.getLocalSiteForSE(se1)
