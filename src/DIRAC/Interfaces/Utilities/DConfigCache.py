@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import os
 import re
+import stat
 import time
 import pickle
 import tempfile
@@ -69,6 +70,15 @@ class ConfigCache:
         else:
             try:
                 with open(self.configCacheName, "rb") as fh:
+                    # Check file permissions of cache file post-open to avoid check race conditions
+                    info = os.fstat(fh.fileno())
+                    if info.st_uid != os.getuid():
+                        gLogger.error(f"Cache file {self.configCacheName} not owned by current user! Ignoring...")
+                        return
+                    if stat.S_IMODE(info.st_mode) & (stat.S_IWGRP | stat.S_IWOTH):
+                        gLogger.error(f"Cache file {self.configCacheName} is writeable by group/others! Ignoring...")
+                        return
+                    # Pickle files are cached locally, so should be safe
                     gConfigurationData.mergedCFG = pickle.load(fh)
                     reset_all_caches()
             except:
