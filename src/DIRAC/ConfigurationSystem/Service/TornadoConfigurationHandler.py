@@ -57,6 +57,8 @@ class TornadoConfigurationHandler(TornadoService):
             retDict["data"] = b64encode(self.ServiceInterface.getCompressedConfigurationData()).decode()
         return S_OK(retDict)
 
+    auth_publishSlaveServer = ["TrustedHost"]
+
     def export_publishSlaveServer(self, sURL):
         """
         Used by worker server to register as a worker server.
