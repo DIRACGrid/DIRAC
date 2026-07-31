@@ -33,9 +33,9 @@ class TestUtcnow:
         assert dt.tzinfo is None, "utcnow() must strip tzinfo and return naive"
 
     def test_is_roughly_now(self):
-        before = datetime.datetime.utcnow()
+        before = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         dt = DiracTime.utcnow()
-        after = datetime.datetime.utcnow()
+        after = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
         assert before <= dt <= after + datetime.timedelta(seconds=2)
 
     def test_return_type_is_datetime_not_date(self):
@@ -73,7 +73,7 @@ class TestUtcfromtimestamp:
         """utcfromtimestamp produces a naive UTC datetime whose timestamp round-trips."""
         dt = DiracTime.utcfromtimestamp(epoch)
         assert dt.tzinfo is None
-        assert dt.timestamp() == epoch
+        assert dt.replace(tzinfo=datetime.timezone.utc).timestamp() == epoch
 
     @pytest.mark.parametrize(
         "epoch",
