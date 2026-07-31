@@ -42,7 +42,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
 
     MSG_DEFINITIONS = {"OptimizeJobs": {"jids": (list, tuple)}}
 
-    auth_msg_OptimizeJobs = ["all"]
+    auth_msg_OptimizeJobs = ["TrustedHost"]
 
     def msg_OptimizeJobs(self, msgObj):
         jids = msgObj.jids
