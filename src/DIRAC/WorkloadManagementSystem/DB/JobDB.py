@@ -31,6 +31,7 @@ from DIRAC.Core.Utilities.ReturnValues import (
     SErrorException,
     DReturnType,
 )
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.FrameworkSystem.Client.Logger import contextLogger
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
@@ -782,8 +783,8 @@ class JobDB(DB):
             vo = getVOForGroup(ownerGroup)
 
         jobAttrs = {
-            "LastUpdateTime": str(datetime.datetime.utcnow()),
-            "SubmissionTime": str(datetime.datetime.utcnow()),
+            "LastUpdateTime": str(DiracTime.utcnow()),
+            "SubmissionTime": str(DiracTime.utcnow()),
             "Owner": owner,
             "OwnerGroup": ownerGroup,
             "VO": vo,
@@ -867,7 +868,7 @@ class JobDB(DB):
 
         retVal["Status"] = initialStatus
         retVal["MinorStatus"] = initialMinorStatus
-        retVal["TimeStamp"] = str(datetime.datetime.utcnow())
+        retVal["TimeStamp"] = str(DiracTime.utcnow())
 
         return retVal
 
@@ -1038,8 +1039,8 @@ class JobDB(DB):
         jobAttrs["Status"] = JobStatus.RECEIVED
         jobAttrs["MinorStatus"] = JobMinorStatus.RESCHEDULED
         jobAttrs["ApplicationStatus"] = "Unknown"
-        jobAttrs["LastUpdateTime"] = str(datetime.datetime.utcnow())
-        jobAttrs["RescheduleTime"] = str(datetime.datetime.utcnow())
+        jobAttrs["LastUpdateTime"] = str(DiracTime.utcnow())
+        jobAttrs["RescheduleTime"] = str(DiracTime.utcnow())
         jobAttrs["VO"] = getVOForGroup(resultDict["OwnerGroup"])
 
         reqJDL = classAdReq.asJDL()
@@ -1088,7 +1089,7 @@ class JobDB(DB):
             del selectDict["LastUpdateTime"]
 
         result = self.getCounters("Jobs", ["Site", "Status"], {}, newer=last_update, timeStamp="LastUpdateTime")
-        last_day = datetime.datetime.utcnow() - datetime.timedelta(days=1)
+        last_day = DiracTime.utcnow() - datetime.timedelta(days=1)
         resultDay = self.getCounters("Jobs", ["Site", "Status"], {}, newer=last_day, timeStamp="EndExecTime")
 
         # Get the site mask status

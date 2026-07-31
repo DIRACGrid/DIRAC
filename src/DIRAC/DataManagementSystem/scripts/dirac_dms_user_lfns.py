@@ -17,7 +17,8 @@ Example:
 """
 
 import fnmatch
-from datetime import datetime, timedelta
+from datetime import timedelta
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 from DIRAC.Core.Base.Script import Script
 
@@ -63,7 +64,7 @@ def main():
 
     def isOlderThan(cTimeStruct, days):
         timeDelta = timedelta(days=days)
-        maxCTime = datetime.utcnow() - timeDelta
+        maxCTime = DiracTime.utcnow() - timeDelta
         if cTimeStruct < maxCTime:
             return True
         return False

@@ -152,6 +152,7 @@ from libcloud.compute.types import NodeState, Provider
 
 from DIRAC import S_ERROR, S_OK, rootPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
@@ -507,7 +508,7 @@ class CloudComputingElement(ComputingElement):
         self.log.info(f"Starting cleanup for {self.ceName}")
         try:
             maxLifetime = int(self.ceParameters.get("Context_MaxLifetime", DEF_MAXLIFETIME))
-            now = datetime.datetime.utcnow()
+            now = DiracTime.utcnow()
             driver = self._getDriver()
             for node in driver.list_nodes():
                 if not node.name.startswith(VM_NAME_PREFIX):

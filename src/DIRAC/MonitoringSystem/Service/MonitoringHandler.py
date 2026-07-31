@@ -21,6 +21,7 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.Plotting import gDataCache
 from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
 from DIRAC.Core.Utilities.Plotting.Plots import generateErrorMessagePlot
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.MonitoringSystem.private.MainReporter import MainReporter
 
 
@@ -183,14 +184,14 @@ class MonitoringHandlerMixin:
                 return S_ERROR("Value Error")
             if lastSeconds < 3600:
                 return S_ERROR("lastSeconds must be more than 3600")
-            now = datetime.datetime.utcnow()  # this is an UTC time
+            now = DiracTime.utcnow()  # this is an UTC time
             reportRequest["endTime"] = now
             reportRequest["startTime"] = now - datetime.timedelta(seconds=lastSeconds)
         else:
             # if end date is not there, just set it to now
             if not reportRequest.get("endTime"):
                 # check the existence of the endTime it can be present and empty
-                reportRequest["endTime"] = datetime.datetime.utcnow()
+                reportRequest["endTime"] = DiracTime.utcnow()
         # Check keys
         for key in self.__reportRequestDict:
             if key not in reportRequest:

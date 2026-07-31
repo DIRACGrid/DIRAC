@@ -11,6 +11,7 @@ from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Utilities.SaferEval import saferEval
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 
 def registerSwitches():
@@ -132,7 +133,7 @@ def filterOngoing(selectOutput):
 
     downtimes = selectOutput
     downtimesFiltered = []
-    currentDate = TimeUtilities.toEpoch(datetime.datetime.utcnow())
+    currentDate = TimeUtilities.toEpoch(DiracTime.utcnow())
 
     for dt in downtimes:
         dtStart = TimeUtilities.toEpoch(dt["startDate"])

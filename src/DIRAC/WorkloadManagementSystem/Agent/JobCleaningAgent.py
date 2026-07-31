@@ -23,7 +23,6 @@ than 0.
 
 """
 
-import datetime
 import os
 
 from DIRAC import S_ERROR, S_OK
@@ -31,6 +30,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import TimeUtilities
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -157,7 +157,7 @@ class JobCleaningAgent(AgentModule):
             condDict = dict(baseCond)
             if status != "Any":
                 condDict["Status"] = status
-            delTime = str(datetime.datetime.utcnow() - delay * TimeUtilities.day)
+            delTime = str(DiracTime.utcnow() - delay * TimeUtilities.day)
             result = self.deleteJobsByStatus(condDict, delTime)
             if not result["OK"]:
                 self.log.error("Failed to delete jobs", f"with condDict {condDict}")
@@ -394,7 +394,7 @@ class JobCleaningAgent(AgentModule):
         :returns: None
         """
         self.log.info(f"Removing HeartBeatLoggingInfo for Jobs with {status} and older than {delayDays} day(s)")
-        delTime = str(datetime.datetime.utcnow() - delayDays * TimeUtilities.day)
+        delTime = str(DiracTime.utcnow() - delayDays * TimeUtilities.day)
         result = self.jobDB.removeInfoFromHeartBeatLogging(status, delTime, self.maxHBJobsAtOnce)
         if not result["OK"]:
             self.log.error("Failed to delete from HeartBeatLoggingInfo", result["Message"])

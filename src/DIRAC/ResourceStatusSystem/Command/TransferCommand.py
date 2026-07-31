@@ -1,9 +1,10 @@
 """ TransferCommand module
 """
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.JEncode import strToIntDict
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
@@ -98,7 +99,7 @@ class TransferCommand(Command):
                 return params
             hours, name, direction, metric = params["Value"]
 
-        toD = datetime.utcnow()
+        toD = DiracTime.utcnow()
         fromD = toD - timedelta(hours=hours)
 
         # dictionary with conditions for the accounting

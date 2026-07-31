@@ -18,6 +18,7 @@ from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-er
 from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
 from DIRAC.Core.Utilities import DIRACSingleton, ThreadSafe
 from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 gUsersSync = ThreadSafe.Synchronizer()
 gProxiesSync = ThreadSafe.Synchronizer()
@@ -59,7 +60,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         :return: datetime
         """
         if utc:
-            td = expiration - datetime.datetime.utcnow()
+            td = expiration - DiracTime.utcnow()
         else:
             td = expiration - datetime.datetime.now()
         return td.days * 86400 + td.seconds
@@ -591,7 +592,7 @@ class ProxyManagerClient(metaclass=DIRACSingleton.DIRACSingleton):
         expiryPos = pNames.index("ExpirationTime")
         for row in data["Records"]:
             if DN == row[dnPos]:
-                td = row[expiryPos] - datetime.datetime.utcnow()
+                td = row[expiryPos] - DiracTime.utcnow()
                 secondsLeft = td.days * 86400 + td.seconds
                 return S_OK(max(0, secondsLeft))
         return S_OK(0)

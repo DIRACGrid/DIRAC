@@ -13,7 +13,7 @@ import ast
 import errno
 import os
 import re
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 # # from DIRAC
 from DIRAC import S_ERROR, S_OK
@@ -24,6 +24,7 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
@@ -213,7 +214,7 @@ class TransformationCleaningAgent(AgentModule):
             self.log.error("Could not get the transformations", res["Message"])
 
         # Obtain the transformations in Completed status and archive if inactive for X days
-        olderThanTime = datetime.utcnow() - timedelta(days=self.archiveAfter)
+        olderThanTime = DiracTime.utcnow() - timedelta(days=self.archiveAfter)
         res = self.transClient.getTransformations(
             {"Status": TransformationStatus.COMPLETED, "Type": self.transformationTypes},
             older=olderThanTime,
@@ -260,7 +261,7 @@ class TransformationCleaningAgent(AgentModule):
         So, we should just clean from time to time.
         What I added here is done only when the agent finalize, and it's quite light-ish operation anyway.
         """
-        res = self.jobDB.getDistinctJobAttributes("JobGroup", None, datetime.utcnow() - timedelta(days=365))
+        res = self.jobDB.getDistinctJobAttributes("JobGroup", None, DiracTime.utcnow() - timedelta(days=365))
         if not res["OK"]:
             self.log.error("Failed to get job groups", res["Message"])
             return res

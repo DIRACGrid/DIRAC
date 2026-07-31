@@ -3,7 +3,6 @@
     Most of these functions can only be done by administrators
 """
 
-import datetime
 
 from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
@@ -15,6 +14,7 @@ from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 
 class CSAPI:
@@ -103,8 +103,7 @@ class CSAPI:
         self.__rpcClient = ConfigurationClient(url=gConfig.getValue("/DIRAC/Configuration/MasterServer", ""))
         self.__csMod = Modificator(
             self.__rpcClient,
-            "%s - %s - %s"
-            % (self.__userGroup, self.__userDN, datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")),
+            f"{self.__userGroup} - {self.__userDN} - {DiracTime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}",
         )
         retVal = self.downloadCSData()
         if not retVal["OK"]:

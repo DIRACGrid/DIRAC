@@ -10,6 +10,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DEncode, List, ThreadSafe, TimeUtilities
 from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 gSynchro = ThreadSafe.Synchronizer()
 
@@ -50,7 +51,7 @@ class AccountingDB(DB):
             minute=random.randint(0, 59),  # nosec B311
             second=random.randint(0, 59),  # nosec B311
         )
-        lcd = datetime.datetime.utcnow()
+        lcd = DiracTime.utcnow()
         lcd.replace(hour=self.__compactTime.hour + 1, minute=0, second=0)
         self.__lastCompactionEpoch = TimeUtilities.toEpoch(lcd)
         self.__registerTypes()
@@ -69,7 +70,7 @@ class AccountingDB(DB):
 
     def __periodicAutoCompactDB(self):
         while self.autoCompact:
-            nct = datetime.datetime.utcnow()
+            nct = DiracTime.utcnow()
             if nct.hour >= self.__compactTime.hour:
                 nct = nct + datetime.timedelta(days=1)
             nct = nct.replace(

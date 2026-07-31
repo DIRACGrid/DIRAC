@@ -9,7 +9,7 @@ import socket
 import subprocess
 import tempfile
 import time
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import psutil
 import requests
@@ -26,7 +26,7 @@ from DIRAC.Core.Utilities.Extensions import extensionsByPriority, getExtensionMe
 from DIRAC.Core.Utilities.File import mkLink
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.Core.Utilities.TimeUtilities import day, fromString, hour
+from DIRAC.Core.Utilities.TimeUtilities import day, DiracTime, fromString, hour
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
@@ -372,7 +372,7 @@ class SystemAdministratorHandler(RequestHandler):
             newProPrefix = os.path.join(
                 rootPath,
                 "versions",
-                f"{directory}-{datetime.utcnow().strftime('%s')}",
+                f"{directory}-{DiracTime.utcnow().strftime('%s')}",
             )
             installPrefix = os.path.join(newProPrefix, f"{platform.system()}-{platform.machine()}")
             self.log.info("Running DIRACOS installer for prefix", installPrefix)
@@ -517,7 +517,7 @@ class SystemAdministratorHandler(RequestHandler):
 
             errors_1 = 0
             errors_24 = 0
-            now = datetime.utcnow()
+            now = DiracTime.utcnow()
             lastError = ""
             for line in logLines:
                 if "ERROR:" in line:
@@ -736,7 +736,7 @@ class SystemAdministratorHandler(RequestHandler):
             return result
 
         fields = result["Value"]
-        fields["Timestamp"] = datetime.utcnow()
+        fields["Timestamp"] = DiracTime.utcnow()
         fields["Extension"] = fields["Extensions"]
         result = ComponentMonitoringClient().updateLog(socket.getfqdn(), fields)
         if not result["OK"]:

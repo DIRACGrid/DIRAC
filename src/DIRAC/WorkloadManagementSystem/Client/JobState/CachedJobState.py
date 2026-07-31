@@ -4,11 +4,11 @@
     everything locally instead of going to the DB.
 """
 import copy
-import datetime
 import time
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 
@@ -296,7 +296,7 @@ class CachedJobState:
             return
         if not source:
             source = "Unknown"
-        self.__jobLog.append([record, datetime.datetime.utcnow(), source])
+        self.__jobLog.append([record, DiracTime.utcnow(), source])
 
     def setStatus(self, majorStatus=None, minorStatus=None, appStatus=None, source=None):
         if majorStatus:

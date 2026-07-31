@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRACCommon.WorkloadManagementSystem.Utilities.JobStatusUtility import getStartAndEndTime, getNewStatus
 
@@ -70,7 +70,7 @@ class JobStatusUtility:
             if source:
                 sDict["Source"] = source
             if not dateTime:
-                dateTime = str(datetime.utcnow())
+                dateTime = str(DiracTime.utcnow())
             return self.setJobStatusBulk(jobID, {dateTime: sDict}, force=force)
         return S_OK()
 

@@ -1,6 +1,5 @@
 """ This is the guy that actually modifies the content of the CS
 """
-import datetime
 import difflib
 import zlib
 
@@ -10,6 +9,7 @@ from DIRAC import S_ERROR
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities import List
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.FrameworkSystem.Utilities.diracx import diracxVerifyConfig
 
 
@@ -29,7 +29,7 @@ class Modificator:
             self.commiterId = "{}@{} - {}".format(
                 credDict["username"],
                 credDict["group"],
-                datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                DiracTime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
             )
             return retVal
         return retVal

@@ -1,4 +1,3 @@
-import datetime
 import errno
 import json
 from sqlalchemy import orm
@@ -21,6 +20,7 @@ from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.Core.Utilities.JEncode import JSerializable
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation as rmsOperation
@@ -116,7 +116,7 @@ class FTS3Operation(JSerializable):
 
         self.ftsJobs = []
 
-        now = datetime.datetime.utcnow().replace(microsecond=0)
+        now = DiracTime.utcnow().replace(microsecond=0)
 
         self.creationTime = now
         self.lastUpdate = now

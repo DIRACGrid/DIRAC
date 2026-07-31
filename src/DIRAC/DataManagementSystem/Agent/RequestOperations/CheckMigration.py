@@ -4,6 +4,7 @@ from pprint import pformat
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
@@ -56,6 +57,6 @@ class CheckMigration(OperationHandlerBase):
                 opFile.Status = "Done"
             else:
                 self.log.notice("File has NOT been migrated:", opFile.LFN)
-                now = datetime.datetime.utcnow().replace(microsecond=0)
+                now = DiracTime.utcnow().replace(microsecond=0)
                 extraDelay = datetime.timedelta(minutes=20)
                 self.request.NotBefore = now + extraDelay

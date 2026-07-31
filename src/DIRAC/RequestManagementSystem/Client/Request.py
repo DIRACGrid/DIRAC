@@ -15,6 +15,7 @@ import json
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
@@ -54,7 +55,7 @@ class Request:
         """
         self.__waiting = None
 
-        now = datetime.datetime.utcnow().replace(microsecond=0)
+        now = DiracTime.utcnow().replace(microsecond=0)
 
         self._CreationTime = now
         self._SubmitTime = now
@@ -316,7 +317,7 @@ class Request:
 
         :param deltaTime: time in minutes before next execution
         """
-        now = datetime.datetime.utcnow().replace(microsecond=0)
+        now = DiracTime.utcnow().replace(microsecond=0)
         extraDelay = datetime.timedelta(minutes=deltaTime)
         self._NotBefore = now + extraDelay
 
@@ -351,7 +352,7 @@ class Request:
         # If the status moved to Failed or Done, update the lastUpdate time
         if value in ("Done", "Failed"):
             if value != self._Status:
-                self.LastUpdate = datetime.datetime.utcnow().replace(microsecond=0)
+                self.LastUpdate = DiracTime.utcnow().replace(microsecond=0)
 
         if value == "Done":
             self.Error = ""

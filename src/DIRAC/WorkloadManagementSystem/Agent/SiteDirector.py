@@ -8,7 +8,6 @@
 
 """
 
-import datetime
 import os
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -26,7 +25,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping, getQueues
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Security import X509Chain
-from DIRAC.Core.Utilities.TimeUtilities import second, toEpochMilliSeconds
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime, second, toEpochMilliSeconds
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
@@ -836,7 +835,7 @@ class SiteDirector(AgentModule):
         updatedPilots = {}
         for pilotReference, pilotInfo in pilotDict.items():
             oldStatus = pilotInfo["Status"]
-            sinceLastUpdate = datetime.datetime.utcnow() - pilotInfo["LastUpdateTime"]
+            sinceLastUpdate = DiracTime.utcnow() - pilotInfo["LastUpdateTime"]
             ceStatus = pilotCEDict.get(pilotReference, oldStatus)
 
             if oldStatus != ceStatus:
@@ -1006,8 +1005,8 @@ class SiteDirector(AgentModule):
         """
 
         pA = PilotSubmissionAccounting()
-        pA.setStartTime(datetime.datetime.utcnow())
-        pA.setEndTime(datetime.datetime.utcnow())
+        pA.setStartTime(DiracTime.utcnow())
+        pA.setEndTime(DiracTime.utcnow())
         pA.setValueByKey("HostName", DIRAC.siteName())
         pA.setValueByKey("SiteDirector", self.am_getModuleParam("agentName"))
         pA.setValueByKey("Site", siteName)
@@ -1055,7 +1054,7 @@ class SiteDirector(AgentModule):
             "Status": status,
             "NumTotal": numTotal,
             "NumSucceeded": numSucceeded,
-            "timestamp": int(toEpochMilliSeconds(datetime.datetime.utcnow())),
+            "timestamp": int(toEpochMilliSeconds(DiracTime.utcnow())),
         }
         pilotMonitoringReporter.addRecord(pilotMonitoringData)
 

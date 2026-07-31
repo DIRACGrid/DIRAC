@@ -2,10 +2,10 @@
 Utilities for ComponentMonitoring features
 """
 
-import datetime
 import socket
 
 from DIRAC import S_OK
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.FrameworkSystem.Client.ComponentMonitoringClient import ComponentMonitoringClient
 
 
@@ -45,7 +45,7 @@ def monitorInstallation(componentType, system, component, module=None, cpu=None,
         return S_OK(f"Monitoring of {component} is already enabled")
 
     result = monitoringClient.addInstallation(
-        {"InstallationTime": datetime.datetime.utcnow(), "InstalledBy": user, "Instance": instance},
+        {"InstallationTime": DiracTime.utcnow(), "InstalledBy": user, "Instance": instance},
         {"Type": componentType, "DIRACSystem": system, "DIRACModule": module},
         {"HostName": hostname, "CPU": cpu},
         True,
@@ -78,6 +78,6 @@ def monitorUninstallation(system, component, cpu=None, hostname=None, user=None)
         {"Instance": instance, "UnInstallationTime": None},
         {"DIRACSystem": system},
         {"HostName": hostname, "CPU": cpu},
-        {"UnInstallationTime": datetime.datetime.utcnow(), "UnInstalledBy": user},
+        {"UnInstallationTime": DiracTime.utcnow(), "UnInstalledBy": user},
     )
     return result

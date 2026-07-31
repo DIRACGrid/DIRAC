@@ -35,6 +35,7 @@ from sqlalchemy.sql.expression import and_
 # # from DIRAC
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3StagingOperation, FTS3TransferOperation
@@ -332,7 +333,7 @@ class FTS3DB:
             ftsJobs = ftsJobsQuery.all()
 
             if jobAssignmentTag:
-                jobAssignmentTag += f"_{datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}"
+                jobAssignmentTag += f"_{DiracTime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}"
 
                 jobIds = [job.jobID for job in ftsJobs]
                 if jobIds:
@@ -569,7 +570,7 @@ class FTS3DB:
                 ftsOperations = session.query(FTS3Operation).filter(FTS3Operation.operationID.in_(operationIDs)).all()
 
                 if operationAssignmentTag:
-                    operationAssignmentTag += f"_{datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}"
+                    operationAssignmentTag += f"_{DiracTime.utcnow().strftime('%Y-%m-%d %H:%M:%S')}"
 
                     session.execute(
                         update(FTS3Operation)
@@ -692,7 +693,7 @@ class FTS3DB:
 
         session = self.dbSession(expire_on_commit=False)
 
-        fromDate = datetime.datetime.utcnow() - datetime.timedelta(days=deleteDelay)
+        fromDate = DiracTime.utcnow() - datetime.timedelta(days=deleteDelay)
         try:
             ftsOps = (
                 session.query(FTS3Operation.operationID)

@@ -5,6 +5,7 @@
 import datetime
 
 from DIRAC import gLogger, S_OK
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.WorkloadManagementSystem.private.correctors.BaseHistoryCorrector import BaseHistoryCorrector
 from DIRAC.MonitoringSystem.Client.MonitoringClient import MonitoringClient
 
@@ -34,7 +35,7 @@ class MonitoringHistoryCorrector(BaseHistoryCorrector):
             reportCondition["UserGroup"] = groupToUse
             reportCondition["grouping"] = ["User"]
 
-        now = datetime.datetime.utcnow()
+        now = DiracTime.utcnow()
         result = monitoringClient.getReport(
             "WMSHistory",
             "AverageNumberOfJobs",

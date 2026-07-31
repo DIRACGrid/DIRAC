@@ -5,7 +5,6 @@ Proxy RFC: https://tools.ietf.org/html/rfc38200
 X509RFC: https://tools.ietf.org/html/rfc5280
 
 """
-import datetime
 import os
 import secrets
 import time
@@ -20,6 +19,7 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security.m2crypto import asn1_utils, DEFAULT_PROXY_STRENGTH
 from DIRAC.Core.Utilities.Decorators import executeOnlyIf
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 # Decorator to execute the method only of the certificate has been loaded
 executeOnlyIfCertLoaded = executeOnlyIf("_certLoaded", S_ERROR(DErrno.ENOCERT))
@@ -201,7 +201,7 @@ class X509Certificate:
             return res
 
         notAfter = res["Value"]
-        now = datetime.datetime.utcnow()
+        now = DiracTime.utcnow()
 
         return S_OK(notAfter < now)
 
@@ -440,7 +440,7 @@ class X509Certificate:
         :returns: S_OK(remaining seconds)
         """
         notAfter = self.getNotAfterDate()["Value"]
-        now = datetime.datetime.utcnow()
+        now = DiracTime.utcnow()
         remainingSeconds = max(0, int((notAfter - now).total_seconds()))
 
         return S_OK(remainingSeconds)

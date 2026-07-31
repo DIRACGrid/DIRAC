@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from DIRAC.Core.Security.DiracX import DiracXClient, FutureClient, addRPCStub
 from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueOrRaise
-from DIRAC.Core.Utilities.TimeUtilities import fromString
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime, fromString
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 if TYPE_CHECKING:
@@ -120,7 +120,7 @@ class JobStateUpdateClient(FutureClient):
         if source:
             statusDict["Source"] = source
         if datetime_ is None:
-            datetime_ = datetime.utcnow()
+            datetime_ = DiracTime.utcnow()
         with DiracXClient() as api:
             api.jobs.set_job_statuses(
                 {jobID: {fromString(datetime_).replace(tzinfo=timezone.utc): statusDict}},

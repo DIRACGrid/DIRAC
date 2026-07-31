@@ -38,6 +38,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnValueOrRaise
 from DIRAC.Core.Utilities.DErrno import cmpError
 
 from DIRAC.Core.Utilities.JEncode import JSerializable
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 
 # 3 days in seconds
@@ -221,7 +222,7 @@ class FTS3Job(JSerializable):
         except FTS3ClientException as e:
             return S_ERROR(f"Error getting the job status {e}")
 
-        now = datetime.datetime.utcnow().replace(microsecond=0)
+        now = DiracTime.utcnow().replace(microsecond=0)
         self.lastMonitor = now
 
         newStatus = jobStatusDict["job_state"].capitalize()
@@ -910,7 +911,7 @@ class FTS3Job(JSerializable):
                 if ftsFile.fileID in fileIDsInTheJob:
                     ftsFile.status = "Submitted"
 
-            now = datetime.datetime.utcnow().replace(microsecond=0)
+            now = DiracTime.utcnow().replace(microsecond=0)
             self.submitTime = now
             self.lastUpdate = now
             self.lastMonitor = now

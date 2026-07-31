@@ -7,13 +7,14 @@ The status is kept in the RSSCache object, which is a small wrapper on top of Di
 
 import errno
 import math
-from datetime import datetime, timedelta
+from datetime import timedelta
 from time import sleep
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
@@ -230,7 +231,7 @@ class SiteStatus(metaclass=DIRACSingleton):
         else:
             return S_ERROR(f"Unable to get user proxy info {result['Message']} ")
 
-        tokenExpiration = datetime.utcnow() + timedelta(days=1)
+        tokenExpiration = DiracTime.utcnow() + timedelta(days=1)
         if expiry:
             tokenExpiration = expiry
 

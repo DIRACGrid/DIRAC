@@ -1,11 +1,11 @@
 """FileManager for ... ?"""
 
 import os
-import datetime
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager.FileManagerBase import FileManagerBase
 from DIRAC.Core.Utilities.List import stringListToString, intListToString, breakListIntoChunks
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 # The logic of some methods is basically a copy/paste from the FileManager class,
 # so I could have inherited from it. However, I did not want to depend on it
@@ -221,7 +221,7 @@ class FileManagerPs(FileManagerBase):
 
         for lfn in wantedLfns:
             dirID, size, s_uid, s_gid, statusID, fileName, guid, checksum, checksumtype, mode = allFileValues[lfn]
-            utcNow = datetime.datetime.utcnow().replace(microsecond=0)
+            utcNow = DiracTime.utcnow().replace(microsecond=0)
             fileValuesStrings.append(
                 "(%s, %s, %s, %s, %s, '%s', '%s', '%s', '%s', '%s', '%s', %s)"
                 % (dirID, size, s_uid, s_gid, statusID, fileName, guid, checksum, checksumtype, utcNow, utcNow, mode)
@@ -465,7 +465,7 @@ class FileManagerPs(FileManagerBase):
 
         for lfn in lfnsChunk:
             fileID, seID, statusID, replicaType, pfn = allReplicaValues[lfn]
-            utcNow = datetime.datetime.utcnow().replace(microsecond=0)
+            utcNow = DiracTime.utcnow().replace(microsecond=0)
             repValuesStrings.append(f"({fileID},{seID},'{statusID}','{replicaType}','{utcNow}','{utcNow}','{pfn}')")
             repDescStrings.append(f"(r.FileID = {fileID} AND SEID = {seID})")
 

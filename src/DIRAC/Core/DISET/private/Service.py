@@ -10,7 +10,6 @@ There are 2 main parts in this class:
 
 import os
 import time
-import datetime
 import threading
 import psutil
 
@@ -24,11 +23,11 @@ from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 from DIRAC.Core.DISET.private.MessageBroker import MessageBroker, MessageSender
 from DIRAC.Core.DISET.AuthManager import AuthManager
-from DIRAC.Core.DISET.RequestHandler import getServiceOption
 from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.Core.Utilities.DErrno import ENOAUTH
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 
 
@@ -50,7 +49,7 @@ class Service:
         """
         self._svcData = serviceData
         self._name = serviceData["modName"]
-        self._startTime = datetime.datetime.utcnow()
+        self._startTime = DiracTime.utcnow()
         self._validNames = [serviceData["modName"]]
         if serviceData["loadName"] not in self._validNames:
             self._validNames.append(serviceData["loadName"])

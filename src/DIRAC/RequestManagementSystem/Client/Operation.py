@@ -2,7 +2,6 @@
 # File: Operation.py
 # Date: 2012/07/24 12:12:05
 ########################################################################
-
 """
 :mod: Operation
 
@@ -18,6 +17,7 @@ import json
 
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
@@ -78,7 +78,7 @@ class Operation:
         """
         self._parent = None
 
-        now = datetime.datetime.utcnow().replace(microsecond=0)
+        now = DiracTime.utcnow().replace(microsecond=0)
         self._SubmitTime = now
         self._LastUpdate = now
         self._CreationTime = now
@@ -129,7 +129,7 @@ class Operation:
         # If the status moved to Failed or Done, update the lastUpdate time
         if newStatus in ("Failed", "Done", "Scheduled"):
             if self._Status != newStatus:
-                self._LastUpdate = datetime.datetime.utcnow().replace(microsecond=0)
+                self._LastUpdate = DiracTime.utcnow().replace(microsecond=0)
 
         self._Status = newStatus
         if self._parent:
@@ -265,7 +265,7 @@ class Operation:
             # If the status moved to Failed or Done, update the lastUpdate time
             if value in ("Failed", "Done"):
                 if self._Status != value:
-                    self._LastUpdate = datetime.datetime.utcnow().replace(microsecond=0)
+                    self._LastUpdate = DiracTime.utcnow().replace(microsecond=0)
 
             self._Status = value
             if self._parent:

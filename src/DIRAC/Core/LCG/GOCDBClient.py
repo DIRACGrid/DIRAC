@@ -13,6 +13,7 @@ import requests
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Security.Locations import getCAsLocation
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 
 def _parseSingleElement(element, attributes=None):
@@ -109,7 +110,7 @@ class GOCDBClient:
         startDateMax = None
 
         if startingInHours is not None:
-            startDate = datetime.utcnow()
+            startDate = DiracTime.utcnow()
             startDateMax = startDate + timedelta(hours=startingInHours)
 
         if startDate is not None:

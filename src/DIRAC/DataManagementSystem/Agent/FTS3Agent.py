@@ -31,7 +31,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Core.Utilities.TimeUtilities import fromString
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime, fromString
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
 from DIRAC.DataManagementSystem.private import FTS3Utilities
@@ -318,7 +318,7 @@ class FTS3Agent(AgentModule):
         # Not only is it pointless to monitor right after submission
         # but also we would end up fetching multiple time the same job otherwise
         # as we call getActiveJobs by batch
-        lastMonitor = datetime.datetime.utcnow() - datetime.timedelta(minutes=MONITORING_DELAY)
+        lastMonitor = DiracTime.utcnow() - datetime.timedelta(minutes=MONITORING_DELAY)
 
         log.debug("Getting active jobs")
 

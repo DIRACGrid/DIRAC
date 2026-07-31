@@ -6,7 +6,6 @@ import zlib
 import zipfile
 import _thread
 import time
-import datetime
 import secrets
 
 from diraccfg import CFG
@@ -16,6 +15,7 @@ from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.LockRing import LockRing
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 
@@ -201,7 +201,7 @@ class ConfigurationData:
         self.sync()
 
     def generateNewVersion(self):
-        self.setVersion(str(datetime.datetime.utcnow()))
+        self.setVersion(str(DiracTime.utcnow()))
         self.sync()
         gLogger.info(f"Generated new version {self.getVersion()}")
 
@@ -326,7 +326,7 @@ class ConfigurationData:
     def __backupCurrentConfiguration(self, backupName):
         configurationFilename = f"{self.getName()}.cfg"
         configurationFile = os.path.join(DIRAC.rootPath, "etc", configurationFilename)
-        today = datetime.datetime.utcnow().date()
+        today = DiracTime.utcnow().date()
         backupPath = os.path.join(self.getBackupDir(), str(today.year), "%02d" % today.month)
         mkDir(backupPath)
         backupFile = os.path.join(backupPath, configurationFilename.replace(".cfg", f".{backupName}.zip"))

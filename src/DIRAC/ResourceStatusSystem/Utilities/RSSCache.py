@@ -10,6 +10,7 @@ import time
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.DictCache import DictCache
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 
 class RSSCache:
@@ -184,7 +185,7 @@ class RSSCache:
 
         refreshResult = self.refreshCache()
 
-        now = datetime.datetime.utcnow()
+        now = DiracTime.utcnow()
 
         if self.__rssCacheStatus:
             # Check oldest record

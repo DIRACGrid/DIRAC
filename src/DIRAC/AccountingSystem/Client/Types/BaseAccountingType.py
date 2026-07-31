@@ -6,6 +6,7 @@ import datetime
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.Client import Client
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 
 class BaseAccountingType:
@@ -55,7 +56,7 @@ class BaseAccountingType:
         By default use now
         """
         if not startTime:
-            self.startTime = datetime.datetime.utcnow()
+            self.startTime = DiracTime.utcnow()
         else:
             self.startTime = startTime
 
@@ -65,7 +66,7 @@ class BaseAccountingType:
         By default use now
         """
         if not endTime:
-            self.endTime = datetime.datetime.utcnow()
+            self.endTime = DiracTime.utcnow()
         else:
             self.endTime = endTime
 
@@ -73,7 +74,7 @@ class BaseAccountingType:
         """
         Set current time as start and end time of the report
         """
-        self.startTime = datetime.datetime.utcnow()
+        self.startTime = DiracTime.utcnow()
         self.endTime = self.startTime
 
     def setValueByKey(self, key, value):

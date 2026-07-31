@@ -2,7 +2,6 @@
 """
 
 import datetime
-import time as _time_module
 
 import pytest
 

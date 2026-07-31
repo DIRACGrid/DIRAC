@@ -4,7 +4,6 @@
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
     CMS/Phedex Project by ... <to be added>
 """
-import datetime
 
 from pylab import setp
 from matplotlib.patches import Polygon
@@ -18,6 +17,7 @@ from DIRAC.Core.Utilities.Graphs.GraphUtilities import (
     PrettyDateFormatter,
     PrettyScalarFormatter,
 )
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 
 class BarGraph(PlotBase):
@@ -65,8 +65,8 @@ class BarGraph(PlotBase):
         start_plot = 0
         end_plot = 0
         if "starttime" in self.prefs and "endtime" in self.prefs:
-            start_plot = date2num(datetime.datetime.utcfromtimestamp(to_timestamp(self.prefs["starttime"])))
-            end_plot = date2num(datetime.datetime.utcfromtimestamp(to_timestamp(self.prefs["endtime"])))
+            start_plot = date2num(DiracTime.utcfromtimestamp(to_timestamp(self.prefs["starttime"])))
+            end_plot = date2num(DiracTime.utcfromtimestamp(to_timestamp(self.prefs["endtime"])))
 
         nKeys = self.gdata.getNumberOfKeys()
         tmp_b = []

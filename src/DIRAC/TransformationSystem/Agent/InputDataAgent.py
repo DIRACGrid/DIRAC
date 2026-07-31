@@ -22,6 +22,7 @@ from errno import ENOENT
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -103,7 +104,7 @@ class InputDataAgent(AgentModule):
                 if transID in self.timeLog:
                     if transID in self.fullTimeLog:
                         # If it is more than a day since the last reduced query, make a full query just in case
-                        if (datetime.datetime.utcnow() - self.fullTimeLog[transID]) < datetime.timedelta(
+                        if (DiracTime.utcnow() - self.fullTimeLog[transID]) < datetime.timedelta(
                             seconds=self.fullUpdatePeriod
                         ):
                             timeStamp = self.timeLog[transID]
@@ -114,10 +115,10 @@ class InputDataAgent(AgentModule):
                             else:
                                 self.log.error("DateKey was not set in the CS, cannot use the RefreshOnly")
                         else:
-                            self.fullTimeLog[transID] = datetime.datetime.utcnow()
-                self.timeLog[transID] = datetime.datetime.utcnow()
+                            self.fullTimeLog[transID] = DiracTime.utcnow()
+                self.timeLog[transID] = DiracTime.utcnow()
                 if transID not in self.fullTimeLog:
-                    self.fullTimeLog[transID] = datetime.datetime.utcnow()
+                    self.fullTimeLog[transID] = DiracTime.utcnow()
 
             # Perform the query to the metadata catalog
             self.log.verbose("Using input data query for transformation", "%d: %s" % (transID, str(inputDataQuery)))

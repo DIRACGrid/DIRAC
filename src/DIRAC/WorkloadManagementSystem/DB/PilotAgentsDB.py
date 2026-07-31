@@ -3,7 +3,6 @@ This database keeps track of all the submitted grid pilot jobs.
 It also registers the mapping of the DIRAC jobs to the pilot agents.
 """
 
-import datetime
 import decimal
 import threading
 
@@ -15,6 +14,7 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.MySQL import _quotedList
 from DIRAC.Core.Utilities.ReturnValues import returnValueOrRaise
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.FrameworkSystem.Client.Logger import contextLogger
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
@@ -658,7 +658,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %s DAY)",
         if not result["OK"]:
             return result
 
-        last_update = datetime.datetime.utcnow() - TimeUtilities.hour
+        last_update = DiracTime.utcnow() - TimeUtilities.hour
         selectDict["Status"] = PilotStatus.ABORTED
         resultHour = self.getCounters(
             "PilotAgents",
@@ -670,7 +670,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %s DAY)",
         if not resultHour["OK"]:
             return resultHour
 
-        last_update = datetime.datetime.utcnow() - TimeUtilities.day
+        last_update = DiracTime.utcnow() - TimeUtilities.day
         selectDict["Status"] = [PilotStatus.ABORTED, PilotStatus.DONE]
         resultDay = self.getCounters(
             "PilotAgents",
@@ -1088,8 +1088,8 @@ class PivotedPilotSummaryTable:
         :return: SQL query
         """
 
-        lastUpdate = datetime.datetime.utcnow() - TimeUtilities.day
-        lastHour = datetime.datetime.utcnow() - TimeUtilities.hour
+        lastUpdate = DiracTime.utcnow() - TimeUtilities.day
+        lastHour = DiracTime.utcnow() - TimeUtilities.hour
 
         pvtable = "pivoted"
         innerGroupBy = (

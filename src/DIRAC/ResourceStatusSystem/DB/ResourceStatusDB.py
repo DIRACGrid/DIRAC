@@ -24,6 +24,7 @@ from sqlalchemy import Column, String, DateTime, exc, BigInteger
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 
 TABLESLIST = ["SiteStatus", "ResourceStatus"]
@@ -72,7 +73,7 @@ class ResourceStatusCache(rssBase):
         self.status = dictionary.get("Status", self.status)
         self.previousstatus = dictionary.get("PreviousStatus", self.previousstatus)
         self.statustype = dictionary.get("StatusType", self.statustype)
-        self.time = dictionary.get("Time", datetime.datetime.utcnow())
+        self.time = dictionary.get("Time", DiracTime.utcnow())
 
     def toList(self):
         """
@@ -122,7 +123,7 @@ class ElementStatusBase:
         utcnow = (
             self.lastchecktime.replace(microsecond=0)
             if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0)
+            else DiracTime.utcnow().replace(microsecond=0)
         )
 
         self.name = dictionary.get("Name", self.name)
@@ -309,7 +310,7 @@ class ResourceStatusDB(SQLAlchemyDB):
         """
 
         if not params.get("DateEffective"):
-            params["DateEffective"] = datetime.datetime.utcnow().replace(microsecond=0)
+            params["DateEffective"] = DiracTime.utcnow().replace(microsecond=0)
 
         return super().insert(table, params)
 
@@ -368,9 +369,9 @@ class ResourceStatusDB(SQLAlchemyDB):
 
             for columnName, columnValue in params.items():
                 if columnName == "LastCheckTime" and not columnValue:  # we always update lastCheckTime
-                    columnValue = datetime.datetime.utcnow().replace(microsecond=0)
+                    columnValue = DiracTime.utcnow().replace(microsecond=0)
                 if changeDE and columnName == "DateEffective" and not columnValue:
-                    columnValue = datetime.datetime.utcnow().replace(microsecond=0)
+                    columnValue = DiracTime.utcnow().replace(microsecond=0)
                 if columnValue:
                     if isinstance(columnValue, datetime.datetime):
                         columnValue = columnValue.replace(microsecond=0)

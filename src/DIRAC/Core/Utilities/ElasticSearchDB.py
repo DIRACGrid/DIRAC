@@ -9,6 +9,7 @@ import json
 import time
 from datetime import datetime, timedelta
 from urllib import parse as urlparse
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 import certifi
 from opensearchpy import OpenSearch
@@ -592,7 +593,7 @@ class ElasticSearchDB:
         """
         query = self._Search(indexName)
 
-        endDate = datetime.utcnow()
+        endDate = DiracTime.utcnow()
 
         startDate = endDate - timedelta(days=30)
 
@@ -671,7 +672,7 @@ class ElasticSearchDB:
             return indexName
 
         # Do NOT use datetime.today() because it is not UTC
-        todayUTC = datetime.utcnow().date()
+        todayUTC = DiracTime.utcnow().date()
         suffix = None
 
         if period.lower() == "day":

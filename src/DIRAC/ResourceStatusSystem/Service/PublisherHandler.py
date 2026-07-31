@@ -13,6 +13,7 @@ from DIRAC import S_OK, gConfig, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts, getStorageElementsHosts
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getSiteCEMapping
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
@@ -231,7 +232,7 @@ class PublisherHandlerMixin:
 
         if token == "Acquire":  # nosec: B105
             tokenOwner = username
-            tokenExpiration = datetime.utcnow() + timedelta(days=1)
+            tokenExpiration = DiracTime.utcnow() + timedelta(days=1)
         elif token == "Release":  # nosec: B105
             tokenOwner = "rs_svc"
             tokenExpiration = datetime.max
@@ -353,7 +354,7 @@ class PublisherHandlerMixin:
             return S_ERROR("Your selection has been modified. Please refresh.")
 
         reason = f"Status {status} forced by {username} ( web )"
-        tokenExpiration = datetime.utcnow() + timedelta(days=1)
+        tokenExpiration = DiracTime.utcnow() + timedelta(days=1)
 
         newStatus = self.rsClient.addOrModifyStatusElement(
             element,

@@ -8,7 +8,6 @@
   :caption: PilotStatusAgent options
 """
 
-import datetime
 
 from DIRAC import S_OK
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
@@ -16,6 +15,7 @@ from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import TimeUtilities
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.WorkloadManagementSystem.Client import PilotStatus
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
@@ -81,9 +81,7 @@ class PilotStatusAgent(AgentModule):
         Deleted, accounting for them.
         """
         pilotsToAccount = {}
-        timeLimitToConsider = TimeUtilities.toString(
-            datetime.datetime.utcnow() - TimeUtilities.day * self.pilotStalledDays
-        )
+        timeLimitToConsider = TimeUtilities.toString(DiracTime.utcnow() - TimeUtilities.day * self.pilotStalledDays)
         result = self.pilotDB.selectPilots(
             {"Status": PilotStatus.PILOT_TRANSIENT_STATES}, older=timeLimitToConsider, timeStamp="LastUpdateTime"
         )
@@ -112,7 +110,7 @@ class PilotStatusAgent(AgentModule):
                 continue
             deletedJobDict = pilotsDict[pRef]
             deletedJobDict["Status"] = PilotStatus.DELETED
-            deletedJobDict["StatusDate"] = datetime.datetime.utcnow()
+            deletedJobDict["StatusDate"] = DiracTime.utcnow()
             pilotsToAccount[pRef] = deletedJobDict
             if len(pilotsToAccount) > 100:
                 self.accountPilots(pilotsToAccount, connection)
@@ -230,7 +228,7 @@ class PilotStatusAgent(AgentModule):
             self.log.error("Failed to kill some pilots", result["Message"])
 
     def _checkJobLastUpdateTime(self, joblist, StalledDays):
-        timeLimitToConsider = datetime.datetime.utcnow() - TimeUtilities.day * StalledDays
+        timeLimitToConsider = DiracTime.utcnow() - TimeUtilities.day * StalledDays
         ret = False
         for jobID in joblist:
             result = self.jobDB.getJobAttributes(int(jobID))

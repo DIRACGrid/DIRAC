@@ -16,6 +16,7 @@ from datetime import datetime, timedelta
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
@@ -91,7 +92,7 @@ class TokenAgent(AgentModule):
         If the TokenOwner is not the rssToken ( rs_svc ), it is selected.
         """
 
-        tokenExpLimit = datetime.utcnow() + timedelta(hours=self.notifyHours)
+        tokenExpLimit = DiracTime.utcnow() + timedelta(hours=self.notifyHours)
 
         tokenElements = self.rsClient.selectStatusElement(
             element, "Status", meta={"older": ["TokenExpiration", tokenExpLimit]}
@@ -132,7 +133,7 @@ class TokenAgent(AgentModule):
                 return S_ERROR(e)
 
             # If token has already expired
-            if tokenExpiration < datetime.utcnow():
+            if tokenExpiration < DiracTime.utcnow():
                 _msg = '%s with statusType "%s" and owner %s EXPIRED'
                 self.log.info(_msg % (name, statusType, tokenOwner))
 
@@ -164,7 +165,7 @@ class TokenAgent(AgentModule):
         among users. It ends sending notifications to the users.
         """
 
-        now = datetime.utcnow()
+        now = DiracTime.utcnow()
 
         adminExpired = []
         adminExpiring = []

@@ -7,7 +7,6 @@
   :dedent: 2
   :caption: StatesAccountingAgent options
 """
-import datetime
 
 from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
@@ -16,6 +15,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import TimeUtilities
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
@@ -89,7 +89,7 @@ class StatesAccountingAgent(AgentModule):
         if "Monitoring" in self.pilotMonitoringOption:
             self.log.info("Committing PilotsHistory to Monitoring")
             result = PilotAgentsDB().getSummarySnapshot()
-            now = datetime.datetime.utcnow()
+            now = DiracTime.utcnow()
             if not result["OK"]:
                 self.log.error(
                     "Can't get the PilotAgentsDB summary",
@@ -113,7 +113,7 @@ class StatesAccountingAgent(AgentModule):
         # WMSHistory to Monitoring or Accounting
         self.log.info(f"Committing WMSHistory to {'and '.join(self.jobMonitoringOption)} backend")
         result = JobDB().getSummarySnapshot(self.__jobDBFields)
-        now = datetime.datetime.utcnow()
+        now = DiracTime.utcnow()
         if not result["OK"]:
             self.log.error("Can't get the JobDB summary", f"{result['Message']}: won't commit WMSHistory at this cycle")
             return S_ERROR()

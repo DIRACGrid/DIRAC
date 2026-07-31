@@ -23,6 +23,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
 from DIRAC.Core.Utilities.List import breakListIntoChunks, randomize
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -179,7 +180,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
 
         # Since idle transformations aren't in active_trans_ids, let's filter it more
         # and take only files that haven't been touched for 2 month
-        last_update_threshold = (datetime.datetime.utcnow() - datetime.timedelta(days=60)).timestamp()
+        last_update_threshold = (DiracTime.utcnow() - datetime.timedelta(days=60)).timestamp()
 
         for cache_file in useless_cache_files:
             if Path(cache_file).stat().st_mtime < last_update_threshold:
@@ -422,7 +423,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
             pass
 
         # Check if something new happened
-        now = datetime.datetime.utcnow()
+        now = DiracTime.utcnow()
         if not kickTrans and skipIfNoNewUnused and noUnusedDelay:
             nextStamp = self.unusedTimeStamp.setdefault(transID, now) + datetime.timedelta(hours=noUnusedDelay)
             skip = now < nextStamp
@@ -605,7 +606,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
 
     def __updateCache(self, transID, newReplicas):
         """Add replicas to the cache"""
-        self.replicaCache.setdefault(transID, {})[datetime.datetime.utcnow()] = newReplicas
+        self.replicaCache.setdefault(transID, {})[DiracTime.utcnow()] = newReplicas
 
     def __clearCacheForTrans(self, transID):
         """Remove all replicas for a transformation"""
@@ -625,7 +626,7 @@ class TransformationAgent(AgentModule, TransformationAgentsUtilities):
         """Cleans the cache"""
         try:
             if transID in self.replicaCache:
-                timeLimit = datetime.datetime.utcnow() - datetime.timedelta(days=self.replicaCacheValidity)
+                timeLimit = DiracTime.utcnow() - datetime.timedelta(days=self.replicaCacheValidity)
                 for updateTime in set(self.replicaCache[transID]):
                     nCache = len(self.replicaCache[transID][updateTime])
                     if updateTime < timeLimit or not nCache:

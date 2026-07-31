@@ -17,6 +17,7 @@ import concurrent.futures
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 
@@ -94,7 +95,7 @@ class ElementInspectorAgent(AgentModule):
         if not res["OK"]:
             return res
 
-        utcnow = datetime.datetime.utcnow().replace(microsecond=0)
+        utcnow = DiracTime.utcnow().replace(microsecond=0)
         future_to_element = {}
 
         # filter elements by Type

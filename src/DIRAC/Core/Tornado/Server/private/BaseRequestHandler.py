@@ -7,7 +7,6 @@
 import time
 import inspect
 import threading
-from datetime import datetime
 
 from http import HTTPStatus
 from urllib.parse import unquote
@@ -24,6 +23,7 @@ from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.Utilities.JEncode import decode, encode
 from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.IdProvider.Utilities import getIdProviderIdentifiers
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
@@ -441,7 +441,7 @@ class BaseRequestHandler(RequestHandler):
             absoluteUrl = request.full_url()
 
             # The time at which the handler was initialized
-            cls._startTime = datetime.utcnow()
+            cls._startTime = DiracTime.utcnow()
             cls.log.info("Initializing method for first use", f"{cls._fullComponentName}, initializing..")
 
             # component monitoring initialization

@@ -27,6 +27,8 @@ import datetime
 # # from DIRAC
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
+
 from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 
 AGENT_NAME = "RequestManagement/CleanReqDBAgent"
@@ -83,7 +85,7 @@ class CleanReqDBAgent(AgentModule):
     def execute(self):
         """execution in one cycle"""
 
-        now = datetime.datetime.utcnow()
+        now = DiracTime.utcnow()
         kickTime = now - datetime.timedelta(hours=self.KICK_GRACE_HOURS)
         rmTime = now - datetime.timedelta(days=self.DEL_GRACE_DAYS)
 
@@ -145,7 +147,7 @@ class CleanReqDBAgent(AgentModule):
 
         # optional: Set Scheduled requests to Cancelled if older than threshold
         if self.cancelGraceDays > 0:
-            cancelTime = datetime.datetime.utcnow() - datetime.timedelta(days=self.cancelGraceDays)
+            cancelTime = DiracTime.utcnow() - datetime.timedelta(days=self.cancelGraceDays)
             result = self.__requestDB.getRequestIDsList(["Scheduled"], self.DEL_LIMIT)
             if not result["OK"]:
                 self.log.error("Failed to get list of Scheduled requests:", result["Message"])

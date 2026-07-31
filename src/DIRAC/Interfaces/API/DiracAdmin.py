@@ -14,6 +14,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Base.API import API
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.PromptUser import promptUser
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.MonitoringSystem.Client.WebAppClient import WebAppClient
@@ -181,7 +182,7 @@ class DiracAdmin(API):
         if tokenLifetime <= 0:
             tokenExpiration = datetime.max
         else:
-            tokenExpiration = datetime.utcnow().replace(microsecond=0) + timedelta(days=tokenLifetime)
+            tokenExpiration = DiracTime.utcnow().replace(microsecond=0) + timedelta(days=tokenLifetime)
 
         if not (result := self.sitestatus.setSiteStatus(site, "Active", comment, expiry=tokenExpiration))["OK"]:
             return result
@@ -258,7 +259,7 @@ class DiracAdmin(API):
         if tokenLifetime <= 0:
             tokenExpiration = datetime.max
         else:
-            tokenExpiration = datetime.utcnow().replace(microsecond=0) + timedelta(days=tokenLifetime)
+            tokenExpiration = DiracTime.utcnow().replace(microsecond=0) + timedelta(days=tokenLifetime)
         if not (result := self.sitestatus.setSiteStatus(site, "Banned", comment, expiry=tokenExpiration))["OK"]:
             return result
 

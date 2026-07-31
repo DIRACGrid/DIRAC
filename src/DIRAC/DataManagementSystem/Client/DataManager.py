@@ -14,7 +14,7 @@ import errno
 import fnmatch
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 # # from DIRAC
 import DIRAC
@@ -24,6 +24,7 @@ from DIRAC.Core.Utilities.Adler import fileAdler, compareAdler
 from DIRAC.Core.Utilities.File import makeGuid, getSize
 from DIRAC.Core.Utilities.List import randomize
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -38,7 +39,7 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 def _isOlderThan(stringTime, days):
     """Check if a time stamp is older than a given number of days"""
     timeDelta = timedelta(days=days)
-    maxCTime = datetime.utcnow() - timeDelta
+    maxCTime = DiracTime.utcnow() - timeDelta
     # st = time.strptime( stringTime, "%a %b %d %H:%M:%S %Y" )
     # cTimeStruct = datetime( st[0], st[1], st[2], st[3], st[4], st[5], st[6], None )
     cTimeStruct = stringTime
@@ -521,7 +522,7 @@ class DataManager:
         failed = {}
         ##########################################################
         #  Perform the put here.
-        startTime = datetime.utcnow()
+        startTime = DiracTime.utcnow()
         transferStartTime = time.time()
         res = returnSingleResult(storageElement.putFile(fileDict))
         putTime = time.time() - transferStartTime
@@ -536,7 +537,7 @@ class DataManager:
                 accountingDict["TransferOK"] = 0
                 accountingDict["FinalStatus"] = "Failed"
                 sendingResult = self.dataOpSender.sendData(
-                    accountingDict, commitFlag=True, startTime=startTime, endTime=datetime.utcnow()
+                    accountingDict, commitFlag=True, startTime=startTime, endTime=DiracTime.utcnow()
                 )
 
                 log.verbose("Committing data operation")
@@ -1398,14 +1399,14 @@ class DataManager:
         """
         log = self.log.getSubLogger("__removeCatalogReplica")
 
-        startTime = datetime.utcnow()
+        startTime = DiracTime.utcnow()
         registrationStartTime = time.time()
         # HACK!
         replicaDict = {}
         for lfn, pfn, se in replicaTuples:
             replicaDict[lfn] = {"SE": se, "PFN": pfn}
         res = self.fileCatalog.removeReplica(replicaDict)
-        endTime = datetime.utcnow()
+        endTime = DiracTime.utcnow()
         accountingDict = _initialiseAccountingDict("removeCatalogReplica", "", len(replicaTuples))
         accountingDict["RegistrationTime"] = time.time() - registrationStartTime
 
@@ -1459,13 +1460,13 @@ class DataManager:
             log.verbose(errStr, f"{storageElementName} {res['Message']}")
             return S_ERROR(f"{errStr} {res['Message']}")
 
-        startTime = datetime.utcnow()
+        startTime = DiracTime.utcnow()
         transferStartTime = time.time()
         lfnsToRemove = list(lfnsToRemove)
         ret = storageElement.getFileSize(lfnsToRemove, replicaDict=replicaDict)
         deletedSizes = ret.get("Value", {}).get("Successful", {})
         res = storageElement.removeFile(lfnsToRemove, replicaDict=replicaDict)
-        endTime = datetime.utcnow()
+        endTime = DiracTime.utcnow()
         accountingDict = _initialiseAccountingDict("removePhysicalReplica", storageElementName, len(lfnsToRemove))
         accountingDict["TransferTime"] = time.time() - transferStartTime
 

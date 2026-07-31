@@ -11,9 +11,9 @@ from DIRAC.Core.Utilities.Graphs.GraphUtilities import (
     PrettyDateFormatter,
     PrettyScalarFormatter,
 )
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from matplotlib.lines import Line2D
 from matplotlib.dates import date2num
-import datetime
 
 
 class CurveGraph(PlotBase):
@@ -35,8 +35,8 @@ class CurveGraph(PlotBase):
         start_plot = 0
         end_plot = 0
         if "starttime" in self.prefs and "endtime" in self.prefs:
-            start_plot = date2num(datetime.datetime.utcfromtimestamp(to_timestamp(self.prefs["starttime"])))
-            end_plot = date2num(datetime.datetime.utcfromtimestamp(to_timestamp(self.prefs["endtime"])))
+            start_plot = date2num(DiracTime.utcfromtimestamp(to_timestamp(self.prefs["starttime"])))
+            end_plot = date2num(DiracTime.utcfromtimestamp(to_timestamp(self.prefs["endtime"])))
 
         labels = self.gdata.getLabels()
         labels.reverse()

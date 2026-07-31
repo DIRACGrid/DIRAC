@@ -14,6 +14,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Utilities.SaferEval import saferEval
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 
 
@@ -120,8 +121,8 @@ def getToken(key):
         if not tokenExpiration["OK"]:
             error(tokenExpiration["Message"])
 
-        now = datetime.datetime.utcnow()
-        # datetime.datetime.utcnow()
+        now = DiracTime.utcnow()
+        # DiracTime.utcnow()
         expirationDate = now + datetime.timedelta(seconds=tokenExpiration["Value"])
         return expirationDate
 

@@ -16,6 +16,7 @@ from DIRAC import exit as DIRACExit
 from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
 switchDict = {}
@@ -130,7 +131,7 @@ def setToken(user):
         tokenExpiration = datetime.max
         newTokenOwner = "rs_svc"
     else:
-        tokenExpiration = datetime.utcnow().replace(microsecond=0) + timedelta(days=int(switchDict["days"]))
+        tokenExpiration = DiracTime.utcnow().replace(microsecond=0) + timedelta(days=int(switchDict["days"]))
         newTokenOwner = user
 
     gLogger.always(f"New token: {newTokenOwner} --- until {tokenExpiration}")
