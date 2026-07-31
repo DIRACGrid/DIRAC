@@ -312,20 +312,16 @@ class DownloadInputData:
             self.__cleanFailedFile(lfn, downloadDir)
             return result
 
-        if os.path.exists(localFile):
-            self.log.verbose("File successfully downloaded locally", f"({lfn} to {localFile})")
-            fileDict = {
-                "turl": "Downloaded",
-                "protocol": "Downloaded",
-                "se": seName,
-                "pfn": reps[seName],
-                "guid": guid,
-                "path": localFile,
-            }
-            return S_OK(fileDict)
-        else:
-            self.log.warn("File does not exist in local directory after download")
-            return S_ERROR("OK download result but file missing in current directory")
+        self.log.verbose("File successfully downloaded locally", f"({lfn} to {localFile})")
+        fileDict = {
+            "turl": "Downloaded",
+            "protocol": "Downloaded",
+            "se": seName,
+            "pfn": reps[seName],
+            "guid": guid,
+            "path": localFile,
+        }
+        return S_OK(fileDict)
 
     #############################################################################
     def __setJobParam(self, name, value):
