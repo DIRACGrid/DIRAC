@@ -1,14 +1,17 @@
-""" DIRAC FileCatalog component representing a directory tree with
-    a closure table
+"""DIRAC FileCatalog component representing a directory tree with
+a closure table
 
-    General warning: when we return the number of affected row, if the values did not change
-                     then they are not taken into account, so we might return "Dir does not exist"
-                     while it does.... the timestamp update should prevent this to happen, however if
-                     you do it several times within 1 second, then there will be no changed, and affected = 0
+General warning: when we return the number of affected row, if the values did not change
+                 then they are not taken into account, so we might return "Dir does not exist"
+                 while it does.... the timestamp update should prevent this to happen, however if
+                 you do it several times within 1 second, then there will be no changed, and affected = 0
 
 """
+
 import errno
 import os
+
+import MySQLdb
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.DirectoryTreeBase import DirectoryTreeBase
@@ -389,7 +392,7 @@ class DirectoryClosure(DirectoryTreeBase):
             result = self.db.ugManager.getUserAndGroupID(credDict)
             if not result["OK"]:
                 return result
-            (l_uid, l_gid) = result["Value"]
+            l_uid, l_gid = result["Value"]
 
         # Find the ID of the parent
         res = self.findDir(parentDir)
@@ -512,7 +515,6 @@ class DirectoryClosure(DirectoryTreeBase):
     def _setDirectoryParameter(self, path, pname, pvalue, recursive=False):
         """Set a numerical directory parameter
 
-
         Rem: the parent class has a more generic method, which is called
              in case we are given an unknown parameter
 
@@ -539,74 +541,17 @@ class DirectoryClosure(DirectoryTreeBase):
 
         # If there is an associated procedure, we go for it
         if psName:
-            # Build the query based on whether it's recursive and which parameter
             if recursive and pname in ["UID", "GID", "Mode"]:
-                # Recursive update: update directory and all its children
-                # First, get the directory ID
-                dirResult = self.findDir(path)
-                if not dirResult["OK"]:
-                    return dirResult
-                dirId = dirResult["Value"]
-                if not dirId:
-                    return S_ERROR(errno.ENOENT, f"Directory does not exist: {path}")
-                
-                # Update directories recursively
-                if pname == "UID":
-                    req = """UPDATE FC_DirectoryList d
-                       JOIN FC_DirectoryClosure c ON d.DirID = c.ChildID
-                       SET d.UID = %s, d.ModificationDate = UTC_TIMESTAMP()
-                       WHERE c.ParentID = %s"""
-                    result = self.db._update(req, args=(pvalue, dirId))
-                    # Also update files
-                    req_files = """UPDATE FC_Files f
-                       JOIN FC_DirectoryClosure c ON f.DirID = c.ChildID
-                       SET f.UID = %s, f.ModificationDate = UTC_TIMESTAMP()
-                       WHERE c.ParentID = %s"""
-                    resultFiles = self.db._update(req_files, args=(pvalue, dirId))
-                elif pname == "GID":
-                    req = """UPDATE FC_DirectoryList d
-                       JOIN FC_DirectoryClosure c ON d.DirID = c.ChildID
-                       SET d.GID = %s, d.ModificationDate = UTC_TIMESTAMP()
-                       WHERE c.ParentID = %s"""
-                    result = self.db._update(req, args=(pvalue, dirId))
-                    # Also update files
-                    req_files = """UPDATE FC_Files f
-                       JOIN FC_DirectoryClosure c ON f.DirID = c.ChildID
-                       SET f.GID = %s, f.ModificationDate = UTC_TIMESTAMP()
-                       WHERE c.ParentID = %s"""
-                    resultFiles = self.db._update(req_files, args=(pvalue, dirId))
-                else:  # Mode
-                    req = """UPDATE FC_DirectoryList d
-                       JOIN FC_DirectoryClosure c ON d.DirID = c.ChildID
-                       SET d.Mode = %s, d.ModificationDate = UTC_TIMESTAMP()
-                       WHERE c.ParentID = %s"""
-                    result = self.db._update(req, args=(pvalue, dirId))
-                    # Also update files
-                    req_files = """UPDATE FC_Files f
-                       JOIN FC_DirectoryClosure c ON f.DirID = c.ChildID
-                       SET f.Mode = %s, f.ModificationDate = UTC_TIMESTAMP()
-                       WHERE c.ParentID = %s"""
-                    resultFiles = self.db._update(req_files, args=(pvalue, dirId))
+                result = self._setDirectoryParameterRecursively(path, pname, pvalue)
             else:
-                # Non-recursive update
-                if pname == "UID":
-                    req = "UPDATE FC_DirectoryList SET UID = %s, ModificationDate = UTC_TIMESTAMP() WHERE Name = %s"
-                elif pname == "GID":
-                    req = "UPDATE FC_DirectoryList SET GID = %s, ModificationDate = UTC_TIMESTAMP() WHERE Name = %s"
-                elif pname == "Status":
-                    req = "UPDATE FC_DirectoryList SET Status = %s, ModificationDate = UTC_TIMESTAMP() WHERE Name = %s"
-                elif pname == "Mode":
-                    req = "UPDATE FC_DirectoryList SET Mode = %s, ModificationDate = UTC_TIMESTAMP() WHERE Name = %s"
+                req = f"UPDATE FC_DirectoryList SET {pname} = %s, ModificationDate = UTC_TIMESTAMP() WHERE Name = %s"  # nosec B608
                 result = self.db._update(req, args=(pvalue, path))
-                resultFiles = S_OK(0)  # Non-recursive doesn't update files
 
             if not result["OK"]:
                 return result
-            if not resultFiles["OK"]:
-                return resultFiles
 
             affected = result["Value"]
-            
+
             if not affected:
                 # Either there were no changes, or the directory does not exist
                 exists = self.existsDir(path).get("Value", {}).get("Exists")
@@ -619,6 +564,50 @@ class DirectoryClosure(DirectoryTreeBase):
         # In case this is a 'new' parameter, we have a fallback solution, but we should add a specific ps for it
         else:
             return DirectoryTreeBase._setDirectoryParameter(self, path, pname, pvalue)
+
+    def _setDirectoryParameterRecursively(self, path, pname, pvalue):
+        """Set a directory parameter on a directory tree and its files atomically."""
+
+        result = self.db._getConnection()
+        if not result["OK"]:
+            return result
+        connection = result["Value"]
+
+        directory_query = f"""UPDATE FC_DirectoryList d
+           JOIN FC_DirectoryClosure c ON d.DirID = c.ChildID
+           SET d.{pname} = %s, d.ModificationDate = UTC_TIMESTAMP()
+           WHERE c.ParentID = %s"""  # nosec B608
+        file_query = f"""UPDATE FC_Files f
+           JOIN FC_DirectoryClosure c ON f.DirID = c.ChildID
+           SET f.{pname} = %s, f.ModificationDate = UTC_TIMESTAMP()
+           WHERE c.ParentID = %s"""  # nosec B608
+
+        with connection.cursor() as cursor:
+            try:
+                cursor.execute("START TRANSACTION")
+                cursor.execute(
+                    "SELECT DirID FROM FC_DirectoryList WHERE Name = %s",
+                    (os.path.normpath(path),),
+                )
+                row = cursor.fetchone()
+                if not row:
+                    cursor.execute("ROLLBACK")
+                    return S_ERROR(errno.ENOENT, f"Directory does not exist: {path}")
+
+                dir_id = row[0]
+                cursor.execute(directory_query, (pvalue, dir_id))
+                directory_updates = cursor.rowcount
+                cursor.execute(file_query, (pvalue, dir_id))
+                file_updates = cursor.rowcount
+                cursor.execute("COMMIT")
+            except MySQLdb.Error as error:
+                try:
+                    cursor.execute("ROLLBACK")
+                except MySQLdb.Error as rollback_error:
+                    return S_ERROR(f"Recursive directory update failed: {error}; rollback failed: {rollback_error}")
+                return S_ERROR(f"Recursive directory update failed: {error}")
+
+        return S_OK(directory_updates + file_updates)
 
     def _setDirectoryGroup(self, path, gname, recursive=False):
         """Set the directory owner"""
