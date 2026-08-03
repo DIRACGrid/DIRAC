@@ -71,7 +71,7 @@ class Host(object):
             os.unlink(runFileName)
         runFile = open(runFileName, "w")
         runFile.write(
-            """
+            """#!/bin/bash
 ( exec </dev/null
 #  echo $2
   exec > $2
