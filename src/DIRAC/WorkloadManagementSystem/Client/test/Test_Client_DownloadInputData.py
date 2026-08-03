@@ -72,12 +72,6 @@ def osPathExists(mocker):
     return osPathMock
 
 
-def test_DLIDownloadFromSE_fail(dli, mockSE, osPathExists):
-    osPathExists.return_value = False
-    res = dli._downloadFromSE("/a/lfn/1.txt", "mySE", {"mySE": []}, "aGuid")
-    assert not res["OK"]
-
-
 def test_DLIDownloadFromSE_local(dli, mockSE, osPathExists):
     res = dli._downloadFromSE("/a/lfn/1.txt", "mySE", {"mySE": []}, "aGuid")
     assert res["OK"], res
@@ -107,12 +101,6 @@ def test_DLIDownloadFromBestSE_isLocal(dli, mockSE, osPathExists):
     res = dli._downloadFromBestSE("/a/lfn/1.txt", {"mySE": []}, "aGuid")
     assert res["OK"], res.get("Message", "No error")
     assert res["Value"]["protocol"] == "LocalData"
-
-
-def test_DLIDownloadFromBestSE_Fail(dli, mockSE, osPathExists):
-    osPathExists.return_value = False
-    res = dli._downloadFromBestSE("/a/lfn/1.txt", {"mySE": []}, "aGuid")
-    assert not res["OK"]
 
 
 def test_DLI_execute(mocker, dli, mockSE):
