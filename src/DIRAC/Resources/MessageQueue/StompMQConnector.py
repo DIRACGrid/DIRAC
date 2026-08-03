@@ -195,10 +195,14 @@ class StompMQConnector(MQConnector):
 
         for _ in range(10):
             try:
-                # We need to explicitely call disconnect to avoid leaving
-                # threads behind
+                # We need to explicitly call disconnect to avoid leaving threads behind
                 self.connection.disconnect()
-                self.connection.connect(username=user, passcode=password, wait=True)
+
+                # Connect to the broker with a timeout of 30 seconds
+                self.connection.connect(username=user, passcode=password, wait=False)
+                self.connection.transport.wait_for_connection(30)  # pylint: disable=no-member
+                if self.connection.transport.connection_error:  # pylint: disable=no-member
+                    raise stomp.exception.ConnectFailedException()
 
                 if self.connection.is_connected():
                     # Go to the socket of the Stomp to find the remote host
