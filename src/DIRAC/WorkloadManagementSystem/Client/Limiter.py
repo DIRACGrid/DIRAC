@@ -132,9 +132,13 @@ class Limiter:
                     negCond[attr].append(value)
         return negCond
 
-    def __extractCSData(self, section):
+    def __extractCSData(self, section, cast=int):
         """Extract limiting information from the CS in the form:
         { 'JobType' : { 'Merge' : 20, 'MCGen' : 1000 } }
+
+        :param cast: callable used to convert each value. ``int`` for job-count
+            limits (RunningLimit) and ``float`` for delays in seconds (MatchingDelay),
+            which may be sub-second.
         """
         stuffDict = self.csDictCache.get(section)
         if stuffDict:
@@ -153,7 +157,7 @@ class Limiter:
                 return result
             attLimits = result["Value"]
             try:
-                attLimits = {k: int(attLimits[k]) for k in attLimits}
+                attLimits = {k: cast(attLimits[k]) for k in attLimits}
             except Exception as excp:
                 errMsg = f"{section}/{attName} has to contain numbers: {str(excp)}"
                 self.log.error(errMsg)
@@ -197,10 +201,10 @@ class Limiter:
         # negCond is something like : {'JobType': ['Merge']}
         return S_OK(negCond)
 
-    def updateDelayCounters(self, siteName, jid):
+    def updateDelayCounters(self, siteName, jid, knownAtts=None):
         # Get the info from the CS
         siteSection = f"{self.__matchingDelaySection}/{siteName}"
-        result = self.__extractCSData(siteSection)
+        result = self.__extractCSData(siteSection, cast=float)
         if not result["OK"]:
             return result
         delayDict = result["Value"]
@@ -213,11 +217,17 @@ class Limiter:
                 self.log.error("Attribute does not exist in the JobDB. Please fix it!", f"({attName})")
             else:
                 attNames.append(attName)
-        result = self.jobDB.getJobAttributes(jid, attNames)
-        if not result["OK"]:
-            self.log.error("Error while retrieving attributes", f"coming from {siteSection}: {result['Message']}")
-            return result
-        atts = result["Value"]
+        # Reuse any attributes the caller already fetched; only query the DB for the missing ones.
+        # This lets the caller arm the counter right after matching without an extra round trip.
+        knownAtts = knownAtts or {}
+        atts = {attName: knownAtts[attName] for attName in attNames if attName in knownAtts}
+        missing = [attName for attName in attNames if attName not in atts]
+        if missing:
+            result = self.jobDB.getJobAttributes(jid, missing)
+            if not result["OK"]:
+                self.log.error("Error while retrieving attributes", f"coming from {siteSection}: {result['Message']}")
+                return result
+            atts.update(result["Value"])
         # Create the DictCache if not there
         if siteName not in self.delayMem:
             self.delayMem[siteName] = DictCache()
