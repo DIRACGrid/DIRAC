@@ -305,6 +305,19 @@ class WebAppHandler(RequestHandler):
 
         return S_OK(loggingInfo)
 
+    types_getGroupedPilotSummary = [list]
+
+    @classmethod
+    def export_getGroupedPilotSummary(cls, columnList):
+        """
+        Get pilot summary showing grouped by columns in columnList, all pilot states
+        and pilot efficiencies in a single row.
+
+        :param columnList: a list of columns to GROUP BY (less status column)
+        :return: a dictionary containing column names and data records
+        """
+        return cls.pilotAgentsDB.getGroupedPilotSummary(columnList)
+
     ##############################################################################
     # Jobs
     ##############################################################################
