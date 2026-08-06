@@ -2,6 +2,7 @@
     It's an interface to JobStateUpdateClient, used when bulk submission is needed.
 """
 import datetime
+import math
 from collections import defaultdict
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -57,7 +58,8 @@ class JobReport:
 
     def setJobParameter(self, par_name, par_value, sendFlag=True):
         """Set job parameter for jobID"""
-        self.jobParameters.append((par_name, par_value))
+        if self._isValidParameterValue(par_name, par_value):
+            self.jobParameters.append((par_name, par_value))
         if sendFlag and self.jobID:
             # and send
             return self.sendStoredJobParameters()
@@ -67,13 +69,26 @@ class JobReport:
     def setJobParameters(self, parameters, sendFlag=True):
         """Set job parameters for jobID"""
         for pname, pvalue in parameters:
-            self.jobParameters.append((pname, pvalue))
+            if self._isValidParameterValue(pname, pvalue):
+                self.jobParameters.append((pname, pvalue))
 
         if sendFlag and self.jobID:
             # and send
             return self.sendStoredJobParameters()
 
         return S_OK()
+
+    def _isValidParameterValue(self, par_name, par_value):
+        """Check that a parameter value can be reported.
+
+        Non-finite floats (NaN, +/-Infinity) cannot be represented in JSON
+        nor stored in the job parameters backends, so they are dropped here
+        with a warning rather than failing the whole parameters update.
+        """
+        if isinstance(par_value, float) and not math.isfinite(par_value):
+            gLogger.warn("Dropping non-finite value for job parameter", f"{par_name} = {par_value}")
+            return False
+        return True
 
     def sendStoredStatusInfo(self):
         """Send the job status information stored in the internal cache"""

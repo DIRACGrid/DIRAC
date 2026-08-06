@@ -12,6 +12,8 @@ Pilots invoke dirac-wms-cpu-normalization which
       DB12measured = 15.4
     }
 """
+import math
+
 from db12 import multiple_dirac_benchmark
 
 import DIRAC
@@ -67,6 +69,11 @@ def main():
 
     gLogger.info("Applying a correction on the CPU power:", corr)
     cpuPower = round(db12Result / corr, 1)
+    if not math.isfinite(cpuPower):
+        gLogger.error(
+            "Computed CPU power is not finite, falling back to 0.0", f"(db12Result={db12Result}, correction={corr})"
+        )
+        cpuPower = 0.0
 
     gLogger.notice(f"Estimated CPU power is {cpuPower:.1f} HS06")
 

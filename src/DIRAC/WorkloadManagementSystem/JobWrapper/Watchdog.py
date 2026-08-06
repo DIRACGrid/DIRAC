@@ -140,6 +140,9 @@ class Watchdog:
         # thus they need to be multiplied by a large enough factor
         self.fineTimeLeftLimit = gConfig.getValue(self.section + "/TimeLeftLimit", 150 * self.pollingTime)
         self.cpuPower = gConfig.getValue("/LocalSite/CPUNormalizationFactor", 1.0)
+        if not math.isfinite(self.cpuPower):
+            self.log.error("Ignoring non-finite CPUNormalizationFactor from configuration", str(self.cpuPower))
+            self.cpuPower = 1.0
 
         return S_OK()
 
@@ -801,39 +804,31 @@ class Watchdog:
 
     #############################################################################
     def __getUsageSummary(self):
-        """Returns average load, memory etc. over execution of job thread"""
+        """Returns average load, memory etc. over execution of job thread
+
+        Parameters for which no sample was collected (e.g. because the job
+        ended before the first Watchdog cycle) are omitted from the summary:
+        NaN cannot be represented in JSON nor stored in the backends.
+        """
         summary = {}
         # CPUConsumed
-        if "CPUConsumed" in self.parameters:
-            cpuList = self.parameters["CPUConsumed"]
-            if cpuList:
-                hmsCPU = cpuList[-1]
-                rawCPU = self.__convertCPUTime(hmsCPU)
-                if rawCPU["OK"]:
-                    summary["LastUpdateCPU(s)"] = rawCPU["Value"]
-            else:
-                summary["LastUpdateCPU(s)"] = math.nan
+        if self.parameters.get("CPUConsumed"):
+            hmsCPU = self.parameters["CPUConsumed"][-1]
+            rawCPU = self.__convertCPUTime(hmsCPU)
+            if rawCPU["OK"]:
+                summary["LastUpdateCPU(s)"] = rawCPU["Value"]
         # DiskSpace
-        if "DiskSpace" in self.parameters:
+        if self.parameters.get("DiskSpace"):
             space = self.parameters["DiskSpace"]
-            if space:
-                summary["DiskSpace(MB)"] = max(abs(float(space[-1]) - float(self.initialValues["DiskSpace"])), 0.0)
-            else:
-                summary["DiskSpace(MB)"] = math.nan
+            summary["DiskSpace(MB)"] = max(abs(float(space[-1]) - float(self.initialValues["DiskSpace"])), 0.0)
         # MemoryUsed
-        if "MemoryUsed" in self.parameters:
+        if self.parameters.get("MemoryUsed"):
             memory = self.parameters["MemoryUsed"]
-            if memory:
-                summary["MemoryUsed(MB)"] = abs(float(memory[-1]) - float(self.initialValues["MemoryUsed"]))
-            else:
-                summary["MemoryUsed(MB)"] = math.nan
+            summary["MemoryUsed(MB)"] = abs(float(memory[-1]) - float(self.initialValues["MemoryUsed"]))
         # LoadAverage
-        if "LoadAverage" in self.parameters:
+        if self.parameters.get("LoadAverage"):
             laList = self.parameters["LoadAverage"]
-            if laList:
-                summary["LoadAverage"] = sum(laList) / len(laList)
-            else:
-                summary["LoadAverage"] = math.nan
+            summary["LoadAverage"] = sum(laList) / len(laList)
 
         result = self.__getWallClockTime()
         if not result["OK"]:
