@@ -33,12 +33,10 @@ eval "${PILOT_DOWNLOAD_COMMAND}"
 echo "${PILOT_JSON}" >pilot.json
 jq <pilot.json
 
-if command -v python &>/dev/null; then
-  py='python'
-elif command -v python3 &>/dev/null; then
+if command -v python3 &>/dev/null; then
   py='python3'
-elif command -v python2 &>/dev/null; then
-  py='python2'
+elif command -v python &>/dev/null; then
+  py='python'
 fi
 
 # shellcheck disable=SC2086
