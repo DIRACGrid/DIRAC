@@ -20,7 +20,7 @@ import os
 
 import requests
 from signurlarity.client import Client
-from signurlarity.exceptions import SignurlarityError
+from signurlarity.exceptions import NoSuchBucketError, NoSuchKeyError, PresignError, SignurlarityError
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities.Adler import fileAdler
@@ -103,7 +103,6 @@ class S3Storage(StorageBase):
         self.bucketName = parameters["Path"]
 
         self.s3_client = Client(
-            "s3",
             endpoint_url=endpoint_url,
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
@@ -230,12 +229,9 @@ class S3Storage(StorageBase):
             try:
                 self.s3_client.head_object(Bucket=self.bucketName, Key=key)
                 successful[key] = True
-            except SignurlarityError as exp:
-                if exp.response["Error"]["Code"] == "404":
-                    successful[key] = False
-                else:
-                    failed[key] = repr(exp)
-            except Exception as exp:
+            except (NoSuchBucketError, NoSuchKeyError):
+                successful[key] = False
+            except PresignError as exp:
                 failed[key] = repr(exp)
 
         resDict = {"Failed": failed, "Successful": successful}
@@ -615,12 +611,11 @@ class S3Storage(StorageBase):
         # the @_extractKeyFromS3Path transformed URL into keys
         keys = urls
 
-        for key in keys:
-            try:
-                self.s3_client.delete_object(Bucket=self.bucketName, Key=key)
-                successful[key] = True
-            except Exception as exp:
-                failed[key] = repr(exp)
+        try:
+            self.s3_client.delete_objects(Bucket=self.bucketName, Delete={"Objects": keys, "Quiet": True})
+            successful = True
+        except PresignError as exp:
+            failed = repr(exp)
 
         return S_OK({"Failed": failed, "Successful": successful})
 
@@ -638,7 +633,7 @@ class S3Storage(StorageBase):
         failed = {}
         successful = {}
 
-        res = self.S3GatewayClient.createPresignedUrl(self.name, "delete_object", urls)
+        res = self.S3GatewayClient.createPresignedUrl(self.name, "delete_objects", urls)
         if not res["OK"]:
             return res
 
