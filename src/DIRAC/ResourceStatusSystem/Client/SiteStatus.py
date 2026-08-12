@@ -147,7 +147,7 @@ class SiteStatus(metaclass=DIRACSingleton):
             return siteStatusDictRes
         if not siteStatusDictRes["Value"]:
             return S_OK([])
-        return S_OK([x[0] for x in siteStatusDictRes["Value"].items() if x[1] in ["Active", "Degraded"]])
+        return S_OK([x[0] for x in siteStatusDictRes["Value"].items() if x[1] == "Active"])
 
     def getSites(self, siteState="Active"):
         """
@@ -188,7 +188,7 @@ class SiteStatus(metaclass=DIRACSingleton):
         else:
             # fix case sensitive string
             siteState = siteState.capitalize()
-            allowedStateList = ["Active", "Banned", "Degraded", "Probing", "Error", "Unknown"]
+            allowedStateList = ["Active", "Banned"]
             if siteState not in allowedStateList:
                 return S_ERROR(errno.EINVAL, "Not a valid status, parameter rejected")
 
@@ -275,9 +275,14 @@ def getCacheDictFromRawData(rawList):
 
     :return: dict of the form { ( elementName ) : status, ... }
     """
+    ALLOWED = {"Active", "Degraded"}
 
     res = {}
     for entry in rawList:
-        res.update({(entry[0]): entry[1]})
+        if entry[1] in ALLOWED:
+            status = "Active"
+        else:
+            status = "Banned"
+        res.update({(entry[0]): status})
 
     return res
