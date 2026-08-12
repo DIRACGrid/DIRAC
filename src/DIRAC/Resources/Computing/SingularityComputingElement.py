@@ -346,6 +346,11 @@ class SingularityComputingElement(ComputingElement):
         # Now prepare start singularity
         # Mount /cvmfs in if it exists on the host
         withCVMFS = os.path.isdir("/cvmfs")
+        # Payloads may need to start a container of their own (e.g. lb-run for an
+        # application which needs an older OS). As --contain gives them a minimal
+        # /dev, apptainer is left without /dev/fuse and so cannot fall back to
+        # fuse-overlayfs on hosts where the kernel overlay is unavailable.
+        withFuse = os.path.exists("/dev/fuse")
         innerCmd = os.path.join(self.__innerdir, "dirac_container.sh")
         outerCmd = ["apptainer", "exec"]
         outerCmd.extend(["--contain"])  # use minimal /dev and empty other directories (e.g. /tmp and $HOME)
@@ -356,6 +361,8 @@ class SingularityComputingElement(ComputingElement):
         outerCmd.append("--userns")
         if withCVMFS:
             outerCmd.extend(["--bind", "/cvmfs"])
+        if withFuse:
+            outerCmd.extend(["--bind", "/dev/fuse"])
         if not self.__installDIRACInContainer:
             outerCmd.extend(["--bind", "{0}:{0}:ro".format(self.__findInstallBaseDir())])
 
