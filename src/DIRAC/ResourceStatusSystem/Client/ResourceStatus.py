@@ -257,9 +257,14 @@ def getCacheDictFromRawData(rawList):
 
     :return: dict of the form { ( elementName, elementType, statusType, vO ) : status, ... }
     """
+    ALLOWED = {"Active", "Degraded"}
 
     res = {}
     for entry in rawList:
-        res.update({(entry[0], entry[1], entry[2], entry[4]): entry[3]})
+        if entry[3] in ALLOWED:
+            status = "Active"
+        else:
+            status = "Banned"
+        res.update({(entry[0], entry[1], entry[2], entry[4]): status})
 
     return res
