@@ -122,16 +122,12 @@ class DiracAdmin(API):
         if not bannedSites["OK"]:
             return bannedSites
 
-        probingSites = self.sitestatus.getSites(siteState="Probing")
-        if not probingSites["OK"]:
-            return probingSites
-
-        mergedList = sorted(bannedSites["Value"] + probingSites["Value"])
+        bannedList = sorted(bannedSites["Value"])
 
         if printOutput:
-            gLogger.notice("\n".join(mergedList))
+            gLogger.notice("\n".join(bannedList))
 
-        return S_OK(mergedList)
+        return S_OK(bannedList)
 
     #############################################################################
     def getSiteSection(self, site, printOutput=False):
