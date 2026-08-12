@@ -372,7 +372,7 @@ class ResourceStatusDB(SQLAlchemyDB):
                     columnValue = DiracTime.utcnow().replace(microsecond=0)
                 if changeDE and columnName == "DateEffective" and not columnValue:
                     columnValue = DiracTime.utcnow().replace(microsecond=0)
-                if columnValue:
+                if columnValue is not None:
                     if isinstance(columnValue, datetime.datetime):
                         columnValue = columnValue.replace(microsecond=0)
                     setattr(res, columnName.lower(), columnValue)

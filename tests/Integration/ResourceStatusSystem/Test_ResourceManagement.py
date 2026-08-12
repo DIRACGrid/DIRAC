@@ -249,6 +249,13 @@ def test_SpaceTokenOccupancy(rmClient):
     # check if the result has changed
     assert res["Value"][0][3] == 100.0
 
+    res = rmClient.addOrModifySpaceTokenOccupancyCache("endpoint", "token", free=0.0)
+    assert res["OK"] is True, res["Message"]
+
+    res = rmClient.selectSpaceTokenOccupancyCache("endpoint", "token")
+    # check if the result has changed
+    assert res["Value"][0][3] == 0.0
+
     # TEST deleteSpaceTokenOccupancy
     # ...............................................................................
     res = rmClient.deleteSpaceTokenOccupancyCache("endpoint", "token")

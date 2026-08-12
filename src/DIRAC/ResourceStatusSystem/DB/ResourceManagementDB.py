@@ -426,7 +426,7 @@ class ResourceManagementDB(SQLAlchemyDB):
                     columnValue = DiracTime.utcnow().replace(microsecond=0)
                 if columnName == "DateEffective" and not columnValue:  # we always update DateEffective, if there
                     columnValue = DiracTime.utcnow().replace(microsecond=0)
-                if columnValue:
+                if columnValue is not None:
                     setattr(res, columnName.lower(), columnValue)
 
             session.commit()
