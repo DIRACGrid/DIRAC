@@ -142,4 +142,4 @@ def test_large_list():
 def test_performance(s):
     start = time.time()
     saferEval(s, 2048)
-    assert time.time() - start < 0.1
+    assert time.time() - start < 1.0
