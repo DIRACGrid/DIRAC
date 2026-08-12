@@ -132,7 +132,7 @@ def test_addAndRemove_complicatedTest(stClient):
 
     result = stClient.getSites()
     assert result["OK"] is True, result["Message"]
-    inRSS = "testBanned.test.test" in result["Value"]
+    inRSS = "testActive.test.test" in result["Value"]
 
     # TEST getSites
     # ...............................................................................
@@ -148,9 +148,10 @@ def test_addAndRemove_complicatedTest(stClient):
 
     # setting a status
     if inRSS:
-        result = stClient.setSiteStatus("testBanned.test.test", "Probing")
+        result = stClient.setSiteStatus("testActive.test.test", "Probing")
         assert result["OK"] is True, result["Message"]
         stClient.rssCache.refreshCache()
 
-        result = stClient.getSites("Probing")
+        result = stClient.getSites("Banned")
         assert result["OK"] is True, result["Message"]
+        assert "testActive.test.test" in result["Value"]

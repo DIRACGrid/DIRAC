@@ -15,6 +15,7 @@ DIRAC.initialize()  # Initialize configuration
 
 from DIRAC import gLogger
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 gLogger.setLevel("DEBUG")
 
@@ -24,6 +25,12 @@ Datetime = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
 @pytest.fixture(name="rssClient")
 def fixtureResourceStatusClient():
     yield ResourceStatusClient()
+
+
+@pytest.fixture(name="rsClient")
+def fixtureResourceStatus():
+    resourceStatus = ResourceStatus()
+    yield resourceStatus
 
 
 def test_addAndRemove(rssClient: ResourceStatusClient):
@@ -422,3 +429,76 @@ def test_addIfNotThereStatusElement(rssClient: ResourceStatusClient):
     assert res["OK"] is True, res["Message"]
     # check if the returned value is empty
     assert not res["Value"]
+
+
+def test_getElementStatus(rssClient: ResourceStatusClient, rsClient):
+    # make sure that the test resoureces are not presented in the db
+    rssClient.deleteStatusElement("Resource", "Status", "testActiveResource")
+    rssClient.deleteStatusElement("Resource", "Status", "testBannedResource")
+    rssClient.deleteStatusElement("Resource", "Status", "testResource")
+
+    res = rssClient.insertStatusElement(
+        "Resource",
+        "Status",
+        "testActiveResource",
+        "all",
+        "Degraded",
+        "ComputingElement",
+        "reason",
+        Datetime,
+        Datetime,
+        "tokenOwner",
+        Datetime,
+    )
+
+    assert res["OK"] is True, res["Message"]
+    rsClient.rssCache.refreshCache()
+
+    res = rsClient.getElementStatus("testActiveResource", "ComputingElement")
+
+    assert res["OK"] is True, res["Message"]
+    assert res["Value"]["testActiveResource"]["all"] == "Active"
+
+    res = rssClient.insertStatusElement(
+        "Resource",
+        "Status",
+        "testBannedResource",
+        "all",
+        "Probing",
+        "ComputingElement",
+        "reason",
+        Datetime,
+        Datetime,
+        "tokenOwner",
+        Datetime,
+    )
+
+    assert res["OK"] is True, res["Message"]
+    rsClient.rssCache.refreshCache()
+
+    res = rsClient.getElementStatus("testBannedResource", "ComputingElement")
+    assert res["OK"] is True, res["Message"]
+    assert res["Value"]["testBannedResource"]["all"] == "Banned"
+
+    res = rssClient.insertStatusElement(
+        "Resource",
+        "Status",
+        "testResource",
+        "all",
+        "Active",
+        "ComputingElement",
+        "reason",
+        Datetime,
+        Datetime,
+        "tokenOwner",
+        Datetime,
+    )
+    assert res["OK"] is True, res["Message"]
+    rsClient.rssCache.refreshCache()
+
+    res = rsClient.setElementStatus("testResource", "ComputingElement", "all", "Error")
+    assert res["OK"] is True, res["Message"]
+    rsClient.rssCache.refreshCache()
+    res = rsClient.getElementStatus("testResource", "ComputingElement")
+    assert res["OK"] is True, res["Message"]
+    assert res["Value"]["testResource"]["all"] == "Banned"
