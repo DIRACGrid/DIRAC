@@ -16,7 +16,6 @@ import re
 import sys
 import time
 import datetime
-import math
 import shutil
 import threading
 import tarfile
@@ -125,11 +124,6 @@ class JobWrapper:
         self.boincUserID = gConfig.getValue("/LocalSite/BoincUserID", 0)
         self.pilotRef = gConfig.getValue("/LocalSite/PilotReference", "Unknown")
         self.cpuNormalizationFactor = gConfig.getValue("/LocalSite/CPUNormalizationFactor", 0.0)
-        if not math.isfinite(self.cpuNormalizationFactor):
-            self.log.error(
-                "Ignoring non-finite CPUNormalizationFactor from configuration", str(self.cpuNormalizationFactor)
-            )
-            self.cpuNormalizationFactor = 0.0
         self.bufferLimit = gConfig.getValue(self.section + "/BufferLimit", 10485760)
         self.defaultOutputSE = getDestinationSEList(
             gConfig.getValue("/Resources/StorageElementGroups/SE-USER", []), self.siteName
@@ -231,11 +225,6 @@ class JobWrapper:
 
         if not self.cpuNormalizationFactor:
             self.cpuNormalizationFactor = float(self.ceArgs.get("CPUNormalizationFactor", self.cpuNormalizationFactor))
-            if not math.isfinite(self.cpuNormalizationFactor):
-                self.log.error(
-                    "Ignoring non-finite CPUNormalizationFactor from CE parameters", str(self.cpuNormalizationFactor)
-                )
-                self.cpuNormalizationFactor = 0.0
         self.siteName = self.ceArgs.get("Site", self.siteName)
 
         # Prepare the working directory, cd to there, and copying eventual extra arguments in it

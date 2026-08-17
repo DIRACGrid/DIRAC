@@ -54,3 +54,42 @@ def test__getUsageSummaryNoSamples(monkeypatch):
     for name in ("LastUpdateCPU(s)", "DiskSpace(MB)", "MemoryUsed(MB)", "LoadAverage"):
         assert name not in wd.currentStats
     assert all(math.isfinite(value) for value in wd.currentStats.values()), wd.currentStats
+
+
+def test__getUsageSummaryWithSamples(monkeypatch):
+    """Once samples have been collected, the summary must actually report them."""
+    monkeypatch.delenv("JOBID", raising=False)
+    pid = os.getpid()
+    wd = Watchdog(pid, mock_exeThread, mock_spObject, 5000)
+    assert wd.calibrate()["OK"] is True
+    assert wd._performChecks()["OK"] is True
+
+    wd._Watchdog__getUsageSummary()
+
+    # LoadAverage is sampled unconditionally, the others depend on the probes
+    assert "LoadAverage" in wd.currentStats
+    assert {"WallClockTime(s)", "ScaledCPUTime(s)"} <= set(wd.currentStats)
+    assert all(math.isfinite(value) for value in wd.currentStats.values()), wd.currentStats
+
+
+def test__getUsageSummaryWithoutCalibrationBaseline(monkeypatch):
+    """Samples without a baseline must be skipped, not raise.
+
+    calibrate() only records initialValues[DiskSpace]/[MemoryUsed] when the probe
+    succeeded, while a later check cycle collects samples regardless.
+    """
+    monkeypatch.delenv("JOBID", raising=False)
+    pid = os.getpid()
+    wd = Watchdog(pid, mock_exeThread, mock_spObject, 5000)
+    assert wd.calibrate()["OK"] is True
+
+    # as if both probes had failed at calibration time
+    wd.initialValues.pop("DiskSpace", None)
+    wd.initialValues.pop("MemoryUsed", None)
+
+    assert wd._performChecks()["OK"] is True
+    wd._Watchdog__getUsageSummary()
+
+    for name in ("DiskSpace(MB)", "MemoryUsed(MB)"):
+        assert name not in wd.currentStats
+    assert all(math.isfinite(value) for value in wd.currentStats.values()), wd.currentStats

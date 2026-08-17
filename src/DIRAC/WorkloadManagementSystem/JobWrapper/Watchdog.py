@@ -14,7 +14,6 @@
 import datetime
 import errno
 import getpass
-import math
 import os
 import re
 import socket
@@ -140,9 +139,6 @@ class Watchdog:
         # thus they need to be multiplied by a large enough factor
         self.fineTimeLeftLimit = gConfig.getValue(self.section + "/TimeLeftLimit", 150 * self.pollingTime)
         self.cpuPower = gConfig.getValue("/LocalSite/CPUNormalizationFactor", 1.0)
-        if not math.isfinite(self.cpuPower):
-            self.log.error("Ignoring non-finite CPUNormalizationFactor from configuration", str(self.cpuPower))
-            self.cpuPower = 1.0
 
         return S_OK()
 
@@ -806,9 +802,9 @@ class Watchdog:
     def __getUsageSummary(self):
         """Returns average load, memory etc. over execution of job thread
 
-        Parameters for which no sample was collected (e.g. because the job
-        ended before the first Watchdog cycle) are omitted from the summary:
-        NaN cannot be represented in JSON nor stored in the backends.
+        A parameter is omitted when no sample was collected for it, e.g. because
+        the job ended before the first Watchdog cycle, or when calibrate() could
+        not record the baseline that a differential value is computed against.
         """
         summary = {}
         # CPUConsumed
@@ -818,11 +814,11 @@ class Watchdog:
             if rawCPU["OK"]:
                 summary["LastUpdateCPU(s)"] = rawCPU["Value"]
         # DiskSpace
-        if self.parameters.get("DiskSpace"):
+        if self.parameters.get("DiskSpace") and "DiskSpace" in self.initialValues:
             space = self.parameters["DiskSpace"]
             summary["DiskSpace(MB)"] = max(abs(float(space[-1]) - float(self.initialValues["DiskSpace"])), 0.0)
         # MemoryUsed
-        if self.parameters.get("MemoryUsed"):
+        if self.parameters.get("MemoryUsed") and "MemoryUsed" in self.initialValues:
             memory = self.parameters["MemoryUsed"]
             summary["MemoryUsed(MB)"] = abs(float(memory[-1]) - float(self.initialValues["MemoryUsed"]))
         # LoadAverage

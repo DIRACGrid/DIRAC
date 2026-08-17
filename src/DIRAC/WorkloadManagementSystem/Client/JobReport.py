@@ -2,6 +2,7 @@
     It's an interface to JobStateUpdateClient, used when bulk submission is needed.
 """
 import datetime
+import decimal
 import math
 from collections import defaultdict
 
@@ -9,6 +10,33 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
+
+
+def isFiniteParameterValue(value):
+    """Check that a job parameter value holds no non-finite number.
+
+    Non-finite floats (NaN, +/-Infinity) have no representation in JSON: they make
+    the encoded payload invalid, which the receiving side rejects outright. Values
+    are inspected recursively, since a parameter may well be a container.
+
+    :param value: any job parameter value
+    :return: False if a NaN or an infinity is found anywhere in `value`
+    """
+    # bool and int are exact and always finite, and math.isfinite() would raise
+    # OverflowError on a large enough int
+    if isinstance(value, int):
+        return True
+    if isinstance(value, (float, decimal.Decimal)):
+        try:
+            return math.isfinite(value)
+        except (TypeError, ValueError):
+            # e.g. decimal.Decimal("sNaN"), which cannot even be converted to float
+            return False
+    if isinstance(value, dict):
+        return all(isFiniteParameterValue(item) for item in value.values())
+    if isinstance(value, (list, tuple, set)):
+        return all(isFiniteParameterValue(item) for item in value)
+    return True
 
 
 class JobReport:
@@ -25,6 +53,7 @@ class JobReport:
         self.source = source
         if not source:
             self.source = "Job_%d" % self.jobID
+        self.log = gLogger.getSubLogger(self.__class__.__name__)
 
     def setJob(self, jobID):
         """Set the job ID for which to send reports"""
@@ -58,13 +87,7 @@ class JobReport:
 
     def setJobParameter(self, par_name, par_value, sendFlag=True):
         """Set job parameter for jobID"""
-        if self._isValidParameterValue(par_name, par_value):
-            self.jobParameters.append((par_name, par_value))
-        if sendFlag and self.jobID:
-            # and send
-            return self.sendStoredJobParameters()
-
-        return S_OK()
+        return self.setJobParameters([(par_name, par_value)], sendFlag)
 
     def setJobParameters(self, parameters, sendFlag=True):
         """Set job parameters for jobID"""
@@ -81,12 +104,12 @@ class JobReport:
     def _isValidParameterValue(self, par_name, par_value):
         """Check that a parameter value can be reported.
 
-        Non-finite floats (NaN, +/-Infinity) cannot be represented in JSON
-        nor stored in the job parameters backends, so they are dropped here
-        with a warning rather than failing the whole parameters update.
+        Non-finite floats (NaN, +/-Infinity) cannot be represented in JSON nor
+        stored in the job parameters backends, so they are dropped here with a
+        warning rather than failing the whole parameters update.
         """
-        if isinstance(par_value, float) and not math.isfinite(par_value):
-            gLogger.warn("Dropping non-finite value for job parameter", f"{par_name} = {par_value}")
+        if not isFiniteParameterValue(par_value):
+            self.log.warn("Dropping non-finite value for job parameter", f"{par_name} = {par_value}")
             return False
         return True
 
