@@ -24,6 +24,8 @@ from rucio.common.utils import chunks, extract_scope
 
 sLog = gLogger.getSubLogger(__name__)
 
+RUCIO_COLLECTION_TYPES = {"DATASET", "CONTAINER"}
+
 
 def get_scope(lfn, scopes=None, diracAlgorithm="dirac"):
     """
@@ -305,11 +307,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                             file_dict[file_did["name"]] = str(uuid.UUID(guid))
                     if lfn not in result["Value"]["Successful"]:
                         result["Value"]["Successful"][lfn] = {"Files": {}, "Links": {}, "SubDirs": {}}
-                    for rep in self.client.list_replicas(
-                        [
-                            did,
-                        ]
-                    ):
+                    for rep in self.client.list_replicas([did]):
                         if rep:
                             name = rep["name"]
                             if self.convertUnicode:
@@ -343,7 +341,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                                     "PFN": pfn,
                                     "Status": "U",
                                 }
-            except DataIdentifierNotFound as err:
+            except DataIdentifierNotFound:
                 result["Value"]["Failed"][lfn] = "No such file or directory"
             except Exception as err:
                 return S_ERROR(str(err))
@@ -360,14 +358,14 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                 dids = [self.__getDidsFromLfn(lfn) for lfn in chunk]
                 for meta in self.client.get_metadata_bulk(dids):
                     lfn = str(meta["name"])
-                    if meta["did_type"] in ["DATASET", "CONTAINER"]:
+                    if meta["did_type"] in RUCIO_COLLECTION_TYPES:
                         nlinks = len([child for child in self.client.list_content(meta["scope"], meta["name"])])
                         successful[lfn] = {
                             "Checksum": "",
                             "ChecksumType": "",
                             "CreationDate": meta["created_at"],
                             "GUID": "",
-                            "Mode": 509,
+                            "Mode": 0o775,
                             "ModificationDate": meta["updated_at"],
                             "NumberOfLinks": nlinks,
                             "Size": 0,
@@ -386,7 +384,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                             "ChecksumType": "AD",
                             "CreationDate": meta["created_at"],
                             "GUID": guid,
-                            "Mode": 436,
+                            "Mode": 0o664,
                             "ModificationDate": meta["updated_at"],
                             "NumberOfLinks": 1,
                             "Size": meta["bytes"],
