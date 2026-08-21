@@ -395,7 +395,8 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                         except ValueError:
                             pass
             except DataIdentifierNotFound as err:
-                failed[lfn] = str(err)
+                for lfn in chunk:
+                    failed[lfn] = str(err)
             except Exception as err:
                 return S_ERROR(str(err))
         for lfn in listFiles:
