@@ -248,6 +248,10 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                 return S_ERROR(str(err))
         return result
 
+    def _get_did_type(self, scope, name):
+        """Return type of rucio DID (CONTAINER, DATASET or FILE)."""
+        return self.client.get_did(scope, name)["type"]
+
     @checkCatalogArguments
     def listDirectory(self, lfns, verbose=False):
         """
@@ -263,8 +267,8 @@ class RucioFileCatalogClient(FileCatalogClientBase):
             try:
                 did = self.__getDidsFromLfn(lfn)
                 # First need to check if it's a dataset or container
-                meta = self.client.get_metadata(did["scope"], did["name"])
-                if meta["did_type"] == "CONTAINER":
+                did_type = self._get_did_type(did["scope"], did["name"])
+                if did_type == "CONTAINER":
                     if lfn not in result["Value"]["Successful"]:
                         result["Value"]["Successful"][lfn] = {"Files": {}, "Links": {}, "SubDirs": {}}
                     for child in self.client.list_content(scope=did["scope"], name=did["name"]):
@@ -292,7 +296,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                             result["Value"]["Successful"][lfn]["Files"][childName] = {"Mode": 509}
                             if verbose:
                                 pass
-                elif meta["did_type"] == "DATASET":
+                elif did_type == "DATASET":
                     file_dict = {}
                     for file_did in self.client.list_files(scope=did["scope"], name=did["name"]):
                         guid = file_did["guid"]
@@ -612,8 +616,8 @@ class RucioFileCatalogClient(FileCatalogClientBase):
         for lfn in lfns:
             try:
                 did = self.__getDidsFromLfn(lfn)
-                meta = self.client.get_metadata(did["scope"], did["name"])
-                if meta["did_type"] == "FILE":
+                did_type = self._get_did_type(did["scope"], did["name"])
+                if did_type == "FILE":
                     parentLfn = "/".join(lfn.split("/")[:-1])
                     parentDid = self.__getDidsFromLfn(parentLfn)
                     dsnScope, dsnName = parentDid["scope"], parentDid["name"]
@@ -637,8 +641,8 @@ class RucioFileCatalogClient(FileCatalogClientBase):
         for lfn in lfns:
             try:
                 did = self.__getDidsFromLfn(lfn)
-                meta = self.client.get_metadata(did["scope"], did["name"])
-                if meta["did_type"] == "DATASET":
+                did_type = self._get_did_type(did["scope"], did["name"])
+                if did_type == "DATASET":
                     try:
                         self.client.set_metadata(scope=did["scope"], name=did["name"], key="lifetime", value=1)
                         resDict["Successful"][lfn] = True
