@@ -8,9 +8,10 @@ from functools import partial
 from pathlib import Path
 
 import pytest
+from unittest.mock import patch
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 
-from DIRAC import S_ERROR, S_OK, gLogger
+from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.Resources.Computing.test.Test_PoolComputingElement import badJobScript, jobScript
 from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
@@ -173,6 +174,27 @@ def test__computeCPUWorkLeft(mocker, initCPUWork, cpuPower, elapsedSeconds, expe
     result = jobAgent._computeCPUWorkLeft()
 
     assert abs(result - expectedTimeLeft) < 10
+
+
+def test_the_upload_margin_is_reserved_once_for_the_whole_slot(mocker):
+    """Filling mode: two jobs matched into one slot share one margin, not one each.
+
+    initialize() carves it out of initCPUWork and the cycles only count down from there,
+    so the second match is short by the time the first used and by nothing else.
+    """
+    power, slotSeconds, margin = 27.9, 3600, 300
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
+    jobAgent = JobAgent("Test", "Test1")
+    jobAgent.log = gLogger
+    jobAgent.cpuPower = power
+    # as initialize() computes it, from the pilot's /LocalSite/CPUTimeLeft
+    jobAgent.initCPUWork = max(0.0, slotSeconds * power - margin * power)
+
+    jobAgent.initTime = time.time()
+    assert jobAgent._computeCPUWorkLeft() / power == pytest.approx(slotSeconds - margin, abs=2)
+
+    jobAgent.initTime = time.time() - 600  # second match, ten minutes in
+    assert jobAgent._computeCPUWorkLeft() / power == pytest.approx(slotSeconds - 600 - margin, abs=2)
 
 
 @pytest.mark.parametrize(

@@ -13,6 +13,7 @@ import errno
 import getpass
 import math
 import os
+import re
 import socket
 import time
 from pathlib import Path
@@ -32,8 +33,9 @@ class Watchdog:
     #############################################################################
     def __init__(self, pid, exeThread, spObject, jobCPUTime, memoryLimit=0, processors=1, jobArgs={}):
         """Constructor, takes system flag as argument."""
-        self.stopSigStartSeconds = int(jobArgs.get("StopSigStartSeconds", 1800))  # 30 minutes
-        self.stopSigFinishSeconds = int(jobArgs.get("StopSigFinishSeconds", 1800))  # 30 minutes
+        self.jobArgs = jobArgs
+        self.stopSigStartWork = int(jobArgs.get("StopSigStartWork", 0))  # normalized units
+        self.stopSigFinishWork = int(jobArgs.get("StopSigFinishWork", 0))  # normalized units
         self.stopSigNumber = int(jobArgs.get("StopSigNumber", 2))  # SIGINT
         self.stopSigRegex = jobArgs.get("StopSigRegex", None)
         self.stopSigSent = False
@@ -68,7 +70,6 @@ class Watchdog:
         self.pollingTime = 10  # 10 seconds
         self.checkingTime = 30 * 60  # 30 minute period
         self.minCheckingTime = 20 * 60  # 20 mins
-        self.wallClockCheckSeconds = 5 * 60  # 5 minutes
         self.maxWallClockTime = 3 * 24 * 60 * 60  # e.g. 4 days
         self.jobPeekFlag = 1  # on / off
         self.minDiskSpace = 10  # MB
@@ -78,12 +79,10 @@ class Watchdog:
         self.minCPUWallClockRatio = 5  # ratio age
         self.nullCPULimit = 5  # After 5 sample times return null CPU consumption kill job
         self.checkCount = 0
-        self.wallClockCheckCount = 0
         self.nullCPUCount = 0
 
         self.initialWallClockLeft = 0
         self.wallClockLeft = 0
-        self.stopMargin = 300  # seconds of wall-clock time to reserve for post-processing
         self.cpuPower = 1.0
         self.processors = processors
 
@@ -127,15 +126,13 @@ class Watchdog:
             )
             self.checkingTime = self.minCheckingTime
 
-        self.cpuPower = gConfig.getValue("/LocalSite/CPUNormalizationFactor", 1.0)
-        self.stopMargin = gConfig.getValue(self.section + "/StopMargin", self.stopMargin)
+        self.__resolveStopSigOptions()
 
-        # Read CPU work left from config (written by JobAgent) and convert to wall-clock seconds
+        self.cpuPower = gConfig.getValue("/LocalSite/CPUNormalizationFactor", 1.0)
+        # CPU work left, as published by the JobAgent and so already net of the StopMargin
+        # it set aside for the uploads. Converted to the wall clock this counts down.
         cpuWorkLeft = gConfig.getValue("/LocalSite/CPUTimeLeft", 0)
-        if cpuWorkLeft and self.cpuPower:
-            self.initialWallClockLeft = cpuWorkLeft / self.cpuPower
-        else:
-            self.initialWallClockLeft = 0
+        self.initialWallClockLeft = cpuWorkLeft / self.cpuPower if cpuWorkLeft and self.cpuPower else 0
 
         return S_OK()
 
@@ -175,14 +172,6 @@ class Watchdog:
             self.__getUsageSummary()
             self.log.info("Process to monitor has completed, Watchdog will exit.")
             return S_OK("Ended")
-
-        # WallClock checks every self.wallClockCheckSeconds, but only if StopSigRegex is defined in JDL
-        if (
-            not self.stopSigSent
-            and self.stopSigRegex is not None
-            and (time.time() - self.initialValues["StartTime"]) > self.wallClockCheckSeconds * self.wallClockCheckCount
-        ):
-            self.wallClockCheckCount += 1
 
         # Check time left on every poll cycle (cheap: just reads wall-clock)
         if self.testTimeLeft:
@@ -726,20 +715,121 @@ class Watchdog:
         The initial wall-clock time left is read from the local configuration at initialization
         (written by the JobAgent). A simple countdown is then used to determine the remaining time.
 
-        Returns S_ERROR when the remaining wall-clock time drops below the configurable StopMargin
-        (default: 300s), leaving enough time for post-processing (output upload, cleanup, etc.).
+        That budget is already net of the ``StopMargin`` the JobAgent set aside for the
+        uploads, so the payload is stopped as soon as it is exhausted.
+
+        Returning S_ERROR gets the payload killed, which is too late to ask it to wind
+        down: that takes time, and what is left by then belongs to the uploads. Hence the
+        second, earlier threshold on the S_OK path.
         """
         if not self.initialWallClockLeft:
             return S_OK("TimeLeft not available")
 
-        elapsed = time.time() - self.initialValues["StartTime"]
-        wallClockLeft = self.initialWallClockLeft - elapsed
-        self.wallClockLeft = wallClockLeft
+        self.wallClockLeft = self.initialWallClockLeft - (time.time() - self.initialValues["StartTime"])
 
-        if wallClockLeft < self.stopMargin:
+        if self.wallClockLeft <= 0:
             return S_ERROR(JobMinorStatus.JOB_EXCEEDED_CPU)
 
+        self._askPayloadToStop()
         return S_OK()
+
+    #############################################################################
+    def __resolveStopSigOptions(self):
+        """Take from the CS the graceful-stop settings the JDL did not give.
+
+        A JDL is fixed when the job is submitted, so only the CS can reach work already in
+        the system.
+        """
+        for option, attribute in (
+            ("StopSigStartWork", "stopSigStartWork"),
+            ("StopSigFinishWork", "stopSigFinishWork"),
+            ("StopSigNumber", "stopSigNumber"),
+            ("StopSigRegex", "stopSigRegex"),
+        ):
+            if option not in self.jobArgs:
+                setattr(self, attribute, gConfig.getValue(f"{self.section}/{option}", getattr(self, attribute)))
+
+    #############################################################################
+    def _askPayloadToStop(self):
+        """Ask the payload to stop while there is still time for it to do so.
+
+        A payload killed when its budget runs out loses whatever it had produced but not
+        written: an event generator stopped mid-event loses the whole file. A job that
+        knows how to wind down names its application in ``StopSigRegex`` and is sent
+        ``StopSigNumber`` early enough to finish and write. ``__checkTimeLeft`` remains the
+        backstop for one that ignores it.
+
+        Always returns S_OK: failing to signal is not a reason to fail the job.
+        """
+        if self.stopSigSent or not self.stopSigRegex or not self.stopSigFinishWork:
+            return S_OK()
+        if not self.initialWallClockLeft or not self.cpuPower:
+            return S_OK()
+
+        # Both thresholds are in CPU work, not seconds: how much a payload has done, and how
+        # much it needs to stop, are questions about computation, and the same computation
+        # costs more wall clock on a slower node.
+        windDown = self.stopSigFinishWork / self.cpuPower
+
+        # Nothing worth saving in a payload that has not done as much work as stopping it
+        # costs. Without this, one matched into a slot shorter than its wind-down would be
+        # signalled at once and report success having produced nothing.
+        startWork = self.stopSigStartWork or self.stopSigFinishWork
+        if (time.time() - self.initialValues["StartTime"]) < startWork / self.cpuPower:
+            return S_OK()
+        if self.wallClockLeft > windDown:
+            return S_OK()
+
+        self.stopSigSent = True  # sent once, whether or not the payload acts on it
+        signalled = self._signalPayload()
+        self.log.info(
+            "Asked the payload to stop while it still can",
+            f"signal={self.stopSigNumber} processes={signalled} "
+            f"wallClockLeft={self.wallClockLeft:.0f}s windDown={windDown:.0f}s",
+        )
+        return S_OK()
+
+    #############################################################################
+    def _signalPayload(self):
+        """Send ``StopSigNumber`` to the descendants matching ``StopSigRegex``.
+
+        Only descendants of this JobWrapper, so other jobs sharing the node are untouched
+        however well their command lines match. Unlike killChild this also spares the parent
+        -- the JobWrapper still has the outputs to upload -- and does not escalate to
+        SIGKILL: the point is to ask, and to leave time to answer.
+
+        The regex picks the application out of the shells, wrappers and container entrypoints
+        sharing its tree, which must not be signalled in its place.
+
+        :return: the number of processes signalled
+        :rtype: int
+        """
+        try:
+            children = psutil.Process(self.wrapperPID).children(recursive=True)
+        except psutil.NoSuchProcess:
+            return 0
+
+        try:
+            matcher = re.compile(self.stopSigRegex)
+        except re.error as exc:
+            self.log.error("Not a usable StopSigRegex, signalling nothing", f"{self.stopSigRegex!r}: {exc}")
+            return 0
+
+        signalled = 0
+        for child in children:
+            try:
+                if not matcher.search(" ".join(child.cmdline()) or child.name()):
+                    continue
+                child.send_signal(self.stopSigNumber)
+                signalled += 1
+            except psutil.NoSuchProcess:
+                continue
+            except psutil.Error as exc:
+                self.log.warn("Could not signal payload process", f"pid={child.pid}: {exc}")
+
+        if not signalled:
+            self.log.warn("StopSigRegex matched no payload process", f"{self.stopSigRegex!r} of {len(children)}")
+        return signalled
 
     #############################################################################
     def __getUsageSummary(self):
