@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 # Test the possibility to use general workflow parameters as variables
 # in the job description
 
