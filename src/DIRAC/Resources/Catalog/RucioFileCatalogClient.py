@@ -341,6 +341,8 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                                     "PFN": pfn,
                                     "Status": "U",
                                 }
+                else:
+                    result["Value"]["Failed"][lfn] = "Not a directory"
             except DataIdentifierNotFound:
                 result["Value"]["Failed"][lfn] = "No such file or directory"
             except Exception as err:
