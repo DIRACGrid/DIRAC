@@ -357,7 +357,11 @@ class FTS3Operation(JSerializable):
         for ftsFile in self.ftsFiles:
             opFile = rmsFileIDs[ftsFile.rmsFileID]
 
-            opFile.Status = "Failed" if ftsFile.rmsFileID in defunctRmsFileIDs else "Done"
+            if ftsFile.rmsFileID in defunctRmsFileIDs:
+                opFile.Status = "Failed"
+                opFile.Error = ftsFile.error
+            else:
+                opFile.Status = "Done"
 
         return S_OK({"request": request, "operation": operation, "ftsFilesByTarget": ftsFilesByTarget})
 
