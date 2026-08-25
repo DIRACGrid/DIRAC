@@ -112,5 +112,6 @@ In this section all the attributes that can be used in the DIRAC JDL job descrip
     output files in the logical namespace. It is the responsibility of the user to make
     sure that this path is accessible for writing for the user's data.
 
-3. If multiple output SEs are specified, they will be tried one-by-one for each
-   output file until a successful file upload.
+3. If multiple output SEs are specified, they will be tried one-by-onefor redundancy for each
+   output file until the first successful file upload. No more than one replica will be created
+   for each file.
