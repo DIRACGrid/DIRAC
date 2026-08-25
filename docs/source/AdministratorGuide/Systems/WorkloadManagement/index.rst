@@ -87,5 +87,6 @@ The following sections add some detail for the WMS systems.
    JobsPriorities
    JobsMatching
    tagsAndJobs
+   allocatedTime
    multiProcessorJobs
    InputDataResolution

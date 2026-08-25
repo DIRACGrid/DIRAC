@@ -108,8 +108,15 @@ class JobAgent(AgentModule):
         if not result["OK"]:
             return result
 
-        # Read initial CPU work left from config (seeded by pilot via dirac-wms-get-queue-cpu-time)
-        self.initCPUWork = gConfig.getValue("/LocalSite/CPUTimeLeft", self.initCPUWork)
+        # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
+        self.cpuPower = gConfig.getValue("/LocalSite/CPUNormalizationFactor", self.cpuPower)
+
+        # Read initial CPU work left from config (seeded by pilot via dirac-wms-get-queue-cpu-time),
+        # less the tail of the slot the JobWrapper needs for the uploads. Taking it off here, once,
+        # leaves every later use of the slot working from what a payload may actually consume.
+        # An unbenchmarked node has no cpuPower to express the margin in, and reserves nothing.
+        stopMargin = gConfig.getValue("/Systems/WorkloadManagement/JobWrapper/StopMargin", 300)
+        self.initCPUWork = max(0.0, gConfig.getValue("/LocalSite/CPUTimeLeft", 0.0) - stopMargin * self.cpuPower)
         self.cpuWorkLeft = self.initCPUWork
 
         self.initTime = time.time()
@@ -118,8 +125,6 @@ class JobAgent(AgentModule):
         self.pilotReference = gConfig.getValue("/LocalSite/PilotReference", self.pilotReference)
         self.defaultProxyLength = gConfig.getValue("/Registry/DefaultProxyLifeTime", self.defaultProxyLength)
         # Agent options
-        # This is the factor to convert raw CPU to Normalized units (based on the CPU Model)
-        self.cpuPower = gConfig.getValue("/LocalSite/CPUNormalizationFactor", self.cpuPower)
         self.jobSubmissionDelay = self.am_getOption("SubmissionDelay", self.jobSubmissionDelay)
         self.fillingMode = self.am_getOption("FillingModeFlag", self.fillingMode)
         self.minimumCPUWork = self.am_getOption("MinimumTimeLeft", self.minimumCPUWork)
@@ -403,6 +408,9 @@ class JobAgent(AgentModule):
         Uses a simple wall-clock countdown from the initial value (seeded by the pilot
         via dirac-wms-get-queue-cpu-time). The elapsed wall-clock time is multiplied by
         the CPU power to get the consumed CPU work.
+
+        What is counted down is what a payload may consume: initialize() has already taken
+        the StopMargin off.
 
         :return: cpu work left (wall-clock time left * cpu power)
         """
