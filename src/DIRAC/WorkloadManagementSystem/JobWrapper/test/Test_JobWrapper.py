@@ -1149,3 +1149,52 @@ def test_finalize(mocker, failedFlag, expectedRes, finalStates):
     assert res == expectedRes
     assert jw.jobReport.jobStatusInfo[0][0] == finalStates[0]
     assert jw.jobReport.jobStatusInfo[0][1] == finalStates[1]
+
+
+@pytest.mark.parametrize(
+    "gracefulStopSignal, payloadStatus, expectedMinorStatus, expectedFailedFlag",
+    [
+        # The payload stopped on the signal it was asked to stop on: it did what it was told.
+        (2, 130, JobMinorStatus.APP_SUCCESS, False),
+        (10, 138, JobMinorStatus.APP_SUCCESS, False),
+        # Killed by some other signal, or dead of its own accord: a real application error.
+        (2, 139, JobMinorStatus.APP_ERRORS, True),
+        # Nothing was asked of it, so 130 means it died and that is an error.
+        (0, 130, JobMinorStatus.APP_ERRORS, True),
+    ],
+)
+def test_postProcess_payload_stopped_on_request(
+    setup_job_wrapper,
+    mocker,
+    mock_report_and_set_param,
+    gracefulStopSignal,
+    payloadStatus,
+    expectedMinorStatus,
+    expectedFailedFlag,
+):
+    """A payload killed by the signal it was asked to wind down on exits 128 + N.
+
+    That is the shell convention for "terminated by signal N", not a sign of failure: the
+    job produced what it could and stopped when told to. Reporting it as an application
+    error would mark every gracefully stopped job as failed.
+    """
+    jw = setup_job_wrapper()
+    report_args, _set_param_args, report_side_effect, set_param_side_effect = mock_report_and_set_param
+
+    mocker.patch.object(jw, "_JobWrapper__report", side_effect=report_side_effect)
+    mocker.patch.object(jw, "_JobWrapper__setJobParam", side_effect=set_param_side_effect)
+
+    payloadResult = {
+        "payloadStatus": payloadStatus,
+        "payloadOutput": "",
+        "payloadExecutorError": None,
+        "cpuTimeConsumed": [100, 200, 300, 400, 500],
+        "watchdogError": "",
+        "watchdogStats": {},
+        "gracefulStopSignal": gracefulStopSignal,
+    }
+    jw.executionResults["CPU"] = payloadResult["cpuTimeConsumed"]
+
+    assert jw.postProcess(**payloadResult)["OK"]
+    assert report_args[-1]["minorStatus"] == expectedMinorStatus
+    assert jw.failedFlag is expectedFailedFlag

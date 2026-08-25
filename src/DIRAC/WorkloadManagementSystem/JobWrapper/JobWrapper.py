@@ -500,6 +500,7 @@ class JobWrapper:
             "cpuTimeConsumed": None,
             "watchdogError": watchdog.checkError,
             "watchdogStats": watchdog.currentStats,
+            "gracefulStopSignal": watchdog.stopSigNumber if watchdog.stopSigSent else 0,
         }
 
         # Get CPU time consumed
@@ -540,6 +541,7 @@ class JobWrapper:
         cpuTimeConsumed: list,
         watchdogError: str,
         watchdogStats: dict,
+        gracefulStopSignal: int = 0,
     ):
         """This method is called after the payload has finished running."""
         self.log.info(f"Job Wrapper is starting the post processing phase for job {self.jobID}")
@@ -580,9 +582,14 @@ class JobWrapper:
             self.__report(status=JobStatus.FAILED, minorStatus=JobMinorStatus.APP_THREAD_FAILED, sendFlag=True)
             self.__setJobParam("ApplicationError", str(payloadStatus), sendFlag=True)
 
+        # A payload asked to wind down and killed by the signal it was asked to wind down on
+        # exits 128 + N, the convention for "terminated by signal N". It did what it was told,
+        # so that is not an application error.
+        stoppedOnRequest = bool(gracefulStopSignal) and payloadStatus == 128 + gracefulStopSignal
+
         # Trust the payload's exit code over the watchdog: an elastic payload that catches
         # the signal and exits cleanly should be reported per its exit code.
-        cleanExit = payloadStatus == 0 or payloadStatus in (DErrno.EWMSRESC, DErrno.EWMSRESC & 255)
+        cleanExit = payloadStatus == 0 or payloadStatus in (DErrno.EWMSRESC, DErrno.EWMSRESC & 255) or stoppedOnRequest
         if watchdogError and not cleanExit:
             self.__report(status=JobStatus.FAILED, minorStatus=watchdogError, sendFlag=True)
 
@@ -605,7 +612,7 @@ class JobWrapper:
             self.log.info(res["Value"][1])
 
         # Non-zero exit without a watchdog reason: report a generic application error.
-        if not watchdogError and payloadStatus != 0:
+        if not watchdogError and payloadStatus != 0 and not stoppedOnRequest:
             self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.APP_ERRORS, sendFlag=True)
 
         # Reschedule and success branches honour the payload's exit code regardless of
@@ -618,7 +625,7 @@ class JobWrapper:
             self.__report(minorStatus=JobMinorStatus.GOING_RESCHEDULE, sendFlag=True)
             return S_ERROR(DErrno.EWMSRESC, "Job will be rescheduled")
 
-        if payloadStatus == 0:
+        if payloadStatus == 0 or stoppedOnRequest:
             self.failedFlag = False
             self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.APP_SUCCESS, sendFlag=True)
 
