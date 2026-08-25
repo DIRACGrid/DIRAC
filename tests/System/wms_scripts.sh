@@ -15,6 +15,7 @@ declare -a commands=(
 'dirac-wms-get-normalized-queue-length ce503.cern.ch/condor'
 'dirac-wms-get-queue-normalization ce503.cern.ch/condor'
 'dirac-wms-select-jobs --Status=Running'
+'test_wf_job.py'
 )
 
 echo " "
