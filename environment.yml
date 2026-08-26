@@ -71,7 +71,8 @@ dependencies:
   - typer-cli
   # docs
   - pygments >=1.5
-  - sphinx
+  # Until https://github.com/sphinx-doc/sphinx/issues/14548 is fixed
+  - sphinx <9.0.0
   - graphviz
   # RTD Sphinx theme
   - sphinx_rtd_theme
