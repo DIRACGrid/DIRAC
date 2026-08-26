@@ -88,4 +88,6 @@ runcmd:
  - [ cp, /root/run_pilot.sh, /mnt/run_pilot.sh ]
  - [ cp, /root/startup.sh, /mnt/startup.sh ]
  - [ sudo, -u, dirac, /mnt/startup.sh ]
+ - [ wall, "Done: node will shutdown in 5 minutes" ]
+ - [ sleep, 5m ]
  - [ poweroff ]
