@@ -15,7 +15,6 @@ job.
 import datetime
 import errno
 import getpass
-import math
 import os
 import socket
 import time
@@ -752,39 +751,31 @@ class Watchdog:
 
     #############################################################################
     def __getUsageSummary(self):
-        """Returns average load, memory etc. over execution of job thread"""
+        """Returns average load, memory etc. over execution of job thread
+
+        A parameter is omitted when no sample was collected for it, e.g. because
+        the job ended before the first Watchdog cycle, or when calibrate() could
+        not record the baseline that a differential value is computed against.
+        """
         summary = {}
         # CPUConsumed
-        if "CPUConsumed" in self.parameters:
-            cpuList = self.parameters["CPUConsumed"]
-            if cpuList:
-                hmsCPU = cpuList[-1]
-                rawCPU = self.__convertCPUTime(hmsCPU)
-                if rawCPU["OK"]:
-                    summary["LastUpdateCPU(s)"] = rawCPU["Value"]
-            else:
-                summary["LastUpdateCPU(s)"] = math.nan
+        if self.parameters.get("CPUConsumed"):
+            hmsCPU = self.parameters["CPUConsumed"][-1]
+            rawCPU = self.__convertCPUTime(hmsCPU)
+            if rawCPU["OK"]:
+                summary["LastUpdateCPU(s)"] = rawCPU["Value"]
         # DiskSpace
-        if "DiskSpace" in self.parameters:
+        if self.parameters.get("DiskSpace") and "DiskSpace" in self.initialValues:
             space = self.parameters["DiskSpace"]
-            if space:
-                summary["DiskSpace(MB)"] = max(abs(float(space[-1]) - float(self.initialValues["DiskSpace"])), 0.0)
-            else:
-                summary["DiskSpace(MB)"] = math.nan
+            summary["DiskSpace(MB)"] = max(abs(float(space[-1]) - float(self.initialValues["DiskSpace"])), 0.0)
         # MemoryUsed
-        if "MemoryUsed" in self.parameters:
+        if self.parameters.get("MemoryUsed") and "MemoryUsed" in self.initialValues:
             memory = self.parameters["MemoryUsed"]
-            if memory:
-                summary["MemoryUsed(MB)"] = abs(float(memory[-1]) - float(self.initialValues["MemoryUsed"]))
-            else:
-                summary["MemoryUsed(MB)"] = math.nan
+            summary["MemoryUsed(MB)"] = abs(float(memory[-1]) - float(self.initialValues["MemoryUsed"]))
         # LoadAverage
-        if "LoadAverage" in self.parameters:
+        if self.parameters.get("LoadAverage"):
             laList = self.parameters["LoadAverage"]
-            if laList:
-                summary["LoadAverage"] = sum(laList) / len(laList)
-            else:
-                summary["LoadAverage"] = math.nan
+            summary["LoadAverage"] = sum(laList) / len(laList)
 
         result = self.__getWallClockTime()
         if not result["OK"]:
