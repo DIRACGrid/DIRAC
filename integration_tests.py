@@ -267,9 +267,9 @@ def prepare_environment(
             server_flags[key] = value
             client_flags[key] = value
             pilot_flags[key] = value
-    server_config = _make_config(modules, server_flags, release_var, editable)
-    client_config = _make_config(modules, client_flags, release_var, editable)
-    pilot_config = _make_config(modules, pilot_flags, release_var, editable)
+    server_config = _make_config(modules, server_flags, release_var, editable, "server")
+    client_config = _make_config(modules, client_flags, release_var, editable, "client")
+    pilot_config = _make_config(modules, pilot_flags, release_var, editable, "pilot")
 
     # The dependencies of dirac-server and dirac-client will be automatically
     # started but we need to add manually all the extra services
@@ -1198,7 +1198,7 @@ def _create_iam_group_membership(
             raise typer.Exit(code=1)
 
 
-def _make_config(modules, flags, release_var, editable):
+def _make_config(modules, flags, release_var, editable, install_type):
     config = {
         # MYSQL Settings
         "DB_USER": DB_USER,
@@ -1268,7 +1268,19 @@ def _make_config(modules, flags, release_var, editable):
 
             config["DIRACX_DISABLED_SERVICES"] = diracx_disabled_services
 
-    config["TESTREPO"] = [f"/home/dirac/LocalRepo/TestCode/{name}" for name in modules]
+    if install_type == "client" and config.get("INSTALLATION_BRANCH"):
+        # Backward-compatibility runs: utilities.sh pip-installs DIRAC alone from
+        # INSTALLATION_BRANCH, and install_client.sh clones that same branch into
+        # ${INSTALLROOT}/TestCode. Run the client tests from that clone so that they match the
+        # library they exercise; the mounted checkout would instead run the tests of the branch
+        # under test against an older client library, which fails for reasons that have nothing
+        # to do with backward compatibility.
+        # Extensions are neither installed nor cloned in this mode, so only DIRAC's tests can run.
+        config["TESTREPO"] = ["/home/dirac/TestCode/DIRAC"]
+    else:
+        # The mounted checkout is a live bind mount, so tests edited locally are picked up without
+        # having to re-run install-client.
+        config["TESTREPO"] = [f"/home/dirac/LocalRepo/TestCode/{name}" for name in modules]
     config["ALTERNATIVE_MODULES"] = [f"/home/dirac/LocalRepo/ALTERNATIVE_MODULES/{name}" for name in modules]
 
     # Exit with an error if there are unused feature flags remaining
