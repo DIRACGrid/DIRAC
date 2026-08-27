@@ -222,9 +222,25 @@ class FileManagerPs(FileManagerBase):
         for lfn in wantedLfns:
             dirID, size, s_uid, s_gid, statusID, fileName, guid, checksum, checksumtype, mode = allFileValues[lfn]
             utcNow = DiracTime.utcnow().replace(microsecond=0)
+            # A missing checksum has to be NULL and not the string "None", to stay consistent with
+            # ps_insert_file below and with the FC_FileInfo inserts made by FileManager
+            checksumValue = "NULL" if checksum is None else f"'{checksum}'"
             fileValuesStrings.append(
-                "(%s, %s, %s, %s, %s, '%s', '%s', '%s', '%s', '%s', '%s', %s)"
-                % (dirID, size, s_uid, s_gid, statusID, fileName, guid, checksum, checksumtype, utcNow, utcNow, mode)
+                "(%s, %s, %s, %s, %s, '%s', '%s', %s, '%s', '%s', '%s', %s)"
+                % (
+                    dirID,
+                    size,
+                    s_uid,
+                    s_gid,
+                    statusID,
+                    fileName,
+                    guid,
+                    checksumValue,
+                    checksumtype,
+                    utcNow,
+                    utcNow,
+                    mode,
+                )
             )
             fileDescStrings.append(f"(DirID = {dirID} AND FileName = '{fileName}')")
 
