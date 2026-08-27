@@ -173,13 +173,13 @@ def test_putAndRegisterRemoveReplica(dm, tempFile):
     assertResult(removeRes, lfn)
 
 
-def test_registerFile(dm, tempFile):
+@pytest.mark.parametrize("checkSum", [None, "fakeCks"])
+def test_registerFile(dm, tempFile, checkSum):
     lfn = os.path.join(DESTINATION_PATH, f"registerFile/testFile.{time.time()}")
     physicalFile = f"srm://host:port/srm/managerv2?SFN=/sa/path{lfn}"
     fileSize = 10000
     storageElementName = "SE-1"
     fileGuid = makeGuid()
-    checkSum = None
     fileTuple = (lfn, physicalFile, fileSize, storageElementName, fileGuid, checkSum)
     registerRes = dm.registerFile(fileTuple)
     removeFileRes = dm.removeFile(lfn)
@@ -188,7 +188,8 @@ def test_registerFile(dm, tempFile):
     assertResult(removeFileRes, lfn)
 
 
-def test_registerReplica(dm, tempFile):
+@pytest.mark.parametrize("checkSum", [None, "fakeCks"])
+def test_registerReplica(dm, tempFile, checkSum):
     print(
         "\n\n#########################################################"
         "################\n\n\t\t\tRegister replica test\n"
@@ -198,7 +199,6 @@ def test_registerReplica(dm, tempFile):
     fileSize = 10000
     storageElementName = "SE-1"
     fileGuid = makeGuid()
-    checkSum = None
     fileTuple = (lfn, physicalFile, fileSize, storageElementName, fileGuid, checkSum)
     registerRes = dm.registerFile(fileTuple)
     seName = "SE-1"
