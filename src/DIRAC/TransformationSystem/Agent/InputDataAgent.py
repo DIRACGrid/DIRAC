@@ -14,18 +14,18 @@ The following options can be set for the InputDataAgent.
   :dedent: 2
   :caption: InputDataAgent options
 """
-import time
 import datetime
-
+import time
 from errno import ENOENT
 
 from DIRAC import S_OK
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.TimeUtilities import DiracTime
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 AGENT_NAME = "Transformation/InputDataAgent"
 
@@ -45,7 +45,7 @@ class InputDataAgent(AgentModule):
         self.dateKey = self.am_getOption("DateKey", None)
 
         self.transClient = TransformationClient()
-        self.metadataClient = FileCatalogClient()
+        self.metadataClient = FileCatalog()
         self.transformationTypes = None
         self.multiVO = False
 
@@ -69,6 +69,17 @@ class InputDataAgent(AgentModule):
         self.multiVO = self.am_getOption("MultiVO", self.multiVO)
 
         return S_OK()
+
+    def _getMetadataCatalog(self, transDict):
+        """Return the configured metadata catalog for the transformation."""
+        if not self.multiVO:
+            return self.metadataClient
+
+        ownerDN = transDict["AuthorDN"]
+        ownerGroup = transDict["AuthorGroup"]
+        ownerVO = getVOForGroup(ownerGroup)
+        self.log.debug(f"Querying file catalog for VO {ownerVO} as {ownerDN}, {ownerGroup}")
+        return FileCatalog(vo=ownerVO)
 
     ##############################################################################
     def execute(self):
@@ -123,12 +134,7 @@ class InputDataAgent(AgentModule):
             # Perform the query to the metadata catalog
             self.log.verbose("Using input data query for transformation", "%d: %s" % (transID, str(inputDataQuery)))
             start = time.time()
-            mdc = self.metadataClient
-            if self.multiVO:
-                ownerDN = transDict["AuthorDN"]
-                ownerGroup = transDict["AuthorGroup"]
-                self.log.debug(f"Querying file catalog as {ownerDN}, {ownerGroup}")
-                mdc = FileCatalogClient(useCertificates=True, delegatedDN=ownerDN, delegatedGroup=ownerGroup)
+            mdc = self._getMetadataCatalog(transDict)
             result = mdc.findFilesByMetadata(inputDataQuery)
             rtime = time.time() - start
             self.log.verbose("Metadata catalog query time", f": {rtime:.2f} seconds.")
