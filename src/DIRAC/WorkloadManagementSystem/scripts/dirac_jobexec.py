@@ -40,8 +40,6 @@ def main():
             sys.exit(1)
         workflow = fromXMLFile(jobfile)
         gLogger.debug(workflow)
-        code = workflow.createCode()
-        gLogger.debug(code)
         jobID = 0
         if "JOBID" in os.environ:
             jobID = os.environ["JOBID"]
