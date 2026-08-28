@@ -28,10 +28,12 @@ def fixtureResourceManagementClient():
     yield ResourceManagementClient()
 
 
-def test_AccountingCache(rmClient):
+def test_AccountingCache(rmClient, serverIsOlderThan):
     """
     DowntimeCache table
     """
+    if not serverIsOlderThan(rmClient, "9.1"):
+        pytest.skip("The AccountingCache table was dropped from ResourceManagementDB in v9.1")
 
     res = rmClient.deleteAccountingCache("TestName12345")  # just making sure it's not there (yet)
     assert res["OK"] is True, res["Message"]

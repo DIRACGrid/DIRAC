@@ -15,7 +15,7 @@ publisher = PublisherClient()
 gLogger.setLevel("DEBUG")
 
 
-def test_Get():
+def test_Get(serverIsOlderThan):
     res = publisher.getSites()
     assert res["OK"] is True, res["Message"]
 
@@ -31,8 +31,10 @@ def test_Get():
     res = publisher.getElementPolicies("Site", None, None)
     assert res["OK"] is True, res["Message"]
 
-    res = publisher.getNodeStatuses()
-    assert res["OK"] is True, res["Message"]
+    # Nodes (queues) were dropped from the RSS, and getNodeStatuses with them, in v9.1
+    if serverIsOlderThan(publisher, "9.1"):
+        res = publisher.getNodeStatuses()
+        assert res["OK"] is True, res["Message"]
 
     res = publisher.getTree("", "")
     assert res["OK"] is True, res["Message"]

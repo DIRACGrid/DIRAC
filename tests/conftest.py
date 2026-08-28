@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import pytest
+from packaging.version import Version
 
 import DIRAC
 
@@ -56,3 +57,27 @@ def _check_environment():
             "bypass this check pass --no-check-dirac-environment to pytest.",
             returncode=42,
         )
+
+
+@pytest.fixture(name="serverIsOlderThan")
+def fixtureServerIsOlderThan():
+    """Return a callable telling whether the server behind a client predates a given version.
+
+    These integration tests are also run by the "Backward Compatibility" CI job, which points
+    the tests of a release branch at a server installed from a more recent branch. Use this to
+    guard the assertions covering an API that a later release is known to have dropped::
+
+        def test_something(someClient, serverIsOlderThan):
+            if serverIsOlderThan(someClient, "9.1"):
+                assert someClient.methodDroppedIn91()["OK"]
+
+    :param client: any :class:`~DIRAC.Core.Base.Client.Client` talking to the service of interest
+    :param str version: the version to compare the server against
+    """
+
+    def _serverIsOlderThan(client, version):
+        res = client.ping()
+        assert res["OK"], res["Message"]
+        return Version(res["Value"]["version"]) < Version(version)
+
+    return _serverIsOlderThan
