@@ -1847,7 +1847,10 @@ class MySQL:
     def executeStoredProcedureWithCursor(self, packageName, parameters, *, conn=None):
         """Execute a stored procedure "packageName" with the givens parameters.
 
-        NOTE: parameters should be pre-validated if user supplied.
+        The parameters are bound by the driver, so ``None`` is passed as ``NULL`` and strings
+        are escaped. NOTE: a few procedures take a SQL fragment as an argument and interpolate
+        it into a dynamic statement themselves, so such arguments must still be pre-validated
+        if user supplied.
         """
         if not self._checkIdentifier(packageName)["OK"]:
             return S_ERROR(f"Invalid stored procedure name: {packageName}")
@@ -1862,12 +1865,9 @@ class MySQL:
 
         cursor = connection.cursor()
         try:
-            #       execStr = "call %s(%s);" % ( packageName, ",".join( map( str, parameters ) ) )
-            execStr = "call {}({});".format(
-                packageName,
-                ",".join(['"%s"' % param if isinstance(param, str) else str(param) for param in parameters]),
-            )
-            cursor.execute(execStr)
+            parameters = tuple(parameters)
+            execStr = f"call {packageName}({','.join(['%s'] * len(parameters))});"
+            cursor.execute(execStr, args=parameters)
             rows = cursor.fetchall()
             retDict = S_OK(rows)
         except Exception as x:
