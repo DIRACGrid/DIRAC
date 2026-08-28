@@ -22,14 +22,21 @@ def test_histogram():
     test histogram
     """
 
-    res = generateHistogram(filename, [2, 2, 3, 4, 5, 5], {})
+    # The bin count picked by the default "auto" comes from numpy and changed in numpy 2.1, which
+    # would make the reference images valid for one numpy version only. These two plots therefore
+    # ask for an explicit number of bins; the values are the ones "auto" picks with numpy 1.x, so
+    # the resulting plots are unchanged. "auto" is still exercised by histogram3 below, which is
+    # also the only shape used in production (see JobPlotter._plotHistogramCPUUsed).
+    res = generateHistogram(filename, [2, 2, 3, 4, 5, 5], {"bins": 4})
     assert res["OK"] is True
 
     res = compareToReferences(filename, referenceImages(plots_directory, "histogram1"))
     assert res == 0.0
 
     res = generateHistogram(
-        filename, [{"a": [1, 2, 3, 1, 2, 2, 4, 2]}, {"b": [2, 2, 2, 4, 4, 1, 1]}], {"plot_grid": "2:1"}
+        filename,
+        [{"a": [1, 2, 3, 1, 2, 2, 4, 2]}, {"b": [2, 2, 2, 4, 4, 1, 1]}],
+        {"bins": 6, "plot_grid": "2:1"},
     )
     assert res["OK"] is True
 
