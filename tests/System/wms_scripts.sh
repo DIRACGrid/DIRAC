@@ -13,6 +13,7 @@ declare -a commands=(
 'dirac-wms-get-wn-parameters --Site=LCG.CERN.cern --Name=ce503.cern.ch --Queue=condor'
 'dirac-admin-site-info LCG.CERN.cern'
 'dirac-wms-select-jobs --Status=Running'
+'test_wf_job.py'
 )
 
 echo " "
