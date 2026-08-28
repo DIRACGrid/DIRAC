@@ -1,3 +1,68 @@
+[v9.1.16]
+
+*DataMangement
+
+FIX: (#8758) FIX: registering a file without a checksum no longer fails with `"Unknown column 'None' in 'field list'"`
+
+*Tests
+
+FIX: (#8751) run the backward-compatibility tests from the client's own branch, instead of running the tests of the branch under test against the old client library
+
+*WorkloadManagement
+
+FIX: (#8750) do not report non-finite (NaN/Infinity) job parameters from the Watchdog and JobWrapper; validate CPUNormalizationFactor
+FIX: (#8740) Support exposing /dev/fuse when using SingularityCE
+FIX: (#8719) Make OptimizationMind auth more strict
+NEW: (#8711) allow fractional MatchingDelay for sub-second matcher throttling
+
+*DataManagementSystem
+
+FIX: (#8742) propagate the FTS error back to the RMS
+FEAT: (#8742) better retry logic for FTS jobs
+CHANGE: (#8724) add some caching in DMSHelper
+
+*ResourceStatusSystem
+
+FIX: (#8739) fix RSS to be able to update falsy values
+
+*MonitoringSystem
+
+CHANGE: (#8730) restored getGroupedPilotSummary in WebAppHandler
+
+*Resources/Computing
+
+CHANGE: (#8729) Add 5 min cooldown before shutting down cloud node. Helps with debugging when jobs crash.
+
+*WorkloadManagementSystem
+
+CHANGE: (#8728) remove DownloadInputData local file check
+
+*Interfaces
+
+FIX: (#8726) Check permission on DConfigCache files
+
+*Core
+
+FIX: (#8723) Add wait timeout when connecting to stomp
+FIX: (#8718) Minor fixups for TimeUtils tests
+
+Thank you for writing the text to appear in the release notes. It will show up
+exactly as it appears between the two bold lines
+Please follow the template:
+
+*Subsystem
+
+NEW/CHANGE/FIX: (#8721) explanation
+For examples look into release.notes
+
+*ConfigurationSystem
+
+FIX: (#8720) Tidy up CS auth
+
+*RequestManagementSystem
+
+NEW: (#8710) ReqProxy can use the DB directly if available
+
 [v9.1.15]
 
 *DataManagementSystem
