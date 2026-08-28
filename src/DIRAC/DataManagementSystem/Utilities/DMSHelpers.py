@@ -115,8 +115,23 @@ class DMSHelpers:
         if inst is None:
             inst = super().__new__(cls)
             inst.__csVersion = None
+            inst._vo = vo
             cls._instances[vo] = inst
         return inst
+
+    # A per-VO singleton must stay one through copies and pickles. Returning
+    # (or, on unpickle, looking up) the shared instance also keeps the method
+    # caches and their locks from being duplicated or serialised: deepcopying
+    # or pickling an object that holds a DMSHelpers (e.g. an RMS Request)
+    # would otherwise fail with "cannot pickle '_thread.lock' object".
+    def __copy__(self):
+        return self
+
+    def __deepcopy__(self, memo):
+        return self
+
+    def __reduce__(self):
+        return (self.__class__, (self._vo,))
 
     def __init__(self, vo=False):
         # We're a per-VO singleton (see __new__); skip re-init unless the CS
