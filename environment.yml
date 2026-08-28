@@ -45,7 +45,7 @@ dependencies:
   - voms
   - python-gfal2
   # Workaround for https://github.com/DIRACGrid/DIRAC/issues/6978
-  - mysqlclient >=2.0.3,<2.1
+  - mysqlclient >=2.2.0
   - diraccfg
   - ldap3
   - importlib_resources
