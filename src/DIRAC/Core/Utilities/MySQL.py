@@ -1700,6 +1700,13 @@ class MySQL:
     # For the procedures that execute a select without storing the result
     @captureOptimizerTraces
     def executeStoredProcedureWithCursor(self, packageName, parameters, *, conn=None):
+        """Execute a stored procedure "packageName" with the givens parameters.
+
+        The parameters are bound by the driver, so ``None`` is passed as ``NULL`` and strings
+        are escaped. NOTE: a few procedures take a SQL fragment as an argument and interpolate
+        it into a dynamic statement themselves, so such arguments must still be pre-validated
+        if user supplied.
+        """
         if conn:
             connection = conn
         else:
@@ -1711,12 +1718,9 @@ class MySQL:
 
         cursor = connection.cursor()
         try:
-            #       execStr = "call %s(%s);" % ( packageName, ",".join( map( str, parameters ) ) )
-            execStr = "call {}({});".format(
-                packageName,
-                ",".join(['"%s"' % param if isinstance(param, str) else str(param) for param in parameters]),
-            )
-            cursor.execute(execStr)
+            parameters = tuple(parameters)
+            execStr = f"call {packageName}({','.join(['%s'] * len(parameters))});"
+            cursor.execute(execStr, args=parameters)
             rows = cursor.fetchall()
             retDict = S_OK(rows)
         except Exception as x:
