@@ -9,13 +9,21 @@ import asyncio
 import psutil
 import secrets
 
-import M2Crypto.SSL
+# With the legacy M2Crypto implementation (DIRAC_USE_M2CRYPTO=Yes), tornado
+# must be configured to use the M2Crypto based iostream (from
+# tornado_m2crypto, which requires the patched DIRACGrid tornado fork) before
+# anything instantiates an SSLIOStream. With the default implementation
+# neither M2Crypto nor tornado_m2crypto may be imported.
+DIRAC_USE_M2CRYPTO = os.getenv("DIRAC_USE_M2CRYPTO", "No").lower() in ("yes", "true")
 
-import tornado.iostream
+if DIRAC_USE_M2CRYPTO:
+    import M2Crypto.SSL
 
-tornado.iostream.SSLIOStream.configure(  # pylint: disable=no-member
-    "tornado_m2crypto.m2iostream.M2IOStream"
-)  # pylint: disable=wrong-import-position
+    import tornado.iostream
+
+    tornado.iostream.SSLIOStream.configure(  # pylint: disable=no-member
+        "tornado_m2crypto.m2iostream.M2IOStream"
+    )  # pylint: disable=wrong-import-position
 
 import tornado.platform.asyncio
 import tornado.ioloop
@@ -23,6 +31,7 @@ from tornado.httpserver import HTTPServer
 from tornado.web import Application, RequestHandler
 
 from DIRAC import gConfig, gLogger, S_OK
+from DIRAC.Core.DISET.private.Transports.SSLTransport import getSSLContext
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Utilities import Network, TimeUtilities
 from DIRAC.Core.Tornado.Server.HandlerManager import HandlerManager
@@ -189,18 +198,29 @@ class TornadoServer:
         sLog.debug("Starting Tornado")
 
         # Prepare SSL settings
-        certs = Locations.getHostCertificateAndKeyLocation()
-        if certs is False:
-            sLog.fatal("Host certificates not found ! Can't start the Server")
-            raise ImportError("Unable to load certificates")
-        ca = Locations.getCAsLocation()
-        ssl_options = {
-            "certfile": certs[0],
-            "keyfile": certs[1],
-            "cert_reqs": M2Crypto.SSL.verify_peer,
-            "ca_certs": ca,
-            "sslDebug": DEBUG_M2CRYPTO,  # Set to true if you want to see the TLS debug messages
-        }
+        if DIRAC_USE_M2CRYPTO:
+            certs = Locations.getHostCertificateAndKeyLocation()
+            if certs is False:
+                sLog.fatal("Host certificates not found ! Can't start the Server")
+                raise ImportError("Unable to load certificates")
+            ca = Locations.getCAsLocation()
+            ssl_options = {
+                "certfile": certs[0],
+                "keyfile": certs[1],
+                "cert_reqs": M2Crypto.SSL.verify_peer,
+                "ca_certs": ca,
+                "sslDebug": DEBUG_M2CRYPTO,  # Set to true if you want to see the TLS debug messages
+            }
+        else:
+            # The client certificate is optional: some requests are authenticated
+            # with a token or as visitor instead (see BaseRequestHandler)
+            try:
+                ssl_options = getSSLContext(bServerMode=True, optionalClientCert=True)
+            except RuntimeError as e:
+                sLog.fatal("Unable to prepare the TLS settings ! Can't start the Server", repr(e))
+                raise ImportError(f"Unable to prepare the TLS settings: {e}") from e
+            certs = Locations.getHostCertificateAndKeyLocation()
+            ca = Locations.getCAsLocation()
 
         # Init monitoring
         if self.activityMonitoring:
@@ -214,7 +234,7 @@ class TornadoServer:
             tornado.ioloop.PeriodicCallback(self.__reportToMonitoring, self.__monitoringLoopDelay * 1000).start()
 
         for port, app in self.__appsSettings.items():
-            sLog.debug(" - %s" % "\n - ".join([f"{k} = {ssl_options[k]}" for k in ssl_options]))
+            sLog.debug(f" - certfile = {certs[0]}\n - keyfile = {certs[1]}\n - ca_certs = {ca}")
 
             # Default server configuration
             settings = dict(compress_response=True, cookie_secret=secrets.token_hex(32))

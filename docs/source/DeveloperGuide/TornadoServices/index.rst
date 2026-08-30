@@ -313,7 +313,12 @@ How to install Tornado
 Requirements
 ************
 
-Two special python packages are needed:
+The standard tornado package is used: the TLS layer (including grid proxy
+support) relies on the ``ssl`` module of the python standard library
+(python >= 3.13 is required on the server side).
+
+When the legacy M2Crypto implementation is enabled (``DIRAC_USE_M2CRYPTO=Yes``),
+two special python packages are needed instead:
 
 * git+https://github.com/DIRACGrid/tornado.git@iostreamConfigurable : in place of the standard tornado. This adds configurable feature to tornado
 * git+https://github.com/DIRACGrid/tornado_m2crypto.git: this allows to use tornado with M2Crypto

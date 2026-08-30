@@ -5,6 +5,9 @@ DEFAULT_RPC_TIMEOUT = 600
 #: Default timeout to establish a connection
 DEFAULT_CONNECTION_TIMEOUT = 10
 
+# The following constants are only used by the M2Crypto based SSL
+# implementation (DIRAC_USE_M2CRYPTO=Yes)
+
 #: Default SSL Ciher accepted. Current default is for pyGSI/M2crypto compatibility
 #: Can be changed with DIRAC_M2CRYPTO_SSL_CIPHERS
 #: Recommandation (incompatible with pyGSI)

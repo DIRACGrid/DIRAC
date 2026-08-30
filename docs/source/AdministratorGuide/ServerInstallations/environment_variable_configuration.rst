@@ -43,13 +43,21 @@ DIRAC_HTTPS_SSL_METHOD_MIN
   If set, overrides the lowest supported TLS version when using HTTPS. It should be a valid value of :py:class:`ssl.TLSVersion`.
 
 DIRAC_M2CRYPTO_SPLIT_HANDSHAKE
-  If ``true`` or ``yes`` the SSL handshake is done in a new thread (default Yes)
+  Only relevant with ``DIRAC_USE_M2CRYPTO``. If ``true`` or ``yes`` the SSL handshake is done in a new thread (default Yes)
 
 DIRAC_M2CRYPTO_SSL_CIPHERS
-  If set, overwrites the default SSL ciphers accepted. It should be a colon separated list. See :py:mod:`DIRAC.Core.DISET`
+  Only relevant with ``DIRAC_USE_M2CRYPTO`` (but also accepted as an alias of ``DIRAC_SSL_CIPHERS`` by the default implementation). If set, overwrites the default SSL ciphers accepted. It should be a colon separated list. See :py:mod:`DIRAC.Core.DISET`
 
 DIRAC_M2CRYPTO_SSL_METHODS
-  If set, overwrites the default SSL methods accepted. It should be a colon separated list. See :py:mod:`DIRAC.Core.DISET`
+  Only relevant with ``DIRAC_USE_M2CRYPTO``. If set, overwrites the default SSL methods accepted. It should be a colon separated list. See :py:mod:`DIRAC.Core.DISET`
+
+DIRAC_SSL_CIPHERS
+  If set, overwrites the default SSL ciphers accepted by the DISET protocol. It should be an OpenSSL style colon separated list.
+
+DIRAC_USE_M2CRYPTO
+  If ``true`` or ``yes``, use the legacy M2Crypto/pyasn1 based implementation of the X509 layer and of the TLS transports (DISET and HTTPS) instead of the default one, based on pyca/cryptography and the :py:mod:`ssl` module of the standard library (default No).
+  The implementation is selected once, at import time, so it must be set consistently for all the components of an installation.
+  The optional dependencies M2Crypto, pyasn1, pyasn1-modules and (for HTTPS services) tornado-m2crypto with the patched DIRACGrid tornado fork must be installed.
 
 DIRAC_MYSQL_OPTIMIZER_TRACES_PATH
   If set, it should point to an existing directory, where MySQL Optimizer traces will be stored. See :py:func:`DIRAC.Core.Utilities.MySQL.captureOptimizerTraces`

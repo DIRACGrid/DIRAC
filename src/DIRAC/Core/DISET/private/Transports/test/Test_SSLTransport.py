@@ -1,14 +1,15 @@
 """ Test the SSLTransport mechanism """
 import os
 import selectors
+import sys
 import threading
 
 from diraccfg import CFG
-from pytest import fixture
+from pytest import fixture, mark, param
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.DISET.private.Transports import M2SSLTransport, PlainTransport
-from DIRAC.Core.Security.test.x509TestUtilities import CERTDIR, USERCERT, getCertOption
+from DIRAC.Core.DISET.private.Transports import PlainTransport, StdSSLTransport
+from DIRAC.Core.Security.test.x509TestUtilities import CERTDIR, USERCERT, getCertOption, skipm2
 
 # TODO: Expired hostcert
 # TODO: Expired usercert
@@ -38,7 +39,16 @@ PORT_NUMBER = 50000
 # Transports are now tested in pairs:
 # "Server-Client"
 # Each pair is defined as a string.
-TRANSPORTTESTS = ("Plain-Plain", "M2-M2")
+TRANSPORTTESTS = (
+    "Plain-Plain",
+    # The server side of the standard library ssl transport needs
+    # SSLSocket.get_unverified_chain, which was added in python 3.13
+    param(
+        "SSL-SSL",
+        marks=mark.skipif(sys.version_info < (3, 13), reason="needs python >= 3.13 (ssl get_unverified_chain)"),
+    ),
+    param("M2-M2", marks=skipm2),
+)
 
 
 # https://www.ibm.com/developerworks/linux/library/l-openssl/index.html
@@ -121,7 +131,12 @@ def transportByName(transport):
     """helper function to get a transport class by 'friendly' name."""
     if transport.lower() == "plain":
         return PlainTransport.PlainTransport
+    elif transport.lower() == "ssl":
+        return StdSSLTransport.SSLTransport
     elif transport.lower() == "m2":
+        # Imported lazily as M2Crypto may not be installed
+        from DIRAC.Core.DISET.private.Transports import M2SSLTransport
+
         return M2SSLTransport.SSLTransport
     raise RuntimeError(f"Unknown Transport Name: {transport}")
 
@@ -196,6 +211,27 @@ def test_simpleMessage(create_serverAndClient):
     serverAnswer = ping_server(client)
     assert serv.receivedMessage == MAGIC_QUESTION
     assert serverAnswer == MAGIC_ANSWER
+
+
+def test_clientContextCache(tmp_path):
+    """Client SSL contexts are shared until the credential file changes"""
+    from DIRAC.Core.DISET.private.Transports.StdSSLTransport import _CLIENT_CTX_CACHE, _getClientSSLContext
+
+    proxyCopy = tmp_path / "proxy.pem"
+    proxyCopy.write_bytes(open(proxyFile, "rb").read())
+
+    _CLIENT_CTX_CACHE.clear()
+    ctx1 = _getClientSSLContext(proxyLocation=str(proxyCopy), skipCACheck=True)
+    ctx2 = _getClientSSLContext(proxyLocation=str(proxyCopy), skipCACheck=True)
+    assert ctx1 is ctx2
+
+    # Changing the credential file invalidates the cache entry
+    st = os.stat(proxyCopy)
+    os.utime(proxyCopy, ns=(st.st_atime_ns, st.st_mtime_ns + 10**9))
+    ctx3 = _getClientSSLContext(proxyLocation=str(proxyCopy), skipCACheck=True)
+    assert ctx3 is not ctx1
+
+    _CLIENT_CTX_CACHE.clear()
 
 
 def test_getRemoteInfo(create_serverAndClient):

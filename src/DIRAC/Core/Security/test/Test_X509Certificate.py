@@ -21,15 +21,16 @@ from DIRAC.Core.Security.test.x509TestUtilities import (
     CERTCONTENTS,
     getCertOption,
     HOSTCERT,
+    skipm2,
     VOMSPROXY,
     VOMS_PROXY_ATTR,
 )
 
-from pytest import mark, fixture, skip
+from pytest import mark, fixture, param, skip
 
 parametrize = mark.parametrize
 
-X509CERTTYPES = ("M2_X509Certificate",)
+X509CERTTYPES = ("PYCA_X509Certificate", param("M2_X509Certificate", marks=skipm2))
 
 # This fixture will return a X509Certificate class
 # https://docs.pytest.org/en/latest/fixture.html#automatic-grouping-of-tests-by-fixture-instances
@@ -45,7 +46,9 @@ def get_X509Certificate_class(request):
 
     x509Class = request.param
 
-    if x509Class == "M2_X509Certificate":
+    if x509Class == "PYCA_X509Certificate":
+        from DIRAC.Core.Security.pyca.X509Certificate import X509Certificate
+    elif x509Class == "M2_X509Certificate":
         from DIRAC.Core.Security.m2crypto.X509Certificate import X509Certificate
     else:
         raise NotImplementedError()

@@ -4,6 +4,7 @@
 
    This module is basic for each of these components and describes the basic concept of access to them.
 """
+import os
 import time
 import inspect
 import threading
@@ -27,6 +28,10 @@ from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.IdProvider.Utilities import getIdProviderIdentifiers
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
+
+# Whether the legacy M2Crypto based TLS implementation is used instead of the
+# default one, based on the standard library ssl module (see TornadoServer)
+DIRAC_USE_M2CRYPTO = os.getenv("DIRAC_USE_M2CRYPTO", "No").lower() in ("yes", "true")
 
 
 def set_attribute(attr, val):
@@ -732,6 +737,57 @@ class BaseRequestHandler(RequestHandler):
 
     def _authzSSL(self):
         """Load client certchain in DIRAC and extract information.
+
+        :return: S_OK(dict)/S_ERROR()
+        """
+        if DIRAC_USE_M2CRYPTO:
+            return self._authzSSLM2()
+
+        try:
+            # The peer chain, as sent by the client (leaf first, DER encoded).
+            # It was validated by OpenSSL during the TLS handshake
+            derChain = self.request.connection.stream.socket.get_unverified_chain()
+        except Exception:
+            # Plain HTTP connection, or no client certificate presented
+            derChain = None
+
+        # Boolean whether we are behind a balancer and can trust headers
+        balancer = gConfig.getValue("/WebApp/Balancer", "none") != "none"
+
+        # Get the client certificate chain
+        if derChain:
+            peerChain = X509Chain.generateX509ChainFromDERList(derChain)
+        elif balancer:
+            if self.request.headers.get("X-Ssl_client_verify") == "SUCCESS" and self.request.headers.get("X-SSL-CERT"):
+                chainAsText = unquote(self.request.headers.get("X-SSL-CERT"))
+                peerChain = X509Chain()
+                peerChain.loadChainFromString(chainAsText)
+            else:
+                return S_ERROR(DErrno.ECERTFIND, "Valid certificate not found.")
+        else:
+            return S_ERROR(DErrno.ECERTFIND, "Valid certificate not found.")
+
+        # Retrieve the credentials
+        res = peerChain.getCredentials(withRegistryInfo=False)
+        if not res["OK"]:
+            return res
+
+        credDict = res["Value"]
+
+        # getCredentials already resolves DN (identity for proxies, subject
+        # otherwise), isProxy and isLimitedProxy
+        credDict["x509Chain"] = peerChain
+
+        # We check if client sends extra credentials...
+        if "extraCredentials" in self.request.arguments:
+            extraCred = self.get_argument("extraCredentials")
+            if extraCred:
+                credDict["extraCredentials"] = self.decode(extraCred)[0]
+        return S_OK(credDict)
+
+    def _authzSSLM2(self):
+        """Load client certchain in DIRAC and extract information, using the
+        legacy M2Crypto based TLS implementation (DIRAC_USE_M2CRYPTO=Yes).
 
         :return: S_OK(dict)/S_ERROR()
         """

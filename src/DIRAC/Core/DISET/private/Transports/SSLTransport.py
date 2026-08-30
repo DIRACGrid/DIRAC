@@ -1,3 +1,13 @@
+"""SSL Transport selector.
+
+Two implementations of the SSL transport are available: the default one,
+based on the standard library ssl module (:py:mod:`.StdSSLTransport`), and
+the legacy one, based on M2Crypto (:py:mod:`.M2SSLTransport`). The
+implementation is selected once, at import time, with the DIRAC_USE_M2CRYPTO
+environment variable (default No).
+
+The helpers defined here (delegate, checkSanity) are implementation agnostic.
+"""
 import os
 
 from DIRAC import gLogger
@@ -7,9 +17,19 @@ from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-er
 from DIRAC.Core.Security.X509Certificate import X509Certificate  # pylint: disable=import-error
 
 
-# Eventhough SSLTransport is not used in this file, it is imported in other module from there,
-# so do not remove these imports !
-from DIRAC.Core.DISET.private.Transports.M2SSLTransport import SSLTransport
+# Even though SSLTransport, getSSLContext and getPeerInfo are not all used in
+# this file, they are imported from here by other modules, so do not remove
+# these imports!
+if os.getenv("DIRAC_USE_M2CRYPTO", "No").lower() in ("yes", "true"):
+    from DIRAC.Core.DISET.private.Transports.M2SSLTransport import SSLTransport
+    from DIRAC.Core.DISET.private.Transports.SSL.M2Utils import getM2SSLContext as getSSLContext
+    from DIRAC.Core.DISET.private.Transports.SSL.M2Utils import getM2PeerInfo as getPeerInfo
+else:
+    from DIRAC.Core.DISET.private.Transports.StdSSLTransport import (
+        SSLTransport,
+        getSSLContext,
+        getPeerInfo,
+    )
 
 
 def delegate(delegationRequest, kwargs):
