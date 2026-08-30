@@ -565,6 +565,7 @@ DELIMITER ;
 -- ps_count_files_in_dir : counts how many files are in a given directory
 -- dir_id : directory id
 -- countFile (out value): amount of files
+-- DEPRECATED: FileManagerPs.countFilesInDir now uses a parametrized direct query.
 
 DROP PROCEDURE IF EXISTS ps_count_files_in_dir;
 DELIMITER //
@@ -634,6 +635,7 @@ DELIMITER ;
 -- visibleFileStatus : status of files to be considered
 -- visibleReplicaStatus : status of replicas to be considered
 -- outputs : FileName, FileID, SEName, PFN
+-- DEPRECATED: FileManagerPs.getDirectoryReplicas now uses a parametrized direct query.
 
 DROP PROCEDURE IF EXISTS ps_get_replicas_for_files_in_dir;
 DELIMITER //
@@ -661,6 +663,7 @@ DELIMITER ;
 -- dirName : name of the directory
 -- fileName : name of the file
 -- file_id (out) : id of the file
+-- DEPRECATED: FileManagerPs._findFileIDs now uses a parametrized direct query.
 
 DROP PROCEDURE IF EXISTS ps_get_file_id_from_lfn;
 DELIMITER //
@@ -683,6 +686,7 @@ DELIMITER ;
 -- dir_id : directory id
 -- file_names : names of the files we are interested in
 -- output : FileID, FileName
+-- DEPRECATED: FileManagerPs._findFileIDs now uses a parametrized direct query.
 
 DROP PROCEDURE IF EXISTS ps_get_file_ids_from_dir_id;
 DELIMITER //
@@ -710,6 +714,7 @@ DELIMITER ;
 -- visibleFileStatus : list of status we are interested in
 -- output : FileName, DirID, f.FileID, Size, f.uid, UserName, f.gid, GroupName, s.Status,
 --                     GUID, Checksum, ChecksumType, Type, CreationDate,ModificationDate, Mode
+-- DEPRECATED: FileManagerPs._getDirectoryFiles now uses a parametrized direct query.
 
 drop procedure if exists ps_get_all_info_for_files_in_dir;
 DELIMITER //
@@ -745,6 +750,7 @@ DELIMITER ;
 -- ps_get_all_info_for_file_ids : get all the info for given file ids
 -- file_ids : list of file ids
 -- output : FileID, Size, UID, GID, s.Status, GUID, CreationDate
+-- DEPRECATED: FileManagerPs._getFileMetadataByID now uses a parametrized direct query.
 
 DROP PROCEDURE IF EXISTS ps_get_all_info_for_file_ids;
 DELIMITER //
@@ -856,6 +862,7 @@ DELIMITER ;
 -- ps_get_file_ids_from_guids : return list of file ids for given guids
 -- guids : list of guids
 -- output : GUID, FileID
+-- DEPRECATED: FileManagerPs._getFileIDFromGUID now uses a parametrized direct query.
 
 DROP PROCEDURE IF EXISTS ps_get_file_ids_from_guids;
 DELIMITER //
@@ -875,6 +882,7 @@ DELIMITER ;
 -- ps_get_lfns_from_guids : return list of file lfns for given guids
 -- guids : list of guids
 -- output : GUID, LFN
+-- DEPRECATED: FileManagerPs.getLFNForGUID now uses a parametrized direct query.
 
 DROP PROCEDURE IF EXISTS ps_get_lfns_from_guids;
 DELIMITER //
@@ -1101,6 +1109,7 @@ DELIMITER ;
 -- file_id : file id
 -- se id : storage element id
 -- rep_id (out) : replica id
+-- DEPRECATED: FileManagerPs._getRepIDsForReplica now uses a parametrized direct query.
 
 DROP PROCEDURE IF EXISTS ps_get_replica_id;
 DELIMITER //
@@ -1161,6 +1170,7 @@ DELIMITER ;
 -- status_id : new status id
 --
 -- output : 0, number of column affected (should be 1 or 0), 'OK'
+-- DEPRECATED: FileManagerPs._setReplicaStatus now uses a parametrized direct update.
 
 DROP PROCEDURE IF EXISTS ps_set_replica_status;
 DELIMITER //
@@ -1219,6 +1229,7 @@ DELIMITER ;
 -- in_uid : new uid
 --
 -- output : errno, msg. If errno ==0, all good
+-- DEPRECATED: FileManagerPs._setFileParameter now uses a parametrized direct update.
 
 DROP PROCEDURE IF EXISTS ps_set_file_uid;
 DELIMITER //
@@ -1240,6 +1251,7 @@ DELIMITER ;
 -- in_gid : new gid
 --
 -- output : errno, msg. If errno ==0, all good
+-- DEPRECATED: FileManagerPs._setFileParameter now uses a parametrized direct update.
 
 DROP PROCEDURE IF EXISTS ps_set_file_gid;
 DELIMITER //
@@ -1262,6 +1274,7 @@ DELIMITER ;
 -- status_id : id of the new status
 --
 -- output errno, msg. If errno ==0, all good
+-- DEPRECATED: FileManagerPs._setFileParameter now uses a parametrized direct update.
 
 DROP PROCEDURE IF EXISTS ps_set_file_status;
 DELIMITER //
@@ -1284,6 +1297,7 @@ DELIMITER ;
 -- in_mode : new mode
 --
 -- output errno, msg. If errno ==0, all good
+-- DEPRECATED: FileManagerPs._setFileParameter now uses a parametrized direct update.
 
 DROP PROCEDURE IF EXISTS ps_set_file_mode;
 DELIMITER //
@@ -1350,6 +1364,7 @@ DELIMITER ;
 -- visibleReplicaStatus : list of status we are interested in
 --
 -- output :  FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
+-- DEPRECATED: FileManagerPs._getFileReplicas now uses a parametrized direct query.
 
 DROP PROCEDURE IF EXISTS ps_get_all_info_of_replicas_bulk;
 DELIMITER //
@@ -1903,6 +1918,7 @@ DELIMITER ;
 -- ps_get_full_lfn_for_file_ids : get the full lfn for given file ids
 -- file_ids : list of file ids
 -- output : FileID, lfn
+-- DEPRECATED: FileManagerPs._getFileLFNs now uses a parametrized direct query.
 
 DROP PROCEDURE IF EXISTS ps_get_full_lfn_for_file_ids;
 DELIMITER //
@@ -1927,6 +1943,7 @@ DELIMITER ;
 -- ps_get_se_dump : dump all the lfns in list of SEs, with checksum and size
 -- se_id : storageElement IDs
 -- output : SEName, LFN, Checksum, Size
+-- DEPRECATED: FileManagerPs.getSEDump now uses a parametrized direct query.
 
 DROP PROCEDURE IF EXISTS ps_get_se_dump;
 DELIMITER //
