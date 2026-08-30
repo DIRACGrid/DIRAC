@@ -80,16 +80,6 @@ CREATE TABLE `InputData` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS `JobParameters`;
-CREATE TABLE `JobParameters` (
-  `JobID` INT(11) UNSIGNED NOT NULL,
-  `Name` VARCHAR(100) NOT NULL,
-  `Value` TEXT NOT NULL,
-  PRIMARY KEY (`JobID`,`Name`),
-  FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
--- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `OptimizerParameters`;
 CREATE TABLE `OptimizerParameters` (
   `JobID` INT(11) UNSIGNED NOT NULL,

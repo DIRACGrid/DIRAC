@@ -141,6 +141,52 @@ def getNumberOfGPUs(siteName=None, gridCE=None, queue=None):
     return 0
 
 
+def getJobParameters(jobIDs: list[int], parName: str | None, vo: str = "") -> dict:
+    """Utility to get a job parameter for a list of jobIDs pertaining to a VO.
+    If the jobID is not in the JobParametersDB, it will be looked up in the JobDB.
+
+    Requires direct access to the JobParametersDB and JobDB.
+
+    :param jobIDs: list of jobIDs
+    :param parName: name of the parameter to be retrieved
+    :param vo: VO of the jobIDs
+    :return: dictionary with jobID as key and the parameter as value
+    :rtype: dict
+    """
+    from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import JobParametersDB
+
+    elasticJobParametersDB = JobParametersDB()
+
+    if vo:  # a user is connecting, with a proxy
+        res = elasticJobParametersDB.getJobParameters(jobIDs, vo, parName)
+        if not res["OK"]:
+            return res
+        parameters = res["Value"]
+    else:  # a service is connecting, no proxy, e.g. StalledJobAgent
+        from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+
+        q = f"SELECT JobID, VO FROM Jobs WHERE JobID IN ({','.join([str(jobID) for jobID in jobIDs])})"
+        res = JobDB()._query(q)
+        if not res["OK"]:
+            return res
+        if not res["Value"]:
+            return S_OK({})
+        # get the VO for each jobID
+        voDict = {}
+        for jobID, vo in res["Value"]:
+            if vo not in voDict:
+                voDict[vo] = []
+            voDict[vo].append(jobID)
+        # get the parameters for each VO
+        parameters = {}
+        for vo, jobIDs in voDict.items():
+            res = elasticJobParametersDB.getJobParameters(jobIDs, vo, parName)
+            if not res["OK"]:
+                return res
+            parameters.update(res["Value"])
+    return S_OK(parameters)
+
+
 def getAvailableRAM(siteName=None, gridCE=None, queue=None):
     """Gets the available RAM on a certain CE/queue/node (what the pilot administers)
 
