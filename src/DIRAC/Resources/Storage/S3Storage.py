@@ -1,5 +1,4 @@
 # https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations.html
-# https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.list_objects
 """
 Configuration of an S3 storage
 Like others, but in protocol S3 add:
@@ -17,21 +16,18 @@ The Path should be the BucketName
 import copy
 import errno
 import functools
-
 import os
+
 import requests
+from signurlarity.client import Client
+from signurlarity.exceptions import NoSuchBucketError, NoSuchKeyError, PresignError, SignurlarityError
 
-
-import boto3
-from botocore.exceptions import ClientError
-
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.DataManagementSystem.Client.S3GatewayClient import S3GatewayClient
 from DIRAC.Resources.Storage.StorageBase import StorageBase
-
 
 LOG = gLogger.getSubLogger(__name__)
 
@@ -106,8 +102,7 @@ class S3Storage(StorageBase):
         endpoint_url = f"{proto}://{parameters['Host']}:{port}"
         self.bucketName = parameters["Path"]
 
-        self.s3_client = boto3.client(
-            "s3",
+        self.s3_client = Client(
             endpoint_url=endpoint_url,
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
@@ -234,12 +229,9 @@ class S3Storage(StorageBase):
             try:
                 self.s3_client.head_object(Bucket=self.bucketName, Key=key)
                 successful[key] = True
-            except ClientError as exp:
-                if exp.response["Error"]["Code"] == "404":
-                    successful[key] = False
-                else:
-                    failed[key] = repr(exp)
-            except Exception as exp:
+            except (NoSuchBucketError, NoSuchKeyError):
+                successful[key] = False
+            except PresignError as exp:
                 failed[key] = repr(exp)
 
         resDict = {"Failed": failed, "Successful": successful}
@@ -619,12 +611,11 @@ class S3Storage(StorageBase):
         # the @_extractKeyFromS3Path transformed URL into keys
         keys = urls
 
-        for key in keys:
-            try:
-                self.s3_client.delete_object(Bucket=self.bucketName, Key=key)
-                successful[key] = True
-            except Exception as exp:
-                failed[key] = repr(exp)
+        try:
+            self.s3_client.delete_objects(Bucket=self.bucketName, Delete={"Objects": keys, "Quiet": True})
+            successful = True
+        except PresignError as exp:
+            failed = repr(exp)
 
         return S_OK({"Failed": failed, "Successful": successful})
 
@@ -642,7 +633,7 @@ class S3Storage(StorageBase):
         failed = {}
         successful = {}
 
-        res = self.S3GatewayClient.createPresignedUrl(self.name, "delete_object", urls)
+        res = self.S3GatewayClient.createPresignedUrl(self.name, "delete_objects", urls)
         if not res["OK"]:
             return res
 
@@ -773,7 +764,7 @@ class S3Storage(StorageBase):
                     )
 
                 successful[key] = response
-            except ClientError as e:
+            except SignurlarityError as e:
                 log.debug(e)
                 failed[key] = repr(e)
 
