@@ -1,3 +1,9 @@
+[v9.1.17]
+
+*DataManagementSystem
+
+FIX: (#8764) DMSHelpers instances stay per-VO singletons through copy, deepcopy and pickle, restoring deepcopy/pickle of objects that embed one (e.g. RMS Request)
+
 [v9.1.16]
 
 *DataMangement
