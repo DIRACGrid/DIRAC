@@ -133,63 +133,33 @@ def main():
 
         # Eventually, we will get rid of the notion of InActive, as we always write Banned.
         if write and "WriteAccess" in seOptions:
-            if seOptions["WriteAccess"] == "Banned":
-                gLogger.notice("Write access already banned", se)
-                resW["OK"] = True
-            elif not seOptions["WriteAccess"] in ["Active", "Degraded", "Probing"]:
-                gLogger.notice(
-                    "Write option for %s is %s, instead of %s"
-                    % (se, seOptions["WriteAccess"], ["Active", "Degraded", "Probing"])
-                )
-                gLogger.notice("Try specifying the command switches")
+            resW = resourceStatus.setElementStatus(se, "StorageElement", "WriteAccess", "Banned", reason, userName)
+            # res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "InActive" )
+            if not resW["OK"]:
+                gLogger.error(f"Failed to update {se} write access to Banned")
             else:
-                resW = resourceStatus.setElementStatus(se, "StorageElement", "WriteAccess", "Banned", reason, userName)
-                # res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "InActive" )
-                if not resW["OK"]:
-                    gLogger.error(f"Failed to update {se} write access to Banned")
-                else:
-                    gLogger.notice(f"Successfully updated {se} write access to Banned")
-                    writeBanned.append(se)
+                gLogger.notice(f"Successfully updated {se} write access to Banned")
+                writeBanned.append(se)
 
         # Eventually, we will get rid of the notion of InActive, as we always write Banned.
         if check and "CheckAccess" in seOptions:
-            if seOptions["CheckAccess"] == "Banned":
-                gLogger.notice("Check access already banned", se)
-                resC["OK"] = True
-            elif not seOptions["CheckAccess"] in ["Active", "Degraded", "Probing"]:
-                gLogger.notice(
-                    "Check option for %s is %s, instead of %s"
-                    % (se, seOptions["CheckAccess"], ["Active", "Degraded", "Probing"])
-                )
-                gLogger.notice("Try specifying the command switches")
+            resC = resourceStatus.setElementStatus(se, "StorageElement", "CheckAccess", "Banned", reason, userName)
+            # res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
+            if not resC["OK"]:
+                gLogger.error(f"Failed to update {se} check access to Banned")
             else:
-                resC = resourceStatus.setElementStatus(se, "StorageElement", "CheckAccess", "Banned", reason, userName)
-                # res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
-                if not resC["OK"]:
-                    gLogger.error(f"Failed to update {se} check access to Banned")
-                else:
-                    gLogger.notice(f"Successfully updated {se} check access to Banned")
-                    checkBanned.append(se)
+                gLogger.notice(f"Successfully updated {se} check access to Banned")
+                checkBanned.append(se)
 
         # Eventually, we will get rid of the notion of InActive, as we always write Banned.
         if remove and "RemoveAccess" in seOptions:
-            if seOptions["RemoveAccess"] == "Banned":
-                gLogger.notice("Remove access already banned", se)
-                resC["OK"] = True
-            elif not seOptions["RemoveAccess"] in ["Active", "Degraded", "Probing"]:
-                gLogger.notice(
-                    "Remove option for %s is %s, instead of %s"
-                    % (se, seOptions["RemoveAccess"], ["Active", "Degraded", "Probing"])
-                )
-                gLogger.notice("Try specifying the command switches")
+            resC = resourceStatus.setElementStatus(se, "StorageElement", "RemoveAccess", "Banned", reason, userName)
+            # res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
+            if not resC["OK"]:
+                gLogger.error(f"Failed to update {se} remove access to Banned")
             else:
-                resC = resourceStatus.setElementStatus(se, "StorageElement", "RemoveAccess", "Banned", reason, userName)
-                # res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
-                if not resC["OK"]:
-                    gLogger.error(f"Failed to update {se} remove access to Banned")
-                else:
-                    gLogger.notice(f"Successfully updated {se} remove access to Banned")
-                    removeBanned.append(se)
+                gLogger.notice(f"Successfully updated {se} remove access to Banned")
+                removeBanned.append(se)
 
         if not (resR["OK"] or resW["OK"] or resC["OK"]):
             DIRAC.exit(-1)
