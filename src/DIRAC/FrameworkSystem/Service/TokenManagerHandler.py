@@ -26,8 +26,6 @@ The ``refresh token`` from :py:class:`TokenDB <DIRAC.FrameworkSystem.DB.TokenDB.
 is taken and the **exchange token** request to Identity Provider is made.
 """
 
-import pprint
-
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -116,40 +114,6 @@ class TokenManagerHandlerMixin:
                                 tokenDict["username"] = user
                                 tokensInfo.append(tokenDict)
         return S_OK(tokensInfo)
-
-    types_updateToken = [dict, str, str, int]
-
-    def export_updateToken(self, token: dict, userID: str, provider: str, rt_expired_in: int = 24 * 3600):
-        """Using this method, you can transfer user tokens for storage in the TokenManager.
-
-        It is important to note that TokenManager saves only one token per user and, accordingly,
-        the Identity Provider from which it was issued. So when a new token is delegated,
-        keep in mind that the old token will be deleted.
-
-        :param token: token
-        :param userID: user ID
-        :param provider: provider name
-        :param rt_expired_in: refresh token expires time (in seconds)
-
-        :return: S_OK(list)/S_ERROR() -- list contain uploaded tokens info as dictionaries
-        """
-        self.log.verbose(f"Update {userID} user token issued by {provider}:\n", pprint.pformat(token))
-        # prepare the client instance of the appropriate IdP to revoke the old tokens
-        result = self.idps.getIdProvider(provider)
-        if not result["OK"]:
-            return result
-        idPObj = result["Value"]
-        # overwrite old tokens with new ones
-        result = self.__tokenDB.updateToken(token, userID, provider, rt_expired_in)
-        if not result["OK"]:
-            return result
-        # revoke the old tokens
-        for oldToken in result["Value"]:
-            if "refresh_token" in oldToken and oldToken["refresh_token"] != token["refresh_token"]:
-                self.log.verbose("Revoke old refresh token:\n", pprint.pformat(oldToken))
-                idPObj.revokeToken(oldToken["refresh_token"])
-        # Let's return to the current situation with the storage of user tokens
-        return self.__tokenDB.getTokensByUserID(userID)
 
     def __checkProperties(self, requestedUserDN: str, requestedUserGroup: str):
         """Check the properties and return if they can only download limited tokens if authorized
