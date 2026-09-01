@@ -17,6 +17,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatu
 from DIRAC.ResourceStatusSystem.Utilities.InfoGetter import getPoliciesThatApply
 from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
+from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine import resolveElementStatus
 
 
 class ResourceStatus(metaclass=DIRACSingleton):
@@ -66,13 +67,13 @@ class ResourceStatus(metaclass=DIRACSingleton):
         >>> getElementStatus('SE1', 'StorageElement', ['ReadAccess', 'WriteAccess'])
             S_OK( { 'SE1': { 'ReadAccess': 'Banned' , 'WriteAccess': 'Active'} } } )
         >>> getElementStatus('SE1', 'StorageElement')
-            S_OK( { 'SE1': { 'ReadAccess': 'Probing' ,
+            S_OK( { 'SE1': { 'ReadAccess': 'Banned' ,
                              'WriteAccess': 'Active',
-                             'CheckAccess': 'Degraded',
+                             'CheckAccess': 'Active',
                              'RemoveAccess': 'Banned'} } } )
         >>> getElementStatus(['CE1', 'CE2'], 'ComputingElement')
             S_OK( {'CE1': {'all': 'Active'},
-                   'CE2': {'all': 'Probing'}}}
+                   'CE2': {'all': 'Banned'}}}
         """
 
         allowedParameters = ["StorageElement", "ComputingElement", "FTS"]
@@ -257,14 +258,7 @@ def getCacheDictFromRawData(rawList):
 
     :return: dict of the form { ( elementName, elementType, statusType, vO ) : status, ... }
     """
-    ALLOWED = {"Active", "Degraded"}
-
     res = {}
     for entry in rawList:
-        if entry[3] in ALLOWED:
-            status = "Active"
-        else:
-            status = "Banned"
-        res.update({(entry[0], entry[1], entry[2], entry[4]): status})
-
+        res[(entry[0], entry[1], entry[2], entry[4])] = resolveElementStatus(entry[3])
     return res
