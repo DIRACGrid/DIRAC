@@ -115,7 +115,12 @@ class RequestExecutingAgent(AgentModule):
         self.__rmsMonitoring = False
 
     def processPool(self):
-        """facade for ProcessPool"""
+        """facade for ProcessPool
+
+        The pool is created by :meth:`initialize`. Creating it forks MaxProcess
+        workers, which inherit everything reachable at that point, so the first
+        call must stay outside of the execution cycle.
+        """
         if not self.__processPool:
             minProcess = max(1, self.__minProcess)
             maxProcess = max(self.__minProcess, self.__maxProcess)
@@ -272,6 +277,15 @@ class RequestExecutingAgent(AgentModule):
 
         # # create request dict
         self.__requestCache = dict()
+
+        # # Spawn the ProcessPool here, while the agent is still small.
+        # # ProcessPool forks its workers, so whatever is reachable at that moment is
+        # # inherited by every one of them and, because the workers never unwind the
+        # # frame they were forked from, is pinned for the lifetime of the agent.
+        # # Creating the pool lazily from execute() meant forking in the middle of a
+        # # cycle, freezing a full BulkRequest worth of Requests into all MaxProcess
+        # # workers. Doing it here also keeps the RequestDB connection out of them.
+        self.processPool()
 
         self.__requestDB = RequestDB()
 
