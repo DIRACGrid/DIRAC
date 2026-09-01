@@ -166,14 +166,6 @@ class DiracAdmin(API):
         if not (result := self._checkSiteIsValid(site))["OK"]:
             return result
 
-        if not (result := self.getSiteMask(status="Active"))["OK"]:
-            return result
-        siteMask = result["Value"]
-        if site in siteMask:
-            if printOutput:
-                gLogger.notice(f"Site {site} is already Active")
-            return S_OK(f"Site {site} is already Active")
-
         tokenLifetime = int(days)
         if tokenLifetime <= 0:
             tokenExpiration = datetime.max
@@ -242,14 +234,6 @@ class DiracAdmin(API):
         """
         if not (result := self._checkSiteIsValid(site))["OK"]:
             return result
-        mask = self.getSiteMask(status="Banned")
-        if not mask["OK"]:
-            return mask
-        siteMask = mask["Value"]
-        if site in siteMask:
-            if printOutput:
-                gLogger.notice(f"Site {site} is already Banned")
-            return S_OK(f"Site {site} is already Banned")
 
         tokenLifetime = int(days)
         if tokenLifetime <= 0:

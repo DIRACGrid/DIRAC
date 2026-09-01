@@ -18,6 +18,7 @@ from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
+from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine import resolveElementStatus
 
 
 class SiteStatus(metaclass=DIRACSingleton):
@@ -275,14 +276,7 @@ def getCacheDictFromRawData(rawList):
 
     :return: dict of the form { ( elementName ) : status, ... }
     """
-    ALLOWED = {"Active", "Degraded"}
-
     res = {}
     for entry in rawList:
-        if entry[1] in ALLOWED:
-            status = "Active"
-        else:
-            status = "Banned"
-        res.update({(entry[0]): status})
-
+        res[entry[0]] = resolveElementStatus(entry[1])
     return res
