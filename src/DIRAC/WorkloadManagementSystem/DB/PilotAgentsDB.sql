@@ -22,6 +22,7 @@
 USE PilotAgentsDB;
 
 -- ------------------------------------------------------------------------------
+
 DROP TABLE IF EXISTS `PilotAgents`;
 CREATE TABLE `PilotAgents` (
   `PilotID` INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -42,6 +43,7 @@ CREATE TABLE `PilotAgents` (
   `AccountingSent` ENUM('True','False') NOT NULL DEFAULT 'False',
   PRIMARY KEY (`PilotID`),
   KEY `PilotJobReference` (`PilotJobReference`),
+  KEY `PilotStamp` (`PilotStamp`),
   KEY `Status` (`Status`),
   KEY `Statuskey` (`GridSite`,`DestinationSite`,`Status`),
   KEY `idx_dest_queue_status` (`DestinationSite`,`Queue`,`Status`)
