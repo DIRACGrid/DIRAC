@@ -23,6 +23,39 @@ import datetime
 import sys
 import time
 
+# TimeUtilities imports datetime as well
+# To avoid conflicts/surprises, import copies here used a _local
+from datetime import datetime as dt_local, timezone as tz_local
+
+
+class DiracTime:
+    """datetime tools for DIRAC:
+    There are a number of facilities in DIRAC which can't handle timezone aware
+    datetime objects: These don't serialise, don't fit in database schemas, etc.
+    As the python non-timezone aware helper functions are being deprecated we
+    provide our own equivalents here.
+    """
+
+    @staticmethod
+    def utcnow() -> dt_local:
+        """Returns a UTC datetime object for now *without* a timezone field."""
+        return dt_local.now(tz_local.utc).replace(tzinfo=None)
+
+    @staticmethod
+    def utcfromtimestamp(epoch: float) -> dt_local:
+        """Returns a UTC datetime object from the given epoch offset (also in UTC)."""
+        return dt_local.fromtimestamp(epoch, tz=tz_local.utc).replace(tzinfo=None)
+
+    @staticmethod
+    def timestamp_utc(dt: dt_local) -> int:
+        """Converts a datetime object to a UTC epoch offset int.
+        Naive timezones are assumed to be UTC.
+        """
+        if dt.tzinfo is None:
+            return int(dt.replace(tzinfo=tz_local.utc).timestamp())
+        return int(dt.timestamp())
+
+
 # Some useful constants for time operations
 microsecond = datetime.timedelta(microseconds=1)
 second = datetime.timedelta(seconds=1)
