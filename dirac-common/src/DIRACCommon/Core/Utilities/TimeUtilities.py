@@ -123,7 +123,7 @@ def toEpochMilliSeconds(dateTimeObject=None):
     Get milliseconds since epoch
     """
     if dateTimeObject is None:
-        dateTimeObject = datetime.datetime.utcnow()
+        dateTimeObject = DiracTime.utcnow()
     if dateTimeObject.resolution == datetime.timedelta(days=1):
         # Add time information corresponding to midnight UTC if it's a datetime.date
         dateTimeObject = datetime.datetime.combine(
@@ -144,7 +144,7 @@ def fromEpoch(epoch):
         epoch /= 1000**2
     elif epoch > 10**11:  # milliseconds
         epoch /= 1000
-    return datetime.datetime.utcfromtimestamp(epoch)
+    return DiracTime.utcfromtimestamp(epoch)
 
 
 def toString(myDate=None):
@@ -172,7 +172,7 @@ def toString(myDate=None):
             myDate.microseconds,
         )
     else:
-        return toString(datetime.datetime.utcnow())
+        return toString(DiracTime.utcnow())
 
 
 def fromString(myDate=None):
