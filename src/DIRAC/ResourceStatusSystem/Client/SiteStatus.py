@@ -126,7 +126,7 @@ class SiteStatus(metaclass=DIRACSingleton):
     def getUsableSites(self, siteNames=None):
         """
         Returns all sites that are usable if their
-        statusType is either Active or Degraded; in a list.
+        statusType is either Active; in a list.
 
         examples
           >>> siteStatus.getUsableSites( ['test1.test1.uk', 'test2.test2.net', 'test3.test3.org'] )
