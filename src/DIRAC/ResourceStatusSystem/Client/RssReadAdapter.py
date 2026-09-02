@@ -1,11 +1,11 @@
-"""Response translation for the read adapter module.
+"""RSS API calling and translation for the read adapter module.
 
-This module translates responses from diracx Pydantic models to legacy format.
+This module provides functionality to:
+- Call diracx RSS API endpoints and translate the outputs
+- Translate responses from new diracx format to legacy format
 """
 
 from __future__ import annotations
-
-from typing import Dict
 
 from diracx.core.models.rss import (
     AllowedStatus,
@@ -15,6 +15,8 @@ from diracx.core.models.rss import (
     SiteStatus,
     StorageElementStatus,
 )
+
+from DIRAC.Core.Security.DiracX import DiracXClient
 
 
 def translate_storage_element_status(
@@ -154,3 +156,35 @@ def _translate_resource_status(status: AllowedStatus | BannedStatus) -> str:
     else:  # BannedStatus
         # All banned statuses are mapped to Banned
         return "Banned"
+
+
+def get_resource_rss_status(client: DiracXClient) -> list[tuple]:
+    """Get all resource statuses from the RSS API and translate to legacy format.
+
+    Returns:
+        List of tuples in legacy format: (name, element_type, status_type, status, vo)
+
+    """
+    status: list[tuple] = []
+    # Storage elements
+    response = client.rss.get_storage_status()
+    status.extend(translate_storage_element_status(response))
+    # Computing Elements
+    response = client.rss.get_compute_status()
+    status.extend(translate_computing_element_status(response))
+    # FTS
+    response = client.rss.get_fts_status()
+    status.extend(translate_fts_status(response))
+
+    return status
+
+
+def get_site_status(client: DiracXClient) -> list[tuple]:
+    """Get site status from the RSS API and translate to legacy format.
+
+    Returns:
+        List of tuples in legacy format: (site, status)
+
+    """
+    response = client.rss.get_site_status()
+    return translate_site_status(response)
