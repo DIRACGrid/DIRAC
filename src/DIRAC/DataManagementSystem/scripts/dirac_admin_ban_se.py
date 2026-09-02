@@ -113,23 +113,13 @@ def main():
 
         # Eventually, we will get rid of the notion of InActive, as we always write Banned.
         if read and "ReadAccess" in seOptions:
-            if seOptions["ReadAccess"] == "Banned":
-                gLogger.notice("Read access already banned", se)
-                resR["OK"] = True
-            elif not seOptions["ReadAccess"] in ["Active", "Degraded", "Probing", "Error"]:
-                gLogger.notice(
-                    "Read option for %s is %s, instead of %s"
-                    % (se, seOptions["ReadAccess"], ["Active", "Degraded", "Probing", "Error"])
-                )
-                gLogger.notice("Try specifying the command switches")
+            resR = resourceStatus.setElementStatus(se, "StorageElement", "ReadAccess", "Banned", reason, userName)
+            # res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "InActive" )
+            if not resR["OK"]:
+                gLogger.error(f"Failed to update {se} read access to Banned")
             else:
-                resR = resourceStatus.setElementStatus(se, "StorageElement", "ReadAccess", "Banned", reason, userName)
-                # res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "InActive" )
-                if not resR["OK"]:
-                    gLogger.error(f"Failed to update {se} read access to Banned")
-                else:
-                    gLogger.notice(f"Successfully updated {se} read access to Banned")
-                    readBanned.append(se)
+                gLogger.notice(f"Successfully updated {se} read access to Banned")
+                readBanned.append(se)
 
         # Eventually, we will get rid of the notion of InActive, as we always write Banned.
         if write and "WriteAccess" in seOptions:
