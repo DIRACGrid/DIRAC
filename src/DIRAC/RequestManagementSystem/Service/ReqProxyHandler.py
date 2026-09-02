@@ -206,16 +206,3 @@ class ReqProxyHandler(RequestHandler):
             return S_OK(dirContent)
         except OSError as e:
             return S_ERROR(DErrno.ERMSUKN, f"Error listing {cacheDir}: {repr(e)}")
-
-    types_showCachedRequest = [str]
-
-    def export_showCachedRequest(self, filename):
-        """Show the request cached in the given file"""
-        fullPath = None
-        try:
-            fullPath = os.path.join(self.cacheDir(), filename)
-            with open(fullPath) as cacheFile:
-                requestJSON = "".join(cacheFile.readlines())
-                return S_OK(requestJSON)
-        except Exception as e:
-            return S_ERROR(DErrno.ERMSUKN, f"Error showing cached request {fullPath}: {repr(e)}")
