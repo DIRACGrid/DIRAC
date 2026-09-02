@@ -107,7 +107,7 @@ class DiracAdmin(API):
 
     #############################################################################
     def getBannedSites(self, printOutput=False):
-        """Retrieve current list of banned  and probing sites.
+        """Retrieve current list of banned sites.
 
         Example usage:
 
