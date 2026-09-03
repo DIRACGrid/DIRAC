@@ -547,21 +547,13 @@ class StorageElementItem:
 
         # If nothing is defined in the CS Access is allowed
         # If something is defined, then it must be set to Active
-        retDict["Read"] = not (
-            "ReadAccess" in self.options and self.options["ReadAccess"] not in ("Active", "Degraded")
-        )
-        retDict["Write"] = not (
-            "WriteAccess" in self.options and self.options["WriteAccess"] not in ("Active", "Degraded")
-        )
-        retDict["Remove"] = not (
-            "RemoveAccess" in self.options and self.options["RemoveAccess"] not in ("Active", "Degraded")
-        )
+        retDict["Read"] = not ("ReadAccess" in self.options and self.options["ReadAccess"] != "Active")
+        retDict["Write"] = not ("WriteAccess" in self.options and self.options["WriteAccess"] != "Active")
+        retDict["Remove"] = not ("RemoveAccess" in self.options and self.options["RemoveAccess"] != "Active")
         if retDict["Read"]:
             retDict["Check"] = True
         else:
-            retDict["Check"] = not (
-                "CheckAccess" in self.options and self.options["CheckAccess"] not in ("Active", "Degraded")
-            )
+            retDict["Check"] = not ("CheckAccess" in self.options and self.options["CheckAccess"] != "Active")
         diskSE = True
         tapeSE = False
         if "SEType" in self.options:

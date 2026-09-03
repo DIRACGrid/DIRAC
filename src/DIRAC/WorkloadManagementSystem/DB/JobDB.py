@@ -1094,10 +1094,6 @@ class JobDB(DB):
 
         # Get the site mask status
         siteMask = {}
-        resultMask = self.siteClient.getSites("All")
-        if resultMask["OK"]:
-            for site in resultMask["Value"]:
-                siteMask[site] = "NoMask"
         resultMask = self.siteClient.getSites("Active")
         if resultMask["OK"]:
             for site in resultMask["Value"]:

@@ -98,7 +98,6 @@ def main():
         DIRAC.exit()
 
     STATUS_TYPES = ["ReadAccess", "WriteAccess", "CheckAccess", "RemoveAccess"]
-    ALLOWED_STATUSES = ["Unknown", "InActive", "Banned", "Probing", "Degraded", "Error"]
 
     statusAllowedDict = {}
     for statusType in STATUS_TYPES:
@@ -123,26 +122,14 @@ def main():
         # InActive is used on the CS model, Banned is the equivalent in RSS
         for statusType in STATUS_TYPES:
             if statusFlagDict[statusType]:
-                if seOptions.get(statusType) == "Active":
-                    gLogger.notice(f"{statusType} status of {se} is already Active")
-                    continue
                 if statusType in seOptions:
-                    if not seOptions[statusType] in ALLOWED_STATUSES:
-                        gLogger.notice(
-                            "%s option for %s is %s, instead of %s"
-                            % (statusType, se, seOptions["ReadAccess"], ALLOWED_STATUSES)
-                        )
-                        gLogger.notice("Try specifying the command switches")
+                    resR = resourceStatus.setElementStatus(se, "StorageElement", statusType, "Active", reason, userName)
+                    if not resR["OK"]:
+                        gLogger.fatal(f"Failed to update {se} {statusType} to Active, exit -", resR["Message"])
+                        DIRAC.exit(-1)
                     else:
-                        resR = resourceStatus.setElementStatus(
-                            se, "StorageElement", statusType, "Active", reason, userName
-                        )
-                        if not resR["OK"]:
-                            gLogger.fatal(f"Failed to update {se} {statusType} to Active, exit -", resR["Message"])
-                            DIRAC.exit(-1)
-                        else:
-                            gLogger.notice(f"Successfully updated {se} {statusType} to Active")
-                            statusAllowedDict[statusType].append(se)
+                        gLogger.notice(f"Successfully updated {se} {statusType} to Active")
+                        statusAllowedDict[statusType].append(se)
 
     totalAllowed = 0
     totalAllowedSEs = []
