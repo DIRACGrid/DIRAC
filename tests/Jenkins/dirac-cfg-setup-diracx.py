@@ -74,16 +74,16 @@ def main(url: str, disabled_vos: list[str], legacy_adapted_services: list[str]):
     returnValueOrRaise(csAPI.mergeCFGUnderSection("/DiracX/", csSyncCFG))
 
     # Add service with legacy adaptors.
-    legacy = {"LegacyClientEnabled": {}}
+    legacy = {"FutureClientEnabled": {}}
     for service in legacy_adapted_services:
         print(f"Adding legacy adaptor for service {service}")
         # Service name such as:  system/name
         system, name = service.split("/")
 
-        if not system in legacy["LegacyClientEnabled"]:
-            legacy["LegacyClientEnabled"][system] = {}
+        if not system in legacy["FutureClientEnabled"]:
+            legacy["FutureClientEnabled"][system] = {}
 
-        legacy["LegacyClientEnabled"][system][name] = "yes"
+        legacy["FutureClientEnabled"][system][name] = "yes"
 
     legacyCFG = CFG().loadFromDict(legacy)
     returnValueOrRaise(csAPI.mergeCFGUnderSection("/DiracX/", legacyCFG))
