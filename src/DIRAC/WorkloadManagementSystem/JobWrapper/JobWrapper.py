@@ -951,9 +951,24 @@ class JobWrapper:
             else:
                 nonlfnList.append(out)
 
-        # Check whether list of outputData has a globbable pattern
+        # Check whether the list of LFNs has globbable patterns
+        globbedLfnList = []
+        for lfn in lfnList:
+            lfnPath = os.path.dirname(lfn)
+            lfnLocal = os.path.basename(lfn)
+            globbedLfnList += [os.path.join(lfnPath, gLfn) for gLfn in getGlobbedFiles(lfnLocal)]
+
+        if globbedLfnList:
+            globbedLfnList = List.uniqueElements(globbedLfnList)
+            if globbedLfnList != lfnList:
+                self.log.info(
+                    "Found a pattern in the output data LFN list, LFNs to upload are:", ", ".join(globbedLfnList)
+                )
+                lfnList = globbedLfnList
+
+        # Check whether the list of outputData has a globbable pattern
         globbedOutputList = List.uniqueElements(getGlobbedFiles(nonlfnList))
-        if globbedOutputList != nonlfnList and globbedOutputList:
+        if globbedOutputList and globbedOutputList != nonlfnList:
             self.log.info(
                 "Found a pattern in the output data file list, files to upload are:", ", ".join(globbedOutputList)
             )
@@ -1113,6 +1128,10 @@ class JobWrapper:
                 # If output path is given, append it to the user path and put output files in this directory
                 if outputPath.startswith("/"):
                     outputPath = outputPath[1:]
+                # If output path is given with the LFN: prefix, take it as an absolute path
+                elif outputPath.startswith("LFN:"):
+                    outputPath = outputPath[4:]
+                    basePath = ""
             else:
                 # By default the output path is constructed from the job id
                 subdir = str(int(self.jobID / 1000))
