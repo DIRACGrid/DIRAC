@@ -1,6 +1,8 @@
 """
    Contains the mechanism to evaluate whether to use or not a catalog
 """
+from functools import lru_cache
+
 from pyparsing import infix_notation, opAssoc, Word, printables, Literal, Suppress
 
 from DIRAC import S_OK, gLogger
@@ -199,6 +201,25 @@ class FCConditionParser:
 
         self.log = gLogger.getSubLogger(self.__class__.__name__)
 
+        # Bound per-instance cache (as opposed to a class-level one) so it is
+        # garbage collected along with the instance instead of growing forever
+        self.__parseCondition = lru_cache(maxsize=None)(self.__parseConditionUncached)
+
+    def __parseConditionUncached(self, conditionString):
+        """Parse a condition string into its evaluation tree.
+
+        Condition strings are static (they come from the CS or are fixed at
+        call time), so parsing them - which instantiates the (possibly costly)
+        plugins via :class:`ObjectLoader` - is cached per-instance in
+        :attr:`__parseCondition` and reused for every lfn/call.
+
+        :param str conditionString: the condition to parse
+        :returns: the root node (bool operator or PluginOperand) of the parsed expression
+        """
+        # res is a tuple whose first and only element is either
+        # one of the bool operator defined above, or a PluginOperand
+        return self.__boolExpr.parseString(conditionString)[0]
+
     def __evaluateCondition(self, conditionString, **kwargs):
         """Evaluate a condition against attributes, typically lfn.
         CAUTION: lfns are here given one by one
@@ -207,11 +228,8 @@ class FCConditionParser:
 
         self.log.debug(f"Testing {conditionString} against {kwargs}")
 
-        # Parse all the condition and evaluate it
-        # res is a tuple whose first and only element is either
-        # one of the bool operator defined above, or a PluginOperand
-        res = self.__boolExpr.parseString(conditionString)
-        res = res[0].eval(**kwargs)
+        parsedCondition = self.__parseCondition(conditionString)
+        res = parsedCondition.eval(**kwargs)
 
         self.log.debug(f"Evaluated to {res}")
 
