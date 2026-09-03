@@ -20,7 +20,16 @@ dependencies:
   - opensearch-py
   - fts3
   - gitpython >=2.1.0
-  - m2crypto >=0.38.0
+  - invoke
+  # Upper pin: m2crypto 0.46.0 rewrote ssl_read() in src/SWIG/_ssl.i and inverted the
+  # handling of ssl_sleep_with_timeout()'s return value (and dropped the gettimeofday()
+  # that initialises the deadline). Any read() on a connection with a timeout set now
+  # busy-loops and returns with a stale SSLTimeoutError set, which surfaces as
+  # "SystemError: <built-in function ssl_read> returned a result with an exception set"
+  # and breaks all DIRAC DISET/dips connections. Still unfixed upstream as of 0.49.0.
+  ## Reported in
+  ## https://lists.sr.ht/~mcepl/m2crypto/%3C7b94d866-bdd2-4a29-9713-b6a6fd076ad7@cta-observatory.org%3E
+  - m2crypto >=0.43,<0.46
   - matplotlib
   - numpy
   - pexpect >=4.0.1
@@ -99,16 +108,16 @@ dependencies:
   - types-requests
   - types-setuptools
   - pip:
-    # Prerelease of the required package for integration of OAuth2
-    - Authlib >=1.0.0
-    - dominate
-    - pyjwt
-    # This is a fork of tornado with a patch to allow for configurable iostream
-    - git+https://github.com/DIRACGrid/tornado.git@iostreamConfigurable
-    # This is an extension of Tornado to use M2Crypto
-    # It should eventually be part of DIRACGrid
-    - git+https://github.com/DIRACGrid/tornado_m2crypto
-    - -e .[server]
-    - -e ./dirac-common/
-    # Add diracdoctools
-    - -e docs/
+      # Prerelease of the required package for integration of OAuth2
+      - Authlib >=1.0.0
+      - dominate
+      - pyjwt
+      # This is a fork of tornado with a patch to allow for configurable iostream
+      - git+https://github.com/DIRACGrid/tornado.git@iostreamConfigurable
+      # This is an extension of Tornado to use M2Crypto
+      # It should eventually be part of DIRACGrid
+      - git+https://github.com/DIRACGrid/tornado_m2crypto
+      - -e .[server]
+      - -e ./dirac-common/
+      # Add diracdoctools
+      - -e docs/
