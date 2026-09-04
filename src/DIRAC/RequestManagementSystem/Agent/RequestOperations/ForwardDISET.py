@@ -1,4 +1,3 @@
-import importlib
 from collections.abc import Sequence
 
 # imports
@@ -21,8 +20,6 @@ class ForwardDISET(OperationHandlerBase):
 
     There are fundamental differences in behavior between the forward diset
     for DIPS service and the one for DiracX:
-    * dips call will be done with the server certificates and use the delegated DN field
-    * diracx call will be done with the credentials setup by request tasks
     * dips call are just RPC call, they do not execute the logic of the client (that is anyway not relied upon for now)
     * diracx calls will effectively call the client entirely.
 
@@ -54,19 +51,7 @@ class ForwardDISET(OperationHandlerBase):
 
         # This is the DISET rpcStub
         if isinstance(stub, Sequence):
-            # Ensure the forwarded request is done on behalf of the request owner
-            res = getDNForUsername(self.request.Owner)
-            if not res["OK"]:
-                return res
-            stub[0][1]["delegatedDN"] = res["Value"][0]
-            stub[0][1]["delegatedGroup"] = self.request.OwnerGroup
-
-            # ForwardDiset is supposed to be used with a host certificate
-            useServerCertificate = gConfig.useServerCertificate()
-            gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "true")
             forward = disetExecuteRPCStub(stub)
-            if not useServerCertificate:
-                gConfigurationData.setOptionInCFG("/DIRAC/Security/UseServerCertificate", "false")
         # DiracX stub
         elif isinstance(stub, dict):
             forward = diracxExecuteRPCStub(stub)

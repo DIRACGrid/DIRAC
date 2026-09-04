@@ -33,3 +33,4 @@ CleanReqDBAgent
 ---------------
 
 Because the database can grow very large, the :ref:`CleanReqDBAgent` is in charge of removing old `Requests` in a final state.
+It is also capable of canceling requests if they are there for too long, or can group Requests together.

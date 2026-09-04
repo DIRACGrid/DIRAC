@@ -1,8 +1,3 @@
-########################################################################
-# File: CleanReqDBAgent.py
-# Author: Krzysztof.Ciba@NOSPAMgmail.com
-# Date: 2013/05/17 08:31:26
-########################################################################
 """Cleaning the RequestDB from obsolete records and kicking assigned requests
 
 .. literalinclude:: ../ConfigTemplate.cfg
@@ -11,15 +6,8 @@
   :dedent: 2
   :caption: CleanReqDBAgent options
 
-.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
-
 """
 
-# #
-# @file CleanReqDBAgent.py
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2013/05/17 08:32:08
-# @brief Definition of CleanReqDBAgent class.
 
 # # imports
 import datetime
@@ -56,6 +44,12 @@ class CleanReqDBAgent(AgentModule):
     # # remove failed requests flag
     DEL_FAILED = False
 
+    # # Number of Accounting requests to fetch to batch
+    # # 0 to disable
+    ACCOUNTING_BATCH_MAX_REQUESTS = 0
+    # # Number of operations to batch in a single requests.
+    ACCOUNTING_BATCH_SIZE = 100
+
     # # request db
     __requestDB = None
 
@@ -74,6 +68,16 @@ class CleanReqDBAgent(AgentModule):
         self.KICK_LIMIT = self.am_getOption("KickLimit", self.KICK_LIMIT)
         self.log.info(f"Kick limit = {self.KICK_LIMIT} request/cycle")
 
+        self.ACCOUNTING_BATCH_MAX_REQUESTS = self.am_getOption(
+            "AccountingBatchMaxRequests", self.ACCOUNTING_BATCH_MAX_REQUESTS
+        )
+
+        self.ACCOUNTING_BATCH_SIZE = self.am_getOption("AccountingBatchSize", self.ACCOUNTING_BATCH_SIZE)
+
+        if self.ACCOUNTING_BATCH_MAX_REQUESTS:
+            self.log.info(f"Accounting max requests = {self.ACCOUNTING_BATCH_MAX_REQUESTS} request/cycle")
+            self.log.info(f"Accouting batch size = {self.ACCOUNTING_BATCH_SIZE} requests")
+
         if self.cancelGraceDays >= self.DEL_GRACE_DAYS:
             self.cancelGraceDays = self.DEL_GRACE_DAYS - 1
             self.log.warn("Cancelled jobs grace period > delete period, capping to %u days" % self.cancelGraceDays)
@@ -88,6 +92,7 @@ class CleanReqDBAgent(AgentModule):
         now = DiracTime.utcnow()
         kickTime = now - datetime.timedelta(hours=self.KICK_GRACE_HOURS)
         rmTime = now - datetime.timedelta(days=self.DEL_GRACE_DAYS)
+        batched = None
 
         # # kick
         statusList = ["Assigned"]
@@ -163,9 +168,23 @@ class CleanReqDBAgent(AgentModule):
                         continue
                     cancelled += 1
 
+        if self.ACCOUNTING_BATCH_MAX_REQUESTS:
+            res = self.__requestDB.aggregateAccountingDataStoreRequests(
+                batch_size=self.ACCOUNTING_BATCH_SIZE, max_requests=self.ACCOUNTING_BATCH_MAX_REQUESTS
+            )
+            if not res["OK"]:
+                self.log.error("Failed to batch accounting requests requests:", res["Message"])
+                return res
+            batched = res["Value"]
+
         self.log.info("execute: kicked assigned requests", str(kicked))
         self.log.info("execute: deleted finished requests", str(deleted))
         if self.cancelGraceDays > 0:
             self.log.info("execute: cancelled overdue requests", str(cancelled))
 
+        if batched:
+            self.log.info(
+                "Batched accounting requests",
+                f"created : {len(batched['created_requests'])}, canceled: {len(batched['canceled_requests'])}",
+            )
         return S_OK()
