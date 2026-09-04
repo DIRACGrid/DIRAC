@@ -6,8 +6,6 @@
 # - starts it
 #
 # It should be executed for different versions of python, e.g.:
-# - 2.7.x (x < 9)
-# - 2.7.x (x >= 9)
 # - 3.6.x
 # - 3.11.x
 #
@@ -17,29 +15,18 @@
 # python Test_GenerateAndExecutePilotWrapper.py url://to_PilotWrapper.py
 
 
-from __future__ import absolute_import, division, print_function
-
-import os
+import ssl  # pylint: disable=import-error
+import subprocess
 import sys
 import time
-import subprocess
 
 # 1) gets the (DIRAC-free) PilotWrapper.py
 
-# urllib is different between python 2 and 3
-if sys.version_info < (3,):
-    from urllib2 import urlopen as url_library_urlopen  # pylint: disable=import-error
-else:
-    from urllib.request import urlopen as url_library_urlopen  # pylint: disable=import-error,no-name-in-module
+from urllib.request import urlopen
 
 
-if sys.version_info >= (2, 7, 9):
-    import ssl  # pylint: disable=import-error
-
-    context = ssl._create_unverified_context()
-    rf = url_library_urlopen(sys.argv[1], context=context)
-else:
-    rf = url_library_urlopen(sys.argv[1])
+context = ssl._create_unverified_context()
+rf = urlopen(sys.argv[1], context=context)
 locc = sys.argv[2]
 
 with open("PilotWrapper.py", "wb") as pj:
@@ -52,8 +39,7 @@ time.sleep(1)
 from PilotWrapper import pilotWrapperScript  # pylint: disable=import-error
 
 res = pilotWrapperScript(
-    pilotOptions="-N ce.dirac.org -Q DIRACQUEUE -n DIRAC.CI.ORG --debug",
-    location=locc + "/,wrong.cern.ch",
+    pilotOptions="-N ce.dirac.org -Q DIRACQUEUE -n DIRAC.CI.ORG --debug", location="wrong.cern.ch, " + locc
 )
 
 with open("pilot-wrapper.sh", "wb") as pj:

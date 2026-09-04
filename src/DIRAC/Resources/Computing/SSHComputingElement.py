@@ -1,4 +1,4 @@
-""" SSH (Virtual) Computing Element
+"""SSH (Virtual) Computing Element
 
 For a given IP/host it will send jobs directly through ssh
 
@@ -57,6 +57,7 @@ Timeout:
 
 **Code Documentation**
 """
+
 import errno
 import json
 import os
@@ -396,8 +397,7 @@ class SSHComputingElement(ComputingElement):
             # Execute the batch command with the options file path
             cmd = (
                 f"bash --login -c 'python3 {self.sharedArea}/execute_batch {remoteOptionsFile} || "
-                f"python {self.sharedArea}/execute_batch {remoteOptionsFile} || "
-                f"python2 {self.sharedArea}/execute_batch {remoteOptionsFile}'"
+                f"python {self.sharedArea}/execute_batch {remoteOptionsFile}"
             )
 
             self.log.verbose(f"CE submission command: {cmd}")

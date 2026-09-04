@@ -12,8 +12,6 @@ The main client of this module is the SiteDirector, that invokes the functions h
 
 """
 
-from __future__ import absolute_import, division, print_function
-
 import base64
 import bz2
 import os
@@ -28,20 +26,14 @@ new_limit=1048575
 if [ "${current_limit}" = "unlimited" ] || [ "${current_limit}" -gt "${new_limit}" ]; then
     ulimit -n "${new_limit}"
 fi
-if command -v python &> /dev/null; then
-  py='python'
-elif command -v python3 &> /dev/null; then
+if command -v python3 &> /dev/null; then
   py='python3'
-elif command -v python2 &> /dev/null; then
-  py='python2'
+elif command -v python &> /dev/null; then
+  py='python'
 fi
 /usr/bin/env $py << EOF
 
 # imports
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 import os
 import io
 import stat
@@ -63,19 +55,10 @@ import ssl
 import shlex
 from uuid import uuid1
 
-try:
-    # For Python 3.0 and later
-    from urllib.request import urlopen, HTTPError, URLError
-    from urllib.parse import urlencode
-except ImportError:
-    # Fall back to Python 2's urllib2
-    from urllib2 import urlopen, HTTPError, URLError
-    from urllib import urlencode
+from urllib.request import urlopen
+from urllib.error import URLError
 
-try:
-  from cStringIO import StringIO
-except ImportError:
-  from io import StringIO
+from io import StringIO
 
 # formatting with microsecond accuracy, (ISO-8601)
 
@@ -93,10 +76,7 @@ class MicrosecondFormatter(logging.Formatter):
 # formatter = logging.Formatter(fmt='%%(asctime)s UTC %%(levelname)-8s %%(message)s', datefmt='%%Y-%%m-%%d %%H:%%M:%%S')
 formatter = MicrosecondFormatter('%%(asctime)s %%(levelname)-8s [%%(name)s] %%(message)s')
 logging.Formatter.converter = time.gmtime
-try:
-  screen_handler = logging.StreamHandler(stream=sys.stdout)
-except TypeError:  # python2.6
-  screen_handler = logging.StreamHandler(strm=sys.stdout)
+screen_handler = logging.StreamHandler(stream=sys.stdout)
 screen_handler.setFormatter(formatter)
 
 # add a string buffer handler
@@ -204,10 +184,7 @@ def pilotWrapperScript(
 try:
   fd = os.open('%(pfName)s', os.O_WRONLY | os.O_CREAT | os.O_TRUNC, stat.S_IRUSR | stat.S_IWUSR)
   with io.open(fd, 'wb') as fd:
-    if sys.version_info < (3,):
-      fd.write(bz2.decompress(base64.b64decode(\"\"\"%(encodedPf)s\"\"\")))
-    else:
-      fd.write(bz2.decompress(base64.b64decode(b'%(encodedPf)s')))
+    fd.write(bz2.decompress(base64.b64decode(b'%(encodedPf)s')))
   os.chmod('%(pfName)s', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 except Exception as x:
   print(x, file=sys.stderr)
@@ -215,7 +192,7 @@ except Exception as x:
   shutil.rmtree(pilotWorkingDirectory)
   sys.exit(3)
 """ % {
-            "encodedPf": encodedPf.decode() if hasattr(encodedPf, "decode") else encodedPf,
+            "encodedPf": encodedPf.decode() if isinstance(encodedPf, bytes) else encodedPf,
             "pfName": pfName,
         }
 
@@ -275,35 +252,17 @@ for loc in locations:
 
   # Getting the json, tar, and checksum file
   try:
-
-    # urllib is different between python 2 and 3
-    if sys.version_info < (3,):
-      from urllib2 import urlopen as url_library_urlopen
-      from urllib2 import URLError as url_library_URLError
-    else:
-      from urllib.request import urlopen as url_library_urlopen
-      from urllib.error import URLError as url_library_URLError
-
     for fileName in ['checksums.sha512', 'pilot.json', 'pilot.tar']:
-      # needs to distinguish whether urlopen method contains the 'context' param
-      # in theory, it should be available from python 2.7.9
-      # in practice, some prior versions may be composed of recent urllib version containing the param
-      if 'context' in url_library_urlopen.__code__.co_varnames:
-        import ssl
-        context = ssl.create_default_context()
-        check_dirs = [
-          os.environ.get('X509_CERT_DIR', '/etc/grid-security/certificates'),
-          "/cvmfs/grid.cern.ch/etc/grid-security/certificates",
-        ]
-        for cert_dir in check_dirs:
-            if cert_dir and os.path.isdir(cert_dir):
-                context.load_verify_locations(capath=cert_dir)
-        remoteFile = url_library_urlopen(os.path.join(loc, fileName),
-                                         timeout=10,
-                                         context=context)
-      else:
-        remoteFile = url_library_urlopen(os.path.join(loc, fileName),
-                                         timeout=10)
+      import ssl
+      context = ssl.create_default_context()
+      check_dirs = [
+        os.environ.get('X509_CERT_DIR', '/etc/grid-security/certificates'),
+        "/cvmfs/grid.cern.ch/etc/grid-security/certificates",
+      ]
+      for cert_dir in check_dirs:
+        if cert_dir and os.path.isdir(cert_dir):
+          context.load_verify_locations(capath=cert_dir)
+      remoteFile = urlopen(os.path.join(loc, fileName), timeout=10, context=context)
 
       localFile = open(fileName, 'wb')
       localFile.write(remoteFile.read())
@@ -326,9 +285,13 @@ for loc in locations:
           raise
     # if we get here we break out of the loop of locations
     break
-  except (url_library_URLError, Exception) as e:
+  except URLError as e:
     print('%%s unreacheable (this is normal!)' %% loc, file=sys.stderr)
     logger.error('%%s unreacheable (this is normal!)' %% loc)
+    logger.exception(e)
+  except Exception as e:
+    print('Generic error recorded)', file=sys.stderr)
+    logger.error('Generic error recorded')
     logger.exception(e)
 
 else:

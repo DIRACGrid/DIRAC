@@ -40,7 +40,7 @@ where:
 - configure means adding dirac specific configuration files (which, at a minimum, should include the location of a DIRAC configuration service)
 
 
-A pilot has to run on each and every computing resource type, provided that Python 2.6+ is on the WN.
+A pilot has to run on each and every computing resource type, provided that Python 3.6+ is on the WN.
 The same pilot script can be used everywhere.
 
 .. image:: Pilots2.png

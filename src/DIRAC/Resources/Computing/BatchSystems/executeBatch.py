@@ -1,7 +1,3 @@
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-
 ###########################################################
 #
 #  Simple executor script for Batch class methods.
@@ -10,7 +6,7 @@ from __future__ import print_function
 #  batch system class definition.
 #
 #  NB: This scipt is executed using the local (to the WN)
-#  python version, so support for py2 and py3 is necessary.
+#  python version
 #
 #  15.11.2014
 #  Author: A.T.
@@ -23,16 +19,8 @@ if __name__ == "__main__":
   import sys
   import json
   import traceback
-  try:
-    from six.moves.urllib.parse import quote as urlquote
-    from six.moves.urllib.parse import unquote as urlunquote
-  except ImportError:
-    try:
-      from urllib import unquote as urlunquote
-      from urllib import quote as urlquote
-    except ImportError:
-      from urllib.parse import quote as urlquote
-      from urllib.parse import unquote as urlunquote
+  from urllib.parse import quote as urlquote
+  from urllib.parse import unquote as urlunquote
 
 
   # Read options from JSON file
