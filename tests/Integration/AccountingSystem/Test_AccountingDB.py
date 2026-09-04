@@ -42,10 +42,10 @@ nonKeyValue_2 = [456]
 
 @pytest.fixture
 def inout():
-    res = acDB.insertRecordDirectly("Pilot", startTime, middleTime, keyValues_1 + nonKeyValue_1)
+    res = acDB._insertRecordDirectly("Pilot", startTime, middleTime, keyValues_1 + nonKeyValue_1)
     assert res["OK"], res["Message"]
 
-    res = acDB.insertRecordDirectly("Pilot", middleTime, endTime, keyValues_2 + nonKeyValue_2)
+    res = acDB._insertRecordDirectly("Pilot", middleTime, endTime, keyValues_2 + nonKeyValue_2)
     assert res["OK"], res["Message"]
 
     yield
