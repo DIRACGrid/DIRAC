@@ -291,7 +291,7 @@ for loc in locations:
     logger.exception(e)
   except Exception as e:
     print('Generic error recorded)', file=sys.stderr)
-    logger.error('Generic errir recorded')
+    logger.error('Generic error recorded')
     logger.exception(e)
 
 else:
