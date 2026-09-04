@@ -148,6 +148,20 @@ class FileStorage(StorageBase):
 
         self.pluginName = "File"
         self.protocol = self.protocolParameters["Protocol"]
+        self.block_size = int(self._allProtocolParameters.get("BlockSize", 0))
+
+    def _do_copy(self, src, dst):
+        """
+        Either use shutil.copy2 or copyfileobj if the site is
+        strongly opinionated on the block size
+        """
+        if not self.block_size:
+            return shutil.copy2(src, dst)
+        else:
+            with open(src, "rb") as fd_r:
+                with open(dst, "wb") as fd_w:
+                    shutil.copyfileobj(fd_r, fd_w, self.block_size)
+            shutil.copystat(src, dst)
 
     def getURLBase(self, withWSUrl=False):
         return S_OK(self.basePath)
@@ -243,7 +257,7 @@ class FileStorage(StorageBase):
             try:
                 fileName = os.path.basename(src_url)
                 dest_url = os.path.join(localPath, fileName)
-                shutil.copy2(src_url, dest_url)
+                self._do_copy(src_url, dest_url)
 
                 fileSize = os.path.getsize(dest_url)
                 successful[src_url] = fileSize
@@ -277,7 +291,7 @@ class FileStorage(StorageBase):
                 dirname = os.path.dirname(dest_url)
                 if not os.path.exists(dirname):
                     os.makedirs(dirname)
-                shutil.copy2(src_file, dest_url)
+                self._do_copy(src_file, dest_url)
                 fileSize = os.path.getsize(dest_url)
                 try:
                     src_cks = fileAdler(src_file)
