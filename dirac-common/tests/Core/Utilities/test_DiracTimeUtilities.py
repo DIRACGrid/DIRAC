@@ -5,7 +5,7 @@ import datetime
 
 import pytest
 
-from DIRAC.Core.Utilities.TimeUtilities import DiracTime
+from DIRACCommon.Core.Utilities.TimeUtilities import DiracTime
 
 
 # ---------------------------------------------------------------------------
