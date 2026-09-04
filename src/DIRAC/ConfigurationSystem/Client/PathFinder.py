@@ -248,7 +248,7 @@ def useLegacyAdapter(system, service=None) -> bool:
     :return: bool -- True if DiracX should be used
     """
     system, service = divideFullName(system, service)
-    value = gConfigurationData.extractOptionFromCFG(f"/DiracX/LegacyClientEnabled/{system}/{service}")
+    value = gConfigurationData.extractOptionFromCFG(f"/DiracX/FutureClientEnabled/{system}/{service}")
     return (value or "no").lower() in ("y", "yes", "true", "1")
 
 
