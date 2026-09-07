@@ -679,10 +679,6 @@ class WorkflowTasks(TaskBase):
         taskNameIDs = res["Value"]["TaskNameIDs"]
 
         updateDict = {}
-        for jobName in noTasks:
-            for lfn, oldStatus in taskFiles[jobName].items():
-                if oldStatus != TransformationFilesStatus.UNUSED:
-                    updateDict[lfn] = TransformationFilesStatus.UNUSED
 
         res = self.jobMonitoringClient.getJobsStatus(list(taskNameIDs.values()))
         if not res["OK"]:
