@@ -1,5 +1,4 @@
-""" test File Plugin
-"""
+"""test File Plugin"""
 
 from unittest import mock
 import unittest
@@ -38,7 +37,6 @@ def mock_StorageFactory_getConfigStorageProtocols(storageName, derivedStorageNam
             "PluginName": "File",
             "Port": "",
             "Protocol": "file",
-            "SpaceToken": "",
             "WSUrl": "",
         }
     }
@@ -204,7 +202,8 @@ class TestBase(unittest.TestCase):
         self.assertTrue(res["OK"], res)
         self.assertTrue(self.subDir in res["Value"]["Failed"])
         self.assertTrue(
-            os.strerror(errno.EISDIR) in res["Value"]["Failed"][self.subDir] or
+            os.strerror(errno.EISDIR) in res["Value"]["Failed"][self.subDir]
+            or
             # Python 3.9.7+ improved the Exception that is raised
             "Directory does not exist" in res["Value"]["Failed"][self.subDir],
             res,
@@ -242,7 +241,8 @@ class TestBase(unittest.TestCase):
         self.assertTrue(os.path.exists(os.path.join(self.destPath, os.path.basename(self.subFile))))
         self.assertTrue(os.strerror(errno.ENOENT) in res["Value"]["Failed"][self.nonExistingFile], res)
         self.assertTrue(
-            os.strerror(errno.EISDIR) in res["Value"]["Failed"][self.subDir] or
+            os.strerror(errno.EISDIR) in res["Value"]["Failed"][self.subDir]
+            or
             # Python 3.9.7+ improved the Exception that is raised
             "Directory does not exist" in res["Value"]["Failed"][self.subDir],
             res,

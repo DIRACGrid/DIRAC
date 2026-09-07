@@ -1,4 +1,4 @@
-""" :mod: RucioSynchronizer
+""":mod: RucioSynchronizer
 
   Agent that synchronizes Rucio and Dirac
 
@@ -92,7 +92,6 @@ def getStorageElements(vo):
 
         mapping = {"Protocol": "scheme", "Host": "hostname", "Port": "port", "Path": "prefix"}
         for protocol in all_protocols:
-            space_token = None
             params = {
                 "hostname": None,
                 "scheme": None,
@@ -107,17 +106,15 @@ def getStorageElements(vo):
             res = se.getStorageParameters(protocol=protocol)
             if res["OK"]:
                 values = res["Value"]
-                for key in ["Protocol", "Host", "Access", "Path", "Port", "WSUrl", "SpaceToken", "WSUrl", "PluginName"]:
+                for key in ["Protocol", "Host", "Access", "Path", "Port", "WSUrl", "WSUrl", "PluginName"]:
                     value = values.get(key)
                     if key in mapping:
                         params[mapping[key]] = value
                     else:
-                        if key == "SpaceToken":
-                            space_token = value
                         if params["scheme"] == "srm" and key == "WSUrl":
                             params["extended_attributes"] = {
                                 "web_service_path": f"{value}",
-                                "space_token": space_token,
+                                "space_token": None,
                             }
                     if key == "Protocol":
                         params["domains"]["lan"]["read"] = read_protocols.get(value, 0)
@@ -181,7 +178,7 @@ def configHelper(voList):
 
         if len(selectedCatalog) > 1:
             log.error(
-                "VO %s: Services/Catalogs section mis-configured." " More that one Rucio file catalog",
+                "VO %s: Services/Catalogs section mis-configured. More that one Rucio file catalog",
                 f"[VO: {vo}, Catalogs: {selectedCatalog}]",
             )
             continue
