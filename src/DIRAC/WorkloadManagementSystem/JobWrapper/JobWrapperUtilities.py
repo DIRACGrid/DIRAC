@@ -217,13 +217,22 @@ def executePayload(job: JobWrapper) -> bool:
             )
             job.sendJobAccounting(status=rescheduleResult, minorStatus=JobMinorStatus.JOB_WRAPPER_EXECUTION)
             return False
-        gLogger.exception("Job failed in execution phase")
+        gLogger.error("Job failed in execution phase", repr(exc))
         job.jobReport.setJobParameter("Error Message", repr(exc), sendFlag=False)
-        job.jobReport.setJobStatus(
-            status=JobStatus.FAILED, minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC, sendFlag=False
-        )
-        job.sendFailoverRequest()
-        job.sendJobAccounting(status=JobStatus.FAILED, minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC)
+        # If postProcess already stamped FAILED with a specific minor status (e.g. a
+        # watchdog reason like JOB_EXCEEDED_CPU), preserve it. Otherwise (postProcess
+        # bypassed) fall back to EXCEPTION_DURING_EXEC so the job isn't left RUNNING.
+        if job.wmsMajorStatus == JobStatus.FAILED:
+            job.sendFailoverRequest()
+            job.sendJobAccounting()
+        else:
+            job.jobReport.setJobStatus(
+                status=JobStatus.FAILED, minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC, sendFlag=False
+            )
+            job.sendFailoverRequest()
+            # setJobStatus on jobReport does not propagate to the JobWrapper's
+            # wmsMajorStatus / wmsMinorStatus, so pass them explicitly.
+            job.sendJobAccounting(status=JobStatus.FAILED, minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC)
         return False
     except Exception as exc:  # pylint: disable=broad-except
         gLogger.exception("Job raised exception during execution phase")
