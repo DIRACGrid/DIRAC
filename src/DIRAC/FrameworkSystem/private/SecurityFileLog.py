@@ -1,5 +1,6 @@
 import os
 import time
+import datetime
 import gzip
 import queue
 import shutil
@@ -7,6 +8,7 @@ import threading
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.File import cleanDirectory, mkDir
+from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 
 class SecurityFileLog(threading.Thread):
@@ -47,7 +49,7 @@ class SecurityFileLog(threading.Thread):
                 )
             else:
                 fd = open(logFile, "a")
-            fd.write(f"{', '.join([str(item) for item in secMsg])}\n")
+            fd.write(", ".join(str(item).replace(",", "").replace("\n", "") for item in secMsg) + "\n")
             fd.close()
 
     def __launchCleaningOldLogFiles(self):
@@ -87,5 +89,11 @@ class SecurityFileLog(threading.Thread):
     def logAction(self, msg):
         if len(msg) != len(self.__requiredFields):
             return S_ERROR(f"Mismatch in the msg size, it should be {len(self.__requiredFields)} and it's {len(msg)}")
+        if not isinstance(msg[0], datetime.datetime):
+            gLogger.warn("Received security log message with corrupt timestamp of type " + str(type(msg[0])))
+            msg[0] = DiracTime.utcnow()
+        elif abs((msg[0] - DiracTime.utcnow()).total_seconds()) > 600:
+            gLogger.warn(f"Received security log message with timestamp {msg[0]} more than 10 minutes from local time")
+            msg[0] = DiracTime.utcnow()
         self.__messagesQueue.put(msg)
         return S_OK()
