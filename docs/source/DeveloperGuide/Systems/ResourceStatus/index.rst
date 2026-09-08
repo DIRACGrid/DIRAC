@@ -222,13 +222,16 @@ The ``FreeDiskSpacePolicy`` (``Policy/FreeDiskSpacePolicy.py``) evaluates SE occ
 configurable thresholds.  Thresholds are passed through as command arguments so they propagate
 from the CS configuration all the way to the policy evaluation:
 
-1. ``Configurations.py`` reads ``Unit``, ``Banned_threshold`` and ``Degraded_threshold`` from the
+1. ``Configurations.py`` reads ``Unit``, ``Banned_threshold``, ``Degraded_threshold``,
+   ``Banned_fraction`` and ``Degraded_fraction`` from the
    Operations CS via ``Operations().getValue("ResourceStatus/Policies/FreeDiskSpace/Banned_threshold", 0.1)``
    and stores them in the policy ``args`` dict.
 2. ``FreeDiskSpaceCommand`` reads these values from ``self.args`` in ``_prepareCommand()`` and
    returns them alongside ``Free`` and ``Total`` in both ``doNew()`` and ``doCache()``.
-3. ``FreeDiskSpacePolicy._evaluate()`` reads ``Banned_threshold`` and ``Degraded_threshold``
-   from the command result dict (with safe defaults) and applies the comparison.
+3. ``FreeDiskSpacePolicy._evaluate()`` reads ``Banned_threshold``, ``Degraded_threshold``,
+   ``Banned_fraction`` and ``Degraded_fraction`` from the command result dict (with safe defaults)
+   and applies the comparison. The SE is set to Banned or Degraded if EITHER the absolute
+   threshold OR the fraction threshold is exceeded.
 
 This design keeps thresholds fully configurable per deployment without code changes.
 See :ref:`rss_advanced_configuration` for the available CS keys.
