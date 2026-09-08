@@ -446,17 +446,24 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %s DAY)",
     def getJobsForPilot(self, pilotID):
         """Get IDs of Jobs that were executed by a pilot"""
         if isinstance(pilotID, list):
-            cmd = "SELECT pilotID,JobID FROM JobToPilotMapping WHERE pilotID IN ("
-            cmd += ",".join(["%s"] * len(pilotID))
-            cmd += ")"
-            args = [str(int(x)) for x in pilotID]
+            sqlCmd = "CREATE TEMPORARY TABLE to_select_JobToPilotMapping (PilotID INT UNSIGNED NOT NULL, PRIMARY KEY (PilotID)) ENGINE=MEMORY;"
+            returnValueOrRaise(self._update(sqlCmd))
+            try:
+                sqlCmd = "INSERT INTO to_select_JobToPilotMapping (PilotID) VALUES ( %s )"
+                returnValueOrRaise(self._updatemany(sqlCmd, [(int(p),) for p in pilotID]))
+                sqlCmd = "SELECT pilotID, JobID FROM JobToPilotMapping JOIN to_select_JobToPilotMapping USING (PilotID)"
+                result = self._query(sqlCmd)
+            finally:
+                sqlCmd = "DROP TEMPORARY TABLE to_select_JobToPilotMapping"
+                returnValueOrRaise(self._update(sqlCmd))
+            if not result["OK"]:
+                return result
         else:
             cmd = "SELECT pilotID,JobID FROM JobToPilotMapping WHERE pilotID = %s"
             args = [str(pilotID)]
-
-        result = self._query(cmd, args=args)
-        if not result["OK"]:
-            return result
+            result = self._query(cmd, args=args)
+            if not result["OK"]:
+                return result
 
         resDict = {}
         for row in result["Value"]:
