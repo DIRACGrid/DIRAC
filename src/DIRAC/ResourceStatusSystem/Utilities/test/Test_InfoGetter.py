@@ -27,6 +27,8 @@ _BASE_POLICIES = {
         "Unit": ["TB"],
         "Banned_threshold": ["0.1"],
         "Degraded_threshold": ["5"],
+        "Banned_fraction": ["0.01"],
+        "Degraded_fraction": ["0.05"],
     },
     # Matches all Resources of type StorageElement with WriteAccess.
     "SEWriteAccessFreeDiskSpace": {
@@ -171,6 +173,8 @@ def test_se2_gets_default_args(_mock):
     assert args["unit"] == "TB"
     assert args["Banned_threshold"] == 0.1
     assert args["Degraded_threshold"] == 5
+    assert args["Banned_fraction"] == 0.01
+    assert args["Degraded_fraction"] == 0.05
 
 
 @patch(_GET_POLICIES, return_value=S_OK(_BASE_POLICIES))
@@ -184,6 +188,8 @@ def test_se1_specific_policy_wins_with_overridden_args(_mock):
     assert policy["args"]["unit"] == "GB"  # overridden, key-normalised from "Unit"
     assert policy["args"]["Banned_threshold"] == 15.0  # overridden, cast from str to float
     assert policy["args"]["Degraded_threshold"] == 5  # not overridden → POLICIESMETA default
+    assert policy["args"]["Banned_fraction"] == 0.01  # not overridden → POLICIESMETA default
+    assert policy["args"]["Degraded_fraction"] == 0.05  # not overridden → POLICIESMETA default
 
 
 @pytest.mark.parametrize(
@@ -207,6 +213,8 @@ def test_arg_override_key_normalisation(_mock, expected_key, unexpected_key, exp
     [
         pytest.param("Banned_threshold", float, id="Banned_threshold-cast-to-float"),
         pytest.param("Degraded_threshold", int, id="Degraded_threshold-remains-int"),
+        pytest.param("Banned_fraction", float, id="Banned_fraction-cast-to-float"),
+        pytest.param("Degraded_fraction", float, id="Degraded_fraction-cast-to-float"),
     ],
 )
 @patch(_GET_POLICIES, return_value=S_OK(_BASE_POLICIES))
