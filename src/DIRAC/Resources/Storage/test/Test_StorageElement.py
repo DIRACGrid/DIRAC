@@ -1,5 +1,5 @@
-""" test StoragElement
-"""
+"""test StoragElement"""
+
 import itertools
 import os
 import tempfile
@@ -724,7 +724,6 @@ class TestSameSE(unittest.TestCase):
           GFAL2_SRM2
           {
             Host = srm-diskandtape.cern.ch
-            SpaceToken = Disk
             Protocol = srm
             Path = /base/pathDisk
           }
@@ -740,7 +739,6 @@ class TestSameSE(unittest.TestCase):
           {
             Host = srm-diskandtape.cern.ch
             Protocol = srm
-            SpaceToken = Tape
             Path = /base/pathDisk
           }
         }
@@ -753,14 +751,12 @@ class TestSameSE(unittest.TestCase):
           GFAL2_SRM2
           {
             Host = srm-diskandtape.cern.ch
-            SpaceToken = Disk
             Protocol = srm
             Path = /base/pathDisk
           }
           GFAL2_GSIFTP
           {
             Host = gsiftp-diskandtape.cern.ch
-            SpaceToken = Disk
             Protocol = gsiftp
             Path = /base/pathDisk
           }
@@ -774,7 +770,6 @@ class TestSameSE(unittest.TestCase):
           GFAL2_GSIFTP
           {
             Host = otherstorage.cern.ch
-            SpaceToken = Disk
             Protocol = gsiftp
             Path = /base/pathDisk
           }
@@ -788,7 +783,6 @@ class TestSameSE(unittest.TestCase):
           GFAL2_GSIFTP
           {
             Host = otherstorage.cern.ch
-            SpaceToken = Disk
             Protocol = gsiftp
             Path = /base/otherPath
           }
