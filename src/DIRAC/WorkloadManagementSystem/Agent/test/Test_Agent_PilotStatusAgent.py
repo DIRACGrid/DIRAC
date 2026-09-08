@@ -40,6 +40,14 @@ def psa(mocker):
         "DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB._escapeString",
         lambda s, c: S_OK(f'"{s}"'),
     )  # To bypass "connection.escape_string"
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB._update",
+        return_value=S_OK(),
+    )
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB._updatemany",
+        return_value=S_OK(),
+    )
 
     psa = PilotStatusAgent()
     psa._AgentModule__configDefaults = mockAM

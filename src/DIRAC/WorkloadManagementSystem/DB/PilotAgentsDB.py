@@ -41,6 +41,11 @@ class PilotAgentsDB(DB):
         "VO",
     }
 
+    # Number of values inserted into the in-memory temp tables per batch in
+    # getPilotInfo. Keeping batches bounded avoids overflowing MEMORY tables
+    # (ERROR 1114: The table is full) when querying large pilot reference lists.
+    PILOT_INFO_BATCH_SIZE = 10000
+
     def __init__(self, parentLogger=None):
         super().__init__("PilotAgentsDB", "WorkloadManagement/PilotAgentsDB", parentLogger=parentLogger)
         self._defaultLogger = self.log
@@ -286,23 +291,70 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %s DAY)",
                 return S_ERROR(f"Unknown column: {col}")
 
         cmd = f"SELECT {', '.join(parameters)} FROM PilotAgents"  # nosec
-        condSQL = []
-        for key, value in [
-            ("PilotJobReference", pilotRef),
-            ("PilotID", pilotID),
-        ]:
-            resList = []
-            for v in value if isinstance(value, list) else [value] if value else []:
-                result = self._escapeString(v)
-                if not result["OK"]:
-                    return result
-                resList.append(result["Value"])
-            if resList:
-                condSQL.append(f"{key} IN ({','.join(resList)})")
-        if condSQL:
-            cmd = f"{cmd} WHERE {' AND '.join(condSQL)}"
+        tempTables = []
+        activeKeys = []
+        result = None
+        try:
+            for key, value in [("PilotJobReference", pilotRef), ("PilotID", pilotID)]:
+                values = []
+                for v in value if isinstance(value, list) else [value] if value else []:
+                    values.append(v)
+                if not values:
+                    continue
+                tableName = f"to_select_PilotAgents_{key}"
+                if key == "PilotID":
+                    sqlCmd = (
+                        f"CREATE TEMPORARY TABLE {tableName}"
+                        f" (PilotID INT UNSIGNED NOT NULL, PRIMARY KEY (PilotID)) ENGINE=MEMORY;"
+                    )
+                    insertValues = [(int(v),) for v in values]
+                else:
+                    sqlCmd = (
+                        f"CREATE TEMPORARY TABLE {tableName}"
+                        f" (PilotJobReference VARCHAR(255) NOT NULL, PRIMARY KEY (PilotJobReference)) ENGINE=MEMORY;"
+                    )
+                    insertValues = [(v,) for v in values]
+                returnValueOrRaise(self._update(sqlCmd, conn=conn))
+                tempTables.append(tableName)
+                activeKeys.append((key, tableName, insertValues))
 
-        result = self._query(cmd, conn=conn)
+            joinSQL = [f"JOIN {tn} USING ({k})" for k, tn, _ in activeKeys]
+            selectCmd = f"{cmd} {' '.join(joinSQL)}" if joinSQL else cmd
+
+            if not activeKeys:
+                # No conditions: plain SELECT over the whole table.
+                result = self._query(selectCmd, conn=conn)
+            else:
+                # Load every condition key fully except the last one, which is
+                # processed batch by batch (truncating between batches) so the
+                # in-memory temp table never holds all the rows at once. This
+                # preserves the AND semantics: the union of the per-batch
+                # results equals the full JOIN result.
+                for key, tableName, insertValues in activeKeys[:-1]:
+                    insertCmd = f"INSERT INTO {tableName} ({key}) VALUES ( %s )"  # nosec: B608
+                    for i in range(0, len(insertValues), self.PILOT_INFO_BATCH_SIZE):
+                        returnValueOrRaise(
+                            self._updatemany(insertCmd, insertValues[i : i + self.PILOT_INFO_BATCH_SIZE], conn=conn)
+                        )
+                batchKey, batchTable, batchValues = activeKeys[-1]
+                insertCmd = f"INSERT INTO {batchTable} ({batchKey}) VALUES ( %s )"  # nosec: B608
+                resultRows = []
+                for i in range(0, len(batchValues), self.PILOT_INFO_BATCH_SIZE):
+                    returnValueOrRaise(self._update(f"TRUNCATE TABLE {batchTable}", conn=conn))
+                    returnValueOrRaise(
+                        self._updatemany(insertCmd, batchValues[i : i + self.PILOT_INFO_BATCH_SIZE], conn=conn)
+                    )
+                    batchResult = self._query(selectCmd, conn=conn)
+                    if not batchResult["OK"]:
+                        result = batchResult
+                        break
+                    resultRows.extend(batchResult["Value"])
+                else:
+                    result = S_OK(resultRows)
+        finally:
+            for tableName in tempTables:
+                sqlCmd = f"DROP TEMPORARY TABLE {tableName}"
+                returnValueOrRaise(self._update(sqlCmd, conn=conn))
         if not result["OK"]:
             return result
         if not result["Value"]:
