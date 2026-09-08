@@ -114,7 +114,7 @@ def getStorageElements(vo):
                         if params["scheme"] == "srm" and key == "WSUrl":
                             params["extended_attributes"] = {
                                 "web_service_path": f"{value}",
-                                "space_token": None,
+                                "space_token": None,  # nosec B105
                             }
                     if key == "Protocol":
                         params["domains"]["lan"]["read"] = read_protocols.get(value, 0)
