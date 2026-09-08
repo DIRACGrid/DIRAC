@@ -316,6 +316,8 @@ csAPI.setOption("Resources/FTSEndpoints/FTS3/JENKINS-FTS3", "https://jenkins-fts
 #           Unit               = TB
 #           Banned_threshold   = 0.1
 #           Degraded_threshold = 5
+#           Banned_fraction    = 0.01
+#           Degraded_fraction  = 0.05
 #         }
 #         AlwaysActiveForResource
 #         {
@@ -356,6 +358,8 @@ csAPI.setOption("Resources/FTSEndpoints/FTS3/JENKINS-FTS3", "https://jenkins-fts
 #           Unit               = GB
 #           Banned_threshold   = 10
 #           Degraded_threshold = 50
+#           Banned_fraction    = 0.02
+#           Degraded_fraction  = 0.10
 #           matchParams
 #           {
 #             element    = Resource
@@ -421,6 +425,8 @@ if not res["OK"]:
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace/Unit", "TB")
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace/Banned_threshold", "0.1")
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace/Degraded_threshold", "5")
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace/Banned_fraction", "0.01")
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace/Degraded_fraction", "0.05")
 
 res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource")
 if not res["OK"]:

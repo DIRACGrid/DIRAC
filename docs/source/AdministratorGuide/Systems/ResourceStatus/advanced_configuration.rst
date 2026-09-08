@@ -128,13 +128,15 @@ Built-in FreeDiskSpace Policy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``FreeDiskSpace`` policy type monitors Storage Element occupancy.
-It compares the free space reported by the SE against two configurable thresholds:
+It compares the free space reported by the SE against the following:
 
-* If free space is below ``Banned_threshold``, the SE is set to **Banned**.
-* If free space is below ``Degraded_threshold`` (but above ``Banned_threshold``), the SE is set to **Degraded**.
+* If free space is below ``Banned_threshold``, or if the fraction of free space (free/total) is below ``Banned_fraction``, the SE is set to **Banned**.
+* If free space is below ``Degraded_threshold`` (but above ``Banned_threshold``), or if the fraction of free space is below ``Degraded_fraction`` (but above ``Banned_fraction``), the SE is set to **Degraded**.
 * Otherwise the SE is set to **Active**.
 
-All three parameters — unit, banned threshold, and degraded threshold — are fully configurable
+The SE is set to Banned or Degraded if **EITHER** the absolute threshold **OR** the fraction threshold is exceeded.
+
+All five parameters — unit, thresholds, and fractions — are fully configurable
 from the Operations CS and fall back to safe defaults:
 
 ::
@@ -142,9 +144,11 @@ from the Operations CS and fall back to safe defaults:
   /Operations/Defaults/ResourceStatus
                           /Policies
                               /FreeDiskSpace
-                                  Unit               = TB     # unit for the SE occupancy query (TB, GB or MB)
+                                  Unit               = TB     # unit for the SE occupancy query  used for Banned_threshold and Degraded_threshold (TB, GB or MB)
                                   Banned_threshold   = 0.1    # in the chosen unit (default)
                                   Degraded_threshold = 5      # in the chosen unit (default)
+                                  Banned_fraction    = 0.01   # fraction of total space (default: 1%)
+                                  Degraded_fraction  = 0.05   # fraction of total space (default: 5%)
 
 .. note::
 
@@ -163,6 +167,8 @@ Example: use GB with tighter thresholds::
     Unit               = GB
     Banned_threshold   = 100
     Degraded_threshold = 5000
+    Banned_fraction    = 0.02
+    Degraded_fraction  = 0.10
   }
 
 -------------
