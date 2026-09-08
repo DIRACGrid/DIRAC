@@ -1,10 +1,10 @@
-""" FreeDiskSpaceCommand
-    The Command gets the free space that is left in a Storage Element
+"""FreeDiskSpaceCommand
+The Command gets the free space that is left in a Storage Element
 
-    Note: there are, still, many references to "space tokens",
-    for example ResourceManagementClient().selectSpaceTokenOccupancyCache(token=elementName)
-    This is for historical reasons, and shoud be fixed one day.
-    For the moment, when you see "token" or "space token" here, just read "StorageElement".
+Note: there are, still, many references to "space tokens",
+for example the SpaceTokenOccupancyCache table.
+This is for historical reasons, and shoud be fixed one day.
+For the moment, when you see "token" or "space token" here, just read "StorageElement".
 
 """
 
@@ -19,8 +19,8 @@ from DIRAC.Core.Utilities.File import convertSizeUnits
 from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
+from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
 
@@ -32,7 +32,7 @@ class FreeDiskSpaceCommand(Command):
     def __init__(self, args=None, clients=None):
         super().__init__(args, clients=clients)
 
-        self.rmClient = ResourceManagementClient()
+        self.rmDB = ResourceManagementDB()
 
     def _prepareCommand(self):
         """
@@ -80,7 +80,7 @@ class FreeDiskSpaceCommand(Command):
         free = occupancy["Free"]
         total = occupancy["Total"]
 
-        results = {"Endpoint": "Deprecated", "Free": free, "Total": total, "ElementName": elementName}
+        results = {"Free": free, "Total": total, "ElementName": elementName}
         result = self._storeCommand(results)
         if not result["OK"]:
             return result
@@ -93,22 +93,23 @@ class FreeDiskSpaceCommand(Command):
         and adds records to the StorageOccupancy accounting.
 
         :param dict results: something like {'ElementName': 'CERN-HIST-EOS',
-                                             'Endpoint': 'httpg://srm-eoslhcb-bis.cern.ch:8443/srm/v2/server',
                                              'Free': 3264963586.10073,
                                              'Total': 8000000000.0}
         :returns: S_OK/S_ERROR dict
         """
 
         # Stores in cache
-        res = self.rmClient.addOrModifySpaceTokenOccupancyCache(
-            endpoint=results["Endpoint"],
-            lastCheckTime=DiracTime.utcnow(),
-            free=results["Free"],
-            total=results["Total"],
-            token=results["ElementName"],
+        res = self.rmDB.addOrModify(
+            "SpaceTokenOccupancyCache",
+            {
+                "Token": results["ElementName"],
+                "Free": results["Free"],
+                "Total": results["Total"],
+                "LastCheckTime": DiracTime.utcnow(),
+            },
         )
         if not res["OK"]:
-            self.log.error("Error calling addOrModifySpaceTokenOccupancyCache", res["Message"])
+            self.log.error("Error calling addOrModify on SpaceTokenOccupancyCache", res["Message"])
             return res
 
         # Now proceed with the accounting
@@ -117,8 +118,6 @@ class FreeDiskSpaceCommand(Command):
             return siteRes
 
         accountingDict = {
-            "StorageElement": results["ElementName"],
-            "Endpoint": results["Endpoint"],
             "Site": siteRes["Value"] if siteRes["Value"] else "unassigned",
         }
 
@@ -151,7 +150,7 @@ class FreeDiskSpaceCommand(Command):
             return params
         elementName, unit = params["Value"]
 
-        result = self.rmClient.selectSpaceTokenOccupancyCache(token=elementName)
+        result = self.rmDB.select("SpaceTokenOccupancyCache", {"Token": elementName})
 
         if not result["OK"]:
             return result
@@ -192,16 +191,16 @@ class FreeDiskSpaceCommand(Command):
         return self._cleanCommand()
 
     def _cleanCommand(self, toDelete=None):
-        """Clean the spaceTokenOccupancy table from old endpoints
+        """Clean the spaceTokenOccupancy table from old SEs
 
-        :param tuple toDelete: endpoint to remove (endpoint, storage_element_name),
-                               e.g. ('httpg://srm-lhcb.cern.ch:8443/srm/managerv2', CERN-RAW)
+        :param tuple toDelete: storage_element_name
         """
         if not toDelete:
             toDelete = []
 
-            res = self.rmClient.selectSpaceTokenOccupancyCache(
-                meta={"older": ["LastCheckTime", DiracTime.utcnow() - timedelta(hours=6)]}
+            res = self.rmDB.select(
+                "SpaceTokenOccupancyCache",
+                {"meta": {"older": ["LastCheckTime", DiracTime.utcnow() - timedelta(hours=6)]}},
             )
             if not res["OK"]:
                 return res
@@ -223,7 +222,7 @@ class FreeDiskSpaceCommand(Command):
             toDelete = [toDelete]
 
         for ep in toDelete:
-            res = self.rmClient.deleteSpaceTokenOccupancyCache(ep[0], ep[1])
+            res = self.rmDB.delete("SpaceTokenOccupancyCache", {"Token": ep[0]})
             if not res["OK"]:
                 self.log.warn("Could not delete entry from SpaceTokenOccupancyCache", res["Message"])
 

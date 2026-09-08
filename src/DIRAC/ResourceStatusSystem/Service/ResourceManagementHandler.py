@@ -1,11 +1,12 @@
-""" ResourceManagementHandler
+"""ResourceManagementHandler
 
-  Module that allows users to access the ResourceManagementDB remotely.
+Module that allows users to access the ResourceManagementDB remotely.
 """
-from DIRAC import gConfig, S_OK
+
+from DIRAC import S_OK, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
-from DIRAC.ResourceStatusSystem.Utilities import Synchronizer
 from DIRAC.ResourceStatusSystem.Service.ResourceStatusHandler import loadResourceStatusComponent
+from DIRAC.ResourceStatusSystem.Utilities import Synchronizer
 
 
 class ResourceManagementHandlerMixin:
