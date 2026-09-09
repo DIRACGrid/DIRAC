@@ -109,6 +109,27 @@ class TornadoPilotLoggingHandlerTestCase(unittest.TestCase):
         res = plugin.sendMessage(messageJSON, pilotUUID, vo)
         self.assertFalse(res["OK"])
 
+    @patch.object(DIRAC.WorkloadManagementSystem.Client.PilotLoggingPlugins.FileCacheLoggingPlugin.os, "makedirs")
+    @patch.object(DIRAC.WorkloadManagementSystem.Client.PilotLoggingPlugins.FileCacheLoggingPlugin.os, "getcwd")
+    @patch.object(DIRAC.WorkloadManagementSystem.Client.PilotLoggingPlugins.FileCacheLoggingPlugin.os.path, "exists")
+    def test_FileCachePlugin_PathTraversalBlocked(self, mockExists, mockGetcwd, mockMakedirs):
+        """Reject VO and logfile paths that escape the cache root."""
+        mockExists.return_value = False
+        mockGetcwd.return_value = "/tornado/document/root"
+        plugin = FileCacheLoggingPlugin()
+        messageJSON = json.dumps("safe message")
+        pilotUUID = "78f39a90-2073-11ec-98d7-b496913c0cf4"
+
+        with tempfile.TemporaryDirectory(suffix="pilottests") as d:
+            plugin.meta["LogPath"] = d
+            res = plugin.sendMessage(messageJSON, pilotUUID, "../escape")
+            self.assertFalse(res["OK"])
+            self.assertIn("Path escapes", res["Message"])
+
+            res = plugin.getLogs(pilotUUID, "../escape")
+            self.assertFalse(res["OK"])
+            self.assertIn("Path escapes", res["Message"])
+
     @patch.object(DIRAC.WorkloadManagementSystem.Service.TornadoPilotLoggingHandler.os.path, "exists")
     @patch.object(DIRAC.WorkloadManagementSystem.Client.PilotLoggingPlugins.FileCacheLoggingPlugin.os, "getcwd")
     def test_getMeta(self, mockGetcwd, mockExists):
