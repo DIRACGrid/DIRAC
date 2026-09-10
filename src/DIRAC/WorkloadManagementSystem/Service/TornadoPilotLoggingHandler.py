@@ -8,6 +8,7 @@
 """
 
 import os
+import re
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
@@ -71,6 +72,9 @@ class TornadoPilotLoggingHandler(TornadoService):
         if vo == "":
             vo = wnVO
 
+        if not self.__verifyVOPattern(vo):
+            return S_ERROR(f"VO name is invalid: {vo}")
+
         # the plugin returns S_OK or S_ERROR
         # leave JSON decoding to the selected plugin:
         result = self.loggingPlugin.sendMessage(message, pilotUUID, vo)
@@ -110,8 +114,17 @@ class TornadoPilotLoggingHandler(TornadoService):
         if vo == "":
             vo = wnVO
 
+        if not self.__verifyVOPattern(vo):
+            return S_ERROR(f"VO name is invalid: {vo}")
+
         # The plugin returns the Dirac S_OK or S_ERROR object
         return self.loggingPlugin.finaliseLogs(payload, pilotUUID, vo)
+
+    def __verifyVOPattern(self, vo):
+        """Validate that a VO name is safe for use as a filesystem path component."""
+        if vo is None:
+            return False
+        return bool(re.fullmatch(r"[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*", vo))
 
     def __getClientVO(self):
         # get client credentials to determine the VO
