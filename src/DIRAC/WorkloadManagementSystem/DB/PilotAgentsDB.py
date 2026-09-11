@@ -93,6 +93,7 @@ class PilotAgentsDB(DB):
         benchmark=None,
         currentJob=None,
         updateTime=None,
+        pilotStamp=None,
         conn=False,
     ):
         """Set pilot job status"""
@@ -123,17 +124,23 @@ class PilotAgentsDB(DB):
             setList.append("CurrentJobID=%s")
             args.append(str(int(currentJob)))
         if destination:
-            setList.append(f"DestinationSite=%s")
+            setList.append("DestinationSite=%s")
             args.append(destination)
             if not gridSite:
                 res = getCESiteMapping(destination)
                 if res["OK"] and res["Value"]:
-                    setList.append(f"GridSite=%s")
+                    setList.append("GridSite=%s")
                     args.append(res["Value"][destination])
 
         set_string = ",".join(setList)
-        req = f"UPDATE PilotAgents SET {set_string} WHERE PilotJobReference=%s"  # nosec
-        args.append(pilotRef)
+        req = f"UPDATE PilotAgents SET {set_string}"  # nosec
+
+        if pilotStamp:
+            req += " WHERE PilotStamp=%s"
+            args.append(pilotStamp)
+        else:
+            req += " WHERE PilotJobReference=%s"
+            args.append(pilotRef)
         return self._update(req, args=args, conn=conn)
 
     def selectPilots(

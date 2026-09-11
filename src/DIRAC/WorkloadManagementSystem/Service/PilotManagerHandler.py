@@ -73,9 +73,17 @@ class PilotManagerHandler(RequestHandler):
     types_setPilotStatus = [str, str]
 
     @classmethod
-    def export_setPilotStatus(cls, pilotRef, status, destination=None, reason=None, gridSite=None, queue=None):
+    def export_setPilotStatus(
+        cls, pilotRef, status, destination=None, reason=None, gridSite=None, queue=None, pilotStamp=None
+    ):
         """Set the pilot agent status"""
 
         return cls.pilotAgentsDB.setPilotStatus(
-            pilotRef, status, destination=destination, statusReason=reason, gridSite=gridSite, queue=queue
+            pilotRef,
+            status,
+            destination=destination,
+            statusReason=reason,
+            gridSite=gridSite,
+            queue=queue,
+            pilotStamp=pilotStamp,
         )
