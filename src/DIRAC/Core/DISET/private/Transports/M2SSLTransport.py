@@ -324,7 +324,11 @@ class SSLTransport(BaseTransport):
             self.oSocket.setup_ssl()
             self.oSocket.set_accept_state()
             self.oSocket.accept_ssl()
-            check = getattr(self.oSocket, "postConnectionCheck", self.oSocket.serverPostConnectionCheck)
+            check = getattr(
+                self.oSocket,
+                "postConnectionCheck",
+                getattr(self.oSocket, "serverPostConnectionCheck", None),
+            )
             if check is not None:
                 if not check(self.oSocket.get_peer_cert(), self.oSocket.addr[0]):
                     raise SSL.Checker.SSLVerificationError("post connection check failed")
