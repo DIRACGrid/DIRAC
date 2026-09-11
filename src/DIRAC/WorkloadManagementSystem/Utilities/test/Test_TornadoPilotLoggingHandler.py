@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 import os
 import json
 import tempfile
@@ -9,6 +9,56 @@ from DIRAC.WorkloadManagementSystem.Service.TornadoPilotLoggingHandler import To
 
 
 class TornadoPilotLoggingHandlerTestCase(unittest.TestCase):
+    def test_sendMessage_uses_vo_pattern_validation(self):
+        handler = TornadoPilotLoggingHandler.__new__(TornadoPilotLoggingHandler)
+        handler.loggingPlugin = MagicMock()
+        handler.loggingPlugin.sendMessage.return_value = {"OK": True}
+
+        valid_vos = ["lhcb", "vo-name", "atlas.prod", "a1-b2.c3-d4", "A-B.C-D"]
+        invalid_vos = ["", None, ".lhcb", "lhcb.", "lhcb..prod", "lhcb_prod", "lhcb/prod", "lhcb prod"]
+
+        with patch.object(TornadoPilotLoggingHandler, "_TornadoPilotLoggingHandler__getClientVO", return_value=""):
+            for vo in valid_vos:
+                with self.subTest(vo=vo):
+                    result = handler.export_sendMessage("msg", "uuid", vo)
+                    self.assertTrue(result["OK"])
+                    handler.loggingPlugin.sendMessage.assert_called_with("msg", "uuid", vo)
+
+            handler.loggingPlugin.sendMessage.reset_mock()
+
+            for vo in invalid_vos:
+                with self.subTest(vo=vo):
+                    result = handler.export_sendMessage("msg", "uuid", vo)
+                    self.assertFalse(result["OK"])
+                    self.assertIn("VO name is invalid", result["Message"])
+
+            handler.loggingPlugin.sendMessage.assert_not_called()
+
+    def test_finaliseLogs_uses_vo_pattern_validation(self):
+        handler = TornadoPilotLoggingHandler.__new__(TornadoPilotLoggingHandler)
+        handler.loggingPlugin = MagicMock()
+        handler.loggingPlugin.finaliseLogs.return_value = {"OK": True}
+
+        valid_vos = ["lhcb", "vo-name", "atlas.prod", "a1-b2.c3-d4", "A-B.C-D"]
+        invalid_vos = ["", None, ".lhcb", "lhcb.", "lhcb..prod", "lhcb_prod", "lhcb/prod", "lhcb prod"]
+
+        with patch.object(TornadoPilotLoggingHandler, "_TornadoPilotLoggingHandler__getClientVO", return_value=""):
+            for vo in valid_vos:
+                with self.subTest(vo=vo):
+                    result = handler.export_finaliseLogs({"retCode": 0}, "uuid", vo)
+                    self.assertTrue(result["OK"])
+                    handler.loggingPlugin.finaliseLogs.assert_called_with({"retCode": 0}, "uuid", vo)
+
+            handler.loggingPlugin.finaliseLogs.reset_mock()
+
+            for vo in invalid_vos:
+                with self.subTest(vo=vo):
+                    result = handler.export_finaliseLogs({"retCode": 0}, "uuid", vo)
+                    self.assertFalse(result["OK"])
+                    self.assertIn("VO name is invalid", result["Message"])
+
+            handler.loggingPlugin.finaliseLogs.assert_not_called()
+
     @patch.object(DIRAC.WorkloadManagementSystem.Service.TornadoPilotLoggingHandler.os, "makedirs")
     @patch.object(DIRAC.WorkloadManagementSystem.Service.TornadoPilotLoggingHandler.os, "getcwd")
     @patch.object(DIRAC.WorkloadManagementSystem.Service.TornadoPilotLoggingHandler.os.path, "exists")
