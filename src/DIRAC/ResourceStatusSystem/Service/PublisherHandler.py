@@ -4,16 +4,18 @@ PublisherHandler
 This service has been built to provide the RSS web views with all the information
 they need. NO OTHER COMPONENT THAN Web controllers should make use of it.
 """
+
 #  pylint: disable=no-self-use
 from datetime import datetime, timedelta
 
 # DIRAC
-from DIRAC import S_OK, gConfig, S_ERROR
+from DIRAC import S_ERROR, S_OK, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteCEMapping, getSites
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts, getStorageElementsHosts
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getSiteCEMapping
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 
 
 class PublisherHandlerMixin:
@@ -37,6 +39,8 @@ class PublisherHandlerMixin:
             return result
         resourceManagementClientClass = result["Value"]
         cls.rmClient = resourceManagementClientClass()
+
+        cls.rmDB = ResourceManagementDB()
 
         return S_OK()
 
@@ -334,6 +338,21 @@ class PublisherHandlerMixin:
         result["Columns"] = columns
 
         return result
+
+    types_selectSpaceTokenOccupancyCache = [(str, list, type(None))]
+
+    @classmethod
+    def export_selectSpaceTokenOccupancyCache(cls, token):
+        """
+        Gets space token occupancy from the SpaceTokenOccupancyCache table.
+
+        :param token: name of the token (StorageElement)
+        :type token: str or list
+        :return: S_OK() || S_ERROR()
+        """
+
+        params = {"Token": token} if token else {}
+        return cls.rmDB.select("SpaceTokenOccupancyCache", params)
 
     types_setStatus = [str] * 7
 

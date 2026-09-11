@@ -1,11 +1,9 @@
-""" FreeDiskSpaceCommand
-    The Command gets the free space that is left in a Storage Element
-
-    Note: there are, still, many references to "space tokens",
-    for example ResourceManagementClient().selectSpaceTokenOccupancyCache(token=elementName)
-    This is for historical reasons, and shoud be fixed one day.
-    For the moment, when you see "token" or "space token" here, just read "StorageElement".
-
+"""FreeDiskSpaceCommand
+The Command gets the free space that is left in a Storage Element
+Note: there are, still, many references to "space tokens",
+for example the SpaceTokenOccupancyCache table.
+This is for historical reasons, and shoud be fixed one day.
+For the moment, when you see "token" or "space token" here, just read "StorageElement".
 """
 
 import errno
@@ -18,8 +16,8 @@ from DIRAC.AccountingSystem.Client.Types.StorageOccupancy import StorageOccupanc
 from DIRAC.Core.Utilities.File import convertSizeUnits
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
+from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
 
@@ -31,7 +29,7 @@ class FreeDiskSpaceCommand(Command):
     def __init__(self, args=None, clients=None):
         super().__init__(args, clients=clients)
 
-        self.rmClient = ResourceManagementClient()
+        self.rmDB = ResourceManagementDB()
 
     def _prepareCommand(self):
         """
@@ -99,15 +97,17 @@ class FreeDiskSpaceCommand(Command):
         """
 
         # Stores in cache
-        res = self.rmClient.addOrModifySpaceTokenOccupancyCache(
-            endpoint=results["Endpoint"],
-            lastCheckTime=datetime.utcnow(),
-            free=results["Free"],
-            total=results["Total"],
-            token=results["ElementName"],
+        res = self.rmDB.addOrModify(
+            "SpaceTokenOccupancyCache",
+            {
+                "Token": results["ElementName"],
+                "Free": results["Free"],
+                "Total": results["Total"],
+                "LastCheckTime": datetime.utcnow(),
+            },
         )
         if not res["OK"]:
-            self.log.error("Error calling addOrModifySpaceTokenOccupancyCache", res["Message"])
+            self.log.error("Error calling addOrModify on SpaceTokenOccupancyCache", res["Message"])
             return res
 
         # Now proceed with the accounting
@@ -150,7 +150,7 @@ class FreeDiskSpaceCommand(Command):
             return params
         elementName, unit = params["Value"]
 
-        result = self.rmClient.selectSpaceTokenOccupancyCache(token=elementName)
+        result = self.rmDB.select("SpaceTokenOccupancyCache", {"Token": elementName})
 
         if not result["OK"]:
             return result
@@ -199,8 +199,9 @@ class FreeDiskSpaceCommand(Command):
         if not toDelete:
             toDelete = []
 
-            res = self.rmClient.selectSpaceTokenOccupancyCache(
-                meta={"older": ["LastCheckTime", datetime.utcnow() - timedelta(hours=6)]}
+            res = self.rmDB.select(
+                "SpaceTokenOccupancyCache",
+                {"meta": {"older": ["LastCheckTime", datetime.utcnow() - timedelta(hours=6)]}},
             )
             if not res["OK"]:
                 return res
@@ -222,7 +223,7 @@ class FreeDiskSpaceCommand(Command):
             toDelete = [toDelete]
 
         for ep in toDelete:
-            res = self.rmClient.deleteSpaceTokenOccupancyCache(ep[0], ep[1])
+            res = self.rmDB.delete("SpaceTokenOccupancyCache", {"Token": ep[0]})
             if not res["OK"]:
                 self.log.warn("Could not delete entry from SpaceTokenOccupancyCache", res["Message"])
 
