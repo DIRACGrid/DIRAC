@@ -1,3 +1,13 @@
+[v8.0.83]
+
+*Core
+
+FIX: (#8786) server-side DISET handshakes no longer raise AttributeError with m2crypto >=0.46
+
+*FrameworkSystem
+
+FIX: (#8690) skip the Tornado server in ComponentSupervisionAgent service checks
+
 [v8.0.82]
 
 *Core
