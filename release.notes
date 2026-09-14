@@ -1,3 +1,32 @@
+[v9.0.25]
+
+*Core
+
+FIX: (#8785) server-side DISET handshakes no longer raise AttributeError with m2crypto >=0.46
+
+*ConfigurationSystem
+
+CHANGE: (#8774) rename LegacyClientEnabled to FutureClientEnabled
+FIX: (#8727) Tidy up CS auth
+
+*WorkloadManagement
+
+FIX: (#8763) dirac-jobexec - do not bootstrap the workflow before setting command line parameters
+FIX: (#8749) do not report non-finite (NaN/Infinity) job parameters from the Watchdog and JobWrapper; validate CPUNormalizationFactor
+FIX: (#8727) Make OptimizationMind auth more strict
+
+*DataManagementSystem
+
+FIX: (#8759) a missing file checksum is stored as NULL rather than the string "None", which re-registering such a file ("already registered with alternative metadata")
+
+*Interfaces
+
+FIX: (#8727) Check permission on DConfigCache files
+
+*FrameworkSystem
+
+FIX: (#8689) skip the Tornado server in ComponentSupervisionAgent service checks
+
 [v9.0.24]
 
 *Subsystem
