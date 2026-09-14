@@ -21,7 +21,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.TimeUtilities import DiracTime, fromString, second, toEpoch
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
-from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import getJobParameters
+from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import getJobParametersUtility
 from DIRAC.WorkloadManagementSystem.DB.StatusUtils import kill_delete_jobs
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_KILL
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import rescheduleJobs
@@ -290,10 +290,10 @@ class StalledJobAgent(AgentModule):
 
     def _getJobPilotStatus(self, jobID):
         """Get the job pilot status."""
-        result = getJobParameters([jobID], "Pilot_Reference")
+        result = getJobParametersUtility([jobID], "Pilot_Reference")
         if not result["OK"]:
             return result
-        # getJobParameters returns {jobID: {parName: value, ...}, ...}, with jobID being either an int (JobDB)
+        # getJobParametersUtility returns {jobID: {parName: value, ...}, ...}, with jobID being either an int (JobDB)
         # or a str (JobParametersDB), so look it up both ways
         jobParameters = result["Value"].get(jobID) or result["Value"].get(str(jobID)) or {}
         pilotReference = jobParameters.get("Pilot_Reference")
@@ -428,8 +428,8 @@ class StalledJobAgent(AgentModule):
             if lastHeartBeatTime is not None and lastHeartBeatTime > endTime:
                 endTime = lastHeartBeatTime
 
-            result = getJobParameters([jobID], "CPUNormalizationFactor")
-            # getJobParameters returns {jobID: {parName: value, ...}, ...}, with jobID being either an int (JobDB)
+            result = getJobParametersUtility([jobID], "CPUNormalizationFactor")
+            # getJobParametersUtility returns {jobID: {parName: value, ...}, ...}, with jobID being either an int (JobDB)
             # or a str (JobParametersDB), so look it up both ways
             jobParameters = result.get("Value", {}).get(jobID) or result.get("Value", {}).get(str(jobID)) or {}
             if not result["OK"] or not jobParameters.get("CPUNormalizationFactor"):
