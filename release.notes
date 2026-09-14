@@ -1,3 +1,53 @@
+[v9.1.18]
+
+*Core
+
+FIX: (#8784) server-side DISET handshakes no longer raise AttributeError with m2crypto >=0.46
+CHANGE: (#8767) Move DiracTime class to DiracCommon which would allow using its utcnow() in DiracCommon time utilities.
+
+*WorkloadManagement
+
+FIX: (#8780) verify wnVO name patters in Tornado pilot server
+FIX: (#8765) dirac-jobexec - do not bootstrap the workflow before setting command line parameters
+
+*DataManagementSystem
+
+FIX: (#8778) Tidy up SQL PreparedStatement Parameters in FileManagerPs
+
+*ProductionSystem
+
+FIX: (#8775) Ensure PS decodes step body from JSON
+
+*ConfigurationSystem
+
+CHANGE: (#8772) rename LegacyClientEnabled to FutureClientEnabled
+
+*Resources
+
+NEW: (#8768) add a BlockSize parameter to the FilePlugin to be allowed to overwrite the default
+CHANGE: (#8768) FCConditionParser only instanciate once each plugin per FC instance
+
+*RequestManagemet
+
+FIX: (#8766) Reduce memory usage of RequestExecutingAgent
+
+*RequestManagementSystem
+
+NEW: (#8714) the CleanReqDBAgent can  aggregate DataStore Requests together
+
+*deployment
+
+A new index needs to be added  to the ReqDB
+```sql
+CREATE INDEX idx_request_status_notbefore_lastupdate ON Request (Status, NotBefore, LastUpdate) ALGORITHM=INPLACE LOCK=NONE;
+```
+
+*Accounting
+
+FIX: (#8712) AccountingDB do not block for an hour after a bucketing error
+FEAT: (#8712) AccountingDB optimized with caching
+FEAT: (#8712) allow to split the DataStore based on AccountingType
+
 [v9.1.17]
 
 *DataManagementSystem
