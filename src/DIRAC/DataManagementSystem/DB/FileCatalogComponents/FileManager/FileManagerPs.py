@@ -15,6 +15,11 @@ class FileManagerPs(FileManagerBase):
     def __init__(self, database=None):
         super().__init__(database)
 
+    @staticmethod
+    def __validatedIntListToString(values):
+        """Helper function to ensure string list arguments are all int-only."""
+        return ",".join(str(int(v)) for v in values)
+
     ######################################################
     #
     # The all important _findFiles and _getDirectoryFiles methods
@@ -95,7 +100,13 @@ class FileManagerPs(FileManagerBase):
                 fileNames = filesInDirDict[dirPath]
                 dirID = directoryPathToIds[dirPath]
 
-                formatedFileNames = stringListToString(fileNames)
+                escapedFileNames = []
+                for fileName in fileNames:
+                    res = self.db._escapeString(str(fileName))
+                    if not res["OK"]:
+                        return res
+                    escapedFileNames.append(res["Value"])
+                formatedFileNames = ",".join(escapedFileNames)
 
                 result = self.db.executeStoredProcedureWithCursor(
                     "ps_get_file_ids_from_dir_id", (dirID, formatedFileNames)
@@ -136,7 +147,13 @@ class FileManagerPs(FileManagerBase):
             metadata.append("FileID")
 
         # Format the filenames and status to be used in a IN clause in the sotred procedure
-        formatedFileNames = stringListToString(fileNames)
+        escapedFileNames = []
+        for fileName in fileNames:
+            res = self.db._escapeString(str(fileName))
+            if not res["OK"]:
+                return res
+            escapedFileNames.append(res["Value"])
+        formatedFileNames = ",".join(escapedFileNames)
         fStatus = stringListToString(self.db.visibleFileStatus)
 
         specificFiles = True if len(fileNames) else False
@@ -188,7 +205,7 @@ class FileManagerPs(FileManagerBase):
         """
 
         # Format the filenames and status to be used in a IN clause in the sotred procedure
-        formatedFileIds = intListToString(fileIDs)
+        formatedFileIds = self.__validatedIntListToString(fileIDs)
         result = self.db.executeStoredProcedureWithCursor("ps_get_all_info_for_file_ids", (formatedFileIds,))
         if not result["OK"]:
             return result
@@ -224,9 +241,29 @@ class FileManagerPs(FileManagerBase):
             utcNow = DiracTime.utcnow().replace(microsecond=0)
             # A missing checksum has to be NULL and not the string "None", to stay consistent with
             # ps_insert_file below and with the FC_FileInfo inserts made by FileManager
-            checksumValue = "NULL" if checksum is None else f"'{checksum}'"
+            res = self.db._escapeString(str(fileName))
+            if not res["OK"]:
+                return res
+            fileName = res["Value"]
+            res = self.db._escapeString(str(guid))
+            if not res["OK"]:
+                return res
+            guid = res["Value"]
+            res = self.db._escapeString(str(checksumtype))
+            if not res["OK"]:
+                return res
+            checksumtype = res["Value"]
+            # A missing checksum has to be NULL and not the string "None", to stay consistent with
+            # ps_insert_file below and with the FC_FileInfo inserts made by FileManager
+            if checksum is None:
+                checksum = "NULL"
+            else:
+                res = self.db._escapeString(str(checksum))
+                if not res["OK"]:
+                    return res
+                checksum = res["Value"]
             fileValuesStrings.append(
-                "(%s, %s, %s, %s, %s, '%s', '%s', %s, '%s', '%s', '%s', %s)"
+                "(%s, %s, %s, %s, %s, %s, %s, %s, %s, '%s', '%s', %s)"
                 % (
                     dirID,
                     size,
@@ -235,14 +272,14 @@ class FileManagerPs(FileManagerBase):
                     statusID,
                     fileName,
                     guid,
-                    checksumValue,
+                    checksum,
                     checksumtype,
                     utcNow,
                     utcNow,
                     mode,
                 )
             )
-            fileDescStrings.append(f"(DirID = {dirID} AND FileName = '{fileName}')")
+            fileDescStrings.append(f"(DirID = {dirID} AND FileName = {fileName})")
 
         fileValuesStr = ",".join(fileValuesStrings)
         fileDescStr = " OR ".join(fileDescStrings)
@@ -363,7 +400,13 @@ class FileManagerPs(FileManagerBase):
             guids = [guids]
 
         #     formatedGuids = ','.join( [ '"%s"' % guid for guid in guids ] )
-        formatedGuids = stringListToString(guids)
+        escapedGuids = []
+        for guid in guids:
+            res = self.db._escapeString(str(guid))
+            if not res["OK"]:
+                return res
+            escapedGuids.append(res["Value"])
+        formatedGuids = ",".join(escapedGuids)
         result = self.db.executeStoredProcedureWithCursor("ps_get_file_ids_from_guids", (formatedGuids,))
 
         if not result["OK"]:
@@ -382,7 +425,13 @@ class FileManagerPs(FileManagerBase):
         if not isinstance(guids, (list, tuple)):
             guids = [guids]
 
-        formatedGuids = stringListToString(guids)
+        escapedGuids = []
+        for guid in guids:
+            res = self.db._escapeString(str(guid))
+            if not res["OK"]:
+                return res
+            escapedGuids.append(res["Value"])
+        formatedGuids = ",".join(escapedGuids)
         result = self.db.executeStoredProcedureWithCursor("ps_get_lfns_from_guids", (formatedGuids,))
 
         if not result["OK"]:
@@ -432,7 +481,7 @@ class FileManagerPs(FileManagerBase):
         if not fileIDs:
             return S_OK()
 
-        formatedFileIds = intListToString(fileIDs)
+        formatedFileIds = self.__validatedIntListToString(fileIDs)
 
         result = self.db.executeStoredProcedureWithCursor("ps_delete_replicas_from_file_ids", (formatedFileIds,))
         if not result["OK"]:
@@ -455,7 +504,7 @@ class FileManagerPs(FileManagerBase):
 
         connection = self._getConnection(connection)
 
-        formatedFileIds = intListToString(fileIDs)
+        formatedFileIds = self.__validatedIntListToString(fileIDs)
 
         result = self.db.executeStoredProcedureWithCursor("ps_delete_files", (formatedFileIds,))
         if not result["OK"]:
@@ -482,7 +531,11 @@ class FileManagerPs(FileManagerBase):
         for lfn in lfnsChunk:
             fileID, seID, statusID, replicaType, pfn = allReplicaValues[lfn]
             utcNow = DiracTime.utcnow().replace(microsecond=0)
-            repValuesStrings.append(f"({fileID},{seID},'{statusID}','{replicaType}','{utcNow}','{utcNow}','{pfn}')")
+            res = self.db._escapeString(str(pfn))
+            if not res["OK"]:
+                return res
+            pfn = res["Value"]
+            repValuesStrings.append(f"({fileID},{seID},'{statusID}','{replicaType}','{utcNow}','{utcNow}',{pfn})")
             repDescStrings.append(f"(r.FileID = {fileID} AND SEID = {seID})")
 
         repValuesStr = ",".join(repValuesStrings)
@@ -819,7 +872,7 @@ class FileManagerPs(FileManagerBase):
 
         for chunks in breakListIntoChunks(fileIDs, 1000):
             # Format the FileIDs to be used in a IN clause in the stored procedure
-            formatedFileIds = intListToString(chunks)
+            formatedFileIds = self.__validatedIntListToString(chunks)
             result = self.db.executeStoredProcedureWithCursor(
                 "ps_get_all_info_of_replicas_bulk", (formatedFileIds, allStatus, fStatus)
             )
@@ -923,7 +976,7 @@ class FileManagerPs(FileManagerBase):
         successful = {}
         for chunks in breakListIntoChunks(fileIDs, 1000):
             # Format the filenames and status to be used in a IN clause in the sotred procedure
-            formatedFileIds = intListToString(chunks)
+            formatedFileIds = self.__validatedIntListToString(chunks)
             result = self.db.executeStoredProcedureWithCursor("ps_get_full_lfn_for_file_ids", (formatedFileIds,))
             if not result["OK"]:
                 return result
@@ -954,6 +1007,6 @@ class FileManagerPs(FileManagerBase):
                 return res
             seIDs.append(res["Value"])
 
-        formatedSEIds = intListToString(seIDs)
+        formatedSEIds = self.__validatedIntListToString(seIDs)
 
         return self.db.executeStoredProcedureWithCursor("ps_get_se_dump", (formatedSEIds,))
