@@ -39,6 +39,29 @@
           }
           policyType = AlwaysBanned
         }
+        SpecificFreeDiskSpace
+        {
+          policyType         = FreeDiskSpace
+          Unit               = GB
+          Banned_threshold   = 10
+          Degraded_threshold = 50
+          Banned_fraction    = 0.02
+          Degraded_fraction  = 0.10
+          matchParams
+          {
+            element    = Resource
+            name       = LogSE
+            statusType = WriteAccess
+          }
+        }
+        PropagationForSite
+        {
+          matchParams
+          {
+            element = Site
+          }
+          policyType = Propagation
+        }
       }
       PolicyActions
       {
@@ -126,6 +149,30 @@ def test_takeDecision_noDecisionParams():
                 "elementType": "StorageElement",
                 "statusType": "ReadAccess",
                 "status": "Active",
+                "reason": None,
+                "tokenOwner": None,
+            },
+            "Banned",
+        ),
+        (
+            {
+                "element": "Resource",
+                "name": "LogSE",
+                "elementType": "StorageElement",
+                "statusType": "WriteAccess",
+                "status": "Active",
+                "reason": None,
+                "tokenOwner": None,
+            },
+            "Error",
+        ),
+        (
+            {
+                "element": "Site",
+                "name": "Site3",
+                "elementType": None,
+                "statusType": None,
+                "status": None,
                 "reason": None,
                 "tokenOwner": None,
             },

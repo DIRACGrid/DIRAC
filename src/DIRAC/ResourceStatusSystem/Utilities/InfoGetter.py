@@ -45,21 +45,24 @@ def getPoliciesThatApply(decisionParams):
 
     # Get policies that match the given decisionParameters
     for policyName, policySetup in policiesConfig.items():
-        # The parameter policyType replaces policyName, so if it is not present,
-        # we pick policyName
+        # The parameter policyType is mandatory. If not present, skip this entry —
+        # it is a command-args defaults section, not a policy definition.
         try:
             policyType = policySetup["policyType"][0]
         except KeyError:
-            policyType = policyName
-            # continue
+            continue
 
         # The section matchParams is not mandatory, so we set {} as default.
         policyMatchParams = policySetup.get("matchParams", {})
         gLogger.debug(f"matchParams of {policyName}: {str(policyMatchParams)}")
 
-        # FIXME: make sure the values in the policyConfigParams dictionary are typed !!
-        policyConfigParams = {}
-        # policyConfigParams = policySetup.get( 'configParams', {} )
+        # Any key in the CS policy entry that is not a reserved keyword is treated as
+        # a command-argument override. These override the defaults from POLICIESMETA.
+        _reservedKeys = {"policyType", "matchParams", "configParams", "doNotCombineResult", "active"}
+        policyConfigParams = {
+            k: v[0] if isinstance(v, list) else v for k, v in policySetup.items() if k not in _reservedKeys
+        }
+
         policyMatch = Utils.configMatch(decisionParams, policyMatchParams)
         gLogger.debug(f"PolicyMatch for decisionParams {decisionParams}: {str(policyMatch)}")
 
@@ -67,7 +70,7 @@ def getPoliciesThatApply(decisionParams):
         # is not straightforward (e.g. when the policy specify a 'domain', while
         # the decisionParams has only the name of the element)
         if policyMatch and _filterPolicies(decisionParams, policyMatchParams):
-            policiesThatApply.append((policyName, policyType, policyConfigParams))
+            policiesThatApply.append((policyName, policyType, policyConfigParams, policyMatchParams))
 
     gLogger.debug(f"policies that apply (before post-processing): {str(policiesThatApply)}")
     policiesThatApply = postProcessingPolicyList(policiesThatApply)
@@ -76,7 +79,7 @@ def getPoliciesThatApply(decisionParams):
     objectLoader = ObjectLoader()
     policiesToBeLoaded = []
     # Gets policies parameters from code.
-    for policyName, policyType, _policyConfigParams in policiesThatApply:
+    for policyName, policyType, _policyConfigParams, _policyMatchParams in policiesThatApply:
         try:
             result = objectLoader.loadModule("DIRAC.ResourceStatusSystem.Policy.Configurations")
             if not result["OK"]:
@@ -92,8 +95,22 @@ def getPoliciesThatApply(decisionParams):
         policyDict = {"name": policyName, "type": policyType, "args": {}}
 
         # args is one of the parameters we are going to use on the policies. We copy
-        # the defaults and then we update if with whatever comes from the CS.
+        # the defaults from POLICIESMETA and then override with whatever comes from the CS.
         policyDict.update(policyMeta)
+        if _policyConfigParams and policyDict.get("args") is not None:
+            # Build a case-insensitive lookup of the existing arg keys so that CS keys
+            # like "Unit" correctly override POLICIESMETA keys like "unit".
+            argsKeyMap = {k.lower(): k for k in policyDict["args"]}
+            for csKey, csVal in _policyConfigParams.items():
+                targetKey = argsKeyMap.get(csKey.lower(), csKey)
+                # CS values are always strings; cast to the type of the existing default.
+                existingVal = policyDict["args"].get(targetKey)
+                if existingVal is not None:
+                    try:
+                        csVal = type(existingVal)(csVal)
+                    except (ValueError, TypeError):
+                        pass
+                policyDict["args"][targetKey] = csVal
 
         policiesToBeLoaded.append(policyDict)
 
@@ -262,28 +279,39 @@ def _filterPolicies(decisionParams, policyMatchParams):
 
 
 def postProcessingPolicyList(policiesThatApply):
-    """Put here any "hacky" post-processing"""
+    """Remove lower-priority duplicates when multiple policies of the same type apply.
 
-    # FIXME: the following 2 "if" are a "hack" for dealing with the following case:
-    # an SE happens to be subject to, e.g., both the 'FreeDiskSpaceMB' and the 'FreeDiskSpaceGB' policies
-    # (currently, there is no way to avoid that this happens, see e.g. LogSE)
-    # When this is the case, supposing that an SE has 50 MB free, the policies evaluation will be the following:
-    # - 'FreeDiskSpaceMB' will evaluate 'Active'
-    # - 'FreeDiskSpaceGB' will evaluate 'Banned'
-    # so the SE will end up being banned, but we want only the 'FreeDiskSpaceMB' to be considered.
-    if ("FreeDiskSpaceMB", "FreeDiskSpaceMB", {}) in policiesThatApply:
-        try:
-            policiesThatApply.remove(("FreeDiskSpaceGB", "FreeDiskSpaceGB", {}))
-        except ValueError:
-            pass
-        try:
-            policiesThatApply.remove(("FreeDiskSpaceTB", "FreeDiskSpaceTB", {}))
-        except ValueError:
-            pass
-    if ("FreeDiskSpaceGB", "FreeDiskSpaceGB", {}) in policiesThatApply:
-        try:
-            policiesThatApply.remove(("FreeDiskSpaceTB", "FreeDiskSpaceTB", {}))
-        except ValueError:
-            pass
+    When two or more policies share the same ``policyType`` and both match the current
+    element, we keep only the most specific one. Specificity is determined by the number
+    of ``matchParams`` keys: more keys = more specific. If one of the duplicates matched
+    by ``name`` it is always considered more specific than one that did not.
+    """
+    from collections import defaultdict
 
-    return policiesThatApply
+    # Group policies by policyType
+    byType = defaultdict(list)
+    for entry in policiesThatApply:
+        policyName, policyType, policyConfigParams, policyMatchParams = entry
+        byType[policyType].append(entry)
+
+    result = []
+    for policyType, entries in byType.items():
+        if len(entries) == 1:
+            result.extend(entries)
+            continue
+
+        # Multiple policies of the same type matched — keep only the most specific.
+        # Specificity = number of matchParams keys; ties broken by name-match presence.
+        def specificity(entry):
+            matchParams = entry[3]  # policyMatchParams
+            nameMatch = 1 if "name" in matchParams else 0
+            return (nameMatch, len(matchParams))
+
+        most_specific = max(entries, key=specificity)
+        result.append(most_specific)
+        gLogger.debug(
+            f"postProcessing: multiple {policyType!r} policies matched; "
+            f"keeping {most_specific[0]!r}, dropping {[e[0] for e in entries if e is not most_specific]}"
+        )
+
+    return result
