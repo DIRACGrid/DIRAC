@@ -504,26 +504,35 @@ class GithubInterface:
         """
         log = LOGGER.getChild("getGithubLatestTagDate")
 
-        # Get all tags
-        tags = req2Json(url=self._github("tags"), queryParameters={"per_page": 100})
-        if isinstance(tags, dict) and "Not Found" in tags.get("message"):
-            raise RuntimeError(f"Package not found: {str(self)}")
-
         if sinceTag:
-            for tag in tags:
-                if tag["name"] == sinceTag:
-                    latestTag = tag
+            # Look the tag up directly as there are more tags than fit in a single page of
+            # the "tags" endpoint. This matches any tag starting with sinceTag so the exact
+            # match still has to be picked out of the results.
+            refs = req2Json(url=self._github(f"git/matching-refs/tags/{sinceTag}"), queryParameters={"per_page": 100})
+            for ref in refs:
+                if ref["ref"] == f"refs/tags/{sinceTag}":
                     break
             else:
                 raise ValueError(f"Tag {sinceTag} not found")
+            latestTagName = sinceTag
+            latestTagCommitSha = ref["object"]["sha"]
+            if ref["object"]["type"] == "tag":
+                # Annotated tags have to be dereferenced to find the commit they point at
+                tagInfo = req2Json(url=self._github(f"git/tags/{latestTagCommitSha}"))
+                latestTagCommitSha = tagInfo["object"]["sha"]
         else:
-            sortedTags = sorted(tags, key=lambda tag: LooseVersion(tag["name"]), reverse=True)
-            latestTag = sortedTags[0]
+            # Get all tags
+            tags = req2Json(url=self._github("tags"), queryParameters={"per_page": 100})
+            if isinstance(tags, dict) and "Not Found" in tags.get("message"):
+                raise RuntimeError(f"Package not found: {str(self)}")
 
-        log.info("Found latest tag %s", latestTag["name"])
+            sortedTags = sorted(tags, key=lambda tag: LooseVersion(tag["name"]), reverse=True)
+            latestTagName = sortedTags[0]["name"]
+            latestTagCommitSha = sortedTags[0]["commit"]["sha"]
+
+        log.info("Found latest tag %s", latestTagName)
 
         # Use the sha of the commit to finally retrieve the date
-        latestTagCommitSha = latestTag["commit"]["sha"]
         commitInfo = req2Json(url=self._github(f"git/commits/{latestTagCommitSha}"))
 
         startDate = dateutil.parser.isoparse(commitInfo["committer"]["date"])
