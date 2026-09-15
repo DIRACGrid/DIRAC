@@ -13,9 +13,148 @@ import M2Crypto.SSL
 
 import tornado.iostream
 
-tornado.iostream.SSLIOStream.configure(  # pylint: disable=no-member
-    "tornado_m2crypto.m2iostream.M2IOStream"
-)  # pylint: disable=wrong-import-position
+# Patch Tornado to use M2Crypto instead of standard ssl
+# 1. Use M2IOStream for SSL connections
+tornado.iostream.SSLIOStream.configure("tornado_m2crypto.m2iostream.M2IOStream")  # pylint: disable=no-member
+
+# 2. Patch m2_wrap_socket in the m2iostream module and replace M2IOStream.initialize
+from tornado_m2crypto import m2iostream as _m2mod
+from tornado_m2crypto.m2netutil import m2_wrap_socket
+from tornado_m2crypto.m2iostream import M2IOStream
+from tornado.iostream import IOStream
+
+# Patch m2_wrap_socket in both modules
+import tornado_m2crypto.m2netutil as _m2netutil
+
+_orig_m2_wrap = _m2netutil.m2_wrap_socket
+
+
+def _m2_wrap_patched(sock, ssl_options, **kwargs):
+    return _orig_m2_wrap(sock, ssl_options, **kwargs)
+
+
+_m2netutil.m2_wrap_socket = _m2_wrap_patched
+_m2mod.m2_wrap_socket = _m2_wrap_patched
+
+
+# Replace M2IOStream.initialize with working version
+def _m2_working_init(self, *args, **kwargs):
+    self._ssl_options = kwargs.pop("ssl_options", {})
+
+    if kwargs.pop("create_context_on_init", False):
+        server_side = kwargs.pop("server_side", False)
+        do_handshake_on_connect = kwargs.pop("do_handshake_on_connect", False)
+        connection = args[0]
+        self.socket = m2_wrap_socket(
+            connection,
+            self._ssl_options,
+            server_side=server_side,
+            do_handshake_on_connect=do_handshake_on_connect,
+        )
+        args = (self.socket,) + args[1:]
+
+    IOStream.__init__(self, *args, **kwargs)
+    self._done_setup = False
+    self._ssl_accepting = True
+    self._handshake_reading = False
+    self._handshake_writing = False
+    self._ssl_connect_callback = None
+    self._server_hostname = None
+
+    try:
+        self.socket.getpeername()
+    except Exception:  # nosec: B110
+        pass
+    else:
+        self._add_io_state(self.io_loop.WRITE)
+
+
+M2IOStream.initialize = _m2_working_init
+
+# 3. Patch M2IOStream._do_ssl_handshake to store peer cert before socket might be closed
+_orig_M2IOStream_do_ssl_handshake = M2IOStream._do_ssl_handshake
+
+
+def _patched_do_ssl_handshake(self):
+    result = _orig_M2IOStream_do_ssl_handshake(self)
+    # Store peer cert if handshake completed successfully and socket is still valid
+    if self.socket is not None and not self._ssl_accepting:
+        try:
+            self._peer_cert = self.socket.get_peer_cert()
+            self._peer_cert_chain = self.socket.get_peer_cert_chain()
+        except Exception:
+            self._peer_cert = None
+            self._peer_cert_chain = None
+    return result
+
+
+M2IOStream._do_ssl_handshake = _patched_do_ssl_handshake
+
+# 4. Patch M2IOStream.read_from_fd to return None instead of 0 when no data available
+# This prevents premature stream closure after handshake completion
+_orig_M2IOStream_read_from_fd = M2IOStream.read_from_fd
+
+
+def _patched_read_from_fd(self, buf):
+    result = _orig_M2IOStream_read_from_fd(self, buf)
+    # If read_from_fd returns 0, treat it as "no data available yet"
+    # instead of EOF, to prevent premature stream closure after handshake
+    if result == 0:
+        return None
+    return result
+
+
+M2IOStream.read_from_fd = _patched_read_from_fd
+
+
+# 5. Patch M2IOStream.get_ssl_certificate to use stored cert
+def _patched_get_ssl_cert(self, binary_form=False):
+    peer_cert = getattr(self, "_peer_cert", None)
+    if peer_cert is not None:
+        return peer_cert.as_der() if binary_form else peer_cert
+    if self.socket is not None:
+        return self.socket.get_peer_cert()
+    return None
+
+
+def _patched_get_ssl_cert_chain(self):
+    peer_chain = getattr(self, "_peer_cert_chain", None)
+    if peer_chain is not None:
+        return peer_chain
+    if self.socket is not None:
+        return self.socket.get_peer_cert_chain()
+    return []
+
+
+M2IOStream.get_ssl_certificate = _patched_get_ssl_cert
+M2IOStream.get_ssl_certificate_chain = _patched_get_ssl_cert_chain
+
+# 6. Patch HTTPServerRequest.get_ssl_certificate to use the stream's method
+import tornado.httputil
+
+
+def _m2_get_ssl_certificate(self, binary_form=False):
+    """Returns the client's SSL certificate using M2Crypto."""
+    if self.connection is None:
+        return None
+    stream = self.connection.stream
+    if hasattr(stream, "get_ssl_certificate"):
+        return stream.get_ssl_certificate(binary_form=binary_form)
+    return None
+
+
+def _m2_get_ssl_certificate_chain(self):
+    """Returns the client's SSL certificate chain using M2Crypto."""
+    if self.connection is None:
+        return []
+    stream = self.connection.stream
+    if hasattr(stream, "get_ssl_certificate_chain"):
+        return stream.get_ssl_certificate_chain()
+    return []
+
+
+tornado.httputil.HTTPServerRequest.get_ssl_certificate = _m2_get_ssl_certificate
+tornado.httputil.HTTPServerRequest.get_ssl_certificate_chain = _m2_get_ssl_certificate_chain
 
 import tornado.platform.asyncio
 import tornado.ioloop
@@ -182,7 +321,7 @@ class TornadoServer:
         # This statement must be placed before setting PeriodicCallback
         asyncio.set_event_loop_policy(tornado.platform.asyncio.AnyThreadEventLoopPolicy())
 
-        # If there is no services loaded:
+        # If there is no services list:
         if not self.__calculateAppSettings():
             raise Exception("There is no services loaded, please check your configuration")
 
@@ -251,7 +390,7 @@ class TornadoServer:
             }
         )
         self.activityMonitoringReporter.commit()
-        # Save memory usage and save realtime/CPU time for next call
+        # Send memory usage and save realtime/CPU time for next call
         self.__report = self.__startReportToMonitoringLoop()
 
         # For each handler,

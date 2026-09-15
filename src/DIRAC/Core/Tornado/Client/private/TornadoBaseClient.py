@@ -489,7 +489,8 @@ class TornadoBaseClient:
         # getting certificate
         # Do we use the server certificate ?
         elif self.kwargs[self.KW_USE_CERTIFICATES]:
-            auth = {"cert": Locations.getHostCertificateAndKeyLocation()}
+            cert_loc = Locations.getHostCertificateAndKeyLocation()
+            auth = {"cert": cert_loc}
 
         # Use access token?
         elif self.__useAccessToken:
@@ -527,6 +528,7 @@ class TornadoBaseClient:
             fp = os.fdopen(tmpHandle, "w")
             fp.write(self.kwargs[self.KW_PROXY_STRING])
             fp.close()
+            auth = {"cert": cert}
         else:
             auth = {"cert": Locations.getProxyLocation()}
             if not auth["cert"]:
