@@ -21,6 +21,15 @@ from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper
 
 gLogger.setLevel("DEBUG")
 
+uploadSandboxMock = MagicMock()
+uploadSandboxMock.return_value = {"OK": True}
+
+
+def uploadFileMockFunc(**kwargs):
+    destinationSEList = kwargs["destinationSEList"]
+    return {"OK": True, "Value": {"uploadedSE": destinationSEList[0]}}
+
+
 # -------------------------------------------------------------------------------------------------
 
 
@@ -661,11 +670,13 @@ def jobIDPath():
     (p / "std.err").touch()
     (p / "summary_123.xml").touch()
     (p / "result_dir").mkdir()
-    (p / "result_dir" / "file1").touch()
     # Output data files
+    (p / "00232454_00000244.xml").touch()
     (p / "00232454_00000244_1.sim").touch()
     (p / "1720442808testFileUpload.txt").touch()
     (p / "testFileUploadFullLFN.txt").touch()
+    (p / "result_dir" / "output.xml").touch()
+    (p / "result_dir" / "output.txt").touch()
 
     with open(p / "pool_xml_catalog.xml", "w") as f:
         f.write(
@@ -996,3 +1007,116 @@ def test_finalize(mocker, failedFlag, expectedRes, finalStates):
     assert res == expectedRes
     assert jw.jobReport.jobStatusInfo[0][0] == finalStates[0]
     assert jw.jobReport.jobStatusInfo[0][1] == finalStates[1]
+
+
+@pytest.mark.parametrize(
+    "outputData, outputPath, expectedResult",
+    [
+        (
+            "00232454_00000244.xml",
+            None,
+            "/dirac/user/u/unknown/0/123/00232454_00000244.xml",
+        ),
+        (
+            "00232454_00000244*",
+            None,
+            [
+                "/dirac/user/u/unknown/0/123/00232454_00000244.xml, "
+                "/dirac/user/u/unknown/0/123/00232454_00000244_1.sim",
+                "/dirac/user/u/unknown/0/123/00232454_00000244_1.sim, "
+                "/dirac/user/u/unknown/0/123/00232454_00000244.xml",
+            ],
+        ),
+        (
+            "*.txt",
+            None,
+            [
+                "/dirac/user/u/unknown/0/123/1720442808testFileUpload.txt, "
+                "/dirac/user/u/unknown/0/123/testFileUploadFullLFN.txt",
+                "/dirac/user/u/unknown/0/123/testFileUploadFullLFN.txt, "
+                "/dirac/user/u/unknown/0/123/1720442808testFileUpload.txt",
+            ],
+        ),
+        (
+            "00232454_00000244.xml",
+            "/my_output_dir/00232454",
+            "/dirac/user/u/unknown/my_output_dir/00232454/00232454_00000244.xml",
+        ),
+        (
+            "00232454_00000244.xml",
+            "LFN:/dirac/prod/00232454",
+            "/dirac/prod/00232454/00232454_00000244.xml",
+        ),
+        (
+            "LFN:/dirac/prod/00232454/00232454_00000244.xml",
+            None,
+            "/dirac/prod/00232454/00232454_00000244.xml",
+        ),
+        (
+            "LFN:/dirac/prod/00232454/00232454_00000244.xml",
+            "/my_output_dir/00232454",
+            "/dirac/prod/00232454/00232454_00000244.xml",
+        ),
+        (
+            "result_dir",
+            None,
+            [
+                "/dirac/user/u/unknown/0/123/output.xml, /dirac/user/u/unknown/0/123/output.txt",
+                "/dirac/user/u/unknown/0/123/output.txt, /dirac/user/u/unknown/0/123/output.xml",
+            ],
+        ),
+        (
+            "result_dir/*.xml",
+            None,
+            "/dirac/user/u/unknown/0/123/output.xml",
+        ),
+        (
+            "result_dir/*.xml",
+            "/my_output_dir/00232454",
+            "/dirac/user/u/unknown/my_output_dir/00232454/output.xml",
+        ),
+    ],
+)
+def test_OutputData(mocker, jobIDPath, outputData, outputPath, expectedResult):
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.gConfig.getValue",
+        side_effect=lambda path, default=None: default,
+    )
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.getVOForGroup", return_value="dirac")
+
+    ops_mock = MagicMock()
+
+    ops_mock.getValue.return_value = "user"
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper.Operations", return_value=ops_mock)
+    mocker.patch(
+        "DIRAC.DataManagementSystem.Client.FailoverTransfer.FailoverTransfer.transferAndRegisterFile",
+        side_effect=uploadFileMockFunc,
+    )
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient.SandboxStoreClient.uploadFilesAsSandbox",
+        side_effect=uploadSandboxMock,
+    )
+
+    jw = JobWrapper(jobIDPath)
+    jw.jobIDPath = Path.cwd() / str(jobIDPath)
+    os.chdir(str(jw.jobID))
+    jw.jobArgs = {
+        "OutputData": outputData,
+        "OutputPath": outputPath,
+        "Owner": "duser",
+        "OutputSE": "DIRAC-disk",
+        "OutputSandbox": ["std.out", "std.err"],
+    }
+
+    jw.failedFlag = False
+    jw.dm = dm_mock
+    jw.fc = fc_mock
+
+    result = jw.processJobOutputs()
+    os.chdir(jw.root)
+    assert result["OK"]
+    uploaded = [v for k, v in jw.jobReport.jobParameters if k == "UploadedOutputData"]
+    assert uploaded, f"UploadedOutputData parameter not set: {jw.jobReport.jobParameters}"
+    assert uploaded[0] in expectedResult
