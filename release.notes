@@ -1,3 +1,14 @@
+[v9.1.19]
+
+*SSHComputingElement
+
+Fix job submission failure due to missing quote in executed command
+
+*Core
+
+CHANGE: (#8787) the conda-forge dirac-grid feedstock is updated automatically when a release is made
+FIX: (#8787) making release notes no longer fails when the reference tag is not one of the 100 most recent tags
+
 [v9.1.18]
 
 *Core
