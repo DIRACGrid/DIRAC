@@ -27,20 +27,19 @@ sLog = gLogger.getSubLogger(__name__)
 RUCIO_COLLECTION_TYPES = {"DATASET", "CONTAINER"}
 
 
-def get_scope(lfn, scopes=None, diracAlgorithm="dirac"):
+def get_scope(lfn, scopes=None, default_extract="def"):
     """
     Helper function that extracts the scope from the LFN.
 
     :param str lfn: Logical file name
     :param list scopes: list of scopes
-    :param str diracAlgorithm: only used by extract_scope if there is no config file with an algorithm listed.
-                               Otherwise use the algorithm listed in the config file.
+    :param str default_extract: fallback algorithm used by Rucio if no config file defines one.
     :return: scope name
     """
 
     if scopes is None:
         scopes = []
-    scope, _ = extract_scope(did=lfn, scopes=scopes, default_extract=diracAlgorithm)
+    scope, _ = extract_scope(did=lfn, scopes=scopes, default_extract=default_extract)
     return scope
 
 
@@ -106,7 +105,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
 
         :param options: options dict
         """
-        self.diracScopeAlg = options.get("DiracScopeAlg", "dirac")
+        self.scopeExtractAlg = options.get("DiracScopeAlg", "def")
         self.useDiracCS = False  # use a Rucio config file
         self.convertUnicode = True
         proxyInfo = {"OK": False}
@@ -206,7 +205,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
         if lfn.find(":") > -1:
             scope, name = lfn.split(":")
         else:
-            scope = get_scope(lfn, scopes=self.scopes, diracAlgorithm=self.diracScopeAlg)
+            scope = get_scope(lfn, scopes=self.scopes, default_extract=self.scopeExtractAlg)
             name = lfn
         return {"scope": scope, "name": name}
 
