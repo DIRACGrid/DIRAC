@@ -395,10 +395,10 @@ class SSHComputingElement(ComputingElement):
                 return result
 
             # Execute the batch command with the options file path
-            cmd = (
-                f"bash --login -c 'python3 {self.sharedArea}/execute_batch {remoteOptionsFile} || "
-                f"python {self.sharedArea}/execute_batch {remoteOptionsFile}"
-            )
+            exes = ("python3", "python")
+            args = f"{self.sharedArea}/execute_batch {remoteOptionsFile}"
+            inner_cmd = " || ".join(f"{exe} {args}" for exe in exes)
+            cmd = f"bash --login -c '{inner_cmd}'"
 
             self.log.verbose(f"CE submission command: {cmd}")
 
