@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from DIRAC.Resources.Catalog.RucioFileCatalogClient import RucioFileCatalogClient
+from DIRAC.Resources.Catalog.RucioFileCatalogClient import RucioFileCatalogClient, get_scope
 
 
 class TestRucioFileCatalogClient(unittest.TestCase):
@@ -12,6 +12,35 @@ class TestRucioFileCatalogClient(unittest.TestCase):
 
     def tearDown(self):
         self.patcher.stop()
+
+    @patch("DIRAC.Resources.Catalog.RucioFileCatalogClient.extract_scope")
+    def test_get_scope_defaults_to_rucio_default_algorithm(self, mock_extract_scope):
+        mock_extract_scope.return_value = ("atlas", "atlas:file")
+
+        scope = get_scope("atlas:file", scopes=["atlas"])
+
+        self.assertEqual(scope, "atlas")
+        mock_extract_scope.assert_called_once_with(did="atlas:file", scopes=["atlas"], default_extract="def")
+
+    @patch("DIRAC.Resources.Catalog.RucioFileCatalogClient.extract_scope")
+    def test_get_scope_can_still_take_an_explicit_algorithm(self, mock_extract_scope):
+        mock_extract_scope.return_value = ("atlas", "atlas:file")
+
+        scope = get_scope("atlas:file", scopes=["atlas"], default_extract="dirac")
+
+        self.assertEqual(scope, "atlas")
+        mock_extract_scope.assert_called_once_with(did="atlas:file", scopes=["atlas"], default_extract="dirac")
+
+    @patch("DIRAC.Resources.Catalog.RucioFileCatalogClient.get_scope")
+    def test_get_dids_from_lfn_uses_updated_scope_keyword(self, mock_get_scope):
+        mock_get_scope.return_value = "atlas"
+
+        result = self.client._RucioFileCatalogClient__getDidsFromLfn("atlas.file")
+
+        self.assertEqual(result, {"scope": "atlas", "name": "atlas.file"})
+        mock_get_scope.assert_called_once_with(
+            "atlas.file", scopes=["test_scope"], default_extract=self.client.scopeExtractAlg
+        )
 
     def test_transform_DIRAC_operator_to_Rucio(self):
         DIRAC_dict = {"key1": "value1", "key2": {">": 10}, "key3": {"=": 10}}
