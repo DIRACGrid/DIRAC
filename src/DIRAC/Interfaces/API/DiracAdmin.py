@@ -107,7 +107,7 @@ class DiracAdmin(API):
 
     #############################################################################
     def getBannedSites(self, printOutput=False):
-        """Retrieve current list of banned  and probing sites.
+        """Retrieve current list of banned sites.
 
         Example usage:
 
@@ -122,16 +122,12 @@ class DiracAdmin(API):
         if not bannedSites["OK"]:
             return bannedSites
 
-        probingSites = self.sitestatus.getSites(siteState="Probing")
-        if not probingSites["OK"]:
-            return probingSites
-
-        mergedList = sorted(bannedSites["Value"] + probingSites["Value"])
+        bannedList = sorted(bannedSites["Value"])
 
         if printOutput:
-            gLogger.notice("\n".join(mergedList))
+            gLogger.notice("\n".join(bannedList))
 
-        return S_OK(mergedList)
+        return S_OK(bannedList)
 
     #############################################################################
     def getSiteSection(self, site, printOutput=False):
@@ -169,14 +165,6 @@ class DiracAdmin(API):
         """
         if not (result := self._checkSiteIsValid(site))["OK"]:
             return result
-
-        if not (result := self.getSiteMask(status="Active"))["OK"]:
-            return result
-        siteMask = result["Value"]
-        if site in siteMask:
-            if printOutput:
-                gLogger.notice(f"Site {site} is already Active")
-            return S_OK(f"Site {site} is already Active")
 
         tokenLifetime = int(days)
         if tokenLifetime <= 0:
@@ -246,14 +234,6 @@ class DiracAdmin(API):
         """
         if not (result := self._checkSiteIsValid(site))["OK"]:
             return result
-        mask = self.getSiteMask(status="Banned")
-        if not mask["OK"]:
-            return mask
-        siteMask = mask["Value"]
-        if site in siteMask:
-            if printOutput:
-                gLogger.notice(f"Site {site} is already Banned")
-            return S_OK(f"Site {site} is already Banned")
 
         tokenLifetime = int(days)
         if tokenLifetime <= 0:
