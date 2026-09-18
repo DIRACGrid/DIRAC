@@ -1,3 +1,10 @@
+[v8.0.84]
+
+*Core
+
+CHANGE: (#8789) the conda-forge dirac-grid feedstock is updated automatically when a release is made
+FIX: (#8789) making release notes no longer fails when the reference tag is not one of the 100 most recent tags
+
 [v8.0.83]
 
 *Core
