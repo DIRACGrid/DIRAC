@@ -703,6 +703,10 @@ def jobIDPath():
 @pytest.fixture
 def setup_another_job_wrapper(mocker, jobIDPath):
     """Fixture to create a JobWrapper instance with the jobIDPath."""
+    # Reset the cache otherwise some tests don't pass
+    from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
+
+    resolveSEGroup.cache_clear()
     jw = JobWrapper(jobIDPath)
     jw.jobIDPath = Path(str(jobIDPath))
     jw.failedFlag = False

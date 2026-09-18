@@ -5,8 +5,9 @@ This module contains helper methods for accessing operational attributes or para
 
 from __future__ import annotations
 
-from cachetools import LRUCache, cachedmethod
+from cachetools import LRUCache, TTLCache, cached, cachedmethod
 from cachetools.keys import hashkey
+from collections.abc import Iterable
 
 from collections import defaultdict
 from threading import Lock
@@ -22,6 +23,14 @@ DOWNLOAD = PROTOCOL + 1
 sLog = gLogger.getSubLogger(__name__)
 
 
+def _resolveSEGroup_key(seGroupList: str, allSEs: Iterable[str] | None = None):
+    se_group_list_key = [seGroupList] if isinstance(seGroupList, str) else seGroupList
+    all_se_key = allSEs if allSEs else ()
+
+    return hashkey(tuple(sorted(se_group_list_key)), tuple(sorted(all_se_key)))
+
+
+@cached(LRUCache(maxsize=128), lock=Lock(), key=_resolveSEGroup_key)
 def resolveSEGroup(seGroupList, allSEs=None):
     """
     Resolves recursively a (list of) SEs that can be groupSEs
