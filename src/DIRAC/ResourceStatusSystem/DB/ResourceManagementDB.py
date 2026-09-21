@@ -278,7 +278,6 @@ class SpaceTokenOccupancyCache(rmsBase):
     __tablename__ = "SpaceTokenOccupancyCache"
     __table_args__ = {"mysql_engine": "InnoDB", "mysql_charset": "utf8mb4"}
 
-    endpoint = Column("Endpoint", String(128), nullable=False, primary_key=True)
     token = Column("Token", String(64), nullable=False, primary_key=True)
     guaranteed = Column("Guaranteed", Float(asdecimal=False), nullable=False, server_default="0")
     free = Column("Free", Float(asdecimal=False), nullable=False, server_default="0")
@@ -293,7 +292,6 @@ class SpaceTokenOccupancyCache(rmsBase):
         :type arguments: dict
         """
 
-        self.endpoint = dictionary.get("Endpoint", self.endpoint)
         self.token = dictionary.get("Token", self.token)
         self.guaranteed = dictionary.get("Guaranteed", self.guaranteed)
         self.free = dictionary.get("Free", self.free)
@@ -307,7 +305,7 @@ class SpaceTokenOccupancyCache(rmsBase):
 
     def toList(self):
         """Simply returns a list of column values"""
-        return [self.endpoint, self.token, self.guaranteed, self.free, self.total, self.lastchecktime]
+        return [self.token, self.guaranteed, self.free, self.total, self.lastchecktime]
 
 
 class TransferCache(rmsBase):
