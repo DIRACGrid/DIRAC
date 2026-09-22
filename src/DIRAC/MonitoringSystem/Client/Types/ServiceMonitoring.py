@@ -40,14 +40,14 @@ class ServiceMonitoring(BaseType):
                 "Status": {"type": "keyword"},
                 "Location": {"type": "keyword"},
                 "MemoryUsage": {"type": "long"},
-                "CpuPercentage": {"type": "long"},
+                "CpuPercentage": {"type": "float"},
                 "Connections": {"type": "long"},
                 "Queries": {"type": "long"},
                 "PendingQueries": {"type": "long"},
                 "ActiveQueries": {"type": "long"},
                 "RunningThreads": {"type": "long"},
                 "MaxFD": {"type": "long"},
-                "ResponseTime": {"type": "long"},
+                "ResponseTime": {"type": "float"},
             }
         )
 
