@@ -1,5 +1,6 @@
 """TaskQueueDB class is a front-end to the task queues db"""
 
+import hashlib
 import random
 import string
 from collections import defaultdict
@@ -69,6 +70,7 @@ class TaskQueueDB(DB):
         ]
         self.__maxMatchRetry = 3
         self.__maxInsertRetries = 10
+        self.__tqCreationLockTimeout = 10
         self.__jobPriorityBoundaries = (0.001, 10)
         self.__groupShares = {}
         self.__deleteTQWithDelay = DictCache(self.__deleteTQIfEmpty)
@@ -478,21 +480,37 @@ class TaskQueueDB(DB):
         # A TQ found (or created) here may be deleted by a concurrent cleanup before the
         # job lands in it; __insertJobInTaskQueue then reports it gone and we look again.
         for _ in range(self.__maxInsertRetries):
-            retVal = self.__findSmallestTaskQueue(tqDefDict, connObj=connObj)
-            if not retVal["OK"]:
-                return retVal
-            tqInfo = retVal["Value"]
-            newTQ = not tqInfo["found"]
-            if newTQ:
-                self.log.info("Creating a TQ for job", jobId)
-                retVal = self.__createTaskQueue(tqDefDict, 1, connObj=connObj)
+            creationLock = None
+            try:
+                retVal = self.__findSmallestTaskQueue(tqDefDict, connObj=connObj)
                 if not retVal["OK"]:
                     return retVal
-                tqId = retVal["Value"]
-            else:
-                tqId = tqInfo["tqId"]
-                self.log.info("Found TQ for job requirements", f"({tqId} : {jobId})")
-            result = self.__insertJobInTaskQueue(jobId, tqId, int(jobPriority), newTQ=newTQ, connObj=connObj)
+                tqInfo = retVal["Value"]
+                if not tqInfo["found"]:
+                    # Serialise creation for this requirement set: without this, every
+                    # thread inserting such a job before the first one commits creates
+                    # its own duplicate TQ (each triggering a share recalculation).
+                    creationLock = self.__acquireTQCreationLock(tqDefDict, connObj)
+                    if creationLock:
+                        retVal = self.__findSmallestTaskQueue(tqDefDict, connObj=connObj)
+                        if not retVal["OK"]:
+                            return retVal
+                        tqInfo = retVal["Value"]
+                newTQ = not tqInfo["found"]
+                if newTQ:
+                    self.log.info("Creating a TQ for job", jobId)
+                    retVal = self.__createTaskQueue(tqDefDict, 1, connObj=connObj)
+                    if not retVal["OK"]:
+                        return retVal
+                    tqId = retVal["Value"]
+                else:
+                    tqId = tqInfo["tqId"]
+                    self.log.info("Found TQ for job requirements", f"({tqId} : {jobId})")
+                result = self.__insertJobInTaskQueue(jobId, tqId, int(jobPriority), newTQ=newTQ, connObj=connObj)
+            finally:
+                # Only released once the job is committed, so that waiters can find the TQ
+                if creationLock:
+                    self._query("SELECT RELEASE_LOCK(%s)", args=(creationLock,), conn=connObj)
             if not result["OK"]:
                 self.log.error("Error inserting job in TQ", f"Job {jobId} TQ {tqId}: {result['Message']}")
                 if newTQ:
@@ -507,6 +525,29 @@ class TaskQueueDB(DB):
         if newTQ:
             self.recalculateTQSharesForEntity(tqDefDict["Owner"], tqDefDict["OwnerGroup"], connObj=connObj)
         return S_OK()
+
+    def __acquireTQCreationLock(self, tqDefDict, connObj):
+        """Take a MySQL named lock specific to this set of TQ requirements.
+
+        Best effort: if the lock cannot be obtained in time (or GET_LOCK is unavailable),
+        return None and let the caller create the TQ anyway, as before.
+
+        :returns: the lock name if acquired, None otherwise
+        """
+        canonical = []
+        for key in sorted(tqDefDict):
+            value = tqDefDict[key]
+            if isinstance(value, (list, tuple, set)):
+                value = sorted(str(v).strip() for v in value)
+            canonical.append((key, value))
+        digest = hashlib.sha1(repr(canonical).encode(), usedforsecurity=False).hexdigest()
+        # MySQL lock names are limited to 64 characters
+        lockName = f"TaskQueueDB.newTQ.{digest}"
+        result = self._query("SELECT GET_LOCK(%s, %s)", args=(lockName, self.__tqCreationLockTimeout), conn=connObj)
+        if result["OK"] and result["Value"] and result["Value"][0][0] == 1:
+            return lockName
+        self.log.warn("Could not get TQ creation lock, a duplicate TQ may be created", lockName)
+        return None
 
     def __insertJobInTaskQueue(self, jobId, tqId, jobPriority, newTQ=False, connObj=False):
         """Insert a job in a given task queue
