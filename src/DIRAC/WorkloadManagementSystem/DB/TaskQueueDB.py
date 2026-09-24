@@ -68,6 +68,7 @@ class TaskQueueDB(DB):
             int(12.5 * 86400),
         ]
         self.__maxMatchRetry = 3
+        self.__maxInsertRetries = 10
         self.__jobPriorityBoundaries = (0.001, 10)
         self.__groupShares = {}
         self.__deleteTQWithDelay = DictCache(self.__deleteTQIfEmpty)
@@ -440,23 +441,6 @@ class TaskQueueDB(DB):
                 return result
         return S_OK()
 
-    def __setTaskQueueEnabled(self, tqId, enabled=True, connObj=False):
-        if enabled:
-            enVal = "+1"
-        else:
-            enVal = "-1"
-        req = "UPDATE tq_TaskQueues "
-        req += f"SET Enabled=Enabled{enVal} "
-        req += "WHERE TQId=%s"
-        result = self._update(req, args=(tqId,), conn=connObj)
-        if not result["OK"]:
-            self.log.error("Error setting TQ state", f"TQ {tqId} State {enVal}: {result['Message']}")
-            return result
-        updated = result["Value"] > 0
-        if updated:
-            self.log.verbose("Set enabled for TQ", f"({enVal} for TQ {tqId})")
-        return S_OK(updated)
-
     def __hackJobPriority(self, jobPriority):
         jobPriority = min(max(int(jobPriority), self.__jobPriorityBoundaries[0]), self.__jobPriorityBoundaries[1])
         if jobPriority == self.__jobPriorityBoundaries[0]:
@@ -491,40 +475,54 @@ class TaskQueueDB(DB):
             tqDefDict = retVal["Value"]
         tqDefDict["CPUTime"] = self.fitCPUTimeToSegments(tqDefDict["CPUTime"])
         self.log.info("Inserting job with requirements", f"({jobId} : {printDict(tqDefDict)})")
-        retVal = self.__findAndDisableTaskQueue(tqDefDict, connObj=connObj)
-        if not retVal["OK"]:
-            return retVal
-        tqInfo = retVal["Value"]
-        newTQ = False
-        if not tqInfo["found"]:
-            self.log.info("Creating a TQ for job", jobId)
-            retVal = self.__createTaskQueue(tqDefDict, 1, connObj=connObj)
+        # A TQ found (or created) here may be deleted by a concurrent cleanup before the
+        # job lands in it; __insertJobInTaskQueue then reports it gone and we look again.
+        for _ in range(self.__maxInsertRetries):
+            retVal = self.__findSmallestTaskQueue(tqDefDict, connObj=connObj)
             if not retVal["OK"]:
                 return retVal
-            tqId = retVal["Value"]
-            newTQ = True
-        else:
-            tqId = tqInfo["tqId"]
-            self.log.info("Found TQ for job requirements", f"({tqId} : {jobId})")
-        try:
-            result = self.__insertJobInTaskQueue(jobId, tqId, int(jobPriority), checkTQExists=False, connObj=connObj)
+            tqInfo = retVal["Value"]
+            newTQ = not tqInfo["found"]
+            if newTQ:
+                self.log.info("Creating a TQ for job", jobId)
+                retVal = self.__createTaskQueue(tqDefDict, 1, connObj=connObj)
+                if not retVal["OK"]:
+                    return retVal
+                tqId = retVal["Value"]
+            else:
+                tqId = tqInfo["tqId"]
+                self.log.info("Found TQ for job requirements", f"({tqId} : {jobId})")
+            result = self.__insertJobInTaskQueue(jobId, tqId, int(jobPriority), newTQ=newTQ, connObj=connObj)
             if not result["OK"]:
                 self.log.error("Error inserting job in TQ", f"Job {jobId} TQ {tqId}: {result['Message']}")
+                if newTQ:
+                    # Make the (still empty) new TQ visible to the cleanup again
+                    self._update("UPDATE tq_TaskQueues SET Enabled=1 WHERE TQId=%s", args=(tqId,), conn=connObj)
                 return result
-            if newTQ:
-                self.recalculateTQSharesForEntity(tqDefDict["Owner"], tqDefDict["OwnerGroup"], connObj=connObj)
-        finally:
-            self.__setTaskQueueEnabled(tqId, True)
+            if result["Value"]:
+                break
+            self.log.verbose("TQ vanished before job could be inserted, retrying", f"TQ {tqId} Job {jobId}")
+        else:
+            return S_ERROR(f"Could not insert job {jobId}: task queues kept disappearing")
+        if newTQ:
+            self.recalculateTQSharesForEntity(tqDefDict["Owner"], tqDefDict["OwnerGroup"], connObj=connObj)
         return S_OK()
 
-    def __insertJobInTaskQueue(self, jobId, tqId, jobPriority, checkTQExists=True, connObj=False):
+    def __insertJobInTaskQueue(self, jobId, tqId, jobPriority, newTQ=False, connObj=False):
         """Insert a job in a given task queue
 
-        :param int jobId: job ID
-        :param dict tqDefDict: dict for TQ definition
-        :param int jobPriority: integer that defines the job priority
+        The TQ row is read with a *shared* lock in the same transaction as the insert.
+        Any number of inserters can hold it at once, but it blocks the exclusive lock
+        taken by :meth:`__deleteTaskQueueIfEmptyLocked`, so the TQ cannot be deleted
+        between finding it and adding the job. This replaces the former Enabled-1 /
+        Enabled+1 bracketing, which took two exclusive locks on the same row per job and
+        serialised every concurrent insertion into a popular TQ.
 
-        :returns: S_OK() / S_ERROR
+        :param int jobId: job ID
+        :param int tqId: task queue ID
+        :param int jobPriority: integer that defines the job priority
+        :param bool newTQ: the TQ was just created (Enabled=0) by the caller: publish it
+        :returns: S_OK(True) if inserted, S_OK(False) if the TQ no longer exists, or S_ERROR
         """
         self.log.info("Inserting job in TQ with priority", f"({jobId} : {tqId} : {jobPriority})")
         if not connObj:
@@ -532,20 +530,31 @@ class TaskQueueDB(DB):
             if not result["OK"]:
                 return S_ERROR(f"Can't insert job: {result['Message']}")
             connObj = result["Value"]
-        if checkTQExists:
-            req = "SELECT tqId FROM tq_TaskQueues WHERE TQId=%s"
-            result = self._query(req, args=(tqId,), conn=connObj)
-            if not result["OK"] or not result["Value"]:
-                return S_OK(f"Can't find task queue with id {tqId}: {result['Message']}")
         hackedPriority = self.__hackJobPriority(jobPriority)
-        req = "INSERT INTO tq_Jobs (TQId, JobId, Priority, RealPriority) "
-        req += "VALUES (%s,%s,%s,%s) ON DUPLICATE KEY "
-        req += "UPDATE TQId=%s, Priority=%s, RealPriority=%s"
-        args = (tqId, jobId, jobPriority, hackedPriority, tqId, jobPriority, hackedPriority)
-        result = self._update(req, args=args, conn=connObj)
-        if not result["OK"]:
-            return result
-        return S_OK()
+        try:
+            with self.__transaction(connObj):
+                req = "SELECT TQId FROM tq_TaskQueues WHERE TQId = %s LOCK IN SHARE MODE"
+                result = self._query(req, args=(tqId,), conn=connObj)
+                if not result["OK"]:
+                    raise _TQTransactionAbort(result)
+                if not result["Value"]:
+                    raise _TQTransactionAbort(S_OK(False))
+                req = "INSERT INTO tq_Jobs (TQId, JobId, Priority, RealPriority) "
+                req += "VALUES (%s,%s,%s,%s) ON DUPLICATE KEY "
+                req += "UPDATE TQId=%s, Priority=%s, RealPriority=%s"
+                args = (tqId, jobId, jobPriority, hackedPriority, tqId, jobPriority, hackedPriority)
+                result = self._update(req, args=args, conn=connObj)
+                if not result["OK"]:
+                    raise _TQTransactionAbort(result)
+                if newTQ:
+                    # Nobody else can see this TQ yet (it had no job), so this is uncontended
+                    req = "UPDATE tq_TaskQueues SET Enabled=1 WHERE TQId = %s"
+                    result = self._update(req, args=(tqId,), conn=connObj)
+                    if not result["OK"]:
+                        raise _TQTransactionAbort(result)
+        except _TQTransactionAbort as abort:
+            return abort.result
+        return S_OK(True)
 
     def __generateTQFindSQL(
         self,
@@ -614,26 +623,6 @@ class TaskQueueDB(DB):
         # END MAGIC: That was easy ;)
         whereSql = " AND ".join(sqlCondList)
         return S_OK((whereSql, condArgs))
-
-    def __findAndDisableTaskQueue(self, tqDefDict, retries=10, connObj=False):
-        """Disable and find TQ
-
-        :param dict tqDefDict: dict for TQ definition
-        :returns: S_OK() / S_ERROR
-        """
-        for _ in range(retries):
-            result = self.__findSmallestTaskQueue(tqDefDict, connObj=connObj)
-            if not result["OK"]:
-                return result
-            data = result["Value"]
-            if not data["found"]:
-                return result
-            if data["enabled"] < 1:
-                self.log.debug("TaskQueue {tqId} seems to be already disabled ({enabled})".format(**data))
-            result = self.__setTaskQueueEnabled(data["tqId"], False)
-            if result["OK"]:
-                return S_OK(data)
-        return S_ERROR("Could not disable TQ")
 
     def __findSmallestTaskQueue(self, tqDefDict, connObj=False):
         """
