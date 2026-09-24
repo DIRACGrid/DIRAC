@@ -367,57 +367,64 @@ class TaskQueueDB(DB):
         # Insert the TQ Disabled
         sqlSingleFields.append("Enabled")
         sqlValues.append("0")
-        req = "INSERT INTO tq_TaskQueues ("
-        req += ",".join(sqlSingleFields)
-        req += ") VALUES ("
-        req += ",".join(["%s"] * len(sqlValues))
-        req += ")"
-        result = self._update(req, args=sqlValues, conn=connObj)
-        if not result["OK"]:
-            self.log.error("Can't insert TQ in DB", result["Message"])
-            return result
-        if "lastRowId" in result:
-            tqId = result["lastRowId"]
-        else:
-            result = self._query("SELECT LAST_INSERT_ID()", conn=connObj)
-            if not result["OK"]:
-                self.cleanOrphanedTaskQueues(connObj=connObj)
-                return S_ERROR("Can't determine task queue id after insertion")
-            tqId = result["Value"][0][0]
-        for field in multiValueDefFields:
-            if field not in tqDefDict:
-                continue
-            values = {x.strip() for x in tqDefDict[field] if x.strip()}
-            if not values:
-                continue
-            req = "INSERT INTO "
-            req += f"tq_TQTo{field} "
-            req += "(TQId, Value) VALUES "
-            req += ",".join(["(%s,%s)"] * len(values))
-            args = []
-            for val in values:
-                args.append(tqId)
-                args.append(val)
-            result = self._update(req, args=args, conn=connObj)
-            if not result["OK"]:
-                self.log.error("Failed to insert condition", f"{field} : {result['Message']}")
-                self.cleanOrphanedTaskQueues(connObj=connObj)
-                return S_ERROR(f"Can't insert values {values} for field {field}: {result['Message']}")
-
-        # Insert RAM requirements if specified and not both zero
-        if "MinRAM" in tqDefDict or "MaxRAM" in tqDefDict:
-            minRAM = tqDefDict.get("MinRAM", 0)
-            maxRAM = tqDefDict.get("MaxRAM", 0)
-            # Only insert if at least one value is non-zero (optimization: avoid unnecessary rows)
-            if minRAM > 0 or maxRAM > 0:
-                req = "INSERT INTO tq_RAM_requirements "
-                req += "(TQId, MinRAM, MaxRAM) VALUES (%s,%s,%s)"
-                args = (tqId, minRAM, maxRAM)
-                result = self._update(req, args=args, conn=connObj)
+        # The TQ row and its requirement rows must become visible together: matching
+        # treats a TQ without tq_TQTo<Field> rows as "no restriction", so a TQ seen before
+        # its Sites/Platforms/... rows are committed could be matched by any pilot.
+        try:
+            with self.__transaction(connObj):
+                req = "INSERT INTO tq_TaskQueues ("
+                req += ",".join(sqlSingleFields)
+                req += ") VALUES ("
+                req += ",".join(["%s"] * len(sqlValues))
+                req += ")"
+                result = self._update(req, args=sqlValues, conn=connObj)
                 if not result["OK"]:
-                    self.log.error("Failed to insert RAM requirements", result["Message"])
-                    self.cleanOrphanedTaskQueues(connObj=connObj)
-                    return S_ERROR(f"Can't insert RAM requirements: {result['Message']}")
+                    self.log.error("Can't insert TQ in DB", result["Message"])
+                    raise _TQTransactionAbort(result)
+                if "lastRowId" in result:
+                    tqId = result["lastRowId"]
+                else:
+                    result = self._query("SELECT LAST_INSERT_ID()", conn=connObj)
+                    if not result["OK"]:
+                        raise _TQTransactionAbort(S_ERROR("Can't determine task queue id after insertion"))
+                    tqId = result["Value"][0][0]
+                for field in multiValueDefFields:
+                    if field not in tqDefDict:
+                        continue
+                    values = {x.strip() for x in tqDefDict[field] if x.strip()}
+                    if not values:
+                        continue
+                    req = "INSERT INTO "
+                    req += f"tq_TQTo{field} "
+                    req += "(TQId, Value) VALUES "
+                    req += ",".join(["(%s,%s)"] * len(values))
+                    args = []
+                    for val in values:
+                        args.append(tqId)
+                        args.append(val)
+                    result = self._update(req, args=args, conn=connObj)
+                    if not result["OK"]:
+                        self.log.error("Failed to insert condition", f"{field} : {result['Message']}")
+                        raise _TQTransactionAbort(
+                            S_ERROR(f"Can't insert values {values} for field {field}: {result['Message']}")
+                        )
+
+                # Insert RAM requirements if specified and not both zero
+                if "MinRAM" in tqDefDict or "MaxRAM" in tqDefDict:
+                    minRAM = tqDefDict.get("MinRAM", 0)
+                    maxRAM = tqDefDict.get("MaxRAM", 0)
+                    # Only insert if at least one value is non-zero (optimization: avoid unnecessary rows)
+                    if minRAM > 0 or maxRAM > 0:
+                        req = "INSERT INTO tq_RAM_requirements "
+                        req += "(TQId, MinRAM, MaxRAM) VALUES (%s,%s,%s)"
+                        args = (tqId, minRAM, maxRAM)
+                        result = self._update(req, args=args, conn=connObj)
+                        if not result["OK"]:
+                            self.log.error("Failed to insert RAM requirements", result["Message"])
+                            raise _TQTransactionAbort(S_ERROR(f"Can't insert RAM requirements: {result['Message']}"))
+        except _TQTransactionAbort as abort:
+            # Rolled back: no partial TQ is left behind, nothing to clean up
+            return abort.result
 
         self.log.info("Created TQ", tqId)
         return S_OK(tqId)
