@@ -31,10 +31,6 @@ from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
-#: Time during which the service does not accept new requests and handles those in the queue, if the backlog is too large
-#: This sleep is repeated for as long as Service.wantsThrottle is truthy
-THROTTLE_SERVICE_SLEEP_SECONDS = 0.25
-
 
 class ServiceReactor:
     __transportExtraKeywords = {
@@ -200,7 +196,6 @@ class ServiceReactor:
                                   services at the same time
         """
         sel = self.__getListeningSelector(svcName)
-        throttleExpires = None
         while self.__alive:
             clientTransport = None
             try:
@@ -224,16 +219,27 @@ class ServiceReactor:
                 gLogger.warn(f"Client connected from banned ip {clientIP}")
                 clientTransport.close()
                 continue
-            # Handle throttling
-            if self.__services[svcName].wantsThrottle and throttleExpires is None:
-                throttleExpires = time.time() + THROTTLE_SERVICE_SLEEP_SECONDS
-            if throttleExpires:
-                if time.time() > throttleExpires:
-                    throttleExpires = None
-                else:
-                    gLogger.warn("Rejecting client due to throttling", str(clientTransport.getRemoteAddress()))
+            # Handle throttling: reject all connections while overloaded
+            # to prevent queue growth when threads are stuck.
+            # wantsThrottle also handles state tracking and diagnostic logging.
+            svc = self.__services[svcName]
+            if svc.wantsThrottle:
+                # Check if throttle has exceeded the maximum allowed duration
+                maxThrottleDuration = svc.getConfig().getMaxThrottleDuration()
+                if maxThrottleDuration > 0 and svc.throttleDuration > maxThrottleDuration:
+                    diag = svc.throttleDiagnostics()
+                    gLogger.fatal(
+                        f"Service {svcName} stuck in throttle, initiating process restart",
+                        f"duration={svc.throttleDuration:.0f}s (limit: {maxThrottleDuration}s), "
+                        f"queue={diag['queue']}/{diag['maxQueue']}, "
+                        f"threads={diag['threads']}/{diag['maxThreads']}",
+                    )
                     clientTransport.close()
-                    continue
+                    self.__alive = False
+                    return
+                gLogger.warn("Rejecting client due to throttling", str(clientTransport.getRemoteAddress()))
+                clientTransport.close()
+                continue
             # Handle connection
             self.__stats.connectionStablished()
             self.__services[svcName].handleConnection(clientTransport)
