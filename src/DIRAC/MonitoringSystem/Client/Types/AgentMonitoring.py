@@ -34,8 +34,8 @@ class AgentMonitoring(BaseType):
                 "Status": {"type": "keyword"},
                 "Location": {"type": "keyword"},
                 "MemoryUsage": {"type": "long"},
-                "CpuPercentage": {"type": "long"},
-                "CycleDuration": {"type": "long"},
+                "CpuPercentage": {"type": "float"},
+                "CycleDuration": {"type": "float"},
             }
         )
 
