@@ -48,6 +48,9 @@ BRING_ONLINE_TIMEOUT = 259200
 # to the number of groups performing transfers
 IDP_CACHE_SIZE = 8
 
+# POC CHRIS Tape Tokens
+# Done following https://indico.cern.ch/event/1542060/contributions/6723217/
+
 
 _scitag_cache = TTLCache(maxsize=10, ttl=3600)
 _scitag_lock = Lock()
@@ -439,6 +442,10 @@ class FTS3Job(JSerializable):
         copy_pin_lifetime = None
         bring_online = None
         archive_timeout = None
+        ### POC CHRIS tape token
+        tape_token_src = None
+        tape_token_dst = None
+        ###
 
         transfers = []
 
@@ -462,6 +469,9 @@ class FTS3Job(JSerializable):
                 log.error("Could not get source SURL", f"{lfn} {reason}")
 
             allSrcDstSURLs = res["Value"]["Successful"]
+            ### POC CHRIS Tape token
+            common_lfns_prefix = os.path.commonprefix(list(allSrcDstSURLs))
+            ###
             srcProto, destProto = res["Value"]["Protocols"]
 
             # If the source is a tape SE, we should set the
@@ -472,13 +482,54 @@ class FTS3Job(JSerializable):
                 copy_pin_lifetime = pinTime
                 bring_online = srcSE.options.get("BringOnlineTimeout", BRING_ONLINE_TIMEOUT)
 
+                ### POC CHRIS Tape token
+                # Problem here: the grouping at FTS will not
+                # be efficient as it needs to group based on scope as well
+                # It is more optimal to keep "storage.stage:/" as scope
+                # The risk is that "stage" is a superset of "read", which
+                # is not a problem at the moment, but could be for
+                # communities like astrophysics
+                # See https://github.com/WLCG-AuthZ-WG/common-jwt-profile/blob/master/profile.md
+                if tokensEnabled and self.__seTokenSupport(srcSE):
+                    res = srcSE.getWLCGTokenPath(common_lfns_prefix)
+                    if not res["OK"]:
+                        return res
+                    tape_token_src_path = res["Value"]
+
+                    res = self._getIdpClient(self.userGroup).fetchToken(
+                        grant_type="client_credentials",
+                        scope=[f"storage.stage:/{tape_token_src_path}", f"storage.stat:/{tape_token_src_path}"],
+                        # TODO: add a specific audience
+                    )
+                    if not res["OK"]:
+                        return res
+                    tape_token_src = res["Value"]["access_token"]
+                ###
+
             # If the destination is a tape, and the protocol supports it,
             # check if we want to have an archive timeout
             # In case of multihop, this is relevant only for the
             # final target, but again, code factorization is more important
             dstIsTape = self.__isTapeSE(hopDstSEName, self.vo)
             if dstIsTape and destProto in dstSE.localStageProtocolList:
+                tape_token_src_path = res["Value"]
                 archive_timeout = dstSE.options.get("ArchiveTimeout")
+                ### POC CHRIS Tape token
+                if tokensEnabled and self.__seTokenSupport(dstSE):
+                    res = dstSE.getWLCGTokenPath(common_lfns_prefix)
+                    if not res["OK"]:
+                        return res
+                    tape_token_dst_path = res["Value"]
+
+                    res = self._getIdpClient(self.userGroup).fetchToken(
+                        grant_type="client_credentials",
+                        scope=[f"storage.stat:/{tape_token_dst_path}"],
+                        # TODO: add a specific audience
+                    )
+                    if not res["OK"]:
+                        return res
+                    tape_dst_src = res["Value"]["access_token"]
+                ###
 
             # This contains the staging URLs if they are different from the transfer URLs
             # (CTA...)
@@ -675,6 +726,10 @@ class FTS3Job(JSerializable):
             priority=self.priority,
             unmanaged_tokens=True,
             archive_timeout=archive_timeout,
+            ### POC Chris tape token
+            stage_access_token=tape_token_src_path,
+            tape_poll_access_token=tape_token_dst or tape_token_src_path,
+            ###
             **dest_spacetoken,
         )
 
