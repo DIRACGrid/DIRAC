@@ -31,11 +31,9 @@ from fts3.rest.client.request import Request as ftsSSLRequest
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.FrameworkSystem.Utilities.TokenManagementUtilities import getIdProviderClient
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnValueOrRaise
-from DIRAC.Core.Utilities.DErrno import cmpError
 
 from DIRAC.Core.Utilities.JEncode import JSerializable
 from DIRAC.Core.Utilities.TimeUtilities import DiracTime
@@ -327,31 +325,6 @@ class FTS3Job(JSerializable):
             return S_ERROR(f"Error canceling the job {e}")
 
     @staticmethod
-    def __fetchSpaceToken(seName, vo):
-        """Fetch the space token of storage element
-
-        :param seName: name of the storageElement
-        :param vo: vo of the job
-        :returns: space token. If there is no SpaceToken defined, returns None
-        """
-        seToken = None
-        if seName:
-            seObj = StorageElement(seName, vo=vo)
-
-            res = seObj.getStorageParameters(protocol="srm")
-            if not res["OK"]:
-                # If there is no SRM protocol, we do not specify
-                # the space token
-                if cmpError(res, errno.ENOPROTOOPT):
-                    return S_OK(None)
-
-                return res
-
-            seToken = res["Value"].get("SpaceToken")
-
-        return S_OK(seToken)
-
-    @staticmethod
     def __isTapeSE(seName, vo):
         """Check whether a given SE is a tape storage
 
@@ -428,11 +401,6 @@ class FTS3Job(JSerializable):
             allHops = [(self.sourceSE, self.targetSE)]
 
         nbOfHops = len(allHops)
-
-        res = self.__fetchSpaceToken(self.sourceSE, self.vo)
-        if not res["OK"]:
-            return res
-        source_spacetoken = res["Value"]
 
         failedLFNs = set()
 
@@ -665,7 +633,7 @@ class FTS3Job(JSerializable):
             transfers=transfers,
             overwrite=True,
             disable_cleanup=True,
-            source_spacetoken=source_spacetoken,
+            source_spacetoken=None,
             bring_online=bring_online,
             copy_pin_lifetime=copy_pin_lifetime,
             retry=3,
@@ -809,7 +777,7 @@ class FTS3Job(JSerializable):
             transfers=transfers,
             overwrite=True,
             disable_cleanup=True,
-            source_spacetoken=target_spacetoken,
+            source_spacetoken=None,
             bring_online=bring_online,
             copy_pin_lifetime=copy_pin_lifetime,
             retry=3,
@@ -853,23 +821,16 @@ class FTS3Job(JSerializable):
         log = gLogger.getLocalSubLogger(f"submit/{self.operationID}/{self.sourceSE}_{self.targetSE}")
 
         # Construct the target SURL
-        res = self.__fetchSpaceToken(self.targetSE, self.vo)
-        if not res["OK"]:
-            return res
-        target_spacetoken = res["Value"]
-
         allLFNs = [ftsFile.lfn for ftsFile in self.filesToSubmit]
 
         if self.type == "Transfer":
             res = self._constructTransferJob(
-                pinTime, allLFNs, target_spacetoken, protocols=protocols, tokensEnabled=bool(fts_access_token)
+                pinTime, allLFNs, None, protocols=protocols, tokensEnabled=bool(fts_access_token)
             )
-
         elif self.type == "Staging":
-            res = self._constructStagingJob(pinTime, allLFNs, target_spacetoken)
-        # elif self.type == 'Removal':
-        #   res = self._constructRemovalJob(context, allLFNs, failedLFNs, target_spacetoken)
-
+            res = self._constructStagingJob(pinTime, allLFNs, None)
+        else:
+            return S_ERROR("Unknown type")
         if not res["OK"]:
             return res
 
