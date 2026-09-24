@@ -129,31 +129,64 @@ def sourceEnv(timeout, cmdTuple, inputEnv=None):
     return result
 
 
+def _callWithTimeout(call, timeout):
+    """Run ``call()`` in a daemon thread, giving up after ``timeout`` seconds.
+
+    Lazily loaded File Systems like CVMFS can block a single stat() or readdir()
+    for minutes, and the blocking call cannot be interrupted. The thread is
+    therefore abandoned rather than joined, so that an unresponsive mount delays
+    the caller by at most ``timeout``.
+
+    :param call: zero-argument callable to run
+    :param int timeout: timeout, in seconds
+    :returns: whatever ``call()`` returned, or ``None`` if it did not finish in time
+    """
+    result = []
+    t = threading.Thread(target=lambda: result.append(call()))
+    t.daemon = True  # don't delay program's exit
+    t.start()
+    t.join(timeout)
+    if t.is_alive():
+        return None  # timeout
+    return result[0] if result else None
+
+
 def safe_listdir(directory, timeout=60):
     """This is a "safe" list directory,
     for lazily-loaded File Systems like CVMFS.
     There's by default a 60 seconds timeout.
 
     .. warning::
-        There is no distinction between an empty directory, and a non existent one.
-        It will return `[]` in both cases.
+        There is no distinction between an empty directory, and one that cannot
+        be listed (absent, or not readable). It will return `[]` in both cases.
 
     :param str directory: directory to list
     :param int timeout: optional timeout, in seconds. Defaults to 60.
+    :returns: the directory contents, or ``None`` if the listing timed out
     """
 
-    def listdir(directory):
+    def listdir():
         try:
             return os.listdir(directory)
-        except FileNotFoundError:
-            print(f"{directory} not found")
+        except OSError:
+            # Absent, not readable, ... : as documented, indistinguishable from empty.
+            # Only a timeout is reported differently, since it says nothing either way.
             return []
 
-    contents = []
-    t = threading.Thread(target=lambda: contents.extend(listdir(directory)))
-    t.daemon = True  # don't delay program's exit
-    t.start()
-    t.join(timeout)
-    if t.is_alive():
-        return None  # timeout
-    return contents
+    return _callWithTimeout(listdir, timeout)
+
+
+def safe_exists(path, timeout=60):
+    """This is a "safe" existence check,
+    for lazily-loaded File Systems like CVMFS.
+    There's by default a 60 seconds timeout.
+
+    Unlike :func:`safe_listdir`, it makes no distinction between files and
+    directories: it answers the same question as :func:`os.path.exists`, which
+    reports a missing or unreadable path as ``False`` rather than raising.
+
+    :param str path: path to check
+    :param int timeout: optional timeout, in seconds. Defaults to 60.
+    :returns: ``True``/``False``, or ``None`` if the check timed out
+    """
+    return _callWithTimeout(lambda: os.path.exists(path), timeout)
