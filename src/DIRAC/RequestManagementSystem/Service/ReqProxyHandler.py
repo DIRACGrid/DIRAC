@@ -164,12 +164,17 @@ class ReqProxyHandler(RequestHandler):
         if not isAuthorized:
             return S_ERROR(DErrno.ENOAUTH, "Credentials in the requests are not allowed")
 
+        # The setAndCheckRequestOwner call may have updated the owner details in the request object
+        # We need to copy those values back to the source dict so that those values are saved
+        requestDict["Owner"] = request.Owner
+        requestDict["OwnerGroup"] = request.OwnerGroup
+
         forwardable = self.__forwardable(requestDict)
         if not forwardable["OK"]:
             gLogger.warn("putRequest: ", f"{forwardable['Message']}")
 
         # # put request to the request file cache
-        save = self.__saveRequest(requestName, requestJSON)
+        save = self.__saveRequest(requestName, json.dumps(requestDict))
         if not save["OK"]:
             gLogger.error("setRequest: unable to save request to the cache", save["Message"])
             return save
