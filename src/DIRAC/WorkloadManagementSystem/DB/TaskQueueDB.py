@@ -3,6 +3,7 @@
 import random
 import string
 from collections import defaultdict
+from contextlib import contextmanager
 from typing import Any
 
 from DIRAC import S_ERROR, S_OK, gConfig
@@ -29,6 +30,14 @@ multiValueMatchFields = ("GridCE", "Site", "Platform", "JobType", "Tag")
 bannedJobMatchFields = ("Site",)
 mandatoryMatchFields = ("CPUTime",)
 priorityIgnoredFields = ("Sites", "BannedSites", "MinRAM", "MaxRAM")
+
+
+class _TQTransactionAbort(Exception):
+    """Internal: abort a TaskQueueDB transaction, carrying the S_OK/S_ERROR to return"""
+
+    def __init__(self, result):
+        super().__init__(result.get("Message", ""))
+        self.result = result
 
 
 def _lowerAndRemovePunctuation(s):
@@ -79,6 +88,70 @@ class TaskQueueDB(DB):
     def enableAllTaskQueues(self):
         """Enable all Task queues"""
         return self.updateFields("tq_TaskQueues", updateDict={"Enabled": "1"})
+
+    @contextmanager
+    def __transaction(self, connObj):
+        """Run the enclosed statements in an explicit transaction on ``connObj``.
+
+        Connections are cached per thread and run with ``AUTOCOMMIT=1``, so a transaction
+        left open would silently swallow every later statement issued by this thread.
+        The block must therefore always end with COMMIT or ROLLBACK: it is rolled back
+        on any exception, and the caller signals an S_ERROR/abort by raising
+        :class:`_TQTransactionAbort` (the return value is carried in the exception).
+        """
+        result = self._update("START TRANSACTION", conn=connObj)
+        if not result["OK"]:
+            raise _TQTransactionAbort(result)
+        try:
+            yield
+        except BaseException:
+            self._update("ROLLBACK", conn=connObj)
+            raise
+        result = self._update("COMMIT", conn=connObj)
+        if not result["OK"]:
+            self._update("ROLLBACK", conn=connObj)
+            raise _TQTransactionAbort(result)
+
+    def __deleteTaskQueueIfEmptyLocked(self, tqId, connObj):
+        """Atomically delete a task queue and its requirement rows if it holds no job.
+
+        The TQ row is locked FOR UPDATE first. Inserting a job into ``tq_Jobs`` needs a
+        shared lock on the parent TQ row (explicitly in :meth:`insertJob`, and implicitly
+        through the foreign key check), so once we hold the exclusive lock no job can be
+        added until we commit or roll back. Everything happens in one transaction: if any
+        step fails the requirement rows are restored. Previously the ``tq_TQTo*`` rows were
+        deleted in autocommit mode *before* the parent row, so a job inserted in between
+        left a TQ that still had jobs but no Sites/Platforms/... restrictions, which could
+        then be matched by any pilot.
+
+        :returns: S_OK(True) if deleted, S_OK(False) if not (non-empty, gone, or disabled)
+        """
+        try:
+            with self.__transaction(connObj):
+                req = "SELECT TQId FROM tq_TaskQueues WHERE TQId = %s AND Enabled >= 1 FOR UPDATE"
+                result = self._query(req, args=(tqId,), conn=connObj)
+                if not result["OK"]:
+                    raise _TQTransactionAbort(result)
+                if not result["Value"]:
+                    raise _TQTransactionAbort(S_OK(False))
+                # Current (locking) read: must see jobs committed after our snapshot
+                req = "SELECT JobId FROM tq_Jobs WHERE TQId = %s LIMIT 1 LOCK IN SHARE MODE"
+                result = self._query(req, args=(tqId,), conn=connObj)
+                if not result["OK"]:
+                    raise _TQTransactionAbort(result)
+                if result["Value"]:
+                    raise _TQTransactionAbort(S_OK(False))
+                for table in [f"tq_TQTo{mvField}" for mvField in multiValueDefFields] + [
+                    "tq_RAM_requirements",
+                    "tq_TaskQueues",
+                ]:
+                    req = f"DELETE FROM {table} WHERE TQId = %s"  # nosec B608: table names are constants
+                    result = self._update(req, args=(tqId,), conn=connObj)
+                    if not result["OK"]:
+                        raise _TQTransactionAbort(result)
+        except _TQTransactionAbort as abort:
+            return abort.result
+        return S_OK(True)
 
     def findOrphanJobs(self):
         """Find jobs that are not in any task queue"""
@@ -351,26 +424,18 @@ class TaskQueueDB(DB):
         Delete all empty task queues
         """
         self.log.info("Cleaning orphaned TQs")
+        if not connObj:
+            result = self._getConnection()
+            if not result["OK"]:
+                return result
+            connObj = result["Value"]
         req = "SELECT TQId FROM tq_TaskQueues WHERE Enabled >= 1 AND TQId NOT IN (SELECT DISTINCT TQId FROM tq_Jobs)"
         result = self._query(req, conn=connObj)
         if not result["OK"]:
             return result
-        orphanedTQs = result["Value"]
-        if not orphanedTQs:
-            return S_OK()
-        orphanedTQs = [str(otq[0]) for otq in orphanedTQs]
-
-        cleanTables = []
-        cleanTables.extend([f"tq_TQTo{x}" for x in multiValueDefFields])
-        cleanTables.append("tq_RAM_requirements")
-        cleanTables.append("tq_TaskQueues")
-        for table in cleanTables:
-            req = "DELETE FROM "
-            req += table
-            req += " WHERE TQId IN ("
-            req += ",".join(["%s"] * len(orphanedTQs))
-            req += ")"
-            result = self._update(req, args=orphanedTQs, conn=connObj)
+        # The selection above is only a hint: each candidate is re-checked under lock
+        for (tqId,) in result["Value"]:
+            result = self.__deleteTaskQueueIfEmptyLocked(tqId, connObj)
             if not result["OK"]:
                 return result
         return S_OK()
@@ -1154,27 +1219,15 @@ class TaskQueueDB(DB):
         tqToDel = retVal["Value"]
 
         if tqToDel:
-            for mvField in multiValueDefFields:
-                req = "DELETE FROM "
-                req += f"tq_TQTo{mvField} "
-                req += " WHERE TQId = %s"
-                retVal = self._update(req, args=(tqId,), conn=connObj)
-                if not retVal["OK"]:
-                    return retVal
-
-            # Delete RAM requirements if they exist
-            req = "DELETE FROM tq_RAM_requirements WHERE TQId = %s"
-            retVal = self._update(req, args=(tqId,), conn=connObj)
+            # The query above is a cheap, non-locking pre-check so that busy TQs are not
+            # X-locked on every job deletion; the real decision is taken under lock.
+            retVal = self.__deleteTaskQueueIfEmptyLocked(tqId, connObj)
             if not retVal["OK"]:
                 return retVal
-
-            req = "DELETE FROM tq_TaskQueues WHERE TQId = %s"
-            retVal = self._update(req, args=(tqId,), conn=connObj)
-            if not retVal["OK"]:
-                return retVal
-            self.recalculateTQSharesForEntity(tqOwner, tqOwnerGroup, connObj=connObj)
-            self.log.info("Deleted empty and enabled TQ", tqId)
-            return S_OK()
+            if retVal["Value"]:
+                self.recalculateTQSharesForEntity(tqOwner, tqOwnerGroup, connObj=connObj)
+                self.log.info("Deleted empty and enabled TQ", tqId)
+                return S_OK()
         return S_OK(False)
 
     def getMatchingTaskQueues(self, tqMatchDict, negativeCond=False):
