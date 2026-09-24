@@ -1278,38 +1278,48 @@ class TaskQueueDB(DB):
         """
         Get all the task queues
         """
-        sqlSelectEntries = ["tq_TaskQueues.TQId", "tq_TaskQueues.Priority", "COUNT(tq_Jobs.TQId)"]
-        sqlGroupEntries = ["tq_TaskQueues.TQId", "tq_TaskQueues.Priority"]
-        for field in singleValueDefFields:
-            sqlSelectEntries.append(f"tq_TaskQueues.{field}")
-            sqlGroupEntries.append(f"tq_TaskQueues.{field}")
-        req = "SELECT "
-        req += ",".join(sqlSelectEntries)
-        req += " FROM tq_TaskQueues, tq_Jobs"
-        sqlTQCond = ""
+        # Counting the jobs and reading the task queue definitions used to be a single
+        # join with a GROUP BY on the tq_TaskQueues columns. MySQL cannot satisfy that
+        # grouping from an index, so it materialises every joined tq_Jobs row in a
+        # temporary table: with ~1M jobs that costs seconds once a resource matches a few
+        # dozen task queues. Counting on tq_Jobs alone is a covering index range scan.
+        req = "SELECT TQId, COUNT(*) FROM tq_Jobs"
         args = []
         if tqIdList is not None:
             if not tqIdList:
                 # Empty list => Fast-track no matches
                 return S_OK({})
-            else:
-                sqlTQCond += " AND tq_TaskQueues.TQId IN ("
-                sqlTQCond += ",".join(["%s"] * len(tqIdList))
-                sqlTQCond += ")"
-                args.extend(tqIdList)
-        req += " WHERE tq_TaskQueues.TQId = tq_Jobs.TQId "
-        req += sqlTQCond
-        req += " GROUP BY "
-        req += ",".join(sqlGroupEntries)
+            req += " WHERE TQId IN ("
+            req += ",".join(["%s"] * len(tqIdList))
+            req += ")"
+            args.extend(tqIdList)
+        req += " GROUP BY TQId"
         retVal = self._query(req, args=args)
+        if not retVal["OK"]:
+            self.log.error("Can't retrieve task queue job counts", retVal["Message"])
+            return retVal
+        jobCounts = dict(retVal["Value"])
+        if not jobCounts:
+            # As with the previous inner join, task queues without jobs are not returned
+            return S_OK({})
+
+        sqlSelectEntries = ["TQId", "Priority"]
+        for field in singleValueDefFields:
+            sqlSelectEntries.append(field)
+        req = "SELECT "
+        req += ",".join(sqlSelectEntries)
+        req += " FROM tq_TaskQueues WHERE TQId IN ("
+        req += ",".join(["%s"] * len(jobCounts))
+        req += ")"
+        retVal = self._query(req, args=list(jobCounts))
         if not retVal["OK"]:
             self.log.error("Can't retrieve task queues info", retVal["Message"])
             return retVal
         tqData = {}
         for record in retVal["Value"]:
             tqId = record[0]
-            tqData[tqId] = {"Priority": record[1], "Jobs": record[2]}
-            record = record[3:]
+            tqData[tqId] = {"Priority": record[1], "Jobs": jobCounts[tqId]}
+            record = record[2:]
             for iP, _ in enumerate(singleValueDefFields):
                 tqData[tqId][singleValueDefFields[iP]] = record[iP]
 
@@ -1317,7 +1327,15 @@ class TaskQueueDB(DB):
         for field in multiValueDefFields:
             req = "SELECT TQId, Value FROM "
             req += f"tq_TQTo{field}"
-            retVal = self._query(req)
+            args = []
+            if tqIdList is not None:
+                # As for the RAM requirements below: only the requested task queues are
+                # needed, there is no point in reading the whole table and filtering here
+                req += " WHERE TQId IN ("
+                req += ",".join(["%s"] * len(tqIdList))
+                req += ")"
+                args.extend(tqIdList)
+            retVal = self._query(req, args=args)
             if not retVal["OK"]:
                 self.log.error("Can't retrieve task queues field", f"{field} info: {retVal['Message']}")
                 return retVal
