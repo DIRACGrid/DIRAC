@@ -4,7 +4,6 @@ This is a DIRAC WMS administrator interface.
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.MonitoringSystem.Client.WebAppClient import WebAppClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
@@ -30,116 +29,6 @@ class WMSAdministratorHandlerMixin:
         cls.pilotManager = PilotManagerClient()
         cls.web_app_manager = WebAppClient()
 
-        return S_OK()
-
-    @deprecated("no-op RPC")
-    def export_setSiteMask(self, siteList):
-        """Set the site mask for matching. The mask is given in a form of Classad string.
-
-        :param list siteList: site, status
-        :return: S_OK()/S_ERROR()
-        """
-        return S_OK()
-
-    ##############################################################################
-    types_getSiteMask = []
-
-    @classmethod
-    @deprecated("no-op RPC")
-    def export_getSiteMask(cls, siteState="Active"):
-        """Get the site mask
-
-        :param str siteState: site status
-        :return: S_OK(list)/S_ERROR()
-        """
-        return S_OK()
-
-    types_getSiteMaskStatus = []
-
-    @classmethod
-    @deprecated("no-op RPC")
-    def export_getSiteMaskStatus(cls, sites=None):
-        """Get the site mask of given site(s) with columns 'site' and 'status' only
-
-        :param sites: list of sites or site
-        :type sites: list or str
-        :return: S_OK()/S_ERROR() -- S_OK contain dict or str
-        """
-        return S_OK()
-
-    ##############################################################################
-    types_getAllSiteMaskStatus = []
-
-    @classmethod
-    @deprecated("no-op RPC")
-    def export_getAllSiteMaskStatus(cls):
-        """Get all the site parameters in the site mask
-
-        :return: dict
-        """
-        return S_OK()
-
-    ##############################################################################
-    types_banSite = [str]
-
-    @deprecated("no-op RPC")
-    def export_banSite(self, site, comment="No comment"):
-        """Ban the given site in the site mask
-
-        :param str site: site
-        :param str comment: comment
-        :return: S_OK()/S_ERROR()
-        """
-        return S_OK()
-
-    ##############################################################################
-    types_allowSite = [str]
-
-    @deprecated("no-op RPC")
-    def export_allowSite(self, site, comment="No comment"):
-        """Allow the given site in the site mask
-
-        :param str site: site
-        :param str comment: comment
-        :return: S_OK()/S_ERROR()
-        """
-        return S_OK()
-
-    ##############################################################################
-    types_clearMask = []
-
-    @classmethod
-    @deprecated("no-op RPC")
-    def export_clearMask(cls):
-        """Clear up the entire site mask
-
-        :return: S_OK()/S_ERROR()
-        """
-        return S_OK()
-
-    ##############################################################################
-    types_getSiteMaskLogging = [[str, list]]
-
-    @classmethod
-    @deprecated("no-op RPC")
-    def export_getSiteMaskLogging(cls, sites):
-        """Get the site mask logging history
-
-        :param list sites: sites
-        :return: S_OK(dict)/S_ERROR()
-        """
-        return S_OK()
-
-    ##############################################################################
-    types_getSiteMaskSummary = []
-
-    @classmethod
-    @deprecated("no-op RPC")
-    def export_getSiteMaskSummary(cls):
-        """Get the mask status for all the configured sites
-
-        :return: S_OK(dict)/S_ERROR()
-        """
         return S_OK()
 
     ##############################################################################
