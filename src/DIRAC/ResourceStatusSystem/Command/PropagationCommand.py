@@ -19,31 +19,36 @@ class PropagationCommand(Command):
         return S_OK()
 
     def doCache(self):
-        if not self.args["name"]:
-            return S_ERROR("site was not found in args")
+        if not self.args.get("name"):
+            return S_OK({"Status": "Unknown", "Reason": "No name provided for propagation check"})
 
         site = self.args["name"]
 
         elements = CSHelpers.getSiteElements(site)
+        if not elements["OK"]:
+            return S_OK({"Status": "Unknown", "Reason": f"Could not get site elements: {elements['Message']}"})
 
         statusList = []
 
-        if elements["OK"]:
-            for element in elements["Value"]:
-                status = self.rssClient.selectStatusElement("Resource", "Status", element, meta={"columns": ["Status"]})
-                if not status["OK"]:
-                    return status
+        for element in elements["Value"]:
+            status = self.rssClient.selectStatusElement("Resource", "Status", element, meta={"columns": ["Status"]})
+            if not status["OK"]:
+                self.log.warn(f"Could not get status for {element}: {status['Message']}")
+                continue
 
-                if status["Value"]:
-                    statusList.append(status["Value"][0][0])
-                else:  # forcing in the case the resource has no status (yet)
-                    statusList.append("Active")
+            if status["Value"]:
+                statusList.append(status["Value"][0][0])
+            else:  # forcing in the case the resource has no status (yet)
+                statusList.append("Active")
 
-            if "Active" in statusList:
-                return S_OK({"Status": "Active", "Reason": "An element that belongs to the site is Active"})
+        if not statusList:
+            return S_OK({"Status": "Unknown", "Reason": "No elements found or all queries failed"})
 
-            if "Degraded" in statusList:
-                return S_OK({"Status": "Degraded", "Reason": "An element that belongs to the site is Degraded"})
+        if "Active" in statusList:
+            return S_OK({"Status": "Active", "Reason": "An element that belongs to the site is Active"})
+
+        if "Degraded" in statusList:
+            return S_OK({"Status": "Degraded", "Reason": "An element that belongs to the site is Degraded"})
 
         return S_OK({"Status": "Banned", "Reason": "There is no Active element in the site"})
 
