@@ -21,14 +21,14 @@ Already described in :ref:`config section <config section>`.
 Policies
 --------
 
-This section describes the policies and the conditions to match elements.
+This section describes the policies, and to which elements such policies are applied.
 
 ::
 
   /Operations/Defaults/ResourceStatus
                           /Policies
                               /PolicyName
-                                  policyType = policyType
+                                  policyType = nameOfPolicyType
                                   doNotCombineResult = something
                                   /matchParams
                                       element = element
@@ -42,10 +42,10 @@ This section describes the policies and the conditions to match elements.
 
 This is the complete definition of a policy. Let's go one by one.
 
-* PolicyName         : this must be a human readable name explaining what the policy is doing ( mandatory ).
-* policyType         : is the name of the policy we want to run as defined in DIRAC.ResourceStatusSystem.Policy.Configurations ( mandatory ).
-* doNotCombineResult : if this option is present, the status will not be merged with the rest of statuses ( but actions on this policy will apply ).
-* matchParams        : is the dictionary containing the policy metadata used by :ref:`Info Getter <info getter>` to match policies. Any of them can be a CSV.
+* PolicyName         : this must be a human readable name explaining what the policy is doing (mandatory).
+* policyType         : is the name of the policy we want to run as defined in DIRAC.ResourceStatusSystem.Policy.Configurations (mandatory). Possible policy names: "Downtime", "FreeDiskSpace", "JobEfficiency", "PilotEfficiency", "AlwaysBanned", "AlwaysActive", "AlwaysProbing", "AlwaysDegraded", "Propagation", "JobDoneRatio", "JobRunningWaitingRatio", "JobRunningMatchedRatio"
+* doNotCombineResult : if this option is present, the status will not be merged with the rest of statuses (but actions on this policy will apply).
+* matchParams        : This section defines to which elements the policy is applied. It is used by :ref:`Info Getter <info getter>` to match policies.
 
 .. note :: Remember, declare ONLY the parameters in match params that want to be taken into account.
 
@@ -65,6 +65,111 @@ we cannot define the following matchParams:
 .. seealso::
 
    Code templates and examples for creating custom policies: :doc:`../../../DeveloperGuide/Systems/ResourceStatus/index`
+
+
+The Downtime and FreeDiskSpace policies have some configurable parameters.
+
+Built-in Downtime Policy
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``Downtime`` policy type evaluates `GOC DB <https://goc.egi.eu/>`__ downtime data for a Site or Resource.
+Severity is mapped to RSS status as follows:
+
+* **OUTAGE** → **Banned**
+* **WARNING** → **Degraded**
+* No downtime → **Active**
+
+The look-ahead window is configurable from the Operations CS:
+
+::
+
+  /Operations/Defaults/ResourceStatus
+                          /Policies
+                              /Downtime
+                                  hours = 0   # hours to look ahead (0 = ongoing only, default)
+
+.. note::
+
+   Setting ``hours = 0`` (the default) means only downtimes that are currently ongoing
+   are considered. Setting a positive value (e.g. ``12``) also catches downtimes scheduled
+   to start within that window, which is useful for proactive status changes.
+
+   This section has no ``policyType`` key and is therefore treated purely as
+   command-argument defaults, not as a policy definition.
+
+Example: flag elements with downtimes starting within the next 24 hours::
+
+  /Operations/Defaults/ResourceStatus/Policies/Downtime
+  {
+    hours = 24
+  }
+
+
+Example: setting 2 downtime policies:
+
+::
+
+  /Operations/Defaults/ResourceStatus
+                          /Policies
+                              /OngoingDowntime
+                                  policyType = Downtime
+                                  hours = 0   # hours to look ahead (0 = ongoing only, default)
+                                  /matchParams
+                                      element = Site
+                              /Downtime12
+                                  policyType = Downtime
+                                  hours = 12
+                                  /matchParams
+                                      element = Resource
+
+
+
+Built-in FreeDiskSpace Policy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``FreeDiskSpace`` policy type monitors Storage Element occupancy.
+It compares the free space reported by the SE against the following:
+
+* If free space is below ``Banned_threshold``, or if the fraction of free space (free/total) is below ``Banned_fraction``, the SE is set to **Banned**.
+* If free space is below ``Degraded_threshold`` (but above ``Banned_threshold``), or if the fraction of free space is below ``Degraded_fraction`` (but above ``Banned_fraction``), the SE is set to **Degraded**.
+* Otherwise the SE is set to **Active**.
+
+The SE is set to Banned or Degraded if **EITHER** the absolute threshold **OR** the fraction threshold is exceeded.
+
+All five parameters — unit, thresholds, and fractions — are fully configurable
+from the Operations CS and fall back to safe defaults:
+
+::
+
+  /Operations/Defaults/ResourceStatus
+                          /Policies
+                              /FreeDiskSpace
+                                  Unit               = TB     # unit for the SE occupancy query  used for Banned_threshold and Degraded_threshold (TB, GB or MB)
+                                  Banned_threshold   = 0.1    # in the chosen unit (default)
+                                  Degraded_threshold = 5      # in the chosen unit (default)
+                                  Banned_fraction    = 0.01   # fraction of total space (default: 1%)
+                                  Degraded_fraction  = 0.05   # fraction of total space (default: 5%)
+
+.. note::
+
+   These keys live under ``/Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace``,
+   not under the ``/matchParams`` sub-section.  They tune the **command arguments**, not the
+   element-matching logic. This section has no ``policyType`` key and is therefore not treated
+   as a policy definition by the policy engine.
+
+   The default values of ``0.1`` and ``5`` are always used as fallback regardless of unit.
+   Make sure to set meaningful threshold values explicitly in the CS when changing the unit.
+
+Example: use GB with tighter thresholds::
+
+  /Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace
+  {
+    Unit               = GB
+    Banned_threshold   = 100
+    Degraded_threshold = 5000
+    Banned_fraction    = 0.02
+    Degraded_fraction  = 0.10
+  }
 
 -------------
 PolicyActions
