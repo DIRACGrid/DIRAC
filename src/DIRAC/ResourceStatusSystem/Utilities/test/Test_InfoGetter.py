@@ -113,8 +113,8 @@ def test_cs_error_is_propagated(_mock):
     [
         pytest.param(
             _SE1_WRITEACCESS,
+            ["SpecificFreeDiskSpace"],
             ["FreeDiskSpace"],
-            [],
             id="command-args-section-uses-name-as-policytype",
         ),
         pytest.param(
@@ -164,12 +164,12 @@ def test_unknown_policytype_in_policiesmeta_is_skipped():
 
 @patch(_GET_POLICIES, return_value=S_OK(_BASE_POLICIES))
 def test_se2_gets_default_args(_mock):
-    """SE2 matches only SEWriteAccessFreeDiskSpace → gets POLICIESMETA default args."""
+    """SE2 matches FreeDiskSpace (with defaults) → gets POLICIESMETA default args."""
     result = getPoliciesThatApply(_SE2_WRITEACCESS)
     assert result["OK"]
     assert len(result["Value"]) == 1
     args = result["Value"][0]["args"]
-    assert result["Value"][0]["name"] == "SEWriteAccessFreeDiskSpace"
+    assert result["Value"][0]["name"] == "FreeDiskSpace"
     assert args["unit"] == "TB"
     assert args["Banned_threshold"] == 0.1
     assert args["Degraded_threshold"] == 5
