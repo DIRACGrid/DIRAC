@@ -110,7 +110,8 @@ class DowntimeCommand(Command):
             result = self.rmClient.selectDowntimeCache(element=element, name=elementName)
 
             if not result["OK"]:
-                return result
+                self.log.warn(f"Could not query downtime cache for {elementName}: {result['Message']}")
+                continue
 
             uniformResult = [dict(zip(result["Columns"], res)) for res in result["Value"]]
 
@@ -122,7 +123,8 @@ class DowntimeCommand(Command):
             # get the list of all ongoing DTs from GocDB
             gDTLinkList = self.gClient.getCurrentDTLinkList()
             if not gDTLinkList["OK"]:
-                return gDTLinkList
+                self.log.warn(f"Could not get current DT list from GocDB: {gDTLinkList['Message']}")
+                continue
 
             for dt in uniformResult:
                 # if DT expired or DT not in the list of current DTs, then we remove it from the cache
@@ -272,7 +274,8 @@ class DowntimeCommand(Command):
         else:
             params = self._prepareCommand()
             if not params["OK"]:
-                return params
+                self.log.warn(f"Could not prepare downtime command: {params['Message']}")
+                return S_OK(None)
             element, elementName, hours, gOCDBServiceType = params["Value"]
             if not isinstance(elementName, list):
                 elementNames = [elementName]
@@ -287,10 +290,12 @@ class DowntimeCommand(Command):
                 # Let's give it a second chance..
                 results = self.gClient.getStatus(element, name=elementNames, startingInHours=hours)
             except URLError as e:
-                return S_ERROR(e)
+                self.log.warn(f"GOCDB query failed: {e}")
+                return S_OK(None)
 
         if not results["OK"]:
-            return results
+            self.log.warn(f"GOCDB query failed: {results['Message']}")
+            return S_OK(None)
         results = results["Value"]
 
         if results is None:  # no downtimes found
@@ -299,7 +304,7 @@ class DowntimeCommand(Command):
         # cleaning the Cache
         if elementNames:
             if not (res := self._cleanCommand(element, elementNames))["OK"]:
-                return res
+                self.log.warn(f"Failed to clean downtime cache: {res['Message']}")
 
         uniformResult = []
 
@@ -359,12 +364,14 @@ class DowntimeCommand(Command):
 
         params = self._prepareCommand()
         if not params["OK"]:
-            return params
+            self.log.warn(f"Could not prepare downtime command: {params['Message']}")
+            return S_OK()
         element, elementName, hours, gOCDBServiceType = params["Value"]
 
         result = self.rmClient.selectDowntimeCache(element=element, name=elementName, gOCDBServiceType=gOCDBServiceType)
         if not result["OK"]:
-            return result
+            self.log.warn(f"Could not query downtime cache: {result['Message']}")
+            return S_OK()
         if not result["Value"]:
             return S_OK()
 
