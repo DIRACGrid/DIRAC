@@ -9,6 +9,7 @@ import copy
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.Utilities import RssConfiguration, Utils
+from DIRAC.ResourceStatusSystem.Policy.Configurations import POLICIESMETA
 
 
 def getPoliciesThatApply(decisionParams):
@@ -51,8 +52,10 @@ def getPoliciesThatApply(decisionParams):
         except KeyError:
             policyType = policyName
 
-        # The section matchParams is not mandatory, so we set {} as default.
+        # The section matchParams is not mandatory, so we fall back to POLICIESMETA defaults.
         policyMatchParams = policySetup.get("matchParams", {})
+        if not policyMatchParams:
+            policyMatchParams = POLICIESMETA.get(policyType, {}).get("matchParams", {})
         gLogger.debug(f"matchParams of {policyName}: {str(policyMatchParams)}")
 
         # Any key in the CS policy entry that is not a reserved keyword is treated as
