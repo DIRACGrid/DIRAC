@@ -25,23 +25,17 @@ from socket import gethostname
 from urllib import parse
 
 from DIRAC import S_ERROR, S_OK
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as opHelper
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.TimeUtilities import DiracTime, fromString
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
-from DIRAC.DataManagementSystem.private import FTS3Utilities
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
 from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
-from DIRAC.DataManagementSystem.private import FTS3Utilities
-from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
-from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 # pylint: disable=attribute-defined-outside-init
@@ -82,16 +76,6 @@ class FTS3Agent(AgentModule):
         :return: S_OK()/S_ERROR()
         """
 
-        # Getting all the possible servers
-        res = getFTS3ServerDict()
-        if not res["OK"]:
-            gLogger.error(res["Message"])
-            return res
-
-        srvDict = res["Value"]
-        serverPolicyType = opHelper().getValue("DataManagement/FTSPlacement/FTS3/ServerPolicy", "Random")
-        self._serverPolicy = FTS3Utilities.FTS3ServerPolicy(srvDict, serverPolicy=serverPolicyType)
-
         self.maxNumberOfThreads = self.am_getOption("MaxThreads", 10)
 
         # Number of Operation we treat in one loop
@@ -108,8 +92,6 @@ class FTS3Agent(AgentModule):
         self.proxyLifetime = self.am_getOption("ProxyLifetime", PROXY_LIFETIME)
         self.jobMonitoringBatchSize = self.am_getOption("JobMonitoringBatchSize", JOB_MONITORING_BATCH_SIZE)
         self.useTokens = self.am_getOption("UseTokens", False)
-
-        self.jobMonitoringBatchSize = self.am_getOption("JobMonitoringBatchSize", JOB_MONITORING_BATCH_SIZE)
 
         return S_OK()
 
@@ -482,12 +464,12 @@ class FTS3Agent(AgentModule):
                     log.debug(f"FTS3Operation {operation.operationID}: {len(newJobs)} new jobs to be submitted")
 
                     for ftsJob in newJobs:
-                        res = self._serverPolicy.chooseFTS3Server()
-                        if not res["OK"]:
-                            log.error(res)
+                        try:
+                            ftsServer = operation.fts3Plugin.selectFTS3Server(ftsJob=ftsJob)
+                        except ValueError as e:
+                            log.error("Could not select FTS3 server", repr(e))
                             continue
 
-                        ftsServer = res["Value"]
                         log.debug(f"Use {ftsServer} server")
 
                         ftsJob.ftsServer = ftsServer
