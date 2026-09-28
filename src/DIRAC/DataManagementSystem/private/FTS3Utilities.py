@@ -3,6 +3,7 @@
 import random
 import threading
 
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as opHelper
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -96,24 +97,43 @@ def groupFilesByTarget(ftsFiles):
     return S_OK(destGroup)
 
 
+# Cache of the FTS3Plugin instances, shared per VO.
+# { (vo, pluginName): (csVersion, pluginInstance) }
+_fts3PluginCache = {}
+_fts3PluginCacheLock = threading.Lock()
+
+
 def getFTS3Plugin(vo=None):
     """
-    Return an instance of the FTS3Plugin configured in the CS
+    Return the instance of the FTS3Plugin configured in the CS.
+
+    The instance is shared per VO, and re-created only if the configuration
+    has been refreshed since it was instantiated
+    (like :py:class:`~DIRAC.DataManagementSystem.Utilities.DMSHelpers.DMSHelpers`).
+    Hence, plugins must be thread safe and should not keep per operation state.
 
     :param vo: vo config to look for
     """
     pluginName = opHelper(vo=vo).getValue("DataManagement/FTSPlacement/FTS3/FTS3Plugin", "Default")
+    cacheKey = (vo, pluginName)
+    currentVersion = gConfigurationData.getVersion()
 
-    objLoader = ObjectLoader()
-    _class = objLoader.loadObject(
-        f"DataManagementSystem.private.FTS3Plugins.{pluginName}FTS3Plugin", f"{pluginName}FTS3Plugin"
-    )
+    with _fts3PluginCacheLock:
+        cachedVersion, fts3Plugin = _fts3PluginCache.get(cacheKey, (None, None))
+        if fts3Plugin is not None and cachedVersion == currentVersion:
+            return fts3Plugin
 
-    if not _class["OK"]:
-        raise Exception(_class["Message"])
+        objLoader = ObjectLoader()
+        _class = objLoader.loadObject(
+            f"DataManagementSystem.private.FTS3Plugins.{pluginName}FTS3Plugin", f"{pluginName}FTS3Plugin"
+        )
 
-    fts3Plugin = _class["Value"](vo=vo)
-    return fts3Plugin
+        if not _class["OK"]:
+            raise Exception(_class["Message"])
+
+        fts3Plugin = _class["Value"](vo=vo)
+        _fts3PluginCache[cacheKey] = (currentVersion, fts3Plugin)
+        return fts3Plugin
 
 
 threadLocal = threading.local()

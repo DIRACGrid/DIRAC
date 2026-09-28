@@ -25,16 +25,27 @@ class DefaultFTS3Plugin:
 
     They are called by :py:class:`DIRAC.DataManagementSystem.Client.FTS3Operation.FTS3Operation`
 
-    The class name must be "<PluginName>FTS3Plugin" """
+    The class name must be "<PluginName>FTS3Plugin".
+
+    The plugin is obtained via :py:func:`DIRAC.DataManagementSystem.private.FTS3Utilities.getFTS3Plugin`,
+    which shares one instance per VO (re-created when the CS is refreshed).
+    Plugins must thus be thread safe and should not keep per operation state."""
 
     def __init__(self, vo=None):
-        """The plugin is instanciated once per ``FTS3Operation``, so it is a
-        good place to do global initialization
+        """The plugin is instanciated once per VO (and per CS refresh),
+        so it is a good place to do global initialization
 
         :param str vo: Virtual Organization
         """
         self.vo = vo
         self.thirdPartyProtocols = DMSHelpers(vo=vo).getThirdPartyProtocols()
+
+    # The plugin is shared per VO, so copies should refer to the same instance
+    def __copy__(self):
+        return self
+
+    def __deepcopy__(self, memo):
+        return self
 
     def selectTPCProtocols(self, ftsJob=None, sourceSEName=None, destSEName=None, **kwargs):
         """

@@ -6,7 +6,13 @@ from unittest import mock
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC import S_OK, S_ERROR
 
-from DIRAC.DataManagementSystem.private.FTS3Utilities import groupFilesByTarget, selectUniqueSource, FTS3ServerPolicy
+from DIRAC.DataManagementSystem.private import FTS3Utilities
+from DIRAC.DataManagementSystem.private.FTS3Utilities import (
+    groupFilesByTarget,
+    selectUniqueSource,
+    FTS3ServerPolicy,
+    getFTS3Plugin,
+)
 from DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin import DefaultFTS3Plugin
 
 
@@ -205,7 +211,81 @@ class TestFTS3ServerPolicy(unittest.TestCase):
         self.assertEqual(len(serverSet), len(self.fakeServerDict))
 
 
+class FakeFTS3Plugin:
+    """Stands for a plugin class loaded by the ObjectLoader"""
+
+    def __init__(self, vo=None):
+        self.vo = vo
+
+
+class TestGetFTS3Plugin(unittest.TestCase):
+    """Testing that the FTS3Plugin is shared per VO"""
+
+    def setUp(self):
+        FTS3Utilities._fts3PluginCache.clear()
+        self.csVersion = "v1"
+        self.pluginName = "Fake"
+
+        patchers = [
+            mock.patch(
+                "DIRAC.DataManagementSystem.private.FTS3Utilities.gConfigurationData.getVersion",
+                side_effect=lambda: self.csVersion,
+            ),
+            mock.patch(
+                "DIRAC.DataManagementSystem.private.FTS3Utilities.opHelper",
+                side_effect=lambda vo=None: mock.MagicMock(getValue=mock.MagicMock(return_value=self.pluginName)),
+            ),
+            mock.patch(
+                "DIRAC.DataManagementSystem.private.FTS3Utilities.ObjectLoader.loadObject",
+                return_value=S_OK(FakeFTS3Plugin),
+            ),
+        ]
+        for patcher in patchers:
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def tearDown(self):
+        FTS3Utilities._fts3PluginCache.clear()
+
+    def testSameInstancePerVO(self):
+        """The same VO gets the same instance, a different VO a different one"""
+        pluginA = getFTS3Plugin(vo="voA")
+        self.assertIs(pluginA, getFTS3Plugin(vo="voA"))
+        self.assertEqual(pluginA.vo, "voA")
+
+        pluginB = getFTS3Plugin(vo="voB")
+        self.assertIsNot(pluginA, pluginB)
+        self.assertEqual(pluginB.vo, "voB")
+
+        self.assertIsNot(pluginA, getFTS3Plugin())
+
+    def testNewInstanceOnCSRefresh(self):
+        """A new instance is created when the CS version changes"""
+        plugin = getFTS3Plugin(vo="voA")
+        self.csVersion = "v2"
+        newPlugin = getFTS3Plugin(vo="voA")
+        self.assertIsNot(plugin, newPlugin)
+        self.assertIs(newPlugin, getFTS3Plugin(vo="voA"))
+
+    def testNewInstanceOnPluginChange(self):
+        """A new instance is created when the configured plugin changes"""
+        plugin = getFTS3Plugin(vo="voA")
+        self.pluginName = "OtherFake"
+        self.assertIsNot(plugin, getFTS3Plugin(vo="voA"))
+
+    def testLoadFailure(self):
+        """An exception is raised if the plugin cannot be loaded, and nothing is cached"""
+        with mock.patch(
+            "DIRAC.DataManagementSystem.private.FTS3Utilities.ObjectLoader.loadObject",
+            return_value=S_ERROR("No such plugin"),
+        ):
+            with self.assertRaises(Exception):
+                getFTS3Plugin(vo="voA")
+        self.assertFalse(FTS3Utilities._fts3PluginCache)
+
+
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestFileGrouping)
     suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestFTS3ServerPolicy))
+    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestGetFTS3Plugin))
     unittest.TextTestRunner(verbosity=2).run(suite)

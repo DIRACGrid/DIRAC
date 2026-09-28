@@ -153,6 +153,8 @@ The ``FTS3Plugin`` option allows one to specify a plugin to alter some default c
    * the FTS activity used
    * The multihop strategy
 
+The plugin instance is shared per VO (and re-created when the configuration is refreshed), so a plugin must be thread safe and should not keep per operation state.
+
 This can be useful if you want to implement a matrix-like selection of protocols, or if some links require specific protocols, etc. The plugins must be placed in :py:mod:`DIRAC.DataManagementSystem.private.FTS3Plugins`. The default behaviors, as well as the documentation on how to implement your own plugin can be found in :py:mod:`DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin`
 
 
