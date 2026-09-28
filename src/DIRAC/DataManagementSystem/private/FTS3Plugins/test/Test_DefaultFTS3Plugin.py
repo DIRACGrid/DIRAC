@@ -1,5 +1,6 @@
 """ This modules contains a lot of tests for multiHop. It can be used as a configuration reference"""
 
+import copy
 import os
 import tempfile
 from unittest import mock
@@ -429,3 +430,9 @@ def test_full_matrix(fts3Plugin, src, dst):
 
     hopName = fts3Plugin.findMultiHopSEToCoverUpForWLCGFailure(src, dst)
     assert hopName == FULL_MATRIX[src][dst]
+
+
+def test_copyReturnsSameInstance(fts3Plugin):
+    """The plugin is shared, so copies should return the same instance"""
+    assert copy.copy(fts3Plugin) is fts3Plugin
+    assert copy.deepcopy(fts3Plugin) is fts3Plugin
