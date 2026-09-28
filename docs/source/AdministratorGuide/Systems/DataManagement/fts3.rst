@@ -114,6 +114,8 @@ The FTS server to which the job is sent is chose based on the policy. There are 
   * Failover: pick one, and stay on that one until it fails
   * Sequence: take them in turn, always change
 
+This policy is applied by the default FTS3 plugin (see `FTS3 Plugins`_), and the ``ServerPolicy`` option is read from the Operations section of the VO. A plugin can override this choice (see :py:meth:`DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin.DefaultFTS3Plugin.selectFTS3Server`).
+
 
 FTS3 state machines
 -------------------
@@ -152,6 +154,7 @@ The ``FTS3Plugin`` option allows one to specify a plugin to alter some default c
    * the selection of a source storage element
    * the FTS activity used
    * The multihop strategy
+   * the FTS server to which a job is submitted
 
 The plugin instance is shared per VO (and re-created when the configuration is refreshed), so a plugin must be thread safe and should not keep per operation state.
 

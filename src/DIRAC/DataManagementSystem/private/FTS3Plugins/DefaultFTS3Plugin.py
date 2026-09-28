@@ -1,8 +1,12 @@
 """
-    This module implements the default behavior for the FTS3 system for TPC and source SE selection
+    This module implements the default behavior for the FTS3 system for TPC, source SE and FTS server selection
 """
+from __future__ import annotations
 
 import random
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
+from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3ServerPolicy
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
@@ -20,10 +24,11 @@ class DefaultFTS3Plugin:
     to change one specific behavior.
 
     Such plugins are meant to alter the TPC protocols list that an FTS3 job
-    will use to transfer between two SEs, and possibly make a smart selection
-    of the source SE.
+    will use to transfer between two SEs, possibly make a smart selection
+    of the source SE, and choose the FTS server to which a job is submitted.
 
     They are called by :py:class:`DIRAC.DataManagementSystem.Client.FTS3Operation.FTS3Operation`
+    and :py:class:`DIRAC.DataManagementSystem.Agent.FTS3Agent.FTS3Agent`
 
     The class name must be "<PluginName>FTS3Plugin".
 
@@ -39,6 +44,8 @@ class DefaultFTS3Plugin:
         """
         self.vo = vo
         self.thirdPartyProtocols = DMSHelpers(vo=vo).getThirdPartyProtocols()
+        # Instantiated lazily, see selectFTS3Server
+        self._serverPolicy = None
 
     # The plugin is shared per VO, so copies should refer to the same instance
     def __copy__(self):
@@ -117,6 +124,35 @@ class DefaultFTS3Plugin:
         # (choice requires a list)
         randSource = random.choice(list(allowedReplicaSource))  # nosec B311
         return randSource
+
+    def selectFTS3Server(self, ftsJob=None, **kwargs):
+        """
+        Return the URL of the FTS3 server to which the job should be submitted.
+
+        In this default implementation, the choice is made amongst the servers defined in
+        ``Resources/FTSEndpoints/FTS3`` according to the
+        ``DataManagement/FTSPlacement/FTS3/ServerPolicy`` Operations option of the VO
+        (see :py:class:`~DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy`)
+
+        :param ftsJob: :py:class:`~DIRAC.DataManagementSystem.Client.FTS3Job.FTS3Job` to be submitted
+
+        :returns: the URL of the FTS3 server
+        :raise ValueError: in case no server can be selected
+        """
+        # getattr in case a subclass does not call our __init__
+        if getattr(self, "_serverPolicy", None) is None:
+            res = getFTS3ServerDict()
+            if not res["OK"]:
+                raise ValueError(f"Could not get the FTS3 servers: {res['Message']}")
+            serverPolicyType = Operations(vo=self.vo).getValue(
+                "DataManagement/FTSPlacement/FTS3/ServerPolicy", "Random"
+            )
+            self._serverPolicy = FTS3ServerPolicy(res["Value"], serverPolicy=serverPolicyType)
+
+        res = self._serverPolicy.chooseFTS3Server()
+        if not res["OK"]:
+            raise ValueError(res["Message"])
+        return res["Value"]
 
     def inferFTSActivity(self, ftsOperation, rmsRequest, rmsOperation):
         """

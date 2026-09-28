@@ -21,6 +21,7 @@ Operations / DataManagement
 
   - FTS3 section:
 
-    - ServerPolicy (Random): policy to choose between FTS3 servers (Random, Sequence, Failover)
+    - ServerPolicy (Random): policy to choose between FTS3 servers (Random, Sequence, Failover). Applied by the default FTS3Plugin, can be defined per VO
+    - FTS3Plugin (Default): plugin to alter the behavior of the FTS3 system
 
 Read :ref:`multiProtocol` for more details on the meanings of RegistrationProtocols, ThirdPartyProtocols, AccessProtocols, and WriteProtocols
