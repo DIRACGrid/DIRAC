@@ -2,13 +2,23 @@
 
 import os
 
+import MySQLdb
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager.FileManagerBase import FileManagerBase
-from DIRAC.Core.Utilities.List import stringListToString, intListToString, breakListIntoChunks
-from DIRAC.Core.Utilities.TimeUtilities import DiracTime
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import executeInTransaction
+from DIRAC.Core.Utilities.List import breakListIntoChunks
+
+# MySQL error code for duplicate entry
+ER_DUP_ENTRY = 1062
 
 # The logic of some methods is basically a copy/paste from the FileManager class,
 # so I could have inherited from it. However, I did not want to depend on it
+
+
+def _placeholders(values):
+    """Returns a string of comma separated %s placeholders, one per value, to be used in an IN clause"""
+    return ",".join(["%s"] * len(values))
 
 
 class FileManagerPs(FileManagerBase):
@@ -16,9 +26,9 @@ class FileManagerPs(FileManagerBase):
         super().__init__(database)
 
     @staticmethod
-    def __validatedIntListToString(values):
-        """Helper function to ensure string list arguments are all int-only."""
-        return ",".join(str(int(v)) for v in values)
+    def __validatedIntList(values):
+        """Helper function to ensure list arguments are all int-only."""
+        return [int(v) for v in values]
 
     ######################################################
     #
@@ -72,13 +82,16 @@ class FileManagerPs(FileManagerBase):
         if len(lfns) == 1:
             lfn = list(lfns)[0]  # if lfns is a dict, list(lfns) returns lfns.keys()
             pathPart, filePart = os.path.split(lfn)
-            result = self.db.executeStoredProcedure(
-                "ps_get_file_id_from_lfn", (pathPart, filePart, "ret1"), outputIds=[2]
+            result = self.db._query(
+                "SELECT f.FileID FROM FC_Files f JOIN FC_DirectoryList d ON d.DirID = f.DirID "
+                "WHERE d.Name = %s AND f.FileName = %s",
+                args=(pathPart, filePart),
+                conn=connection,
             )
             if not result["OK"]:
                 return result
 
-            fileId = result["Value"][0]
+            fileId = result["Value"][0][0] if result["Value"] else 0
 
             if not fileId:
                 failed[lfn] = "No such file or directory"
@@ -97,19 +110,14 @@ class FileManagerPs(FileManagerBase):
 
             # For each directory, we get the file ids of the files we want
             for dirPath in directoryPathToIds:
-                fileNames = filesInDirDict[dirPath]
+                fileNames = [str(fileName) for fileName in filesInDirDict[dirPath]]
                 dirID = directoryPathToIds[dirPath]
 
-                escapedFileNames = []
-                for fileName in fileNames:
-                    res = self.db._escapeString(str(fileName))
-                    if not res["OK"]:
-                        return res
-                    escapedFileNames.append(res["Value"])
-                formatedFileNames = ",".join(escapedFileNames)
-
-                result = self.db.executeStoredProcedureWithCursor(
-                    "ps_get_file_ids_from_dir_id", (dirID, formatedFileNames)
+                result = self.db._query(
+                    "SELECT FileID, FileName FROM FC_Files "  # nosec B608
+                    f"WHERE DirID = %s AND FileName IN ({_placeholders(fileNames)})",
+                    args=[dirID] + fileNames,
+                    conn=connection,
                 )
                 if not result["OK"]:
                     return result
@@ -146,20 +154,28 @@ class FileManagerPs(FileManagerBase):
         if "FileID" not in metadata:
             metadata.append("FileID")
 
-        # Format the filenames and status to be used in a IN clause in the sotred procedure
-        escapedFileNames = []
-        for fileName in fileNames:
-            res = self.db._escapeString(str(fileName))
-            if not res["OK"]:
-                return res
-            escapedFileNames.append(res["Value"])
-        formatedFileNames = ",".join(escapedFileNames)
-        fStatus = stringListToString(self.db.visibleFileStatus)
-
-        specificFiles = True if len(fileNames) else False
-        result = self.db.executeStoredProcedureWithCursor(
-            "ps_get_all_info_for_files_in_dir", (dirID, specificFiles, formatedFileNames, allStatus, fStatus)
+        req = (
+            "SELECT f.FileName, f.DirID, f.FileID, f.Size, f.UID, u.UserName, f.GID, g.GroupName, s.Status, "
+            "f.GUID, f.Checksum, f.ChecksumType, f.Type, f.CreationDate, f.ModificationDate, f.Mode "
+            "FROM FC_Files f "
+            "JOIN FC_Users u ON f.UID = u.UID "
+            "JOIN FC_Groups g ON f.GID = g.GID "
+            "JOIN FC_Statuses s ON f.Status = s.StatusID "
+            "WHERE f.DirID = %s"
         )
+        args = [dirID]
+
+        if not allStatus:
+            fStatus = list(self.db.visibleFileStatus)
+            req += f" AND s.Status IN ({_placeholders(fStatus)})"
+            args.extend(fStatus)
+
+        if fileNames:
+            fileNames = [str(fileName) for fileName in fileNames]
+            req += f" AND f.FileName IN ({_placeholders(fileNames)})"
+            args.extend(fileNames)
+
+        result = self.db._query(req, args=args, conn=connection)
 
         if not result["OK"]:
             return result
@@ -204,9 +220,16 @@ class FileManagerPs(FileManagerBase):
                             ["FileID", "Size", "UID", "GID", "s.Status", "GUID", "CreationDate"]
         """
 
-        # Format the filenames and status to be used in a IN clause in the sotred procedure
-        formatedFileIds = self.__validatedIntListToString(fileIDs)
-        result = self.db.executeStoredProcedureWithCursor("ps_get_all_info_for_file_ids", (formatedFileIds,))
+        if not fileIDs:
+            return S_OK({})
+
+        fileIDs = self.__validatedIntList(fileIDs)
+        result = self.db._query(
+            "SELECT f.FileID, f.Size, f.UID, f.GID, s.Status, f.GUID, f.CreationDate "  # nosec B608
+            "FROM FC_Files f JOIN FC_Statuses s ON f.Status = s.StatusID "
+            f"WHERE f.FileID IN ({_placeholders(fileIDs)})",
+            args=fileIDs,
+        )
         if not result["OK"]:
             return result
 
@@ -231,62 +254,73 @@ class FileManagerPs(FileManagerBase):
         :param allFileValues : dictionary of tuple with all the information about possibly more
                               files than we want to insert
         :param wantedLfns : list of lfn that we want to insert
+
+        :returns: S_OK with a list of tuples (DirID, FileName, FileID)
         """
 
         fileValuesStrings = []
+        fileValuesArgs = []
         fileDescStrings = []
+        fileDescArgs = []
 
         for lfn in wantedLfns:
             dirID, size, s_uid, s_gid, statusID, fileName, guid, checksum, checksumtype, mode = allFileValues[lfn]
-            utcNow = DiracTime.utcnow().replace(microsecond=0)
-            # A missing checksum has to be NULL and not the string "None", to stay consistent with
-            # ps_insert_file below and with the FC_FileInfo inserts made by FileManager
-            res = self.db._escapeString(str(fileName))
-            if not res["OK"]:
-                return res
-            fileName = res["Value"]
-            res = self.db._escapeString(str(guid))
-            if not res["OK"]:
-                return res
-            guid = res["Value"]
-            res = self.db._escapeString(str(checksumtype))
-            if not res["OK"]:
-                return res
-            checksumtype = res["Value"]
-            # A missing checksum has to be NULL and not the string "None", to stay consistent with
-            # ps_insert_file below and with the FC_FileInfo inserts made by FileManager
-            if checksum is None:
-                checksum = "NULL"
-            else:
-                res = self.db._escapeString(str(checksum))
-                if not res["OK"]:
-                    return res
-                checksum = res["Value"]
-            fileValuesStrings.append(
-                "(%s, %s, %s, %s, %s, %s, %s, %s, %s, '%s', '%s', %s)"
-                % (
-                    dirID,
-                    size,
-                    s_uid,
-                    s_gid,
-                    statusID,
-                    fileName,
-                    guid,
-                    checksum,
-                    checksumtype,
-                    utcNow,
-                    utcNow,
-                    mode,
-                )
+            # A missing checksum is bound as None, so it is NULL and not the string "None",
+            # to stay consistent with the FC_FileInfo inserts made by FileManager
+            fileValuesStrings.append("(%s, %s, %s, %s, %s, %s, %s, %s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP(), %s)")
+            fileValuesArgs.extend(
+                [dirID, size, s_uid, s_gid, statusID, str(fileName), str(guid), checksum, checksumtype, mode]
             )
-            fileDescStrings.append(f"(DirID = {dirID} AND FileName = {fileName})")
+            fileDescStrings.append("(f.DirID = %s AND f.FileName = %s)")
+            fileDescArgs.extend([dirID, str(fileName)])
 
         fileValuesStr = ",".join(fileValuesStrings)
         fileDescStr = " OR ".join(fileDescStrings)
 
-        result = self.db.executeStoredProcedureWithCursor("ps_insert_multiple_file", (fileValuesStr, fileDescStr))
+        def _insertFiles(cursor):
+            """Insert the files and update the FC_DirectoryUsage of the FakeSE (SEID 1)"""
+            cursor.execute(
+                "INSERT INTO FC_Files (DirID, Size, UID, GID, Status, FileName, GUID, Checksum, ChecksumType, "  # nosec B608
+                f"CreationDate, ModificationDate, Mode) VALUES {fileValuesStr}",
+                fileValuesArgs,
+            )
+            cursor.execute(
+                "INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) "  # nosec B608
+                f"SELECT f.DirID, 1, SUM(f.Size), COUNT(*) FROM FC_Files f WHERE {fileDescStr} GROUP BY f.DirID "
+                "ON DUPLICATE KEY UPDATE SESize = SESize + VALUES(SESize), SEFiles = SEFiles + VALUES(SEFiles)",
+                fileDescArgs,
+            )
 
-        return result
+        result = executeInTransaction(self.db, _insertFiles)
+        if not result["OK"]:
+            return result
+
+        return self.db._query(
+            f"SELECT f.DirID, f.FileName, f.FileID FROM FC_Files f WHERE {fileDescStr}", args=fileDescArgs  # nosec B608
+        )
+
+    def __insertFile(self, dirID, size, s_uid, s_gid, statusID, fileName, guid, checksum, checksumtype, mode):
+        """Insert a single file and update the FC_DirectoryUsage of the FakeSE (SEID 1)
+
+        :returns: S_OK(fileID)
+        """
+
+        def _insertFile(cursor):
+            cursor.execute(
+                "INSERT INTO FC_Files (DirID, Size, UID, GID, Status, FileName, GUID, Checksum, ChecksumType, "
+                "CreationDate, ModificationDate, Mode) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP(), %s)",
+                (dirID, size, s_uid, s_gid, statusID, str(fileName), str(guid), checksum, checksumtype, mode),
+            )
+            fileID = cursor.lastrowid
+            cursor.execute(
+                "INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) VALUES (%s, 1, %s, 1) "
+                "ON DUPLICATE KEY UPDATE SESize = SESize + %s, SEFiles = SEFiles + 1",
+                (dirID, size, size),
+            )
+            return fileID
+
+        return executeInTransaction(self.db, _insertFile)
 
     def __chunks(self, l, n):
         """Yield successive n-sized chunks from l."""
@@ -368,16 +402,13 @@ class FileManagerPs(FileManagerBase):
         # If we are here, that means that the multiple insert failed, so we do one by one
 
         for lfn in lfnsToRetry:
-            dirID, size, s_uid, s_gid, statusID, fileName, guid, checksum, checksumtype, mode = fileValues[lfn]
             # insert
-            result = self.db.executeStoredProcedureWithCursor(
-                "ps_insert_file", (dirID, size, s_uid, s_gid, statusID, fileName, guid, checksum, checksumtype, mode)
-            )
+            result = self.__insertFile(*fileValues[lfn])
 
             if not result["OK"]:
                 failed[lfn] = result["Message"]
             else:
-                fileID = result["Value"][0][0]
+                fileID = result["Value"]
 
                 successful[lfn] = lfns[lfn]
                 successful[lfn]["FileID"] = fileID
@@ -399,15 +430,12 @@ class FileManagerPs(FileManagerBase):
         if not isinstance(guids, (list, tuple)):
             guids = [guids]
 
-        #     formatedGuids = ','.join( [ '"%s"' % guid for guid in guids ] )
-        escapedGuids = []
-        for guid in guids:
-            res = self.db._escapeString(str(guid))
-            if not res["OK"]:
-                return res
-            escapedGuids.append(res["Value"])
-        formatedGuids = ",".join(escapedGuids)
-        result = self.db.executeStoredProcedureWithCursor("ps_get_file_ids_from_guids", (formatedGuids,))
+        guids = [str(guid) for guid in guids]
+        result = self.db._query(
+            f"SELECT GUID, FileID FROM FC_Files WHERE GUID IN ({_placeholders(guids)})",  # nosec B608
+            args=guids,
+            conn=connection,
+        )
 
         if not result["OK"]:
             return result
@@ -425,14 +453,14 @@ class FileManagerPs(FileManagerBase):
         if not isinstance(guids, (list, tuple)):
             guids = [guids]
 
-        escapedGuids = []
-        for guid in guids:
-            res = self.db._escapeString(str(guid))
-            if not res["OK"]:
-                return res
-            escapedGuids.append(res["Value"])
-        formatedGuids = ",".join(escapedGuids)
-        result = self.db.executeStoredProcedureWithCursor("ps_get_lfns_from_guids", (formatedGuids,))
+        escapedGuids = [str(guid) for guid in guids]
+        result = self.db._query(
+            "SELECT f.GUID, CONCAT(d.Name, '/', f.FileName) FROM FC_Files f "  # nosec B608
+            "JOIN FC_DirectoryList d ON f.DirID = d.DirID "
+            f"WHERE f.GUID IN ({_placeholders(escapedGuids)})",
+            args=escapedGuids,
+            conn=connection,
+        )
 
         if not result["OK"]:
             return result
@@ -469,51 +497,72 @@ class FileManagerPs(FileManagerBase):
         return S_OK()
 
     def __deleteFileReplicas(self, fileIDs, connection=False):
-        """Delete all the replicas from the file ids
+        """Delete all the replicas from the file ids and update the FC_DirectoryUsage
 
         :param fileIDs: list of file ids
 
         :returns: S_OK() or S_ERROR(msg)
         """
-
-        connection = self._getConnection(connection)
 
         if not fileIDs:
             return S_OK()
 
-        formatedFileIds = self.__validatedIntListToString(fileIDs)
+        fileIDs = self.__validatedIntList(fileIDs)
+        inClause = _placeholders(fileIDs)
 
-        result = self.db.executeStoredProcedureWithCursor("ps_delete_replicas_from_file_ids", (formatedFileIds,))
+        def _deleteReplicas(cursor):
+            # The sub query aggregates per directory and SE, so that removing two files
+            # having a replica on the same SE is correctly accounted for
+            cursor.execute(
+                "UPDATE FC_DirectoryUsage d, "  # nosec B608
+                "(SELECT d1.DirID, d1.SEID, SUM(f.Size) AS t_size, COUNT(*) AS t_file "
+                "FROM FC_DirectoryUsage d1, FC_Files f, FC_Replicas r "
+                "WHERE r.FileID = f.FileID AND f.DirID = d1.DirID AND r.SEID = d1.SEID "
+                f"AND f.FileID IN ({inClause}) "
+                "GROUP BY d1.DirID, d1.SEID) t "
+                "SET d.SESize = d.SESize - t.t_size, d.SEFiles = d.SEFiles - t.t_file "
+                "WHERE d.DirID = t.DirID AND d.SEID = t.SEID",
+                fileIDs,
+            )
+            cursor.execute(f"DELETE FROM FC_Replicas WHERE FileID IN ({inClause})", fileIDs)  # nosec B608
+
+        result = executeInTransaction(self.db, _deleteReplicas)
         if not result["OK"]:
             return result
-
-        errno, msg = result["Value"][0]
-
-        if errno:
-            return S_ERROR(msg)
 
         return S_OK()
 
     def __deleteFiles(self, fileIDs, connection=False):
-        """Delete the files from their ids
+        """Delete the files from their ids and update the FC_DirectoryUsage of the FakeSE (SEID 1).
+        CAREFUL : the cascade delete also removes the replicas but will not update FC_DirectoryUsage
 
         :param fileIDs: list of file ids
 
         :returns: S_OK() or S_ERROR(msg)
         """
 
-        connection = self._getConnection(connection)
+        if not fileIDs:
+            return S_OK()
 
-        formatedFileIds = self.__validatedIntListToString(fileIDs)
+        fileIDs = self.__validatedIntList(fileIDs)
+        inClause = _placeholders(fileIDs)
 
-        result = self.db.executeStoredProcedureWithCursor("ps_delete_files", (formatedFileIds,))
+        def _deleteFiles(cursor):
+            cursor.execute(
+                "UPDATE FC_DirectoryUsage d, "  # nosec B608
+                "(SELECT d1.DirID, SUM(f.Size) AS t_size, COUNT(*) AS t_file "
+                "FROM FC_DirectoryList d1, FC_Files f "
+                f"WHERE f.DirID = d1.DirID AND f.FileID IN ({inClause}) "
+                "GROUP BY d1.DirID) t "
+                "SET d.SESize = d.SESize - t.t_size, d.SEFiles = d.SEFiles - t.t_file "
+                "WHERE d.DirID = t.DirID AND d.SEID = 1",
+                fileIDs,
+            )
+            cursor.execute(f"DELETE FROM FC_Files WHERE FileID IN ({inClause})", fileIDs)  # nosec B608
+
+        result = executeInTransaction(self.db, _deleteFiles)
         if not result["OK"]:
             return result
-
-        errno, msg = result["Value"][0]
-
-        if errno:
-            return S_ERROR(msg)
 
         return S_OK()
 
@@ -523,27 +572,80 @@ class FileManagerPs(FileManagerBase):
         :param allReplicaValues : dictionary of tuple with all the information about possibly more
                               replica than we want to insert
         :param lfnsChunk : list of lfn that we want to insert
+
+        :returns: S_OK with a list of tuples (FileID, SEID, RepID)
         """
 
         repValuesStrings = []
+        repValuesArgs = []
         repDescStrings = []
+        repDescArgs = []
 
         for lfn in lfnsChunk:
             fileID, seID, statusID, replicaType, pfn = allReplicaValues[lfn]
-            utcNow = DiracTime.utcnow().replace(microsecond=0)
-            res = self.db._escapeString(str(pfn))
-            if not res["OK"]:
-                return res
-            pfn = res["Value"]
-            repValuesStrings.append(f"({fileID},{seID},'{statusID}','{replicaType}','{utcNow}','{utcNow}',{pfn})")
-            repDescStrings.append(f"(r.FileID = {fileID} AND SEID = {seID})")
+            repValuesStrings.append("(%s, %s, %s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP(), %s)")
+            repValuesArgs.extend([fileID, seID, statusID, replicaType, str(pfn)])
+            repDescStrings.append("(r.FileID = %s AND r.SEID = %s)")
+            repDescArgs.extend([fileID, seID])
 
         repValuesStr = ",".join(repValuesStrings)
         repDescStr = " OR ".join(repDescStrings)
 
-        result = self.db.executeStoredProcedureWithCursor("ps_insert_multiple_replica", (repValuesStr, repDescStr))
+        def _insertReplicas(cursor):
+            """Insert the replicas and update the FC_DirectoryUsage"""
+            cursor.execute(
+                "INSERT INTO FC_Replicas (FileID, SEID, Status, RepType, CreationDate, ModificationDate, PFN) "  # nosec B608
+                f"VALUES {repValuesStr}",
+                repValuesArgs,
+            )
+            cursor.execute(
+                "INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) "  # nosec B608
+                "SELECT f.DirID, r.SEID, SUM(f.Size), COUNT(*) "
+                f"FROM FC_Files f JOIN FC_Replicas r ON f.FileID = r.FileID WHERE ({repDescStr}) "
+                "GROUP BY f.DirID, r.SEID "
+                "ON DUPLICATE KEY UPDATE SESize = SESize + VALUES(SESize), SEFiles = SEFiles + VALUES(SEFiles)",
+                repDescArgs,
+            )
 
-        return result
+        result = executeInTransaction(self.db, _insertReplicas)
+        if not result["OK"]:
+            return result
+
+        return self.db._query(
+            f"SELECT r.FileID, r.SEID, r.RepID FROM FC_Replicas r WHERE {repDescStr}", args=repDescArgs  # nosec B608
+        )
+
+    def __insertReplica(self, fileID, seID, statusID, replicaType, pfn):
+        """Insert a single replica and update the FC_DirectoryUsage.
+        If the replica already exists, its ID is returned
+
+        :returns: S_OK(replicaID)
+        """
+
+        def _insertReplica(cursor):
+            try:
+                cursor.execute(
+                    "INSERT INTO FC_Replicas (FileID, SEID, Status, RepType, CreationDate, ModificationDate, PFN) "
+                    "VALUES (%s, %s, %s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP(), %s)",
+                    (fileID, seID, statusID, replicaType, str(pfn)),
+                )
+            except MySQLdb.IntegrityError as e:
+                # The replica already exists. Nothing was done in the transaction yet
+                if e.args[0] != ER_DUP_ENTRY:
+                    raise
+                cursor.execute("SELECT RepID FROM FC_Replicas WHERE FileID = %s AND SEID = %s", (fileID, seID))
+                return cursor.fetchone()[0]
+
+            replicaID = cursor.lastrowid
+            cursor.execute(
+                "INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) "
+                "SELECT f.DirID, %s, f.Size, 1 FROM FC_Files f WHERE f.FileID = %s "
+                "ON DUPLICATE KEY UPDATE SESize = SESize + Size, SEFiles = SEFiles + 1",
+                (seID, fileID),
+            )
+            return replicaID
+
+        return executeInTransaction(self.db, _insertReplica)
 
     def _insertReplicas(self, lfns, master=False, connection=False):
         """Insert new replicas. lfns is a dictionary with one entry for each file. The keys are lfns, and values are dict
@@ -621,16 +723,13 @@ class FileManagerPs(FileManagerBase):
                 lfnsToRetry.extend(lfnChunk)
 
         for lfn in lfnsToRetry:
-            fileID, seID, statusID, replicaType, pfn = repValues[lfn]
             # insert the replica and its info
-            result = self.db.executeStoredProcedureWithCursor(
-                "ps_insert_replica", (fileID, seID, statusID, replicaType, pfn)
-            )
+            result = self.__insertReplica(*repValues[lfn])
 
             if not result["OK"]:
                 failed[lfn] = result["Message"]
             else:
-                replicaID = result["Value"][0][0]
+                replicaID = result["Value"]
                 lfns[lfn]["RepID"] = replicaID
                 successful[lfn] = True
 
@@ -648,14 +747,15 @@ class FileManagerPs(FileManagerBase):
         replicaDict = {}
 
         for fileID, seID in replicaTuples:
-            result = self.db.executeStoredProcedure("ps_get_replica_id", (fileID, seID, "repIdOut"), outputIds=[2])
+            result = self.db._query(
+                "SELECT RepID FROM FC_Replicas WHERE FileID = %s AND SEID = %s", args=(fileID, seID), conn=connection
+            )
             if not result["OK"]:
                 return result
 
-            repID = result["Value"][0]
-
             # if the replica exists, we add it to the dict
-            if repID:
+            if result["Value"]:
+                repID = result["Value"][0][0]
                 replicaDict.setdefault(fileID, {}).setdefault(seID, repID)
 
         return S_OK(replicaDict)
@@ -664,6 +764,34 @@ class FileManagerPs(FileManagerBase):
     #
     # _deleteReplicas related methods
     #
+
+    def __deleteReplica(self, fileID, seID):
+        """Delete a given replica and update the FC_DirectoryUsage
+
+        :returns: S_OK() or S_ERROR(msg)
+        """
+
+        def _deleteReplica(cursor):
+            # We need to join on the replicas to make sure that there is a replica at the given se
+            # otherwise the FC_DirectoryUsage would be updated for no good reason
+            cursor.execute(
+                "SELECT f.Size, f.DirID FROM FC_Files f JOIN FC_Replicas r ON f.FileID = r.FileID "
+                "WHERE f.FileID = %s AND r.SEID = %s",
+                (fileID, seID),
+            )
+            row = cursor.fetchone()
+            if not row:
+                return
+            fileSize, dirID = row
+
+            cursor.execute(
+                "UPDATE FC_DirectoryUsage SET SESize = SESize - %s, SEFiles = SEFiles - 1 "
+                "WHERE DirID = %s AND SEID = %s",
+                (fileSize, dirID, seID),
+            )
+            cursor.execute("DELETE FROM FC_Replicas WHERE FileID = %s AND SEID = %s", (fileID, seID))
+
+        return executeInTransaction(self.db, _deleteReplica)
 
     def _deleteReplicas(self, lfns, connection=False):
         """Deletes replicas. The deletion of replicas that do not exist is successful
@@ -701,14 +829,9 @@ class FileManagerPs(FileManagerBase):
             seID = res["Value"]
 
             # Finally remove the replica
-            result = self.db.executeStoredProcedureWithCursor("ps_delete_replica_from_file_and_se_ids", (fileID, seID))
+            result = self.__deleteReplica(fileID, seID)
             if not result["OK"]:
                 failed[lfn] = result["Message"]
-                continue
-
-            errno, errMsg = result["Value"][0]
-            if errno:
-                failed[lfn] = errMsg
             else:
                 successful[lfn] = True
 
@@ -743,11 +866,15 @@ class FileManagerPs(FileManagerBase):
             return res
         seID = res["Value"]
 
-        result = self.db.executeStoredProcedureWithCursor("ps_set_replica_status", (fileID, seID, statusID))
+        result = self.db._update(
+            "UPDATE FC_Replicas SET Status = %s WHERE FileID = %s AND SEID = %s",
+            args=(statusID, fileID, seID),
+            conn=connection,
+        )
         if not result["OK"]:
             return result
 
-        affected = result["Value"][0][0]  # Affected is the number of raws updated
+        affected = result["Value"]  # Affected is the number of raws updated
 
         if not affected:
             return S_ERROR("Replica does not exist")
@@ -776,22 +903,49 @@ class FileManagerPs(FileManagerBase):
             return res
         oldSEID = res["Value"]
 
-        # update
-        result = self.db.executeStoredProcedureWithCursor("ps_set_replica_host", (fileID, oldSEID, newSEID))
+        def _moveReplica(cursor):
+            """Move the replica and update the FC_DirectoryUsage
+
+            :returns: the number of replicas moved
+            """
+            cursor.execute("SELECT Size, DirID FROM FC_Files WHERE FileID = %s", (fileID,))
+            row = cursor.fetchone()
+            if not row:
+                return 0
+            fileSize, dirID = row
+
+            affected = cursor.execute(
+                "UPDATE FC_Replicas SET SEID = %s WHERE FileID = %s AND SEID = %s", (newSEID, fileID, oldSEID)
+            )
+            # Only touch the FC_DirectoryUsage if the replica was actually moved
+            if not affected:
+                return 0
+
+            cursor.execute(
+                "UPDATE FC_DirectoryUsage SET SESize = SESize - %s, SEFiles = SEFiles - 1 "
+                "WHERE DirID = %s AND SEID = %s",
+                (fileSize, dirID, oldSEID),
+            )
+            cursor.execute(
+                "INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) VALUES (%s, %s, %s, 1) "
+                "ON DUPLICATE KEY UPDATE SESize = SESize + %s, SEFiles = SEFiles + 1",
+                (dirID, newSEID, fileSize, fileSize),
+            )
+            return affected
+
+        result = executeInTransaction(self.db, _moveReplica)
         if not result["OK"]:
             return result
 
-        affected = result["Value"][0][0]
-        if not affected:
+        if not result["Value"]:
             return S_ERROR("Replica does not exist")
-        else:
-            return S_OK()
+        return S_OK()
 
     def _setFileParameter(self, fileID, paramName, paramValue, connection=False):
         """Generic method to set a file parameter
 
 
-        :param fileID : id of the file
+        :param fileID : id of the file, or list of ids
         :param paramName : the file parameter you want to change
               It should be one of [ UID, GID, Status, Mode]. However, in case of
               unexpected parameter, and to stay compatible with the other Manager,
@@ -803,37 +957,22 @@ class FileManagerPs(FileManagerBase):
         """
         connection = self._getConnection(connection)
 
-        # The PS associated with a given parameter
-        psNames = {
-            "UID": "ps_set_file_uid",
-            "GID": "ps_set_file_gid",
-            "Status": "ps_set_file_status",
-            "Mode": "ps_set_file_mode",
-        }
+        if not self.db._checkIdentifier(paramName)["OK"]:
+            return S_ERROR(f"ParamName is invalid: {paramName}")
 
-        psName = psNames.get(paramName, None)
+        fileIDs = list(fileID) if isinstance(fileID, (list, tuple)) else [fileID]
+        if not fileIDs:
+            return S_OK()
 
-        # If there is an associated procedure, we go for it
-        if psName:
-            result = self.db.executeStoredProcedureWithCursor(psName, (fileID, paramValue))
-            if not result["OK"]:
-                return result
+        req = (
+            f"UPDATE FC_Files SET {paramName} = %s, ModificationDate = UTC_TIMESTAMP() "  # nosec B608
+            f"WHERE FileID IN ({_placeholders(fileIDs)})"
+        )
+        result = self.db._update(req, args=[paramValue] + fileIDs, conn=connection)
+        if not result["OK"]:
+            return result
 
-            _affected = result["Value"][0][0]
-            # If affected = 0, the file does not exist, but who cares...
-
-        # In case this is a 'new' parameter, we have a failback solution, but we
-        # should add a specific ps for it
-        else:
-            if not self.db._checkIdentifier(paramName)["OK"]:
-                return S_ERROR(f"ParamName is invalid: {paramName}")
-            req = "UPDATE FC_Files SET "
-            req += f"{paramName}=%s, ModificationDate=UTC_TIMESTAMP() WHERE FileID IN ("
-            req += ",".join(["%s"] * len(fileID))
-            req += ")"
-            args = [paramValue] + fileID
-            return self.db._update(req, args=args, conn=connection)
-
+        # If nothing was affected, the file does not exist, but who cares...
         return S_OK()
 
     ######################################################
@@ -865,17 +1004,25 @@ class FileManagerPs(FileManagerBase):
         # non existing replicas
         replicas = {fileID: {} for fileID in fileIDs}
 
-        # Format the status to be used in a IN clause in the stored procedure
-        fStatus = stringListToString(self.db.visibleReplicaStatus)
+        rStatus = list(self.db.visibleReplicaStatus)
 
         fieldNames = ["FileID", "SE", "Status", "RepType", "CreationDate", "ModificationDate", "PFN"]
 
         for chunks in breakListIntoChunks(fileIDs, 1000):
-            # Format the FileIDs to be used in a IN clause in the stored procedure
-            formatedFileIds = self.__validatedIntListToString(chunks)
-            result = self.db.executeStoredProcedureWithCursor(
-                "ps_get_all_info_of_replicas_bulk", (formatedFileIds, allStatus, fStatus)
+            chunkIDs = self.__validatedIntList(chunks)
+            req = (
+                "SELECT r.FileID, se.SEName, st.Status, r.RepType, r.CreationDate, r.ModificationDate, r.PFN "  # nosec B608
+                "FROM FC_Replicas r "
+                "JOIN FC_StorageElements se ON r.SEID = se.SEID "
+                "JOIN FC_Statuses st ON r.Status = st.StatusID "
+                f"WHERE r.FileID IN ({_placeholders(chunkIDs)})"
             )
+            args = list(chunkIDs)
+            if not allStatus:
+                req += f" AND st.Status IN ({_placeholders(rStatus)})"
+                args.extend(rStatus)
+
+            result = self.db._query(req, args=args)
 
             if not result["OK"]:
                 return result
@@ -898,11 +1045,11 @@ class FileManagerPs(FileManagerBase):
         :returns: S_OK(value) or S_ERROR
         """
 
-        result = self.db.executeStoredProcedure("ps_count_files_in_dir", (dirId, "ret1"), outputIds=[1])
+        result = self.db._query("SELECT COUNT(FileID) FROM FC_Files WHERE DirID = %s", args=(dirId,))
         if not result["OK"]:
             return result
 
-        res = S_OK(result["Value"][0])
+        res = S_OK(result["Value"][0][0])
         return res
 
     ##########################################################################
@@ -949,16 +1096,28 @@ class FileManagerPs(FileManagerBase):
                                values from the configuration
         """
 
-        # We format the visible file/replica satus so we can give it as argument to the ps
-        # It is used in an IN clause, so it looks like --'"AprioriGood","Trash"'--
-        #     fStatus = ','.join( [ '"%s"' % status for status in self.db.visibleFileStatus ] )
-        #     rStatus = ','.join( [ '"%s"' % status for status in self.db.visibleReplicaStatus ] )
-        fStatus = stringListToString(self.db.visibleFileStatus)
-        rStatus = stringListToString(self.db.visibleReplicaStatus)
-
-        result = self.db.executeStoredProcedureWithCursor(
-            "ps_get_replicas_for_files_in_dir", (dirID, allStatus, fStatus, rStatus)
+        req = (
+            "SELECT f.FileName, f.FileID, s.SEName, r.PFN FROM FC_Replicas r "
+            "JOIN FC_Files f ON f.FileID = r.FileID "
+            "JOIN FC_StorageElements s ON s.SEID = r.SEID "
         )
+        args = [dirID]
+
+        if not allStatus:
+            fStatus = list(self.db.visibleFileStatus)
+            rStatus = list(self.db.visibleReplicaStatus)
+            req += (
+                "JOIN FC_Statuses fst ON f.Status = fst.StatusID "
+                "JOIN FC_Statuses rst ON r.Status = rst.StatusID "
+                f"WHERE f.DirID = %s AND fst.Status IN ({_placeholders(fStatus)}) "
+                f"AND rst.Status IN ({_placeholders(rStatus)})"
+            )
+            args.extend(fStatus)
+            args.extend(rStatus)
+        else:
+            req += "WHERE f.DirID = %s"
+
+        result = self.db._query(req, args=args)
         if not result["OK"]:
             return result
 
@@ -975,9 +1134,13 @@ class FileManagerPs(FileManagerBase):
 
         successful = {}
         for chunks in breakListIntoChunks(fileIDs, 1000):
-            # Format the filenames and status to be used in a IN clause in the sotred procedure
-            formatedFileIds = self.__validatedIntListToString(chunks)
-            result = self.db.executeStoredProcedureWithCursor("ps_get_full_lfn_for_file_ids", (formatedFileIds,))
+            chunkIDs = self.__validatedIntList(chunks)
+            result = self.db._query(
+                "SELECT f.FileID, CONCAT(d.Name, '/', f.FileName) FROM FC_Files f "  # nosec B608
+                "JOIN FC_DirectoryList d ON f.DirID = d.DirID "
+                f"WHERE f.FileID IN ({_placeholders(chunkIDs)})",
+                args=chunkIDs,
+            )
             if not result["OK"]:
                 return result
 
@@ -1007,6 +1170,16 @@ class FileManagerPs(FileManagerBase):
                 return res
             seIDs.append(res["Value"])
 
-        formatedSEIds = self.__validatedIntListToString(seIDs)
+        if not seIDs:
+            return S_OK(())
 
-        return self.db.executeStoredProcedureWithCursor("ps_get_se_dump", (formatedSEIds,))
+        seIDs = self.__validatedIntList(seIDs)
+
+        return self.db._query(
+            "SELECT s.SEName, CONCAT(d.Name, '/', f.FileName), f.Checksum, f.Size FROM FC_Files f "  # nosec B608
+            "JOIN FC_Replicas r ON f.FileID = r.FileID "
+            "JOIN FC_DirectoryList d ON d.DirID = f.DirID "
+            "JOIN FC_StorageElements s ON r.SEID = s.SEID "
+            f"WHERE s.SEID IN ({_placeholders(seIDs)})",
+            args=seIDs,
+        )
