@@ -244,34 +244,6 @@ class MonitoringHandlerMixin:
         reportRequest["generatePlot"] = False
         return reporter.generate(reportRequest)
 
-    types_addRecords = [str, str, list]
-
-    def export_addRecords(self, indexname, monitoringType, data):
-        """
-        It is used to insert data directly to the database... The data will be inserted to the given index.
-
-        :param str indexname: name of the index
-        :param str monitoringType: type of the monitoring
-        :param list data: data to insert
-        :returns: S_OK or S_ERROR
-        """
-        gLogger.debug("Bulk index:", indexname)
-        mapping = self.__db.getMapping(monitoringType)
-        gLogger.debug("Mapping:", mapping)
-        return self.__db.bulk_index(indexname, data, mapping)
-
-    types_deleteIndex = [str]
-
-    def export_deleteIndex(self, indexName):
-        """
-        It is used to delete an index!
-        Note this is for experienced users!!!
-
-        :param str indexName: name of the index
-        """
-        gLogger.debug("delete index:", indexName)
-        return self.__db.deleteIndex(indexName)
-
     types_getLimitedDat = [str, dict, int]
 
     def export_getLimitedData(self, typeName, condDict, size):
