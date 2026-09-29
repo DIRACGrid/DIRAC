@@ -1,5 +1,5 @@
 """
-    This module implements the default behavior for the FTS3 system for TPC, source SE and FTS server selection
+This module implements the default behavior for the FTS3 system for TPC, source SE and FTS server selection
 """
 from __future__ import annotations
 
@@ -9,6 +9,11 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3ServerPolicy
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 
 
 class DefaultFTS3Plugin:
@@ -125,7 +130,7 @@ class DefaultFTS3Plugin:
         randSource = random.choice(list(allowedReplicaSource))  # nosec B311
         return randSource
 
-    def selectFTS3Server(self, ftsJob=None, **kwargs):
+    def selectFTS3Server(self, ftsJob: FTS3Job | None = None, **kwargs):
         """
         Return the URL of the FTS3 server to which the job should be submitted.
 

@@ -136,9 +136,6 @@ def getFTS3Plugin(vo=None):
         return fts3Plugin
 
 
-threadLocal = threading.local()
-
-
 class FTS3ServerPolicy:
     """
     This class manages the policy for choosing a server
@@ -156,6 +153,9 @@ class FTS3ServerPolicy:
         self._maxAttempts = len(self._serverList)
         self._nextServerID = 0
         self._resourceStatus = ResourceStatus()
+        # The shuffled list used by the Random policy is per thread and per instance,
+        # since several instances (e.g. one per VO) can exist with different server lists
+        self._threadLocal = threading.local()
 
         methName = f"_{serverPolicy.lower()}ServerPolicy"
         if not hasattr(self, methName):
@@ -188,14 +188,14 @@ class FTS3ServerPolicy:
         return a server from shuffledServerList
         """
 
-        if getattr(threadLocal, "shuffledServerList", None) is None:
-            threadLocal.shuffledServerList = self._serverList[:]
-            random.shuffle(threadLocal.shuffledServerList)
+        if getattr(self._threadLocal, "shuffledServerList", None) is None:
+            self._threadLocal.shuffledServerList = self._serverList[:]
+            random.shuffle(self._threadLocal.shuffledServerList)
 
-        fts3Server = threadLocal.shuffledServerList[_attempt]
+        fts3Server = self._threadLocal.shuffledServerList[_attempt]
 
         if _attempt == self._maxAttempts - 1:
-            random.shuffle(threadLocal.shuffledServerList)
+            random.shuffle(self._threadLocal.shuffledServerList)
 
         return fts3Server
 
