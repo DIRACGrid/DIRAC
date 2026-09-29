@@ -1,9 +1,10 @@
-""" PublisherHandler
+"""PublisherHandler
 
 This service has been built to provide the RSS web views with all the information
 they need. NO OTHER COMPONENT THAN Web controllers should make use of it.
 
 """
+
 #  pylint: disable=no-self-use
 from datetime import datetime, timedelta
 
@@ -217,8 +218,12 @@ class PublisherHandlerMixin:
         return S_OK(tree)
 
     types_setToken = [str] * 7
+    auth_setToken = ["SiteManager"]
 
     def export_setToken(self, element, name, statusType, token, elementType, username, lastCheckTime):
+        # Ignoring the username in input, getting it from the connecting credentials
+        username = self.getRemoteCredentials().get("username")
+
         lastCheckTime = datetime.strptime(lastCheckTime, "%Y-%m-%d %H:%M:%S")
 
         credentials = self.getRemoteCredentials()
@@ -334,8 +339,12 @@ class PublisherHandlerMixin:
         return result
 
     types_setStatus = [str] * 7
+    auth_setStatus = ["SiteManager"]
 
     def export_setStatus(self, element, name, statusType, status, elementType, username, lastCheckTime):
+        # Ignoring the username in input, getting it from the connecting credentials
+        username = self.getRemoteCredentials().get("username")
+
         if not lastCheckTime:
             lastCheckTime = None
         else:
