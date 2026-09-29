@@ -4,6 +4,7 @@ File cache logging plugin.
 import os
 import json
 import re
+from pathlib import Path
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.WorkloadManagementSystem.Client.PilotLoggingPlugins.PilotLoggingPlugin import PilotLoggingPlugin
 
@@ -33,6 +34,18 @@ class FileCacheLoggingPlugin(PilotLoggingPlugin):
             os.makedirs(logPath)
         sLog.verbose("Pilot logging directory:", logPath)
 
+    def _safePath(self, vo, logfile=None):
+        """Return a path under the configured log root and reject traversal attempts."""
+        base = Path(self.meta["LogPath"]).resolve()
+        candidate = (base / vo).resolve(strict=False)
+        if logfile is not None:
+            candidate = (candidate / logfile).resolve(strict=False)
+        try:
+            candidate.relative_to(base)
+        except ValueError as exc:
+            raise ValueError(f"Path escapes base directory: {vo}/{logfile}") from exc
+        return candidate
+
     def sendMessage(self, message, pilotUUID, vo):
         """
         File cache sendMessage method. Write the log message to a file line by line.
@@ -47,11 +60,12 @@ class FileCacheLoggingPlugin(PilotLoggingPlugin):
         if not self._verifyUUIDPattern(pilotUUID):
             return S_ERROR("Pilot UUID is invalid")
 
-        dirname = os.path.join(self.meta["LogPath"], vo)
         try:
-            if not os.path.exists(dirname):
-                os.mkdir(dirname)
-            with open(os.path.join(dirname, pilotUUID), "a") as pilotLog:
+            dirname = self._safePath(vo)
+            if not dirname.exists():
+                dirname.mkdir()
+            filename = self._safePath(vo, pilotUUID)
+            with open(filename, "a") as pilotLog:
                 try:
                     messageContent = json.loads(message)
                     if isinstance(messageContent, list):
@@ -63,7 +77,7 @@ class FileCacheLoggingPlugin(PilotLoggingPlugin):
                 except OSError as oserr:
                     sLog.error("Error writing to log file:", repr(oserr))
                     return S_ERROR(repr(oserr))
-        except OSError as err:
+        except (OSError, ValueError) as err:
             sLog.exception("Error opening a pilot log file", lException=err)
             return S_ERROR(repr(err))
         return S_OK(f"Message logged successfully for pilot: {pilotUUID} and {vo}")
@@ -85,11 +99,12 @@ class FileCacheLoggingPlugin(PilotLoggingPlugin):
             return S_ERROR("Pilot UUID is invalid")
 
         try:
-            filepath = self.meta["LogPath"]
-            os.rename(os.path.join(filepath, vo, logfile), os.path.join(filepath, vo, logfile + ".log"))
+            filepath = self._safePath(vo, logfile)
+            finalpath = self._safePath(vo, logfile + ".log")
+            os.rename(filepath, finalpath)
             sLog.info(f"Log file {logfile} finalised for pilot: (return code: {returnCode})")
             return S_OK()
-        except Exception as err:
+        except (OSError, ValueError) as err:
             sLog.exception("Exception when finalising log")
             return S_ERROR(repr(err))
 
@@ -112,13 +127,14 @@ class FileCacheLoggingPlugin(PilotLoggingPlugin):
         :rtype: dict
         """
 
-        filename = os.path.join(self.meta["LogPath"], vo, logfile)
-        resultDict = {}
+        filename = None
         try:
+            filename = self._safePath(vo, logfile)
+            resultDict = {}
             with open(filename) as f:
                 stdout = f.read()
                 resultDict["StdOut"] = stdout
-        except FileNotFoundError as err:
+        except (FileNotFoundError, ValueError) as err:
             sLog.error(f"Error opening a log file:{filename}", err)
             return S_ERROR(repr(err))
 
