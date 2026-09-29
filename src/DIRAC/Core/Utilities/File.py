@@ -336,14 +336,19 @@ def secureOpenForWrite(filename=None, *, text=True):
     """Securely open a file for writing.
 
     If filename is not provided, a file is created in tempfile.gettempdir().
-    The file always created with mode 600.
+    The file is always created with mode 600. Any existing file is removed
+    before creating the new file to prevent symlink attacks.
 
     :param string filename: name of file to be opened
     """
     if filename:
+        try:
+            os.unlink(filename)
+        except OSError:
+            pass
         fd = os.open(
             path=filename,
-            flags=os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
+            flags=os.O_WRONLY | os.O_CREAT | os.O_EXCL,
             mode=stat.S_IRUSR | stat.S_IWUSR,
         )
     else:
