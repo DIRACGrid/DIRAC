@@ -10,6 +10,7 @@ exposed by MonitoringDB.
 
 
 """
+
 import datetime
 import os
 
@@ -26,7 +27,6 @@ from DIRAC.MonitoringSystem.private.MainReporter import MainReporter
 
 
 class MonitoringHandlerMixin:
-
     """
     .. class:: MonitoringHandler
 
@@ -262,36 +262,6 @@ class MonitoringHandlerMixin:
         prefix = retVal["Value"]
         gLogger.debug("addMonitoringRecords:", prefix)
         return self.__db.bulk_index(prefix, data)
-
-    types_addRecords = [str, str, list]
-
-    def export_addRecords(self, indexname, monitoringType, data):
-        """
-        It is used to insert data directly to the database... The data will be inserted to the given index.
-
-        :param str indexname: name of the index
-        :param str monitoringType: type of the monitoring
-        :param list data: data to insert
-        :returns: S_OK or S_ERROR
-        """
-        indexname = f"{self.diracSetup.lower()}_{indexname}"
-        gLogger.debug("Bulk index:", indexname)
-        mapping = self.__db.getMapping(monitoringType)
-        gLogger.debug("Mapping:", mapping)
-        return self.__db.bulk_index(indexname, data, mapping)
-
-    types_deleteIndex = [str]
-
-    def export_deleteIndex(self, indexName):
-        """
-        It is used to delete an index!
-        Note this is for experienced users!!!
-
-        :param str indexName: name of the index
-        """
-        indexName = f"{self.diracSetup.lower()}_{indexName}"
-        gLogger.debug("delete index:", indexName)
-        return self.__db.deleteIndex(indexName)
 
     types_getLastDayData = [str, dict]
 
