@@ -3,6 +3,7 @@
 The handler is built from a caller's credentials and exercised through its exported methods,
 with the real ``JobPolicy``: only the databases are mocked.
 """
+
 import os
 import re
 from unittest.mock import MagicMock
@@ -238,15 +239,17 @@ def test_setJobsParameter_allowed_for_owner(owner):
 
 def test_force_ignored_for_non_administrator(owner):
     owner.export_setJobStatus(JOB_ID, "Done", "", "Unknown", force=True)
-    assert JobStateUpdateHandlerMixin.jsu.setJobStatus.call_args.kwargs["force"] is False
+    assert JobStateUpdateHandlerMixin.jsu.setJobStatus.call_args.kwargs["force"] is False  # pylint: disable=no-member
 
 
 def test_force_bulk_ignored_for_non_administrator(owner):
     owner.export_setJobStatusBulk(JOB_ID, {"2020-01-01 00:00:00": {"Status": "Done"}}, force=True)
-    assert JobStateUpdateHandlerMixin.jsu.setJobStatusBulk.call_args.kwargs["force"] is False
+    assert (
+        JobStateUpdateHandlerMixin.jsu.setJobStatusBulk.call_args.kwargs["force"] is False  # pylint: disable=no-member
+    )
 
 
 def test_force_honoured_for_administrator(makeHandler):
     handler = makeHandler("admin", "admin_group", [Properties.JOB_ADMINISTRATOR])
     handler.export_setJobStatus(JOB_ID, "Done", "", "Unknown", force=True)
-    assert JobStateUpdateHandlerMixin.jsu.setJobStatus.call_args.kwargs["force"] is True
+    assert JobStateUpdateHandlerMixin.jsu.setJobStatus.call_args.kwargs["force"] is True  # pylint: disable=no-member
