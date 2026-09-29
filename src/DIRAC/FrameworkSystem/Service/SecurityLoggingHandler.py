@@ -7,6 +7,7 @@ import os
 
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig, rootPath
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Security.Properties import TRUSTED_HOST
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.FrameworkSystem.private.SecurityFileLog import SecurityFileLog
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
@@ -42,6 +43,8 @@ def initializeSecurityLoggingHandler(serviceInfo):
 class SecurityLoggingHandler(RequestHandler):
     types_logAction = [(list, tuple)]
 
+    auth_logAction = [TRUSTED_HOST]
+
     def export_logAction(self, secMsg):
         """Log a single action"""
         result = gSecurityFileLog.logAction(secMsg)
@@ -50,6 +53,8 @@ class SecurityLoggingHandler(RequestHandler):
         return S_OK()
 
     types_logActionBundle = [(list, tuple)]
+
+    auth_logActionBundle = [TRUSTED_HOST]
 
     def export_logActionBundle(self, secMsgList):
         """Log a list of actions"""
