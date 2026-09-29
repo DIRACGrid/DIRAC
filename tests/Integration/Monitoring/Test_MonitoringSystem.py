@@ -253,4 +253,6 @@ def test_getReport(putAndDelete):
             if expected_val is None:
                 assert actual_val is None, f"Expected None for {site}/{bucket}, got {actual_val}"
             else:
-                assert actual_val == expected_val * scale_factor, f"Value mismatch for {site}/{bucket}: expected {expected_val * scale_factor}, got {actual_val}"
+                assert (
+                    actual_val == expected_val * scale_factor
+                ), f"Value mismatch for {site}/{bucket}: expected {expected_val * scale_factor}, got {actual_val}"
