@@ -245,20 +245,7 @@ class PushJobAgent(JobAgent):
             ce = queueDictionary["CE"]
             ce.setProxy(pilotProxy)
 
-            # Resolve per-queue CPU info to advertise to the payload via
-            # /LocalSite/CPUTimeLeft and /LocalSite/CPUNormalizationFactor.
-            # For push CEs both CPUTime (wall-clock seconds) and
-            # CPUNormalizationFactor (HS06) are CS fields on the queue;
-            # /LocalSite/CPUTimeLeft is read downstream as CPU work in
-            # HS06-seconds (see JobAgent._computeCPUWorkLeft docstring), so we
-            # multiply here.
-            queueParams = queueDictionary["ParametersDict"]
-            cpuTime = int(queueParams.get("CPUTime", 0) or 0)
-            cpuNormalizationFactor = float(queueParams.get("CPUNormalizationFactor", 0) or 0)
-            cpuInfo = {
-                "CPUTimeLeft": int(cpuTime * cpuNormalizationFactor),
-                "CPUNormalizationFactor": cpuNormalizationFactor,
-            }
+            cpuInfo = self._getQueueCPUInfo(queueDictionary["ParametersDict"])
             self.log.info("Injecting per-queue CPU info", f"queue={queueName} info={cpuInfo}")
 
             if self.submissionPolicy == "JobWrapper":
@@ -540,6 +527,27 @@ class PushJobAgent(JobAgent):
 
         job.jobReport.commit()
         return S_OK(result["Value"])
+
+    def _getQueueCPUInfo(self, queueParams):
+        """Per-queue CPU info to advertise to the payload via /LocalSite/CPUTimeLeft
+        and /LocalSite/CPUNormalizationFactor.
+
+        For push CEs both CPUTime (wall-clock seconds) and CPUNormalizationFactor (HS06)
+        are CS fields on the queue; /LocalSite/CPUTimeLeft is read downstream as CPU work
+        in HS06-seconds (see JobAgent._computeCPUWorkLeft docstring), so we multiply here.
+        As in JobAgent.initialize(), the StopMargin the JobWrapper needs for the uploads is
+        taken off, so that the payload and the Watchdog work from what may be consumed.
+
+        :param dict queueParams: the queue's ParametersDict
+        :return: ``{'CPUTimeLeft', 'CPUNormalizationFactor'}``
+        """
+        cpuTime = int(queueParams.get("CPUTime", 0) or 0)
+        cpuNormalizationFactor = float(queueParams.get("CPUNormalizationFactor", 0) or 0)
+        stopMargin = gConfig.getValue("/Systems/WorkloadManagement/JobWrapper/StopMargin", 300)
+        return {
+            "CPUTimeLeft": int(max(0, cpuTime - stopMargin) * cpuNormalizationFactor),
+            "CPUNormalizationFactor": cpuNormalizationFactor,
+        }
 
     def _appendLocalSiteCFG(self, cfgFilename, cpuInfo):
         """Append /LocalSite/CPUTimeLeft and /LocalSite/CPUNormalizationFactor
