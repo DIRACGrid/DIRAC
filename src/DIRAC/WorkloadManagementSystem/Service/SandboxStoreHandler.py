@@ -68,6 +68,16 @@ class SandboxStoreHandlerMixin:
         pathItems.extend([md5[0:3], md5[3:6], md5])
         return os.path.join(*pathItems)
 
+    def __isValidExtension(self, extension):
+        """Check that the file extension is safe (no path traversal)"""
+        if not extension:
+            return False
+        if ".." in extension:
+            return False
+        if not all(c.isalnum() or c == "." for c in extension):
+            return False
+        return True
+
     def _getFromClient(self, fileId, token, fileSize, fileHelper=None, data=""):
         """
         Receive a file as a sandbox
@@ -94,6 +104,8 @@ class SandboxStoreHandlerMixin:
         else:
             extension = ""
             aHash = fileId
+        if not self.__isValidExtension(extension):
+            return S_ERROR(f"Invalid sandbox extension: {extension}")
         gLogger.info("Upload requested", f"for {aHash} [{extension}]")
 
         credDict = self.getRemoteCredentials()
@@ -236,6 +248,8 @@ class SandboxStoreHandlerMixin:
         gLogger.info("Got Sandbox to local storage", tmpFilePath)
 
         extension = fileId[fileId.find(".tar") + 1 :]
+        if not self.__isValidExtension(extension):
+            return S_ERROR(f"Invalid sandbox extension: {extension}")
         sbPath = f"{self.__getSandboxPath(fileHelper.getHash())}.{extension}"
         gLogger.info("Sandbox path will be", sbPath)
         # Register in DB
