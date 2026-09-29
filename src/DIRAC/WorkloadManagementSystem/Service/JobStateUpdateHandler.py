@@ -12,11 +12,30 @@ import datetime as dateTime
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_CHANGE_STATUS, JobPolicy
+
+# Job attributes that may be modified through this service (default-deny: any other attribute,
+# including a newly added Jobs column, is immutable here)
+MUTABLE_JOB_ATTRIBUTES = frozenset(
+    {
+        "Status",
+        "MinorStatus",
+        "ApplicationStatus",
+        "Site",
+        "StartExecTime",
+        "EndExecTime",
+        "HeartBeatTime",
+    }
+)
+
+# Callers holding any of these properties may act on any job
+PRIVILEGED_JOB_PROPERTIES = frozenset({Properties.JOB_ADMINISTRATOR, Properties.TRUSTED_HOST, Properties.OPERATOR})
 
 
 class JobStateUpdateHandlerMixin:
@@ -53,12 +72,47 @@ class JobStateUpdateHandlerMixin:
                 return S_ERROR(f"Can't connect to DB: {excp}")
         return S_OK()
 
+    def initializeRequest(self):
+        credDict = self.getRemoteCredentials()
+        self.userProperties = credDict.get("properties", [])
+        self.jobPolicy = JobPolicy(credDict.get("DN", ""), credDict.get("group", ""))
+        self.jobPolicy.jobDB = self.jobDB
+
+    def _authorizedJobs(self, jobIDs):
+        """Return the subset of ``jobIDs`` (as ``int``) whose state the caller may change,
+        evaluating the rights of all the jobs in a single ``JobPolicy`` pass.
+        """
+        jobIDs = [int(jobID) for jobID in jobIDs]
+        if PRIVILEGED_JOB_PROPERTIES.intersection(self.userProperties):
+            return set(jobIDs)
+        return set(self.jobPolicy.evaluateJobRights(jobIDs, RIGHT_CHANGE_STATUS)[0])
+
+    def _checkJobAccess(self, jobID):
+        """Check that the caller may change the state of the given job: it holds a privileged
+        property or is granted ``RIGHT_CHANGE_STATUS`` by ``JobPolicy`` (owner, JobSharing member
+        of the owner's group, pilot).
+        """
+        if int(jobID) not in self._authorizedJobs([jobID]):
+            return S_ERROR(f"Not authorized to modify job {jobID}")
+        return S_OK()
+
+    def _authorizeForce(self, force, jobID):
+        """The ``force`` flag bypasses the job state machine: it is only honoured for callers
+        holding the JobAdministrator property, and ignored for any other caller.
+        """
+        if force and Properties.JOB_ADMINISTRATOR not in self.userProperties:
+            self.log.warn("Ignoring 'force' flag from non-administrator caller", f"for job {jobID}")
+            return False
+        return force
+
     ###########################################################################
     types_updateJobFromStager = [[str, int], str]
 
-    @classmethod
-    def export_updateJobFromStager(cls, jobID, status):
+    def export_updateJobFromStager(self, jobID, status):
         """Simple call back method to be used by the stager."""
+        result = self._checkJobAccess(jobID)
+        if not result["OK"]:
+            return result
         if status == "Done":
             jobStatus = JobStatus.CHECKING
             minorStatus = "JobScheduling"
@@ -69,7 +123,7 @@ class JobStateUpdateHandlerMixin:
         infoStr = None
         trials = 10
         for i in range(trials):
-            result = cls.jobDB.getJobAttributes(int(jobID), ["Status"])
+            result = self.jobDB.getJobAttributes(int(jobID), ["Status"])
             if not result["OK"]:
                 return result
             if not result["Value"]:
@@ -84,7 +138,7 @@ class JobStateUpdateHandlerMixin:
         if status != JobStatus.STAGING:
             return S_OK("Job is not in Staging after %d seconds" % trials)
 
-        result = cls.__setJobStatus(int(jobID), status=jobStatus, minorStatus=minorStatus, source="StagerSystem")
+        result = self.__setJobStatus(int(jobID), status=jobStatus, minorStatus=minorStatus, source="StagerSystem")
         if not result["OK"]:
             if result["Message"].find("does not exist") != -1:
                 return S_OK()
@@ -95,14 +149,17 @@ class JobStateUpdateHandlerMixin:
     ###########################################################################
     types_setJobStatus = [[str, int], str, str, str]
 
-    @classmethod
-    def export_setJobStatus(cls, jobID, status="", minorStatus="", source="Unknown", datetime=None, force=False):
+    def export_setJobStatus(self, jobID, status="", minorStatus="", source="Unknown", datetime=None, force=False):
         """
         Sets the major and minor status for job specified by its JobId.
         Sets optionally the status date and source component which sends the status information.
-        The "force" flag will override the WMS state machine decision.
+        The "force" flag will override the WMS state machine decision (JobAdministrator only).
         """
-        return cls.__setJobStatus(
+        result = self._checkJobAccess(jobID)
+        if not result["OK"]:
+            return result
+        force = self._authorizeForce(force, jobID)
+        return self.__setJobStatus(
             int(jobID), status=status, minorStatus=minorStatus, source=source, datetime=datetime, force=force
         )
 
@@ -132,10 +189,13 @@ class JobStateUpdateHandlerMixin:
     ###########################################################################
     types_setJobStatusBulk = [[str, int], dict]
 
-    @classmethod
-    def export_setJobStatusBulk(cls, jobID, statusDict, force=False):
+    def export_setJobStatusBulk(self, jobID, statusDict, force=False):
         """Set various job status fields with a time stamp and a source"""
-        return cls._setJobStatusBulk(jobID, statusDict, force=force)
+        result = self._checkJobAccess(jobID)
+        if not result["OK"]:
+            return result
+        force = self._authorizeForce(force, jobID)
+        return self._setJobStatusBulk(jobID, statusDict, force=force)
 
     @classmethod
     def _setJobStatusBulk(cls, jobID, statusDict, force=False):
@@ -294,87 +354,110 @@ class JobStateUpdateHandlerMixin:
     ###########################################################################
     types_setJobAttribute = [[str, int], str, str]
 
-    @classmethod
-    def export_setJobAttribute(cls, jobID, attribute, value):
-        """Set a job attribute"""
-        return cls.jobDB.setJobAttribute(int(jobID), attribute, value)
+    def export_setJobAttribute(self, jobID, attribute, value):
+        """Set a job attribute. Only ``MUTABLE_JOB_ATTRIBUTES`` may be set."""
+        if attribute not in MUTABLE_JOB_ATTRIBUTES:
+            return S_ERROR(f"Job attribute '{attribute}' cannot be modified through JobStateUpdate")
+        result = self._checkJobAccess(jobID)
+        if not result["OK"]:
+            return result
+        return self.jobDB.setJobAttribute(int(jobID), attribute, value)
 
     ###########################################################################
     types_setJobSite = [[str, int], str]
 
-    @classmethod
-    def export_setJobSite(cls, jobID, site):
+    def export_setJobSite(self, jobID, site):
         """Allows the site attribute to be set for a job specified by its jobID."""
-        return cls.jobDB.setJobAttribute(int(jobID), "Site", site)
+        result = self._checkJobAccess(jobID)
+        if not result["OK"]:
+            return result
+        return self.jobDB.setJobAttribute(int(jobID), "Site", site)
 
     ###########################################################################
     types_setJobFlag = [[str, int], str]
 
-    @classmethod
-    def export_setJobFlag(cls, jobID, flag):
-        """Set job flag for job with jobID"""
-        return cls.jobDB.setJobAttribute(int(jobID), flag, "True")
+    def export_setJobFlag(self, jobID, flag):
+        """Set job flag for job with jobID. Only ``MUTABLE_JOB_ATTRIBUTES`` may be set."""
+        if flag not in MUTABLE_JOB_ATTRIBUTES:
+            return S_ERROR(f"Job flag '{flag}' cannot be modified through JobStateUpdate")
+        result = self._checkJobAccess(jobID)
+        if not result["OK"]:
+            return result
+        return self.jobDB.setJobAttribute(int(jobID), flag, "True")
 
     ###########################################################################
     types_unsetJobFlag = [[str, int], str]
 
-    @classmethod
-    def export_unsetJobFlag(cls, jobID, flag):
-        """Unset job flag for job with jobID"""
-        return cls.jobDB.setJobAttribute(int(jobID), flag, "False")
+    def export_unsetJobFlag(self, jobID, flag):
+        """Unset job flag for job with jobID. Only ``MUTABLE_JOB_ATTRIBUTES`` may be unset."""
+        if flag not in MUTABLE_JOB_ATTRIBUTES:
+            return S_ERROR(f"Job flag '{flag}' cannot be modified through JobStateUpdate")
+        result = self._checkJobAccess(jobID)
+        if not result["OK"]:
+            return result
+        return self.jobDB.setJobAttribute(int(jobID), flag, "False")
 
     ###########################################################################
     types_setJobApplicationStatus = [[str, int], str, str]
 
-    @classmethod
-    def export_setJobApplicationStatus(cls, jobID, appStatus, source="Unknown"):
+    def export_setJobApplicationStatus(self, jobID, appStatus, source="Unknown"):
         """Set the application status for job specified by its JobId.
         Internally calling the bulk method
         """
-        return cls.__setJobStatus(jobID, appStatus=appStatus, source=source)
+        result = self._checkJobAccess(jobID)
+        if not result["OK"]:
+            return result
+        return self.__setJobStatus(jobID, appStatus=appStatus, source=source)
 
     ###########################################################################
     types_setJobParameter = [[str, int], str, str]
 
-    @classmethod
-    def export_setJobParameter(cls, jobID, name, value):
+    def export_setJobParameter(self, jobID, name, value):
         """Set arbitrary parameter specified by name/value pair
         for job specified by its JobId
         """
+        result = self._checkJobAccess(jobID)
+        if not result["OK"]:
+            return result
 
-        if cls.elasticJobParametersDB:
-            return cls.elasticJobParametersDB.setJobParameter(int(jobID), name, value)  # pylint: disable=no-member
+        if self.elasticJobParametersDB:
+            return self.elasticJobParametersDB.setJobParameter(int(jobID), name, value)  # pylint: disable=no-member
 
-        return cls.jobDB.setJobParameter(int(jobID), name, value)
+        return self.jobDB.setJobParameter(int(jobID), name, value)
 
     ###########################################################################
     types_setJobsParameter = [dict]
 
-    @classmethod
     @ignoreEncodeWarning
-    def export_setJobsParameter(cls, jobsParameterDict):
+    def export_setJobsParameter(self, jobsParameterDict):
         """Set arbitrary parameter specified by name/value pair
         for job specified by its JobId
         """
         failed = False
         message = ""
 
+        authorizedJobs = self._authorizedJobs(jobsParameterDict)
         for jobID in jobsParameterDict:
-            if cls.elasticJobParametersDB:
-                res = cls.elasticJobParametersDB.setJobParameter(
+            if int(jobID) not in authorizedJobs:
+                self.log.error("Not authorized to set job parameter", f"for job {jobID}")
+                failed = True
+                message = f"Not authorized to modify job {jobID}"
+                continue
+            if self.elasticJobParametersDB:
+                res = self.elasticJobParametersDB.setJobParameter(
                     int(jobID), str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1])
                 )
                 if not res["OK"]:
-                    cls.log.error("Failed to add Job Parameter to elasticJobParametersDB", res["Message"])
+                    self.log.error("Failed to add Job Parameter to elasticJobParametersDB", res["Message"])
                     failed = True
                     message = res["Message"]
 
             else:
-                res = cls.jobDB.setJobParameter(
+                res = self.jobDB.setJobParameter(
                     jobID, str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1])
                 )
                 if not res["OK"]:
-                    cls.log.error("Failed to add Job Parameter to MySQL", res["Message"])
+                    self.log.error("Failed to add Job Parameter to MySQL", res["Message"])
                     failed = True
                     message = res["Message"]
 
@@ -385,46 +468,50 @@ class JobStateUpdateHandlerMixin:
     ###########################################################################
     types_setJobParameters = [[str, int], list]
 
-    @classmethod
     @ignoreEncodeWarning
-    def export_setJobParameters(cls, jobID, parameters):
+    def export_setJobParameters(self, jobID, parameters):
         """Set arbitrary parameters specified by a list of name/value pairs
         for job specified by its JobId
         """
-        if cls.elasticJobParametersDB:
-            result = cls.elasticJobParametersDB.setJobParameters(int(jobID), parameters)
+        result = self._checkJobAccess(jobID)
+        if not result["OK"]:
+            return result
+        if self.elasticJobParametersDB:
+            result = self.elasticJobParametersDB.setJobParameters(int(jobID), parameters)
             if not result["OK"]:
-                cls.log.error("Failed to add Job Parameters to ElasticJobParametersDB", result["Message"])
+                self.log.error("Failed to add Job Parameters to ElasticJobParametersDB", result["Message"])
         else:
-            result = cls.jobDB.setJobParameters(int(jobID), parameters)
+            result = self.jobDB.setJobParameters(int(jobID), parameters)
             if not result["OK"]:
-                cls.log.error("Failed to add Job Parameters to MySQL", result["Message"])
+                self.log.error("Failed to add Job Parameters to MySQL", result["Message"])
 
         return result
 
     ###########################################################################
     types_sendHeartBeat = [[str, int], dict, dict]
 
-    @classmethod
-    def export_sendHeartBeat(cls, jobID, dynamicData, staticData):
+    def export_sendHeartBeat(self, jobID, dynamicData, staticData):
         """Send a heart beat sign of life for a job jobID"""
-
-        result = cls.jobDB.setHeartBeatData(int(jobID), dynamicData)
+        result = self._checkJobAccess(jobID)
         if not result["OK"]:
-            cls.log.warn("Failed to set the heart beat data", f"for job {jobID} ")
+            return result
 
-        if cls.elasticJobParametersDB:
+        result = self.jobDB.setHeartBeatData(int(jobID), dynamicData)
+        if not result["OK"]:
+            self.log.warn("Failed to set the heart beat data", f"for job {jobID} ")
+
+        if self.elasticJobParametersDB:
             for key, value in staticData.items():
-                result = cls.elasticJobParametersDB.setJobParameter(int(jobID), key, value)
+                result = self.elasticJobParametersDB.setJobParameter(int(jobID), key, value)
                 if not result["OK"]:
-                    cls.log.error("Failed to add Job Parameters to ElasticSearch", result["Message"])
+                    self.log.error("Failed to add Job Parameters to ElasticSearch", result["Message"])
         else:
-            result = cls.jobDB.setJobParameters(int(jobID), list(staticData.items()))
+            result = self.jobDB.setJobParameters(int(jobID), list(staticData.items()))
             if not result["OK"]:
-                cls.log.error("Failed to add Job Parameters to MySQL", result["Message"])
+                self.log.error("Failed to add Job Parameters to MySQL", result["Message"])
 
         # Restore the Running status if necessary
-        result = cls.jobDB.getJobAttributes(jobID, ["Status"])
+        result = self.jobDB.getJobAttributes(jobID, ["Status"])
         if not result["OK"]:
             return result
 
@@ -433,21 +520,24 @@ class JobStateUpdateHandlerMixin:
 
         status = result["Value"]["Status"]
         if status in (JobStatus.STALLED, JobStatus.MATCHED):
-            result = cls.jobDB.setJobAttribute(jobID=jobID, attrName="Status", attrValue=JobStatus.RUNNING, update=True)
+            result = self.jobDB.setJobAttribute(
+                jobID=jobID, attrName="Status", attrValue=JobStatus.RUNNING, update=True
+            )
             if not result["OK"]:
-                cls.log.warn("Failed to restore the job status to Running")
+                self.log.warn("Failed to restore the job status to Running")
 
         jobMessageDict = {}
-        result = cls.jobDB.getJobCommand(int(jobID))
+        result = self.jobDB.getJobCommand(int(jobID))
         if result["OK"]:
             jobMessageDict = result["Value"]
 
         if jobMessageDict:
             for key in jobMessageDict:
-                result = cls.jobDB.setJobCommandStatus(int(jobID), key, "Sent")
+                result = self.jobDB.setJobCommandStatus(int(jobID), key, "Sent")
 
         return S_OK(jobMessageDict)
 
 
 class JobStateUpdateHandler(JobStateUpdateHandlerMixin, RequestHandler):
-    pass
+    def initialize(self):
+        return self.initializeRequest()
