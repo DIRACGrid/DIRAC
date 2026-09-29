@@ -66,6 +66,7 @@ class AuthServer(_AuthorizationServer):
         self.idps = IdProviderFactory()
         self.proxyCli = ProxyManagerClient()  # take care about proxies
         self.tokenCli = TokenManagerClient()  # take care about tokens
+        self._tokenDB = None
         # The authorization server has its own settings, but they are standardized
         self.metadata = collectMetadata()
         self.metadata.validate()
@@ -87,6 +88,15 @@ class AuthServer(_AuthorizationServer):
         self.register_endpoint(DeviceAuthorizationEndpoint)
         self.register_endpoint(RevocationEndpoint)  # Enable revokation tokens
         self.register_grant(AuthorizationCodeGrant, [CodeChallenge(required=True)])  # Enable authorization code flow
+
+    @property
+    def tokenDB(self):
+        """Lazy initialization of TokenDB"""
+        if self._tokenDB is None:
+            from DIRAC.FrameworkSystem.DB.TokenDB import TokenDB
+
+            self._tokenDB = TokenDB(parentLogger=self.log)
+        return self._tokenDB
 
     # pylint: disable=method-hidden
     def query_client(self, client_id):
@@ -321,8 +331,14 @@ class AuthServer(_AuthorizationServer):
         # Update token for user. This token will be stored separately in the database and
         # updated from time to time. This token will never be transmitted,
         # it will be used to make exchange token requests.
-        result = self.tokenCli.updateToken(idpObj.token, credDict["ID"], idpObj.name)
-        return S_OK(credDict) if result["OK"] else result
+        result = self.tokenDB.updateToken(idpObj.token, credDict["ID"], idpObj.name, rt_expired_in=24 * 3600)
+        if not result["OK"]:
+            return result
+        # Revoke old tokens
+        for oldToken in result["Value"]:
+            if "refresh_token" in oldToken and oldToken["refresh_token"] != idpObj.token.get("refresh_token"):
+                idpObj.revokeToken(oldToken["refresh_token"])
+        return S_OK(credDict)
 
     def create_oauth2_request(self, request, method_cls=OAuth2Request, use_json=False):
         """Parse request. Rewrite authlib method."""
