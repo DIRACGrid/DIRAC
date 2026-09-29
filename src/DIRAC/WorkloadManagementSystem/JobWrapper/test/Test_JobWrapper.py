@@ -530,6 +530,128 @@ def test_postProcess_watchdog_error(setup_job_wrapper, mocker, mock_report_and_s
     assert report_args[-1]["minorStatus"] == payloadResult["watchdogError"]
 
 
+def test_postProcess_no_status_executor_and_watchdog_priority(setup_job_wrapper, mocker, mock_report_and_set_param):
+    """payloadStatus=None with both executor error and watchdog error set.
+
+    Watchdog must win -- it's the proximate cause when both are present (the kill
+    is what made the executor record an error in the first place).
+    """
+    jw = setup_job_wrapper()
+    report_args, set_param_args, report_side_effect, set_param_side_effect = mock_report_and_set_param
+
+    mocker.patch.object(jw, "_JobWrapper__report", side_effect=report_side_effect)
+    mocker.patch.object(jw, "_JobWrapper__setJobParam", side_effect=set_param_side_effect)
+
+    payloadResult = {
+        "payloadStatus": None,
+        "payloadOutput": None,
+        "payloadExecutorError": "systemCall failed",
+        "cpuTimeConsumed": None,
+        "watchdogError": JobMinorStatus.JOB_EXCEEDED_CPU,
+        "watchdogStats": None,
+    }
+
+    result = jw.postProcess(**payloadResult)
+    assert not result["OK"]
+    assert "Payload killed by watchdog" in result["Message"]
+    assert report_args[-1]["minorStatus"] == JobMinorStatus.JOB_EXCEEDED_CPU
+    # The executor-error branch's APP_THREAD_FAILED must NOT appear -- watchdog wins.
+    assert not any(call.get("minorStatus") == JobMinorStatus.APP_THREAD_FAILED for call in report_args)
+
+
+@pytest.mark.parametrize("payloadStatus", [0, DErrno.EWMSRESC, DErrno.EWMSRESC & 255])
+def test_postProcess_watchdog_verdict_wins_over_exit_code(
+    setup_job_wrapper, mocker, mock_report_and_set_param, payloadStatus
+):
+    """The Watchdog killed the payload, which still managed to exit 0 or ask to be rescheduled.
+
+    A payload stopped for exceeding a limit (CPU, memory, time left) did not complete its
+    work, whatever it returned on the way out: the Watchdog's reason stands.
+    """
+    jw = setup_job_wrapper()
+    report_args, set_param_args, report_side_effect, set_param_side_effect = mock_report_and_set_param
+
+    mocker.patch.object(jw, "_JobWrapper__report", side_effect=report_side_effect)
+    mocker.patch.object(jw, "_JobWrapper__setJobParam", side_effect=set_param_side_effect)
+
+    payloadResult = {
+        "payloadStatus": payloadStatus,
+        "payloadOutput": "",
+        "payloadExecutorError": None,
+        "cpuTimeConsumed": [100, 200, 300, 400, 500],
+        "watchdogError": JobMinorStatus.JOB_EXCEEDED_CPU,
+        "watchdogStats": {"LastUpdateCPU(s)": "100", "MemoryUsed(MB)": "100"},
+    }
+    jw.executionResults["CPU"] = payloadResult["cpuTimeConsumed"]
+
+    assert jw.postProcess(**payloadResult)["OK"]
+    assert report_args[-1]["status"] == JobStatus.FAILED
+    assert report_args[-1]["minorStatus"] == JobMinorStatus.JOB_EXCEEDED_CPU
+    assert jw.failedFlag
+
+
+def test_postProcess_watchdog_killed_payload_with_partial_output(setup_job_wrapper, mocker, mock_report_and_set_param):
+    """Watchdog killed the payload but partial output and CPU figures are available.
+
+    The wrapper should still send the partial output as the final heartbeat -- the
+    user often wants to see how far the payload got before the kill.
+    """
+    jw = setup_job_wrapper()
+    report_args, set_param_args, report_side_effect, set_param_side_effect = mock_report_and_set_param
+
+    mocker.patch.object(jw, "_JobWrapper__report", side_effect=report_side_effect)
+    mocker.patch.object(jw, "_JobWrapper__setJobParam", side_effect=set_param_side_effect)
+    sendFinal = mocker.patch.object(jw, "_JobWrapper__sendFinalStdOut")
+
+    payloadResult = {
+        "payloadStatus": None,
+        "payloadOutput": "Last log line before SIGTERM\n",
+        "payloadExecutorError": None,
+        "cpuTimeConsumed": [100, 200, 300, 400, 500],
+        "watchdogError": JobMinorStatus.JOB_EXCEEDED_CPU,
+        "watchdogStats": {"LastUpdateCPU(s)": "100"},
+    }
+    jw.executionResults["CPU"] = payloadResult["cpuTimeConsumed"]
+
+    result = jw.postProcess(**payloadResult)
+
+    assert not result["OK"]
+    sendFinal.assert_called_once_with(payloadResult["payloadOutput"])
+    # Watchdog status still reported correctly.
+    assert report_args[-1]["minorStatus"] == JobMinorStatus.JOB_EXCEEDED_CPU
+
+
+def test_postProcess_watchdog_killed_payload(setup_job_wrapper, mocker, mock_report_and_set_param):
+    """Watchdog killed the payload mid-flight: payloadStatus=None + watchdogError set.
+
+    Regression test for the path where killChild leaves no clean exit code: the
+    watchdog's verdict must be reported as the minor status, not silently lost
+    behind APP_THREAD_NOT_COMPLETE / "No outputs generated".
+    """
+    jw = setup_job_wrapper()
+    report_args, set_param_args, report_side_effect, set_param_side_effect = mock_report_and_set_param
+
+    mocker.patch.object(jw, "_JobWrapper__report", side_effect=report_side_effect)
+    mocker.patch.object(jw, "_JobWrapper__setJobParam", side_effect=set_param_side_effect)
+
+    payloadResult = {
+        "payloadStatus": None,
+        "payloadOutput": None,
+        "payloadExecutorError": None,
+        "cpuTimeConsumed": None,
+        "watchdogError": JobMinorStatus.JOB_EXCEEDED_CPU,
+        "watchdogStats": None,
+    }
+
+    result = jw.postProcess(**payloadResult)
+    assert not result["OK"]
+    assert "Payload killed by watchdog" in result["Message"]
+    assert JobMinorStatus.JOB_EXCEEDED_CPU in result["Message"]
+    assert report_args[-1]["status"] == JobStatus.FAILED
+    assert report_args[-1]["minorStatus"] == JobMinorStatus.JOB_EXCEEDED_CPU
+    assert set_param_args[-1][0][1] == JobMinorStatus.JOB_EXCEEDED_CPU
+
+
 def test_postProcess_executor_failed_no_status(setup_job_wrapper, mocker, mock_report_and_set_param):
     """Test the postProcess method of the JobWrapper class: executor failed and no status defined."""
     jw = setup_job_wrapper()

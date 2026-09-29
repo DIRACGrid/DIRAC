@@ -542,3 +542,35 @@ def test_submitJobWrapper_writes_local_site_to_dirac_cfg(mocker, jobID):
     assert reloaded.getOption("/DIRAC/VirtualOrganization") == "lhcb"
 
     shutil.rmtree("job", ignore_errors=True)
+
+
+@pytest.mark.parametrize(
+    "wmsMajorStatus, expectedAccounting",
+    [
+        # postProcess already reported the failure (e.g. the Watchdog's reason): keep it
+        ("Failed", {}),
+        # postProcess failed without reporting anything: fall back to the generic status
+        ("Running", {"status": "Failed", "minorStatus": JobMinorStatus.EXCEPTION_DURING_EXEC}),
+    ],
+)
+def test_postProcessJob_keeps_the_status_postProcess_reported(mocker, tmp_path, wmsMajorStatus, expectedAccounting):
+    """A failed postProcess is not overwritten with EXCEPTION_DURING_EXEC when it already stamped FAILED."""
+    agent = _bareAgent(mocker)
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PushJobAgent.shutil.rmtree")
+
+    job = Mock()
+    job.jobID = 1
+    job.jobIDPath = tmp_path
+    job.wmsMajorStatus = wmsMajorStatus
+    job.postProcess.return_value = S_ERROR(f"Payload killed by watchdog: {JobMinorStatus.JOB_EXCEEDED_CPU}")
+
+    agent.postProcessJob(job, {})
+
+    overwritten = [
+        call
+        for call in job.jobReport.setJobStatus.call_args_list
+        if call.kwargs.get("minorStatus") == JobMinorStatus.EXCEPTION_DURING_EXEC
+    ]
+    assert bool(overwritten) is bool(expectedAccounting)
+    job.sendFailoverRequest.assert_called_once_with()
+    job.sendJobAccounting.assert_called_once_with(**expectedAccounting)
