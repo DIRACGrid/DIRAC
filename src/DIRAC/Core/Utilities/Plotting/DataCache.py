@@ -1,10 +1,10 @@
 """ Accounting Cache
 """
-import os.path
-import time
+import os
 import threading
+import time
 
-from DIRAC import S_OK, S_ERROR, gLogger, rootPath
+from DIRAC import S_ERROR, S_OK, gLogger, rootPath
 from DIRAC.Core.Utilities.DictCache import DictCache
 
 
@@ -67,9 +67,13 @@ class DataCache:
         return S_OK(plotDict)
 
     def getPlotData(self, plotFileName):
-        filename = f"{self.graphsLocation}/{plotFileName}"
+        filename = os.path.join(self.graphsLocation, plotFileName)
+        realPath = os.path.realpath(filename)
+        realBase = os.path.realpath(self.graphsLocation)
+        if not realPath.startswith(realBase + os.sep) and realPath != realBase:
+            return S_ERROR(f"Invalid file path: {plotFileName}")
         try:
-            fd = open(filename, "rb")
+            fd = open(realPath, "rb")
             data = fd.read()
             fd.close()
         except Exception as e:
