@@ -82,7 +82,6 @@ class Watchdog:
 
         self.initialWallClockLeft = 0
         self.wallClockLeft = 0
-        self.stopMargin = 300  # seconds of wall-clock time to reserve for post-processing
         self.cpuPower = 1.0
         self.processors = processors
 
@@ -127,14 +126,10 @@ class Watchdog:
             self.checkingTime = self.minCheckingTime
 
         self.cpuPower = gConfig.getValue("/LocalSite/CPUNormalizationFactor", 1.0)
-        self.stopMargin = gConfig.getValue(self.section + "/StopMargin", self.stopMargin)
-
-        # Read CPU work left from config (written by JobAgent) and convert to wall-clock seconds
+        # CPU work left, as published by the JobAgent and so already net of the StopMargin
+        # it set aside for the uploads. Converted to the wall clock this counts down.
         cpuWorkLeft = gConfig.getValue("/LocalSite/CPUTimeLeft", 0)
-        if cpuWorkLeft and self.cpuPower:
-            self.initialWallClockLeft = cpuWorkLeft / self.cpuPower
-        else:
-            self.initialWallClockLeft = 0
+        self.initialWallClockLeft = cpuWorkLeft / self.cpuPower if cpuWorkLeft and self.cpuPower else 0
 
         return S_OK()
 
@@ -725,17 +720,15 @@ class Watchdog:
         The initial wall-clock time left is read from the local configuration at initialization
         (written by the JobAgent). A simple countdown is then used to determine the remaining time.
 
-        Returns S_ERROR when the remaining wall-clock time drops below the configurable StopMargin
-        (default: 300s), leaving enough time for post-processing (output upload, cleanup, etc.).
+        That budget is already net of the ``StopMargin`` the JobAgent set aside for the
+        uploads, so the payload is stopped as soon as it is exhausted.
         """
         if not self.initialWallClockLeft:
             return S_OK("TimeLeft not available")
 
-        elapsed = time.time() - self.initialValues["StartTime"]
-        wallClockLeft = self.initialWallClockLeft - elapsed
-        self.wallClockLeft = wallClockLeft
+        self.wallClockLeft = self.initialWallClockLeft - (time.time() - self.initialValues["StartTime"])
 
-        if wallClockLeft < self.stopMargin:
+        if self.wallClockLeft <= 0:
             return S_ERROR(JobMinorStatus.JOB_EXCEEDED_CPU)
 
         return S_OK()

@@ -4,6 +4,8 @@ import os
 import time
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 # sut
 from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
 
@@ -43,11 +45,11 @@ def test__performChecksFull():
 class TestCheckTimeLeft:
     """Tests for the simplified wall-clock countdown time-left logic."""
 
-    def _make_watchdog(self, initialWallClockLeft=0, stopMargin=300, cpuPower=10.0):
+    def _make_watchdog(self, initialWallClockLeft=0, cpuPower=10.0):
+        """A Watchdog holding a budget the JobAgent has already taken StopMargin off."""
         pid = os.getpid()
         wd = Watchdog(pid, mock_exeThread, mock_spObject, 5000)
         wd.initialWallClockLeft = initialWallClockLeft
-        wd.stopMargin = stopMargin
         wd.cpuPower = cpuPower
         wd.initialValues = {"StartTime": time.time()}
         wd.testTimeLeft = 1
@@ -61,16 +63,26 @@ class TestCheckTimeLeft:
 
     def test_plenty_of_time_left(self):
         """When there's plenty of time, the check should pass."""
-        wd = self._make_watchdog(initialWallClockLeft=3600, stopMargin=300)
+        wd = self._make_watchdog(initialWallClockLeft=3600)
         result = wd._Watchdog__checkTimeLeft()
         assert result["OK"] is True
         assert wd.wallClockLeft > 3000
 
-    def test_below_stop_margin(self):
-        """When wall-clock left drops below stop margin, the check should fail."""
-        wd = self._make_watchdog(initialWallClockLeft=3600, stopMargin=300)
-        # Pretend the job started 3500 seconds ago (only 100s left, below 300s margin)
+    def test_budget_not_exhausted(self):
+        """The payload keeps the whole published budget: it is already net of the margin.
+
+        Under the old behaviour the Watchdog took another StopMargin off here and stopped
+        the job with 100 s still on its clock.
+        """
+        wd = self._make_watchdog(initialWallClockLeft=3600)
         wd.initialValues["StartTime"] = time.time() - 3500
+        result = wd._Watchdog__checkTimeLeft()
+        assert result["OK"] is True
+
+    def test_budget_exhausted(self):
+        """Once the published budget runs out, what is left of the slot is the reserve."""
+        wd = self._make_watchdog(initialWallClockLeft=3600)
+        wd.initialValues["StartTime"] = time.time() - 3700
         result = wd._Watchdog__checkTimeLeft()
         assert not result["OK"]
 
@@ -81,11 +93,10 @@ class TestCheckTimeLeft:
         # wallClockLeft should be approximately 3600s
         assert wd.wallClockLeft > 3500
 
-    def test_exact_stop_margin_boundary(self):
-        """When wall-clock left equals stop margin, the check should fail (< not <=)."""
-        wd = self._make_watchdog(initialWallClockLeft=1000, stopMargin=300)
-        # 699s elapsed → 301s left, which is not < 300 → should pass
-        wd.initialValues["StartTime"] = time.time() - 699
+    def test_boundary(self):
+        """A second still on the clock is a second the payload may use."""
+        wd = self._make_watchdog(initialWallClockLeft=1000)
+        wd.initialValues["StartTime"] = time.time() - 998
         result = wd._Watchdog__checkTimeLeft()
         assert result["OK"] is True
 
@@ -160,3 +171,28 @@ def test__getUsageSummaryWithoutCalibrationBaseline(monkeypatch):
     for name in ("DiskSpace(MB)", "MemoryUsed(MB)"):
         assert name not in wd.currentStats
     assert all(math.isfinite(value) for value in wd.currentStats.values()), wd.currentStats
+
+
+class TestConcurrentJobsInOneSlot:
+    """A PoolComputingElement runs several jobs side by side in the same batch slot."""
+
+    SLOT_SECONDS = 3600
+    MARGIN = 300
+
+    @pytest.mark.parametrize(
+        "secondsIntoSlot, stillRunning",
+        [(SLOT_SECONDS - MARGIN - 60, True), (SLOT_SECONDS - MARGIN + 60, False)],
+    )
+    def test_jobs_matched_at_different_times_stop_together(self, secondsIntoSlot, stillRunning):
+        """Both end at the slot's end, not at their own start plus a whole slot.
+
+        The JobAgent publishes what is left *now*, so the job matched ten minutes later is
+        handed a budget shorter by exactly those ten minutes.
+        """
+        now = time.time()
+        for startedAt in (0, 600):  # two matches, ten minutes apart
+            wd = Watchdog(os.getpid(), MagicMock(), MagicMock(), 5000)
+            wd.initialWallClockLeft = self.SLOT_SECONDS - startedAt - self.MARGIN
+            wd.initialValues = {"StartTime": now - (secondsIntoSlot - startedAt)}
+            wd.testTimeLeft = 1
+            assert wd._Watchdog__checkTimeLeft()["OK"] is stillRunning, f"job matched at {startedAt}s"
