@@ -450,6 +450,23 @@ def _bareAgent(mocker):
     return agent
 
 
+@pytest.mark.parametrize(
+    "queueParams, expected",
+    [
+        # 3600 s of queue, less the 300 s kept for the uploads, times the queue's power
+        ({"CPUTime": 3600, "CPUNormalizationFactor": 10.0}, {"CPUTimeLeft": 33000, "CPUNormalizationFactor": 10.0}),
+        # a queue shorter than the margin leaves nothing to spend
+        ({"CPUTime": 100, "CPUNormalizationFactor": 10.0}, {"CPUTimeLeft": 0, "CPUNormalizationFactor": 10.0}),
+        # nothing known about the queue: nothing advertised
+        ({}, {"CPUTimeLeft": 0, "CPUNormalizationFactor": 0.0}),
+    ],
+)
+def test__getQueueCPUInfo_reserves_the_upload_margin(mocker, queueParams, expected):
+    """Push-mode jobs are advertised what they may consume, as JobAgent.initialize() does for pilots."""
+    agent = _bareAgent(mocker)
+    assert agent._getQueueCPUInfo(queueParams) == expected
+
+
 def test__appendLocalSiteCFG_writes_options(mocker, tmp_path):
     """The helper adds /LocalSite options to a CFG file without clobbering existing ones."""
     from diraccfg import CFG
