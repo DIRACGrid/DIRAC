@@ -1,3 +1,9 @@
+[v8.0.85]
+
+*MonitoringSystem
+
+FIX: (#8799) Use float mapping for ResponseTime, CpuPercentage and CycleDuration in ServiceMonitoring and AgentMonitoring so that aggregations are no longer truncated (existing indices need to be reindexed)
+
 [v8.0.84]
 
 *Core
