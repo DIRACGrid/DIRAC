@@ -1,3 +1,40 @@
+[v9.1.20]
+
+*DataManagementSystem
+
+FIX: (#8804) Escape parameters in findDirs
+NEW: (#8793) DMSHelper cache resolveSEGroup
+
+*ResourceStatusSystem
+
+CHANGE: (#8803) removed deprecated RPC methods
+
+*RequestManagementSystem
+
+FIX: (#8802) Ensure Request owner details are consistent
+
+*WorkloadManagement
+
+FIX: (#8801) TaskQueueDB deletes empty task queues atomically, so a task queue holding jobs can no longer lose its site/platform/tag restrictions
+FIX: (#8801) TaskQueueDB creates task queues and their requirement rows in a single transaction
+FIX: (#8801) TaskQueueDB job insertion no longer fails when the task queue is deleted concurrently
+CHANGE: (#8801) TaskQueueDB job insertion uses a shared lock instead of the Enabled counter, so concurrent insertions into the same task queue no longer block each other
+CHANGE: (#8801) TaskQueueDB avoids creating duplicate task queues when jobs with identical requirements are inserted concurrently
+CHANGE: (#8801) TaskQueueDB.retrieveTaskQueues no longer materialises every job in a temporary table, which speeds up getMatchingTaskQueues
+CHANGE: (#8796) Interpret outputPath with LFN: prefix as an absolute one
+
+*MonitoringSystem
+
+FIX: (#8797) Use float mapping for ResponseTime, CpuPercentage and CycleDuration in ServiceMonitoring and AgentMonitoring so that aggregations are no longer truncated (existing indices need to be reindexed)
+
+*Resources
+
+FIX: (#8794) fix a bug when Dirac scope extraction algorithm was use even though a Rucio configuration said otherwise. Adress #8741
+
+*TransformationSystem
+
+FIX: (#8757) The InputDataAgent now uses `FileCatalog` instead of `FileCatalogClient`, enabling its use with any configured `FileCatalog`, e.g. the `RucioFileCatalog`.
+
 [v9.1.19]
 
 *SSHComputingElement
