@@ -1,3 +1,18 @@
+[v9.0.26]
+
+*MonitoringSystem
+
+FIX: (#8798) Use float mapping for ResponseTime, CpuPercentage and CycleDuration in ServiceMonitoring and AgentMonitoring so that aggregations are no longer truncated (existing indices need to be reindexed)
+
+*WorkloadManagement
+
+CHANGE: (#8795) Interpret outputPath with LFN: prefix as an absolute one
+
+*Core
+
+CHANGE: (#8788) the conda-forge dirac-grid feedstock is updated automatically when a release is made
+FIX: (#8788) making release notes no longer fails when the reference tag is not one of the 100 most recent tags
+
 [v9.0.25]
 
 *Core
