@@ -34,7 +34,7 @@ from DIRAC.WorkloadManagementSystem.Agent.JobAgent import JobAgent
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus, PilotStatus
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
-from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import getJobParameters
+from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import getJobParametersUtility
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapperUtilities import (
     getJobWrapper,
@@ -787,7 +787,7 @@ class PushJobAgent(JobAgent):
             return S_OK()
 
         # Get their parameters
-        if not (result := getJobParameters(jobs, ["GridCE", "TaskID", "Stamp"]))["OK"]:
+        if not (result := getJobParametersUtility(jobs, ["GridCE", "TaskID", "Stamp"]))["OK"]:
             self.log.error("Failed to get the list of taskIDs", result["Message"])
             return result
 
