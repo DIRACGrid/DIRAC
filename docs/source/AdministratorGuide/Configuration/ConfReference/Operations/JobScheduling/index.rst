@@ -34,6 +34,9 @@ there are more than a configured threshold, no more jobs of that type will run a
 *JobType*) name, and setting the limits inside. For instance, to define that there can't be more that 150 jobs running with *JobType=MonteCarlo* at site *DIRAC.Somewhere.co*
 set *JobScheduling/RunningLimit/DIRAC.Somewhere.co/JobType/MonteCarlo=150*
 
+The number of running jobs is taken from the JobDB and cached for a few seconds. The jobs matched by the
+Matcher since then are added to it, so that a site cannot exceed its limits while the count is cached.
+
 Setting the matching delay
 ===========================
 
@@ -43,6 +46,35 @@ For instance *JobScheduling/MatchingDelay/DIRAC.Somewhere.co/JobType/MonteCarlo=
 site *DIRAC.Somewhere.co* with less than 10 seconds between them.
 
 The value may be fractional (e.g. ``0.5``) to allow more than one job to start per second.
+
+By default no two matching jobs can start closer than the delay. To let a site start several jobs at once after a
+quiet period while keeping the same average rate, set a burst size under *JobScheduling/MatchingDelay/<Site name>/Burst*,
+with the same structure. For instance, with::
+
+ MatchingDelay
+ {
+   DIRAC.Somewhere.co
+   {
+     JobType
+     {
+       MonteCarlo = 0.2
+     }
+     Burst
+     {
+       JobType
+       {
+         MonteCarlo = 50
+       }
+     }
+   }
+ }
+
+up to 50 *MonteCarlo* jobs can start at once, then one every 0.2 seconds (5 per second) while jobs keep being matched.
+The site regains the ability to start a burst at the same rate when fewer jobs are matched.
+This is a token bucket: each matched job takes a token, the bucket holds at most *Burst* tokens and gains one every
+delay seconds. Tokens are reserved before querying the task queues, so concurrent matching requests cannot exceed
+the configured rate. The state is kept in memory by each Matcher service process: with several Matcher instances,
+each of them applies the rate.
 
 Example
 ========
