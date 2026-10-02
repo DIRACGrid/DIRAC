@@ -49,6 +49,30 @@ def setup_job_wrapper(mocker):
     return _setup
 
 
+def test_setInitialJobParameters(setup_job_wrapper, mocker):
+    """Only job parameters are reported: job attributes (e.g. JobType, JobGroup) are
+    already known by the WMS and must not be sent as job parameters."""
+    jw = setup_job_wrapper(
+        jobArgs={"JobType": "User", "JobGroup": "my_group", "Owner": "owner"},
+        ceArgs={"PilotReference": "pilot_ref", "LocalSE": ["SE1", "SE2"], "CPUNormalizationFactor": 10},
+    )
+    setJobParameters = mocker.patch.object(jw.jobReport, "setJobParameters", return_value=S_OK())
+
+    jw._JobWrapper__setInitialJobParameters()
+
+    setJobParameters.assert_called_once()
+    parameters = dict(setJobParameters.call_args.args[0])
+    assert set(parameters) == {
+        "Pilot_Reference",
+        "AgentLocalSE",
+        "CPUNormalizationFactor",
+        "PilotAgent",
+        "JobWrapperPID",
+    }
+    assert parameters["Pilot_Reference"] == "pilot_ref"
+    assert parameters["AgentLocalSE"] == "SE1,SE2"
+
+
 def test_preProcess_no_arguments(setup_job_wrapper):
     """Test the pre process method of the JobWrapper class: no arguments."""
     ls = shutil.which("ls")
