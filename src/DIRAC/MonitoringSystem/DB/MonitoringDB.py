@@ -4,7 +4,8 @@ Wrapper on top of ElasticDB. It is used to manage the DIRAC monitoring types.
 **Configuration Parameters**:
 
 The global OpenSearch index prefix can be set in
-`Systems/NoSQLDatabases/IndexPrefix`.
+`Systems/NoSQLDatabases/IndexPrefix`. The configured value must include any
+desired separator.
 
 For each monitoring types managed, the Period (how often a new index is created)
 can be defined with::
