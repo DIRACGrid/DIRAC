@@ -498,6 +498,7 @@ class JobWrapper:
             "cpuTimeConsumed": None,
             "watchdogError": watchdog.checkError,
             "watchdogStats": watchdog.currentStats,
+            "gracefulStopSignal": watchdog.stopSigNumber if watchdog.stopSigSent else 0,
         }
 
         # Get CPU time consumed
@@ -538,6 +539,7 @@ class JobWrapper:
         cpuTimeConsumed: list,
         watchdogError: str,
         watchdogStats: dict,
+        gracefulStopSignal: int = 0,
     ):
         """This method is called after the payload has finished running."""
         self.log.info(f"Job Wrapper is starting the post processing phase for job {self.jobID}")
@@ -589,7 +591,12 @@ class JobWrapper:
             # no timeout and exit code is 0
             self.log.info(res["Value"][1])
 
-        if not watchdogError and payloadStatus != 0:
+        # A payload asked to wind down that stops on the signal it was sent exits 128 + N, the
+        # convention for "terminated by signal N". It did what it was told, so that is not an
+        # application error. If the Watchdog then had to kill it anyway, watchdogError says so.
+        stoppedOnRequest = bool(gracefulStopSignal) and payloadStatus == 128 + gracefulStopSignal
+
+        if not watchdogError and payloadStatus != 0 and not stoppedOnRequest:
             self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.APP_ERRORS, sendFlag=True)
 
         if not watchdogError and payloadStatus in (
@@ -600,7 +607,7 @@ class JobWrapper:
             self.__report(minorStatus=JobMinorStatus.GOING_RESCHEDULE, sendFlag=True)
             return S_ERROR(DErrno.EWMSRESC, "Job will be rescheduled")
 
-        if not watchdogError and payloadStatus == 0:
+        if not watchdogError and (payloadStatus == 0 or stoppedOnRequest):
             self.failedFlag = False
             self.__report(status=JobStatus.COMPLETING, minorStatus=JobMinorStatus.APP_SUCCESS, sendFlag=True)
 
