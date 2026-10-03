@@ -3,8 +3,8 @@
 A computing element class using singularity containers,
 where Singularity is supposed to be found on the WN.
 
-The goal of this CE is to start the job in the container set by
-the "ContainerRoot" config option.
+The goal of this CE is to start the job in a container image resolved by
+:py:func:`~DIRAC.Core.Utilities.ContainerImageResolver.resolveImagePath`.
 
 DIRAC can be re-installed within the container.
 
@@ -24,13 +24,12 @@ import DIRAC
 from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Operations
 from DIRAC.Core.Utilities.CGroups2 import CG2Manager
+from DIRAC.Core.Utilities.ContainerImageResolver import resolveImagePath
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 
-# Default container to use if it isn't specified in the CE options
-CONTAINER_DEFROOT = "/cvmfs/cernvm-prod.cern.ch/cvm4"
 CONTAINER_WORKDIR = "DIRAC_containers"
 CONTAINER_INNERDIR = "/tmp"  # nosec: B108
 # /tmp dir to use in the container
@@ -105,9 +104,6 @@ class SingularityComputingElement(ComputingElement):
         super().__init__(ceUniqueID)
         self.__submittedJobs = 0
         self.__runningJobs = 0
-        self.__root = CONTAINER_DEFROOT
-        if "ContainerRoot" in self.ceParameters:
-            self.__root = self.ceParameters["ContainerRoot"]
         self.__workdir = CONTAINER_WORKDIR
         self.__innerdir = CONTAINER_INNERDIR
         self.__installDIRACInContainer = self.ceParameters.get("InstallDIRACInContainer", False)
@@ -314,7 +310,18 @@ class SingularityComputingElement(ComputingElement):
 
         :return: S_OK(payload exit code) / S_ERROR() if submission issue
         """
-        rootImage = self.__root
+        # Read at submit time, like every other container option below: setParameters()
+        # and PoolComputingElement both update ceParameters after the CE is built
+        imagePath = resolveImagePath(
+            imageRef=self.ceParameters.get("ImageReference"),
+            basePath=self.ceParameters.get("ImageBasePath"),
+            containerRoot=self.ceParameters.get("ContainerRoot"),
+            log=self.log,
+        )
+        if not imagePath:
+            # The resolver already logged the architecture and every path it tried
+            return S_ERROR("Failed to find singularity image to exec")
+
         renewTask = None
 
         self.log.info("Creating singularity container")
@@ -418,11 +425,8 @@ class SingularityComputingElement(ComputingElement):
             containerOpts = self.ceParameters["ContainerOptions"].split(",")
             for opt in containerOpts:
                 outerCmd.extend([opt.strip()])
-        if not (os.path.isdir(rootImage) or os.path.isfile(rootImage)):
-            # if we are here is because there's no image, or it is not accessible (e.g. not on CVMFS)
-            self.log.error("Singularity image to exec not found: ", rootImage)
-            return S_ERROR("Failed to find singularity image to exec")
-        outerCmd.append(rootImage)
+
+        outerCmd.append(str(imagePath))
         cmd = outerCmd + [innerCmd]
 
         self.log.debug(f"Execute singularity command: {cmd}")

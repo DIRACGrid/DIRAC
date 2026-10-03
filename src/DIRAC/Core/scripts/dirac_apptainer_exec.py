@@ -9,7 +9,8 @@ import DIRAC
 from DIRAC import S_ERROR, gConfig, gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Security.Locations import getCAsLocation, getProxyLocation, getVOMSLocation
-from DIRAC.Core.Utilities.Os import safe_listdir
+from DIRAC.Core.Utilities.ContainerImageResolver import EXISTS_TIMEOUT, findMultiarchImage, resolveImagePath
+from DIRAC.Core.Utilities.Os import safe_exists, safe_listdir
 from DIRAC.Core.Utilities.Subprocess import systemCall
 
 
@@ -37,15 +38,12 @@ def generate_container_wrapper(dirac_env_var, diracos_env_var, etc_dir, rc_scrip
     return "\n".join(lines)
 
 
-CONTAINER_DEFROOT = ""  # Should add something like "/cvmfs/dirac.egi.eu/container/apptainer/alma9/x86_64"
-
-
 @Script()
 def main():
     command = sys.argv[1]
 
     user_image = None
-    Script.registerSwitch("i:", "image=", "   apptainer image to use")
+    Script.registerSwitch("i:", "image=", "   Container image: local path or OCI reference")
     Script.parseCommandLine(ignoreErrors=False)
     for switch in Script.getUnprocessedSwitches():
         if switch[0].lower() == "i" or switch[0].lower() == "image":
@@ -70,7 +68,24 @@ def main():
     # Script may include credentials, make sure other users can't read it
     os.chmod("dirac_container.sh", 0o700)
 
-    # Now let's construct the apptainer command
+    # Resolve the container image. As before the multiarch layout, a value given
+    # with -i/--image is used on its own: an existing local path is taken as-is,
+    # and the configured ContainerRoot is not considered. Looking the value up as
+    # an OCI reference is new, and only happens where the command used to fail.
+    if user_image:
+        if safe_exists(user_image, timeout=EXISTS_TIMEOUT):
+            image_path = Path(user_image)
+        else:
+            image_path = findMultiarchImage(user_image)
+    else:
+        # No built-in default here: an unconfigured node must fail loudly rather
+        # than silently running the payload in whatever image happens to be on CVMFS
+        image_path = resolveImagePath(defaultRoot=None)
+    if not image_path:
+        gLogger.error("Apptainer image to exec not found:", user_image or "(from the configuration)")
+        return S_ERROR("Failed to find Apptainer image to exec")
+
+    # Build the apptainer command
     cmd = ["apptainer", "exec"]
     cmd.extend(["--contain"])  # use minimal /dev and empty other directories (e.g. /tmp and $HOME)
     cmd.extend(["--ipc"])  # run container in a new IPC namespace
@@ -93,14 +108,7 @@ def main():
             gLogger.warn(f"Bind path {bind_path} does not exist, skipping")
     cmd.extend(["--cwd", cwd])  # set working directory
 
-    rootImage = user_image or gConfig.getValue("/Resources/Computing/Singularity/ContainerRoot") or CONTAINER_DEFROOT
-
-    if os.path.isdir(rootImage) or os.path.isfile(rootImage):
-        cmd.extend([rootImage, f"{cwd}/dirac_container.sh"])
-    else:
-        # if we are here is because there's no image, or it is not accessible (e.g. not on CVMFS)
-        gLogger.error("Apptainer image to exec not found: ", rootImage)
-        return S_ERROR("Failed to find Apptainer image to exec")
+    cmd.extend([str(image_path), f"{cwd}/dirac_container.sh"])
 
     gLogger.debug(f"Execute Apptainer command: {' '.join(cmd)}")
     result = systemCall(0, cmd)
