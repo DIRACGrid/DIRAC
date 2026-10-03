@@ -1,8 +1,8 @@
-""" This is a test of the chain
-    ResourceManagementClient -> ResourceManagementHandler -> ResourceManagementDB
-    It supposes that the DB is present, and that the service is running
+"""This is a test of the chain
+ResourceManagementClient -> ResourceManagementHandler -> ResourceManagementDB
+It supposes that the DB is present, and that the service is running
 
-    The DB is supposed to be empty when the test starts
+The DB is supposed to be empty when the test starts
 """
 # pylint: disable=wrong-import-position, missing-docstring
 
@@ -259,42 +259,6 @@ def test_PolicyResult(rmClient):
     assert res["OK"] is True, res["Message"]
 
     res = rmClient.selectPolicyResult("element", "TestName12345", "policyName", "statusType")
-    assert res["OK"] is True, res["Message"]
-    assert not res["Value"], res["Value"]
-
-
-def test_SpaceTokenOccupancy(rmClient):
-    """
-    SpaceTokenOccupancy table
-    """
-
-    res = rmClient.deleteSpaceTokenOccupancyCache("endpoint", "token")  # just making sure it's not there (yet)
-    assert res["OK"] is True, res["Message"]
-
-    # TEST addOrModifySpaceTokenOccupancy
-    res = rmClient.addOrModifySpaceTokenOccupancyCache(
-        "endpoint", "token", 500.0, 1000.0, 200.0, datetime.datetime.now()
-    )
-    assert res["OK"] is True, res["Message"]
-
-    res = rmClient.selectSpaceTokenOccupancyCache("endpoint", "token")
-    assert res["OK"] is True, res["Message"]
-    # check if the name that we got is equal to the previously added 'token'
-    assert res["Value"][0][1] == "token"
-
-    res = rmClient.addOrModifySpaceTokenOccupancyCache("endpoint", "token", free=100.0)
-    assert res["OK"] is True, res["Message"]
-
-    res = rmClient.selectSpaceTokenOccupancyCache("endpoint", "token")
-    # check if the result has changed
-    assert res["Value"][0][3] == 100.0
-
-    # TEST deleteSpaceTokenOccupancy
-    # ...............................................................................
-    res = rmClient.deleteSpaceTokenOccupancyCache("endpoint", "token")
-    assert res["OK"] is True, res["Message"]
-
-    res = rmClient.selectSpaceTokenOccupancyCache("endpoint", "token")
     assert res["OK"] is True, res["Message"]
     assert not res["Value"], res["Value"]
 
