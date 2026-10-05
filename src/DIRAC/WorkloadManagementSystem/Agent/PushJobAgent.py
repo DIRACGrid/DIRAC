@@ -749,11 +749,17 @@ class PushJobAgent(JobAgent):
                     return
 
                 job.jobReport.setJobParameter("Error Message", result["Message"], sendFlag=False)
-                job.jobReport.setJobStatus(
-                    status=JobStatus.FAILED, minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC, sendFlag=False
-                )
-                job.sendFailoverRequest()
-                job.sendJobAccounting(status=JobStatus.FAILED, minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC)
+                # If postProcess already stamped FAILED with a specific minor status (e.g. a
+                # watchdog reason), preserve it, as JobWrapperUtilities.executePayload does.
+                if job.wmsMajorStatus == JobStatus.FAILED:
+                    job.sendFailoverRequest()
+                    job.sendJobAccounting()
+                else:
+                    job.jobReport.setJobStatus(
+                        status=JobStatus.FAILED, minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC, sendFlag=False
+                    )
+                    job.sendFailoverRequest()
+                    job.sendJobAccounting(status=JobStatus.FAILED, minorStatus=JobMinorStatus.EXCEPTION_DURING_EXEC)
                 shutil.rmtree(job.jobIDPath)
                 return
         except Exception as exc:  # pylint: disable=broad-except
