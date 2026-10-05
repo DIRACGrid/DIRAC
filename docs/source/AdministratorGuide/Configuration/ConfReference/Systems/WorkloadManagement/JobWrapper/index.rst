@@ -31,3 +31,10 @@ The options used to configure JobWrapper are showed in the table below:
 +----------------------+-------------------------------------------------+------------------------------+
 | *OutputSandboxLimit* | Limit of sandbox output expressed in MB         | OutputSandboxLimit = 10      |
 +----------------------+-------------------------------------------------+------------------------------+
+| *StopMargin*         | Wall-clock seconds at the end of the batch      | StopMargin = 300             |
+|                      | slot reserved for uploading the outputs and     |                              |
+|                      | the logs. Deducted once, by the agent that      |                              |
+|                      | publishes the slot budget, so consumers of      |                              |
+|                      | /LocalSite/CPUTimeLeft must not deduct it       |                              |
+|                      | again                                           |                              |
++----------------------+-------------------------------------------------+------------------------------+
