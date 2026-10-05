@@ -156,8 +156,7 @@ class BaseRequestHandler(RequestHandler):
     In order to pass information around and keep some states, we use instance attributes.
     These are initialized in the :py:meth:`.initialize` method.
 
-    This class is basic for :py:class:`TornadoService <DIRAC.Core.Tornado.Server.TornadoService.TornadoService>`
-    and :py:class:`TornadoREST <DIRAC.Core.Tornado.Server.TornadoREST.TornadoREST>`.
+    This class is basic for :py:class:`TornadoService <DIRAC.Core.Tornado.Server.TornadoService.TornadoService>`.
     Check them out, this is a good example of writing a new child class if needed.
 
     .. digraph:: structure
@@ -166,7 +165,7 @@ class BaseRequestHandler(RequestHandler):
         node [shape=plaintext]
         RequestHandler [label="tornado.web.RequestHandler"];
 
-        {TornadoService, TornadoREST} -> BaseRequestHandler;
+        TornadoService -> BaseRequestHandler;
         BaseRequestHandler -> RequestHandler [label="  inherit", fontsize=8];
 
     In order to create a class that inherits from ``BaseRequestHandler``,

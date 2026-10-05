@@ -52,7 +52,6 @@ Internal structure
 - :py:class:`~DIRAC.Core.DISET.private.Service` and :py:mod:`~DIRAC.Core.DISET.RequestHandler` are now merge into :py:class:`~DIRAC.Core.Tornado.Server.TornadoService`
 - CallStack from S_ERROR are deleted when they are returned to client.
 - Common config for all services, there is no more specific config/service. But you can still give extra config files in the command line when you start a HTTPS server.
-- Server returns HTTP status codes like ``200 OK`` or ``401 Forbidden``. Not used by client for now but open possibility for usage with external services (like a REST API)
 
 How to write service
 ********************
