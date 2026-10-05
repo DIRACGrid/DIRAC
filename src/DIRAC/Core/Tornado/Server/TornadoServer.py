@@ -257,7 +257,6 @@ class TornadoServer:
         # For each handler,
         for urlSpec in self.handlerManager.getHandlersDict().values():
             # If there is more than one URL, it's
-            # most likely something that inherit from TornadoREST
             # so don't even try to monitor...
             if len(urlSpec["URLs"]) > 1:
                 continue
