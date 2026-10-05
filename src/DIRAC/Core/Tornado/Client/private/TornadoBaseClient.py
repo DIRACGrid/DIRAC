@@ -259,7 +259,7 @@ class TornadoBaseClient:
         if self.KW_EXTRA_CREDENTIALS in self.kwargs:
             self.__extraCredentials = self.kwargs[self.KW_EXTRA_CREDENTIALS]
         # Are we delegating something?
-        delegatedDN, delegatedGroup = self.__threadConfig.getID()
+        delegatedDN, delegatedGroup = self.__threadConfig.getID()  # pylint: disable=no-member
         if self.KW_DELEGATED_DN in self.kwargs and self.kwargs[self.KW_DELEGATED_DN]:
             delegatedDN = self.kwargs[self.KW_DELEGATED_DN]
         elif delegatedDN:
