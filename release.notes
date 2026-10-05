@@ -1,3 +1,9 @@
+[v9.0.27]
+
+*WorkloadManagement
+
+FIX: (#8809) stop sending JobType and JobGroup as job parameters (duplicate)
+
 [v9.0.26]
 
 *MonitoringSystem
