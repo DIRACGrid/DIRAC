@@ -245,7 +245,7 @@ class BaseClient:
         # Are we delegating something?
         delegatedDN = self.kwargs.get(self.KW_DELEGATED_DN) or self.__threadConfig.getDN()  # pylint: disable=no-member
         delegatedGroup = (
-            self.kwargs.get(self.KW_DELEGATED_GROUP) or self.__threadConfig.getGroup()
+            self.kwargs.get(self.KW_DELEGATED_GROUP) or self.__threadConfig.getGroup()  # pylint: disable=no-member
         )  # pylint: disable=no-member
         if delegatedDN:
             self.kwargs[self.KW_DELEGATED_DN] = delegatedDN
