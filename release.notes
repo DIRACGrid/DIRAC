@@ -1,3 +1,22 @@
+[v9.1.21]
+
+*Core
+
+CHANGE: (#8816) removed TornadoREST and AuthHandler
+
+*WorkloadManagement
+
+NEW: (#8814) the Watchdog can again ask a payload to wind down before its budget runs out (StopSigRegex, StopSigNumber, StopSigStartWork, StopSigFinishWork), configurable in /Systems/WorkloadManagement/JobWrapper as well as per job in the JDL
+CHANGE: (#8814) StopSigStartSeconds and StopSigFinishSeconds are replaced by StopSigStartWork and StopSigFinishWork, expressed in CPU work
+FIX: (#8814) a payload that stops on the signal the Watchdog sent it (exit code 128 + N) is not reported as an application error
+NEW: (#8814) "Allocated time management" page in the Administrator Guide
+FIX: (#8808) stop sending JobType and JobGroup as job parameters (duplicate)
+FIX: (#8746) the JobAgent (and PushJobAgent) reserve the JobWrapper's StopMargin before advertising the slot to the Matcher and publishing it in /LocalSite/CPUTimeLeft, so that jobs are neither matched nor sized against time the post-processing will need. The Watchdog no longer deducts it a second time.
+
+*DataManagementSystem
+
+NEW: (#8805) FTS server selection is done in the plugin
+
 [v9.1.20]
 
 *DataManagementSystem
