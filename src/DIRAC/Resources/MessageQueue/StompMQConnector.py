@@ -6,6 +6,7 @@ import random
 import os
 import socket
 import ssl
+import threading
 import time
 import stomp
 
@@ -42,10 +43,27 @@ class StompMQConnector(MQConnector):
 
     PORT = 61613
 
+    # Number of attempts made by connect() when called without an explicit value,
+    # e.g. when establishing the connection or from the listener after a disconnection.
+    CONNECT_ATTEMPTS = 10
+    # Seconds to wait for the broker to accept a connection
+    CONNECT_TIMEOUT = 30
+    # Same, for the single reconnection attempt made by put() after a failed send
+    PUT_CONNECT_TIMEOUT = 5
+    # Backoff applied by put() between reconnection attempts after a failure: it is
+    # doubled after each failed attempt, up to the maximum.
+    PUT_RECONNECT_BACKOFF_INITIAL = 1  # [s]
+    PUT_RECONNECT_BACKOFF_MAX = 60  # [s]
+
     def __init__(self, parameters=None):
         """Standard constructor"""
         super().__init__(parameters=parameters)
         self.connection = None
+        # Serialises (re)connections: several threads tearing down and re-creating the same
+        # stomp connection concurrently leads to broken pipes and closed sockets.
+        self._connectLock = threading.Lock()
+        self._putReconnectBackoff = 0
+        self._nextPutReconnect = 0
 
     def setupConnection(self, parameters=None):
         """
@@ -160,31 +178,78 @@ class StompMQConnector(MQConnector):
         Sends a message to the queue
         message contains the body of the message
 
+        This method never blocks for long: if sending fails, at most one quick reconnection
+        attempt is made, and none at all while another thread is reconnecting or while
+        backing off after a failed reconnection. Callers (e.g. the logging handler) must
+        not be held up by an unreachable broker.
+
         Args:
           message(str): string or any json encodable structure.
           parameters(dict): parameters with 'destination' key defined.
         """
         log = LOG.getSubLogger("put")
         destination = parameters.get("destination", "")
+        body = json.dumps(message)
 
         try:
             try:
-                self.connection.send(body=json.dumps(message), destination=destination)
+                self.connection.send(body=body, destination=destination)
             except (stomp.exception.StompException, ConnectionError):
-                self.connect()
-                self.connection.send(body=json.dumps(message), destination=destination)
+                result = self._reconnectForPut()
+                if not result["OK"]:
+                    return result
+                self.connection.send(body=body, destination=destination)
         except Exception as e:
             log.debug("Failed to send message", repr(e))
             return S_ERROR(EMQUKN, f"Failed to send message: {repr(e)}")
 
         return S_OK("Message sent successfully")
 
-    def connect(self, parameters=None):
+    def _reconnectForPut(self):
+        """Make a single, non-waiting reconnection attempt on behalf of put()
+
+        :returns: S_OK if connected, S_ERROR otherwise (without waiting for other threads)
+        """
+        if time.monotonic() < self._nextPutReconnect:
+            return S_ERROR(EMQCONN, "Not connected: backing off before reconnecting")
+        if not self._connectLock.acquire(blocking=False):
+            return S_ERROR(EMQCONN, "Not connected: reconnection in progress in another thread")
+        try:
+            # Another thread may have reconnected while we were failing to send
+            if self.connection.is_connected():
+                return S_OK()
+            result = self._connect(attempts=1, timeout=self.PUT_CONNECT_TIMEOUT)
+            if result["OK"]:
+                self._putReconnectBackoff = 0
+            else:
+                self._putReconnectBackoff = min(
+                    max(2 * self._putReconnectBackoff, self.PUT_RECONNECT_BACKOFF_INITIAL),
+                    self.PUT_RECONNECT_BACKOFF_MAX,
+                )
+                self._nextPutReconnect = time.monotonic() + self._putReconnectBackoff
+            return result
+        finally:
+            self._connectLock.release()
+
+    def connect(self, parameters=None, attempts=None):
         """Call the ~stomp.Connection.connect method for each endpoint
 
         :param parameters: connection parameter
+        :param int attempts: number of connection attempts (default: CONNECT_ATTEMPTS)
         """
+        with self._connectLock:
+            # e.g. the listener reacting to a disconnection that another thread has already repaired
+            if self.connection.is_connected():
+                return S_OK("Already connected")
+            return self._connect(attempts=attempts or self.CONNECT_ATTEMPTS)
 
+    def _connect(self, attempts, timeout=None, retrySleep=5):
+        """Connect to the broker, the caller must hold ``self._connectLock``
+
+        :param int attempts: number of connection attempts
+        :param timeout: seconds to wait for each attempt (default: CONNECT_TIMEOUT)
+        :param retrySleep: seconds to wait between attempts
+        """
         log = LOG.getSubLogger("connect")
 
         # Since I use a dirty trick to know to what IP I am connected,
@@ -193,14 +258,16 @@ class StompMQConnector(MQConnector):
         user = self.parameters.get("User")
         password = self.parameters.get("Password")
 
-        for _ in range(10):
+        for attempt in range(attempts):
             try:
                 # We need to explicitly call disconnect to avoid leaving threads behind
                 self.connection.disconnect()
 
-                # Connect to the broker with a timeout of 30 seconds
+                # Connect to the broker with a timeout
                 self.connection.connect(username=user, passcode=password, wait=False)
-                self.connection.transport.wait_for_connection(30)  # pylint: disable=no-member
+                self.connection.transport.wait_for_connection(  # pylint: disable=no-member
+                    timeout or self.CONNECT_TIMEOUT
+                )
                 if self.connection.transport.connection_error:  # pylint: disable=no-member
                     raise stomp.exception.ConnectFailedException()
 
@@ -218,7 +285,8 @@ class StompMQConnector(MQConnector):
                 log.error(f"Failed to connect: {repr(e)}")
 
             # Wait a bit before retrying
-            time.sleep(5)
+            if attempt < attempts - 1:
+                time.sleep(retrySleep)
 
         return S_ERROR(EMQCONN, "Failed to connect")
 
