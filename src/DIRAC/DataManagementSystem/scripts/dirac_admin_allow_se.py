@@ -61,6 +61,7 @@ def main():
     from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
     from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
     from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+    from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
     if not (read or write or check or remove):
         # No switch was specified, means we need all of them
@@ -111,25 +112,31 @@ def main():
 
     resourceStatus = ResourceStatus()
 
-    res = resourceStatus.getElementStatus(ses, "StorageElement")
-    if not res["OK"]:
-        gLogger.error(f"Storage Element {ses} does not exist")
+    resDB = ResourceStatusClient().selectStatusElement(
+        "Resource", "Status", ses, elementType="StorageElement", meta={"columns": ["Name", "StatusType", "Status"]}
+    )
+    if not resDB["OK"]:
+        gLogger.error("Failed to get the status of the storage elements", resDB["Message"])
         DIRAC.exit(-1)
+    dbStatus = {}
+    for name, statusType, status in resDB["Value"]:
+        dbStatus.setdefault(name, {})[statusType] = status
 
     reason = f"Forced with dirac-admin-allow-se by {userName}"
 
-    for se, seOptions in res["Value"].items():
-        # InActive is used on the CS model, Banned is the equivalent in RSS
-        for statusType in STATUS_TYPES:
-            if statusFlagDict[statusType]:
-                if statusType in seOptions:
-                    resR = resourceStatus.setElementStatus(se, "StorageElement", statusType, "Active", reason, userName)
-                    if not resR["OK"]:
-                        gLogger.fatal(f"Failed to update {se} {statusType} to Active, exit -", resR["Message"])
-                        DIRAC.exit(-1)
-                    else:
-                        gLogger.notice(f"Successfully updated {se} {statusType} to Active")
-                        statusAllowedDict[statusType].append(se)
+    for se, seOptions in dbStatus.items():
+        for statusType in (s for s in STATUS_TYPES if statusFlagDict[s]):
+            if seOptions.get(statusType) == "Active":
+                gLogger.notice(f"{statusType} status of {se} is already Active")
+                continue
+            if statusType in seOptions:
+                resR = resourceStatus.setElementStatus(se, "StorageElement", statusType, "Active", reason, userName)
+                if not resR["OK"]:
+                    gLogger.fatal(f"Failed to update {se} {statusType} to Active, exit -", resR["Message"])
+                    DIRAC.exit(-1)
+                else:
+                    gLogger.notice(f"Successfully updated {se} {statusType} to Active")
+                    statusAllowedDict[statusType].append(se)
 
     totalAllowed = 0
     totalAllowedSEs = []
