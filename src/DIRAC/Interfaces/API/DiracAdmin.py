@@ -150,6 +150,20 @@ class DiracAdmin(API):
         return result
 
     #############################################################################
+    def _getSiteDBStatus(self, site):
+        """Get the status of a site as stored in the RSS Database.
+
+        :param str site: DIRAC site name
+        :return: S_OK,S_ERROR
+        """
+        result = ResourceStatusClient().selectStatusElement("Site", "Status", site, meta={"columns": ["Status"]})
+        if not result["OK"]:
+            return result
+        if not result["Value"]:
+            return S_ERROR(f"Site {site} not found in the RSS database")
+        return S_OK(result["Value"][0][0])
+
+    #############################################################################
     def allowSite(self, site, comment, printOutput=False, days=1):
         """Adds the site to the site mask. The site must be a valid DIRAC site name
 
@@ -165,6 +179,14 @@ class DiracAdmin(API):
         """
         if not (result := self._checkSiteIsValid(site))["OK"]:
             return result
+
+        if not (result := self._getSiteDBStatus(site))["OK"]:
+            return result
+
+        if result["Value"] == "Active":
+            if printOutput:
+                gLogger.notice(f"Site {site} is already Active")
+            return S_OK(f"Site {site} is already Active")
 
         tokenLifetime = int(days)
         if tokenLifetime <= 0:
@@ -234,6 +256,14 @@ class DiracAdmin(API):
         """
         if not (result := self._checkSiteIsValid(site))["OK"]:
             return result
+
+        if not (result := self._getSiteDBStatus(site))["OK"]:
+            return result
+
+        if result["Value"] == "Banned":
+            if printOutput:
+                gLogger.notice(f"Site {site} is already Banned")
+            return S_OK(f"Site {site} is already Banned")
 
         tokenLifetime = int(days)
         if tokenLifetime <= 0:

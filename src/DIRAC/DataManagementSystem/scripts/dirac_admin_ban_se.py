@@ -68,6 +68,7 @@ def main():
     from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers, resolveSEGroup
     from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
     from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+    from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
     ses = resolveSEGroup(ses)
     diracAdmin = DiracAdmin()
@@ -94,75 +95,62 @@ def main():
         gLogger.error("There were no SEs provided")
         DIRAC.exit(-1)
 
-    readBanned = []
-    writeBanned = []
-    checkBanned = []
-    removeBanned = []
+    STATUS_TYPES = ["ReadAccess", "WriteAccess", "CheckAccess", "RemoveAccess"]
+
+    statusBannedDict = {}
+    for statusType in STATUS_TYPES:
+        statusBannedDict[statusType] = []
+
+    statusFlagDict = {}
+    statusFlagDict["ReadAccess"] = read
+    statusFlagDict["WriteAccess"] = write
+    statusFlagDict["CheckAccess"] = check
+    statusFlagDict["RemoveAccess"] = remove
 
     resourceStatus = ResourceStatus()
 
-    res = resourceStatus.getElementStatus(ses, "StorageElement")
-    if not res["OK"]:
-        gLogger.error(f"Storage Element {ses} does not exist")
+    resDB = ResourceStatusClient().selectStatusElement(
+        "Resource", "Status", ses, elementType="StorageElement", meta={"columns": ["Name", "StatusType", "Status"]}
+    )
+    if not resDB["OK"]:
+        gLogger.error("Failed to get the status of the storage elements", resDB["Message"])
         DIRAC.exit(-1)
+    dbStatus = {}
+    for name, statusType, status in resDB["Value"]:
+        dbStatus.setdefault(name, {})[statusType] = status
 
     reason = f"Forced with dirac-admin-ban-se by {userName}"
 
-    for se, seOptions in res["Value"].items():
-        resW = resC = resR = {"OK": False}
+    for se, seOptions in dbStatus.items():
+        for statusType in (s for s in STATUS_TYPES if statusFlagDict[s]):
+            if seOptions.get(statusType) == "Banned":
+                gLogger.notice(f"{statusType} status of {se} is already Banned")
+                continue
+            if statusType in seOptions:
+                resR = resourceStatus.setElementStatus(se, "StorageElement", statusType, "Banned", reason, userName)
+                if not resR["OK"]:
+                    gLogger.fatal(f"Failed to update {se} {statusType} to Banned, exit -", resR["Message"])
+                    DIRAC.exit(-1)
+                else:
+                    gLogger.notice(f"Successfully updated {se} {statusType} to Banned")
+                    statusBannedDict[statusType].append(se)
 
-        # Eventually, we will get rid of the notion of InActive, as we always write Banned.
-        if read and "ReadAccess" in seOptions:
-            resR = resourceStatus.setElementStatus(se, "StorageElement", "ReadAccess", "Banned", reason, userName)
-            # res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "InActive" )
-            if not resR["OK"]:
-                gLogger.error(f"Failed to update {se} read access to Banned")
-            else:
-                gLogger.notice(f"Successfully updated {se} read access to Banned")
-                readBanned.append(se)
+    totalBanned = 0
+    totalBannedSEs = []
+    for statusType in STATUS_TYPES:
+        totalBanned += len(statusBannedDict[statusType])
+        totalBannedSEs += statusBannedDict[statusType]
+    totalBannedSEs = list(set(totalBannedSEs))
 
-        # Eventually, we will get rid of the notion of InActive, as we always write Banned.
-        if write and "WriteAccess" in seOptions:
-            resW = resourceStatus.setElementStatus(se, "StorageElement", "WriteAccess", "Banned", reason, userName)
-            # res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "InActive" )
-            if not resW["OK"]:
-                gLogger.error(f"Failed to update {se} write access to Banned")
-            else:
-                gLogger.notice(f"Successfully updated {se} write access to Banned")
-                writeBanned.append(se)
-
-        # Eventually, we will get rid of the notion of InActive, as we always write Banned.
-        if check and "CheckAccess" in seOptions:
-            resC = resourceStatus.setElementStatus(se, "StorageElement", "CheckAccess", "Banned", reason, userName)
-            # res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
-            if not resC["OK"]:
-                gLogger.error(f"Failed to update {se} check access to Banned")
-            else:
-                gLogger.notice(f"Successfully updated {se} check access to Banned")
-                checkBanned.append(se)
-
-        # Eventually, we will get rid of the notion of InActive, as we always write Banned.
-        if remove and "RemoveAccess" in seOptions:
-            resC = resourceStatus.setElementStatus(se, "StorageElement", "RemoveAccess", "Banned", reason, userName)
-            # res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
-            if not resC["OK"]:
-                gLogger.error(f"Failed to update {se} remove access to Banned")
-            else:
-                gLogger.notice(f"Successfully updated {se} remove access to Banned")
-                removeBanned.append(se)
-
-        if not (resR["OK"] or resW["OK"] or resC["OK"]):
-            DIRAC.exit(-1)
-
-    if not (writeBanned or readBanned or checkBanned or removeBanned):
-        gLogger.notice("No storage elements were banned")
+    if not totalBanned:
+        gLogger.info("No storage elements were Banned")
         DIRAC.exit(-1)
 
     if mute:
         gLogger.notice("Email is muted by script switch")
         DIRAC.exit(0)
 
-    subject = f"{len(writeBanned + readBanned + checkBanned + removeBanned)} storage elements banned for use"
+    subject = f"{len(totalBannedSEs)} storage elements banned for use"
     addressPath = "EMail/Production"
     address = Operations().getValue(addressPath, "")
     fromAddress = Operations().getValue("ResourceStatus/Config/FromAddress", "")
@@ -170,19 +158,19 @@ def main():
     body = ""
     if read:
         body = f"{body}\n\nThe following storage elements were banned for reading:"
-        for se in readBanned:
+        for se in statusBannedDict["ReadAccess"]:
             body = f"{body}\n{se}"
     if write:
         body = f"{body}\n\nThe following storage elements were banned for writing:"
-        for se in writeBanned:
+        for se in statusBannedDict["WriteAccess"]:
             body = f"{body}\n{se}"
     if check:
         body = f"{body}\n\nThe following storage elements were banned for check access:"
-        for se in checkBanned:
+        for se in statusBannedDict["CheckAccess"]:
             body = f"{body}\n{se}"
     if remove:
         body = f"{body}\n\nThe following storage elements were banned for remove access:"
-        for se in removeBanned:
+        for se in statusBannedDict["RemoveAccess"]:
             body = f"{body}\n{se}"
 
     if not address:
