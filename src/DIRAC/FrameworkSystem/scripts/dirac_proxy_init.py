@@ -9,6 +9,7 @@ Example:
 import datetime
 import glob
 import os
+import shlex
 import sys
 import time
 
@@ -50,6 +51,7 @@ class ProxyInit:
         self.__issuerCert = False
         self.__proxyGenerated = False
         self.__uploadedInfo = {}
+        self.debugHintNeeded = False
 
     def getIssuerCert(self):
         if self.__issuerCert:
@@ -117,6 +119,8 @@ class ProxyInit:
         resultProxyGenerated = ProxyGeneration.generateProxy(piParams)
         if not resultProxyGenerated["OK"]:
             gLogger.error(resultProxyGenerated["Message"])
+            if "is not registered" in resultProxyGenerated["Message"]:
+                self.printDebugHint()
             sys.exit(1)
         self.__proxyGenerated = resultProxyGenerated["Value"]
         return resultProxyGenerated
@@ -169,6 +173,26 @@ class ProxyInit:
             for userDN in self.__uploadedInfo:
                 gLogger.notice(f" {userDN.ljust(maxDNLen)} | {self.__uploadedInfo[userDN].strftime('%Y/%m/%d %H:%M')}")
 
+    def printDebugHint(self):
+        """Print the certificate details needed for someone else to debug the registration"""
+        if not self.__piParams.certLoc:
+            return
+        chain = X509Chain.X509Chain()
+        if not chain.loadChainFromFile(self.__piParams.certLoc)["OK"]:
+            return
+        # Same certificate as used by ProxyGeneration to find the user DN
+        cert = chain.getCertInChain(-1)["Value"]
+        subject = cert.getSubjectDN().get("Value")
+        issuer = cert.getIssuerDN().get("Value")
+        if not subject or not issuer:
+            return
+        gLogger.notice(
+            f"\nYour certificate subject (DN) is:\n    {subject}\n"
+            f"and its issuer (CA) is:\n    {issuer}\n"
+            "If you need help, someone with a working proxy can check your registration by running:\n"
+            f"    dirac-admin-debug-user --ca {shlex.quote(issuer)} {shlex.quote(subject)}"
+        )
+
     def checkCAs(self):
         caDir = getCAsLocation()
         if not caDir:
@@ -215,13 +239,19 @@ class ProxyInit:
             return result
 
         if not resultProxyWithVOMS["OK"]:
-            if "returning a valid AC for the user" in resultProxyWithVOMS["Message"]:
-                gLogger.error(resultProxyWithVOMS["Message"])
-                gLogger.error("\n Are you sure you are properly registered in the VO?")
-            elif "Missing voms-proxy" in resultProxyWithVOMS["Message"]:
+            message = resultProxyWithVOMS["Message"]
+            if "Missing voms-proxy" in message:
                 gLogger.notice("Failed to add VOMS extension: no standard grid interface available")
             else:
-                gLogger.error(resultProxyWithVOMS["Message"])
+                if "returning a valid AC for the user" in message:
+                    message += "\n\nAre you sure you are properly registered in the VO?"
+                    self.debugHintNeeded = True
+                if self.__piParams.strict:
+                    # Printed by main, avoid showing the error twice
+                    return S_ERROR(message)
+                gLogger.error(message)
+                if self.debugHintNeeded:
+                    self.printDebugHint()
             if self.__piParams.strict:
                 return resultProxyWithVOMS
 
@@ -250,6 +280,8 @@ def main():
     resultDoTheMagic = pI.doTheMagic()
     if not resultDoTheMagic["OK"]:
         gLogger.fatal(resultDoTheMagic["Message"])
+        if pI.debugHintNeeded:
+            pI.printDebugHint()
         sys.exit(1)
 
     pI.printInfo()
