@@ -654,11 +654,13 @@ class ResourceManagementClient(Client):
     # SpaceTokenOccupancyCache Methods ...........................................
 
     def selectSpaceTokenOccupancyCache(
-        self, token=None, total=None, guaranteed=None, free=None, lastCheckTime=None, meta=None
+        self, endpoint=None, token=None, total=None, guaranteed=None, free=None, lastCheckTime=None, meta=None
     ):
         """
         Gets from SpaceTokenOccupancyCache all rows that match the parameters given.
 
+        :param endpoint: endpoint
+        :type endpoint: string, list
         :param token: name of the token
         :type token: string, list
         :param total: total terabytes
@@ -673,50 +675,7 @@ class ResourceManagementClient(Client):
             For example: meta={'columns': ['Name']} will return only the 'Name' column.
         :return: S_OK() || S_ERROR()
         """
-        columnNames = ["Token", "Total", "Guaranteed", "Free", "LastCheckTime", "Meta"]
-        columnValues = [token, total, guaranteed, free, lastCheckTime, meta]
+        columnNames = ["Endpoint", "Token", "Total", "Guaranteed", "Free", "LastCheckTime", "Meta"]
+        columnValues = [endpoint, token, total, guaranteed, free, lastCheckTime, meta]
 
         return self._getRPC().select("SpaceTokenOccupancyCache", prepareDict(columnNames, columnValues))
-
-    def deleteSpaceTokenOccupancyCache(self, token=None, total=None, guaranteed=None, free=None, lastCheckTime=None):
-        """
-        Deletes from SpaceTokenOccupancyCache all rows that match the parameters given.
-
-        :param token: name of the token
-        :type token: string, list
-        :param total: total terabytes
-        :type total: integer, list
-        :param guaranteed: guaranteed terabytes
-        :type guaranteed: integer, list
-        :param free: free terabytes
-        :type free: integer, list
-        :param lastCheckTime: time-stamp from which the result is effective
-        :type lastCheckTime: datetime, list
-        :return: S_OK() || S_ERROR()
-        """
-        columnNames = ["Token", "Total", "Guaranteed", "Free", "LastCheckTime"]
-        columnValues = [token, total, guaranteed, free, lastCheckTime]
-
-        return self._getRPC().delete("SpaceTokenOccupancyCache", prepareDict(columnNames, columnValues))
-
-    def addOrModifySpaceTokenOccupancyCache(
-        self, token=None, total=None, guaranteed=None, free=None, lastCheckTime=None
-    ):
-        """
-        Adds or updates-if-duplicated to SpaceTokenOccupancyCache. Using `site` and `token`
-        to query the database, decides whether to insert or update the table.
-
-        :param str token: name of the token
-        :param int total: total terabytes
-        :param int guaranteed: guaranteed terabytes
-        :param int free: free terabytes
-        :param datetime lastCheckTime: time-stamp from which the result is effective
-        :return: S_OK() || S_ERROR()
-        """
-        columnNames = ["Token", "Total", "Guaranteed", "Free", "LastCheckTime"]
-        columnValues = [token, total, guaranteed, free, lastCheckTime]
-
-        return self._getRPC().addOrModify("SpaceTokenOccupancyCache", prepareDict(columnNames, columnValues))
-
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

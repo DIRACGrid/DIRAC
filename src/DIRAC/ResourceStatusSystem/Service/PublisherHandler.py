@@ -9,12 +9,12 @@ they need. NO OTHER COMPONENT THAN Web controllers should make use of it.
 from datetime import datetime, timedelta
 
 # DIRAC
-from DIRAC import S_OK, gConfig, S_ERROR
+from DIRAC import S_ERROR, S_OK, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteCEMapping, getSites
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts, getStorageElementsHosts
 from DIRAC.Core.Utilities.TimeUtilities import DiracTime
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getSiteCEMapping
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 
