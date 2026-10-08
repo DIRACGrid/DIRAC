@@ -1,9 +1,10 @@
-""" FreeDiskSpacePolicy
+"""FreeDiskSpacePolicy
 
-   FreeDiskSpacePolicy.__bases__:
-     DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase.PolicyBase
+FreeDiskSpacePolicy.__bases__:
+  DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase.PolicyBase
 
 """
+
 from DIRAC import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
