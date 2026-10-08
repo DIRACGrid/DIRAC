@@ -9,12 +9,14 @@ Example:
 import datetime
 import glob
 import os
+import shlex
 import sys
 import time
 
 import DIRAC
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Core.Security import VOMS, ProxyInfo, X509Chain
 from DIRAC.Core.Security.DiracX import addTokenToPEM
@@ -50,6 +52,8 @@ class ProxyInit:
         self.__issuerCert = False
         self.__proxyGenerated = False
         self.__uploadedInfo = {}
+        # Name of the ProxyInit/<option> help message to show if the proxy can't be created
+        self.helpNeeded = None
 
     def getIssuerCert(self):
         if self.__issuerCert:
@@ -117,6 +121,8 @@ class ProxyInit:
         resultProxyGenerated = ProxyGeneration.generateProxy(piParams)
         if not resultProxyGenerated["OK"]:
             gLogger.error(resultProxyGenerated["Message"])
+            if "is not registered" in resultProxyGenerated["Message"]:
+                self.printHelp("NotRegisteredMessage")
             sys.exit(1)
         self.__proxyGenerated = resultProxyGenerated["Value"]
         return resultProxyGenerated
@@ -169,6 +175,31 @@ class ProxyInit:
             for userDN in self.__uploadedInfo:
                 gLogger.notice(f" {userDN.ljust(maxDNLen)} | {self.__uploadedInfo[userDN].strftime('%Y/%m/%d %H:%M')}")
 
+    def printHelp(self, option):
+        """Print information to help the user understand why they can't get a proxy
+
+        This includes the certificate details needed for someone else to debug the
+        registration and the installation specific message from Operations/ProxyInit/<option>
+        """
+        chain = X509Chain.X509Chain()
+        if self.__piParams.certLoc and chain.loadChainFromFile(self.__piParams.certLoc)["OK"]:
+            # Same certificate as used by ProxyGeneration to find the user DN
+            cert = chain.getCertInChain(-1)["Value"]
+            subject = cert.getSubjectDN().get("Value")
+            issuer = cert.getIssuerDN().get("Value")
+            if subject and issuer:
+                gLogger.notice(
+                    f"\nYour certificate subject (DN) is:\n    {subject}\n"
+                    f"and its issuer (CA) is:\n    {issuer}\n"
+                    "If you need help, someone with a working proxy can check your registration by running:\n"
+                    f"    dirac-admin-debug-user --ca {shlex.quote(issuer)} {shlex.quote(subject)}"
+                )
+
+        ops = Operations(group=self.__piParams.diracGroup) if self.__piParams.diracGroup else Operations()
+        # CFG values can't span multiple lines so allow "\n" to be used instead
+        if message := ops.getValue(f"ProxyInit/{option}", "").replace("\\n", "\n"):
+            gLogger.notice(f"\n{message}")
+
     def checkCAs(self):
         caDir = getCAsLocation()
         if not caDir:
@@ -215,13 +246,19 @@ class ProxyInit:
             return result
 
         if not resultProxyWithVOMS["OK"]:
-            if "returning a valid AC for the user" in resultProxyWithVOMS["Message"]:
-                gLogger.error(resultProxyWithVOMS["Message"])
-                gLogger.error("\n Are you sure you are properly registered in the VO?")
-            elif "Missing voms-proxy" in resultProxyWithVOMS["Message"]:
+            message = resultProxyWithVOMS["Message"]
+            if "Missing voms-proxy" in message:
                 gLogger.notice("Failed to add VOMS extension: no standard grid interface available")
             else:
-                gLogger.error(resultProxyWithVOMS["Message"])
+                if "returning a valid AC for the user" in message:
+                    message += "\n\nAre you sure you are properly registered in the VO?"
+                    self.helpNeeded = "VOMSFailureMessage"
+                if self.__piParams.strict:
+                    # Printed by main, avoid showing the error twice
+                    return S_ERROR(message)
+                gLogger.error(message)
+                if self.helpNeeded:
+                    self.printHelp(self.helpNeeded)
             if self.__piParams.strict:
                 return resultProxyWithVOMS
 
@@ -250,6 +287,8 @@ def main():
     resultDoTheMagic = pI.doTheMagic()
     if not resultDoTheMagic["OK"]:
         gLogger.fatal(resultDoTheMagic["Message"])
+        if pI.helpNeeded:
+            pI.printHelp(pI.helpNeeded)
         sys.exit(1)
 
     pI.printInfo()
