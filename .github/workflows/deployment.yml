@@ -203,10 +203,13 @@ jobs:
     environment: conda-forge
     steps:
       - name: Update the dirac-grid feedstock
-        uses: conda-forge/release@45b05fddc6addd06d5f982ebe0a88378ec44de92  # v2026.9.15
+        uses: conda-forge/release@47ce4c680424d215dc741251ffc60929ae57600b  # v2026.9.15 + automerge --repo fix (#19)
         with:
           feedstock: dirac-grid-feedstock
           feedstock-branch: v9.0.x
+          # The default name, DIRACGridBot/update-feedstock-version/v9.0.x, cannot coexist in the fork
+          # with the DIRACGridBot/update-feedstock-version branch that the integration releases use
+          branch: DIRACGridBot/update-feedstock-version-v9.0.x
           version: ${{ needs.deploy-pypi.outputs.conda-forge-version }}
           github-token: ${{ secrets.CONDA_FORGE_PAT }}
           github-token-for-fork: ${{ secrets.CONDA_FORGE_FORK_PAT }}
