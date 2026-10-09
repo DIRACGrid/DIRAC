@@ -1,6 +1,7 @@
-""" This module exposes the BaseClient class,
-    which serves as base for InnerRPCClient and TransferClient.
+"""This module exposes the BaseClient class,
+which serves as base for InnerRPCClient and TransferClient.
 """
+
 import time
 
 import _thread
@@ -130,7 +131,7 @@ class BaseClient:
         if self.KW_SETUP in self.kwargs and self.kwargs[self.KW_SETUP]:
             self.setup = str(self.kwargs[self.KW_SETUP])
         else:
-            self.setup = self.__threadConfig.getSetup()
+            self.setup = self.__threadConfig.getSetup()  # pylint: disable=no-member
             if not self.setup:
                 self.setup = gConfig.getValue("/DIRAC/Setup", "Test")
         return S_OK()
@@ -258,8 +259,10 @@ class BaseClient:
             self.__extraCredentials = self.kwargs[self.KW_EXTRA_CREDENTIALS]
 
         # Are we delegating something?
-        delegatedDN = self.kwargs.get(self.KW_DELEGATED_DN) or self.__threadConfig.getDN()
-        delegatedGroup = self.kwargs.get(self.KW_DELEGATED_GROUP) or self.__threadConfig.getGroup()
+        delegatedDN = self.kwargs.get(self.KW_DELEGATED_DN) or self.__threadConfig.getDN()  # pylint: disable=no-member
+        delegatedGroup = (
+            self.kwargs.get(self.KW_DELEGATED_GROUP) or self.__threadConfig.getGroup()  # pylint: disable=no-member
+        )
         if delegatedDN:
             self.kwargs[self.KW_DELEGATED_DN] = delegatedDN
             if not delegatedGroup:

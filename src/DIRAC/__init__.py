@@ -60,7 +60,7 @@ import re
 import sys
 import warnings
 from pkgutil import extend_path
-from typing import Any, Optional, Union
+from typing import Any, NoReturn, Optional, Union
 
 
 __path__ = extend_path(__path__, __name__)
@@ -298,7 +298,7 @@ def siteName():
 from DIRAC.Core.Utilities.Platform import getPlatformString, getPlatform, getPlatformTuple
 
 
-def exit(exitCode=0):
+def exit(exitCode=0) -> NoReturn:
     """
     Finish execution using callbacks
     """
