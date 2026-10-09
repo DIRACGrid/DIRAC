@@ -131,7 +131,7 @@ class BaseClient:
         if self.KW_SETUP in self.kwargs and self.kwargs[self.KW_SETUP]:
             self.setup = str(self.kwargs[self.KW_SETUP])
         else:
-            self.setup = self.__threadConfig.getSetup()
+            self.setup = self.__threadConfig.getSetup()  # pylint: disable=no-member
             if not self.setup:
                 self.setup = gConfig.getValue("/DIRAC/Setup", "Test")
         return S_OK()
