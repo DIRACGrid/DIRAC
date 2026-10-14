@@ -50,14 +50,15 @@ For example::
      {
        User = test
        Password = password
-       IndexPrefix = mydirac-
+       IndexPrefix = mydirac_
      }
    }
 
 
 The following global option can be set in `Systems/NoSQLDatabases`:
 
-   *IndexPrefix*: Prefix prepended to all indexes created in the OpenSearch instance.
+   *IndexPrefix*: Global prefix prepended to all indexes created in the OpenSearch instance.
+   The value must include any desired separator, such as ``_`` or ``.``.
 
 For each monitoring types managed, the Period (how often a new index is created)
 can be defined with::

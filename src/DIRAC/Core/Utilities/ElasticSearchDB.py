@@ -119,7 +119,8 @@ class ElasticSearchDB:
         :param str user: user name to access the db
         :param str password: if the db is password protected we need to provide a password
         :param str indexPrefix: it is the indexPrefix used to get all indexes
-        :param str globalIndexPrefix: prefix prepended to all index names and patterns
+        :param str globalIndexPrefix: global prefix prepended to all unprefixed index names and patterns;
+                                      it must include any desired separator
         :param bool useSSL: We can disable using secure connection. By default we use secure connection.
         :param bool useCRT: Use certificates.
         :param str ca_certs: CA certificates bundle.
@@ -197,15 +198,20 @@ class ElasticSearchDB:
 
     @property
     def globalIndexPrefix(self) -> str:
-        """Global prefix prepended to all index names and patterns."""
+        """Global prefix prepended to all unprefixed index names and patterns."""
         return self._globalIndexPrefix
 
     @globalIndexPrefix.setter
-    def globalIndexPrefix(self, value: str):
+    def globalIndexPrefix(self, value: str) -> None:
         self._globalIndexPrefix = (value or "").strip().lower()
 
-    def _withGlobalPrefix(self, indexName):
-        """Prepend the global index prefix to an index name or pattern."""
+    def _withGlobalPrefix(self, indexName: str) -> str:
+        """Prepend the global prefix to unprefixed index names or patterns.
+
+        The caller must pass unprefixed names. Prefix state is deliberately not inferred
+        from their contents because an unprefixed index name can start with the same text
+        as the configured global prefix.
+        """
         if not self._globalIndexPrefix:
             return indexName
 
@@ -223,8 +229,7 @@ class ElasticSearchDB:
             if strippedToken == "_all":
                 strippedToken = "*"
 
-            if not strippedToken.startswith(self._globalIndexPrefix):
-                strippedToken = f"{self._globalIndexPrefix}{strippedToken}"
+            strippedToken = f"{self._globalIndexPrefix}{strippedToken}"
 
             if excluded:
                 strippedToken = f"-{strippedToken}"
@@ -240,7 +245,7 @@ class ElasticSearchDB:
 
         :param self: self reference
         :param str name: index name
-        :param list index_patterns: list of index patterns to match
+        :param list index_patterns: unprefixed index patterns to match
         :param dict mapping: it is the mapping of the index
         """
         if settings is None:
@@ -263,7 +268,7 @@ class ElasticSearchDB:
         """Executes a query and returns its result (uses ES DSL language).
 
         :param self: self reference
-        :param str index: index name
+        :param str index: unprefixed index name
         :param dict query: It is the query in OpenSearch DSL language
 
         """
@@ -278,7 +283,7 @@ class ElasticSearchDB:
     def update(self, index: str, query=None, updateByQuery: bool = True, docID: str = None):
         """Executes an update of a document, and returns S_OK/S_ERROR
 
-        :param index: index name
+        :param index: unprefixed index name
         :param query: It is the query in OpenSearch DSL language
         :param updateByQuery: A bool to determine update by query or index values using index function.
         :param docID: ID for the document to be created.
@@ -304,7 +309,7 @@ class ElasticSearchDB:
     def getDoc(self, index: str, docID: str) -> dict:
         """Retrieves a document in an index.
 
-        :param index: name of the index
+        :param index: unprefixed index name
         :param docID: document ID
         """
         index = self._withGlobalPrefix(index)
@@ -321,7 +326,7 @@ class ElasticSearchDB:
     def getDocs(self, indexFunc, docIDs: list[str], vo: str) -> list[dict]:
         """Efficiently retrieve many documents from an index.
 
-        :param index: name of the index
+        :param indexFunc: function returning an unprefixed index name
         :param docIDs: document IDs
         """
         sLog.debug(f"Retrieving documents {docIDs}")
@@ -338,7 +343,7 @@ class ElasticSearchDB:
     def updateDoc(self, index: str, docID: str, body) -> dict:
         """Update an existing document with a script or partial document
 
-        :param index: name of the index
+        :param index: unprefixed index name
         :param docID: document ID
         :param body: The request definition requires either `script` or
             partial `doc`
@@ -360,7 +365,7 @@ class ElasticSearchDB:
     def deleteDoc(self, index: str, docID: str):
         """Deletes a document in an index.
 
-        :param index: name of the index
+        :param index: unprefixed index name
         :param docID: document ID
         """
         index = self._withGlobalPrefix(index)
@@ -377,7 +382,7 @@ class ElasticSearchDB:
     def existsDoc(self, index: str, docID: str) -> bool:
         """Returns information about whether a document exists in an index.
 
-        :param index: name of the index
+        :param index: unprefixed index name
         :param docID: document ID
         """
         index = self._withGlobalPrefix(index)
@@ -387,7 +392,7 @@ class ElasticSearchDB:
     @ifConnected
     def _Search(self, indexname):
         """
-        it returns the object which can be used for retreiving certain value from the DB
+        Return a search object for an unprefixed index name.
         """
         indexname = self._withGlobalPrefix(indexname)
         return Search(using=self.client, index=indexname)
@@ -407,20 +412,22 @@ class ElasticSearchDB:
 
     @ifConnected
     def getIndexes(self, indexName=None):
+        """Return the available indexes.
+
+        :param str indexName: optional unprefixed index-name prefix
         """
-        It returns the available indexes...
-        """
-        indexName = self._withGlobalPrefix(indexName) if indexName else self.globalIndexPrefix
-        sLog.debug(f"Getting indices alias of {indexName}")
-        # we only return indexes which belong to a specific prefix for example 'lhcb-production' or 'dirac-production etc.
-        return list(self.client.indices.get_alias(index=f"{indexName}*"))
+        indexPattern = f"{self._withGlobalPrefix(indexName)}*" if indexName else self._withGlobalPrefix("*")
+        sLog.debug(f"Getting indices alias of {indexPattern}")
+        # Only return indexes belonging to a specific prefix, for example
+        # "lhcb-production" or "dirac-production".
+        return list(self.client.indices.get_alias(index=indexPattern))
 
     @ifConnected
     def getDocTypes(self, indexName):
         """
         Returns mappings, by index.
 
-        :param str indexName: is the name of the index...
+        :param str indexName: unprefixed index name or pattern
         :return: S_OK or S_ERROR
         """
         result = []
@@ -453,7 +460,7 @@ class ElasticSearchDB:
         """
         Checks the existance of an index, by its name
 
-        :param str indexName: the name of the index
+        :param str indexName: unprefixed index name
         :returns: S_OK/S_ERROR if the request is successful
         """
         indexName = self._withGlobalPrefix(indexName)
@@ -467,7 +474,7 @@ class ElasticSearchDB:
     @ifConnected
     def createIndex(self, indexPrefix, mapping=None, period="day"):
         """
-        :param str indexPrefix: it is the index name.
+        :param str indexPrefix: unprefixed index name
         :param dict mapping: the configuration of the index.
         :param str period: We can specify, which kind of index will be created.
                            Currently only daily and monthly indexes are supported.
@@ -493,7 +500,7 @@ class ElasticSearchDB:
     @ifConnected
     def deleteIndex(self, indexName):
         """
-        :param str indexName: the name of the index to be deleted...
+        :param str indexName: unprefixed index name to delete
         """
         indexName = self._withGlobalPrefix(indexName)
         sLog.info("Deleting index", indexName)
@@ -514,7 +521,7 @@ class ElasticSearchDB:
 
     def index(self, indexName, body=None, docID=None, op_type="index"):
         """
-        :param str indexName: the name of the index to be used
+        :param str indexName: unprefixed index name
         :param dict body: the data which will be indexed (basically the JSON)
         :param int id: optional document id
         :param str op_type: Explicit operation type. (options: 'index' (default) or 'create')
@@ -542,7 +549,7 @@ class ElasticSearchDB:
     @ifConnected
     def bulk_index(self, indexPrefix, data=None, mapping=None, period="day", withTimeStamp=True):
         """
-        :param str indexPrefix: index name.
+        :param str indexPrefix: unprefixed index name
         :param list data: contains a list of dictionary
         :param dict mapping: the mapping used by Opensearch
         :param str period: Accepts 'day' and 'month'. We can specify which kind of indexes will be created.
@@ -558,9 +565,9 @@ class ElasticSearchDB:
             indexName = self.generateFullIndexName(indexPrefix, period)
         else:
             indexName = indexPrefix
-        sLog.debug(f"Bulk indexing into {self._withGlobalPrefix(indexName)} of {len(data)}")
+        sLog.debug(f"Bulk indexing into unprefixed index {indexName} with {len(data)} records")
 
-        # Keep existence/creation checks on the raw name path; methods apply global prefix internally.
+        # Keep existence/creation checks on unprefixed names; methods apply the global prefix internally.
         res = self.existingIndex(indexName)
         if not res["OK"]:
             return res
@@ -569,7 +576,7 @@ class ElasticSearchDB:
             if not retVal["OK"]:
                 return retVal
 
-        # Prefix exactly once for the direct bulk API call.
+        # Apply the prefix at the direct OpenSearch API boundary.
         indexName = self._withGlobalPrefix(indexName)
 
         try:
@@ -587,7 +594,7 @@ class ElasticSearchDB:
     @ifConnected
     def getUniqueValue(self, indexName, key, orderBy=False):
         """
-        :param str indexName: the name of the index which will be used for the query
+        :param str indexName: unprefixed index name used for the query
         :param dict orderBy: it is a dictionary in case we want to order the result {key:'desc'} or {key:'asc'}
         :returns: a list of unique value for a certain key from the dictionary.
         """
@@ -645,7 +652,7 @@ class ElasticSearchDB:
         """
         Delete data by query (careful!)
 
-        :param str indexName: the name of the index
+        :param str indexName: unprefixed index name
         :param str query: the JSON-formatted query for which we want to issue the delete
         """
         indexName = self._withGlobalPrefix(indexName)

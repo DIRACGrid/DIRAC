@@ -19,10 +19,26 @@ def _arg_or_kwarg(call, name):
 
 def test_global_prefix_normalization_and_token_handling():
     db = _get_db()
-    db.globalIndexPrefix = "  LHCB- "
-    assert db.globalIndexPrefix == "lhcb-"
+    db.globalIndexPrefix = "  LHCB_ "
+    assert db.globalIndexPrefix == "lhcb_"
 
-    assert db._withGlobalPrefix("jobs,-logs,_all,lhcb-ready") == "lhcb-jobs,-lhcb-logs,lhcb-*,lhcb-ready"
+    assert db._withGlobalPrefix("jobs,-logs,_all") == "lhcb_jobs,-lhcb_logs,lhcb_*"
+
+
+def test_unprefixed_index_names_starting_with_global_prefix_are_prefixed():
+    db = _get_db("abcd_")
+
+    assert db._withGlobalPrefix("abcd_logs") == "abcd_abcd_logs"
+    assert db._withGlobalPrefix("abcd_") == "abcd_abcd_"
+
+
+def test_global_prefix_does_not_add_a_separator():
+    db = _get_db("prefix")
+
+    assert db._withGlobalPrefix("index") == "prefixindex"
+
+    db.globalIndexPrefix = "prefix."
+    assert db._withGlobalPrefix("index") == "prefix.index"
 
 
 def test_query_and_document_operations_use_prefixed_index_names():
@@ -75,7 +91,7 @@ def test_index_management_and_template_operations_use_prefixed_index_names():
 
     db.addIndexTemplate("my-template", ["myindex-*", "prefix-already-*"], mapping={})
     body = db.client.indices.put_index_template.call_args.kwargs["body"]
-    assert body["index_patterns"] == ["prefix-myindex-*", "prefix-already-*"]
+    assert body["index_patterns"] == ["prefix-myindex-*", "prefix-prefix-already-*"]
 
     db.getIndexes("myindex")
     assert _arg_or_kwarg(db.client.indices.get_alias.call_args, "index") == "prefix-myindex*"
