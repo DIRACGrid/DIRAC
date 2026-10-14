@@ -260,8 +260,52 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %s DAY)",
 
     ##########################################################################################
     def getPilotInfo(self, pilotRef=False, conn=False, paramNames=[], pilotID=False):
-        """Get all the information for the pilot job reference or reference list"""
+        """Get all the information for the pilot job reference or reference list
 
+        To get the information of pilots matching some criteria, prefer :meth:`getPilotInfoForSelection`
+        over :meth:`selectPilots` followed by this method: it avoids sending a potentially huge list of
+        references back to the DB in an ``IN`` clause.
+        """
+        condSQL = []
+        for key, value in [
+            ("PilotJobReference", pilotRef),
+            ("PilotID", pilotID),
+        ]:
+            resList = []
+            for v in value if isinstance(value, list) else [value] if value else []:
+                result = self._escapeString(v)
+                if not result["OK"]:
+                    return result
+                resList.append(result["Value"])
+            if resList:
+                condSQL.append(f"{key} IN ({','.join(resList)})")
+        condition = f"WHERE {' AND '.join(condSQL)}" if condSQL else ""
+
+        result = self._getPilotInfoForCondition(condition, paramNames, conn=conn)
+        if not result["OK"]:
+            return result
+        if not result["Value"]:
+            msg = "No pilots found"
+            if pilotRef:
+                msg += f" for PilotJobReference(s): {pilotRef}"
+            return S_ERROR(DErrno.EWMSNOPILOT, msg)
+        return result
+
+    def getPilotInfoForSelection(
+        self, condDict, older=None, newer=None, timeStamp="SubmissionTime", paramNames=None, conn=False
+    ):
+        """Get the information of the pilots matching the selection, in the format of :meth:`getPilotInfo`
+
+        The selection arguments are the ones of :meth:`selectPilots`.
+
+        :return: S_OK with a dictionary keyed by the first parameter (PilotJobReference by default);
+                 empty if no pilot matches
+        """
+        condition = self.buildCondition(condDict, older, newer, timeStamp)
+        return self._getPilotInfoForCondition(condition, paramNames, conn=conn)
+
+    def _getPilotInfoForCondition(self, condition, paramNames=None, conn=False):
+        """Get the pilot information for the pilots matching a SQL condition (e.g. ``WHERE ...``)"""
         parameters = (
             [
                 "PilotJobReference",
@@ -285,51 +329,28 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %s DAY)",
             if not col in self.ALLOWED_COLUMNS:
                 return S_ERROR(f"Unknown column: {col}")
 
-        cmd = f"SELECT {', '.join(parameters)} FROM PilotAgents"  # nosec
-        condSQL = []
-        for key, value in [
-            ("PilotJobReference", pilotRef),
-            ("PilotID", pilotID),
-        ]:
-            resList = []
-            for v in value if isinstance(value, list) else [value] if value else []:
-                result = self._escapeString(v)
-                if not result["OK"]:
-                    return result
-                resList.append(result["Value"])
-            if resList:
-                condSQL.append(f"{key} IN ({','.join(resList)})")
-        if condSQL:
-            cmd = f"{cmd} WHERE {' AND '.join(condSQL)}"
-
-        result = self._query(cmd, conn=conn)
+        result = self._query(f"SELECT {', '.join(parameters)} FROM PilotAgents {condition}", conn=conn)  # nosec
         if not result["OK"]:
             return result
-        if not result["Value"]:
-            msg = "No pilots found"
-            if pilotRef:
-                msg += f" for PilotJobReference(s): {pilotRef}"
-            return S_ERROR(DErrno.EWMSNOPILOT, msg)
 
-        resDict = {}
-        pilotIDs = []
-        for row in result["Value"]:
-            pilotDict = {}
-            for i, par in enumerate(parameters):
-                pilotDict[par] = row[i]
-                if par == "PilotID":
-                    pilotIDs.append(row[i])
-            resDict[row[0]] = pilotDict
-
-        result = self.getJobsForPilot(pilotIDs)
-        if not result["OK"]:
+        resDict = {row[0]: dict(zip(parameters, row)) for row in result["Value"]}
+        if not resDict or "PilotID" not in parameters:
             return S_OK(resDict)
 
-        jobsDict = result["Value"]
-        for pilotRef, pilotInfo in resDict.items():
-            pilotID = pilotInfo["PilotID"]
-            if pilotID in jobsDict:
-                pilotInfo["Jobs"] = jobsDict[pilotID]
+        # Reuse the condition in a subquery rather than sending the list of PilotIDs back to the DB
+        cmd = (
+            "SELECT PilotID, JobID FROM JobToPilotMapping"
+            f" WHERE PilotID IN (SELECT PilotID FROM PilotAgents {condition})"  # nosec
+        )
+        result = self._query(cmd, conn=conn)
+        if not result["OK"]:
+            return S_OK(resDict)
+        jobsDict = {}
+        for pID, jobID in result["Value"]:
+            jobsDict.setdefault(pID, []).append(jobID)
+        for pilotInfo in resDict.values():
+            if pilotInfo["PilotID"] in jobsDict:
+                pilotInfo["Jobs"] = jobsDict[pilotInfo["PilotID"]]
 
         return S_OK(resDict)
 

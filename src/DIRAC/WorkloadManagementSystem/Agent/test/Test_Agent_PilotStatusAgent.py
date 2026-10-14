@@ -29,7 +29,7 @@ def psa(mocker):
         side_effect=lambda x, y=None: y,
         create=True,
     )
-    module_str = "DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB.selectPilots"
+    module_str = "DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB.getPilotInfoForSelection"
     mocker.patch(module_str, side_effect=mockReply)
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB.__init__", side_effect=mockNone)
     mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.JobDB.__init__", side_effect=mockNone)
@@ -55,16 +55,8 @@ def psa(mocker):
 @pytest.mark.parametrize(
     "mockReplyInput, expected",
     [
-        ({"OK": True, "Value": False}, {"OK": True, "Value": None}),
-        (
-            {"OK": True, "Value": ["Test"]},
-            {
-                "OK": False,
-                "Message": "No pilots found for PilotJobReference(s): ['Test']",
-            },
-        ),
+        ({"OK": True, "Value": {}}, {"OK": True, "Value": None}),
         ({"OK": False, "Message": "Test"}, {"OK": False, "Message": "Test"}),
-        ({"OK": True, "Value": []}, {"OK": True, "Value": None}),
     ],
 )
 def test_handleOldPilots(psa, mockReplyInput, expected):
