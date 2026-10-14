@@ -11,8 +11,73 @@ import errno
 import os
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.List import intListToString, stringListToString
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.DirectoryTreeBase import DirectoryTreeBase
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import executeInTransaction
+
+# Queries used to compute the directory sizes, indexed on the recursiveSum flag
+# Logical size, as stored in FC_DirectoryUsage
+LOGICAL_SIZE_FROM_USAGE_QUERIES = {
+    True: (
+        "SELECT COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles), 0) FROM FC_DirectoryUsage u "
+        "JOIN FC_DirectoryClosure c ON c.ChildID = u.DirID "
+        "JOIN FC_StorageElements s ON s.SEID = u.SEID "
+        "WHERE s.SEName = 'FakeSE' AND c.ParentID = %s"
+    ),
+    False: (
+        "SELECT COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles), 0) FROM FC_DirectoryUsage u "
+        "JOIN FC_StorageElements s ON s.SEID = u.SEID "
+        "WHERE s.SEName = 'FakeSE' AND u.DirID = %s"
+    ),
+}
+
+# Logical size, calculated from FC_Files
+LOGICAL_SIZE_CALCULATED_QUERIES = {
+    True: (
+        "SELECT COALESCE(SUM(f.Size), 0), COUNT(*) FROM FC_Files f "
+        "JOIN FC_DirectoryClosure d ON f.DirID = d.ChildID "
+        "WHERE d.ParentID = %s"
+    ),
+    False: "SELECT COALESCE(SUM(f.Size), 0), COUNT(*) FROM FC_Files f WHERE f.DirID = %s",
+}
+
+# Physical size per SE, as stored in FC_DirectoryUsage
+PHYSICAL_SIZE_FROM_USAGE_QUERIES = {
+    True: (
+        "SELECT se.SEName, COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles), 0) FROM FC_DirectoryUsage u "
+        "JOIN FC_DirectoryClosure c ON u.DirID = c.ChildID "
+        "JOIN FC_StorageElements se ON se.SEID = u.SEID "
+        "WHERE c.ParentID = %s AND se.SEName != 'FakeSE' AND (SESize != 0 OR SEFiles != 0) "
+        "GROUP BY se.SEName ORDER BY NULL"
+    ),
+    False: (
+        "SELECT se.SEName, COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles), 0) FROM FC_DirectoryUsage u "
+        "JOIN FC_StorageElements se ON se.SEID = u.SEID "
+        "WHERE u.DirID = %s AND se.SEName != 'FakeSE' AND (SESize != 0 OR SEFiles != 0) "
+        "GROUP BY se.SEName ORDER BY NULL"
+    ),
+}
+
+# Physical size per SE, calculated from FC_Replicas
+PHYSICAL_SIZE_CALCULATED_QUERIES = {
+    True: (
+        "SELECT se.SEName, COALESCE(SUM(f.Size), 0), COUNT(*) FROM FC_Replicas r "
+        "JOIN FC_Files f ON f.FileID = r.FileID "
+        "JOIN FC_StorageElements se ON se.SEID = r.SEID "
+        "JOIN FC_DirectoryClosure dc ON dc.ChildID = f.DirID "
+        "WHERE dc.ParentID = %s "
+        "GROUP BY se.SEName ORDER BY NULL"
+    ),
+    False: (
+        "SELECT se.SEName, COALESCE(SUM(f.Size), 0), COUNT(*) FROM FC_Replicas r "
+        "JOIN FC_Files f ON f.FileID = r.FileID "
+        "JOIN FC_StorageElements se ON se.SEID = r.SEID "
+        "WHERE f.DirID = %s "
+        "GROUP BY se.SEName ORDER BY NULL"
+    ),
+}
+
+# Columns of FC_DirectoryList that can be set by _setDirectoryParameter
+DIRECTORY_PARAMETER_COLUMNS = {"UID": "UID", "GID": "GID", "Status": "Status", "Mode": "Mode"}
 
 
 class DirectoryClosure(DirectoryTreeBase):
@@ -37,15 +102,23 @@ class DirectoryClosure(DirectoryTreeBase):
         """
 
         dpath = os.path.normpath(path)
-        result = self.db.executeStoredProcedure("ps_find_dir", (dpath, "ret1", "ret2"), outputIds=[1, 2])
+        result = self.db._query("SELECT DirID FROM FC_DirectoryList WHERE Name = %s", args=(dpath,))
         if not result["OK"]:
             return result
 
         if not result["Value"]:
-            return S_OK(0)
+            res = S_OK(0)
+            res["Level"] = None
+            return res
 
-        res = S_OK(result["Value"][0])
-        res["Level"] = result["Value"][1]
+        dirID = result["Value"][0][0]
+
+        result = self.db._query("SELECT MAX(Depth) FROM FC_DirectoryClosure WHERE ChildID = %s", args=(dirID,))
+        if not result["OK"]:
+            return result
+
+        res = S_OK(dirID)
+        res["Level"] = result["Value"][0][0]
         return res
 
     def findDirs(self, paths, connection=False):
@@ -59,14 +132,9 @@ class DirectoryClosure(DirectoryTreeBase):
         dirDict = {}
         if not paths:
             return S_OK(dirDict)
-        dpaths = []
-        for path in paths:
-            res = self.db._escapeString(os.path.normpath(path))
-            if not res["OK"]:
-                return res
-            dpaths.append(res["Value"])
-        param = ",".join(dpaths)
-        result = self.db.executeStoredProcedureWithCursor("ps_find_dirs", (param,))
+        dpaths = [os.path.normpath(path) for path in paths]
+        req = f"SELECT Name, DirID FROM FC_DirectoryList WHERE Name IN ({','.join(['%s'] * len(dpaths))})"  # nosec B608
+        result = self.db._query(req, args=dpaths)
         if not result["OK"]:
             return result
         for dirName, dirID in result["Value"]:
@@ -96,12 +164,14 @@ class DirectoryClosure(DirectoryTreeBase):
             return res
 
         dirId = result["Value"]
-        result = self.db.executeStoredProcedure("ps_remove_dir", (dirId,), outputIds=[])
+        # Because of the cascade, it also deletes the FC_DirectoryClosure and FC_DirectoryUsage entries
+        result = self.db._update("DELETE FROM FC_DirectoryList WHERE DirID = %s", args=(dirId,))
         if not result["OK"]:
             return result
 
-        result["DirID"] = dirId
-        return result
+        res = S_OK()
+        res["DirID"] = dirId
+        return res
 
     def existsDir(self, path):
         """Check the existence of a directory at the specified path
@@ -129,16 +199,14 @@ class DirectoryClosure(DirectoryTreeBase):
 
         """
 
-        result = self.db.executeStoredProcedure("ps_get_dirName_from_id", (dirID, "out"), outputIds=[1])
+        result = self.db._query("SELECT Name FROM FC_DirectoryList WHERE DirID = %s", args=(dirID,))
         if not result["OK"]:
             return result
 
-        dirName = result["Value"][0]
-
-        if not dirName:
+        if not result["Value"]:
             return S_ERROR("Directory with id %d not found" % int(dirID))
 
-        return S_OK(dirName)
+        return S_OK(result["Value"][0][0])
 
     def getDirectoryPaths(self, dirIDList):
         """Get directory names by directory ID list
@@ -152,10 +220,12 @@ class DirectoryClosure(DirectoryTreeBase):
             dirs = [dirIDList]
 
         dirDict = {}
+        if not dirs:
+            return S_OK(dirDict)
 
-        # Format the list
-        dIds = intListToString(dirs)
-        result = self.db.executeStoredProcedureWithCursor("ps_get_dirNames_from_ids", (dIds,))
+        dIds = [int(dirId) for dirId in dirs]
+        req = f"SELECT DirID, Name FROM FC_DirectoryList WHERE DirID IN ({','.join(['%s'] * len(dIds))})"  # nosec B608
+        result = self.db._query(req, args=dIds)
         if not result["OK"]:
             return result
 
@@ -193,7 +263,9 @@ class DirectoryClosure(DirectoryTreeBase):
 
         """
 
-        result = self.db.executeStoredProcedureWithCursor("ps_get_parentIds_from_id", (dirID,))
+        result = self.db._query(
+            "SELECT ParentID FROM FC_DirectoryClosure WHERE ChildID = %s ORDER BY Depth DESC", args=(dirID,)
+        )
 
         if not result["OK"]:
             return result
@@ -212,7 +284,9 @@ class DirectoryClosure(DirectoryTreeBase):
         else:
             dirID = path
 
-        result = self.db.executeStoredProcedureWithCursor("ps_get_direct_children", (dirID,))
+        result = self.db._query(
+            "SELECT ChildID FROM FC_DirectoryClosure WHERE ParentID = %s AND Depth = 1", args=(dirID,)
+        )
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -239,7 +313,16 @@ class DirectoryClosure(DirectoryTreeBase):
                 reqStr += " AND Depth != 0"
             return S_OK(reqStr)
 
-        result = self.db.executeStoredProcedureWithCursor("ps_get_sub_directories", (dirID, includeParent))
+        req = (
+            "SELECT c1.ChildID, MAX(c1.Depth) AS lvl FROM FC_DirectoryClosure c1 "
+            "JOIN FC_DirectoryClosure c2 ON c1.ChildID = c2.ChildID "
+            "WHERE c2.ParentID = %s"
+        )
+        if not includeParent:
+            req += " AND c2.Depth != 0"
+        req += " GROUP BY c1.ChildID ORDER BY NULL"
+
+        result = self.db._query(req, args=(dirID,))
         if not result["OK"]:
             return result
         if not result["Value"]:
@@ -258,8 +341,12 @@ class DirectoryClosure(DirectoryTreeBase):
         if not isinstance(dirIdList, list):
             dirs = [dirIdList]
 
-        dIds = intListToString(dirs)
-        result = self.db.executeStoredProcedureWithCursor("ps_get_multiple_sub_directories", (dIds,))
+        if not dirs:
+            return S_OK([])
+
+        dIds = [int(dirId) for dirId in dirs]
+        req = f"SELECT DISTINCT(ChildID) FROM FC_DirectoryClosure WHERE ParentID IN ({','.join(['%s'] * len(dIds))})"  # nosec B608
+        result = self.db._query(req, args=dIds)
 
         if not result["OK"]:
             return result
@@ -294,14 +381,16 @@ class DirectoryClosure(DirectoryTreeBase):
         :returns: S_OK(value)
         """
 
-        result = self.db.executeStoredProcedure(
-            "ps_count_sub_directories", (dirId, includeParent, "ret1"), outputIds=[2]
-        )
+        result = self.db._query("SELECT COUNT(ChildID) FROM FC_DirectoryClosure WHERE ParentID = %s", args=(dirId,))
         if not result["OK"]:
             return result
 
-        res = S_OK(result["Value"][0])
-        return res
+        countDir = result["Value"][0][0]
+        # The directory itself is in the closure table with Depth 0
+        if not includeParent and countDir:
+            countDir -= 1
+
+        return S_OK(countDir)
 
     ########################################################################################################
     #
@@ -369,14 +458,34 @@ class DirectoryClosure(DirectoryTreeBase):
 
         # We only insert if there is a parent or if it is the root '/'
         if parentDirId or path == "/":
-            result = self.db.executeStoredProcedureWithCursor(
-                packageName="ps_insert_dir", parameters=(parentDirId, dpath, l_uid, l_gid, self.db.umask, status)
-            )
+            mode = self.db.umask
 
+            def _insertDir(cursor):
+                """Insert the directory and its closure entries"""
+                cursor.execute(
+                    "INSERT INTO FC_DirectoryList (UID, GID, CreationDate, ModificationDate, Mode, Status, Name) "
+                    "VALUES (%s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP(), %s, %s, %s)",
+                    (l_uid, l_gid, mode, status, dpath),
+                )
+                dirId = cursor.lastrowid
+
+                cursor.execute(
+                    "INSERT INTO FC_DirectoryClosure (ParentID, ChildID, Depth) VALUES (%s, %s, 0)", (dirId, dirId)
+                )
+
+                if parentDirId:
+                    cursor.execute(
+                        "INSERT INTO FC_DirectoryClosure (ParentID, ChildID, Depth) "
+                        "SELECT p.ParentID, %s, p.Depth + 1 FROM FC_DirectoryClosure p WHERE p.ChildID = %s",
+                        (dirId, parentDirId),
+                    )
+                return dirId
+
+            result = executeInTransaction(self.db, _insertDir)
             if not result["OK"]:
                 return result
 
-            dirId = result["Value"][0][0]
+            dirId = result["Value"]
 
             result = S_OK(dirId)
             result["NewDirectory"] = True
@@ -433,18 +542,22 @@ class DirectoryClosure(DirectoryTreeBase):
         :returns: S_OK(dict), where dict has the following keys:
                         "DirID", "UID", "Owner", "GID", "OwnerGroup", "Status", "Mode", "CreationDate", "ModificationDate"
         """
-        # Which procedure to use
-        psName = None
+        req = (
+            "SELECT d.DirID, d.UID, u.UserName, d.GID, g.GroupName, d.Status, d.Mode, d.CreationDate, "
+            "d.ModificationDate FROM FC_DirectoryList d "
+            "JOIN FC_Users u ON d.UID = u.UID "
+            "JOIN FC_Groups g ON d.GID = g.GID "
+        )
         # it is a path ...
         if isinstance(pathOrDirId, str):
-            psName = "ps_get_all_directory_info"
+            req += "WHERE d.Name = %s"
         # it is the dirId
         elif isinstance(pathOrDirId, ((list,) + (int,))):
-            psName = "ps_get_all_directory_info_from_id"
+            req += "WHERE d.DirID = %s"
         else:
             return S_ERROR(f"Unknown type of pathOrDirId {type(pathOrDirId)}")
 
-        result = self.db.executeStoredProcedureWithCursor(psName, (pathOrDirId,))
+        result = self.db._query(req, args=(pathOrDirId,))
         if not result["OK"]:
             return result
 
@@ -486,30 +599,44 @@ class DirectoryClosure(DirectoryTreeBase):
                 S_ERROR if the directory does not exist
         """
 
-        # The PS associated with a given parameter
-        psNames = {
-            "UID": "ps_set_dir_uid",
-            "GID": "ps_set_dir_gid",
-            "Status": "ps_set_dir_status",
-            "Mode": "ps_set_dir_mode",
-        }
+        column = DIRECTORY_PARAMETER_COLUMNS.get(pname)
 
-        psName = psNames.get(pname, None)
+        # If it is a known parameter, we go for it
+        if column:
+            # Apply recursively on the subdirectories and the files they contain
+            if recursive and pname in ["UID", "GID", "Mode"]:
+                result = self.db._query("SELECT DirID FROM FC_DirectoryList WHERE Name = %s", args=(path,))
+                if not result["OK"]:
+                    return result
+                startDirID = result["Value"][0][0] if result["Value"] else 0
 
-        # If we have a recursive procedure and it is wanted, call it
-        if recursive and pname in ["UID", "GID", "Mode"] and psName:
-            psName += "_recursive"
+                result = self.db._update(
+                    f"UPDATE FC_DirectoryList d JOIN FC_DirectoryClosure c ON d.DirID = c.ChildID "  # nosec B608
+                    f"SET d.{column} = %s, d.ModificationDate = UTC_TIMESTAMP() WHERE c.ParentID = %s",
+                    args=(pvalue, startDirID),
+                )
+                if not result["OK"]:
+                    return result
+                dirUpdate = result["Value"]
 
-        # If there is an associated procedure, we go for it
-        if psName:
-            result = self.db.executeStoredProcedureWithCursor(psName, (path, pvalue))
+                result = self.db._update(
+                    f"UPDATE FC_Files f JOIN FC_DirectoryClosure c ON f.DirID = c.ChildID "  # nosec B608
+                    f"SET f.{column} = %s, f.ModificationDate = UTC_TIMESTAMP() WHERE c.ParentID = %s",
+                    args=(pvalue, startDirID),
+                )
+                if not result["OK"]:
+                    return result
+                fileUpdate = result["Value"]
 
-            if not result["OK"]:
-                return result
-
-            errno, affected, errMsg = result["Value"][0]
-            if errno:
-                return S_ERROR(errMsg)
+                affected = dirUpdate + fileUpdate
+            else:
+                result = self.db._update(
+                    f"UPDATE FC_DirectoryList SET {column} = %s, ModificationDate = UTC_TIMESTAMP() WHERE Name = %s",  # nosec B608
+                    args=(pvalue, path),
+                )
+                if not result["OK"]:
+                    return result
+                affected = result["Value"]
 
             if not affected:
                 # Either there were no changes, or the directory does not exist
@@ -520,7 +647,7 @@ class DirectoryClosure(DirectoryTreeBase):
 
             return S_OK(affected)
 
-        # In case this is a 'new' parameter, we have a fallback solution, but we should add a specific ps for it
+        # In case this is a 'new' parameter, we have a fallback solution
         else:
             return DirectoryTreeBase._setDirectoryParameter(self, path, pname, pvalue)
 
@@ -554,7 +681,7 @@ class DirectoryClosure(DirectoryTreeBase):
         """
         return self._setDirectoryParameter(path, "Mode", mode, recursive=recursive)
 
-    def __getLogicalSize(self, lfns, ps_name, recursiveSum=True, connection=None):
+    def __getLogicalSize(self, lfns, queries, recursiveSum=True, connection=None):
         successful = {}
         failed = {}
         for path in lfns:
@@ -564,7 +691,7 @@ class DirectoryClosure(DirectoryTreeBase):
                 continue
 
             dirID = result["Value"]
-            result = self.db.executeStoredProcedureWithCursor(ps_name, (dirID, recursiveSum))
+            result = self.db._query(queries[bool(recursiveSum)], args=(dirID,))
 
             if not result["OK"]:
                 failed[path] = result["Message"]
@@ -588,15 +715,17 @@ class DirectoryClosure(DirectoryTreeBase):
 
     def _getDirectoryLogicalSizeFromUsage(self, lfns, recursiveSum=True, connection=None):
         """Get the total "logical" size of the requested directories"""
-        return self.__getLogicalSize(lfns, "ps_get_dir_logical_size", recursiveSum=recursiveSum, connection=connection)
+        return self.__getLogicalSize(
+            lfns, LOGICAL_SIZE_FROM_USAGE_QUERIES, recursiveSum=recursiveSum, connection=connection
+        )
 
     def _getDirectoryLogicalSize(self, lfns, recursiveSum=True, connection=None):
         """Get the total "logical" size of the requested directories"""
         return self.__getLogicalSize(
-            lfns, "ps_calculate_dir_logical_size", recursiveSum=recursiveSum, connection=connection
+            lfns, LOGICAL_SIZE_CALCULATED_QUERIES, recursiveSum=recursiveSum, connection=connection
         )
 
-    def __getPhysicalSize(self, lfns, ps_name, recursiveSum=True, connection=None):
+    def __getPhysicalSize(self, lfns, queries, recursiveSum=True, connection=None):
         """Get the total size of the requested directories"""
 
         successful = {}
@@ -611,7 +740,7 @@ class DirectoryClosure(DirectoryTreeBase):
                 continue
             dirID = result["Value"]
 
-            result = self.db.executeStoredProcedureWithCursor(ps_name, (dirID, recursiveSum))
+            result = self.db._query(queries[bool(recursiveSum)], args=(dirID,))
             if not result["OK"]:
                 failed[path] = result["Message"]
                 continue
@@ -636,13 +765,13 @@ class DirectoryClosure(DirectoryTreeBase):
     def _getDirectoryPhysicalSizeFromUsage(self, lfns, recursiveSum=True, connection=None):
         """Get the total size of the requested directories"""
         return self.__getPhysicalSize(
-            lfns, "ps_get_dir_physical_size", recursiveSum=recursiveSum, connection=connection
+            lfns, PHYSICAL_SIZE_FROM_USAGE_QUERIES, recursiveSum=recursiveSum, connection=connection
         )
 
     def _getDirectoryPhysicalSize(self, lfns, recursiveSum=True, connection=None):
         """Get the total size of the requested directories"""
         return self.__getPhysicalSize(
-            lfns, "ps_calculate_dir_physical_size", recursiveSum=recursiveSum, connection=None
+            lfns, PHYSICAL_SIZE_CALCULATED_QUERIES, recursiveSum=recursiveSum, connection=None
         )
 
     def _changeDirectoryParameter(self, paths, directoryFunction, _fileFunction, recursive=False):
@@ -683,7 +812,18 @@ class DirectoryClosure(DirectoryTreeBase):
         if not dirID:
             return S_ERROR(errno.ENOENT, f"{path} does not exist")
 
-        result = self.db.executeStoredProcedureWithCursor("ps_get_directory_dump", (dirID,))
+        # Directories have a NULL size
+        req = (
+            "(SELECT d.Name, NULL, d.CreationDate FROM FC_DirectoryList d "
+            "JOIN FC_DirectoryClosure c ON d.DirID = c.ChildID "
+            "WHERE c.ParentID = %s AND c.Depth != 0) "
+            "UNION ALL "
+            "(SELECT CONCAT(d.Name, '/', f.FileName), f.Size, f.CreationDate FROM FC_Files f "
+            "JOIN FC_DirectoryList d ON f.DirID = d.DirID "
+            "JOIN FC_DirectoryClosure c ON c.ChildID = f.DirID "
+            "WHERE c.ParentID = %s)"
+        )
+        result = self.db._query(req, args=(dirID, dirID))
 
         if not result["OK"]:
             return result
