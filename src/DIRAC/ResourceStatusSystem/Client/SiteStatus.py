@@ -18,6 +18,7 @@ from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
+from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine import resolveElementStatus
 
 
 class SiteStatus(metaclass=DIRACSingleton):
@@ -125,7 +126,7 @@ class SiteStatus(metaclass=DIRACSingleton):
     def getUsableSites(self, siteNames=None):
         """
         Returns all sites that are usable if their
-        statusType is either Active or Degraded; in a list.
+        statusType is either Active; in a list.
 
         examples
           >>> siteStatus.getUsableSites( ['test1.test1.uk', 'test2.test2.net', 'test3.test3.org'] )
@@ -147,7 +148,7 @@ class SiteStatus(metaclass=DIRACSingleton):
             return siteStatusDictRes
         if not siteStatusDictRes["Value"]:
             return S_OK([])
-        return S_OK([x[0] for x in siteStatusDictRes["Value"].items() if x[1] in ["Active", "Degraded"]])
+        return S_OK([x[0] for x in siteStatusDictRes["Value"].items() if x[1] == "Active"])
 
     def getSites(self, siteState="Active"):
         """
@@ -188,7 +189,7 @@ class SiteStatus(metaclass=DIRACSingleton):
         else:
             # fix case sensitive string
             siteState = siteState.capitalize()
-            allowedStateList = ["Active", "Banned", "Degraded", "Probing", "Error", "Unknown"]
+            allowedStateList = ["Active", "Banned"]
             if siteState not in allowedStateList:
                 return S_ERROR(errno.EINVAL, "Not a valid status, parameter rejected")
 
@@ -275,9 +276,7 @@ def getCacheDictFromRawData(rawList):
 
     :return: dict of the form { ( elementName ) : status, ... }
     """
-
     res = {}
     for entry in rawList:
-        res.update({(entry[0]): entry[1]})
-
+        res[entry[0]] = resolveElementStatus(entry[1])
     return res

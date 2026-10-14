@@ -107,7 +107,7 @@ class DiracAdmin(API):
 
     #############################################################################
     def getBannedSites(self, printOutput=False):
-        """Retrieve current list of banned  and probing sites.
+        """Retrieve current list of banned sites.
 
         Example usage:
 
@@ -122,16 +122,12 @@ class DiracAdmin(API):
         if not bannedSites["OK"]:
             return bannedSites
 
-        probingSites = self.sitestatus.getSites(siteState="Probing")
-        if not probingSites["OK"]:
-            return probingSites
-
-        mergedList = sorted(bannedSites["Value"] + probingSites["Value"])
+        bannedList = sorted(bannedSites["Value"])
 
         if printOutput:
-            gLogger.notice("\n".join(mergedList))
+            gLogger.notice("\n".join(bannedList))
 
-        return S_OK(mergedList)
+        return S_OK(bannedList)
 
     #############################################################################
     def getSiteSection(self, site, printOutput=False):
@@ -154,6 +150,20 @@ class DiracAdmin(API):
         return result
 
     #############################################################################
+    def _getSiteDBStatus(self, site):
+        """Get the status of a site as stored in the RSS Database.
+
+        :param str site: DIRAC site name
+        :return: S_OK,S_ERROR
+        """
+        result = ResourceStatusClient().selectStatusElement("Site", "Status", site, meta={"columns": ["Status"]})
+        if not result["OK"]:
+            return result
+        if not result["Value"]:
+            return S_ERROR(f"Site {site} not found in the RSS database")
+        return S_OK(result["Value"][0][0])
+
+    #############################################################################
     def allowSite(self, site, comment, printOutput=False, days=1):
         """Adds the site to the site mask. The site must be a valid DIRAC site name
 
@@ -170,10 +180,10 @@ class DiracAdmin(API):
         if not (result := self._checkSiteIsValid(site))["OK"]:
             return result
 
-        if not (result := self.getSiteMask(status="Active"))["OK"]:
+        if not (result := self._getSiteDBStatus(site))["OK"]:
             return result
-        siteMask = result["Value"]
-        if site in siteMask:
+
+        if result["Value"] == "Active":
             if printOutput:
                 gLogger.notice(f"Site {site} is already Active")
             return S_OK(f"Site {site} is already Active")
@@ -246,11 +256,11 @@ class DiracAdmin(API):
         """
         if not (result := self._checkSiteIsValid(site))["OK"]:
             return result
-        mask = self.getSiteMask(status="Banned")
-        if not mask["OK"]:
-            return mask
-        siteMask = mask["Value"]
-        if site in siteMask:
+
+        if not (result := self._getSiteDBStatus(site))["OK"]:
+            return result
+
+        if result["Value"] == "Banned":
             if printOutput:
                 gLogger.notice(f"Site {site} is already Banned")
             return S_OK(f"Site {site} is already Banned")
