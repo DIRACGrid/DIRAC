@@ -41,11 +41,6 @@ class PilotAgentsDB(DB):
         "VO",
     }
 
-    # Number of values inserted into the in-memory temp tables per batch in
-    # getPilotInfo. Keeping batches bounded avoids overflowing MEMORY tables
-    # (ERROR 1114: The table is full) when querying large pilot reference lists.
-    PILOT_INFO_BATCH_SIZE = 10000
-
     def __init__(self, parentLogger=None):
         super().__init__("PilotAgentsDB", "WorkloadManagement/PilotAgentsDB", parentLogger=parentLogger)
         self._defaultLogger = self.log
@@ -265,8 +260,52 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %s DAY)",
 
     ##########################################################################################
     def getPilotInfo(self, pilotRef=False, conn=False, paramNames=[], pilotID=False):
-        """Get all the information for the pilot job reference or reference list"""
+        """Get all the information for the pilot job reference or reference list
 
+        To get the information of pilots matching some criteria, prefer :meth:`getPilotInfoForSelection`
+        over :meth:`selectPilots` followed by this method: it avoids sending a potentially huge list of
+        references back to the DB in an ``IN`` clause.
+        """
+        condSQL = []
+        for key, value in [
+            ("PilotJobReference", pilotRef),
+            ("PilotID", pilotID),
+        ]:
+            resList = []
+            for v in value if isinstance(value, list) else [value] if value else []:
+                result = self._escapeString(v)
+                if not result["OK"]:
+                    return result
+                resList.append(result["Value"])
+            if resList:
+                condSQL.append(f"{key} IN ({','.join(resList)})")
+        condition = f"WHERE {' AND '.join(condSQL)}" if condSQL else ""
+
+        result = self._getPilotInfoForCondition(condition, paramNames, conn=conn)
+        if not result["OK"]:
+            return result
+        if not result["Value"]:
+            msg = "No pilots found"
+            if pilotRef:
+                msg += f" for PilotJobReference(s): {pilotRef}"
+            return S_ERROR(DErrno.EWMSNOPILOT, msg)
+        return result
+
+    def getPilotInfoForSelection(
+        self, condDict, older=None, newer=None, timeStamp="SubmissionTime", paramNames=None, conn=False
+    ):
+        """Get the information of the pilots matching the selection, in the format of :meth:`getPilotInfo`
+
+        The selection arguments are the ones of :meth:`selectPilots`.
+
+        :return: S_OK with a dictionary keyed by the first parameter (PilotJobReference by default);
+                 empty if no pilot matches
+        """
+        condition = self.buildCondition(condDict, older, newer, timeStamp)
+        return self._getPilotInfoForCondition(condition, paramNames, conn=conn)
+
+    def _getPilotInfoForCondition(self, condition, paramNames=None, conn=False):
+        """Get the pilot information for the pilots matching a SQL condition (e.g. ``WHERE ...``)"""
         parameters = (
             [
                 "PilotJobReference",
@@ -290,98 +329,28 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %s DAY)",
             if not col in self.ALLOWED_COLUMNS:
                 return S_ERROR(f"Unknown column: {col}")
 
-        cmd = f"SELECT {', '.join(parameters)} FROM PilotAgents"  # nosec
-        tempTables = []
-        activeKeys = []
-        result = None
-        try:
-            for key, value in [("PilotJobReference", pilotRef), ("PilotID", pilotID)]:
-                values = []
-                for v in value if isinstance(value, list) else [value] if value else []:
-                    values.append(v)
-                if not values:
-                    continue
-                tableName = f"to_select_PilotAgents_{key}"
-                if key == "PilotID":
-                    sqlCmd = (
-                        f"CREATE TEMPORARY TABLE {tableName}"
-                        f" (PilotID INT UNSIGNED NOT NULL, PRIMARY KEY (PilotID)) ENGINE=MEMORY;"
-                    )
-                    insertValues = [(int(v),) for v in values]
-                else:
-                    sqlCmd = (
-                        f"CREATE TEMPORARY TABLE {tableName}"
-                        f" (PilotJobReference VARCHAR(255) NOT NULL, PRIMARY KEY (PilotJobReference)) ENGINE=MEMORY;"
-                    )
-                    insertValues = [(v,) for v in values]
-                returnValueOrRaise(self._update(sqlCmd, conn=conn))
-                tempTables.append(tableName)
-                activeKeys.append((key, tableName, insertValues))
-
-            joinSQL = [f"JOIN {tn} USING ({k})" for k, tn, _ in activeKeys]
-            selectCmd = f"{cmd} {' '.join(joinSQL)}" if joinSQL else cmd
-
-            if not activeKeys:
-                # No conditions: plain SELECT over the whole table.
-                result = self._query(selectCmd, conn=conn)
-            else:
-                # Load every condition key fully except the last one, which is
-                # processed batch by batch (truncating between batches) so the
-                # in-memory temp table never holds all the rows at once. This
-                # preserves the AND semantics: the union of the per-batch
-                # results equals the full JOIN result.
-                for key, tableName, insertValues in activeKeys[:-1]:
-                    insertCmd = f"INSERT INTO {tableName} ({key}) VALUES ( %s )"  # nosec: B608
-                    for i in range(0, len(insertValues), self.PILOT_INFO_BATCH_SIZE):
-                        returnValueOrRaise(
-                            self._updatemany(insertCmd, insertValues[i : i + self.PILOT_INFO_BATCH_SIZE], conn=conn)
-                        )
-                batchKey, batchTable, batchValues = activeKeys[-1]
-                insertCmd = f"INSERT INTO {batchTable} ({batchKey}) VALUES ( %s )"  # nosec: B608
-                resultRows = []
-                for i in range(0, len(batchValues), self.PILOT_INFO_BATCH_SIZE):
-                    returnValueOrRaise(self._update(f"TRUNCATE TABLE {batchTable}", conn=conn))
-                    returnValueOrRaise(
-                        self._updatemany(insertCmd, batchValues[i : i + self.PILOT_INFO_BATCH_SIZE], conn=conn)
-                    )
-                    batchResult = self._query(selectCmd, conn=conn)
-                    if not batchResult["OK"]:
-                        result = batchResult
-                        break
-                    resultRows.extend(batchResult["Value"])
-                else:
-                    result = S_OK(resultRows)
-        finally:
-            for tableName in tempTables:
-                sqlCmd = f"DROP TEMPORARY TABLE {tableName}"
-                returnValueOrRaise(self._update(sqlCmd, conn=conn))
+        result = self._query(f"SELECT {', '.join(parameters)} FROM PilotAgents {condition}", conn=conn)  # nosec
         if not result["OK"]:
             return result
-        if not result["Value"]:
-            msg = "No pilots found"
-            if pilotRef:
-                msg += f" for PilotJobReference(s): {pilotRef}"
-            return S_ERROR(DErrno.EWMSNOPILOT, msg)
 
-        resDict = {}
-        pilotIDs = []
-        for row in result["Value"]:
-            pilotDict = {}
-            for i, par in enumerate(parameters):
-                pilotDict[par] = row[i]
-                if par == "PilotID":
-                    pilotIDs.append(row[i])
-            resDict[row[0]] = pilotDict
-
-        result = self.getJobsForPilot(pilotIDs)
-        if not result["OK"]:
+        resDict = {row[0]: dict(zip(parameters, row)) for row in result["Value"]}
+        if not resDict or "PilotID" not in parameters:
             return S_OK(resDict)
 
-        jobsDict = result["Value"]
-        for pilotRef, pilotInfo in resDict.items():
-            pilotID = pilotInfo["PilotID"]
-            if pilotID in jobsDict:
-                pilotInfo["Jobs"] = jobsDict[pilotID]
+        # Reuse the condition in a subquery rather than sending the list of PilotIDs back to the DB
+        cmd = (
+            "SELECT PilotID, JobID FROM JobToPilotMapping"
+            f" WHERE PilotID IN (SELECT PilotID FROM PilotAgents {condition})"  # nosec
+        )
+        result = self._query(cmd, conn=conn)
+        if not result["OK"]:
+            return S_OK(resDict)
+        jobsDict = {}
+        for pID, jobID in result["Value"]:
+            jobsDict.setdefault(pID, []).append(jobID)
+        for pilotInfo in resDict.values():
+            if pilotInfo["PilotID"] in jobsDict:
+                pilotInfo["Jobs"] = jobsDict[pilotInfo["PilotID"]]
 
         return S_OK(resDict)
 
@@ -498,24 +467,17 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %s DAY)",
     def getJobsForPilot(self, pilotID):
         """Get IDs of Jobs that were executed by a pilot"""
         if isinstance(pilotID, list):
-            sqlCmd = "CREATE TEMPORARY TABLE to_select_JobToPilotMapping (PilotID INT UNSIGNED NOT NULL, PRIMARY KEY (PilotID)) ENGINE=MEMORY;"
-            returnValueOrRaise(self._update(sqlCmd))
-            try:
-                sqlCmd = "INSERT INTO to_select_JobToPilotMapping (PilotID) VALUES ( %s )"
-                returnValueOrRaise(self._updatemany(sqlCmd, [(int(p),) for p in pilotID]))
-                sqlCmd = "SELECT pilotID, JobID FROM JobToPilotMapping JOIN to_select_JobToPilotMapping USING (PilotID)"
-                result = self._query(sqlCmd)
-            finally:
-                sqlCmd = "DROP TEMPORARY TABLE to_select_JobToPilotMapping"
-                returnValueOrRaise(self._update(sqlCmd))
-            if not result["OK"]:
-                return result
+            cmd = "SELECT pilotID,JobID FROM JobToPilotMapping WHERE pilotID IN ("
+            cmd += ",".join(["%s"] * len(pilotID))
+            cmd += ")"
+            args = [str(int(x)) for x in pilotID]
         else:
             cmd = "SELECT pilotID,JobID FROM JobToPilotMapping WHERE pilotID = %s"
             args = [str(pilotID)]
-            result = self._query(cmd, args=args)
-            if not result["OK"]:
-                return result
+
+        result = self._query(cmd, args=args)
+        if not result["OK"]:
+            return result
 
         resDict = {}
         for row in result["Value"]:
