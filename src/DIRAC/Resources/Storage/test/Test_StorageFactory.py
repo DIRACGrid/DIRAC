@@ -70,7 +70,6 @@ CFG_CONTENT = """
             Protocol = srm
             Path = /eos/lhcb/grid/prod
             Access = remote
-            SpaceToken = LHCb-EOS
             WSUrl = /srm/v2/server?SFN:
           }
         }
@@ -89,7 +88,6 @@ CFG_CONTENT = """
             Protocol = srm
             Path = /eos/lhcb/grid/prod
             Access = remote
-            SpaceToken = LHCb-EOS
             WSUrl = /srm/v2/server?SFN:
           }
         }
@@ -118,7 +116,6 @@ CFG_CONTENT = """
             Protocol = srm
             Path = /eos/lhcb/grid/prod
             Access = remote
-            SpaceToken = LHCb-EOS
             WSUrl = /srm/v2/server?SFN:
           }
           LocalAccessProtocol
@@ -128,7 +125,6 @@ CFG_CONTENT = """
             Protocol = file
             Path = /eos/lhcb/grid/prod
             Access = local
-            SpaceToken = LHCb-EOS
           }
         }
         CERN-USER
@@ -139,7 +135,6 @@ CFG_CONTENT = """
           {
             PluginName = GFAL2_SRM2
             Path = /eos/lhcb/grid/user
-            SpaceToken = LHCb_USER
           }
         }
         CERN-DST
@@ -193,7 +188,6 @@ CFG_CONTENT = """
             Protocol = srm
             Path = /eos/lhcb/grid/user
             Access = remote
-            SpaceToken = LHCb-EOS
             WSUrl = /srm/v2/server?SFN:
           }
         }
@@ -207,7 +201,6 @@ CFG_CONTENT = """
             Protocol = srm
             Path = /eos/lhcb/grid/user
             Access = remote
-            SpaceToken = LHCb-EOS
             PluginName = GFAL2_XROOT
             WSUrl = /srm/v2/server?SFN:
           }
@@ -236,7 +229,6 @@ CFG_CONTENT = """
             Protocol = srm
             Path = /eos/lhcb/grid/prod
             Access = remote
-            SpaceToken = LHCb-EOS
           }
         }
         CERN-CHILD
@@ -246,7 +238,6 @@ CFG_CONTENT = """
           {
             PluginName = GFAL2_SRM2
             Path = /eos/lhcb/grid/user
-            SpaceToken = LHCb_USER
           }
           AccessProtocol.2
           {
@@ -307,7 +298,6 @@ mandatoryProtocolOptions = {
     "Path": "",
     "Port": "",
     "Protocol": "",
-    "SpaceToken": "",
     "WSUrl": "",
 }
 
@@ -358,7 +348,6 @@ def test_simple_inheritance_overwrite():
     assert protocolDetail["PluginName"] == "GFAL2_SRM2"
     assert protocolDetail["Port"] == "8443"
     assert protocolDetail["Protocol"] == "srm"
-    assert protocolDetail["SpaceToken"] == "LHCb_USER"
     assert protocolDetail["WSUrl"] == "/srm/v2/server?SFN:"
 
     assert storages["StorageOptions"] == {
@@ -395,7 +384,6 @@ def test_simple_inheritance():
     assert protocolDetail["PluginName"] == "GFAL2_SRM2"
     assert protocolDetail["Port"] == "8443"
     assert protocolDetail["Protocol"] == "srm"
-    assert protocolDetail["SpaceToken"] == "LHCb-EOS"
     assert protocolDetail["WSUrl"] == "/srm/v2/server?SFN:"
 
     assert storages["StorageOptions"] == {"BackendType": "Eos", "SEType": "T0D1", "BaseSE": "CERN-BASE"}
@@ -427,7 +415,6 @@ def test_pure_inheritance():
     assert protocolDetail["PluginName"] == "GFAL2_SRM2"
     assert protocolDetail["Port"] == "8443"
     assert protocolDetail["Protocol"] == "srm"
-    assert protocolDetail["SpaceToken"] == "LHCb-EOS"
     assert protocolDetail["WSUrl"] == "/srm/v2/server?SFN:"
 
     assert storages["StorageOptions"] == {"BackendType": "Eos", "SEType": "T0D1", "BaseSE": "CERN-BASE"}
@@ -454,7 +441,6 @@ def test_no_plugin_name():
             "PluginName": "GFAL2_SRM2",
             "Port": "8443",
             "Protocol": "srm",
-            "SpaceToken": "LHCb-EOS",
             "WSUrl": "/srm/v2/server?SFN:",
         }
     ]
@@ -483,7 +469,6 @@ def test_bad_plugin_name():
             "PluginName": "AnotherPluginName",
             "Port": "8443",
             "Protocol": "srm",
-            "SpaceToken": "LHCb-EOS",
             "WSUrl": "/srm/v2/server?SFN:",
         }
     ]
@@ -511,7 +496,6 @@ def test_redefine_plugin_name():
             "PluginName": "GFAL2_SRM2",
             "Port": "8443",
             "Protocol": "srm",
-            "SpaceToken": "LHCb-EOS",
             "WSUrl": "/srm/v2/server?SFN:",
         },
         {
@@ -521,7 +505,6 @@ def test_redefine_plugin_name():
             "PluginName": "GFAL2_SRM2",
             "Port": "",
             "Protocol": "",
-            "SpaceToken": "",
             "WSUrl": "",
         },
     ]
@@ -548,7 +531,6 @@ def test_use_plugin_as_protocol_name():
             "PluginName": "GFAL2_SRM2",
             "Port": "8443",
             "Protocol": "srm",
-            "SpaceToken": "LHCb-EOS",
             "WSUrl": "/srm/v2/server?SFN:",
         },
         {
@@ -557,7 +539,6 @@ def test_use_plugin_as_protocol_name():
             "Path": "/eos/lhcb/grid/user",
             "Port": "8443",
             "Protocol": "srm",
-            "SpaceToken": "LHCb-EOS",
             "WSUrl": "/srm/v2/server?SFN:",
         },
     ]
@@ -584,7 +565,6 @@ def test_use_plugin_as_protocol_name_with_plugin_name():
             "PluginName": "GFAL2_SRM2",
             "Port": "8443",
             "Protocol": "srm",
-            "SpaceToken": "LHCb-EOS",
             "WSUrl": "/srm/v2/server?SFN:",
         },
         {
@@ -594,7 +574,6 @@ def test_use_plugin_as_protocol_name_with_plugin_name():
             "PluginName": "GFAL2_XROOT",
             "Port": "8443",
             "Protocol": "srm",
-            "SpaceToken": "LHCb-EOS",
             "WSUrl": "/srm/v2/server?SFN:",
         },
     ]
@@ -622,7 +601,6 @@ def test_more_protocol():
             "PluginName": "Extra",
             "Port": "8443",
             "Protocol": "srm",
-            "SpaceToken": "LHCb-EOS",
             "WSUrl": "",
         },
         {
@@ -632,7 +610,6 @@ def test_more_protocol():
             "PluginName": "GFAL2_SRM2",
             "Port": "8443",
             "Protocol": "srm",
-            "SpaceToken": "LHCb-EOS",
             "WSUrl": "/srm/v2/server?SFN:",
         },
     ]
@@ -659,7 +636,6 @@ def test_child_inherit_from_base_with_two_same_plugins():
             "PluginName": "GFAL2_SRM2",
             "Port": "8443",
             "Protocol": "srm",
-            "SpaceToken": "",
             "WSUrl": "/srm/v2/server?SFN:",
         },
         {
@@ -669,7 +645,6 @@ def test_child_inherit_from_base_with_two_same_plugins():
             "PluginName": "GFAL2_SRM2",
             "Port": "8443",
             "Protocol": "root",
-            "SpaceToken": "",
             "WSUrl": "/srm/v2/server?SFN:",
         },
     ]
@@ -720,7 +695,6 @@ def test_pure_abstract():
             "PluginName": "GFAL2_SRM2",
             "Port": "8443",
             "Protocol": "srm",
-            "SpaceToken": "LHCb_USER",
             "WSUrl": "/srm/v2/server?SFN:",
         },
         {
@@ -730,7 +704,6 @@ def test_pure_abstract():
             "PluginName": "GFAL2_XROOT",
             "Port": "",
             "Protocol": "root",
-            "SpaceToken": "",
             "WSUrl": "",
         },
     ]
