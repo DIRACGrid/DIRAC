@@ -131,7 +131,7 @@ def threadDeco(method):
 
         :return: wrapped method
         """
-        deco = tc.getDecorator()
+        deco = tc.getDecorator()  # pylint: disable=no-member
         if not deco:
             return method(*args, **kwargs)
         # Deco is a decorator sooo....

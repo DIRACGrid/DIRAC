@@ -60,8 +60,8 @@ class ProxyPlugin(FCConditionBasePlugin):
         # We may not have a proxy, check the thread local
         if not self.proxyInfo:
             tc = ThreadConfig()
-            userDN = tc.getDN()
-            userGroup = tc.getGroup()
+            userDN = tc.getDN()  # pylint: disable=no-member
+            userGroup = tc.getGroup()  # pylint: disable=no-member
             if userDN and userGroup:
                 userName = Registry.getUsernameForDN(userDN).get("Value")
                 if userName:

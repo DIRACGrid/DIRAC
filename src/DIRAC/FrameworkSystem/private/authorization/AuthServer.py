@@ -397,7 +397,7 @@ class AuthServer(_AuthorizationServer):
         """
         try:
             response = super().create_authorization_response(response, username)
-            response.clear_cookie("auth_session")
+            response.clear_cookie("auth_session")  # pylint: disable=no-member
             return response
         except Exception as e:
             sLog.exception(e)

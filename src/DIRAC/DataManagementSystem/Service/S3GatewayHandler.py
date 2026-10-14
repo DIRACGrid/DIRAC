@@ -116,8 +116,8 @@ class S3GatewayHandler(RequestHandler):
             # If we can't obtain remote credentials, consider it permission denied
             return S_ERROR(errno.EACCES, "Could not obtain remote credentials")
 
-        self._tc.setDN(credDict["DN"])
-        self._tc.setGroup(credDict["group"])
+        self._tc.setDN(credDict["DN"])  # pylint: disable=no-member
+        self._tc.setGroup(credDict["group"])  # pylint: disable=no-member
 
         successful = {}
         failed = {}
