@@ -268,8 +268,22 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+      opensearch:
+        condition: service_healthy
+      # DiracX requires a URL for every registered DB, including the ones shared
+      # with DIRAC, so wait until the DIRAC installation has created them
+      diracx-wait-for-db:
+        condition: service_completed_successfully
     environment:
       - DIRACX_DB_URL_AUTHDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXAuthDB
+      - DIRACX_DB_URL_TASKDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXTaskDB
+      - DIRACX_DB_URL_JOBDB=mysql+aiomysql://Dirac:Dirac@mysql/JobDB
+      - DIRACX_DB_URL_JOBLOGGINGDB=mysql+aiomysql://Dirac:Dirac@mysql/JobLoggingDB
+      - DIRACX_DB_URL_SANDBOXMETADATADB=mysql+aiomysql://Dirac:Dirac@mysql/SandboxMetadataDB
+      - DIRACX_DB_URL_PILOTAGENTSDB=mysql+aiomysql://Dirac:Dirac@mysql/PilotAgentsDB
+      - DIRACX_DB_URL_TASKQUEUEDB=mysql+aiomysql://Dirac:Dirac@mysql/TaskQueueDB
+      - DIRACX_DB_URL_RESOURCESTATUSDB=mysql+aiomysql://Dirac:Dirac@mysql/ResourceStatusDB
+      - 'DIRACX_OS_DB_JOBPARAMETERSDB={"hosts": "elastic:changeme@opensearch:9200", "use_ssl": false, "verify_certs": false}'
     entrypoint: |
       /entrypoint.sh bash -xc 'python3 -c "
       import pymysql
@@ -278,6 +292,8 @@ services:
       c.execute(\"CREATE USER IF NOT EXISTS Dirac@\\x27%%\\x27 IDENTIFIED BY \\x27Dirac\\x27\")
       c.execute(\"CREATE DATABASE DiracXAuthDB\")
       c.execute(\"GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES,CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE ON DiracXAuthDB.* TO Dirac@\\x27%%\\x27\")
+      c.execute(\"CREATE DATABASE DiracXTaskDB\")
+      c.execute(\"GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES,CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE ON DiracXTaskDB.* TO Dirac@\\x27%%\\x27\")
       db.commit()
       " && python -m diracx.db init-sql && python -m diracx.db init-os'
     pull_policy: always
@@ -289,6 +305,7 @@ services:
     environment:
       - DIRACX_CONFIG_BACKEND_URL=git+file:///cs_store/initialRepo
       - DIRACX_DB_URL_AUTHDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXAuthDB
+      - DIRACX_DB_URL_TASKDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXTaskDB
       - DIRACX_DB_URL_JOBDB=mysql+aiomysql://Dirac:Dirac@mysql/JobDB
       - DIRACX_DB_URL_JOBLOGGINGDB=mysql+aiomysql://Dirac:Dirac@mysql/JobLoggingDB
       - DIRACX_DB_URL_SANDBOXMETADATADB=mysql+aiomysql://Dirac:Dirac@mysql/SandboxMetadataDB
