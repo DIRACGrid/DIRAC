@@ -160,9 +160,9 @@ class TimeLeft:
 #############################################################################
 
 
-def runCommand(cmd, timeout=120):
+def runCommand(cmd, timeout=120, env=None):
     """Wrapper around systemCall to return S_OK(stdout) or S_ERROR(message)"""
-    result = systemCall(timeout=timeout, cmdSeq=shlex.split(cmd))
+    result = systemCall(timeout=timeout, cmdSeq=shlex.split(cmd), env=env)
     if not result["OK"]:
         return result
     status, stdout, stderr = result["Value"][0:3]

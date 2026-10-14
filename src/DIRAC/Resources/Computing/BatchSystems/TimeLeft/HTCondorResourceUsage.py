@@ -13,7 +13,7 @@ class HTCondorResourceUsage(ResourceUsage):
     This is the HTCondor plugin of the TimeLeft Utility.
     HTCondor does not provide any way to get the wallclock/cpu limit, the batch system just provides fair-sharing to
     users and groups: the limit depends on many parameters.
-    However, some Sites have introduced a MaxRuntime variable that sets a wallclock time limit to the allocations and
+    However, CERN has introduced a MaxRuntime variable that sets a wallclock time limit to the allocations and
     allow us to get an estimation of the resources usage.
     """
 
@@ -26,11 +26,16 @@ class HTCondorResourceUsage(ResourceUsage):
         # $_CONDOR_JOB_AD corresponds to the path to the .job.ad file
         # It contains info about the job:
         # - MaxRuntime: wallclock time allocated to the job - not officially supported by HTCondor,
-        #   only present on some Sites
+        #   only present at CERN
         # - CurrentTime: current time
         # - JobCurrentStartDate: start of the job execution
         cmd = f"condor_status -ads {self.info_path} -af MaxRuntime CurrentTime-JobCurrentStartDate"
-        result = runCommand(cmd)
+        # SKIP_LOCAL_CONFIG_FILE prevents condor_status from loading the local config file, which
+        # would otherwise trigger authentication errors at CERN. runCommand() executes without a
+        # shell (systemCall with shell=False), so the variable has to be passed via the environment
+        # rather than as a "VAR=value cmd" prefix. Merge with os.environ so PATH/CONDOR_CONFIG/etc.
+        # are preserved (subprocess replaces, not augments, the environment when env is given).
+        result = runCommand(cmd, env={**os.environ, "SKIP_LOCAL_CONFIG_FILE": "true"})
         if not result["OK"]:
             return S_ERROR("Current batch system is not supported")
 
