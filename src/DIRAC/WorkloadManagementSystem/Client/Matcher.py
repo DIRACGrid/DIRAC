@@ -86,34 +86,43 @@ class Matcher:
                 toPrintDict.pop("Tag")
             self.log.info("Resource description for matching", printDict(toPrintDict))
 
-            negativeCond = self.limiter.getNegativeCondForSite(resourceDict["Site"], resourceDict.get("GridCE"))
-            result = self.tqDB.matchAndGetJob(resourceDict, negativeCond=negativeCond)
+            siteName = resourceDict["Site"]
+            negativeCond = self.limiter.getNegativeCondForSite(siteName, resourceDict.get("GridCE"), checkDelay=False)
+            # MatchingDelay tokens are taken before matching, so that concurrent requests cannot
+            # use the same one; the tokens not used by the matched job are given back.
+            reservation = self.limiter.reserveMatchingSlots(siteName)
+            try:
+                negativeCond = self.limiter.mergeCond(negativeCond, reservation.negativeCond)
+                if negativeCond:
+                    self.log.info("Negative conditions for site", f"{siteName} are: {str(negativeCond)}")
+                result = self.tqDB.matchAndGetJob(resourceDict, negativeCond=negativeCond)
 
-            if not result["OK"]:
-                raise RuntimeError(result["Message"])
-            result = result["Value"]
-            if not result["matchFound"]:
-                self.log.info("No match found")
-                return {}
-
-            jobID = result["jobId"]
-            resAtt = self.jobDB.getJobAttributes(jobID, ["Status", "JobType"])
-            if not resAtt["OK"]:
-                raise RuntimeError("Could not retrieve job attributes")
-            if not resAtt["Value"]:
-                raise RuntimeError("No attributes returned for job")
-            if not resAtt["Value"]["Status"] == "Waiting":
-                self.log.error("Job matched by the TQ is not in Waiting state", str(jobID))
-                result = self.tqDB.deleteJob(jobID)
                 if not result["OK"]:
                     raise RuntimeError(result["Message"])
-                raise RuntimeError(f"Job {str(jobID)} is not in Waiting state")
+                result = result["Value"]
+                if not result["matchFound"]:
+                    self.log.info("No match found")
+                    return {}
 
-            # Arm the matching-delay counter right after the match is confirmed, to keep the window
-            # in which concurrent requests can slip past the delay as small as possible. Reuse the
-            # attributes just fetched (JobType) so this does not add a DB query.
-            if self.opsHelper.getValue("JobScheduling/CheckMatchingDelay", True):
-                self.limiter.updateDelayCounters(resourceDict["Site"], jobID, knownAtts=resAtt["Value"])
+                jobID = result["jobId"]
+                resAtt = self.jobDB.getJobAttributes(jobID, ["Status", "JobType"])
+                if not resAtt["OK"]:
+                    raise RuntimeError("Could not retrieve job attributes")
+                if not resAtt["Value"]:
+                    raise RuntimeError("No attributes returned for job")
+                if not resAtt["Value"]["Status"] == "Waiting":
+                    self.log.error("Job matched by the TQ is not in Waiting state", str(jobID))
+                    result = self.tqDB.deleteJob(jobID)
+                    if not result["OK"]:
+                        raise RuntimeError(result["Message"])
+                    raise RuntimeError(f"Job {str(jobID)} is not in Waiting state")
+
+                # Keep the delay tokens used by this job and count it against the running limits
+                # until the cached counts are refreshed. Reuse the attributes just fetched (JobType)
+                # so this does not add a DB query in the usual case.
+                self.limiter.recordMatch(siteName, jobID, reservation, knownAtts=resAtt["Value"])
+            finally:
+                reservation.release()
 
             self._reportStatus(resourceDict, jobID)
 
