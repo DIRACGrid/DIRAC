@@ -186,3 +186,27 @@ def test_PivotedPilotSummaryTable():
     assert "Total" in columns
 
     cleanUpPilots(pilotRef)
+
+
+def test_getPilotInfoForSelection():
+    """Selecting pilot info by criteria gives the same result as selectPilots + getPilotInfo"""
+    pilotRef = preparePilots([2, 3], "TestSite", "TestCE", "VO")
+    try:
+        res = paDB.setJobForPilot(123, "pilotRef_0", updateStatus=False)
+        assert res["OK"] is True, res["Message"]
+
+        condDict = {"DestinationSite": "TestCE", "Status": "Submitted"}
+        res = paDB.getPilotInfoForSelection(condDict)
+        assert res["OK"] is True, res["Message"]
+        assert sorted(res["Value"]) == ["pilotRef_0", "pilotRef_1"]
+        assert res["Value"]["pilotRef_0"]["Jobs"] == [123]
+        assert "Jobs" not in res["Value"]["pilotRef_1"]
+
+        refs = paDB.selectPilots(condDict)["Value"]
+        assert paDB.getPilotInfo(refs)["Value"] == res["Value"]
+
+        res = paDB.getPilotInfoForSelection({"DestinationSite": "TestCE", "Status": "Unknown"})
+        assert res["OK"] is True, res["Message"]
+        assert res["Value"] == {}
+    finally:
+        cleanUpPilots(pilotRef)

@@ -82,22 +82,15 @@ class PilotStatusAgent(AgentModule):
         """
         pilotsToAccount = {}
         timeLimitToConsider = TimeUtilities.toString(DiracTime.utcnow() - TimeUtilities.day * self.pilotStalledDays)
-        result = self.pilotDB.selectPilots(
+        result = self.pilotDB.getPilotInfoForSelection(
             {"Status": PilotStatus.PILOT_TRANSIENT_STATES}, older=timeLimitToConsider, timeStamp="LastUpdateTime"
         )
         if not result["OK"]:
-            self.log.error("Failed to get the Pilot Agents")
+            self.log.error("Failed to get Info for Pilot Agents", result["Message"])
             return result
-        if not result["Value"]:
-            return S_OK()
-
-        refList = result["Value"]
-        result = self.pilotDB.getPilotInfo(refList)
-        if not result["OK"]:
-            self.log.error("Failed to get Info for Pilot Agents")
-            return result
-
         pilotsDict = result["Value"]
+        if not pilotsDict:
+            return S_OK()
 
         for pRef in pilotsDict:
             if pilotsDict[pRef].get("Jobs") and self._checkJobLastUpdateTime(
