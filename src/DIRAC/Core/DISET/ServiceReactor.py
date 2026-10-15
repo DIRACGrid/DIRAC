@@ -15,6 +15,7 @@
 
 """
 
+import logging
 import time
 import selectors
 import signal
@@ -30,10 +31,6 @@ from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client import PathFinder
-
-#: Time during which the service does not accept new requests and handles those in the queue, if the backlog is too large
-#: This sleep is repeated for as long as Service.wantsThrottle is truthy
-THROTTLE_SERVICE_SLEEP_SECONDS = 0.25
 
 
 class ServiceReactor:
@@ -52,6 +49,7 @@ class ServiceReactor:
         self.__listeningConnections = {}
         self.__stats = ReactorStats()
         self.__processes = []
+        self.__isCloneProcess = False
 
     def initialize(self, servicesList):
         try:
@@ -167,7 +165,7 @@ class ServiceReactor:
         """
         It stops all the running processes.
         """
-        for process in self.__processes:
+        for process in list(self.__processes):
             gLogger.info("Stopping: PID=%d, name=%s, parentPid=%d" % (process.pid, process.name, process._parent_pid))
             if process.is_alive():
                 process.terminate()
@@ -176,6 +174,7 @@ class ServiceReactor:
     # This function runs in a different process
     def __startCloneProcess(self, svcName, i):
         self.__services[svcName].setCloneProcessId(i)
+        self.__isCloneProcess = True
         self.__alive = i
         while self.__alive:
             self.__acceptIncomingConnection(svcName)
@@ -200,7 +199,6 @@ class ServiceReactor:
                                   services at the same time
         """
         sel = self.__getListeningSelector(svcName)
-        throttleExpires = None
         while self.__alive:
             clientTransport = None
             try:
@@ -224,16 +222,18 @@ class ServiceReactor:
                 gLogger.warn(f"Client connected from banned ip {clientIP}")
                 clientTransport.close()
                 continue
-            # Handle throttling
-            if self.__services[svcName].wantsThrottle and throttleExpires is None:
-                throttleExpires = time.time() + THROTTLE_SERVICE_SLEEP_SECONDS
-            if throttleExpires:
-                if time.time() > throttleExpires:
-                    throttleExpires = None
-                else:
-                    gLogger.warn("Rejecting client due to throttling", str(clientTransport.getRemoteAddress()))
+            # Handle throttling: reject all connections while overloaded
+            # to prevent queue growth when threads are stuck.
+            svc = self.__services[svcName]
+            if svc.updateThrottleState():
+                # Check if throttle has exceeded the maximum allowed duration
+                maxThrottleDuration = svc.maxThrottleDuration
+                if maxThrottleDuration > 0 and svc.throttleDuration > maxThrottleDuration:
                     clientTransport.close()
-                    continue
+                    self.__exitStuckService(svcName, svc)
+                gLogger.warn("Rejecting client due to throttling", str(clientTransport.getRemoteAddress()))
+                clientTransport.close()
+                continue
             # Handle connection
             self.__stats.connectionStablished()
             self.__services[svcName].handleConnection(clientTransport)
@@ -248,6 +248,28 @@ class ServiceReactor:
                         renewed = True
             if renewed:
                 sel = self.__getListeningSelector()
+
+    def __exitStuckService(self, svcName, svc):
+        """Terminate the service process so that the process supervisor (e.g. runsv) restarts it.
+
+        A normal interpreter exit would wait forever for the stuck worker threads
+        (ThreadPoolExecutor joins them at exit), so the process is ended with os._exit.
+        A clone process asks the parent to stop, which also stops the other clones.
+        """
+        diag = svc.throttleDiagnostics()
+        gLogger.fatal(
+            f"Service {svcName} stuck in throttle, initiating process restart",
+            f"duration={svc.throttleDuration:.0f}s (limit: {svc.maxThrottleDuration}s), "
+            f"queue={diag['queue']}/{diag['maxQueue']}, "
+            f"threads={diag['threads']}/{diag['maxThreads']}",
+        )
+        if self.__isCloneProcess:
+            os.kill(os.getppid(), signal.SIGTERM)
+        else:
+            self.stopAllProcess()
+        # Flush and close the log handlers, as os._exit skips the usual cleanup
+        logging.shutdown()
+        os._exit(1)
 
     def __closeListeningConnections(self):
         for svcName in self.__listeningConnections:

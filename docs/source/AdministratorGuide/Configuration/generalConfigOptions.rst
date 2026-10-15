@@ -19,7 +19,12 @@ There are several options that can be defined for all the services.
 
 * MaxThreads: max number of service threads (15 by default)
 * MinThreads: min number of service threads (1 by default)
-* MaxWaitingPetitions: max number of queries to be kept in the service queue (500 by default)
+* MaxWaitingPetitions: max number of queries to be kept in the service queue (500 by default).
+  When the queue is longer than this, the service rejects all new connections until it has
+  drained to half of this value.
+* MaxThrottleDuration: seconds the service may keep rejecting connections because of a full
+  queue before the process exits, so that the process supervisor (e.g. runsv) restarts it.
+  0 disables it (0 by default). Read when the service starts.
 * Port: port the service listens on
 * Protocol: service access protocol (dips by default)
 * HandlerPath: path to the services handler code, e.g. DIRAC.WorkloadManagementSystem.Service.JobManager
