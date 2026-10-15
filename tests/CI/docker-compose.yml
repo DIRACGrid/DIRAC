@@ -273,12 +273,12 @@ services:
       - DIRACX_DB_URL_TASKDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXTaskDB
       # DiracX requires a URL for every registered DB, but the schemas of the
       # DBs shared with DIRAC are created by DIRAC: initialise them in memory
-      - DIRACX_DB_URL_JOBDB=sqlite+aiosqlite:///:memory:
-      - DIRACX_DB_URL_JOBLOGGINGDB=sqlite+aiosqlite:///:memory:
-      - DIRACX_DB_URL_SANDBOXMETADATADB=sqlite+aiosqlite:///:memory:
-      - DIRACX_DB_URL_PILOTAGENTSDB=sqlite+aiosqlite:///:memory:
-      - DIRACX_DB_URL_TASKQUEUEDB=sqlite+aiosqlite:///:memory:
-      - DIRACX_DB_URL_RESOURCESTATUSDB=sqlite+aiosqlite:///:memory:
+      - 'DIRACX_DB_URL_JOBDB=sqlite+aiosqlite:///:memory:'
+      - 'DIRACX_DB_URL_JOBLOGGINGDB=sqlite+aiosqlite:///:memory:'
+      - 'DIRACX_DB_URL_SANDBOXMETADATADB=sqlite+aiosqlite:///:memory:'
+      - 'DIRACX_DB_URL_PILOTAGENTSDB=sqlite+aiosqlite:///:memory:'
+      - 'DIRACX_DB_URL_TASKQUEUEDB=sqlite+aiosqlite:///:memory:'
+      - 'DIRACX_DB_URL_RESOURCESTATUSDB=sqlite+aiosqlite:///:memory:'
     entrypoint: |
       /entrypoint.sh bash -xc 'python3 -c "
       import pymysql
