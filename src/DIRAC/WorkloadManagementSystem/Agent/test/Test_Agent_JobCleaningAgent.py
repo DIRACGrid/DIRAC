@@ -11,14 +11,9 @@ from DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent import JobCleaningAge
 gLogger.setLevel("DEBUG")
 
 # Mock Objects
-mockReply = MagicMock()
 mockAM = MagicMock()
 mockNone = MagicMock()
 mockNone.return_value = None
-mockJMC = MagicMock()
-mockJobDB = MagicMock()
-mockJobDB.getDistinctJobAttributes = mockReply
-mockJobDB.selectJobs = mockReply
 
 
 @pytest.fixture
@@ -29,11 +24,32 @@ def jca(mocker):
         side_effect=lambda x, y=None: y,
         create=True,
     )
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.am_getOption", return_value=mockAM)
+
+    def mock_am_getOption(option, default=None):
+        defaults = {
+            "ProductionTypes": [],
+            "MaxJobsAtOnce": 500,
+            "RemoveStatusDelay/Done": 7,
+            "RemoveStatusDelay/Killed": 7,
+            "RemoveStatusDelay/Failed": 7,
+            "RemoveStatusDelay/Any": -1,
+            "RemoveStatusDelayHB/Done": -1,
+            "RemoveStatusDelayHB/Killed": -1,
+            "RemoveStatusDelayHB/Failed": -1,
+            "MaxHBJobsAtOnce": 0,
+        }
+        return defaults.get(option, default)
+
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.am_getOption",
+        side_effect=mock_am_getOption,
+    )
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.Operations")
 
     def mock_load_object(module_path, class_name):
         mocks = {
-            "JobDB": mockJobDB,
+            "JobDB": MagicMock(),
             "TaskQueueDB": MagicMock(),
             "PilotAgentsDB": MagicMock(),
             "SandboxMetadataDB": MagicMock(),
@@ -55,54 +71,65 @@ def jca(mocker):
 
 
 @pytest.mark.parametrize(
-    "mockReplyInput, expected",
+    "dbReply, expected",
     [
-        ({"OK": True, "Value": ""}, {"OK": True, "Value": []}),
-        ({"OK": False, "Message": ""}, {"OK": False, "Message": ""}),
+        ({"OK": True, "Value": []}, {"OK": True, "Value": []}),
+        ({"OK": False, "Message": "error"}, {"OK": False, "Message": "error"}),
     ],
 )
-def test__getAllowedJobTypes(jca, mockReplyInput, expected):
+def test__getAllowedJobTypes(jca, mocker, dbReply, expected):
     """Testing JobCleaningAgent()._getAllowedJobTypes()"""
 
-    mockReply.return_value = mockReplyInput
+    jca.jobDB.getDistinctJobAttributes.return_value = dbReply
     result = jca._getAllowedJobTypes()
-    assert result == expected
+    assert result["OK"] == expected["OK"]
+    if result["OK"]:
+        assert result["Value"] == expected["Value"]
+    else:
+        assert result["Message"] == expected["Message"]
 
 
 @pytest.mark.parametrize(
     "mockReplyInput, expected",
     [
-        ({"OK": True, "Value": ""}, {"OK": True, "Value": None}),
-        ({"OK": False, "Message": ""}, {"OK": False, "Message": ""}),
+        ({"OK": True, "Value": []}, {"OK": True, "Value": None}),
+        ({"OK": False, "Message": "error"}, {"OK": False, "Message": "error"}),
     ],
 )
-def test_removeJobsByStatus(jca, mockReplyInput, expected):
+def test_removeJobsByStatus(jca, mocker, mockReplyInput, expected):
     """Testing JobCleaningAgent().removeDeletedJobs()"""
 
-    mockReply.return_value = mockReplyInput
+    jca.jobDB.selectJobs.return_value = mockReplyInput
     result = jca.removeDeletedJobs()
-    assert result == expected
+    assert result["OK"] == expected["OK"]
+    if result["OK"]:
+        assert result["Value"] is None
+    else:
+        assert result["Message"] == expected["Message"]
 
 
 @pytest.mark.parametrize(
     "conditions, mockReplyInput, expected",
     [
-        ({"JobType": "", "Status": "Deleted"}, {"OK": True, "Value": ""}, {"OK": True, "Value": None}),
-        ({"JobType": "", "Status": "Deleted"}, {"OK": False, "Message": ""}, {"OK": False, "Message": ""}),
-        ({"JobType": [], "Status": "Deleted"}, {"OK": True, "Value": ""}, {"OK": True, "Value": None}),
+        ({"JobType": [], "Status": "Deleted"}, {"OK": True, "Value": []}, {"OK": True, "Value": None}),
+        ({"JobType": [], "Status": "Deleted"}, {"OK": False, "Message": "error"}, {"OK": False, "Message": "error"}),
         (
-            {"JobType": ["some", "status"], "Status": ["Deleted", "Cancelled"]},
-            {"OK": True, "Value": ""},
+            {"JobType": ["User"], "Status": ["Deleted", "Killed"]},
+            {"OK": True, "Value": []},
             {"OK": True, "Value": None},
         ),
     ],
 )
-def test_deleteJobsByStatus(jca, conditions, mockReplyInput, expected):
+def test_deleteJobsByStatus(jca, mocker, conditions, mockReplyInput, expected):
     """Testing JobCleaningAgent().deleteJobsByStatus()"""
 
-    mockReply.return_value = mockReplyInput
+    jca.jobDB.selectJobs.return_value = mockReplyInput
     result = jca.deleteJobsByStatus(conditions)
-    assert result == expected
+    assert result["OK"] == expected["OK"]
+    if result["OK"]:
+        assert result["Value"] is None
+    else:
+        assert result["Message"] == expected["Message"]
 
 
 @pytest.mark.parametrize(
@@ -140,7 +167,8 @@ def test_deleteJobOversizedSandbox(mocker, inputs, params, expected):
     mocker.patch(
         "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.getDNForUsername", return_value=S_OK(["/bih/boh/DN"])
     )
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.getJobParameters", return_value=params)
+    mockJobParamsDB = mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobParametersDB")
+    mockJobParamsDB.return_value.getJobParameters.return_value = params
 
     def mock_load_object(module_path, class_name):
         mocks = {

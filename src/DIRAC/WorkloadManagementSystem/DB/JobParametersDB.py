@@ -33,9 +33,8 @@ mapping = {
 }
 
 
-def getJobParameters(jobIDs: list[int], parName: str | None, vo: str = "") -> dict:
+def getJobParametersUtility(jobIDs: list[int], parName: str | None, vo: str = "") -> dict:
     """Utility to get a job parameter for a list of jobIDs pertaining to a VO.
-    If the jobID is not in the JobParametersDB, it will be looked up in the JobDB.
 
     Requires direct access to the JobParametersDB and JobDB.
 
@@ -80,22 +79,7 @@ def getJobParameters(jobIDs: list[int], parName: str | None, vo: str = "") -> di
                 return res
             parameters.update(res["Value"])
 
-    # Need anyway to get also from JobDB, for those jobs with parameters registered in MySQL or in both backends
-    res = jobDB.getJobParameters(jobIDs, parName)
-    if not res["OK"]:
-        return res
-    parametersM = res["Value"]
-
-    # and now combine
-    final = dict(parametersM)
-    # if job in JobDB, update with parameters from ES if any
-    for jobID in final:
-        final[jobID].update(parameters.get(jobID, {}))
-    # if job in ES and not in JobDB, take ES
-    for jobID in parameters:
-        if jobID not in final:
-            final[jobID] = parameters[jobID]
-    return S_OK(final)
+    return S_OK(parameters)
 
 
 class JobParametersDB(ElasticDB):
@@ -141,6 +125,7 @@ class JobParametersDB(ElasticDB):
 
         :param self: self reference
         :param jobID: Job ID
+        :param vo: virtual organization
         :param paramList: list of parameters to be returned (also a string is treated)
         :return: dict with all Job Parameter values
         """

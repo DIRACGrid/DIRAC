@@ -100,5 +100,5 @@ It is based on layered architecture and is based on DIRAC architecture:
     SandboxMetadataDB class is a front-end to the metadata for sandboxes.
 
   * JobParametersDB
-    JobParametersDB class is a front-end to the Elastic/OpenSearch based index providing Job Parameters.
-    It is used in most of the WMS components and is based on Elastic/OpenSearch.
+    JobParametersDB class is a front-end to the OpenSearch based index providing Job Parameters.
+    It is used in most of the WMS components and is based on OpenSearch.
