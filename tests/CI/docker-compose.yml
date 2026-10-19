@@ -270,6 +270,15 @@ services:
         condition: service_healthy
     environment:
       - DIRACX_DB_URL_AUTHDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXAuthDB
+      - DIRACX_DB_URL_TASKDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXTaskDB
+      # DiracX requires a URL for every registered DB, but the schemas of the
+      # DBs shared with DIRAC are created by DIRAC: initialise them in memory
+      - 'DIRACX_DB_URL_JOBDB=sqlite+aiosqlite:///:memory:'
+      - 'DIRACX_DB_URL_JOBLOGGINGDB=sqlite+aiosqlite:///:memory:'
+      - 'DIRACX_DB_URL_SANDBOXMETADATADB=sqlite+aiosqlite:///:memory:'
+      - 'DIRACX_DB_URL_PILOTAGENTSDB=sqlite+aiosqlite:///:memory:'
+      - 'DIRACX_DB_URL_TASKQUEUEDB=sqlite+aiosqlite:///:memory:'
+      - 'DIRACX_DB_URL_RESOURCESTATUSDB=sqlite+aiosqlite:///:memory:'
     entrypoint: |
       /entrypoint.sh bash -xc 'python3 -c "
       import pymysql
@@ -278,8 +287,10 @@ services:
       c.execute(\"CREATE USER IF NOT EXISTS Dirac@\\x27%%\\x27 IDENTIFIED BY \\x27Dirac\\x27\")
       c.execute(\"CREATE DATABASE DiracXAuthDB\")
       c.execute(\"GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES,CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE ON DiracXAuthDB.* TO Dirac@\\x27%%\\x27\")
+      c.execute(\"CREATE DATABASE DiracXTaskDB\")
+      c.execute(\"GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES,CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE ON DiracXTaskDB.* TO Dirac@\\x27%%\\x27\")
       db.commit()
-      " && python -m diracx.db init-sql && python -m diracx.db init-os'
+      " && python -m diracx.db init-sql'
     pull_policy: always
 
   diracx:
@@ -289,6 +300,7 @@ services:
     environment:
       - DIRACX_CONFIG_BACKEND_URL=git+file:///cs_store/initialRepo
       - DIRACX_DB_URL_AUTHDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXAuthDB
+      - DIRACX_DB_URL_TASKDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXTaskDB
       - DIRACX_DB_URL_JOBDB=mysql+aiomysql://Dirac:Dirac@mysql/JobDB
       - DIRACX_DB_URL_JOBLOGGINGDB=mysql+aiomysql://Dirac:Dirac@mysql/JobLoggingDB
       - DIRACX_DB_URL_SANDBOXMETADATADB=mysql+aiomysql://Dirac:Dirac@mysql/SandboxMetadataDB
