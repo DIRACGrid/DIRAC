@@ -281,6 +281,13 @@ class RequestTask:
                 self.log.error("Cannot get waiting operation", operation["Message"])
                 return operation
             operation = operation["Value"]
+            if operation is None:
+                # e.g. the request has no operations at all: there is nothing we can do with it,
+                # so keep it for a human to look at rather than picking it up again immediately
+                self.log.error("Request has no operation to execute, delaying it", self.request.RequestName)
+                self.request.Error = "Request has no operation to execute"
+                self.request.delayNextExecution(24 * 60)
+                return S_OK(self.request)
             self.log.info("executing operation", f"{operation.Type}")
 
             # # and handler for it
