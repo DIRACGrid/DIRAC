@@ -202,8 +202,8 @@ csAPI.setOption("Resources/StorageElements/SE-2/DIP/Access", "remote")
 #         Path = my-first-bucket
 #         Access = remote
 #         SecureConnection = False
-#         Aws_access_key_id = fakeId #useless
-#         Aws_secret_access_key = fakeKey #useles
+#         Aws_access_key_id = console
+#         Aws_secret_access_key = console123
 #       }
 #     }
 #   }
@@ -227,8 +227,8 @@ csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/Protocol", "s3")
 csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/Path", "my-first-bucket")
 csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/Access", "remote")
 csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/SecureConnection", "False")
-csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/Aws_access_key_id", "FakeId")
-csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/Aws_secret_access_key", "True")
+csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/Aws_access_key_id", "console")
+csAPI.setOption("Resources/StorageElements/S3-DIRECT/S3/Aws_secret_access_key", "console123")
 
 
 # Setting up S3 indirect resources for the Test_Resources_S3.py

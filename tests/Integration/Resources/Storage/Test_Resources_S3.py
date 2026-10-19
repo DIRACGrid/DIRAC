@@ -249,12 +249,6 @@ def test_createDirectory(setuptest):
 @pytest.mark.order4
 def test_putFile(setuptest):
     """Copy a file"""
-    # XXX: this is not good !
-    # The mock I use for S3 seem to have a bug uploading files
-    # with presigned URL. So for the time being, I upload directly,
-    # but this should be checked
-    # https://github.com/adobe/S3Mock/issues/219
-    se = StorageElement("S3-DIRECT")
     res = se.putFile(putFile)
     assert res["OK"], res
     for lfn in putFile:
