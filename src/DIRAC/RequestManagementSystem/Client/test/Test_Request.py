@@ -8,6 +8,7 @@
     test cases for Request class
 """
 
+import copy
 import datetime
 
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -132,6 +133,19 @@ def test_CtorSerilization():
 
     fromJSON = toJSON["Value"]
     req = Request(fromJSON)
+
+
+def test_CtorDoesNotModifyInput():
+    """c'tor must not modify the dict it is given"""
+    reqDict = {
+        "RequestName": "test",
+        "Operations": [{"Type": "ReplicateAndRegister", "TargetSE": "CERN-USER", "Files": [{"LFN": "/a/b/c"}]}],
+    }
+    expected = copy.deepcopy(reqDict)
+    req = Request(reqDict)
+    assert reqDict == expected
+    assert len(req) == 1
+    assert len(req[0]) == 1
 
 
 def test_Props():
