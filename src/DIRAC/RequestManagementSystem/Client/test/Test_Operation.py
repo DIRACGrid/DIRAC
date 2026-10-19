@@ -7,6 +7,8 @@
 
     Operation test cases
 """
+import copy
+
 import pytest
 
 from DIRAC.RequestManagementSystem.Client.File import File
@@ -132,3 +134,12 @@ def test_List():
     # opID set
     op.OperationID = 1
     del op[0]
+
+
+def test_ctorDoesNotModifyInput():
+    """c'tor must not modify the dict it is given"""
+    opDict = {"Type": "ReplicateAndRegister", "TargetSE": "CERN-USER", "Files": [{"LFN": "/a/b/c"}]}
+    expected = copy.deepcopy(opDict)
+    operation = Operation(opDict)
+    assert opDict == expected
+    assert len(operation) == 1

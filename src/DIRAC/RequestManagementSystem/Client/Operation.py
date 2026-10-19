@@ -99,14 +99,12 @@ class Operation:
         elif not isinstance(fromDict, dict):
             fromDict = {}
 
-        if "Files" in fromDict:
-            for fileDict in fromDict.get("Files", []):
-                self.addFile(File(fileDict))
+        for fileDict in fromDict.get("Files", []):
+            self.addFile(File(fileDict))
 
-            del fromDict["Files"]
-
+        # Don't modify fromDict, callers may still be using it
         for key, value in fromDict.items():
-            if value:
+            if key != "Files" and value:
                 setattr(self, key, value)
 
     # # protected methods for parent only
