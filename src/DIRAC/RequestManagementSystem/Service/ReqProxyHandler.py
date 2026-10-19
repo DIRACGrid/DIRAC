@@ -178,7 +178,8 @@ class ReqProxyHandler(RequestHandler):
         gLogger.info("putRequest: got request", f"{requestName}")
 
         # We only need the object to check the authorization
-        request = Request(requestDict)
+        # Build it from the JSON rather than requestDict, as requestDict is what gets saved
+        request = Request(requestJSON)
         # Check whether the credentials in the Requests are correct and allowed to be set
         isAuthorized = RequestValidator.setAndCheckRequestOwner(request, self.getRemoteCredentials())
 

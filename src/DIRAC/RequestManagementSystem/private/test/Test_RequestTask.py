@@ -6,6 +6,7 @@
 
     test cases for RequestTask class
 """
+import datetime
 import unittest
 import importlib
 from unittest.mock import Mock, MagicMock
@@ -71,6 +72,27 @@ class RequestTaskTests(unittest.TestCase):
 
         ret = self.task.setupProxy()
         print(ret)
+
+    def testNoOperation(self):
+        """a request without any operation is delayed instead of crashing"""
+        rt = importlib.import_module("DIRAC.RequestManagementSystem.private.RequestTask")
+        rt.Operations = self.mockOps
+        rt.CS = MagicMock()
+
+        emptyReq = Request({"RequestName": "empty", "OwnerGroup": "lhcb_user", "Owner": "chaen"})
+        self.task = RequestTask(
+            emptyReq.toJSON()["Value"],
+            self.handlersDict,
+            "csPath",
+            "RequestManagement/RequestExecutingAgent",
+            requestClient=self.mockRC,
+        )
+        self.task.setupProxy = Mock(return_value={"OK": True, "Value": {"Shifter": []}})
+        ret = self.task()
+        self.assertTrue(ret["OK"], ret)
+        self.assertEqual(ret["Value"].Status, "Waiting")
+        self.assertEqual(ret["Value"].Error, "Request has no operation to execute")
+        self.assertGreater(ret["Value"].NotBefore, datetime.datetime.utcnow() + datetime.timedelta(hours=23))
 
 
 # # tests execution
