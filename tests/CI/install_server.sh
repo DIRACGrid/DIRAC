@@ -65,8 +65,8 @@ Resources
     {
       S3
       {
-        Aws_access_key_id = fakeId
-        Aws_secret_access_key = fakeKey
+        Aws_access_key_id = console
+        Aws_secret_access_key = console123
       }
     }
   }
