@@ -92,14 +92,12 @@ class Request:
         elif not isinstance(fromDict, dict):
             fromDict = {}
 
-        if "Operations" in fromDict:
-            for opDict in fromDict.get("Operations", []):
-                self += Operation(opDict)
+        for opDict in fromDict.get("Operations", []):
+            self += Operation(opDict)
 
-            del fromDict["Operations"]
-
+        # Don't modify fromDict, callers may still be using it
         for key, value in fromDict.items():
-            if value:
+            if key != "Operations" and value:
                 setattr(self, key, value)
 
         self._notify()
