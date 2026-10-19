@@ -151,9 +151,9 @@ class S3GatewayHandler(RequestHandler):
                     failed[url] = "Permission denied"
                     continue
 
-                res = returnSingleResult(
-                    s3Plugin.createPresignedUrl({url: urls.get("Fields")}, s3_method, expiration=expiration)
-                )
+                # For put_object, urls maps each url to the fields (metadata) of the file
+                fields = urls[url] if s3_method == "put_object" else None
+                res = returnSingleResult(s3Plugin.createPresignedUrl({url: fields}, s3_method, expiration=expiration))
 
                 log.debug(f"Presigned URL for {url}: {res}")
                 if res["OK"]:
