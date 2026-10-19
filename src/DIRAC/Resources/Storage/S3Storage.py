@@ -268,7 +268,8 @@ class S3Storage(StorageBase):
         # and perform it with requests
         for url, presignedURL in presignedURLs.items():
             try:
-                response = requests.get(presignedURL, timeout=30)
+                # The URL is signed for head_object so it must be used with HEAD
+                response = requests.head(presignedURL, timeout=30)
                 if response.status_code == 200:
                     successful[url] = True
                 elif response.status_code == 404:  # not found
@@ -768,8 +769,10 @@ class S3Storage(StorageBase):
                     fields = keys.get(key)
                     if not isinstance(fields, dict):
                         fields = None
+                    # boto does not add the fields to the policy, without which S3 rejects them
+                    conditions = [{k: v} for k, v in fields.items()] if fields else None
                     response = self.s3_client.generate_presigned_post(
-                        self.bucketName, key, Fields=fields, ExpiresIn=expiration
+                        self.bucketName, key, Fields=fields, Conditions=conditions, ExpiresIn=expiration
                     )
 
                 successful[key] = response
