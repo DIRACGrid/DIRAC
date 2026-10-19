@@ -1,5 +1,6 @@
 """ Client for the SandboxStore.
-    Will connect to the WorkloadManagement/SandboxStore service.
+    Will connect to the WorkloadManagement/SandboxStore service, or to DiracX
+    if /DiracX/FutureClientEnabled/WorkloadManagement/SandboxStore is enabled.
 """
 from __future__ import annotations
 
@@ -16,11 +17,15 @@ import zstandard
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+from DIRAC.ConfigurationSystem.Client.PathFinder import useLegacyAdapter
 from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.Tornado.Client.ClientSelector import TransferClientSelector as TransferClient
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize, mkDir
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.WorkloadManagementSystem.FutureClient.SandboxStoreClient import (
+    SandboxStoreClient as futureSandboxStoreClient,
+)
 
 
 @contextmanager
@@ -62,6 +67,11 @@ class SandboxStoreClient:
         self.__vo = None
         if "delegatedGroup" in kwargs:
             self.__vo = getVOForGroup(kwargs["delegatedGroup"])
+        self.__diracxClient = None
+        if useLegacyAdapter(self.__serviceName):
+            self.__diracxClient = futureSandboxStoreClient(
+                delegatedDN=kwargs.get("delegatedDN"), delegatedGroup=kwargs.get("delegatedGroup")
+            )
 
     def __getRPCClient(self):
         """Get an RPC client for SB service"""
@@ -144,15 +154,18 @@ class SandboxStoreClient:
                 result["SandboxFileName"] = tmpFilePath
                 return result
 
-        oMD5 = hashlib.md5(usedforsecurity=False)
-        with open(tmpFilePath, "rb") as fd:
-            bData = fd.read(10240)
-            while bData:
-                oMD5.update(bData)
+        if self.__diracxClient:
+            result = self.__diracxClient.uploadSandbox(tmpFilePath, assignTo)
+        else:
+            oMD5 = hashlib.md5(usedforsecurity=False)
+            with open(tmpFilePath, "rb") as fd:
                 bData = fd.read(10240)
+                while bData:
+                    oMD5.update(bData)
+                    bData = fd.read(10240)
 
-        transferClient = self.__getTransferClient()
-        result = transferClient.sendFile(tmpFilePath, [f"{oMD5.hexdigest()}.tar.bz2", assignTo])
+            transferClient = self.__getTransferClient()
+            result = transferClient.sendFile(tmpFilePath, [f"{oMD5.hexdigest()}.tar.bz2", assignTo])
         result["SandboxFileName"] = tmpFilePath
         try:
             if result["OK"]:
@@ -182,15 +195,20 @@ class SandboxStoreClient:
         except OSError as e:
             return S_ERROR(f"Cannot create temporary file: {repr(e)}")
 
-        se = StorageElement(seName, vo=self.__vo)
-        result = returnSingleResult(se.getFile(sePFN, localPath=tmpSBDir))
+        sbFileName = os.path.basename(sePFN)
+        tarFileName = os.path.join(tmpSBDir, sbFileName)
+
+        # Sandboxes stored in S3 are downloaded directly, others still go through their SE
+        if self.__diracxClient and sePFN.startswith("/S3/"):
+            result = self.__diracxClient.downloadSandbox(sePFN, tarFileName)
+        else:
+            se = StorageElement(seName, vo=self.__vo)
+            result = returnSingleResult(se.getFile(sePFN, localPath=tmpSBDir))
 
         if not result["OK"]:
             return result
-        sbFileName = os.path.basename(sePFN)
 
         result = S_OK()
-        tarFileName = os.path.join(tmpSBDir, sbFileName)
 
         if inMemory:
             try:
@@ -239,7 +257,10 @@ class SandboxStoreClient:
 
     def downloadSandboxForJob(self, jobId, sbType, destinationPath="", inMemory=False, unpack=True):
         """Download SB for a job"""
-        result = self.__getRPCClient().getSandboxesAssignedToEntity(f"Job:{jobId}")
+        if self.__diracxClient:
+            result = self.__diracxClient.getSandboxesAssignedToJob(jobId)
+        else:
+            result = self.__getRPCClient().getSandboxesAssignedToEntity(f"Job:{jobId}")
 
         if not result["OK"]:
             return result
