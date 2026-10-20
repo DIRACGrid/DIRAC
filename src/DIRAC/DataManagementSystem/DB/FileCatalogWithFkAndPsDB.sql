@@ -180,7 +180,7 @@ CREATE TABLE FC_Files(
 -- do we want the delete on cascade on the SE?
 
 CREATE TABLE FC_Replicas (
-    RepID INT AUTO_INCREMENT,
+    RepID BIGINT AUTO_INCREMENT,
     FileID INT NOT NULL,
     SEID INTEGER NOT NULL,
     Status INTEGER NOT NULL,
