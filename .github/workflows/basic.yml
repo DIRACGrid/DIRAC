@@ -169,7 +169,12 @@ jobs:
           # Workaround for https://github.com/prefix-dev/pixi/issues/3762
           sed -i.bak 's@editable = true@editable = false@g' pixi.toml
           rm pixi.toml.bak
-          sed -i.bak '/solve-group = "gubbins"/d' pixi.toml
+          # Break the gubbins environments out of their shared solve group so
+          # that they are not re-locked against the DIRAC/DIRACCommon deps
+          # added below. Strip only the "solve-group" clause: deleting whole
+          # lines would remove the environment definitions themselves, leaving
+          # the pytest-gubbins-* tasks depending on undefined environments.
+          sed -i.bak 's@, solve-group = "gubbins"@@g' pixi.toml
           rm pixi.toml.bak
           # Add annotations to github actions
           pixi add --pypi --feature diracx-core pytest-github-actions-annotate-failures
