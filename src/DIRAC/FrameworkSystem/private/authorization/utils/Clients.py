@@ -1,9 +1,3 @@
-import time
-
-from authlib.oauth2.rfc6749.util import scope_to_list, list_to_scope
-from authlib.integrations.sqla_oauth2 import OAuth2ClientMixin
-
-from DIRAC import gLogger
 from DIRAC.Core.Security import Locations
 from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata
 
@@ -46,37 +40,3 @@ def getDIRACClients():
         else:
             clients[cli].update(confClients[cli])
     return clients
-
-
-class Client(OAuth2ClientMixin):
-    """This class describes the OAuth2 client."""
-
-    def __init__(self, params):
-        """C'r
-
-        :param dict params: client parameters
-        """
-        if params.get("redirect_uri") and not params.get("redirect_uris"):
-            params["redirect_uris"] = [params["redirect_uri"]]
-        self.set_client_metadata(params)
-        self.client_id = params["client_id"]
-        self.client_secret = params.get("client_secret", "")
-        self.client_id_issued_at = params.get("client_id_issued_at", int(time.time()))
-        self.client_secret_expires_at = params.get("client_secret_expires_at", 0)
-
-    def get_allowed_scope(self, scope):
-        """Get allowed scope. Has been slightly modified to accommodate parametric scopes.
-
-        :param str scope: requested scope
-
-        :return: str -- scopes
-        """
-        if not isinstance(scope, str):
-            scope = list_to_scope(scope)
-        allowed = scope_to_list(super().get_allowed_scope(scope))
-        for s in scope_to_list(scope):
-            for def_scope in scope_to_list(self.scope):
-                if s.startswith(def_scope) and s not in allowed:
-                    allowed.append(s)
-        gLogger.debug(f'Try to allow "{scope}" scope:', allowed)
-        return list_to_scope(list(set(allowed)))

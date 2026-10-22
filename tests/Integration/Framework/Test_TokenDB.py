@@ -1,4 +1,4 @@
-""" This is a test of the AuthDB. Requires authlib, pyjwt
+""" This is a test of the TokenDB. Requires authlib, pyjwt
     It supposes that the DB is present and installed in DIRAC
 """
 import time

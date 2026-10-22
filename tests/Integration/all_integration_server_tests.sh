@@ -28,8 +28,6 @@ echo -e "*** $(date -u) **** FRAMEWORK TESTS ****\n"
 pytest --no-check-dirac-environment "${THIS_DIR}/Framework/Test_InstalledComponentsDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 pytest --no-check-dirac-environment "${THIS_DIR}/Framework/Test_ProxyDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 pytest --no-check-dirac-environment "${THIS_DIR}/Framework/Test_TokenDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
-pytest --no-check-dirac-environment "${THIS_DIR}/Framework/Test_AuthDB.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
-pytest --no-check-dirac-environment "${THIS_DIR}/Framework/Test_AuthServer.py" |& tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** MONITORING TESTS ****\n"
