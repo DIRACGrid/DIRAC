@@ -153,7 +153,7 @@ class AuthDB(SQLAlchemyDB):
 
         :return: S_OK/S_ERROR
         """
-        key = JsonWebKey.generate_key("RSA", 1024, is_private=True)
+        key = JsonWebKey.generate_key("RSA", 2048, is_private=True)
         # as_dict has no arguments for authlib < 1.0.0
         # for authlib >= 1.0.0
         keyDict = dict(
