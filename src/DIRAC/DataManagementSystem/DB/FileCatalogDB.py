@@ -1057,11 +1057,16 @@ class FileCatalogDB(DB):
 
         return S_OK({"Successful": successful, "Failed": failed})
 
-    def rebuildDirectoryUsage(self):
+    def rebuildDirectoryUsage(self, credDict={}):
         """Rebuild DirectoryUsage table from scratch"""
 
-        result = self.dtree._rebuildDirectoryUsage()
-        return result
+        result = self._checkAdminPermission(credDict)
+        if not result["OK"]:
+            return result
+        if not result["Value"]:
+            return S_ERROR(errno.EACCES, "Not authorized to rebuild directory usage")
+
+        return self.dtree._rebuildDirectoryUsage()
 
     def repairCatalog(self, credDict={}):
         """Repair catalog inconsistencies"""
