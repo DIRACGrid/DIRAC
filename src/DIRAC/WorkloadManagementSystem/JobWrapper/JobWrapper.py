@@ -17,6 +17,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import stat
 import sys
 import tarfile
@@ -1644,6 +1645,9 @@ class ExecutionThread(threading.Thread):
         This one overrides the ~threading.Thread `run` method
         """
         log = gLogger.getSubLogger(self.__class__.__name__)
+
+        # Unblock signals left blocked by libraries such as gfal2, which the payload would inherit
+        signal.pthread_sigmask(signal.SIG_SETMASK, set())
 
         start = time.time()
         initialStat = os.times()
