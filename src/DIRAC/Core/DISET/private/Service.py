@@ -31,6 +31,14 @@ from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 
 
+#: Interval between periodic throttle warning messages (seconds)
+THROTTLE_LOG_INTERVAL_SECONDS = 30
+
+#: Once throttling, keep throttling until the queue drops to this fraction of MaxWaitingPetitions.
+#: This hysteresis avoids flapping in and out of throttle mode under borderline load.
+THROTTLE_CLEAR_FRACTION = 0.5
+
+
 class Service:
     SVC_VALID_ACTIONS = {"RPC": "export", "FileTransfer": "transfer", "Message": "msg", "Connection": "Message"}
     SVC_SECLOG_CLIENT = SecurityLogClient()
@@ -61,6 +69,9 @@ class Service:
         self._transportPool = getGlobalTransportPool()
         self.__cloneId = 0
         self.__maxFD = 0
+        self._throttleStartedAt = None
+        self._lastThrottleLog = 0
+        self._maxThrottleDuration = self._cfg.getMaxThrottleDuration()
         self.activityMonitoring = False
         # Check if monitoring is enabled
         if "Monitoring" in Operations().getMonitoringBackends(monitoringType="ServiceMonitoring"):
@@ -276,11 +287,68 @@ class Service:
         future = self._threadPool.submit(self._processInThread, clientTransport)
         future.add_done_callback(err_handler)
 
-    @property
-    def wantsThrottle(self):
-        """Boolean property for if the service wants requests to stop being accepted"""
+    def updateThrottleState(self):
+        """Check whether the service should stop accepting requests, and track the throttle state.
+
+        Throttling starts when the queue exceeds MaxWaitingPetitions and only clears once
+        it has drained to THROTTLE_CLEAR_FRACTION of that limit. Records when throttling
+        started and logs state transitions and periodic diagnostics.
+
+        :return: True if the service should reject incoming connections
+        """
         nQueued = self._threadPool._work_queue.qsize()
-        return nQueued > self._cfg.getMaxWaitingPetitions()
+        maxQueue = self._cfg.getMaxWaitingPetitions()
+        if self._throttleStartedAt is None:
+            shouldThrottle = nQueued > maxQueue
+        else:
+            shouldThrottle = nQueued > maxQueue * THROTTLE_CLEAR_FRACTION
+
+        now = time.time()
+        if shouldThrottle:
+            if self._throttleStartedAt is None:
+                self._throttleStartedAt = now
+                self._lastThrottleLog = now
+                diag = self.throttleDiagnostics()
+                gLogger.warn(
+                    f"Service {self._name} entering throttle mode",
+                    f"queue={diag['queue']}/{diag['maxQueue']}, threads={diag['threads']}/{diag['maxThreads']}",
+                )
+            elif now - self._lastThrottleLog >= THROTTLE_LOG_INTERVAL_SECONDS:
+                duration = now - self._throttleStartedAt
+                diag = self.throttleDiagnostics()
+                gLogger.warn(
+                    f"Service {self._name} still throttling",
+                    f"duration={duration:.0f}s, queue={diag['queue']}/{diag['maxQueue']}, "
+                    f"threads={diag['threads']}/{diag['maxThreads']}",
+                )
+                self._lastThrottleLog = now
+        elif self._throttleStartedAt is not None:
+            duration = now - self._throttleStartedAt
+            gLogger.info(f"Service {self._name} throttle cleared", f"duration={duration:.1f}s")
+            self._throttleStartedAt = None
+
+        return shouldThrottle
+
+    @property
+    def maxThrottleDuration(self):
+        """Seconds of continuous throttling after which the service should restart, or 0 if disabled."""
+        return self._maxThrottleDuration
+
+    @property
+    def throttleDuration(self):
+        """Seconds the service has been continuously throttling, or 0 if not throttling."""
+        if self._throttleStartedAt is None:
+            return 0
+        return time.time() - self._throttleStartedAt
+
+    def throttleDiagnostics(self):
+        """Return a dict of diagnostics useful for throttle logging"""
+        return {
+            "queue": self._threadPool._work_queue.qsize(),
+            "maxQueue": self._cfg.getMaxWaitingPetitions(),
+            "threads": len(self._threadPool._threads),
+            "maxThreads": self._cfg.getMaxThreads(),
+        }
 
     # Threaded process function
     def _processInThread(self, clientTransport):
