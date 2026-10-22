@@ -2,6 +2,8 @@
 
 import os
 import shutil
+import signal
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -17,7 +19,8 @@ from DIRAC.DataManagementSystem.Client.test.mock_DM import dm_mock
 from DIRAC.Resources.Catalog.test.mock_FC import fc_mock
 from DIRAC.WorkloadManagementSystem.Client import JobMinorStatus, JobStatus
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobExecutionCoordinator import JobExecutionCoordinator
-from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper
+from DIRAC.Core.Utilities.Subprocess import Subprocess
+from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import ExecutionThread, JobWrapper
 
 gLogger.setLevel("DEBUG")
 
@@ -221,6 +224,27 @@ def test_preProcess_dirac_jobexec_with_args(setup_job_wrapper):
 
 
 @pytest.mark.slow
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="Reads /proc/self/status")
+def test_executionThread_clears_signal_mask(tmp_path):
+    """The payload must not inherit signals blocked in the JobWrapper (e.g. by gfal2)."""
+    stdout = tmp_path / "std.out"
+    executionResults = {}
+    blocked = {signal.SIGQUIT, signal.SIGTERM}
+    exeThread = ExecutionThread(
+        Subprocess(), "grep SigBlk /proc/self/status", 100, str(stdout), None, os.environ.copy(), executionResults
+    )
+    oldMask = signal.pthread_sigmask(signal.SIG_BLOCK, blocked)
+    try:
+        # The thread inherits the mask of this one when it starts, as it would in the JobWrapper
+        exeThread.start()
+    finally:
+        signal.pthread_sigmask(signal.SIG_SETMASK, oldMask)
+    exeThread.join()
+
+    assert executionResults["Thread"]["OK"], executionResults["Thread"]
+    assert stdout.read_text().split() == ["SigBlk:", "0000000000000000"]
+
+
 def test_processSuccessfulCommand(mocker):
     """Test the process method of the JobWrapper class: most common scenario."""
     jw = JobWrapper()
