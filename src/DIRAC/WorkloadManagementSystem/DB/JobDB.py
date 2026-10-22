@@ -487,13 +487,12 @@ class JobDB(DB):
 
         if attrName == "Status":
             # Treat this update separately
-            res = self.setJobsMajorStatus([jobID], attrValue, force=force)
+            res = self.setJobsMajorStatus([jobID], attrValue, force=force, update=update and not myDate)
             if not res["OK"]:
                 return res
-            if update:
+            if update and myDate:
                 cmd = f"UPDATE Jobs SET LastUpdateTime=UTC_TIMESTAMP() WHERE JobID={jobID}"
-                if myDate:
-                    cmd += f" AND LastUpdateTime < {myDate}"
+                cmd += f" AND LastUpdateTime < {myDate}"
                 return self._update(cmd)
             else:
                 return res
@@ -560,7 +559,9 @@ class JobDB(DB):
 
         if "Status" in attrNames:
             # Treat this update separately
-            res = self.setJobsMajorStatus(jIDList, attrValues[attrNames.index("Status")], force=force)
+            res = self.setJobsMajorStatus(
+                jIDList, attrValues[attrNames.index("Status")], force=force, update=update and not myDate
+            )
             if not res["OK"]:
                 return res
             attrValues.pop(attrNames.index("Status"))
@@ -585,12 +586,14 @@ class JobDB(DB):
 
         return self._update(cmd)
 
-    def setJobsMajorStatus(self, jIDList, candidateStatus, force=False):
+    def setJobsMajorStatus(self, jIDList, candidateStatus, force=False, update=False):
         """
         Sets jobs major status, considering the JobStateMachine result
 
         :param list jIDList: list of one or more job IDs
         :param str candidateStatus: candidate major Status
+        :param bool update: also refresh the LastUpdateTime stamp in the same statement, so that
+                            the new status is never visible together with the old time stamp
         """
 
         # get the current statuses of the jobs
@@ -632,6 +635,8 @@ class JobDB(DB):
         cmd += ",".join(ns)
 
         cmd += " ON DUPLICATE KEY UPDATE Status=VALUES(Status)"
+        if update:
+            cmd += ", LastUpdateTime=UTC_TIMESTAMP()"
 
         return self._update(cmd)
 
