@@ -1,5 +1,5 @@
 """Module containing a front-end to the OpenSearch-based JobParametersDB.
-This is a drop-in replacement for MySQL-based table JobDB.JobParameters.
+This OpenSearch-based DB replaces the former MySQL-based table JobDB.JobParameters.
 
 The following class methods are provided for public usage
   - getJobParameters()
@@ -7,9 +7,12 @@ The following class methods are provided for public usage
   - deleteJobParameters()
 """
 
+from typing import Any
+
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC.Core.Utilities import TimeUtilities
+from DIRAC.Core.Utilities.ReturnValues import DReturnType
 
 mapping = {
     "JobID": {"type": "long"},
@@ -33,17 +36,19 @@ mapping = {
 }
 
 
-def getJobParameters(jobIDs: list[int], parName: str | None, vo: str = "") -> dict:
+def getJobParametersUtility(
+    jobIDs: list[int], parName: str | None, vo: str = ""
+) -> DReturnType[dict[int, dict[str, Any]]]:
     """Utility to get a job parameter for a list of jobIDs pertaining to a VO.
-    If the jobID is not in the JobParametersDB, it will be looked up in the JobDB.
 
-    Requires direct access to the JobParametersDB and JobDB.
+    Instantiates the JobParametersDB, and, when no VO is passed, the JobDB, to find
+    the VO each job belongs to.
 
     :param jobIDs: list of jobIDs
     :param parName: name of the parameter to be retrieved
     :param vo: VO of the jobIDs
-    :return: dictionary with jobID as key and the parameter as value
-    :rtype: dict
+    :return: S_OK/S_ERROR, with a dictionary with jobID (int) as key and the
+             parameters as value
     """
 
     from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -80,22 +85,7 @@ def getJobParameters(jobIDs: list[int], parName: str | None, vo: str = "") -> di
                 return res
             parameters.update(res["Value"])
 
-    # Need anyway to get also from JobDB, for those jobs with parameters registered in MySQL or in both backends
-    res = jobDB.getJobParameters(jobIDs, parName)
-    if not res["OK"]:
-        return res
-    parametersM = res["Value"]
-
-    # and now combine
-    final = dict(parametersM)
-    # if job in JobDB, update with parameters from ES if any
-    for jobID in final:
-        final[jobID].update(parameters.get(jobID, {}))
-    # if job in ES and not in JobDB, take ES
-    for jobID in parameters:
-        if jobID not in final:
-            final[jobID] = parameters[jobID]
-    return S_OK(final)
+    return S_OK(parameters)
 
 
 class JobParametersDB(ElasticDB):
@@ -141,6 +131,7 @@ class JobParametersDB(ElasticDB):
 
         :param self: self reference
         :param jobID: Job ID
+        :param vo: virtual organization
         :param paramList: list of parameters to be returned (also a string is treated)
         :return: dict with all Job Parameter values
         """

@@ -10,7 +10,7 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import getJobParameters
+from DIRAC.WorkloadManagementSystem.DB.JobParametersDB import getJobParametersUtility
 
 
 class JobMonitoringHandlerMixin:
@@ -147,7 +147,7 @@ class JobMonitoringHandlerMixin:
         :param str/int jobID: one single Job ID
         :param str parName: one single parameter name
         """
-        res = getJobParameters([int(jobID)], parName, self.vo or "")
+        res = getJobParametersUtility([int(jobID)], parName, self.vo or "")
         if not res["OK"]:
             return res
         return S_OK(res["Value"].get(int(jobID), {}))
@@ -165,7 +165,7 @@ class JobMonitoringHandlerMixin:
             jobIDs = [jobIDs]
         jobIDs = [int(jobID) for jobID in jobIDs]
 
-        return getJobParameters(jobIDs, parName, self.vo or "")
+        return getJobParametersUtility(jobIDs, parName, self.vo or "")
 
     ##############################################################################
     types_getJobAttributes = [int]
