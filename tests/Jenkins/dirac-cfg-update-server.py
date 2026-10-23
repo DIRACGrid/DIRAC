@@ -302,35 +302,87 @@ csAPI.setOption("Resources/FTSEndpoints/FTS3/JENKINS-FTS3", "https://jenkins-fts
 #       Config
 #       {
 #         Cache = 600
-#         State = Active
 #         FromAddress = fstagni@cern.ch
 #         notificationGroups = ShiftersGroup
 #       }
 #       Policies
 #       {
+#         Downtime
+#         {
+#           hours = 0
+#         }
+#         FreeDiskSpace
+#         {
+#           Unit               = TB
+#           Banned_threshold   = 0.1
+#           Degraded_threshold = 5
+#           Banned_fraction    = 0.01
+#           Degraded_fraction  = 0.05
+#         }
 #         AlwaysActiveForResource
 #         {
+#           policyType = AlwaysActive
 #           matchParams
 #           {
 #             element = Resource
 #           }
-#           policyType = AlwaysActive
 #         }
 #         AlwaysBannedForSE1SE2
 #         {
+#           policyType = AlwaysBanned
 #           matchParams
 #           {
 #             name = SE1,SE2
 #           }
-#           policyType = AlwaysBanned
 #         }
 #         AlwaysBannedForSite
 #         {
+#           policyType = AlwaysBanned
 #           matchParams
 #           {
 #             element = Site
 #           }
+#         }
+#         AlwaysBannedForSite2
+#         {
 #           policyType = AlwaysBanned
+#           matchParams
+#           {
+#             element = Site
+#             domain  = test
+#           }
+#         }
+#         SpecificFreeDiskSpace
+#         {
+#           policyType         = FreeDiskSpace
+#           Unit               = GB
+#           Banned_threshold   = 10
+#           Degraded_threshold = 50
+#           Banned_fraction    = 0.02
+#           Degraded_fraction  = 0.10
+#           matchParams
+#           {
+#             element    = Resource
+#             name       = LogSE
+#             statusType = WriteAccess
+#           }
+#         }
+#         PropagationForSite
+#         {
+#           policyType = Propagation
+#           matchParams
+#           {
+#             element = Site
+#           }
+#         }
+#       }
+#       PolicyActions
+#       {
+#         LogStatusAction
+#         {
+#         }
+#         LogPolicyResultAction
+#         {
 #         }
 #       }
 #     }
@@ -359,6 +411,23 @@ res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies")
 if not res["OK"]:
     print(res["Message"])
     sys.exit(1)
+
+res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/Downtime")
+if not res["OK"]:
+    print(res["Message"])
+    sys.exit(1)
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/Downtime/hours", "0")
+
+res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace")
+if not res["OK"]:
+    print(res["Message"])
+    sys.exit(1)
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace/Unit", "TB")
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace/Banned_threshold", "0.1")
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace/Degraded_threshold", "5")
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace/Banned_fraction", "0.01")
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/FreeDiskSpace/Degraded_fraction", "0.05")
+
 res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource")
 if not res["OK"]:
     print(res["Message"])
@@ -388,6 +457,57 @@ if not res["OK"]:
 res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams")
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/policyType", "AlwaysBanned")
 csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite/matchParams/element", "Site")
+
+res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite2")
+if not res["OK"]:
+    print(res["Message"])
+    sys.exit(1)
+res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite2/matchParams")
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite2/policyType", "AlwaysBanned")
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite2/matchParams/element", "Site")
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite2/matchParams/domain", "test")
+
+res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/SpecificFreeDiskSpace")
+if not res["OK"]:
+    print(res["Message"])
+    sys.exit(1)
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/SpecificFreeDiskSpace/policyType", "FreeDiskSpace")
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/SpecificFreeDiskSpace/Unit", "GB")
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/SpecificFreeDiskSpace/Banned_threshold", "10")
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/SpecificFreeDiskSpace/Degraded_threshold", "50")
+res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/SpecificFreeDiskSpace/matchParams")
+if not res["OK"]:
+    print(res["Message"])
+    sys.exit(1)
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/SpecificFreeDiskSpace/matchParams/element", "Resource")
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/SpecificFreeDiskSpace/matchParams/name", "LogSE")
+csAPI.setOption(
+    "Operations/Defaults/ResourceStatus/Policies/SpecificFreeDiskSpace/matchParams/statusType", "WriteAccess"
+)
+
+res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/PropagationForSite")
+if not res["OK"]:
+    print(res["Message"])
+    sys.exit(1)
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/PropagationForSite/policyType", "Propagation")
+res = csAPI.createSection("Operations/Defaults/ResourceStatus/Policies/PropagationForSite/matchParams")
+if not res["OK"]:
+    print(res["Message"])
+    sys.exit(1)
+csAPI.setOption("Operations/Defaults/ResourceStatus/Policies/PropagationForSite/matchParams/element", "Site")
+
+res = csAPI.createSection("Operations/Defaults/ResourceStatus/PolicyActions")
+if not res["OK"]:
+    print(res["Message"])
+    sys.exit(1)
+res = csAPI.createSection("Operations/Defaults/ResourceStatus/PolicyActions/LogStatusAction")
+if not res["OK"]:
+    print(res["Message"])
+    sys.exit(1)
+res = csAPI.createSection("Operations/Defaults/ResourceStatus/PolicyActions/LogPolicyResultAction")
+if not res["OK"]:
+    print(res["Message"])
+    sys.exit(1)
 
 
 # Now setting the catalog list in Operations/Defaults/Services/Catalogs/CatalogList
