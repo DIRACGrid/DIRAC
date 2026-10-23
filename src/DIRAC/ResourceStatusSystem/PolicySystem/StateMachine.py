@@ -4,6 +4,8 @@
 
 """
 from DIRAC.Core.Utilities.StateMachine import State, StateMachine
+from DIRAC import S_ERROR
+import errno
 
 
 class RSSMachine(StateMachine):
@@ -86,3 +88,29 @@ class RSSMachine(StateMachine):
         """
 
         return self.getLevelOfState(policyResult["Status"])
+
+
+ALLOWED = {"Active", "Degraded"}
+BANNED = {"Banned", "Probing", "Unknown", "Error"}
+
+
+def resolveElementStatus(status):
+    """
+    Maps an internal RSS status onto the simplified 'Active' / 'Banned' status
+    exposed to clients.
+
+    examples:
+      >>> resolveElementStatus( 'Degraded' )
+          'Active'
+      >>> resolveElementStatus( 'Unknown' )
+          'Banned'
+
+    :param str status: the internal RSS status
+    :return: str, 'Active' or 'Banned'
+    """
+
+    if status in ALLOWED:
+        return "Active"
+    if status in BANNED:
+        return "Banned"
+    return S_ERROR(errno.EINVAL, "Not a valid status")
