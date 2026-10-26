@@ -1,3 +1,50 @@
+[v9.0.28]
+
+*WorkloadManagement
+
+FIX: (#8851) set the job Status and LastUpdateTime atomically so that the StalledJobAgent does not reschedule jobs that have just been matched
+FIX: (#8851) StalledJobAgent re-checks stuck jobs before rescheduling them and records itself as the source
+FIX: (#8838) the payload no longer inherits signals blocked in the JobWrapper (e.g. by gfal2), so it can be stopped with SIGTERM and abort itself with SIGQUIT
+NEW: (#8829) allow fractional MatchingDelay for sub-second matcher throttling
+NEW: (#8829) MatchingDelay is a token bucket, with an optional MatchingDelay/<Site>/Burst/<Attribute>/<Value> burst size
+FIX: (#8829) MatchingDelay tokens are reserved before matching, so concurrent requests can no longer exceed the configured rate
+FIX: (#8829) running limits count the jobs matched since the cached running counts were taken, so sites no longer overshoot them
+FIX: (#8829) CEs and Burst subsections are no longer reported as unknown job attributes
+
+*DataManagementSystem
+
+FIX: (#8848) Add permission check to FC rebuildDirectoryUsage
+FIX: (#8836) S3Gateway presigned URLs work with S3 implementations which validate them, and store the checksum on upload
+
+*FrameworkSystem
+
+FIX: (#8845) Increase token key size
+FIX: (#8829) MessageQueueHandler sends log records from a background thread with a bounded queue, so logging never blocks when the broker is slow or unreachable
+
+*RequestManagementSystem
+
+FIX: (#8833) The RequestExecutingAgent no longer crashes repeatedly on requests without any operation to execute, it sets an error and delays them by a day
+CHANGE: (#8833) Request and Operation constructors no longer modify the dictionary they are given
+
+*Core
+
+FIX: (#8829) Add wait timeout when connecting to stomp
+FIX: (#8822) annotate DIRAC.exit as NoReturn so pylint knows DIRACExit ends a branch
+NEW: (#8818) Improved error messages when dirac-proxy-init fails
+FIX: (#8782) require m2crypto >=0.50, which restores the timed ssl_read() retries broken in 0.46.0
+
+*Resources
+
+FIX: (#8829) StompMQConnector.put fails fast (one short reconnection attempt, with backoff) instead of blocking for minutes when the broker is unreachable
+
+*tests
+
+CHANGE: (#8828) diracx-init-db sets a URL for every DiracX DB, initialising only the DiracX-owned ones in MySQL
+
+*ResourceStatusSystem
+
+CHANGE: (#8777) Remove some of SpaceTokenOccupancyCache methods from ResourceManagementClient/Handler
+
 [v9.0.27]
 
 *WorkloadManagement
