@@ -49,3 +49,21 @@ def test__sjaFunctions(sja):
     assert sja._kickStuckJobs()["OK"]
     assert sja._failStalledJobs(0)["OK"]
     assert not sja._markStalledJobs(0)["OK"]
+
+
+def test__kickStuckJobs_recheck(sja, mocker):
+    """Jobs that move on between the selection and the rescheduling are left alone"""
+    stillStuck = {1}
+
+    def selectJobs(condDict, older=None):
+        if "JobID" in condDict:
+            return {"OK": True, "Value": [condDict["JobID"]] if condDict["JobID"] in stillStuck else []}
+        if condDict["Status"] == "Matched":
+            return {"OK": True, "Value": [1, 2]}
+        return {"OK": True, "Value": []}
+
+    sja.jobDB.selectJobs.side_effect = selectJobs
+    sja.jobDB.rescheduleJob.return_value = {"OK": True}
+
+    assert sja._kickStuckJobs()["OK"]
+    sja.jobDB.rescheduleJob.assert_called_once_with(1)
