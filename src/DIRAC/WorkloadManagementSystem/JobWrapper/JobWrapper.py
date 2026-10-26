@@ -17,6 +17,7 @@ import sys
 import time
 import datetime
 import shutil
+import signal
 import threading
 import tarfile
 import glob
@@ -1511,6 +1512,9 @@ class ExecutionThread(threading.Thread):
         This one overrides the ~threading.Thread `run` method
         """
         log = gLogger.getSubLogger(self.__class__.__name__)
+
+        # Unblock signals left blocked by libraries such as gfal2, which the payload would inherit
+        signal.pthread_sigmask(signal.SIG_SETMASK, set())
 
         # FIXME: why local instances of object variables are created?
         cmd = self.cmd
