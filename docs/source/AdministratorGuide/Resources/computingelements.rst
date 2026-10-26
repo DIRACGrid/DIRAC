@@ -172,6 +172,68 @@ section ::
     }
   }
 
+Selecting the container image
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+The :mod:`~DIRAC.Resources.Computing.SingularityComputingElement` CE and the
+:py:mod:`~DIRAC.Core.scripts.dirac_apptainer_exec` command resolve the container image with
+:py:func:`~DIRAC.Core.Utilities.ContainerImageResolver.resolveImagePath`, which supports the CVMFS multiarch layout so
+that the same configuration works on nodes of different architectures.
+
+The following options are read from the ``Singularity`` section (or from the CE parameters, which take precedence).
+The image references shown are examples: a site normally points them at the image its VO builds and publishes.
+
+- ImageReference (str) - the OCI reference of the image, e.g. ``registry.hub.docker.com/library/ubuntu:24.04``. It must
+                         be a *relative* reference: absolute paths and ``..`` are rejected, since they would bypass both
+                         the base path and the architecture directory.
+- ImageBasePath (str) - the root of the multiarch image repository. Defaults to ``/cvmfs/unpacked.cern.ch/.multiarch``.
+- ContainerRoot (str) - **deprecated**, kept for backward compatibility. A path to a single architecture (in practice
+                        x86_64) image, used as a fallback when no multiarch image is found. Defaults to
+                        ``/cvmfs/cernvm-prod.cern.ch/cvm4``.
+
+The image is looked up at ``<ImageBasePath>/<architecture>/<ImageReference>``, where the architecture is the OCI
+(GOARCH) name of the node, with the variant appended after a colon where there is one: ``amd64``, ``arm64``,
+``arm:v7``, ``386``, ``ppc64le``, etc. The repository also publishes symlinks for the usual ``uname -m`` names
+(``x86_64``, ``aarch64``, ``i386`` ...), so an architecture DIRAC does not know about is used as reported.
+
+Some architectures are published under more than one directory name, because the name comes from the image manifest:
+an image declaring ``arm64`` with no variant is published under ``arm64``, one declaring variant ``v8`` under
+``arm64:v8``, and the publisher only symlinks one to the other when the plain name is not already a real directory.
+Those names are therefore tried in turn -- ``arm64`` then ``arm64:v8`` on an ARM64 node, ``arm:v7`` then ``arm`` on an
+ARMv7 one -- and the first one that exists is used. When none of them does, the warning names every path that was
+tried, together with the directories the repository actually publishes for that architecture, so that a variant DIRAC
+does not yet know about is visible in the log rather than silently degrading to ``ContainerRoot``. Such a directory is
+only reported, never used: variant compatibility is directional (an ``arm:v6`` image runs on an ARMv7 node, an
+``arm:v7`` image does not run on an ARMv6 one), so an unrecognised variant cannot be assumed to run.
+
+If no multiarch path exists, the deprecated ``ContainerRoot`` is used instead and a warning is logged, naming the
+architecture and every path that was tried.
+
+``ContainerRoot`` images are built for a single architecture, in practice ``amd64``. On a node whose architecture DIRAC
+recognises as a different one, the image is therefore *not* used: resolution fails with an error and the payload is not
+submitted, rather than started only to die with an exec format error. Publish the image under ``ImageBasePath`` for that
+architecture to fix it. When the node reports an architecture DIRAC does not recognise, it may still be a compatible
+one, so ``ContainerRoot`` is used and a warning logged instead.
+
+::
+
+  Resources
+  {
+    Computing
+    {
+      Singularity
+      {
+        ImageReference = registry.hub.docker.com/library/ubuntu:24.04
+        # ImageBasePath = /cvmfs/unpacked.cern.ch/.multiarch
+      }
+    }
+  }
+
+``dirac-apptainer-exec`` accepts a ``-i``/``--image`` option overriding the configuration. That value is used on its
+own: an existing local path is taken as-is, and otherwise it is looked up as an OCI reference in the multiarch layout.
+``ContainerRoot`` is not consulted in that case, so the command never runs an image other than the one asked for.
+Unlike the CE, it has no built-in default image: if nothing is configured and nothing is found, the command fails.
+
 Applying cgroup2 limits to computing resources
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
