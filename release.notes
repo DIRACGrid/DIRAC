@@ -1,3 +1,45 @@
+[v9.1.22]
+
+*FrameworkSystem
+
+CHANGE: (#8854) Removed the unused AuthServer, its OAuth2 grants and AuthDB
+FIX: (#8815) MessageQueueHandler sends log records from a background thread with a bounded queue, so logging never blocks when the broker is slow or unreachable
+
+*WorkloadManagement
+
+FIX: (#8852) set the job Status and LastUpdateTime atomically so that the StalledJobAgent does not reschedule jobs that have just been matched
+FIX: (#8852) StalledJobAgent re-checks stuck jobs before rescheduling them and records itself as the source
+FIX: (#8840) the payload no longer inherits signals blocked in the JobWrapper (e.g. by gfal2), so it can be stopped with SIGTERM and abort itself with SIGQUIT
+NEW: (#8815) MatchingDelay is a token bucket, with an optional MatchingDelay/<Site>/Burst/<Attribute>/<Value> burst size
+FIX: (#8815) MatchingDelay tokens are reserved before matching, so concurrent requests can no longer exceed the configured rate
+FIX: (#8815) running limits count the jobs matched since the cached running counts were taken, so sites no longer overshoot them
+FIX: (#8815) CEs and Burst subsections are no longer reported as unknown job attributes
+
+*DataManagementSystem
+
+FIX: (#8847) Add permission check to FC rebuildDirectoryUsage
+FIX: (#8835) S3Gateway presigned URLs work with S3 implementations which validate them, and store the checksum on upload
+
+*RequestManagementSystem
+
+FIX: (#8832) The ReqProxy no longer drops the operations of the requests it caches
+CHANGE: (#8832) Request and Operation constructors no longer modify the dictionary they are given
+
+*tests
+
+CHANGE: (#8827) diracx-init-db sets a URL for every DiracX DB, initialising only the DiracX-owned ones in MySQL
+
+*Core
+
+FIX: (#8823) annotate DIRAC.exit as NoReturn so pylint knows DIRACExit ends a branch
+NEW: (#8819) Improved error messages when dirac-proxy-init fails
+FIX: (#8813) FIX: Prefix unprefixed OpenSearch index names even when they start with the configured global prefix.
+FIX: (#8781) require m2crypto >=0.50, which restores the timed ssl_read() retries broken in 0.46.0
+
+*Resources
+
+FIX: (#8815) StompMQConnector.put fails fast (one short reconnection attempt, with backoff) instead of blocking for minutes when the broker is unreachable
+
 [v9.1.21]
 
 *Core
