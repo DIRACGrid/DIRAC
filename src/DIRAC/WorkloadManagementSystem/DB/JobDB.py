@@ -405,16 +405,12 @@ class JobDB(DB):
 
         if attrName == "Status":
             # Treat this update separately
-            res = self.setJobsMajorStatus([jobID], attrValue, force=force)
+            res = self.setJobsMajorStatus([jobID], attrValue, force=force, update=update and not myDate)
             if not res["OK"]:
                 return res
-            if update:
-                cmd = "UPDATE Jobs SET LastUpdateTime=UTC_TIMESTAMP() WHERE JobID=%s"
-                args = [str(jobID)]
-                if myDate:
-                    cmd += " AND LastUpdateTime < %s"
-                    args.append(myDate)
-                return self._update(cmd, args=args)
+            if update and myDate:
+                cmd = "UPDATE Jobs SET LastUpdateTime=UTC_TIMESTAMP() WHERE JobID=%s AND LastUpdateTime < %s"
+                return self._update(cmd, args=[str(jobID), myDate])
             else:
                 return res
 
@@ -474,7 +470,9 @@ class JobDB(DB):
         statusDone = False
         if "Status" in attrNames:
             # Treat this update separately
-            res = self.setJobsMajorStatus(jIDList, attrValues[attrNames.index("Status")], force=force)
+            res = self.setJobsMajorStatus(
+                jIDList, attrValues[attrNames.index("Status")], force=force, update=update and not myDate
+            )
             if not res["OK"]:
                 return res
             attrValues.pop(attrNames.index("Status"))
@@ -507,12 +505,14 @@ class JobDB(DB):
 
         return self._update(cmd, args=args)
 
-    def setJobsMajorStatus(self, jIDList, candidateStatus, force=False):
+    def setJobsMajorStatus(self, jIDList, candidateStatus, force=False, update=False):
         """
         Sets jobs major status, considering the JobStateMachine result
 
         :param list jIDList: list of one or more job IDs
         :param str candidateStatus: candidate major Status
+        :param bool update: also refresh the LastUpdateTime stamp in the same statement, so that
+                            the new status is never visible together with the old time stamp
         """
 
         # get the current statuses of the jobs
@@ -543,6 +543,8 @@ class JobDB(DB):
             newStatuses[jID] = nextState
 
         cmd = "INSERT INTO Jobs (JobID, Status) VALUES (%s, %s) ON DUPLICATE KEY UPDATE Status=VALUES(Status)"
+        if update:
+            cmd += ", LastUpdateTime=UTC_TIMESTAMP()"
         return self._updatemany(cmd, data=newStatuses.items())
 
     def setJobStatus(self, jobID, status="", minorStatus="", applicationStatus="", force=False):
