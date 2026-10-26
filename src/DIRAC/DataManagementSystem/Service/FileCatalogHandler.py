@@ -378,7 +378,7 @@ class FileCatalogHandlerMixin:
 
     def export_rebuildDirectoryUsage(self):
         """Rebuild DirectoryUsage table from scratch"""
-        return self.fileCatalogDB.rebuildDirectoryUsage()
+        return self.fileCatalogDB.rebuildDirectoryUsage(self.getRemoteCredentials())
 
     types_repairCatalog = []
 
