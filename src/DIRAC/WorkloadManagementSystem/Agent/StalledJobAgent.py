@@ -556,34 +556,39 @@ class StalledJobAgent(AgentModule):
         """Reschedule jobs stuck in initialization status Rescheduled, Matched."""
 
         message = ""
-
-        checkTime = datetime.datetime.utcnow() - self.matchedTime * second
-        result = self.jobDB.selectJobs({"Status": JobStatus.MATCHED}, older=checkTime)
-        if not result["OK"]:
-            self.log.error("Failed to select jobs", result["Message"])
-            return result
-
-        jobIDs = result["Value"]
-        if jobIDs:
-            self.log.info(f"Rescheduling {len(jobIDs)} jobs stuck in {JobStatus.MATCHED} status")
-            result = rescheduleJobs(jobIDs)
+        for status, stuckTime in ((JobStatus.MATCHED, self.matchedTime), (JobStatus.RESCHEDULED, self.rescheduledTime)):
+            checkTime = datetime.datetime.utcnow() - stuckTime * second
+            result = self.jobDB.selectJobs({"Status": status}, older=checkTime)
             if not result["OK"]:
-                message = f"Failed to reschedule jobs stuck in {JobStatus.MATCHED} status"
-                message += "\n" + result["Message"]
+                self.log.error("Failed to select jobs", result["Message"])
+                return result
 
-        checkTime = datetime.datetime.utcnow() - self.rescheduledTime * second
-        result = self.jobDB.selectJobs({"Status": JobStatus.RESCHEDULED}, older=checkTime)
-        if not result["OK"]:
-            self.log.error("Failed to select jobs", result["Message"])
-            return result
-
-        jobIDs = result["Value"]
-        if jobIDs:
-            self.log.info(f"Rescheduling {len(jobIDs)} jobs stuck in {JobStatus.RESCHEDULED} status")
-            result = rescheduleJobs(jobIDs)
-            if not result["OK"]:
-                message = f"Failed to reschedule jobs stuck in {JobStatus.RESCHEDULED} status"
-                message += "\n" + result["Message"]
+            jobIDs = result["Value"]
+            if not jobIDs:
+                continue
+            self.log.info(f"Rescheduling {len(jobIDs)} jobs stuck in {status} status")
+            failedJobIDs = []
+            for jobID in jobIDs:
+                # The job may have moved on since it was selected (e.g. a pilot picked it up),
+                # so check again just before rescheduling it
+                result = self.jobDB.selectJobs({"JobID": jobID, "Status": status}, older=checkTime)
+                if not result["OK"]:
+                    failedJobIDs.append(jobID)
+                    continue
+                if not result["Value"]:
+                    self.log.info("Job is no longer stuck, not rescheduling", f"{jobID} ({status})")
+                    continue
+                result = rescheduleJobs(
+                    [jobID],
+                    source="StalledJobAgent",
+                    jobDB=self.jobDB,
+                    taskQueueDB=self.taskQueueDB,
+                    jobLoggingDB=self.logDB,
+                )
+                if not result["OK"]:
+                    failedJobIDs.append(jobID)
+            if failedJobIDs:
+                message += f"Failed to reschedule jobs stuck in {status} status: {failedJobIDs}\n"
 
         if message:
             self.log.error(message)
