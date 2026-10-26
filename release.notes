@@ -1,3 +1,41 @@
+[v8.0.86]
+
+*WorkloadManagement
+
+FIX: (#8853) set the job Status and LastUpdateTime atomically so that the StalledJobAgent does not reschedule jobs that have just been matched
+FIX: (#8853) StalledJobAgent re-checks stuck jobs before rescheduling them
+FIX: (#8839) the payload no longer inherits signals blocked in the JobWrapper (e.g. by gfal2), so it can be stopped with SIGTERM and abort itself with SIGQUIT
+NEW: (#8830) allow fractional MatchingDelay for sub-second matcher throttling
+NEW: (#8830) MatchingDelay is a token bucket, with an optional MatchingDelay/<Site>/Burst/<Attribute>/<Value> burst size
+FIX: (#8830) MatchingDelay tokens are reserved before matching, so concurrent requests can no longer exceed the configured rate
+FIX: (#8830) running limits count the jobs matched since the cached running counts were taken, so sites no longer overshoot them
+FIX: (#8830) CEs and Burst subsections are no longer reported as unknown job attributes
+
+*DataManagementSystem
+
+FIX: (#8849) Add permission check to FC rebuildDirectoryUsage
+FIX: (#8837) S3Gateway presigned URLs work with S3 implementations which validate them, and store the checksum on upload
+
+*FrameworkSystem
+
+FIX: (#8846) Increase token key size
+FIX: (#8830) MessageQueueHandler sends log records from a background thread with a bounded queue, so logging never blocks when the broker is slow or unreachable
+
+*RequestManagementSystem
+
+FIX: (#8834) The RequestExecutingAgent no longer crashes repeatedly on requests without any operation to execute, it sets an error and delays them by a day
+CHANGE: (#8834) Request and Operation constructors no longer modify the dictionary they are given
+
+*Resources
+
+FIX: (#8830) StompMQConnector.put fails fast (one short reconnection attempt, with backoff) instead of blocking for minutes when the broker is unreachable
+
+*Core
+
+FIX: (#8821) annotate DIRAC.exit as NoReturn so pylint knows DIRACExit ends a branch
+FIX: (#8821) backport the pylint no-member disables on ThreadConfig calls
+FIX: (#8783) require m2crypto >=0.50, which restores the timed ssl_read() retries broken in 0.46.0
+
 [v8.0.85]
 
 *MonitoringSystem
