@@ -68,7 +68,7 @@ CREATE TABLE FC_Statuses (
 -- -----------------------------------------------------------------------------
 
 CREATE TABLE FC_Replicas (
-    RepID INT AUTO_INCREMENT PRIMARY KEY,
+    RepID BIGINT AUTO_INCREMENT PRIMARY KEY,
     FileID INT NOT NULL,
     SEID INTEGER NOT NULL,
     Status SMALLINT UNSIGNED NOT NULL,
@@ -81,7 +81,7 @@ CREATE TABLE FC_Replicas (
 -- ------------------------------------------------------------------------------
 
 CREATE TABLE FC_ReplicaInfo (
-    RepID INTEGER NOT NULL AUTO_INCREMENT,
+    RepID BIGINT NOT NULL AUTO_INCREMENT,
     RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master',
     CreationDate DATETIME,
     ModificationDate DATETIME,

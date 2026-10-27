@@ -180,7 +180,7 @@ CREATE TABLE FC_Files(
 -- do we want the delete on cascade on the SE?
 
 CREATE TABLE FC_Replicas (
-    RepID INT AUTO_INCREMENT,
+    RepID BIGINT AUTO_INCREMENT,
     FileID INT NOT NULL,
     SEID INTEGER NOT NULL,
     Status INTEGER NOT NULL,
@@ -1013,7 +1013,7 @@ CREATE PROCEDURE ps_insert_replica
  IN rep_type ENUM ('Master','Replica') , IN pfn VARCHAR(1024)
 )
 BEGIN
-  DECLARE replica_id INT DEFAULT 0;
+  DECLARE replica_id BIGINT DEFAULT 0;
 
 
   DECLARE EXIT HANDLER FOR sqlexception BEGIN
@@ -1105,7 +1105,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_get_replica_id;
 DELIMITER //
 CREATE PROCEDURE ps_get_replica_id
-(IN  file_id INT, IN se_id INT, OUT rep_id INT)
+(IN  file_id INT, IN se_id INT, OUT rep_id BIGINT)
 BEGIN
 
   SELECT SQL_NO_CACHE RepID INTO rep_id FROM FC_Replicas WHERE FileID = file_id AND SEID = se_id;
