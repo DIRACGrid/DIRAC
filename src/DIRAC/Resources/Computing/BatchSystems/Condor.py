@@ -290,29 +290,35 @@ class Condor(object):
 
         jobsMetadata = json.loads(output)
 
-        # Get the status of the jobs in the history
-        cmd = ["condor_history"]
-        cmd.extend([str(x) for x in jobIDList])
-        cmd.append("-attributes")
-        cmd.append(STATE_ATTRIBUTES)
-        cmd.append("-json")
-        sp = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-        )  # nosec: B603
-        output, _ = sp.communicate()
-        status = sp.returncode
+        # Get the status of the jobs no longer in the queue from the history
+        # condor_history reads the whole history file for IDs it cannot find, so only ask for the
+        # missing ones and stop as soon as they are all found
+        activeJobIDs = set("%s.%s" % (jobDict["ClusterId"], jobDict["ProcId"]) for jobDict in jobsMetadata)
+        missingJobIDs = [str(x) for x in jobIDList if str(x) not in activeJobIDs]
+        if missingJobIDs:
+            cmd = ["condor_history"]
+            cmd.extend(missingJobIDs)
+            cmd.extend(["-match", str(len(missingJobIDs))])
+            cmd.append("-attributes")
+            cmd.append(STATE_ATTRIBUTES)
+            cmd.append("-json")
+            sp = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True,
+            )  # nosec: B603
+            output, error = sp.communicate()
+            status = sp.returncode
 
-        if status != 0:
-            resultDict["Status"] = status
-            resultDict["Message"] = error
-            return resultDict
-        if not output:
-            output = "[]"
+            if status != 0:
+                resultDict["Status"] = status
+                resultDict["Message"] = error
+                return resultDict
+            if not output:
+                output = "[]"
 
-        jobsMetadata += json.loads(output)
+            jobsMetadata += json.loads(output)
 
         statusDict = {}
         # Build a set of job IDs found in jobsMetadata
