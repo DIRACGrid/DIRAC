@@ -332,18 +332,16 @@ class TransformationDB(DB):
                 sqlCmd = "DROP TEMPORARY TABLE to_query_TransformationIDs"
                 self._update(sqlCmd, conn=connection)
 
-        # TODO: optimize by getting all the extra params at once
-        resultList = []
-        for row in matching_transformations:
-            # Prepare the structure for the web
-            transDict = dict(zip(columns, row))
-            if extraParams:
-                trans_extra_param = returnValueOrRaise(
-                    self.__getAdditionalParameters(transDict["TransformationID"], connection=connection)
+        # Prepare the structure for the web
+        resultList = [dict(zip(columns, row)) for row in matching_transformations]
+        if extraParams and resultList:
+            extraParamsByTransID = returnValueOrRaise(
+                self.__getAdditionalParametersBulk(
+                    [transDict["TransformationID"] for transDict in resultList], connection=connection
                 )
-
-                transDict.update(trans_extra_param)
-            resultList.append(transDict)
+            )
+            for transDict in resultList:
+                transDict.update(extraParamsByTransID[transDict["TransformationID"]])
 
         return resultList
 
@@ -542,17 +540,29 @@ class TransformationDB(DB):
         return self._update(req, args=args, conn=connection)
 
     def __getAdditionalParameters(self, transID, connection=False):
-        fields = ",".join(self.ADDITIONALPARAMETERS)
-        req = f"SELECT {fields} FROM AdditionalParameters WHERE TransformationID = %s"  # nosec
-        res = self._query(req, args=(transID,), conn=connection)
+        res = self.__getAdditionalParametersBulk([transID], connection=connection)
         if not res["OK"]:
             return res
-        paramDict = {}
-        for _transID, parameterName, parameterValue, parameterType in res["Value"]:
-            if parameterType in ("IntType", "LongType"):
-                parameterValue = int(parameterValue)
-            paramDict[parameterName] = parameterValue
-        return S_OK(paramDict)
+        return S_OK(res["Value"][int(transID)])
+
+    def __getAdditionalParametersBulk(self, transIDs, connection=False):
+        """Get the additional parameters of several transformations
+
+        :return: S_OK({transID: {parameterName: parameterValue}}), with an entry for each of transIDs
+        """
+        fields = ",".join(self.ADDITIONALPARAMETERS)
+        paramsByTransID = {int(transID): {} for transID in transIDs}
+        for transIDChunk in breakListIntoChunks(list(paramsByTransID), 1000):
+            placeholders = ",".join(["%s"] * len(transIDChunk))
+            req = f"SELECT {fields} FROM AdditionalParameters WHERE TransformationID IN ({placeholders})"  # nosec
+            res = self._query(req, args=tuple(transIDChunk), conn=connection)
+            if not res["OK"]:
+                return res
+            for transID, parameterName, parameterValue, parameterType in res["Value"]:
+                if parameterType in ("IntType", "LongType"):
+                    parameterValue = int(parameterValue)
+                paramsByTransID[transID][parameterName] = parameterValue
+        return S_OK(paramsByTransID)
 
     def __deleteTransformationParameters(self, transID, parameters=None, connection=False):
         """Remove the parameters associated to a transformation"""
