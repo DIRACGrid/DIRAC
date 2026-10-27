@@ -132,8 +132,7 @@ def main():
             if statusType in seOptions:
                 resR = resourceStatus.setElementStatus(se, "StorageElement", statusType, "Active", reason, userName)
                 if not resR["OK"]:
-                    gLogger.fatal(f"Failed to update {se} {statusType} to Active, exit -", resR["Message"])
-                    DIRAC.exit(-1)
+                    gLogger.error(f"Failed to update {se} {statusType} to Active", resR["Message"])
                 else:
                     gLogger.notice(f"Successfully updated {se} {statusType} to Active")
                     statusAllowedDict[statusType].append(se)

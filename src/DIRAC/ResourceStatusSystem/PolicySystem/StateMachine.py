@@ -4,8 +4,9 @@
 
 """
 from DIRAC.Core.Utilities.StateMachine import State, StateMachine
-from DIRAC import S_ERROR
-import errno
+from DIRAC import gLogger
+
+log = gLogger.getSubLogger(__name__)
 
 
 class RSSMachine(StateMachine):
@@ -111,6 +112,6 @@ def resolveElementStatus(status):
 
     if status in ALLOWED:
         return "Active"
-    if status in BANNED:
-        return "Banned"
-    return S_ERROR(errno.EINVAL, "Not a valid status")
+    if status not in BANNED:
+        gLogger.warn(f"Unknown RSS status {status}, treated as Banned")
+    return "Banned"

@@ -129,8 +129,7 @@ def main():
             if statusType in seOptions:
                 resR = resourceStatus.setElementStatus(se, "StorageElement", statusType, "Banned", reason, userName)
                 if not resR["OK"]:
-                    gLogger.fatal(f"Failed to update {se} {statusType} to Banned, exit -", resR["Message"])
-                    DIRAC.exit(-1)
+                    gLogger.error(f"Failed to update {se} {statusType} to Banned", resR["Message"])
                 else:
                     gLogger.notice(f"Successfully updated {se} {statusType} to Banned")
                     statusBannedDict[statusType].append(se)
