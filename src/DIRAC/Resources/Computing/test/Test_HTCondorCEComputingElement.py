@@ -90,7 +90,7 @@ def test_parseCondorStatus():
 
 def test_getJobStatus(mocker):
     """Test HTCondorCE getJobStatus"""
-    mocker.patch(
+    patchSystemCall = mocker.patch(
         MODNAME + ".systemCall",
         side_effect=[
             S_OK((0, json.dumps(STATUS_QUEUE), "")),
@@ -124,6 +124,11 @@ def test_getJobStatus(mocker):
     assert ret["OK"] is True
     assert expectedResults == ret["Value"]
 
+    # the history is only asked about the jobs that are not in the queue
+    historyCmd = patchSystemCall.call_args_list[1].args[1]
+    assert "condor_history" in historyCmd
+    assert [x for x in historyCmd if x.count(".") == 1 and x[0].isdigit()] == ["123.0", "333.3"]
+
 
 def test_getJobStatusBatchSystem(mocker):
     """Test Condor Batch System plugin getJobStatus"""
@@ -142,6 +147,11 @@ def test_getJobStatusBatchSystem(mocker):
 
     assert ret["Status"] == 0
     assert expectedResults == ret["Jobs"]
+
+    # the history is only asked about the jobs that are not in the queue
+    historyCmd = patchPopen.call_args_list[1].args[0]
+    assert historyCmd[0] == "condor_history"
+    assert historyCmd[1:3] == ["123.0", "333.3"]
 
 
 @pytest.mark.parametrize(

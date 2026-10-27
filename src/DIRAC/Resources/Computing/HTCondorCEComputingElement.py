@@ -425,15 +425,23 @@ class HTCondorCEComputingElement(ComputingElement):
             if not result["OK"]:
                 return result
 
-            if result["Value"]:
-                jobsMetadata.extend(json.loads(result["Value"]))
+            queueMetadata = json.loads(result["Value"]) if result["Value"] else []
+            jobsMetadata.extend(queueMetadata)
+
+            # Jobs no longer in the queue are only in the history: condor_history reads the whole
+            # history file for IDs it cannot find, so only ask for those and stop once they are found
+            inQueue = {f"{jobDict['ClusterId']}.{jobDict['ProcId']}" for jobDict in queueMetadata}
+            missingIDs = [condorID for condorID in _condorIDs if condorID not in inQueue]
+            if not missingIDs:
+                continue
 
             condorHistCall = ["condor_history"]
             condorHistCall.extend(self.remoteScheddOptions.strip().split(" "))
-            condorHistCall.extend(_condorIDs)
+            condorHistCall.extend(missingIDs)
+            condorHistCall.extend(["-match", str(len(missingIDs))])
             condorHistCall.extend(["-attributes", STATE_ATTRIBUTES])
             condorHistCall.extend(["-json"])
-            result = self._executeCondorCommand(cmd, keepTokenFile=True)
+            result = self._executeCondorCommand(condorHistCall, keepTokenFile=True)
             if not result["OK"]:
                 return result
 
