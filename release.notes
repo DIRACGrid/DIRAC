@@ -1,3 +1,9 @@
+[v9.0.29]
+
+*WorkloadManagement
+
+FIX: (#8857) DiracX JobStateUpdate client sends MinorStatus and ApplicationStatus set via setJobAttribute to the status endpoint
+
 [v9.0.28]
 
 *WorkloadManagement
