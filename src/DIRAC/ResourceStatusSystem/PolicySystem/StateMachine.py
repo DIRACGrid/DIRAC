@@ -4,6 +4,9 @@
 
 """
 from DIRAC.Core.Utilities.StateMachine import State, StateMachine
+from DIRAC import gLogger
+
+log = gLogger.getSubLogger(__name__)
 
 
 class RSSMachine(StateMachine):
@@ -86,3 +89,29 @@ class RSSMachine(StateMachine):
         """
 
         return self.getLevelOfState(policyResult["Status"])
+
+
+ALLOWED = {"Active", "Degraded"}
+BANNED = {"Banned", "Probing", "Unknown", "Error"}
+
+
+def resolveElementStatus(status):
+    """
+    Maps an internal RSS status onto the simplified 'Active' / 'Banned' status
+    exposed to clients.
+
+    examples:
+      >>> resolveElementStatus( 'Degraded' )
+          'Active'
+      >>> resolveElementStatus( 'Unknown' )
+          'Banned'
+
+    :param str status: the internal RSS status
+    :return: str, 'Active' or 'Banned'
+    """
+
+    if status in ALLOWED:
+        return "Active"
+    if status not in BANNED:
+        gLogger.warn(f"Unknown RSS status {status}, treated as Banned")
+    return "Banned"

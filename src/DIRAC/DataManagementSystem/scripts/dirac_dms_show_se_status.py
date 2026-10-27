@@ -59,7 +59,7 @@ def main():
     Script.parseCommandLine()
 
     from DIRAC import gConfig, gLogger
-    from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+    from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
     from DIRAC.Core.Utilities.PrettyPrint import printTable
     from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 
@@ -75,12 +75,15 @@ def main():
 
     seList = sorted(res["Value"])
 
-    resourceStatus = ResourceStatus()
-
-    res = resourceStatus.getElementStatus(seList, "StorageElement")
+    res = ResourceStatusClient().selectStatusElement(
+        "Resource", "Status", seList, elementType="StorageElement", meta={"columns": ["Name", "StatusType", "Status"]}
+    )
     if not res["OK"]:
         gLogger.error(f"Failed to get StorageElement status for {str(seList)}")
         DIRACexit(1)
+    dbStatus = {}
+    for name, statusType, status in res["Value"]:
+        dbStatus.setdefault(name, {})[statusType] = status
 
     fields = ["SE", "ReadAccess", "WriteAccess", "RemoveAccess", "CheckAccess"]
     records = []
@@ -92,7 +95,7 @@ def main():
             DIRACexit(1)
         vo = result["Value"]
 
-    for se, statusDict in res["Value"].items():
+    for se, statusDict in dbStatus.items():
         # Check if the SE is allowed for the user VO
         if not allVOsFlag:
             voList = gConfig.getValue(f"/Resources/StorageElements/{se}/VO", [])
