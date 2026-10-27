@@ -130,7 +130,15 @@ def test_setJobApplicationStatus(monkeypatch, example_jobids):
     assert result[example_jobids[0]] == result[example_jobids[1]]
 
 
-@pytest.mark.parametrize("args", [["Status", "Killed"], ["JobGroup", "newJobGroup"]])
+@pytest.mark.parametrize(
+    "args",
+    [
+        ["Status", "Killed"],
+        ["MinorStatus", "newMinorStatus"],
+        ["ApplicationStatus", "newAppStatus"],
+        ["JobGroup", "newJobGroup"],
+    ],
+)
 def test_setJobAttribute(monkeypatch, example_jobids, args):
     # JobStateUpdateClient().setJobAttribute(jobID: str | int, attribute: str, value: str)
     method = JobStateUpdateClient().setJobAttribute
