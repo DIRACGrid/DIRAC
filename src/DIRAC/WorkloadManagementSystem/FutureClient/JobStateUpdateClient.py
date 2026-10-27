@@ -76,9 +76,10 @@ class JobStateUpdateClient(FutureClient):
     @convertToReturnValue
     def setJobAttribute(self, jobID: str | int, attribute: str, value: str):
         with DiracXClient() as api:
-            if attribute == "Status":
+            # DiracX only accepts status attributes through the status endpoint
+            if attribute in ("Status", "MinorStatus", "ApplicationStatus"):
                 return api.jobs.set_job_statuses(
-                    {jobID: {datetime.now(tz=timezone.utc): {"Status": value}}},
+                    {jobID: {datetime.now(tz=timezone.utc): {attribute: value}}},
                 )
             else:
                 return api.jobs.patch_metadata({jobID: {attribute: value}})
