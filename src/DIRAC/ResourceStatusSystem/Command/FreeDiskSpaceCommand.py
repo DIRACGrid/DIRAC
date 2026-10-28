@@ -158,8 +158,8 @@ class FreeDiskSpaceCommand(Command):
             return S_ERROR(errno.ENODATA, "No occupancy recorded")
 
         # results are normally in 'MB'
-        free = result["Value"][0][3]
-        total = result["Value"][0][4]
+        free = result["Value"][0][2]
+        total = result["Value"][0][3]
 
         free = convertSizeUnits(free, "MB", unit)
         total = convertSizeUnits(total, "MB", unit)
