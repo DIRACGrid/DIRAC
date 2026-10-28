@@ -1,5 +1,4 @@
-""" This is the StorageElement module. It implements The StorageElementItem as well as the caching system
-"""
+"""This is the StorageElement module. It implements The StorageElementItem as well as the caching system"""
 
 # # custom duty
 
@@ -371,7 +370,6 @@ class StorageElementItem:
         """Compares two SE together and tries to guess if the two SEs are pointing at the same
         location from the namespace point of view.
         This is primarily aimed at avoiding to overwrite a file with itself, in particular
-        where the difference is only the SRM spacetoken.
 
         Two SEs are considered to be the same if they have a couple (Host, Path) in common
         among their various protocols
@@ -405,7 +403,6 @@ class StorageElementItem:
         It returns the Total and Free space, and a SpaceReservation.
 
         The SpaceReservation is just a name of a zone of the physical storage which can have some space reserved.
-        It corresponds to the ``SpaceToken`` concept of SRM.
         If the StorageElement definition has a ``SpaceReservation`` option in the CS, this is returned, unless
         it is overwritten by the storage plugin.
 

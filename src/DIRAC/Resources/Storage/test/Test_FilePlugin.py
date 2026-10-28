@@ -1,5 +1,4 @@
-""" test File Plugin
-"""
+"""test File Plugin"""
 
 from unittest import mock
 import unittest
@@ -38,7 +37,6 @@ def mock_StorageFactory_getConfigStorageProtocols(storageName, derivedStorageNam
             "PluginName": "File",
             "Port": "",
             "Protocol": "file",
-            "SpaceToken": "",
             "WSUrl": "",
         }
     }
