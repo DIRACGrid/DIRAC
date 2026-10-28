@@ -675,7 +675,6 @@ class WorkflowTasks(TaskBase):
         if not res["OK"]:
             self._logWarn("Failed to obtain taskIDs for files", transID=transID, method=method)
             return res
-        noTasks = res["Value"]["NoTasks"]
         taskNameIDs = res["Value"]["TaskNameIDs"]
 
         updateDict = {}
