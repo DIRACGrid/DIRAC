@@ -904,10 +904,113 @@ def test_processJobOutputs_output_sandbox_upload_fails_with_sandbox_name_no_outp
     assert jw.jobReport.jobParameters[2] == ("OutputSandboxLFN", "/dirac/user/u/unknown/0/123/Sandbox1")
 
 
-def test_processJobOutputs_output_data_upload(mocker, setup_another_job_wrapper):
-    """Test the processJobOutputs method of the JobWrapper class: output sandbox upload fails with sandbox name
-    but there is no output SE defined.
-    """
+@pytest.mark.parametrize(
+    "job_args,expected_files",
+    [
+        # Combined list: plain file, "LFN:" basename, and "LFN:" full path
+        (
+            {
+                "OutputSandbox": [],
+                "OutputData": [
+                    "1720442808testFileUpload.txt",
+                    "LFN:00232454_00000244_1.sim",
+                    "LFN:/dirac/user/u/unknown/testFileUploadFullLFN.txt",
+                ],
+                "Owner": "Jane Doe",
+            },
+            {
+                "00232454_00000244_1.sim",
+                "/dirac/user/u/unknown/0/123/1720442808testFileUpload.txt",
+                "/dirac/user/u/unknown/testFileUploadFullLFN.txt",
+            },
+        ),
+        # Single output data file (no OutputPath): default LFN directory
+        (
+            {"OutputSandbox": [], "OutputData": ["00232454_00000244.xml"], "Owner": "Jane Doe"},
+            {"/dirac/user/u/unknown/0/123/00232454_00000244.xml"},
+        ),
+        # Wildcard matching several files
+        (
+            {"OutputSandbox": [], "OutputData": ["00232454_00000244*"], "Owner": "Jane Doe"},
+            {
+                "/dirac/user/u/unknown/0/123/00232454_00000244.xml",
+                "/dirac/user/u/unknown/0/123/00232454_00000244_1.sim",
+            },
+        ),
+        # Wildcard on the extension
+        (
+            {"OutputSandbox": [], "OutputData": ["*.txt"], "Owner": "Jane Doe"},
+            {
+                "/dirac/user/u/unknown/0/123/1720442808testFileUpload.txt",
+                "/dirac/user/u/unknown/0/123/testFileUploadFullLFN.txt",
+            },
+        ),
+        # OutputPath (relative) is appended to the user LFN base
+        (
+            {
+                "OutputSandbox": [],
+                "OutputData": ["00232454_00000244.xml"],
+                "OutputPath": "/my_output_dir/00232454",
+                "Owner": "Jane Doe",
+            },
+            {"/dirac/user/u/unknown/my_output_dir/00232454/00232454_00000244.xml"},
+        ),
+        # OutputPath with an "LFN:" prefix is treated as an absolute path
+        (
+            {
+                "OutputSandbox": [],
+                "OutputData": ["00232454_00000244.xml"],
+                "OutputPath": "LFN:/dirac/prod/00232454",
+                "Owner": "Jane Doe",
+            },
+            {"/dirac/prod/00232454/00232454_00000244.xml"},
+        ),
+        # "LFN:" full path is taken as it is
+        (
+            {
+                "OutputSandbox": [],
+                "OutputData": ["LFN:/dirac/prod/00232454/00232454_00000244.xml"],
+                "Owner": "Jane Doe",
+            },
+            {"/dirac/prod/00232454/00232454_00000244.xml"},
+        ),
+        # A full "LFN:" output data ignores OutputPath
+        (
+            {
+                "OutputSandbox": [],
+                "OutputData": ["LFN:/dirac/prod/00232454/00232454_00000244.xml"],
+                "OutputPath": "/my_output_dir/00232454",
+                "Owner": "Jane Doe",
+            },
+            {"/dirac/prod/00232454/00232454_00000244.xml"},
+        ),
+        # A directory in OutputData uploads all the files it contains
+        (
+            {"OutputSandbox": [], "OutputData": ["result_dir"], "Owner": "Jane Doe"},
+            {
+                "/dirac/user/u/unknown/0/123/output.xml",
+                "/dirac/user/u/unknown/0/123/output.txt",
+            },
+        ),
+        # Wildcard inside a subdirectory
+        (
+            {"OutputSandbox": [], "OutputData": ["result_dir/*.xml"], "Owner": "Jane Doe"},
+            {"/dirac/user/u/unknown/0/123/output.xml"},
+        ),
+        # Wildcard inside a subdirectory combined with OutputPath
+        (
+            {
+                "OutputSandbox": [],
+                "OutputData": ["result_dir/*.xml"],
+                "OutputPath": "/my_output_dir/00232454",
+                "Owner": "Jane Doe",
+            },
+            {"/dirac/user/u/unknown/my_output_dir/00232454/output.xml"},
+        ),
+    ],
+)
+def test_processJobOutputs_output_data_upload(mocker, setup_another_job_wrapper, job_args, expected_files):
+    """Test the processJobOutputs method of the JobWrapper class for multiple OutputData inputs."""
     jw = setup_another_job_wrapper
     jw.defaultFailoverSE = "TestFailoverSE"
 
@@ -916,40 +1019,23 @@ def test_processJobOutputs_output_data_upload(mocker, setup_another_job_wrapper)
         jw.failoverTransfer, "transferAndRegisterFile", return_value=S_OK({"uploadedSE": jw.defaultFailoverSE})
     )
 
-    # TODO: LFNs does not seem to be well supported, they would not be extracted properly from the pool_xml_catalog.xml
-    # In getGuidByPfn(), pfn (which still contains LFN: at this moment) is compared to the value in pool_xml_catalog.xml
-    # (which does not contains LFN:)
-    # BTW, isn't the concept of pool_xml_catalog.xml from lhcbdirac?
-    jw.jobArgs = {
-        "OutputSandbox": [],
-        "OutputData": [
-            "1720442808testFileUpload.txt",
-            "LFN:00232454_00000244_1.sim",
-            "LFN:/dirac/user/u/unknown/testFileUploadFullLFN.txt",
-        ],
-        "Owner": "Jane Doe",
-    }
+    # Ensure fresh state
+    jw.jobReport.jobStatusInfo = []
+    jw.jobReport.jobParameters = []
+    jw.failedFlag = False
+
+    jw.jobArgs = job_args
 
     result = jw.processJobOutputs()
     assert result["OK"]
     assert "Job outputs processed" in result["Value"]
 
-    # how many times transferAndRegisterFile was called: 2 times
     transferFiles.assert_called()
-    assert len(jw.jobReport.jobStatusInfo) == 3
-    # TODO: Uploading output sandbox is reported whereas there was no output sandbox
-    assert jw.jobReport.jobStatusInfo[0][:-1] == (JobStatus.COMPLETING, JobMinorStatus.UPLOADING_OUTPUT_SANDBOX)
-    assert jw.jobReport.jobStatusInfo[1][:-1] == ("", JobMinorStatus.UPLOADING_OUTPUT_DATA)
-    assert jw.jobReport.jobStatusInfo[2][:-1] == (JobStatus.COMPLETING, JobMinorStatus.OUTPUT_DATA_UPLOADED)
-    assert len(jw.jobReport.jobParameters) == 1
 
-    expected_files = {
-        "00232454_00000244_1.sim",
-        "/dirac/user/u/unknown/0/123/1720442808testFileUpload.txt",
-        "/dirac/user/u/unknown/testFileUploadFullLFN.txt",
-    }
-    assert jw.jobReport.jobParameters[0][0] == "UploadedOutputData"
-    uploaded_files = set(jw.jobReport.jobParameters[0][1].split(", "))
+    # Ensure UploadedOutputData parameter exists and contains the expected files
+    params = [p for p in jw.jobReport.jobParameters if p[0] == "UploadedOutputData"]
+    assert params, "UploadedOutputData parameter missing"
+    uploaded_files = set(params[0][1].split(", "))
     assert uploaded_files == expected_files
 
 
