@@ -143,23 +143,10 @@ class PilotAgentsDB(DB):
         specify the time interval in minutes
         """
         condition = self.buildCondition(condDict, older, newer, timeStamp)
-        if orderAttribute:
-            orderType = None
-            orderField = orderAttribute
-            if orderAttribute.find(":") != -1:
-                orderType = orderAttribute.split(":")[1].upper()
-                if orderType not in {"ASC", "DESC"}:
-                    return S_ERROR(f"Unknown order attribute type {orderType}")
-                orderField = orderAttribute.split(":")[0]
-            if orderField not in self.ALLOWED_COLUMNS:
-                return S_ERROR(f"Unknown order attribute field {orderField}")
-            condition = condition + " ORDER BY " + orderField
-            if orderType:
-                condition = condition + " " + orderType
-
-        if limit:
-            # Must cast to int to prevent SQL injection
-            condition = condition + " LIMIT " + str(int(limit))
+        result = self._parseOrderAttribute(orderAttribute)
+        if not result["OK"]:
+            return result
+        condition += self._buildOrderClause(result["Value"]) + self._buildLimitClause(limit)
 
         req = "SELECT PilotJobReference from PilotAgents"
         if condition:
@@ -173,6 +160,34 @@ class PilotAgentsDB(DB):
             pilotList = [x[0] for x in result["Value"]]
 
         return S_OK(pilotList)
+
+    def _parseOrderAttribute(self, orderAttribute: str | None) -> dict:
+        """Validate an orderAttribute like "Field" or "Field:DESC"
+
+        :return: S_OK with the (field, type) tuple, type being "" when not given; None if no orderAttribute
+        """
+        if not orderAttribute:
+            return S_OK(None)
+        orderField, _, orderType = orderAttribute.partition(":")
+        orderType = orderType.upper()
+        if orderType and orderType not in {"ASC", "DESC"}:
+            return S_ERROR(f"Unknown order attribute type {orderType}")
+        if orderField not in self.ALLOWED_COLUMNS:
+            return S_ERROR(f"Unknown order attribute field {orderField}")
+        return S_OK((orderField, orderType))
+
+    @staticmethod
+    def _buildOrderClause(order: tuple[str, str] | None, tablePrefix: str = "") -> str:
+        """Build the " ORDER BY ..." clause from the result of :meth:`_parseOrderAttribute` (empty if None)"""
+        if not order:
+            return ""
+        return f" ORDER BY {tablePrefix}{order[0]} {order[1]}".rstrip()
+
+    @staticmethod
+    def _buildLimitClause(limit: int | None) -> str:
+        """Build the " LIMIT ..." clause (empty if no limit)"""
+        # Must cast to int to prevent SQL injection
+        return f" LIMIT {int(limit)}" if limit else ""
 
     ##########################################################################################
     def countPilots(self, condDict, older=None, newer=None, timeStamp="SubmissionTime"):
@@ -259,7 +274,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %s DAY)",
         return S_OK(idList)
 
     ##########################################################################################
-    def getPilotInfo(self, pilotRef=False, conn=False, paramNames=[], pilotID=False):
+    def getPilotInfo(self, pilotRef=False, conn=False, paramNames=None, pilotID=False):
         """Get all the information for the pilot job reference or reference list
 
         To get the information of pilots matching some criteria, prefer :meth:`getPilotInfoForSelection`
@@ -292,20 +307,41 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %s DAY)",
         return result
 
     def getPilotInfoForSelection(
-        self, condDict, older=None, newer=None, timeStamp="SubmissionTime", paramNames=None, conn=False
-    ):
+        self,
+        condDict: dict,
+        older: str | None = None,
+        newer: str | None = None,
+        timeStamp: str = "SubmissionTime",
+        orderAttribute: str | None = None,
+        limit: int | None = None,
+        paramNames: list[str] | None = None,
+        conn=False,
+    ) -> dict:
         """Get the information of the pilots matching the selection, in the format of :meth:`getPilotInfo`
 
         The selection arguments are the ones of :meth:`selectPilots`.
 
-        :return: S_OK with a dictionary keyed by the first parameter (PilotJobReference by default);
-                 empty if no pilot matches
+        :return: S_OK with a dictionary keyed by the first parameter (PilotJobReference by default),
+                 in the requested order; empty if no pilot matches
         """
         condition = self.buildCondition(condDict, older, newer, timeStamp)
-        return self._getPilotInfoForCondition(condition, paramNames, conn=conn)
+        return self._getPilotInfoForCondition(
+            condition, paramNames, orderAttribute=orderAttribute, limit=limit, conn=conn
+        )
 
-    def _getPilotInfoForCondition(self, condition, paramNames=None, conn=False):
-        """Get the pilot information for the pilots matching a SQL condition (e.g. ``WHERE ...``)"""
+    def _getPilotInfoForCondition(
+        self,
+        condition: str,
+        paramNames: list[str] | None = None,
+        orderAttribute: str | None = None,
+        limit: int | None = None,
+        conn=False,
+    ) -> dict:
+        """Get the pilot information for the pilots matching a SQL condition (e.g. ``WHERE ...``)
+
+        When PilotID is among the parameters, the IDs of the jobs run by each pilot are added under "Jobs",
+        in the same query.
+        """
         parameters = (
             [
                 "PilotJobReference",
@@ -329,30 +365,42 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %s DAY)",
             if not col in self.ALLOWED_COLUMNS:
                 return S_ERROR(f"Unknown column: {col}")
 
-        result = self._query(f"SELECT {', '.join(parameters)} FROM PilotAgents {condition}", conn=conn)  # nosec
+        result = self._parseOrderAttribute(orderAttribute)
         if not result["OK"]:
             return result
+        order = result["Value"]
+        orderClause = self._buildOrderClause(order)
+        limitClause = self._buildLimitClause(limit)
 
-        resDict = {row[0]: dict(zip(parameters, row)) for row in result["Value"]}
-        if not resDict or "PilotID" not in parameters:
-            return S_OK(resDict)
+        if "PilotID" not in parameters:
+            cmd = f"SELECT {', '.join(parameters)} FROM PilotAgents {condition}{orderClause}{limitClause}"  # nosec
+            result = self._query(cmd, conn=conn)
+            if not result["OK"]:
+                return result
+            return S_OK({row[0]: dict(zip(parameters, row)) for row in result["Value"]})
 
-        # Reuse the condition in a subquery rather than sending the list of PilotIDs back to the DB
+        # Select the pilots in a subquery ("pa"), then join their jobs on it: the condition stays
+        # unambiguous (PilotID is a column of both tables) and the limit counts pilots, not (pilot, job) rows.
+        # The join does not keep the subquery order, so it is repeated outside; the subquery must
+        # therefore also select the order field.
+        columns = parameters + [order[0]] if order and order[0] not in parameters else parameters
         cmd = (
-            "SELECT PilotID, JobID FROM JobToPilotMapping"
-            f" WHERE PilotID IN (SELECT PilotID FROM PilotAgents {condition})"  # nosec
+            f"SELECT {', '.join(f'pa.{p}' for p in parameters)}, j.JobID FROM"  # nosec
+            f" (SELECT {', '.join(columns)} FROM PilotAgents {condition}{orderClause}{limitClause}) AS pa"
+            f" LEFT JOIN JobToPilotMapping AS j ON j.PilotID = pa.PilotID{self._buildOrderClause(order, 'pa.')}"
         )
         result = self._query(cmd, conn=conn)
         if not result["OK"]:
-            return S_OK(resDict)
-        jobsDict = {}
-        for pID, jobID in result["Value"]:
-            jobsDict.setdefault(pID, []).append(jobID)
-        for pilotInfo in resDict.values():
-            if pilotInfo["PilotID"] in jobsDict:
-                pilotInfo["Jobs"] = jobsDict[pilotInfo["PilotID"]]
+            return result
 
-        return S_OK(resDict)
+        # One row per (pilot, job) pair, or per pilot without job
+        pilots = {}
+        for *values, jobID in result["Value"]:
+            pilotInfo = dict(zip(parameters, values))
+            pilotInfo = pilots.setdefault(pilotInfo["PilotID"], pilotInfo)
+            if jobID is not None:
+                pilotInfo.setdefault("Jobs", []).append(jobID)
+        return S_OK({pilotInfo[parameters[0]]: pilotInfo for pilotInfo in pilots.values()})
 
     ##########################################################################################
     def setAccountingFlag(self, pilotRef, mark="True"):

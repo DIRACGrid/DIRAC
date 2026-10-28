@@ -71,3 +71,25 @@ def test_handleOldPilots(psa, mockReplyInput, expected):
     else:
         if "Message" in result:
             assert result["Message"] == expected["Message"]
+
+
+def test_handleOldPilots_keepsPilotsWithRunningJobs(psa, mocker):
+    """Only the pilots without a recently updated job are declared Deleted and killed"""
+    mockReply.return_value = {
+        "OK": True,
+        "Value": {
+            "pilotWithRunningJob": {"PilotID": 1, "Status": "Running", "Jobs": [10]},
+            "pilotWithoutJob": {"PilotID": 2, "Status": "Running"},
+        },
+    }
+    mocker.patch.object(psa, "_checkJobLastUpdateTime", return_value=True)
+    accountPilots = mocker.patch.object(psa, "accountPilots")
+    killPilots = mocker.patch.object(psa, "_killPilots")
+
+    assert psa.handleOldPilots("Test")["OK"]
+
+    psa._checkJobLastUpdateTime.assert_called_once_with([10], psa.pilotStalledDays)
+    accounted = accountPilots.call_args.args[0]
+    assert list(accounted) == ["pilotWithoutJob"]
+    assert accounted["pilotWithoutJob"]["Status"] == "Deleted"
+    killPilots.assert_called_once_with(accounted)
