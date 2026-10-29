@@ -234,17 +234,6 @@ class TokenManagerHandlerMixin:
         result = Registry.getIDFromDN(userDN)
         return self.__tokenDB.removeToken(user_id=result["Value"]) if result["OK"] else result
 
-    types_getTokensByUserID = [str]
-
-    def export_getTokensByUserID(self, userID: str):
-        """Retrieve a token from the DB
-
-        :param userID: user's token id
-
-        :return: S_OK(list)/S_ERROR() token row in dict format
-        """
-        return self.__tokenDB.getTokensByUserID(userID)
-
 
 class TokenManagerHandler(TokenManagerHandlerMixin, RequestHandler):
     pass
