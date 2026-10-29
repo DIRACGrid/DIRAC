@@ -100,20 +100,24 @@ services:
       }" > /jwks/iam-keystore.jwks'
     pull_policy: always
 
-  # Mock of an S3 storage
+  # S3 storage, used by the S3 storage elements and the DiracX sandbox store
   s3-direct:
     platform: linux/amd64
-    # Fix the version until https://github.com/adobe/S3Mock/issues/2321
-    # is resolved
-    image: adobe/s3mock:3.12.0
+    image: chrislusf/seaweedfs:4.48
     container_name: s3-direct
     hostname: s3-direct
+    command: ["mini", "-s3.port=9090", "-bucket=my-first-bucket", "-admin.ui=false"]
     ports:
       - 9090
-      - 9191
     environment:
-      - initialBuckets=my-first-bucket
-      - debug=true
+      - AWS_ACCESS_KEY_ID=console
+      - AWS_SECRET_ACCESS_KEY=console123
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9090/healthz"]
+      interval: 5s
+      timeout: 2s
+      retries: 15
+      start_period: 30s
     pull_policy: always
 
   diracx-wait-for-db:
@@ -149,7 +153,7 @@ services:
       opensearch:
         condition: service_healthy
       s3-direct:
-        condition: service_started
+        condition: service_healthy
       iam-login-service:
         condition: service_healthy
       dirac-init-certificates:
@@ -330,6 +334,8 @@ services:
         condition: service_completed_successfully
       diracx-wait-for-db:
         condition: service_completed_successfully
+      s3-direct:
+        condition: service_healthy
     volumes:
       - diracx-cs-store:/cs_store/
       - diracx-key-store:/keystore/
