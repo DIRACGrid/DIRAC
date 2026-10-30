@@ -129,11 +129,11 @@ class StateMachine:
         if not candidateState:
             self.state = candidateState
         elif candidateState in self.states:
-            if not self.states[self.state].stateMap:
+            if self.state is not None and not self.states[self.state].stateMap:
                 if not noWarn and logger_warn:
                     logger_warn("Final state, won't move", f"({self.state}, asked to move to {candidateState})")
                 return S_OK(self.state)
-            if candidateState not in self.states[self.state].stateMap and logger_warn:
+            if self.state is not None and candidateState not in self.states[self.state].stateMap and logger_warn:
                 logger_warn(f"Can't move from {self.state} to {candidateState}, choosing a good one")
             result = self.getNextState(candidateState)
             if not result["OK"]:

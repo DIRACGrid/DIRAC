@@ -52,7 +52,7 @@ class CacheFeederAgent(AgentModule):
             return res
         rmClass = res["Value"]
 
-        self.commands["Downtime"] = [{"Downtime": {}}]
+        self.commands["Downtime"] = [{"Downtime": {"hours": 120}}]
         self.commands["GOCDBSync"] = [{"GOCDBSync": {}}]
         self.commands["FreeDiskSpace"] = [{"FreeDiskSpace": {}}]
 
