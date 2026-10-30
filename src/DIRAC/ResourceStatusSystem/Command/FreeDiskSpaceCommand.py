@@ -206,7 +206,7 @@ class FreeDiskSpaceCommand(Command):
 
             res = self.rmDB.select(
                 "SpaceTokenOccupancyCache",
-                {"meta": {"older": ["LastCheckTime", DiracTime.utcnow() - timedelta(hours=6)]}},
+                {"Meta": {"older": ["LastCheckTime", DiracTime.utcnow() - timedelta(hours=6)]}},
             )
             if not res["OK"]:
                 return res
