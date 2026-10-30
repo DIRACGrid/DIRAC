@@ -117,7 +117,13 @@ class FreeDiskSpaceCommand(Command):
         if not siteRes["OK"]:
             return siteRes
 
+        # NB: the StorageOccupancy accounting type still requires the Endpoint and
+        # StorageElement key fields (they are part of its definition, both on the client
+        # and on the server side), so they must be filled even if the Endpoint
+        # is not used anymore.
         accountingDict = {
+            "StorageElement": results["ElementName"],
+            "Endpoint": "Deprecated",
             "Site": siteRes["Value"] if siteRes["Value"] else "unassigned",
         }
 
@@ -200,7 +206,7 @@ class FreeDiskSpaceCommand(Command):
 
             res = self.rmDB.select(
                 "SpaceTokenOccupancyCache",
-                {"meta": {"older": ["LastCheckTime", DiracTime.utcnow() - timedelta(hours=6)]}},
+                {"Meta": {"older": ["LastCheckTime", DiracTime.utcnow() - timedelta(hours=6)]}},
             )
             if not res["OK"]:
                 return res
