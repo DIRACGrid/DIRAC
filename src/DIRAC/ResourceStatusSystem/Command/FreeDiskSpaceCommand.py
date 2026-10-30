@@ -117,7 +117,13 @@ class FreeDiskSpaceCommand(Command):
         if not siteRes["OK"]:
             return siteRes
 
+        # NB: the StorageOccupancy accounting type still requires the Endpoint and
+        # StorageElement key fields (they are part of its definition, both on the client
+        # and on the server side), so they must be filled even if the Endpoint
+        # is not used anymore.
         accountingDict = {
+            "StorageElement": results["ElementName"],
+            "Endpoint": "Deprecated",
             "Site": siteRes["Value"] if siteRes["Value"] else "unassigned",
         }
 
