@@ -1,3 +1,15 @@
+[v9.1.24]
+
+*Core
+
+CHANGE: (#8863) Require Authlib >= 1.9.0
+
+FIX: (#8859) only query condor_history for jobs that are no longer in the queue
+
+*WorkloadManagementSystem
+
+CHANGE: (#8779) select pilot info in a single query instead of a large IN list and 2 queries
+
 [v9.1.23]
 
 *WorkloadManagement
