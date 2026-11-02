@@ -1,3 +1,9 @@
+[v9.0.30]
+
+*Core
+
+CHANGE: (#8862) Require Authlib >= 1.9.0
+
 [v9.0.29]
 
 *WorkloadManagement
