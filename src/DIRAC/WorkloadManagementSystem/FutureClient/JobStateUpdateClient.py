@@ -1,37 +1,16 @@
 from __future__ import annotations
 
-import functools
 import time
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
 
-from DIRAC.Core.Security.DiracX import DiracXClient, FutureClient, addRPCStub
+from DIRAC.Core.Security.DiracX import DiracXClient, FutureClient, addRPCStub, stripValueIfOK
 from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueOrRaise
 from DIRAC.Core.Utilities.TimeUtilities import DiracTime, fromString
 from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 if TYPE_CHECKING:
     from diracx.client.models import JobCommand
-
-
-def stripValueIfOK(func):
-    """Decorator to remove S_OK["Value"] from the return value of a function if it is OK.
-
-    This is done as some update functions return the number of modified rows in
-    the database. This likely not actually useful so it isn't supported in
-    DiracX. Stripping the "Value" key of the dictionary means that we should
-    get a fairly straight forward error if the assumption is incorrect.
-    """
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        result = func(*args, **kwargs)
-        if result.get("OK"):
-            if result.get("Value") is None:
-                result.pop("Value")
-        return result
-
-    return wrapper
 
 
 class JobStateUpdateClient(FutureClient):
