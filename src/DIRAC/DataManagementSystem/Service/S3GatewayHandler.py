@@ -158,7 +158,7 @@ class S3GatewayHandlerMixin:
                 if res["OK"]:
                     successful[url] = res["Value"]
                 else:
-                    failed["url"] = res["Message"]
+                    failed[url] = res["Message"]
             except Exception as e:
                 log.exception("Exception presigning URL")
                 failed[url] = repr(e)
