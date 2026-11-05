@@ -166,11 +166,6 @@ def monkeypatchForAllTest(monkeypatch):
         "_StorageFactory__generateStorageObject",
         mock_StorageFactory_generateStorageObject,
     )
-    monkeypatch.setattr(
-        DIRAC.DataManagementSystem.Client.FTS3Job.FTS3Job,
-        "_FTS3Job__fetchSpaceToken",
-        lambda _self, _seName, _vo: S_OK(),
-    )
 
     def mock_init(self, useProxy=False, vo=None):
         self.proxy = False
