@@ -48,11 +48,12 @@ class ProdTransManager:
 
         return S_OK()
 
-    def addTransformationStep(self, stepID, prodID):
+    def addTransformationStep(self, stepID, prodID, customParameters=None):
         """Add the transformation step to the TS
 
         :param int stepID: the production step ID
         :param int prodID: the production ID
+        :param dict customParameters: additional transformation parameters
         :return:
         """
 
@@ -92,7 +93,18 @@ class ProdTransManager:
         if not res["OK"]:
             return S_ERROR(res["Message"])
 
-        return S_OK(res["Value"])
+        transID = res["Value"]
+        for paramName, paramValue in (customParameters or {}).items():
+            res = self.transClient.setTransformationParameter(transID, paramName, paramValue)
+            if not res["OK"]:
+                deleteRes = self.transClient.deleteTransformation(transID)
+                if not deleteRes["OK"]:
+                    gLogger.error(
+                        f"Failed to delete transformation {transID} after parameter error: {deleteRes['Message']}"
+                    )
+                return res
+
+        return S_OK(transID)
 
     def executeActionOnTransformations(self, prodID, action):
         """Wrapper to start/stop/clean the transformations of a production
