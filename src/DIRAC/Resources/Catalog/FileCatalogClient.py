@@ -46,6 +46,7 @@ class FileCatalogClient(FileCatalogClientBase):
         "getFileAncestors",
         "getDirectoryUserMetadata",
         "getFileUserMetadata",
+        "getFileUserMetadataBulk",
         "checkDataset",
         "getDatasetParameters",
         "getDatasetFiles",
@@ -335,6 +336,20 @@ class FileCatalogClient(FileCatalogClientBase):
         fmeta.update(result["Value"])
 
         return S_OK(fmeta)
+
+    @checkCatalogArguments
+    def getFileUserMetadataBulk(self, lfns, timeout=120):
+        """Get the metadata attached to each file and its parent directories."""
+        successful = {}
+        failed = {}
+        for lfn in lfns:
+            result = self.getFileUserMetadata(lfn, timeout=timeout)
+            if result["OK"]:
+                successful[lfn] = result["Value"]
+            else:
+                failed[lfn] = result["Message"]
+
+        return S_OK({"Successful": successful, "Failed": failed})
 
     ########################################################################
     # Path operations (not updated)
