@@ -97,6 +97,10 @@ class ProdTransManager:
         for paramName, paramValue in (customParameters or {}).items():
             res = self.transClient.setTransformationParameter(transID, paramName, paramValue)
             if not res["OK"]:
+                gLogger.error(
+                        f"Failed to set parameter {paramName} for transformation {transID}: {res['Message']}"
+                    )
+                gLogger.notice(f"Delete transformation {transID} due to parameter error")
                 deleteRes = self.transClient.deleteTransformation(transID)
                 if not deleteRes["OK"]:
                     gLogger.error(
