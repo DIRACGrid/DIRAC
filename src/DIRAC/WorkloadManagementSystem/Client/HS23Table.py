@@ -1,36 +1,33 @@
-"""HS23 (HEPScore23) score lookup from the HEPiX scores table.
+"""HS23 (HEPScore23) score lookup from the table bundled with DIRAC.
 
 The HEPiX Benchmarking Working Group publishes the HS23 scores of benchmarked
 servers as a CSV table (one row per server characterization: CPU model, SMT
-state, power policy, etc.). This module lets a pilot find the per-logical-core
-HS23 score of the worker node it runs on by table lookup, instead of running a
-benchmark at bootstrap: HEPScore23 itself is a container-based suite far too
-heavy for a pilot, while DB12 (the historical alternative) is a rough proxy
-with known inaccuracies on modern hardware.
+state, power policy, etc.). DIRAC ships a pre-aggregated snapshot of it as
+``data/HS23scores.json`` (one entry per normalized CPU model and SMT state),
+refreshed by a nightly CI job -- see ``docs/adr/0001-hs23-cpu-power-from-hepix-table.md``.
 
-The value returned by :func:`lookupScore` is ``Score/Ncores`` of the matching
-rows, combined with a ``# Meas``-weighted mean when several rows match.
+This module lets a pilot find the per-logical-core HS23 score of the worker
+node it runs on by table lookup, instead of running a benchmark at bootstrap:
+HEPScore23 itself is a container-based suite far too heavy for a pilot, while
+DB12 (the historical alternative) is a rough proxy with known inaccuracies on
+modern hardware.
 
-Units and terminology: see ``GLOSSARY.md`` at the repository root, and
-``docs/adr/0001-hs23-cpu-power-from-hepix-table.md`` for the rationale.
+The value returned by :func:`lookupScore` is the ``score_per_core`` of the
+entry matching the node, i.e. the ``# Meas``-weighted mean of ``Score/Ncores``
+over all the table rows for that key, computed when the snapshot was generated.
+
+Units and terminology: see ``GLOSSARY.md`` at the repository root.
 """
 
-import csv
-import io
+import json
+import os
 import re
 from pathlib import Path
 
-import psutil
-import requests
-
 from DIRAC import S_ERROR, S_OK, gLogger
 
-#: Last-resort location of the HEPiX HS23 scores table
-DEFAULT_TABLE_URL = "https://raw.githubusercontent.com/HEPiX-Forum/hepix-forum.github.io/master/_data/HS23scores.csv"
-
-#: Configuration option holding the ordered list of table locations (file paths
-#: or URLs), tried in sequence. The default URL is always appended as last resort.
-TABLE_LOCATIONS_OPTION = "JobScheduling/HS23TableLocations"
+#: The pre-aggregated snapshot bundled with this release
+DATA_FILE = Path(__file__).parent / "data" / "HS23scores.json"
 
 #: CPU model strings in the table do not always match what /proc/cpuinfo
 #: reports. Keys and values are normalized model names (as returned by
@@ -46,7 +43,8 @@ def normalizeCpuModel(model: str) -> str:
     The table mixes formats like ``Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz``,
     ``INTEL(R) XEON(R) GOLD 6530`` and ``Intel (R) Xeon (R) CPU Max 9462``:
     lower-case everything, drop the frequency suffix, squash the spacing
-    variants of ``(R)`` and collapse repeated whitespace.
+    variants of ``(R)`` and collapse repeated whitespace. Must stay in sync
+    with the generator in the DIRACGrid/management repository.
     """
     model = model.lower()
     model = model.split("@", 1)[0]
@@ -55,14 +53,15 @@ def normalizeCpuModel(model: str) -> str:
     return model
 
 
-def getCPUModel() -> dict:
-    """Read the CPU model from /proc/cpuinfo.
+def _getCPUInfo() -> dict:
+    """Read the CPU model and the number of physical cores from /proc/cpuinfo.
 
-    psutil does not expose the model name on Linux, so a minimal read is needed
-    (as in the rest of DIRAC, e.g. ``FrameworkSystem/Utilities/MonitoringUtilities.py``).
-    ``model name`` is the x86 key; other architectures use ``Model``.
+    ``model name`` is the x86 key; other architectures use ``Model``. The number
+    of physical cores is the number of unique (``physical id``, ``core id``)
+    pairs, 0 when the kernel does not expose them.
 
-    :return: S_OK(model string), S_ERROR if it cannot be determined
+    :return: S_OK({"Model", "PhysicalCores"}), S_ERROR if the CPU model
+             cannot be determined
     """
     try:
         cpuinfo = Path("/proc/cpuinfo").read_text()
@@ -71,6 +70,8 @@ def getCPUModel() -> dict:
 
     modelName = None
     genericModel = None
+    physicalId = None
+    coreIds = set()
     for line in cpuinfo.splitlines():
         field, sep, value = line.partition(":")
         if not sep:
@@ -79,34 +80,38 @@ def getCPUModel() -> dict:
         value = value.strip()
         if field == "model name" and value:
             modelName = value
-            break
-        if field == "model" and value and not value.isdigit():
+        elif field == "model" and value and not value.isdigit():
             # "model : 79" on x86 is a numeric family id, not a usable model name
             genericModel = genericModel or value
+        elif field == "physical id" and value:
+            physicalId = value
+        elif field == "core id" and value:
+            coreIds.add((physicalId, value))
 
     model = modelName or genericModel
     if not model:
         return S_ERROR("Cannot determine the CPU model from /proc/cpuinfo")
-    return S_OK(model)
+    return S_OK({"Model": model, "PhysicalCores": len(coreIds)})
 
 
 def getNodeInfo() -> dict:
     """Detect the CPU model, the SMT state and the number of online logical CPUs.
 
     The pilot is considered to see the whole node, whatever subset of it its slot
-    will use. Core counts and the SMT state come from psutil, which knows how to
-    deal with the kernel's various exposures; only the model name needs reading
-    /proc/cpuinfo (see :func:`getCPUModel`).
+    will use. The CPU model and the physical core count come from /proc/cpuinfo
+    (see :func:`_getCPUInfo`); the logical CPU count from ``os.cpu_count()``, i.e. the
+    whole node regardless of the slot's affinity mask.
 
     :return: S_OK({"Model", "SMT", "LogicalCPUs"}), S_ERROR if the CPU model
              cannot be determined. ``SMT`` is None if it cannot be determined.
     """
-    result = getCPUModel()
+    result = _getCPUInfo()
     if not result["OK"]:
         return result
-    model = result["Value"]
+    model = result["Value"]["Model"]
+    physicalCores = result["Value"]["PhysicalCores"]
 
-    logicalCPUs = psutil.cpu_count() or 0
+    logicalCPUs = os.cpu_count() or 0
 
     # SMT state: explicit when the kernel exposes it, else derived from the
     # number of physical cores vs logical CPUs
@@ -114,105 +119,60 @@ def getNodeInfo() -> dict:
     try:
         smt = Path("/sys/devices/system/cpu/smt/active").read_text().strip() == "1"
     except OSError:
-        physicalCores = psutil.cpu_count(logical=False)
         if physicalCores and logicalCPUs:
             smt = logicalCPUs > physicalCores
 
     return S_OK({"Model": model, "SMT": smt, "LogicalCPUs": logicalCPUs})
 
 
-def parseTable(text: str) -> list:
-    """Parse the HS23 scores CSV into a list of dicts.
+def _loadTable() -> dict:
+    """Load the bundled table snapshot.
 
-    Only the columns needed for the lookup are kept. Rows with an unparsable
-    score are skipped.
+    :return: S_OK(table dict with ``source``, ``source_hash``, ``data_as_of``
+             and ``entries``), S_ERROR if the file is missing or unparsable
     """
-    rows = []
-    for row in csv.DictReader(io.StringIO(text)):
-        try:
-            rows.append(
-                {
-                    "CPU": row["CPU"],
-                    "SMT": int(row["SMT enabled"]),
-                    "ScorePerCore": float(row["Score/Ncores"]),
-                    "Measurements": int(row["# Meas"] or 0),
-                }
-            )
-        except (KeyError, TypeError, ValueError):
-            continue
-    return rows
+    try:
+        table = json.loads(DATA_FILE.read_text())
+        entries = table["entries"]
+        if not entries:
+            raise ValueError("empty table")
+    except (OSError, KeyError, ValueError) as err:  # json.JSONDecodeError is a ValueError
+        return S_ERROR(f"Cannot load the HS23 table snapshot {DATA_FILE}: {err}")
+    return S_OK(table)
 
 
-def lookupScore(rows: list, model: str, smt: bool) -> dict:
+def lookupScore(entries: list, model: str, smt: bool) -> dict:
     """Find the per-core HS23 score for a CPU model and SMT state.
 
-    All rows matching the normalized model name and SMT state are combined with
-    a ``# Meas``-weighted mean of ``Score/Ncores`` (rows with no measurement
-    count get weight 1). Power policy, NUMA topology and site are deliberately
-    ignored: they are part of the natural spread of the measurement.
+    Entries are keyed by normalized model name; as a safety net against any
+    drift between the generator's normalization and this one, the original
+    model strings are matched as a second pass.
 
-    :param rows: table rows as returned by :func:`parseTable`
+    :param entries: table entries as bundled by :func:`_loadTable`
     :param model: CPU model string, e.g. from /proc/cpuinfo
     :param smt: whether SMT/HT is enabled on the node
-    :return: dict with ``Score``, ``MatchedRows`` and ``Model``
+    :return: dict with ``Score``, ``Model`` and ``SMT``
     """
     key = normalizeCpuModel(model)
     key = ALIASES.get(key, key)
 
-    candidates = [row for row in rows if normalizeCpuModel(row["CPU"]) == key and row["SMT"] == int(smt)]
-    if not candidates:
+    matches = [entry for entry in entries if entry["model"] == key and entry["smt"] == int(smt)]
+    if not matches:
+        # safety net against any drift between the generator's normalization and this one
+        matches = [
+            entry for entry in entries if normalizeCpuModel(entry["original"]) == key and entry["smt"] == int(smt)
+        ]
+    if not matches:
         raise LookupError(f"No HS23 score for {model!r} with SMT {'enabled' if smt else 'disabled'}")
 
-    weightSum = 0.0
-    scoreSum = 0.0
-    for row in candidates:
-        weight = float(row["Measurements"]) or 1.0
-        weightSum += weight
-        scoreSum += weight * row["ScorePerCore"]
-
-    return {"Score": round(scoreSum / weightSum, 1), "MatchedRows": len(candidates), "Model": key}
+    return {"Score": matches[0]["score_per_core"], "Model": key, "SMT": smt}
 
 
-def fetchTable(locations: list = None) -> dict:
-    """Fetch the table text from the first location that answers.
-
-    Entries may be local file paths or http(s) URLs. Failures are logged and the
-    next location is tried.
-
-    :param locations: ordered list of locations; defaults to the CS option
-                      ``JobScheduling/HS23TableLocations`` with the HEPiX URL as
-                      last resort
-    :return: S_OK(text) or S_ERROR if no location answers
-    """
-    from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-
-    if locations is None:
-        locations = Operations().getValue(TABLE_LOCATIONS_OPTION, [])
-        if DEFAULT_TABLE_URL not in locations:
-            locations.append(DEFAULT_TABLE_URL)
-
-    for location in locations:
-        try:
-            if location.startswith(("http://", "https://")):
-                response = requests.get(location, timeout=60)
-                response.raise_for_status()
-                text = response.text
-            else:
-                text = Path(location).read_text()
-            if text.strip():
-                return S_OK(text)
-            _LOG.warn("Empty HS23 table at", location)
-        except Exception as err:  # pylint: disable=broad-except
-            _LOG.warn("Cannot fetch HS23 table from", f"{location}: {err}")
-    return S_ERROR("Could not fetch the HS23 scores table from any configured location")
-
-
-def getHS23Score(nodeInfo: dict = None, locations: list = None) -> dict:
-    """Look up the per-core HS23 score of this node.
+def getHS23Score(nodeInfo: dict = None) -> dict:
+    """Look up the per-core HS23 score of this node in the bundled table.
 
     :param nodeInfo: node info as returned by :func:`getNodeInfo`; detected if not given
-    :param locations: table locations, as for :func:`fetchTable`
-    :return: S_OK({"Score", "MatchedRows", "Model", "SMT"}), S_ERROR on any failure
+    :return: S_OK({"Score", "Model", "SMT"}), S_ERROR on any failure
     """
     if nodeInfo is None:
         result = getNodeInfo()
@@ -223,18 +183,13 @@ def getHS23Score(nodeInfo: dict = None, locations: list = None) -> dict:
     if nodeInfo["SMT"] is None:
         return S_ERROR("Cannot determine the SMT state of the node")
 
-    result = fetchTable(locations)
+    result = _loadTable()
     if not result["OK"]:
         return result
 
-    rows = parseTable(result["Value"])
-    if not rows:
-        return S_ERROR("The HS23 scores table contains no parsable row")
-
     try:
-        score = lookupScore(rows, nodeInfo["Model"], nodeInfo["SMT"])
+        score = lookupScore(result["Value"]["entries"], nodeInfo["Model"], nodeInfo["SMT"])
     except LookupError as err:
         return S_ERROR(str(err))
 
-    score["SMT"] = nodeInfo["SMT"]
     return S_OK(score)

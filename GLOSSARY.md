@@ -35,7 +35,7 @@ DIRAC Benchmark 16, the internal unit in which LHCb event budgets (CPUe) are exp
 _Avoid_: DB16-seconds per event (in glossary context)
 
 **Normalization unit**:
-Which benchmark scale (DB12 or HS23) the CPU power and CPU work of a site are expressed in, chosen by administrator policy.
+Which benchmark scales (DB12, HS23, or both) are recorded and used on a site, expressed as an ordered list in which the first entry is the active one; chosen by administrator policy, globally for the setup.
 _Avoid_: benchmark mode, normalization mode
 
 ### Provenance vs policy
