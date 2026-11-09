@@ -11,7 +11,9 @@ jobs:
       fail-fast: False
       matrix:
         python:
-          - 3.6.8
+          # 3.6.8 only exists in the Anaconda `defaults` channel, which Miniforge
+          # deliberately does not use: 3.6.9 is the nearest build on conda-forge
+          - 3.6.9
           - 3.11.4
           - 3.14.6
         pilot_branch:
@@ -28,10 +30,20 @@ jobs:
       - name: Fail-fast for outdated pipelines
         run: .github/workflows/fail-fast.sh
 
+      # conda is no longer preinstalled (nor on the PATH) of the ubuntu-latest
+      # runner images; install it explicitly since the next steps rely on it
+      - name: Install conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          conda-remove-defaults: "true"
+          auto-update-conda: false
+          activate-environment: ""
+
       - name: prepare environment
         run: |
           conda config --set add_pip_as_python_dependency false
-          conda create -c conda-forge -c free -n python_${{ matrix.python }} python=${{ matrix.python }}
+          conda create -c conda-forge -n python_${{ matrix.python }} python=${{ matrix.python }}
       - name: run pilot wrapper test
         run: |
           export INVALID_UTF8_VAR=$'\xff'
