@@ -310,8 +310,10 @@ class SingularityComputingElement(ComputingElement):
 
         :return: S_OK(payload exit code) / S_ERROR() if submission issue
         """
-        # Read at submit time, like every other container option below: setParameters()
-        # and PoolComputingElement both update ceParameters after the CE is built
+        # Resolved first, so that a failure leaves nothing behind (work area, proxy
+        # renewal task, running job count). Read at submit time, like every other
+        # container option below: setParameters() and PoolComputingElement both
+        # update ceParameters after the CE is built
         imagePath = resolveImagePath(
             imageRef=self.ceParameters.get("ImageReference"),
             basePath=self.ceParameters.get("ImageBasePath"),
@@ -319,7 +321,7 @@ class SingularityComputingElement(ComputingElement):
             log=self.log,
         )
         if not imagePath:
-            # The resolver already logged the architecture and every path it tried
+            # The resolver already logged why
             return S_ERROR("Failed to find singularity image to exec")
 
         renewTask = None

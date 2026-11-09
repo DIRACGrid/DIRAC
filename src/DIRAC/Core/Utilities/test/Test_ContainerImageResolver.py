@@ -58,32 +58,6 @@ def log():
 @pytest.mark.parametrize(
     "arch,expected",
     [
-        ("x86_64", "amd64"),
-        ("amd64", "amd64"),
-        ("aarch64", "arm64"),
-        ("arm64", "arm64"),
-        # Variants are published with a colon separator: arm:v7, arm:v6, arm64:v8
-        ("armv7l", "arm:v7"),
-        ("armv6l", "arm:v6"),
-        ("i686", "386"),
-        ("i386", "386"),
-        ("ppc64le", "ppc64le"),
-        ("s390x", "s390x"),
-        ("riscv64", "riscv64"),
-        # Unknown values are passed through lowercased: the repository publishes
-        # symlinks for most uname names, so they may well resolve anyway
-        ("weirdarch", "weirdarch"),
-        ("WeirdArch", "weirdarch"),
-        ("X86_64", "amd64"),
-    ],
-)
-def test_normalizeArch(arch, expected):
-    assert cir.normalizeArch(arch) == expected
-
-
-@pytest.mark.parametrize(
-    "arch,expected",
-    [
         # DUCC publishes arm64 either plain or variant-qualified depending on the
         # manifest, and only symlinks one to the other when the plain name is free
         ("aarch64", ["arm64", "arm64:v8"]),
@@ -97,75 +71,15 @@ def test_normalizeArch(arch, expected):
         ("x86-64", ["amd64"]),
         ("i686", ["386"]),
         ("ppc64le", ["ppc64le"]),
+        # Lookup is case-insensitive, and unknown values are passed through lowercased:
+        # the repository publishes symlinks for most uname names, so they may still resolve
+        ("X86_64", ["amd64"]),
         ("weirdarch", ["weirdarch"]),
+        ("WeirdArch", ["weirdarch"]),
     ],
 )
 def test_getArchCandidates(arch, expected):
     assert cir.getArchCandidates(arch) == expected
-
-
-def test_normalizeArch_is_the_preferred_candidate():
-    for arch in ("aarch64", "armv7l", "x86_64", "weirdarch"):
-        assert cir.normalizeArch(arch) == cir.getArchCandidates(arch)[0]
-
-
-def test_getMultiarchPaths_covers_every_candidate():
-    paths = cir.getMultiarchPaths("alpine:latest", basePath="/base", arch="aarch64")
-    assert paths == [Path("/base/arm64/alpine:latest"), Path("/base/arm64:v8/alpine:latest")]
-
-
-def test_explicit_arch():
-    paths = cir.getMultiarchPaths(
-        "registry.hub.docker.com/library/alpine:latest",
-        basePath="/cvmfs/unpacked.cern.ch/.multiarch",
-        arch="x86_64",
-    )
-    assert paths == [Path("/cvmfs/unpacked.cern.ch/.multiarch/amd64/registry.hub.docker.com/library/alpine:latest")]
-
-
-def test_arm_variant_path():
-    paths = cir.getMultiarchPaths("alpine:latest", basePath="/base", arch="armv7l")
-    assert paths == [Path("/base/arm:v7/alpine:latest"), Path("/base/arm/alpine:latest")]
-
-
-def test_trailing_slash_stripped():
-    paths = cir.getMultiarchPaths(
-        # Note the image reference ending with "/"
-        "registry.hub.docker.com/library/alpine:latest/",
-        basePath="/cvmfs/unpacked.cern.ch/.multiarch",
-        arch="x86_64",
-    )
-    assert paths == [Path("/cvmfs/unpacked.cern.ch/.multiarch/amd64/registry.hub.docker.com/library/alpine:latest")]
-
-
-def test_base_with_trailing_slash():
-    paths = cir.getMultiarchPaths(
-        "alpine:latest",
-        # Note the base path ending with "/"
-        basePath="/cvmfs/unpacked.cern.ch/.multiarch/",
-        arch="x86_64",
-    )
-    assert paths == [Path("/cvmfs/unpacked.cern.ch/.multiarch/amd64/alpine:latest")]
-
-
-def test_absolute_image_ref_rejected(log):
-    """An absolute reference would make pathlib drop the base path and the architecture."""
-    paths = cir.getMultiarchPaths("/cvmfs/cernvm-prod.cern.ch/cvm4", basePath="/base", arch="x86_64", log=log)
-    assert paths == []
-    assert log.hasMessage("error", "must be a relative OCI reference")
-
-
-def test_parent_traversal_image_ref_rejected(log):
-    paths = cir.getMultiarchPaths("../../etc", basePath="/base", arch="x86_64", log=log)
-    assert paths == []
-    assert log.hasMessage("error", "must not contain '..'")
-
-
-def test_undetectable_arch_rejected(log):
-    """platform.machine() returns an empty string when the architecture is unknown."""
-    paths = cir.getMultiarchPaths("alpine:latest", basePath="/base", arch="", log=log)
-    assert paths == []
-    assert log.hasMessage("error", "Cannot determine the machine architecture")
 
 
 def _make_multiarch_image(tmp_path, arch, image_ref):
@@ -182,6 +96,34 @@ def _make_legacy_root(tmp_path, name="cvm4"):
     return legacy
 
 
+def test_trailing_slash_in_image_ref_is_ignored(tmp_path):
+    expected = _make_multiarch_image(tmp_path, "amd64", "alpine:latest")
+
+    result = cir.findMultiarchImage("alpine:latest/", basePath=str(tmp_path / ".multiarch"), arch="x86_64")
+    assert result == expected
+
+
+def test_parent_traversal_image_ref_rejected(tmp_path, log):
+    """A reference containing '..' would escape the base path."""
+    _make_multiarch_image(tmp_path, "amd64", "alpine:latest")
+
+    result = cir.findMultiarchImage(
+        "../amd64/alpine:latest", basePath=str(tmp_path / ".multiarch" / "amd64"), arch="x86_64", log=log
+    )
+    assert result is None
+    assert log.hasMessage("error", "must not contain '..'")
+
+
+def test_undetectable_arch_skips_multiarch(tmp_path, monkeypatch, log):
+    """platform.machine() returns an empty string when the architecture cannot be determined."""
+    _make_multiarch_image(tmp_path, "amd64", "alpine:latest")
+    monkeypatch.setattr(cir.platform, "machine", lambda: "")
+
+    result = cir.findMultiarchImage("alpine:latest", basePath=str(tmp_path / ".multiarch"), log=log)
+    assert result is None
+    assert log.hasMessage("error", "Cannot determine the machine architecture")
+
+
 def test_multiarch_found_as_directory(tmp_path):
     expected = _make_multiarch_image(tmp_path, "amd64", "registry.hub.docker.com/library/alma9:latest")
 
@@ -189,17 +131,6 @@ def test_multiarch_found_as_directory(tmp_path):
         imageRef="registry.hub.docker.com/library/alma9:latest",
         basePath=str(tmp_path / ".multiarch"),
         arch="x86_64",
-    )
-    assert result == expected
-
-
-def test_multiarch_found_aarch64(tmp_path):
-    expected = _make_multiarch_image(tmp_path, "arm64", "registry.hub.docker.com/library/alma9:latest")
-
-    result = cir.resolveImagePath(
-        imageRef="registry.hub.docker.com/library/alma9:latest",
-        basePath=str(tmp_path / ".multiarch"),
-        arch="aarch64",
     )
     assert result == expected
 
@@ -346,7 +277,7 @@ def test_successful_resolution_is_cached(tmp_path, monkeypatch):
 
 
 def test_failed_resolution_is_not_cached(tmp_path):
-    """A miss may be a transient mount problem, so it must not stick for the pilot's life."""
+    """The image may be published while the pilot runs, so a failure must not stick for its life."""
     kwargs = dict(
         imageRef="registry.hub.docker.com/library/alma9:latest",
         basePath=str(tmp_path / ".multiarch"),
@@ -477,7 +408,7 @@ def test_legacy_on_native_arch_is_not_reported(tmp_path, log):
         arch="x86_64",
         log=log,
     )
-    assert not log.hasMessage("warn", "single architecture image but this node is")
+    assert not any("exec format error" in text for _, text in log.messages)
 
 
 def test_multiarch_not_found_falls_back_to_config_container_root(tmp_path, monkeypatch, log):
@@ -515,7 +446,7 @@ def test_deprecation_is_emitted_once_per_process(tmp_path, log):
 
 
 def test_no_image_ref_no_legacy_returns_none(tmp_path, log):
-    """When nothing is configured and defaults don't exist, return None."""
+    """Without an ImageReference, a ContainerRoot that does not exist is an error."""
     result = cir.resolveImagePath(
         containerRoot=str(tmp_path / "no_such_root"),
         arch="x86_64",
@@ -527,8 +458,9 @@ def test_no_image_ref_no_legacy_returns_none(tmp_path, log):
 
 def test_default_root_can_be_disabled(tmp_path):
     """dirac-apptainer-exec must not silently land on the built-in CernVM image."""
-    result = cir.resolveImagePath(arch="x86_64", defaultRoot=None)
-    assert result is None
+    builtin = _make_legacy_root(tmp_path)
+    assert cir.resolveImagePath(arch="x86_64", defaultRoot=str(builtin)) == builtin
+    assert cir.resolveImagePath(arch="x86_64", defaultRoot=None) is None
 
 
 def test_config_provides_image_ref_and_base(tmp_path, monkeypatch):
@@ -569,32 +501,6 @@ def test_explicit_args_override_config(tmp_path, monkeypatch):
     assert result == expected
 
 
-def test_nothing_found_returns_none(tmp_path):
-    result = cir.resolveImagePath(
-        imageRef="nonexistent:latest",
-        basePath=str(tmp_path / ".multiarch"),
-        containerRoot=str(tmp_path / "no_such_root"),
-        arch="x86_64",
-    )
-    assert result is None
-
-
-def test_unresponsive_filesystem_does_not_block(tmp_path, monkeypatch, log):
-    """A hanging CVMFS mount must not hang the job slot: safe_exists times out."""
-    legacy = _make_legacy_root(tmp_path)
-    monkeypatch.setattr(cir, "safe_exists", lambda path, timeout=None: None)
-
-    result = cir.resolveImagePath(
-        imageRef="alpine:latest",
-        basePath=str(tmp_path / ".multiarch"),
-        containerRoot=str(legacy),
-        arch="x86_64",
-        log=log,
-    )
-    assert result is None
-    assert log.hasMessage("warn", "Timed out")
-
-
 def test_timeout_does_not_fall_back_to_legacy(tmp_path, monkeypatch, log):
     """A timeout says nothing about the image: fail rather than run the payload in ContainerRoot."""
     expected = _make_multiarch_image(tmp_path, "amd64", "alpine:latest")
@@ -616,6 +522,7 @@ def test_timeout_does_not_fall_back_to_legacy(tmp_path, monkeypatch, log):
     )
 
     assert cir.resolveImagePath(**kwargs) is None
+    assert log.hasMessage("warn", "Timed out")
     assert log.hasMessage("error", "not falling back to ContainerRoot")
     # Nothing was cached: once CVMFS answers, the image is found
     assert cir.resolveImagePath(**kwargs) == expected

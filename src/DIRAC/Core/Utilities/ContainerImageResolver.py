@@ -37,7 +37,7 @@ EXISTS_TIMEOUT = 60
 # only one of them cannot be reached through the other. We mirror DUCC's own
 # preference lists and try every candidate in turn.
 #
-# Unknown values are passed through unchanged, and stand a fair chance of
+# Unknown values are passed through lowercased, and stand a fair chance of
 # resolving through one of those alias symlinks.
 # See https://github.com/opencontainers/image-spec/blob/main/image-index.md
 _OCI_ARCH_CANDIDATES = {
@@ -71,12 +71,12 @@ _OCI_ARCH_CANDIDATES = {
 # logged every time it kills one, or only the first casualty leaves a trace.
 _emittedMessages = set()
 
-# The resolver is called once per payload, and its answer cannot change under a
-# running pilot: the configuration is fixed and the CVMFS layout is not rewritten
-# beneath it. Successful resolutions are therefore cached, so that a pilot stats
-# CVMFS once instead of once per payload.
-# Failures are deliberately NOT cached: a miss can be a transient mount problem,
-# and retrying costs only the path that is already slow and already loud.
+# The resolver is called once per payload. Successful resolutions, a fallback to
+# ContainerRoot included, are cached for the life of the process, so that a pilot
+# stats CVMFS once instead of once per payload: an image published or removed
+# afterwards is only seen by the next pilot.
+# Failures are deliberately NOT cached: they may come from a CVMFS timeout, and
+# retrying costs only the path that is already slow and already loud.
 _resolvedPaths = {}
 
 

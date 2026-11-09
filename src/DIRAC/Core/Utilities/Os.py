@@ -140,6 +140,7 @@ def _callWithTimeout(call, timeout):
     :param call: zero-argument callable to run
     :param int timeout: timeout, in seconds
     :returns: whatever ``call()`` returned, or ``None`` if it did not finish in time
+        (or raised)
     """
     result = []
     t = threading.Thread(target=lambda: result.append(call()))
