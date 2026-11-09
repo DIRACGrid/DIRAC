@@ -595,6 +595,32 @@ def test_unresponsive_filesystem_does_not_block(tmp_path, monkeypatch, log):
     assert log.hasMessage("warn", "Timed out")
 
 
+def test_timeout_does_not_fall_back_to_legacy(tmp_path, monkeypatch, log):
+    """A timeout says nothing about the image: fail rather than run the payload in ContainerRoot."""
+    expected = _make_multiarch_image(tmp_path, "amd64", "alpine:latest")
+    legacy = _make_legacy_root(tmp_path)
+    realExists = cir.safe_exists
+    calls = []
+
+    def firstCallTimesOut(path, timeout=None):
+        calls.append(path)
+        return None if len(calls) == 1 else realExists(path, timeout=timeout)
+
+    monkeypatch.setattr(cir, "safe_exists", firstCallTimesOut)
+    kwargs = dict(
+        imageRef="alpine:latest",
+        basePath=str(tmp_path / ".multiarch"),
+        containerRoot=str(legacy),
+        arch="x86_64",
+        log=log,
+    )
+
+    assert cir.resolveImagePath(**kwargs) is None
+    assert log.hasMessage("error", "not falling back to ContainerRoot")
+    # Nothing was cached: once CVMFS answers, the image is found
+    assert cir.resolveImagePath(**kwargs) == expected
+
+
 def test_findMultiarchImage_found(tmp_path):
     expected = _make_multiarch_image(tmp_path, "amd64", "alpine:latest")
 

@@ -178,27 +178,33 @@ def getMultiarchPaths(imageRef: str, basePath: str, arch: str, log=None) -> list
     return [Path(basePath) / candidate / imageRef for candidate in getArchCandidates(arch)]
 
 
-def _existsOnCvmfs(path: Path, log) -> bool:
-    """Existence check protected against an unresponsive CVMFS mount."""
+def _existsOnCvmfs(path: Path, log) -> bool | None:
+    """Existence check protected against an unresponsive CVMFS mount.
+
+    :returns: ``True``/``False``, or ``None`` if CVMFS did not answer in time
+    """
     found = safe_exists(str(path), timeout=EXISTS_TIMEOUT)
     if found is None:
-        log.warn(f"Timed out after {EXISTS_TIMEOUT}s while checking container image path, assuming absent", str(path))
-        return False
+        log.warn(f"Timed out after {EXISTS_TIMEOUT}s while checking container image path", str(path))
     return found
 
 
-def _findMultiarchImage(imageRef: str | None, basePath: str, arch: str, log) -> tuple[Path | None, list[Path]]:
-    """Return the first existing multiarch path, and every candidate tried.
+def _findMultiarchImage(imageRef: str | None, basePath: str, arch: str, log) -> tuple[Path | None, list[Path], bool]:
+    """Return the first existing multiarch path, every candidate tried, and
+    whether a check timed out, in which case the image may still exist.
 
     The candidate list is returned even when nothing is found, so that callers
     can report exactly what was looked for.
     """
     candidates = getMultiarchPaths(imageRef, basePath, arch, log=log) if imageRef else []
     for candidate in candidates:
-        if _existsOnCvmfs(candidate, log):
+        found = _existsOnCvmfs(candidate, log)
+        if found is None:
+            return None, candidates, True
+        if found:
             log.debug("Resolved multiarch image path", str(candidate))
-            return candidate, candidates
-    return None, candidates
+            return candidate, candidates, False
+    return None, candidates, False
 
 
 def _getPublishedArchDirs(basePath: str, arch: str, log) -> list[str]:
@@ -249,7 +255,7 @@ def findMultiarchImage(
     basePath = basePath or gConfig.getValue("/Resources/Computing/Singularity/ImageBasePath") or BASE_PATH_DEFAULT
     arch = (arch or platform.machine() or "").strip()
 
-    found, _candidates = _findMultiarchImage(imageRef, basePath, arch, log)
+    found, _candidates, _timedOut = _findMultiarchImage(imageRef, basePath, arch, log)
     return found
 
 
@@ -268,7 +274,9 @@ def resolveImagePath(
     1. **Multiarch** ``<basePath>/<arch>/<imageRef>`` -- only attempted when
        an ``imageRef`` is explicitly provided (via parameter or CS config).
     2. **Legacy** ``containerRoot`` parameter, ``ContainerRoot`` CS option, or
-       ``defaultRoot`` -- deprecated, and logged as such when used.
+       ``defaultRoot`` -- deprecated, and logged as such when used. Only used
+       when the multiarch image is absent: if a check timed out, ``None`` is
+       returned instead.
     3. ``None`` if nothing is found.
 
     :param imageRef: OCI image reference
@@ -299,9 +307,14 @@ def resolveImagePath(
         return _resolvedPaths[cacheKey]
 
     # 1) Try the CVMFS multiarch paths (only if an image reference is configured)
-    found, candidates = _findMultiarchImage(imageRef, basePath, arch, log)
+    found, candidates, timedOut = _findMultiarchImage(imageRef, basePath, arch, log)
     if found:
         return _remember(cacheKey, found)
+    if timedOut:
+        # The image may exist: running the payload in ContainerRoot instead would
+        # silently change its environment. Fail, so that the job is rescheduled.
+        log.error("CVMFS did not answer in time, not falling back to ContainerRoot", imageRef)
+        return None
 
     # The multiarch lookup missed. Report what the repository does publish for
     # this architecture: a directory name we do not know about is the one thing

@@ -207,7 +207,8 @@ only reported, never used: variant compatibility is directional (an ``arm:v6`` i
 ``arm:v7`` image does not run on an ARMv6 one), so an unrecognised variant cannot be assumed to run.
 
 If no multiarch path exists, the deprecated ``ContainerRoot`` is used instead and a warning is logged, naming the
-architecture and every path that was tried.
+architecture and every path that was tried. A check that times out does not count as a missing image: the submission
+fails and the job is rescheduled, rather than run in ``ContainerRoot``.
 
 ``ContainerRoot`` images are built for a single architecture, in practice ``amd64``. On a node whose architecture DIRAC
 recognises as a different one, the image is therefore *not* used: resolution fails with an error and the payload is not
