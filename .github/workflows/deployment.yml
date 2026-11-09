@@ -140,6 +140,16 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     needs: deploy-pypi
     steps:
+      # conda is no longer preinstalled (nor on the PATH) of the ubuntu-latest
+      # runner images; install it explicitly since the next steps rely on it
+      - name: Install conda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          conda-remove-defaults: "true"
+          auto-update-conda: false
+          activate-environment: ""
+
       - name: prepare environment
         run: |
           conda create -c conda-forge -n cvmfs-env ca-policy-lcg openssl==3.0.7 gct
