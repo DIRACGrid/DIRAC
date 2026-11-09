@@ -4,6 +4,7 @@
 """
 import json
 import os
+import queue
 import threading
 
 import DIRAC
@@ -142,14 +143,14 @@ def _callWithTimeout(call, timeout):
     :returns: whatever ``call()`` returned, or ``None`` if it did not finish in time
         (or raised)
     """
-    result = []
-    t = threading.Thread(target=lambda: result.append(call()))
+    result = queue.SimpleQueue()
+    t = threading.Thread(target=lambda: result.put(call()))
     t.daemon = True  # don't delay program's exit
     t.start()
     t.join(timeout)
     if t.is_alive():
         return None  # timeout
-    return result[0] if result else None
+    return None if result.empty() else result.get()
 
 
 def safe_listdir(directory, timeout=60):
