@@ -75,6 +75,8 @@ def main():
     if user_image:
         if safe_exists(user_image, timeout=EXISTS_TIMEOUT):
             image_path = Path(user_image)
+        elif os.path.isabs(user_image) or ".." in Path(user_image).parts:
+            image_path = None  # a local path that does not exist, not an OCI reference
         else:
             image_path = findMultiarchImage(user_image)
     else:
