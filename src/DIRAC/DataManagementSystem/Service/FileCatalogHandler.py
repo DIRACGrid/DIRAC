@@ -459,6 +459,36 @@ class FileCatalogHandlerMixin:
         """Get all the metadata valid for the given file"""
         return self.fileCatalogDB.fmeta.getFileUserMetadata(path, self.getRemoteCredentials())
 
+    types_getFileUserMetadataBulk = [[list, dict, str]]
+
+    def export_getFileUserMetadataBulk(self, lfns):
+        """Get file metadata and inherited parent directory metadata for multiple files."""
+        successful = {}
+        failed = {}
+        directoryMetadata = {}
+        credDict = self.getRemoteCredentials()
+
+        for lfn in lfns:
+            result = self.fileCatalogDB.fmeta.getFileUserMetadata(lfn, credDict)
+            if not result["OK"]:
+                failed[lfn] = result["Message"]
+                continue
+            fileMetadata = result["Value"]
+
+            directory = "/".join(lfn.split("/")[:-1])
+            if directory not in directoryMetadata:
+                directoryMetadata[directory] = self.fileCatalogDB.dmeta.getDirectoryMetadata(directory, credDict)
+
+            result = directoryMetadata[directory]
+            if not result["OK"]:
+                failed[lfn] = result["Message"]
+                continue
+
+            fileMetadata.update(result["Value"])
+            successful[lfn] = fileMetadata
+
+        return S_OK({"Successful": successful, "Failed": failed})
+
     types_findDirectoriesByMetadata = [dict]
 
     def export_findDirectoriesByMetadata(self, metaDict, path="/"):
