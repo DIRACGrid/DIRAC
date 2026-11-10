@@ -340,16 +340,7 @@ class FileCatalogClient(FileCatalogClientBase):
     @checkCatalogArguments
     def getFileUserMetadataBulk(self, lfns, timeout=120):
         """Get the metadata attached to each file and its parent directories."""
-        successful = {}
-        failed = {}
-        for lfn in lfns:
-            result = self.getFileUserMetadata(lfn, timeout=timeout)
-            if result["OK"]:
-                successful[lfn] = result["Value"]
-            else:
-                failed[lfn] = result["Message"]
-
-        return S_OK({"Successful": successful, "Failed": failed})
+        return self._getRPC(timeout=timeout).getFileUserMetadataBulk(lfns)
 
     ########################################################################
     # Path operations (not updated)
