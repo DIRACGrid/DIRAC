@@ -11,6 +11,7 @@ from io import StringIO
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogDB import FileCatalogDB
+from DIRAC.Resources.Catalog.Utilities import checkArgumentFormat
 
 
 class FileCatalogHandlerMixin:
@@ -465,16 +466,38 @@ class FileCatalogHandlerMixin:
         """Get file metadata and inherited parent directory metadata for multiple files."""
         successful = {}
         failed = {}
-        directoryMetadata = {}
         credDict = self.getRemoteCredentials()
+        res = checkArgumentFormat(lfns)
+        if not res["OK"]:
+            return res
+        lfns = res["Value"]
 
-        for lfn in lfns:
+        res = self.fileCatalogDB.getFileDetailsPublic(lfns, credDict)
+        if not res["OK"]:
+            return res
+        directoryMetadata = {}
+        missingLFNs = {lfn: value for lfn, value in lfns.items() if lfn not in res["Value"]}
+        if missingLFNs:
+            permissionResult = self.fileCatalogDB._checkPathPermissions("getFileDetailsPublic", missingLFNs, credDict)
+            if not permissionResult["OK"]:
+                return permissionResult
+            failed.update(permissionResult["Value"]["Failed"])
+            missingLFNs = permissionResult["Value"]["Successful"]
+
+        fileMetadataByLFN = {lfn: fileDetails.get("Metadata", {}) for lfn, fileDetails in res["Value"].items()}
+
+        for lfn in missingLFNs:
             result = self.fileCatalogDB.fmeta.getFileUserMetadata(lfn, credDict)
             if not result["OK"]:
                 failed[lfn] = result["Message"]
                 continue
-            fileMetadata = result["Value"]
 
+            fileMetadataByLFN[lfn] = result["Value"]
+
+        for lfn in lfns:
+            if lfn not in fileMetadataByLFN:
+                continue
+            fileMetadata = fileMetadataByLFN[lfn]
             directory = "/".join(lfn.split("/")[:-1])
             if directory not in directoryMetadata:
                 directoryMetadata[directory] = self.fileCatalogDB.dmeta.getDirectoryMetadata(directory, credDict)
