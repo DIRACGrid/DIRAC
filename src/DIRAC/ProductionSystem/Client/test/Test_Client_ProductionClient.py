@@ -49,6 +49,15 @@ def test_addProductionStepIncludesCustomParameters(productionClientAndRPC):
     assert productionClient.prodDescription["Step1_Child"]["customParameters"] == {"CustomOption": "custom value"}
 
 
+def test_productionStepRejectsTransformationParametersAsCustomParameters():
+    productionStep = ProductionStep()
+
+    with pytest.raises(AttributeError, match="Status is a transformation parameter"):
+        productionStep.Status = "Active"
+
+    assert "Status" not in productionStep.customParameters
+
+
 def test_addProductionStepOmitsEmptyCustomParameters(productionClientAndRPC):
     productionClient, rpcClient = productionClientAndRPC
     rpcClient.addProductionStep.return_value = S_OK(12)

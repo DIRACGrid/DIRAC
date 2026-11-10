@@ -23,6 +23,18 @@ class ProductionStep:
         "Body",
     }
 
+    _TRANSFORMATION_ONLY_PARAMETER_NAMES = frozenset(
+        {
+            "TransformationID",
+            "TransformationName",
+            "Status",
+            "TransformationGroup",
+            "InheritedFrom",
+            "MaxNumberOfTasks",
+            "EventsPerTask",
+        }
+    )
+
     def __init__(self, **kwargs):
         """Simple constructor"""
         object.__setattr__(self, "customParameters", {})
@@ -50,6 +62,8 @@ class ProductionStep:
     def __setattr__(self, name, value):
         if name.startswith("_") or name in self._STEP_ATTRIBUTES or name in self.__dict__ or hasattr(type(self), name):
             object.__setattr__(self, name, value)
+        elif name in self._TRANSFORMATION_ONLY_PARAMETER_NAMES:
+            raise AttributeError(f"{name} is a transformation parameter, not a custom production-step parameter")
         else:
             self.customParameters[name] = value
 
