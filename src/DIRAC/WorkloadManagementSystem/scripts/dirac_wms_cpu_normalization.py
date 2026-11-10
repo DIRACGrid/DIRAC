@@ -17,7 +17,7 @@ Pilots invoke dirac-wms-cpu-normalization which
     }
 
 What is measured, looked up and used is governed by the CS option
-``JobScheduling/CPUNormalizationUnit``, an ordered list whose default is ``["DB12"]``:
+``JobScheduling/CPUNormalizationUnit``, an ordered list whose default is ``["DB12"]``.
 
 - **membership**: every unit in the list is recorded (DB12 measured, HS23 looked up) and
   published as job parameters;
