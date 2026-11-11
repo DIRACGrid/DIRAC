@@ -1,37 +1,16 @@
 """FTS3Job module containing only the FTS3Job class"""
 
-import datetime
 import errno
 import os
 import requests
-from packaging.version import Version
 
 from cachetools import LRUCache, TTLCache, cached
 from threading import Lock
 from typing import Optional
 
-
-# Requires at least version 3.3.3
-from fts3 import __version__ as fts3_version
-import fts3.rest.client.easy as fts3
-from fts3.rest.client.exceptions import FTS3ClientException, NotFound
-
-# There is a breaking change in the API in 3.13
-# https://gitlab.cern.ch/fts/fts-rest-flask/-/commit/5faa283e0cd4b80a0139a547c4a6356522c8449d
-FTS3_SPACETOKEN_API_CHANGE = Version("3.13")
-if Version(fts3_version) >= FTS3_SPACETOKEN_API_CHANGE:
-    DESTINATION_SPACETOKEN_ATTR = "destination_spacetoken"
-else:
-    DESTINATION_SPACETOKEN_ATTR = "spacetoken"
-
-# We specifically use Request in the FTS client because of a leak in the
-# default pycurl. See https://its.cern.ch/jira/browse/FTS-261
-from fts3.rest.client.request import Request as ftsSSLRequest
-
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.FrameworkSystem.Utilities.TokenManagementUtilities import getIdProviderClient
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnValueOrRaise
@@ -40,6 +19,7 @@ from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.JEncode import JSerializable
 from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
+from DIRAC.DataManagementSystem.private import FTSRestLibs
 
 # 3 days in seconds
 BRING_ONLINE_TIMEOUT = 259200
@@ -166,6 +146,19 @@ class FTS3Job(JSerializable):
         self.vo = None
         self.rmsReqID = None
 
+        # temporary used only for submission
+        # Set by prepareSubmission, and used by FTSRestLibs.submit
+        self.transfers = []
+        self.fileIDsInTheJob = set()
+        self.multihop = False
+        self.bringOnline = None
+        self.copyPinLifetime = None
+        self.archiveTimeout = None
+        self.sourceSpaceToken = None
+        self.targetSpaceToken = None
+        self.jobMetadata = {}
+        self.useTokens = False
+
         # temporary used only for accounting
         # it is set by the monitor method
         # when a job is in a final state
@@ -176,7 +169,7 @@ class FTS3Job(JSerializable):
     def _getIdpClient(group_name: str):
         return returnValueOrRaise(getIdProviderClient(group_name, None, client_name_prefix="fts"))
 
-    def monitor(self, context=None, ftsServer=None, ucert=None):
+    def monitor(self, context):
         """Queries the fts server to monitor the job.
         The internal state of the object is updated depending on the
         monitoring result.
@@ -188,11 +181,8 @@ class FTS3Job(JSerializable):
 
         This method assumes that the attribute self.ftsGUID is set
 
-        :param context: fts3 context. If not given, it is created (see ftsServer & ucert param)
-        :param ftsServer: the address of the fts server to submit to. Used only if context is
-                          not given. if not given either, use the ftsServer object attribute
-
-        :param ucert: path to the user certificate/proxy. Might be infered by the fts cli (see its doc)
+        :param context: context to the server the job was submitted to
+                        (see :py:class:`~DIRAC.DataManagementSystem.private.FTSRestLibs.FTSContextCache`)
 
         :returns: {FileID: { status, error } }
 
@@ -206,21 +196,15 @@ class FTS3Job(JSerializable):
 
         if not self.ftsGUID:
             return S_ERROR("FTSGUID not set, FTS job not submitted?")
-        if not context:
-            if not ftsServer:
-                ftsServer = self.ftsServer
-            context = fts3.Context(endpoint=ftsServer, ucert=ucert, request_class=ftsSSLRequest, verify=False)
 
-        jobStatusDict = None
-        try:
-            jobStatusDict = fts3.get_job_status(context, self.ftsGUID, list_files=True)
-        # The job is not found
-        # Set its status to Failed and return
-        except NotFound:
-            self.status = "Failed"
-            return S_ERROR(errno.ESRCH, f"FTSGUID {self.ftsGUID} not found on {self.ftsServer}")
-        except FTS3ClientException as e:
-            return S_ERROR(f"Error getting the job status {e}")
+        res = FTSRestLibs.getJobStatus(context, self.ftsGUID)
+        if not res["OK"]:
+            # The job is not found
+            # Set its status to Failed and return
+            if cmpError(res, errno.ESRCH):
+                self.status = "Failed"
+            return res
+        jobStatusDict = res["Value"]
 
         now = DiracTime.utcnow().replace(microsecond=0)
         self.lastMonitor = now
@@ -308,23 +292,23 @@ class FTS3Job(JSerializable):
         """Cancel the job on the FTS server. Note that it will cancel all the files.
         See https://fts3-docs.web.cern.ch/fts3-docs/fts-rest/docs/api.html#delete-jobsjobidlist
         for behavior details
+
+        :param context: context to the server the job was submitted to
+
+        :returns: S_OK()/S_ERROR() (errno.ESRCH if the job is not found)
         """
 
-        try:
-            cancelDict = fts3.cancel(context, self.ftsGUID)
-            newStatus = cancelDict["job_state"].capitalize()
-            # If the status is already canceled
-            # (for a reason or another, don't change the error message)
-            # If the new status is Canceled, set it, and update the reason
-            if newStatus == "Canceled" and self.status != "Canceled":
-                self.status = "Canceled"
-                self.error = "Matching RMS Request was canceled"
-            return S_OK()
-        # The job is not found
-        except NotFound:
-            return S_ERROR(errno.ESRCH, f"FTSGUID {self.ftsGUID} not found on {self.ftsServer}")
-        except FTS3ClientException as e:
-            return S_ERROR(f"Error canceling the job {e}")
+        res = FTSRestLibs.cancel(context, self.ftsGUID)
+        if not res["OK"]:
+            return res
+        newStatus = res["Value"]["job_state"].capitalize()
+        # If the status is already canceled
+        # (for a reason or another, don't change the error message)
+        # If the new status is Canceled, set it, and update the reason
+        if newStatus == "Canceled" and self.status != "Canceled":
+            self.status = "Canceled"
+            self.error = "Matching RMS Request was canceled"
+        return S_OK()
 
     @staticmethod
     def __fetchSpaceToken(seName, vo):
@@ -399,8 +383,13 @@ class FTS3Job(JSerializable):
         :param failedLFNs: set of LFNs in filesToSubmit for which there was a problem
         :param target_spacetoken: the space token of the target
         :param protocols: list of protocols to restrict the protocol choice for the transfer
+        :param tokensEnabled: whether tokens can be used for the transfers
 
-        :return: S_OK( (job object, list of ftsFileIDs in the job))
+        The result is stored in the job attributes used by
+        :py:func:`~DIRAC.DataManagementSystem.private.FTSRestLibs.buildJob`
+        (``transfers``, ``multihop``, ``bringOnline``, etc)
+
+        :return: S_OK(set of ftsFileIDs in the job)
         """
 
         log = gLogger.getLocalSubLogger(f"constructTransferJob/{self.operationID}/{self.sourceSE}_{self.targetSE}")
@@ -555,15 +544,15 @@ class FTS3Job(JSerializable):
                     if self.activity:
                         stageTrans_metadata["activity"] = self.activity
 
-                    stageTrans = fts3.new_transfer(
-                        stageURL,
-                        stageURL,
-                        checksum=f"ADLER32:{ftsFile.checksum}",
-                        filesize=ftsFile.size,
-                        metadata=stageTrans_metadata,
-                        activity=self.activity,
-                        scitag=scitag,
-                    )
+                    stageTrans = {
+                        "source": stageURL,
+                        "destination": stageURL,
+                        "checksum": f"ADLER32:{ftsFile.checksum}",
+                        "filesize": ftsFile.size,
+                        "metadata": stageTrans_metadata,
+                        "activity": self.activity,
+                        "scitag": scitag,
+                    }
                     transfers.append(stageTrans)
 
                 # If it is the last hop only, we set the fileID metadata
@@ -627,17 +616,17 @@ class FTS3Job(JSerializable):
                 # protocol, so it's fine to put it here.
                 # I only add it in this transfer and not the "staging" one above because it
                 # impacts only root -> root transfers
-                trans = fts3.new_transfer(
-                    sourceSURL,
-                    targetSURL,
-                    checksum=f"ADLER32:{ftsFile.checksum.lower()}",
-                    filesize=ftsFile.size,
-                    metadata=trans_metadata,
-                    activity=self.activity,
-                    source_token=srcToken,
-                    destination_token=dstToken,
-                    scitag=scitag,
-                )
+                trans = {
+                    "source": sourceSURL,
+                    "destination": targetSURL,
+                    "checksum": f"ADLER32:{ftsFile.checksum.lower()}",
+                    "filesize": ftsFile.size,
+                    "metadata": trans_metadata,
+                    "activity": self.activity,
+                    "source_token": srcToken,
+                    "destination_token": dstToken,
+                    "scitag": scitag,
+                }
 
                 transfers.append(trans)
                 fileIDsInTheJob.add(ftsFileID)
@@ -654,39 +643,34 @@ class FTS3Job(JSerializable):
             "rmsReqID": self.rmsReqID,
             "sourceSE": self.sourceSE,
             "targetSE": self.targetSE,
-            "useTokens": useTokens,  # Store the information here to propagate it to submission
+            "useTokens": useTokens,
         }
 
         if self.activity:
             job_metadata["activity"] = self.activity
 
-        dest_spacetoken = {DESTINATION_SPACETOKEN_ATTR: target_spacetoken}
-        job = fts3.new_job(
-            transfers=transfers,
-            overwrite=True,
-            disable_cleanup=True,
-            source_spacetoken=source_spacetoken,
-            bring_online=bring_online,
-            copy_pin_lifetime=copy_pin_lifetime,
-            retry=3,
-            verify_checksum="target",  # Only check target vs specified, since we verify the source earlier
-            multihop=isMultiHop,
-            metadata=job_metadata,
-            priority=self.priority,
-            unmanaged_tokens=True,
-            archive_timeout=archive_timeout,
-            **dest_spacetoken,
-        )
+        self.transfers = transfers
+        self.fileIDsInTheJob = fileIDsInTheJob
+        self.multihop = isMultiHop
+        self.bringOnline = bring_online
+        self.copyPinLifetime = copy_pin_lifetime
+        self.archiveTimeout = archive_timeout
+        self.sourceSpaceToken = source_spacetoken
+        self.targetSpaceToken = target_spacetoken
+        self.jobMetadata = job_metadata
+        self.useTokens = useTokens
 
-        return S_OK((job, fileIDsInTheJob))
+        return S_OK(fileIDsInTheJob)
 
-    def submit(self, context=None, ftsServer=None, ucert=None, pinTime=36000, protocols=None, fts_access_token=None):
-        """submit the job to the FTS server
+    def prepareSubmission(self, pinTime=36000, protocols=None, tokensEnabled=False):
+        """Prepare everything needed to submit the job, independently of the FTS server.
+        This chooses all the storage related parameters (URLs, protocols, tokens, staging, ...).
 
-        Some attributes are expected to be defined for the submission to work:
+        Some attributes are expected to be defined for this to work:
           * type (set by FTS3Operation)
-          * sourceSE (only for Transfer jobs)
+          * sourceSE
           * targetSE
+          * multiHopSE (optional)
           * activity (optional)
           * priority (optional)
           * username
@@ -696,22 +680,20 @@ class FTS3Job(JSerializable):
 
         We also expect the FTSFiles have an ID defined, as it is given as transfer metadata
 
-        :param pinTime: Time the file should be pinned on disk (used for transfers and staging)
+        The result is stored in the attributes used by
+        :py:func:`~DIRAC.DataManagementSystem.private.FTSRestLibs.buildJob`
+
+        :param pinTime: Time the file should be pinned on disk
                         Used only if he source SE is a tape storage
-        :param context: fts3 context. If not given, it is created (see ftsServer & ucert param)
-        :param ftsServer: the address of the fts server to submit to. Used only if context is
-                          not given. if not given either, use the ftsServer object attribute
-
-        :param ucert: path to the user certificate/proxy. Might be inferred by the fts cli (see its doc)
         :param protocols: list of protocols from which we should choose the protocol to use
-        :param fts_access_token: token to be used to talk to FTS and to be passed when creating a context
+        :param tokensEnabled: whether tokens can be used for the transfers
 
-        :returns: S_OK([FTSFiles ids of files submitted])
+        :returns: S_OK(set of FTSFiles ids that will be submitted)
         """
 
-        log = gLogger.getLocalSubLogger(f"submit/{self.operationID}/{self.sourceSE}_{self.targetSE}")
+        if self.type != "Transfer":
+            return S_ERROR(f"Unsupported job type {self.type}")
 
-        # Construct the target SURL
         res = self.__fetchSpaceToken(self.targetSE, self.vo)
         if not res["OK"]:
             return res
@@ -719,112 +701,59 @@ class FTS3Job(JSerializable):
 
         allLFNs = [ftsFile.lfn for ftsFile in self.filesToSubmit]
 
-        if self.type == "Transfer":
-            res = self._constructTransferJob(
-                pinTime, allLFNs, target_spacetoken, protocols=protocols, tokensEnabled=bool(fts_access_token)
-            )
-        else:
-            return S_ERROR(f"Unsupported job type {self.type}")
+        return self._constructTransferJob(
+            pinTime, allLFNs, target_spacetoken, protocols=protocols, tokensEnabled=tokensEnabled
+        )
 
-        if not res["OK"]:
-            return res
+    def submit(self, context):
+        """Submit the job prepared by :py:meth:`prepareSubmission` to the FTS server
 
-        job, fileIDsInTheJob = res["Value"]
+        :param context: context to the server to submit to. It has to be token based if the job uses tokens
 
-        # If we need a token, don't use the context given in parameter
-        # because the one given in parameter is only with X509 creds
-        if job["params"].get("job_metadata", {}).get("useTokens"):
-            if not fts_access_token:
-                return S_ERROR("Job needs token support but no FTS token was supplied")
-            context = None
-
-        if not context:
-            if not ftsServer:
-                ftsServer = self.ftsServer
-            res = self.generateContext(ftsServer, ucert, fts_access_token)
-            if not res["OK"]:
-                return res
-            context = res["Value"]
-
-        try:
-            self.ftsGUID = fts3.submit(context, job)
-            log.info(f"Got GUID {self.ftsGUID}")
-
-            # Only increase the amount of attempt
-            # if we succeeded in submitting -> no ! Why did I do that ??
-            for ftsFile in self.filesToSubmit:
-                ftsFile.attempt += 1
-
-                # This should never happen because a file should be "released"
-                # first by the previous job.
-                # But we just print a warning
-                if ftsFile.ftsGUID is not None:
-                    log.warn(
-                        "FTSFile has a non NULL ftsGUID at job submission time",
-                        f"FileID: {ftsFile.fileID} existing ftsGUID: {ftsFile.ftsGUID}",
-                    )
-
-                # `assign` the file to this job
-                ftsFile.ftsGUID = self.ftsGUID
-                if ftsFile.fileID in fileIDsInTheJob:
-                    ftsFile.status = "Submitted"
-
-            now = DiracTime.utcnow().replace(microsecond=0)
-            self.submitTime = now
-            self.lastUpdate = now
-            self.lastMonitor = now
-
-        except FTS3ClientException as e:
-            log.exception("Error at submission", repr(e))
-            return S_ERROR(f"Error at submission: {e}")
-
-        return S_OK(fileIDsInTheJob)
-
-    @staticmethod
-    def generateContext(ftsServer, ucert, fts_access_token=None, lifetime=25200):
-        """This method generates an fts3 context
-
-        Only a certificate or an fts token can be given
-
-        :param ftsServer: address of the fts3 server
-        :param ucert: the path to the certificate to be used
-        :param fts_access_token: token to access FTS
-        :param lifetime: duration (in sec) of the delegation to the FTS3 server
-                        (default is 7h, like FTS3 default)
-
-        :returns: an fts3 context
+        :returns: S_OK(set of FTSFiles ids submitted)
         """
-        if fts_access_token and ucert:
-            return S_ERROR("fts_access_token and ucert cannot be both set")
 
-        try:
-            context = fts3.Context(
-                endpoint=ftsServer,
-                ucert=ucert,
-                request_class=ftsSSLRequest,
-                verify=False,
-                fts_access_token=fts_access_token,
-            )
+        log = gLogger.getLocalSubLogger(f"submit/{self.operationID}/{self.sourceSE}_{self.targetSE}")
 
-            # The delegation only makes sense for X509 auth
-            if ucert:
-                # Explicitely delegate to be sure we have the lifetime we want
-                # Note: the delegation will re-happen only when the FTS server
-                # decides that there is not enough timeleft.
-                # At the moment, this is 1 hour, which effectively means that if you do
-                # not submit a job for more than 1h, you have no valid proxy in FTS servers
-                # anymore, and all the jobs failed. So we force it when
-                # one third of the lifetime will be left.
-                # Also, the proxy given as parameter might have less than "lifetime" left
-                # since it is cached, but it does not matter, because in the FTS3Agent
-                # we make sure that we renew it often enough
-                td_lifetime = datetime.timedelta(seconds=lifetime)
-                fts3.delegate(context, lifetime=td_lifetime, delegate_when_lifetime_lt=td_lifetime // 3)
+        if not self.transfers:
+            return S_ERROR(errno.ENODATA, "Job not prepared for submission")
 
-            return S_OK(context)
-        except FTS3ClientException as e:
-            gLogger.exception("Error generating context", repr(e))
-            return S_ERROR(repr(e))
+        if self.useTokens and not FTSRestLibs.usesTokens(context):
+            return S_ERROR("Job needs token support but no FTS token was supplied")
+
+        res = FTSRestLibs.submit(context, self)
+        if not res["OK"]:
+            log.error("Error at submission", res["Message"])
+            return res
+        self.ftsGUID = res["Value"]
+
+        log.info(f"Got GUID {self.ftsGUID}")
+
+        # Only increase the amount of attempt
+        # if we succeeded in submitting -> no ! Why did I do that ??
+        for ftsFile in self.filesToSubmit:
+            ftsFile.attempt += 1
+
+            # This should never happen because a file should be "released"
+            # first by the previous job.
+            # But we just print a warning
+            if ftsFile.ftsGUID is not None:
+                log.warn(
+                    "FTSFile has a non NULL ftsGUID at job submission time",
+                    f"FileID: {ftsFile.fileID} existing ftsGUID: {ftsFile.ftsGUID}",
+                )
+
+            # `assign` the file to this job
+            ftsFile.ftsGUID = self.ftsGUID
+            if ftsFile.fileID in self.fileIDsInTheJob:
+                ftsFile.status = "Submitted"
+
+        now = DiracTime.utcnow().replace(microsecond=0)
+        self.submitTime = now
+        self.lastUpdate = now
+        self.lastMonitor = now
+
+        return S_OK(self.fileIDsInTheJob)
 
     def _fillAccountingDicts(self, jobStatusDict):
         """This methods generates the necessary information to create DataOperation
@@ -832,7 +761,7 @@ class FTS3Job(JSerializable):
 
         For it to be relevant, it should be called only when the job is in a final state.
 
-        :param jobStatusDict: output of fts3.get_job_status
+        :param jobStatusDict: output of FTSRestLibs.getJobStatus
 
         :returns: None
         """

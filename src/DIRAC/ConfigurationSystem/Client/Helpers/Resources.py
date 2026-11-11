@@ -11,6 +11,9 @@ from DIRACCommon.ConfigurationSystem.Client.Helpers.Resources import (
 
 gBaseResourcesSection = "/Resources"
 
+#: Sections of /Resources/FTSEndpoints, one per FTS server flavour
+FTS_FLAVOURS = ("FTS3", "FTS4")
+
 
 def getSites():
     """Get the list of all the sites defined in the CS"""
@@ -123,6 +126,18 @@ def getDIRACSiteName(gocSiteName):
         return S_OK(diracSites)
 
     return S_ERROR(f"There's no site with GOCDB name = {gocSiteName} in DIRAC CS")
+
+
+def getFTSServersByFlavour():
+    """Get the FTS servers defined in the CS, for all the flavours
+
+    :returns: S_OK({flavour: {server name: server url}})
+    """
+    result = {}
+    for flavour in FTS_FLAVOURS:
+        res = gConfig.getOptionsDict(cfgPath(gBaseResourcesSection, "FTSEndpoints", flavour))
+        result[flavour] = res["Value"] if res["OK"] else {}
+    return S_OK(result)
 
 
 def getFTS3ServerDict():

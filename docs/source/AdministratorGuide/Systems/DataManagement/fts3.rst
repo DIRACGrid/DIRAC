@@ -68,6 +68,12 @@ FTS3Agent
 
 This agent is in charge of performing and monitoring all the transfers. Note that this agent can be duplicated as many time as you wish.
 
+The agent downloads the proxy of the users submitting the transfers, and delegates it to the FTS servers. The contexts to the FTS servers are shared by all the threads of the agent during a cycle (see :py:class:`DIRAC.DataManagementSystem.private.FTSRestLibs.FTSContextCache`):
+
+  * the proxies and the tokens are cached by the ProxyManager and TokenManager clients.
+  * one context per FTS server and user and group (or group only for tokens). It is re-created when the proxy or the token changes.
+  * the delegation is checked when a context is created (so once per cycle), and renewed if it is missing or if less than a third of ``ProxyLifetime`` is left. If a server loses it during a cycle, it is delegated again at submission.
+
 See: :py:mod:`~DIRAC.DataManagementSystem.Agent.FTS3Agent` for configuration details.
 
 FTS3 system overview
