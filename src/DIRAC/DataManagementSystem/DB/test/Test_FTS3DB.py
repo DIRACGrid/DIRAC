@@ -6,7 +6,7 @@ from DIRAC import gLogger
 from diraccfg import CFG
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.DataManagementSystem.DB import FTS3DB
-from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3TransferOperation, FTS3StagingOperation
+from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3TransferOperation
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 import DIRAC.DataManagementSystem.DB.test.FTS3TestUtils as baseTestModule
