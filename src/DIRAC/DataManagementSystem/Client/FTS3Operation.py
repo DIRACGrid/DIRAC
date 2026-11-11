@@ -238,7 +238,7 @@ class FTS3Operation(JSerializable):
     def _createNewJob(self, jobType, ftsFiles, targetSE, sourceSE=None, multiHopSE=None):
         """Create a new FTS3Job object
 
-        :param jobType: type of job to create (Transfer, Staging, Removal)
+        :param jobType: type of job to create (Transfer)
         :param ftsFiles: list of FTS3File objects the job has to work on
         :param targetSE: SE on which to operate
         :param sourceSE: source SE, only useful for Transfer jobs
@@ -606,49 +606,5 @@ class FTS3TransferOperation(FTS3Operation):
                 registerOperation.addFile(opFile)
 
             request.insertBefore(registerOperation, operation)
-
-        return self.reqClient.putRequest(request, useFailoverProxy=False, retryMainService=3)
-
-
-class FTS3StagingOperation(FTS3Operation):
-    """Class to be used for a Staging operation"""
-
-    def prepareNewJobs(self, maxFilesPerJob=100, maxAttemptsPerFile=10):
-        log = gLogger.getSubLogger("_prepareNewJobs")
-
-        filesToSubmit = self._getFilesToSubmit(maxAttemptsPerFile=maxAttemptsPerFile)
-        log.debug(f"{len(filesToSubmit)} ftsFiles to submit")
-
-        newJobs = []
-
-        # {targetSE : [FTS3Files] }
-        filesGroupedByTarget = FTS3Utilities.groupFilesByTarget(filesToSubmit)
-
-        for targetSE, ftsFiles in filesGroupedByTarget.items():
-            res = self._checkSEAccess(targetSE, "ReadAccess", vo=self.vo)
-            if not res["OK"]:
-                log.error(res)
-                continue
-
-            for ftsFilesChunk in breakListIntoChunks(ftsFiles, maxFilesPerJob):
-                newJob = self._createNewJob("Staging", ftsFilesChunk, targetSE, sourceSE=targetSE)
-                newJobs.append(newJob)
-
-        return S_OK(newJobs)
-
-    def _callback(self):
-        """ " After a Staging operation, we have to update the matching Request in the
-        RMS, and nothing more. If a callback is to be performed, it will be the next
-        operation in the request, and put by the caller
-
-        NOTE: we don't use ReqProxy when putting the request back to avoid operational hell
-        """
-
-        res = self._updateRmsOperationStatus()
-
-        if not res["OK"]:
-            return res
-
-        request = res["Value"]["request"]
 
         return self.reqClient.putRequest(request, useFailoverProxy=False, retryMainService=3)

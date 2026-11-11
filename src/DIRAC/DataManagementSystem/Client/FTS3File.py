@@ -4,7 +4,7 @@ from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 
 class FTS3File(JSerializable):
     """This class represents an a File on which a given Operation
-    (Transfer, Staging) should be executed
+    (Transfer) should be executed
     """
 
     # START states

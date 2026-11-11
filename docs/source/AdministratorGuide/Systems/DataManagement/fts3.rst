@@ -73,9 +73,7 @@ See: :py:mod:`~DIRAC.DataManagementSystem.Agent.FTS3Agent` for configuration det
 FTS3 system overview
 --------------------
 
-There are two possible tasks that can be done with the FTS3 system: transferring and staging.
-
-Each of these task is performed by a dedicated ``FTS3Operation``: ``FTS3TransferOperation`` and ``FTS3StagingOperation``. These ``FTS3Operation`` contain a list of ``FTS3File``. An ``FTS3File`` is for a specific targetSE. The ``FTS3Agent`` will take an ``FTS3Operation``, group the files following some criteria (see later) into ``FTS3Jobs``. These ``FTS3Jobs`` will then be submitted to the FTS3 servers to become real FTS3 jobs. These Jobs are regularly monitored by the ``FTS3Agent``. When all the ``FTS3Files`` have reached a final status, the ``FTS3Operation`` callback method is called. This callback method depends on the type of ``FTS3Operation``.
+The FTS3 system performs transfers, through ``FTS3TransferOperation``. These ``FTS3Operation`` contain a list of ``FTS3File``. An ``FTS3File`` is for a specific targetSE. The ``FTS3Agent`` will take an ``FTS3Operation``, group the files following some criteria (see later) into ``FTS3Jobs``. These ``FTS3Jobs`` will then be submitted to the FTS3 servers to become real FTS3 jobs. These Jobs are regularly monitored by the ``FTS3Agent``. When all the ``FTS3Files`` have reached a final status, the ``FTS3Operation`` callback method is called. This callback method depends on the type of ``FTS3Operation``.
 
 Note that by default, the ``FTS3Agent`` is meant to run without shifter proxy. It will however download the proxy of the user submitting the job in order to delegate it to FTS. This also means that it is not able to perform registration in the DFC, and relies on Operation callback for that.
 
@@ -94,16 +92,6 @@ The grouping into jobs is done following this logic:
 
 Once the FTS jobs have been executed, and all the operation is completed, the callback takes place. The callback consists in fetching the RMS request which submitted the FTS3Operation, update the status of the RMS files, and insert a Registration Operation.
 Note that since the multiple targets are grouped in a single RMS operation, failing to transfer one file to one destination will result in the failure of the Operation. However, there is one Registration operation per target, and hence correctly transferred files will be registered.
-
-====================
-FTS3StagingOperation
-====================
-
-.. warning ::
-
-   Still in development, not meant to be used
-
-This operation is meant to perform BringOnline. The idea behind that is to replace, if deemed working, the whole StorageSystem of DIRAC.
 
 FTSServer policy
 ----------------
