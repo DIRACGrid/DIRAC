@@ -208,7 +208,7 @@ def fromString(myDate=None):
                 # return datetime.datetime.utcnow().combine( fromString( dateTimeTuple[0] ),
                 #                                   fromString( dateTimeTuple[1] ) )
         elif myDate.find(":") > 0:
-            timeTuple = myDate.replace(".", ":").split(":")
+            timeTuple = myDate.replace(".", ":").replace(",", ":").split(":")
             try:
                 if len(timeTuple) == 4:
                     return datetime.timedelta(
