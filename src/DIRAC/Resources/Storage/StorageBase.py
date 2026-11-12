@@ -54,7 +54,7 @@ class StorageBase:
 
     """
 
-    PROTOCOL_PARAMETERS = ["Protocol", "Host", "Path", "Port", "SpaceToken", "WSUrl"]
+    PROTOCOL_PARAMETERS = ["Protocol", "Host", "Path", "Port", "WSUrl"]
     # Options to be prepended in the URL
     # keys are the name of the parameters in the CS
     # values are the name of the options as they appear in the URL
