@@ -206,6 +206,30 @@ class TransformationClientChain(TestClientTransformationTestCase):
         res2 = self.transClient.getTransformationParameters(transID, ["aParamName"])
         self.assertTrue(res2["OK"])
 
+        # additional parameters of several transformations at once
+        res = self.transClient.addTransformation(
+            "otherTransName", "description", "longDescription", "MCSimulation", "Standard", "Manual", ""
+        )
+        self.assertTrue(res["OK"])
+        otherTransID = res["Value"]
+        res = self.transClient.setTransformationParameter(transID, "anIntParam", 42)
+        self.assertTrue(res["OK"])
+        res = self.transClient.getTransformations(
+            {"TransformationID": [transID, otherTransID]}, columns=["TransformationID"], extraParams=True
+        )
+        self.assertTrue(res["OK"])
+        self.assertEqual(
+            {t["TransformationID"]: t for t in res["Value"]},
+            {
+                transID: {"TransformationID": transID, "aParamName": "aParamValue", "anIntParam": 42},
+                otherTransID: {"TransformationID": otherTransID},
+            },
+        )
+        res = self.transClient.getAdditionalParameters(otherTransID)
+        self.assertTrue(res["OK"])
+        self.assertEqual(res["Value"], {})
+        self.transClient.deleteTransformation(otherTransID)
+
         # file status
         lfns = ["/aa/lfn.1.txt", "/aa/lfn.2.txt", "/aa/lfn.3.txt", "/aa/lfn.4.txt"]
         res = self.transClient.addFilesToTransformation(transID, lfns)
