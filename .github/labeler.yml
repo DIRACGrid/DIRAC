@@ -1,4 +1,0 @@
-# Add 'alsoTargeting:integration' label to any changes within the entire repository
-"alsoTargeting:rel-v9r0":
-  - changed-files:
-      - any-glob-to-any-file: "**"
