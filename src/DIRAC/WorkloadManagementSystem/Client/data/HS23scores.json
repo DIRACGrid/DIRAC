@@ -1,0 +1,1587 @@
+{
+  "source": "https://raw.githubusercontent.com/HEPiX-Forum/hepix-forum.github.io/master/_data/HS23scores.csv",
+  "source_hash": "sha256:fd5675e68432af43dde7d11d6b68693fa9b2d5f9ad12c2b49fbaa6599687a912",
+  "data_as_of": "2026-08-21 07:57:18",
+  "entries": [
+    {
+      "model": "amd epyc 4564p 16-core processor",
+      "original": "AMD EPYC 4564P 16-Core Processor",
+      "smt": 1,
+      "score_per_core": 27.6,
+      "measurements": 6,
+      "rows": 1,
+      "first_date": "2025-02-28 14:39:32",
+      "last_date": "2025-03-11 06:44:30"
+    },
+    {
+      "model": "amd epyc 72f3 8-core processor",
+      "original": "AMD EPYC 72F3 8-Core Processor",
+      "smt": 1,
+      "score_per_core": 21.1,
+      "measurements": 20,
+      "rows": 1,
+      "first_date": "2024-09-04 09:54:33",
+      "last_date": "2024-09-04 09:55:42"
+    },
+    {
+      "model": "amd epyc 7301 16-core processor",
+      "original": "AMD EPYC 7301 16-Core Processor",
+      "smt": 1,
+      "score_per_core": 9.3,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2026-07-02 09:34:40",
+      "last_date": "2026-07-02 09:34:40"
+    },
+    {
+      "model": "amd epyc 7302 16-core processor",
+      "original": "AMD EPYC 7302 16-Core Processor",
+      "smt": 0,
+      "score_per_core": 24.0,
+      "measurements": 978,
+      "rows": 2,
+      "first_date": "2023-03-23 16:00:01",
+      "last_date": "2023-08-09 06:00:02"
+    },
+    {
+      "model": "amd epyc 7302 16-core processor",
+      "original": "AMD EPYC 7302 16-Core Processor",
+      "smt": 1,
+      "score_per_core": 15.4,
+      "measurements": 261,
+      "rows": 7,
+      "first_date": "2023-02-22 13:00:02",
+      "last_date": "2026-08-13 14:26:58"
+    },
+    {
+      "model": "amd epyc 7302p 16-core processor",
+      "original": "AMD EPYC 7302P 16-Core Processor",
+      "smt": 1,
+      "score_per_core": 16.1,
+      "measurements": 4,
+      "rows": 1,
+      "first_date": "2023-05-25 14:26:35",
+      "last_date": "2023-05-25 15:29:19"
+    },
+    {
+      "model": "amd epyc 7303p 16-core processor",
+      "original": "AMD EPYC 7303P 16-Core Processor",
+      "smt": 1,
+      "score_per_core": 14.7,
+      "measurements": 48,
+      "rows": 1,
+      "first_date": "2025-10-13 11:17:51",
+      "last_date": "2025-10-13 19:36:16"
+    },
+    {
+      "model": "amd epyc 7313 16-core processor",
+      "original": "AMD EPYC 7313 16-Core Processor",
+      "smt": 1,
+      "score_per_core": 17.5,
+      "measurements": 1354,
+      "rows": 5,
+      "first_date": "2023-09-27 13:13:13",
+      "last_date": "2025-11-21 09:02:38"
+    },
+    {
+      "model": "amd epyc 7313p 16-core processor",
+      "original": "AMD EPYC 7313P 16-Core Processor",
+      "smt": 1,
+      "score_per_core": 18.2,
+      "measurements": 119,
+      "rows": 2,
+      "first_date": "2024-03-21 18:09:19",
+      "last_date": "2024-04-20 11:36:19"
+    },
+    {
+      "model": "amd epyc 7373x 16-core processor",
+      "original": "AMD EPYC 7373X 16-Core Processor",
+      "smt": 1,
+      "score_per_core": 19.4,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2023-10-15 10:43:11",
+      "last_date": "2023-10-15 10:43:11"
+    },
+    {
+      "model": "amd epyc 7402 24-core processor",
+      "original": "AMD EPYC 7402 24-Core Processor",
+      "smt": 0,
+      "score_per_core": 24.0,
+      "measurements": 5,
+      "rows": 2,
+      "first_date": "2024-10-07 13:09:02",
+      "last_date": "2024-10-14 07:05:45"
+    },
+    {
+      "model": "amd epyc 7402 24-core processor",
+      "original": "AMD EPYC 7402 24-Core Processor",
+      "smt": 1,
+      "score_per_core": 15.6,
+      "measurements": 39,
+      "rows": 4,
+      "first_date": "2023-03-14 12:19:20",
+      "last_date": "2024-10-14 07:14:48"
+    },
+    {
+      "model": "amd epyc 7402p 24-core processor",
+      "original": "AMD EPYC 7402P 24-Core Processor",
+      "smt": 1,
+      "score_per_core": 14.8,
+      "measurements": 105,
+      "rows": 1,
+      "first_date": "2023-12-13 10:37:13",
+      "last_date": "2024-03-03 11:17:12"
+    },
+    {
+      "model": "amd epyc 7413 24-core processor",
+      "original": "AMD EPYC 7413 24-Core Processor",
+      "smt": 1,
+      "score_per_core": 16.3,
+      "measurements": 26,
+      "rows": 1,
+      "first_date": "2024-10-31 09:57:40",
+      "last_date": "2025-11-09 00:13:45"
+    },
+    {
+      "model": "amd epyc 7443 24-core processor",
+      "original": "AMD EPYC 7443 24-Core Processor",
+      "smt": 1,
+      "score_per_core": 17.2,
+      "measurements": 27,
+      "rows": 2,
+      "first_date": "2023-07-01 04:22:54",
+      "last_date": "2025-04-10 07:06:49"
+    },
+    {
+      "model": "amd epyc 7443p 24-core processor",
+      "original": "AMD EPYC 7443P 24-Core Processor",
+      "smt": 1,
+      "score_per_core": 16.8,
+      "measurements": 4,
+      "rows": 2,
+      "first_date": "2023-03-21 15:19:43",
+      "last_date": "2023-10-20 14:08:18"
+    },
+    {
+      "model": "amd epyc 7451 24-core processor",
+      "original": "AMD EPYC 7451 24-Core Processor",
+      "smt": 1,
+      "score_per_core": 11.1,
+      "measurements": 16,
+      "rows": 2,
+      "first_date": "2023-07-03 14:16:15",
+      "last_date": "2025-04-09 12:11:08"
+    },
+    {
+      "model": "amd epyc 7452 32-core processor",
+      "original": "AMD EPYC 7452 32-Core Processor",
+      "smt": 0,
+      "score_per_core": 22.6,
+      "measurements": 2,
+      "rows": 1,
+      "first_date": "2023-06-14 15:13:27",
+      "last_date": "2023-06-15 08:57:46"
+    },
+    {
+      "model": "amd epyc 7452 32-core processor",
+      "original": "AMD EPYC 7452 32-Core Processor",
+      "smt": 1,
+      "score_per_core": 11.9,
+      "measurements": 36,
+      "rows": 3,
+      "first_date": "2023-03-08 05:47:11",
+      "last_date": "2025-11-27 18:29:01"
+    },
+    {
+      "model": "amd epyc 7453 28-core processor",
+      "original": "AMD EPYC 7453 28-Core Processor",
+      "smt": 1,
+      "score_per_core": 14.9,
+      "measurements": 27,
+      "rows": 1,
+      "first_date": "2023-03-15 10:40:51",
+      "last_date": "2023-03-19 20:08:00"
+    },
+    {
+      "model": "amd epyc 74f3 24-core processor",
+      "original": "AMD EPYC 74F3 24-Core Processor",
+      "smt": 0,
+      "score_per_core": 30.5,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2024-10-14 13:24:35",
+      "last_date": "2024-10-14 13:24:35"
+    },
+    {
+      "model": "amd epyc 74f3 24-core processor",
+      "original": "AMD EPYC 74F3 24-Core Processor",
+      "smt": 1,
+      "score_per_core": 18.0,
+      "measurements": 13,
+      "rows": 2,
+      "first_date": "2023-07-05 18:18:04",
+      "last_date": "2024-10-14 13:35:32"
+    },
+    {
+      "model": "amd epyc 7502 32-core processor",
+      "original": "AMD EPYC 7502 32-Core Processor",
+      "smt": 1,
+      "score_per_core": 12.8,
+      "measurements": 16,
+      "rows": 1,
+      "first_date": "2025-05-17 05:49:11",
+      "last_date": "2025-05-20 17:25:28"
+    },
+    {
+      "model": "amd epyc 7513 32-core processor",
+      "original": "AMD EPYC 7513 32-Core Processor",
+      "smt": 0,
+      "score_per_core": 25.7,
+      "measurements": 3,
+      "rows": 1,
+      "first_date": "2023-04-19 15:50:59",
+      "last_date": "2023-06-09 14:20:25"
+    },
+    {
+      "model": "amd epyc 7513 32-core processor",
+      "original": "AMD EPYC 7513 32-Core Processor",
+      "smt": 1,
+      "score_per_core": 14.5,
+      "measurements": 20,
+      "rows": 2,
+      "first_date": "2023-03-31 09:30:48",
+      "last_date": "2025-04-12 14:21:42"
+    },
+    {
+      "model": "amd epyc 7543 32-core processor",
+      "original": "AMD EPYC 7543 32-Core Processor",
+      "smt": 1,
+      "score_per_core": 15.8,
+      "measurements": 2686,
+      "rows": 3,
+      "first_date": "2023-07-26 08:36:33",
+      "last_date": "2024-10-14 14:00:02"
+    },
+    {
+      "model": "amd epyc 7551 32-core processor",
+      "original": "AMD EPYC 7551 32-Core Processor",
+      "smt": 0,
+      "score_per_core": 13.9,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2023-10-04 10:46:45",
+      "last_date": "2023-10-04 10:46:45"
+    },
+    {
+      "model": "amd epyc 7551p 32-core processor",
+      "original": "AMD EPYC 7551P 32-Core Processor",
+      "smt": 0,
+      "score_per_core": 16.4,
+      "measurements": 20,
+      "rows": 1,
+      "first_date": "2023-03-30 13:30:01",
+      "last_date": "2023-04-02 15:46:19"
+    },
+    {
+      "model": "amd epyc 7551p 32-core processor",
+      "original": "AMD EPYC 7551P 32-Core Processor",
+      "smt": 1,
+      "score_per_core": 10.0,
+      "measurements": 20,
+      "rows": 1,
+      "first_date": "2023-03-30 13:30:05",
+      "last_date": "2023-04-04 06:32:25"
+    },
+    {
+      "model": "amd epyc 7643 48-core processor",
+      "original": "AMD EPYC 7643 48-Core Processor",
+      "smt": 0,
+      "score_per_core": 24.7,
+      "measurements": 5,
+      "rows": 1,
+      "first_date": "2023-04-19 15:47:53",
+      "last_date": "2023-06-09 08:37:39"
+    },
+    {
+      "model": "amd epyc 7643 48-core processor",
+      "original": "AMD EPYC 7643 48-Core Processor",
+      "smt": 1,
+      "score_per_core": 14.1,
+      "measurements": 21,
+      "rows": 2,
+      "first_date": "2023-03-08 14:21:00",
+      "last_date": "2025-10-15 13:16:38"
+    },
+    {
+      "model": "amd epyc 7662 64-core processor",
+      "original": "AMD EPYC 7662 64-Core Processor",
+      "smt": 1,
+      "score_per_core": 19.5,
+      "measurements": 12,
+      "rows": 1,
+      "first_date": "2023-04-03 08:16:04",
+      "last_date": "2023-04-06 03:30:55"
+    },
+    {
+      "model": "amd epyc 7702 64-core processor",
+      "original": "AMD EPYC 7702 64-Core Processor",
+      "smt": 0,
+      "score_per_core": 17.4,
+      "measurements": 15,
+      "rows": 1,
+      "first_date": "2023-03-28 11:27:52",
+      "last_date": "2023-03-30 17:55:40"
+    },
+    {
+      "model": "amd epyc 7702 64-core processor",
+      "original": "AMD EPYC 7702 64-Core Processor",
+      "smt": 1,
+      "score_per_core": 10.0,
+      "measurements": 81,
+      "rows": 3,
+      "first_date": "2023-03-03 10:37:59",
+      "last_date": "2023-11-07 01:51:42"
+    },
+    {
+      "model": "amd epyc 7702p 64-core processor",
+      "original": "AMD EPYC 7702P 64-Core Processor",
+      "smt": 0,
+      "score_per_core": 20.1,
+      "measurements": 21,
+      "rows": 2,
+      "first_date": "2023-03-30 13:29:45",
+      "last_date": "2023-10-04 07:31:22"
+    },
+    {
+      "model": "amd epyc 7713 64-core processor",
+      "original": "AMD EPYC 7713 64-Core Processor",
+      "smt": 1,
+      "score_per_core": 11.9,
+      "measurements": 3,
+      "rows": 1,
+      "first_date": "2025-07-20 10:35:08",
+      "last_date": "2025-07-20 20:22:28"
+    },
+    {
+      "model": "amd epyc 7713p 64-core processor",
+      "original": "AMD EPYC 7713P 64-Core Processor",
+      "smt": 1,
+      "score_per_core": 12.1,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2023-09-11 15:08:53",
+      "last_date": "2023-09-11 15:08:53"
+    },
+    {
+      "model": "amd epyc 7742 64-core processor",
+      "original": "AMD EPYC 7742 64-Core Processor",
+      "smt": 0,
+      "score_per_core": 19.6,
+      "measurements": 214,
+      "rows": 7,
+      "first_date": "2023-03-06 11:33:10",
+      "last_date": "2025-03-17 10:48:54"
+    },
+    {
+      "model": "amd epyc 7742 64-core processor",
+      "original": "AMD EPYC 7742 64-Core Processor",
+      "smt": 1,
+      "score_per_core": 11.5,
+      "measurements": 174,
+      "rows": 2,
+      "first_date": "2023-03-01 10:58:48",
+      "last_date": "2024-01-12 18:46:08"
+    },
+    {
+      "model": "amd epyc 7763 64-core processor",
+      "original": "AMD EPYC 7763 64-Core Processor",
+      "smt": 0,
+      "score_per_core": 24.8,
+      "measurements": 16,
+      "rows": 1,
+      "first_date": "2025-05-07 16:19:36",
+      "last_date": "2025-05-09 10:09:27"
+    },
+    {
+      "model": "amd epyc 7763 64-core processor",
+      "original": "AMD EPYC 7763 64-Core Processor",
+      "smt": 1,
+      "score_per_core": 14.2,
+      "measurements": 2,
+      "rows": 1,
+      "first_date": "2023-04-21 10:03:35",
+      "last_date": "2023-06-05 10:47:47"
+    },
+    {
+      "model": "amd epyc 7773x 64-core processor",
+      "original": "AMD EPYC 7773X 64-Core Processor",
+      "smt": 0,
+      "score_per_core": 23.2,
+      "measurements": 22,
+      "rows": 1,
+      "first_date": "2023-03-19 12:38:21",
+      "last_date": "2023-03-22 22:50:17"
+    },
+    {
+      "model": "amd epyc 7773x 64-core processor",
+      "original": "AMD EPYC 7773X 64-Core Processor",
+      "smt": 1,
+      "score_per_core": 13.2,
+      "measurements": 25,
+      "rows": 1,
+      "first_date": "2023-03-16 00:27:55",
+      "last_date": "2023-03-22 09:44:21"
+    },
+    {
+      "model": "amd epyc 7f72 24-core processor",
+      "original": "AMD EPYC 7F72 24-Core Processor",
+      "smt": 1,
+      "score_per_core": 16.2,
+      "measurements": 9,
+      "rows": 1,
+      "first_date": "2024-10-14 13:50:17",
+      "last_date": "2025-03-04 14:12:48"
+    },
+    {
+      "model": "amd epyc 7h12 64-core processor",
+      "original": "AMD EPYC 7H12 64-Core Processor",
+      "smt": 0,
+      "score_per_core": 21.6,
+      "measurements": 20,
+      "rows": 1,
+      "first_date": "2023-03-30 13:30:17",
+      "last_date": "2023-04-02 00:46:30"
+    },
+    {
+      "model": "amd epyc 8224p 24-core processor",
+      "original": "AMD EPYC 8224P 24-Core Processor",
+      "smt": 1,
+      "score_per_core": 16.0,
+      "measurements": 3,
+      "rows": 1,
+      "first_date": "2026-07-09 13:23:06",
+      "last_date": "2026-07-09 13:23:13"
+    },
+    {
+      "model": "amd epyc 8324p 32-core processor",
+      "original": "AMD EPYC 8324P 32-Core Processor",
+      "smt": 1,
+      "score_per_core": 16.9,
+      "measurements": 61,
+      "rows": 2,
+      "first_date": "2026-02-19 16:39:42",
+      "last_date": "2026-03-12 10:00:04"
+    },
+    {
+      "model": "amd epyc 8434pn 48-core processor",
+      "original": "AMD EPYC 8434PN 48-Core Processor",
+      "smt": 1,
+      "score_per_core": 13.7,
+      "measurements": 4,
+      "rows": 1,
+      "first_date": "2025-03-25 16:07:59",
+      "last_date": "2025-03-31 10:17:53"
+    },
+    {
+      "model": "amd epyc 9115 16-core processor",
+      "original": "AMD EPYC 9115 16-Core Processor",
+      "smt": 1,
+      "score_per_core": 21.9,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2025-04-01 09:54:41",
+      "last_date": "2025-04-01 09:54:41"
+    },
+    {
+      "model": "amd epyc 9124 16-core processor",
+      "original": "AMD EPYC 9124 16-Core Processor",
+      "smt": 1,
+      "score_per_core": 21.6,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2025-03-23 09:23:26",
+      "last_date": "2025-03-23 09:23:26"
+    },
+    {
+      "model": "amd epyc 9224 24-core processor",
+      "original": "AMD EPYC 9224 24-Core Processor",
+      "smt": 1,
+      "score_per_core": 18.8,
+      "measurements": 42,
+      "rows": 1,
+      "first_date": "2024-04-25 09:02:33",
+      "last_date": "2024-07-20 10:02:27"
+    },
+    {
+      "model": "amd epyc 9254 24-core processor",
+      "original": "AMD EPYC 9254 24-Core Processor",
+      "smt": 1,
+      "score_per_core": 21.0,
+      "measurements": 30,
+      "rows": 1,
+      "first_date": "2023-10-27 14:50:22",
+      "last_date": "2023-10-27 14:52:36"
+    },
+    {
+      "model": "amd epyc 9255 24-core processor",
+      "original": "AMD EPYC 9255 24-Core Processor",
+      "smt": 1,
+      "score_per_core": 25.2,
+      "measurements": 9,
+      "rows": 2,
+      "first_date": "2025-04-07 08:52:36",
+      "last_date": "2026-03-16 10:20:11"
+    },
+    {
+      "model": "amd epyc 9334 32-core processor",
+      "original": "AMD EPYC 9334 32-Core Processor",
+      "smt": 0,
+      "score_per_core": 29.7,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2024-08-20 09:07:40",
+      "last_date": "2024-08-20 09:07:40"
+    },
+    {
+      "model": "amd epyc 9334 32-core processor",
+      "original": "AMD EPYC 9334 32-Core Processor",
+      "smt": 1,
+      "score_per_core": 20.4,
+      "measurements": 13,
+      "rows": 3,
+      "first_date": "2023-10-23 11:31:29",
+      "last_date": "2023-10-26 12:31:11"
+    },
+    {
+      "model": "amd epyc 9335 32-core processor",
+      "original": "AMD EPYC 9335 32-Core Processor",
+      "smt": 1,
+      "score_per_core": 24.2,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2025-04-07 05:44:06",
+      "last_date": "2025-04-07 05:44:06"
+    },
+    {
+      "model": "amd epyc 9354 32-core processor",
+      "original": "AMD EPYC 9354 32-Core Processor",
+      "smt": 1,
+      "score_per_core": 21.6,
+      "measurements": 130,
+      "rows": 3,
+      "first_date": "2023-10-23 11:31:55",
+      "last_date": "2026-02-27 09:45:54"
+    },
+    {
+      "model": "amd epyc 9354p 32-core processor",
+      "original": "AMD EPYC 9354P 32-Core Processor",
+      "smt": 1,
+      "score_per_core": 20.4,
+      "measurements": 12,
+      "rows": 1,
+      "first_date": "2026-03-16 08:16:41",
+      "last_date": "2026-03-16 08:16:59"
+    },
+    {
+      "model": "amd epyc 9355 32-core processor",
+      "original": "AMD EPYC 9355 32-Core Processor",
+      "smt": 1,
+      "score_per_core": 27.0,
+      "measurements": 16,
+      "rows": 1,
+      "first_date": "2026-04-14 12:09:30",
+      "last_date": "2026-04-16 03:01:02"
+    },
+    {
+      "model": "amd epyc 9374f 32-core processor",
+      "original": "AMD EPYC 9374F 32-Core Processor",
+      "smt": 1,
+      "score_per_core": 25.2,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2025-07-17 11:21:13",
+      "last_date": "2025-07-17 11:21:13"
+    },
+    {
+      "model": "amd epyc 9375f 32-core processor",
+      "original": "AMD EPYC 9375F 32-Core Processor",
+      "smt": 1,
+      "score_per_core": 28.5,
+      "measurements": 6,
+      "rows": 1,
+      "first_date": "2025-10-12 08:20:41",
+      "last_date": "2025-10-12 12:56:45"
+    },
+    {
+      "model": "amd epyc 9454 48-core processor",
+      "original": "AMD EPYC 9454 48-Core Processor",
+      "smt": 1,
+      "score_per_core": 17.7,
+      "measurements": 4,
+      "rows": 1,
+      "first_date": "2025-11-23 01:24:56",
+      "last_date": "2025-11-25 20:57:41"
+    },
+    {
+      "model": "amd epyc 9454p 48-core processor",
+      "original": "AMD EPYC 9454P 48-Core Processor",
+      "smt": 1,
+      "score_per_core": 19.7,
+      "measurements": 216,
+      "rows": 2,
+      "first_date": "2023-12-11 10:21:05",
+      "last_date": "2024-08-20 14:21:17"
+    },
+    {
+      "model": "amd epyc 9455 48-core processor",
+      "original": "AMD EPYC 9455 48-Core Processor",
+      "smt": 1,
+      "score_per_core": 24.4,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2025-04-01 09:30:05",
+      "last_date": "2025-04-01 09:30:05"
+    },
+    {
+      "model": "amd epyc 9474f 48-core processor",
+      "original": "AMD EPYC 9474F 48-Core Processor",
+      "smt": 0,
+      "score_per_core": 32.4,
+      "measurements": 2,
+      "rows": 1,
+      "first_date": "2023-10-04 06:34:23",
+      "last_date": "2023-10-04 08:39:14"
+    },
+    {
+      "model": "amd epyc 9474f 48-core processor",
+      "original": "AMD EPYC 9474F 48-Core Processor",
+      "smt": 1,
+      "score_per_core": 22.8,
+      "measurements": 8,
+      "rows": 1,
+      "first_date": "2023-10-23 11:28:59",
+      "last_date": "2023-10-25 03:57:47"
+    },
+    {
+      "model": "amd epyc 9554 64-core processor",
+      "original": "AMD EPYC 9554 64-Core Processor",
+      "smt": 0,
+      "score_per_core": 31.2,
+      "measurements": 16,
+      "rows": 1,
+      "first_date": "2025-06-03 12:12:06",
+      "last_date": "2025-06-05 18:41:27"
+    },
+    {
+      "model": "amd epyc 9554 64-core processor",
+      "original": "AMD EPYC 9554 64-Core Processor",
+      "smt": 1,
+      "score_per_core": 19.2,
+      "measurements": 18,
+      "rows": 2,
+      "first_date": "2024-08-20 07:48:29",
+      "last_date": "2025-06-13 10:34:58"
+    },
+    {
+      "model": "amd epyc 9554p 64-core processor",
+      "original": "AMD EPYC 9554P 64-Core Processor",
+      "smt": 1,
+      "score_per_core": 19.7,
+      "measurements": 11,
+      "rows": 1,
+      "first_date": "2023-09-06 17:43:06",
+      "last_date": "2023-09-08 11:58:46"
+    },
+    {
+      "model": "amd epyc 9565 72-core processor",
+      "original": "AMD EPYC 9565 72-Core Processor",
+      "smt": 1,
+      "score_per_core": 23.8,
+      "measurements": 16,
+      "rows": 1,
+      "first_date": "2026-02-03 14:24:35",
+      "last_date": "2026-02-05 09:41:51"
+    },
+    {
+      "model": "amd epyc 9634 84-core processor",
+      "original": "AMD EPYC 9634 84-Core Processor",
+      "smt": 1,
+      "score_per_core": 13.7,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2024-10-02 11:25:16",
+      "last_date": "2024-10-02 11:25:16"
+    },
+    {
+      "model": "amd epyc 9654 96-core processor",
+      "original": "AMD EPYC 9654 96-Core Processor",
+      "smt": 0,
+      "score_per_core": 26.5,
+      "measurements": 99,
+      "rows": 4,
+      "first_date": "2023-04-06 01:01:14",
+      "last_date": "2024-08-25 12:13:41"
+    },
+    {
+      "model": "amd epyc 9654 96-core processor",
+      "original": "AMD EPYC 9654 96-Core Processor",
+      "smt": 1,
+      "score_per_core": 16.0,
+      "measurements": 51,
+      "rows": 4,
+      "first_date": "2023-03-28 09:19:20",
+      "last_date": "2025-10-12 17:16:00"
+    },
+    {
+      "model": "amd epyc 9655 96-core processor",
+      "original": "AMD EPYC 9655 96-Core Processor",
+      "smt": 0,
+      "score_per_core": 34.0,
+      "measurements": 3,
+      "rows": 2,
+      "first_date": "2026-01-28 18:18:33",
+      "last_date": "2026-02-12 01:59:07"
+    },
+    {
+      "model": "amd epyc 9655 96-core processor",
+      "original": "AMD EPYC 9655 96-Core Processor",
+      "smt": 1,
+      "score_per_core": 21.3,
+      "measurements": 401,
+      "rows": 5,
+      "first_date": "2025-11-06 17:59:04",
+      "last_date": "2026-08-21 07:57:18"
+    },
+    {
+      "model": "amd epyc 9655p 96-core processor",
+      "original": "AMD EPYC 9655P 96-Core Processor",
+      "smt": 1,
+      "score_per_core": 21.3,
+      "measurements": 173,
+      "rows": 3,
+      "first_date": "2025-12-19 13:51:08",
+      "last_date": "2026-07-29 15:53:23"
+    },
+    {
+      "model": "amd epyc 9745 128-core processor",
+      "original": "AMD EPYC 9745 128-Core Processor",
+      "smt": 1,
+      "score_per_core": 15.2,
+      "measurements": 2,
+      "rows": 1,
+      "first_date": "2025-10-30 14:13:02",
+      "last_date": "2025-10-31 12:24:29"
+    },
+    {
+      "model": "amd epyc 9754 128-core processor",
+      "original": "AMD EPYC 9754 128-Core Processor",
+      "smt": 1,
+      "score_per_core": 14.8,
+      "measurements": 6,
+      "rows": 3,
+      "first_date": "2023-09-21 13:10:00",
+      "last_date": "2024-06-15 01:17:36"
+    },
+    {
+      "model": "amd epyc 9755 128-core processor",
+      "original": "AMD EPYC 9755 128-Core Processor",
+      "smt": 0,
+      "score_per_core": 34.9,
+      "measurements": 35,
+      "rows": 2,
+      "first_date": "2025-04-15 08:21:53",
+      "last_date": "2025-05-14 01:42:56"
+    },
+    {
+      "model": "amd epyc 9755 128-core processor",
+      "original": "AMD EPYC 9755 128-Core Processor",
+      "smt": 1,
+      "score_per_core": 21.8,
+      "measurements": 39,
+      "rows": 3,
+      "first_date": "2025-01-23 11:20:50",
+      "last_date": "2025-05-17 12:36:20"
+    },
+    {
+      "model": "amd epyc 9825 144-core processor",
+      "original": "AMD EPYC 9825 144-Core Processor",
+      "smt": 0,
+      "score_per_core": 26.4,
+      "measurements": 32,
+      "rows": 2,
+      "first_date": "2025-12-11 13:41:20",
+      "last_date": "2026-02-19 06:25:02"
+    },
+    {
+      "model": "amd epyc 9825 144-core processor",
+      "original": "AMD EPYC 9825 144-Core Processor",
+      "smt": 1,
+      "score_per_core": 16.2,
+      "measurements": 32,
+      "rows": 2,
+      "first_date": "2025-12-16 08:13:54",
+      "last_date": "2026-02-16 11:41:27"
+    },
+    {
+      "model": "amd epyc 9965 192-core processor",
+      "original": "AMD EPYC 9965 192-Core Processor",
+      "smt": 1,
+      "score_per_core": 19.1,
+      "measurements": 76,
+      "rows": 2,
+      "first_date": "2025-10-12 08:22:00",
+      "last_date": "2026-02-25 01:55:50"
+    },
+    {
+      "model": "cortex-x925 cortex-a725",
+      "original": "Cortex-X925 Cortex-A725",
+      "smt": 0,
+      "score_per_core": 39.9,
+      "measurements": 3,
+      "rows": 2,
+      "first_date": "2026-04-02 21:42:40",
+      "last_date": "2026-04-22 12:50:55"
+    },
+    {
+      "model": "intel core processor (haswell, no tsx, ibrs)",
+      "original": "Intel Core Processor (Haswell, no TSX, IBRS)",
+      "smt": 0,
+      "score_per_core": 16.9,
+      "measurements": 10,
+      "rows": 1,
+      "first_date": "2023-03-22 15:40:32",
+      "last_date": "2023-03-24 05:36:39"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2407 v2",
+      "original": "Intel(R) Xeon(R) CPU E5-2407 v2 @ 2.40GHz",
+      "smt": 0,
+      "score_per_core": 11.6,
+      "measurements": 10,
+      "rows": 1,
+      "first_date": "2023-03-09 06:44:26",
+      "last_date": "2023-03-11 13:32:13"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2620 0",
+      "original": "Intel(R) Xeon(R) CPU E5-2620 0 @ 2.00GHz",
+      "smt": 1,
+      "score_per_core": 5.4,
+      "measurements": 56,
+      "rows": 1,
+      "first_date": "2025-08-29 14:42:01",
+      "last_date": "2025-09-01 21:37:27"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2630 v3",
+      "original": "Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz",
+      "smt": 0,
+      "score_per_core": 16.8,
+      "measurements": 804,
+      "rows": 3,
+      "first_date": "2023-03-23 16:00:05",
+      "last_date": "2023-08-09 06:00:02"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2630 v3",
+      "original": "Intel(R) Xeon(R) CPU E5-2630 v3 @ 2.40GHz",
+      "smt": 1,
+      "score_per_core": 9.7,
+      "measurements": 607,
+      "rows": 5,
+      "first_date": "2023-02-22 13:00:01",
+      "last_date": "2024-11-07 04:00:02"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2630 v4",
+      "original": "Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz",
+      "smt": 0,
+      "score_per_core": 17.0,
+      "measurements": 4,
+      "rows": 1,
+      "first_date": "2023-06-01 13:37:48",
+      "last_date": "2023-06-01 13:37:57"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2630 v4",
+      "original": "Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz",
+      "smt": 1,
+      "score_per_core": 9.6,
+      "measurements": 14,
+      "rows": 2,
+      "first_date": "2023-03-10 06:44:59",
+      "last_date": "2023-06-01 13:21:05"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2640 v3",
+      "original": "Intel(R) Xeon(R) CPU E5-2640 v3 @ 2.60GHz",
+      "smt": 1,
+      "score_per_core": 10.6,
+      "measurements": 34,
+      "rows": 3,
+      "first_date": "2023-03-08 05:54:54",
+      "last_date": "2023-06-29 14:18:56"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2640 v4",
+      "original": "Intel(R) Xeon(R) CPU E5-2640 v4 @ 2.40GHz",
+      "smt": 1,
+      "score_per_core": 10.4,
+      "measurements": 6,
+      "rows": 1,
+      "first_date": "2023-06-26 17:15:22",
+      "last_date": "2023-07-07 17:12:07"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2650 v2",
+      "original": "Intel(R) Xeon(R) CPU E5-2650 v2 @ 2.60GHz",
+      "smt": 1,
+      "score_per_core": 8.3,
+      "measurements": 72,
+      "rows": 1,
+      "first_date": "2025-08-29 14:41:36",
+      "last_date": "2025-08-31 20:27:07"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2650 v4",
+      "original": "Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz",
+      "smt": 0,
+      "score_per_core": 17.0,
+      "measurements": 729,
+      "rows": 2,
+      "first_date": "2023-03-23 15:00:02",
+      "last_date": "2023-08-09 06:00:02"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2650 v4",
+      "original": "Intel(R) Xeon(R) CPU E5-2650 v4 @ 2.20GHz",
+      "smt": 1,
+      "score_per_core": 10.0,
+      "measurements": 427,
+      "rows": 3,
+      "first_date": "2023-02-22 13:00:01",
+      "last_date": "2024-05-15 03:00:02"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2660 0",
+      "original": "Intel(R) Xeon(R) CPU E5-2660 0 @ 2.20GHz",
+      "smt": 1,
+      "score_per_core": 7.2,
+      "measurements": 10,
+      "rows": 1,
+      "first_date": "2023-03-18 21:12:20",
+      "last_date": "2023-03-21 22:45:06"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2660 v2",
+      "original": "Intel(R) Xeon(R) CPU E5-2660 v2 @ 2.20GHz",
+      "smt": 1,
+      "score_per_core": 7.3,
+      "measurements": 8,
+      "rows": 1,
+      "first_date": "2025-08-29 14:41:48",
+      "last_date": "2025-09-01 01:08:24"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2660 v3",
+      "original": "Intel(R) Xeon(R) CPU E5-2660 v3 @ 2.60GHz",
+      "smt": 0,
+      "score_per_core": 17.0,
+      "measurements": 60,
+      "rows": 1,
+      "first_date": "2023-03-31 11:31:43",
+      "last_date": "2023-04-03 20:09:00"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2660 v3",
+      "original": "Intel(R) Xeon(R) CPU E5-2660 v3 @ 2.60GHz",
+      "smt": 1,
+      "score_per_core": 9.8,
+      "measurements": 120,
+      "rows": 1,
+      "first_date": "2023-03-06 13:54:27",
+      "last_date": "2023-03-22 01:53:46"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2665 0",
+      "original": "Intel(R) Xeon(R) CPU E5-2665 0 @ 2.40GHz",
+      "smt": 0,
+      "score_per_core": 11.8,
+      "measurements": 120,
+      "rows": 2,
+      "first_date": "2023-03-16 15:25:45",
+      "last_date": "2023-04-05 19:42:16"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2665 0",
+      "original": "Intel(R) Xeon(R) CPU E5-2665 0 @ 2.40GHz",
+      "smt": 1,
+      "score_per_core": 7.0,
+      "measurements": 77,
+      "rows": 1,
+      "first_date": "2023-03-06 13:58:05",
+      "last_date": "2023-03-23 14:12:56"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2670 0",
+      "original": "Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz",
+      "smt": 0,
+      "score_per_core": 12.7,
+      "measurements": 69,
+      "rows": 2,
+      "first_date": "2023-03-07 16:25:06",
+      "last_date": "2023-04-05 09:34:14"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2670 0",
+      "original": "Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz",
+      "smt": 1,
+      "score_per_core": 7.7,
+      "measurements": 93,
+      "rows": 4,
+      "first_date": "2023-03-06 13:50:55",
+      "last_date": "2025-10-04 02:44:12"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2670 v3",
+      "original": "Intel(R) Xeon(R) CPU E5-2670 v3 @ 2.30GHz",
+      "smt": 1,
+      "score_per_core": 9.7,
+      "measurements": 14,
+      "rows": 1,
+      "first_date": "2023-03-15 02:22:52",
+      "last_date": "2023-03-18 23:23:54"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2680 v3",
+      "original": "Intel(R) Xeon(R) CPU E5-2680 v3 @ 2.50GHz",
+      "smt": 0,
+      "score_per_core": 17.9,
+      "measurements": 20,
+      "rows": 1,
+      "first_date": "2023-03-30 13:29:57",
+      "last_date": "2023-04-02 11:26:02"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2680 v4",
+      "original": "Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHz",
+      "smt": 0,
+      "score_per_core": 19.2,
+      "measurements": 738,
+      "rows": 2,
+      "first_date": "2023-03-23 16:00:02",
+      "last_date": "2023-08-09 06:00:02"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2680 v4",
+      "original": "Intel(R) Xeon(R) CPU E5-2680 v4 @ 2.40GHz",
+      "smt": 1,
+      "score_per_core": 11.3,
+      "measurements": 822,
+      "rows": 7,
+      "first_date": "2023-02-22 13:00:01",
+      "last_date": "2024-10-24 12:00:02"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2683 v4",
+      "original": "Intel(R) Xeon(R) CPU E5-2683 v4 @ 2.10GHz",
+      "smt": 1,
+      "score_per_core": 9.4,
+      "measurements": 61,
+      "rows": 2,
+      "first_date": "2025-08-22 13:53:01",
+      "last_date": "2025-09-03 11:14:37"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2687w v4",
+      "original": "Intel(R) Xeon(R) CPU E5-2687W v4 @ 3.00GHz",
+      "smt": 1,
+      "score_per_core": 12.4,
+      "measurements": 4,
+      "rows": 1,
+      "first_date": "2025-11-24 21:33:59",
+      "last_date": "2025-11-26 06:55:30"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2690 v4",
+      "original": "Intel(R) Xeon(R) CPU E5-2690 v4 @ 2.60GHz",
+      "smt": 1,
+      "score_per_core": 12.0,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2024-07-31 08:17:07",
+      "last_date": "2024-07-31 08:17:07"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5-2695 v3",
+      "original": "Intel(R) Xeon(R) CPU E5-2695 v3 @ 2.30GHz",
+      "smt": 0,
+      "score_per_core": 14.8,
+      "measurements": 20,
+      "rows": 1,
+      "first_date": "2023-03-14 19:38:29",
+      "last_date": "2023-03-20 00:21:48"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5520",
+      "original": "Intel(R) Xeon(R) CPU           E5520  @ 2.27GHz",
+      "smt": 0,
+      "score_per_core": 9.9,
+      "measurements": 6,
+      "rows": 1,
+      "first_date": "2023-03-02 06:51:52",
+      "last_date": "2023-03-09 08:41:54"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu e5630",
+      "original": "Intel(R) Xeon(R) CPU           E5630  @ 2.53GHz",
+      "smt": 1,
+      "score_per_core": 6.7,
+      "measurements": 7,
+      "rows": 4,
+      "first_date": "2025-08-29 14:42:08",
+      "last_date": "2025-09-08 13:12:47"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu max 9462",
+      "original": "Intel (R) Xeon (R) CPU Max 9462",
+      "smt": 1,
+      "score_per_core": 19.1,
+      "measurements": 2,
+      "rows": 1,
+      "first_date": "2023-03-15 09:37:06",
+      "last_date": "2023-03-15 16:12:39"
+    },
+    {
+      "model": "intel(r)xeon(r)cpu max 9480",
+      "original": "Intel (R) Xeon (R) CPU Max 9480",
+      "smt": 1,
+      "score_per_core": 14.5,
+      "measurements": 12,
+      "rows": 3,
+      "first_date": "2023-04-01 08:55:34",
+      "last_date": "2023-04-06 14:12:45"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 5118 cpu",
+      "original": "Intel(R) Xeon(R) Gold 5118 CPU @ 2.30GHz",
+      "smt": 1,
+      "score_per_core": 11.4,
+      "measurements": 11,
+      "rows": 1,
+      "first_date": "2023-04-03 10:24:51",
+      "last_date": "2023-04-06 05:28:21"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 5218 cpu",
+      "original": "Intel(R) Xeon(R) Gold 5218 CPU @ 2.30GHz",
+      "smt": 0,
+      "score_per_core": 19.1,
+      "measurements": 500,
+      "rows": 2,
+      "first_date": "2023-03-23 17:00:01",
+      "last_date": "2023-08-09 06:00:02"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 5218 cpu",
+      "original": "Intel(R) Xeon(R) Gold 5218 CPU @ 2.30GHz",
+      "smt": 1,
+      "score_per_core": 11.0,
+      "measurements": 307,
+      "rows": 2,
+      "first_date": "2023-02-22 13:00:02",
+      "last_date": "2023-11-01 07:00:01"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6126 cpu",
+      "original": "Intel(R) Xeon(R) Gold 6126 CPU @ 2.60GHz",
+      "smt": 1,
+      "score_per_core": 12.9,
+      "measurements": 24,
+      "rows": 2,
+      "first_date": "2025-08-29 14:41:20",
+      "last_date": "2025-09-02 22:11:02"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6130 cpu",
+      "original": "Intel(R) Xeon(R) Gold 6130 CPU @ 2.10GHz",
+      "smt": 0,
+      "score_per_core": 18.8,
+      "measurements": 341,
+      "rows": 2,
+      "first_date": "2023-03-23 16:00:01",
+      "last_date": "2023-06-02 17:30:30"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6130 cpu",
+      "original": "Intel(R) Xeon(R) Gold 6130 CPU @ 2.10GHz",
+      "smt": 1,
+      "score_per_core": 11.0,
+      "measurements": 480,
+      "rows": 4,
+      "first_date": "2023-02-28 12:00:02",
+      "last_date": "2024-10-24 12:00:02"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6148 cpu",
+      "original": "Intel(R) Xeon(R) Gold 6148 CPU @ 2.40GHz",
+      "smt": 0,
+      "score_per_core": 19.9,
+      "measurements": 20,
+      "rows": 1,
+      "first_date": "2023-03-30 13:29:56",
+      "last_date": "2023-04-02 05:39:50"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6226 cpu",
+      "original": "Intel(R) Xeon(R) Gold 6226 CPU @ 2.70GHz",
+      "smt": 1,
+      "score_per_core": 14.1,
+      "measurements": 25,
+      "rows": 1,
+      "first_date": "2023-03-03 23:12:22",
+      "last_date": "2023-03-12 14:18:06"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6230 cpu",
+      "original": "Intel(R) Xeon(R) Gold 6230 CPU @ 2.10GHz",
+      "smt": 0,
+      "score_per_core": 18.6,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2024-08-01 06:15:19",
+      "last_date": "2024-08-01 06:15:19"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6238r cpu",
+      "original": "Intel(R) Xeon(R) Gold 6238R CPU @ 2.20GHz",
+      "smt": 0,
+      "score_per_core": 19.5,
+      "measurements": 26,
+      "rows": 1,
+      "first_date": "2023-03-27 01:51:42",
+      "last_date": "2023-03-31 22:59:02"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6248 cpu",
+      "original": "Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz",
+      "smt": 0,
+      "score_per_core": 20.7,
+      "measurements": 23,
+      "rows": 1,
+      "first_date": "2023-03-27 01:27:45",
+      "last_date": "2023-03-31 04:39:43"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6248r cpu",
+      "original": "Intel(R) Xeon(R) Gold 6248R CPU @ 3.00GHz",
+      "smt": 1,
+      "score_per_core": 12.1,
+      "measurements": 2,
+      "rows": 1,
+      "first_date": "2023-03-21 13:23:05",
+      "last_date": "2023-04-11 10:50:30"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6252 cpu",
+      "original": "Intel(R) Xeon(R) Gold 6252 CPU @ 2.10GHz",
+      "smt": 1,
+      "score_per_core": 10.9,
+      "measurements": 12,
+      "rows": 2,
+      "first_date": "2023-03-07 16:12:12",
+      "last_date": "2023-03-31 15:44:47"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6258r cpu",
+      "original": "Intel(R) Xeon(R) Gold 6258R CPU @ 2.70GHz",
+      "smt": 0,
+      "score_per_core": 21.1,
+      "measurements": 24,
+      "rows": 1,
+      "first_date": "2023-03-27 01:28:36",
+      "last_date": "2023-03-31 04:11:56"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6326 cpu",
+      "original": "Intel(R) Xeon(R) Gold 6326 CPU @ 2.90GHz",
+      "smt": 0,
+      "score_per_core": 27.0,
+      "measurements": 302,
+      "rows": 1,
+      "first_date": "2023-03-23 16:00:01",
+      "last_date": "2023-05-08 12:00:01"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6326 cpu",
+      "original": "Intel(R) Xeon(R) Gold 6326 CPU @ 2.90GHz",
+      "smt": 1,
+      "score_per_core": 15.9,
+      "measurements": 668,
+      "rows": 4,
+      "first_date": "2023-02-22 13:00:01",
+      "last_date": "2025-09-02 02:00:02"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6336y cpu",
+      "original": "Intel(R) Xeon(R) Gold 6336Y CPU @ 2.40GHz",
+      "smt": 1,
+      "score_per_core": 13.6,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2025-04-03 08:47:48",
+      "last_date": "2025-04-03 08:47:48"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6338 cpu",
+      "original": "Intel(R) Xeon(R) Gold 6338 CPU @ 2.00GHz",
+      "smt": 0,
+      "score_per_core": 21.9,
+      "measurements": 24,
+      "rows": 1,
+      "first_date": "2023-03-27 01:51:15",
+      "last_date": "2023-03-30 23:37:08"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6342 cpu",
+      "original": "Intel(R) Xeon(R) Gold 6342 CPU @ 2.80GHz",
+      "smt": 0,
+      "score_per_core": 25.7,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2023-10-04 10:46:39",
+      "last_date": "2023-10-04 10:46:39"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6430",
+      "original": "Intel(R) Xeon(R) Gold 6430",
+      "smt": 0,
+      "score_per_core": 25.8,
+      "measurements": 17,
+      "rows": 1,
+      "first_date": "2023-06-28 00:28:50",
+      "last_date": "2023-06-30 22:24:57"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6430",
+      "original": "Intel(R) Xeon(R) Gold 6430",
+      "smt": 1,
+      "score_per_core": 16.0,
+      "measurements": 16,
+      "rows": 1,
+      "first_date": "2023-06-27 09:11:47",
+      "last_date": "2023-07-05 18:38:13"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6442y",
+      "original": "Intel(R) Xeon(R) Gold 6442Y",
+      "smt": 1,
+      "score_per_core": 20.0,
+      "measurements": 80,
+      "rows": 1,
+      "first_date": "2024-04-20 11:05:10",
+      "last_date": "2024-04-20 12:07:30"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6448y",
+      "original": "Intel(R) Xeon(R) Gold 6448Y",
+      "smt": 1,
+      "score_per_core": 17.3,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2025-03-21 20:13:32",
+      "last_date": "2025-03-21 20:13:32"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6454s",
+      "original": "Intel(R) Xeon(R) Gold 6454S",
+      "smt": 1,
+      "score_per_core": 17.2,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2026-07-02 11:17:17",
+      "last_date": "2026-07-02 11:17:17"
+    },
+    {
+      "model": "intel(r)xeon(r)gold 6530",
+      "original": "INTEL(R) XEON(R) GOLD 6530",
+      "smt": 0,
+      "score_per_core": 27.6,
+      "measurements": 21,
+      "rows": 1,
+      "first_date": "2026-04-20 06:24:25",
+      "last_date": "2026-04-22 19:15:09"
+    },
+    {
+      "model": "intel(r)xeon(r)platinum 8352y cpu",
+      "original": "Intel(R) Xeon(R) Platinum 8352Y CPU @ 2.20GHz",
+      "smt": 0,
+      "score_per_core": 22.3,
+      "measurements": 42,
+      "rows": 1,
+      "first_date": "2023-05-09 03:04:12",
+      "last_date": "2023-05-11 06:09:14"
+    },
+    {
+      "model": "intel(r)xeon(r)platinum 8358p cpu",
+      "original": "Intel(R) Xeon(R) Platinum 8358P CPU @ 2.60GHz",
+      "smt": 0,
+      "score_per_core": 23.4,
+      "measurements": 20,
+      "rows": 1,
+      "first_date": "2024-01-26 01:50:38",
+      "last_date": "2024-01-28 22:54:55"
+    },
+    {
+      "model": "intel(r)xeon(r)platinum 8362 cpu",
+      "original": "Intel(R) Xeon(R) Platinum 8362 CPU @ 2.80GHz",
+      "smt": 0,
+      "score_per_core": 24.3,
+      "measurements": 19,
+      "rows": 1,
+      "first_date": "2023-03-03 13:07:18",
+      "last_date": "2023-03-03 23:10:21"
+    },
+    {
+      "model": "intel(r)xeon(r)platinum 8468",
+      "original": "Intel(R) Xeon(R) Platinum 8468",
+      "smt": 1,
+      "score_per_core": 16.8,
+      "measurements": 13,
+      "rows": 1,
+      "first_date": "2024-07-19 09:00:06",
+      "last_date": "2024-07-19 09:01:24"
+    },
+    {
+      "model": "intel(r)xeon(r)platinum 8480cl",
+      "original": "Intel(R) Xeon(R) Platinum 8480CL",
+      "smt": 0,
+      "score_per_core": 25.6,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2024-10-14 13:32:00",
+      "last_date": "2024-10-14 13:32:00"
+    },
+    {
+      "model": "intel(r)xeon(r)platinum 8480cl",
+      "original": "Intel(R) Xeon(R) Platinum 8480CL",
+      "smt": 1,
+      "score_per_core": 14.6,
+      "measurements": 39,
+      "rows": 2,
+      "first_date": "2024-09-02 13:56:54",
+      "last_date": "2024-10-17 08:00:26"
+    },
+    {
+      "model": "intel(r)xeon(r)platinum 8592+",
+      "original": "INTEL(R) XEON(R) PLATINUM 8592+",
+      "smt": 1,
+      "score_per_core": 15.7,
+      "measurements": 1,
+      "rows": 1,
+      "first_date": "2026-07-02 14:34:12",
+      "last_date": "2026-07-02 14:34:12"
+    },
+    {
+      "model": "intel(r)xeon(r)silver 4114 cpu",
+      "original": "Intel(R) Xeon(R) Silver 4114 CPU @ 2.20GHz",
+      "smt": 1,
+      "score_per_core": 10.4,
+      "measurements": 14,
+      "rows": 1,
+      "first_date": "2023-03-17 12:24:08",
+      "last_date": "2023-03-21 00:26:06"
+    },
+    {
+      "model": "intel(r)xeon(r)silver 4216 cpu",
+      "original": "Intel(R) Xeon(R) Silver 4216 CPU @ 2.10GHz",
+      "smt": 0,
+      "score_per_core": 18.6,
+      "measurements": 487,
+      "rows": 1,
+      "first_date": "2023-03-23 16:00:01",
+      "last_date": "2023-08-09 06:00:02"
+    },
+    {
+      "model": "intel(r)xeon(r)silver 4216 cpu",
+      "original": "Intel(R) Xeon(R) Silver 4216 CPU @ 2.10GHz",
+      "smt": 1,
+      "score_per_core": 10.6,
+      "measurements": 661,
+      "rows": 5,
+      "first_date": "2023-02-22 13:00:02",
+      "last_date": "2024-10-21 12:00:02"
+    },
+    {
+      "model": "intel(r)xeon(r)silver 4314 cpu",
+      "original": "Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz",
+      "smt": 1,
+      "score_per_core": 13.3,
+      "measurements": 16,
+      "rows": 1,
+      "first_date": "2024-04-27 00:41:16",
+      "last_date": "2024-07-13 19:41:05"
+    },
+    {
+      "model": "neoverse-n1",
+      "original": "Neoverse-N1",
+      "smt": 0,
+      "score_per_core": 17.0,
+      "measurements": 56,
+      "rows": 9,
+      "first_date": "2023-02-24 17:00:01",
+      "last_date": "2025-10-16 13:24:12"
+    },
+    {
+      "model": "neoverse-n1 - ampere(r)altra(r)max processor",
+      "original": "Neoverse-N1 - Ampere(R) Altra(R) Max Processor",
+      "smt": 0,
+      "score_per_core": 16.4,
+      "measurements": 15,
+      "rows": 2,
+      "first_date": "2023-08-24 07:06:33",
+      "last_date": "2023-09-01 06:47:39"
+    },
+    {
+      "model": "neoverse-n1 - ampere(r)altra(r)max processor m128-30 3.00ghz",
+      "original": "Neoverse-N1 - Ampere(R) Altra(R) Max Processor M128-30 3.00GHz",
+      "smt": 0,
+      "score_per_core": 14.8,
+      "measurements": 19,
+      "rows": 1,
+      "first_date": "2025-11-13 09:26:37",
+      "last_date": "2026-01-23 11:52:18"
+    },
+    {
+      "model": "neoverse-n1 - ampere(r)altra(r)processor",
+      "original": "Neoverse-N1 - Ampere(R) Altra(R) Processor",
+      "smt": 0,
+      "score_per_core": 19.0,
+      "measurements": 76,
+      "rows": 4,
+      "first_date": "2023-08-31 15:53:55",
+      "last_date": "2024-04-16 08:10:50"
+    },
+    {
+      "model": "neoverse-v2",
+      "original": "Neoverse-V2",
+      "smt": 0,
+      "score_per_core": 29.9,
+      "measurements": 7,
+      "rows": 3,
+      "first_date": "2024-01-18 10:13:45",
+      "last_date": "2025-10-03 14:01:55"
+    },
+    {
+      "model": "neoverse-v2 - grace a02 900-2g535-0020-000 cpu",
+      "original": "Neoverse-V2 - Grace A02 900-2G535-0020-000 CPU @ 3.3GHz",
+      "smt": 0,
+      "score_per_core": 28.5,
+      "measurements": 18,
+      "rows": 6,
+      "first_date": "2026-03-08 08:45:07",
+      "last_date": "2026-03-10 02:11:16"
+    }
+  ]
+}

@@ -57,7 +57,13 @@ def test_setInitialJobParameters(setup_job_wrapper, mocker):
     already known by the WMS and must not be sent as job parameters."""
     jw = setup_job_wrapper(
         jobArgs={"JobType": "User", "JobGroup": "my_group", "Owner": "owner"},
-        ceArgs={"PilotReference": "pilot_ref", "LocalSE": ["SE1", "SE2"], "CPUNormalizationFactor": 10},
+        ceArgs={
+            "PilotReference": "pilot_ref",
+            "LocalSE": ["SE1", "SE2"],
+            "CPUNormalizationFactor": 10,
+            "CPUNormalizationFactorHS23": 9.2,
+            "CPUNormalizationSource": "HS23table",
+        },
     )
     setJobParameters = mocker.patch.object(jw.jobReport, "setJobParameters", return_value=S_OK())
 
@@ -69,11 +75,15 @@ def test_setInitialJobParameters(setup_job_wrapper, mocker):
         "Pilot_Reference",
         "AgentLocalSE",
         "CPUNormalizationFactor",
+        "CPUNormalizationFactorHS23",
+        "CPUNormalizationSource",
         "PilotAgent",
         "JobWrapperPID",
     }
     assert parameters["Pilot_Reference"] == "pilot_ref"
     assert parameters["AgentLocalSE"] == "SE1,SE2"
+    assert parameters["CPUNormalizationFactorHS23"] == 9.2
+    assert parameters["CPUNormalizationSource"] == "HS23table"
 
 
 def test_preProcess_no_arguments(setup_job_wrapper):
