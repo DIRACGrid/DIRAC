@@ -136,4 +136,6 @@ class ProductionClient(Client):
             return res
         stepID = res["Value"]
         self.prodDescription[prodStep.Name] = {"stepID": stepID, "parentStep": prodStepDict["parentStep"]}
+        if prodStep.customParameters:
+            self.prodDescription[prodStep.Name]["customParameters"] = prodStep.customParameters.copy()
         return S_OK()
