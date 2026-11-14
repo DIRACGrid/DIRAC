@@ -1,3 +1,5 @@
+import threading
+
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ThreadScheduler
 from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
@@ -39,6 +41,7 @@ def cleanTaskQueues():
 class OptimizationMindHandler(ExecutorMindHandler):
     __optimizationStates = [JobStatus.RECEIVED, JobStatus.CHECKING]
     __loadTaskId = False
+    __loadLock = threading.Lock()
 
     MSG_DEFINITIONS = {"OptimizeJobs": {"jids": (list, tuple)}}
 
@@ -63,10 +66,25 @@ class OptimizationMindHandler(ExecutorMindHandler):
 
     @classmethod
     def __loadJobs(cls, eTypes=None):
+        """Load the jobs waiting for optimization from the JobDB
+
+        Only one load runs at a time: executors connecting while a load is in progress
+        would otherwise query and add the same jobs concurrently.
+        """
+        if not cls.__loadLock.acquire(blocking=False):
+            cls.log.verbose("Jobs are already being loaded, skipping")
+            return S_OK()
+        try:
+            return cls.__doLoadJobs(eTypes)
+        finally:
+            cls.__loadLock.release()
+
+    @classmethod
+    def __doLoadJobs(cls, eTypes=None):
         jobCond = {}
         log = cls.log
         if cls.__loadTaskId:
-            period = cls.srv_getCSOption("LoadJobPeriod", 300)
+            period = cls.srv_getCSOption("LoadJobPeriod", 60)
             ThreadScheduler.gThreadScheduler.setTaskPeriod(cls.__loadTaskId, period)
         if not eTypes:
             eConn = cls.getExecutorsConnected()
