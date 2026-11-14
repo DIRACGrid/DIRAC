@@ -145,7 +145,7 @@ class ExecutorMindHandler(RequestHandler):
             numTasks = max(1, int(kwargs["maxTasks"]))
         except Exception:
             numTasks = 1
-        self.__eDispatch.addExecutor(trid, kwargs["executorTypes"])
+        self.__eDispatch.addExecutor(trid, kwargs["executorTypes"], maxTasks=numTasks)
         return self.exec_executorConnected(trid, kwargs["executorTypes"])
 
     auth_conn_drop = ["all"]
