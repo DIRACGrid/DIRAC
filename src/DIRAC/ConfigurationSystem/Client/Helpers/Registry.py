@@ -155,8 +155,12 @@ def getGroupsWithProperty(propName):
     return __getGroupsWithAttr("Properties", propName)
 
 
+@cached(TTLCache(maxsize=1000, ttl=CACHE_REFRESH_TIME), lock=Lock())
 def getHostnameForDN(dn):
     """Search host name for host DN
+
+    Cached like :func:`getUsernameForDN`: services authorise every request coming from a
+    host with it, and the search looks up the DN of each registered host in turn.
 
     :param str dn: host DN
 
