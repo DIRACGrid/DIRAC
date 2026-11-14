@@ -95,7 +95,8 @@ class OptimizationMindHandler(ExecutorMindHandler):
             if not result["OK"]:
                 return result
             jidList = result["Value"]
-            knownJids = cls.getTaskIds()
+            # A set: membership is tested once per selected job (up to JobQueryLimit)
+            knownJids = set(cls.getTaskIds())
             added = 0
             for jid in jidList:
                 jid = int(jid)
