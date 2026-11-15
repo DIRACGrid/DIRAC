@@ -47,7 +47,7 @@ repos:
               tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py
           )$
 
-  - repo: https://github.com/ikamensh/flynt/
+  - repo: https://github.com/ikamensh/flynt
     rev: "0.77"
     hooks:
       - id: flynt
@@ -70,3 +70,9 @@ repos:
               src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py|
               tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py
           )$
+
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.32.0
+    hooks:
+      - id: zizmor
+        args: ["--no-online-audits"]

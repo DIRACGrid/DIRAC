@@ -2,8 +2,17 @@ name: pilot wrapper
 
 on: [push, pull_request]
 
+# A new push to the same branch/PR cancels the previous run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   PilotWrapper:
+    name: PilotWrapper
     runs-on: ubuntu-latest
     if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
 
@@ -20,8 +29,10 @@ jobs:
           - devel
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: cvmfs-contrib/github-action-cvmfs@v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: cvmfs-contrib/github-action-cvmfs@d705955b32075b4b0178f3a0160b6fe527483cf8 # v5
 
       - name: Test CernVM-FS
         run: ls /cvmfs/dirac.egi.eu
@@ -32,24 +43,28 @@ jobs:
       # conda is no longer preinstalled (nor on the PATH) of the ubuntu-latest
       # runner images; install it explicitly since the next steps rely on it
       - name: Install conda
-        uses: conda-incubator/setup-miniconda@v3
+        uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3
         with:
           miniforge-version: latest
           conda-remove-defaults: "true"
           auto-update-conda: false
           activate-environment: ""
       - name: prepare environment
+        env:
+          PYTHON_VERSION: ${{ matrix.python }}
         run: |
           conda config --set add_pip_as_python_dependency false
-          conda create -c conda-forge -n python_${{ matrix.python }} python=${{ matrix.python }}
+          conda create -c conda-forge -n python_${PYTHON_VERSION} python=${PYTHON_VERSION}
       - name: run pilot wrapper test
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYTHON_VERSION: ${{ matrix.python }}
+          PILOT_BRANCH: ${{ matrix.pilot_branch }}
         run: |
           export INVALID_UTF8_VAR=$'\xff'
           cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py .
-          eval "$(conda shell.bash hook)" && conda activate python_${{ matrix.python }}
+          eval "$(conda shell.bash hook)" && conda activate python_${PYTHON_VERSION}
           # download and extract the pilot artifacts: authenticated with the
           # workflow token, so no rate limits, and no manual zip handling
-          gh run download -R DIRACGrid/Pilot -n Pilot_${{ matrix.pilot_branch }} -D ${{ matrix.pilot_branch }}/pilot
-          python Test_GenerateAndExecutePilotWrapper.py file://${{ github.workspace }}/src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py file://${{ github.workspace }}/${{ matrix.pilot_branch }}
+          gh run download -R DIRACGrid/Pilot -n Pilot_${PILOT_BRANCH} -D ${PILOT_BRANCH}/pilot
+          python Test_GenerateAndExecutePilotWrapper.py file://$GITHUB_WORKSPACE/src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py file://$GITHUB_WORKSPACE/${PILOT_BRANCH}
