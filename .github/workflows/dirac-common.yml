@@ -16,16 +16,26 @@ on:
       - 'dirac-common/**'
       - '.github/workflows/dirac-common.yml'
 
+# A new push to the same branch/PR cancels the previous run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   test-dirac-common:
+    name: test-dirac-common
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
         fetch-depth: 0  # Need full history for setuptools_scm
+        persist-credentials: false
 
-    - uses: prefix-dev/setup-pixi@v0.9.0
+    - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e # v0.11.3
       with:
         run-install: false
         post-cleanup: false
@@ -38,7 +48,7 @@ jobs:
         # Show any changes
         git diff
 
-    - uses: prefix-dev/setup-pixi@v0.9.0
+    - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e # v0.11.3
       with:
         cache: false
         environments: testing
