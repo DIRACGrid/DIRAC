@@ -104,7 +104,9 @@ jobs:
       run: |
         # FIXME: The unit tests currently only work with editable installs
         pip install -e .[server,testing]
-        $COMMAND
+        # eval is needed to re-parse the shell quoting (e.g. -k 'not A and not B')
+        # which is lost by the plain $COMMAND expansion
+        eval "$COMMAND"
       env:
         REFERENCE_BRANCH: ${{ github['base_ref'] || github['head_ref'] }}
         COMMAND: ${{ matrix.command }}
@@ -145,7 +147,9 @@ jobs:
       run: |
         # FIXME: The unit tests currently only work with editable installs
         pip install -e .[server,testing]
-        $COMMAND
+        # eval is needed to re-parse the shell quoting (e.g. -k 'not A and not B')
+        # which is lost by the plain $COMMAND expansion
+        eval "$COMMAND"
       env:
         REFERENCE_BRANCH: ${{ github['base_ref'] || github['head_ref'] }}
         COMMAND: ${{ matrix.command }}
