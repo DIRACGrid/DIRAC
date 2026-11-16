@@ -6,7 +6,7 @@ import os
 import requests
 from packaging.version import Version
 
-from cachetools import cachedmethod, LRUCache, TTLCache, cached
+from cachetools import LRUCache, TTLCache, cached
 from threading import Lock
 from typing import Optional
 
@@ -171,9 +171,9 @@ class FTS3Job(JSerializable):
         # when a job is in a final state
         self.accountingDicts = None
 
-    @classmethod
-    @cachedmethod(lambda cls: cls._idp_cache)
-    def _getIdpClient(cls, group_name: str):
+    @staticmethod
+    @cached(_idp_cache)
+    def _getIdpClient(group_name: str):
         return returnValueOrRaise(getIdProviderClient(group_name, None, client_name_prefix="fts"))
 
     def monitor(self, context=None, ftsServer=None, ucert=None):
