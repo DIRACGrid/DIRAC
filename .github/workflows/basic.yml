@@ -108,7 +108,9 @@ jobs:
           # Install DIRACCommon first to ensure dependencies are resolved correctly
           pip install -e ./dirac-common[testing]
           pip install -e .[server,testing]
-          $COMMAND
+          # eval is needed to re-parse the shell quoting (e.g. -k 'not A and not B')
+          # which is lost by the plain $COMMAND expansion
+          eval "$COMMAND"
         env:
           REFERENCE_BRANCH: ${{ github['base_ref'] || github['head_ref'] }}
           COMMAND: ${{ matrix.command }}
@@ -152,7 +154,9 @@ jobs:
           # Install DIRACCommon first to ensure dependencies are resolved correctly
           pip install -e ./dirac-common[testing]
           pip install -e .[server,testing]
-          $COMMAND
+          # eval is needed to re-parse the shell quoting (e.g. -k 'not A and not B')
+          # which is lost by the plain $COMMAND expansion
+          eval "$COMMAND"
         env:
           REFERENCE_BRANCH: ${{ github['base_ref'] || github['head_ref'] }}
           COMMAND: ${{ matrix.command }}
