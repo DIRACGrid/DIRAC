@@ -32,7 +32,7 @@ def reset_all_caches():
     for cache in [
         obj
         for name, obj in inspect.getmembers(sys.modules[__name__])
-        if (inspect.isfunction(obj) and hasattr(obj, "cache_clear"))
+        if callable(obj) and not inspect.isclass(obj) and hasattr(obj, "cache_clear")
     ]:
         cache.cache_clear()
 
