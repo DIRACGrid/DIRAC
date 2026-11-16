@@ -499,3 +499,19 @@ def test_submit_doubleMultiHopStaging():
     # Only "real" (i.e. non intermediate hop) have 'FileID' in their metadata and monitored
     monitoredJob = [f["metadata"] for f in job["files"] if "fileID" in f["metadata"]]
     assert len(monitoredJob) == 1
+
+
+def test_getIdpClient_isCachedPerGroup():
+    """The IdP client of a group is created once, from the class or from any job"""
+    FTS3Job._idp_cache.clear()
+    with mock.patch(
+        "DIRAC.DataManagementSystem.Client.FTS3Job.getIdProviderClient",
+        side_effect=lambda group, _, **kwargs: S_OK(f"client-{group}"),
+    ) as getIdProviderClient:
+        try:
+            assert FTS3Job._getIdpClient("group1") == "client-group1"
+            assert FTS3Job()._getIdpClient("group1") == "client-group1"
+            assert FTS3Job()._getIdpClient("group2") == "client-group2"
+        finally:
+            FTS3Job._idp_cache.clear()
+    assert getIdProviderClient.call_count == 2
