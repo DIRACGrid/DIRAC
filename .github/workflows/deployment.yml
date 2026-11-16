@@ -158,8 +158,10 @@ jobs:
 
   deploy_CVMFS:
     runs-on: "ubuntu-latest"
-    if: github.event_name == 'workflow_dispatch'
-    needs: deploy-pypi
+    # Wait for the PyPI upload: sync_packages.sh must see the new release.
+    # publish is skipped when no release is made; only skip CVMFS if it failed.
+    if: ${{ !failure() && !cancelled() && github.event_name == 'workflow_dispatch' }}
+    needs: [deploy-pypi, publish]
     steps:
       # conda is no longer preinstalled (nor on the PATH) of the ubuntu-latest
       # runner images; install it explicitly since the next steps rely on it
@@ -199,7 +201,8 @@ jobs:
   update-conda-forge:
     name: conda-forge feedstock update
     runs-on: "ubuntu-latest"
-    needs: deploy-pypi
+    # The feedstock recipe downloads the sdist from PyPI, so wait for publish.
+    needs: [deploy-pypi, publish]
     if: needs.deploy-pypi.outputs.conda-forge-version != ''
     environment: conda-forge
     steps:
