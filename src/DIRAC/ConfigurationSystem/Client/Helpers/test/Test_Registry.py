@@ -29,9 +29,11 @@ def registry(mocker):
     cfg = CFG()
     cfg.loadFromBuffer(REGISTRY)
     mocker.patch.object(gConfig, "getSections", side_effect=lambda path: S_OK(_section(cfg, path).listSections()))
-    mocker.patch.object(gConfig, "getValue", side_effect=lambda path, default=None: _value(cfg, path, default))
+    getValue = mocker.patch.object(
+        gConfig, "getValue", side_effect=lambda path, default=None: _value(cfg, path, default)
+    )
     Registry.reset_all_caches()
-    yield
+    yield getValue
     Registry.reset_all_caches()
 
 
@@ -64,11 +66,11 @@ def test_getHostnameForDN_unknown(registry):
 def test_getHostnameForDN_isCached(registry):
     """Repeated lookups of a DN do not search the CS again"""
     assert Registry.getHostnameForDN("/DC=org/CN=host2.example.org")["Value"] == "host2.example.org"
-    calls = gConfig.getValue.call_count
+    calls = registry.call_count
     for _ in range(10):
         assert Registry.getHostnameForDN("/DC=org/CN=host2.example.org")["Value"] == "host2.example.org"
-    assert gConfig.getValue.call_count == calls
+    assert registry.call_count == calls
     # reset_all_caches (called when the CS is reloaded) drops it
     Registry.reset_all_caches()
     assert Registry.getHostnameForDN("/DC=org/CN=host2.example.org")["Value"] == "host2.example.org"
-    assert gConfig.getValue.call_count > calls
+    assert registry.call_count > calls
