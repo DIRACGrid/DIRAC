@@ -72,7 +72,9 @@ jobs:
     - name: Prepare environment
       env:
         MATRIX_ARGS: ${{ matrix.ARGS }}
-      run: ./integration_tests.py prepare-environment "$MATRIX_ARGS"
+      # Intentionally unquoted: MATRIX_ARGS is a space-separated list of
+      # KEY=VALUE flags and must be word-split into separate arguments
+      run: ./integration_tests.py prepare-environment $MATRIX_ARGS
     - name: Install server
       run: ./integration_tests.py install-server
     - name: Install client
