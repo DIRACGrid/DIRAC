@@ -133,3 +133,69 @@ jobs:
           ${{ matrix.command }}
         env:
           REFERENCE_BRANCH: ${{ github['base_ref'] || github['head_ref'] }}
+
+  diracx:
+    name: DiracX Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout DIRAC
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          path: DIRAC
+      - name: Checkout DiracX
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          repository: DIRACGrid/diracx
+          path: diracx
+      - uses: prefix-dev/setup-pixi@v0.9.3
+        with:
+          cache: false
+          post-cleanup: false
+          manifest-path: diracx/pixi.toml
+          environments: >-
+            diracx-core
+            diracx-db
+            diracx-logic
+            diracx-tasks
+            diracx-routers
+            diracx-client
+            diracx-api
+            diracx-cli
+      - name: Apply workarounds
+        run: |
+          cd diracx
+          # Workaround for https://github.com/prefix-dev/pixi/issues/3762
+          sed -i.bak 's@editable = true@editable = false@g' pixi.toml
+          rm pixi.toml.bak
+          # Drop the gubbins environments entirely: this job doesn't use them, and the
+          # `pixi add --feature diracx-core` calls below would otherwise re-solve them too
+          sed -i.bak '/solve-group = "gubbins"/d' pixi.toml
+          rm pixi.toml.bak
+          # The gubbins environments are removed above; drop the task that references them
+          awk '/^\[tasks\.pytest-gubbins-all-one-by-one\]/{skip=1;next} skip&&/^\[/{skip=0} !skip' pixi.toml > pixi.toml.new
+          mv pixi.toml.new pixi.toml
+          # Add annotations to github actions
+          pixi add --pypi --feature diracx-core pytest-github-actions-annotate-failures
+          # Add the current DIRAC clone to the pixi.toml
+          pixi add --pypi --feature diracx-core 'DIRACCommon @ file://'$PWD'/../DIRAC/dirac-common'
+          pixi add --pypi --feature diracx-core 'DIRAC @ file://'$PWD'/../DIRAC'
+          # Show any changes
+          git diff
+      - uses: prefix-dev/setup-pixi@v0.9.3
+        with:
+          cache: false
+          locked: false
+          manifest-path: diracx/pixi.toml
+          environments: >-
+            diracx-core
+            diracx-db
+            diracx-logic
+            diracx-tasks
+            diracx-routers
+            diracx-client
+            diracx-api
+            diracx-cli
+      - name: Run pytest
+        run: cd diracx && pixi run pytest-diracx-all-one-by-one
