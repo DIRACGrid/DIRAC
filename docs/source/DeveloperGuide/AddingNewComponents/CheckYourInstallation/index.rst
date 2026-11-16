@@ -22,8 +22,8 @@ Is my installation correctly done?
 We will now do few, very simple checks. The first can be done by using the python interactive shell.
 We suggest you to use the `iPython <https://ipython.readthedocs.io/en/stable/>`_ interactive python shell.
 
-Make sure that you are running these commands inside the conda environment
-that you have created as explained in :ref:`editing_code`.
+Make sure that you are running these commands inside the development environment
+(``pixi shell`` or conda) that you have created as explained in :ref:`editing_code`.
 
    >>> import pyparsing
    >>> import MySQLdb

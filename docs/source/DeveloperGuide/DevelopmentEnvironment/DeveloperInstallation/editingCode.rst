@@ -41,12 +41,58 @@ Stuff you need to have installed
 If you're new to development, Visual Studio Code is free modern editor with an extensive plugin ecosystem and many nice IDE like features.
 Regardless of which editor you choose it's worth investigating what plugins are available.
 
-*python*: DIRAC is written in Python so you will need to have a Python environment available. While there are many possible ways of doing this, the simplest option for most people is to use either conda or DIRACOS2 (Linux only). Details about how to use both options are included below.
+*python*: DIRAC is written in Python so you will need to have a Python environment available. The recommended option is `pixi <https://pixi.sh>`_, which is what DIRAC's CI uses: the repository contains a committed ``pixi.lock``, so you get exactly the locked dependency set that the tests run against. Conda and DIRACOS2 (Linux only) remain valid alternatives. Details about how to use all the options are included below.
+
+.. _create-dev-env-pixi:
+
+Creating a development environment with pixi (recommended)
+----------------------------------------------------------
+
+Installing pixi
+^^^^^^^^^^^^^^^
+
+.. note::
+    This step can be skipped if you already have pixi installed.
+
+.. code-block:: bash
+    :linenos:
+
+    curl -fsSL https://pixi.sh/install.sh | sh
+
+See the `pixi installation documentation <https://pixi.sh/latest/#installation>`_ for other installation options.
+
+Creating and using the environment
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+From the root of your DIRAC clone, create the environment by running:
+
+.. code-block:: bash
+    :linenos:
+
+    pixi install
+
+This installs the ``default`` environment (Python 3.11) from the committed ``pixi.lock``. You can then either activate it in your shell:
+
+.. code-block:: bash
+    :linenos:
+
+    pixi shell
+
+or prefix individual commands with ``pixi run``, e.g. ``pixi run pytest src/``.
+A second environment, ``py314`` (Python 3.14, as used by the ``check-py314`` CI job), is also defined and can be selected with ``pixi run -e py314 ...`` or ``pixi shell -e py314``.
+
+Updating dependencies
+^^^^^^^^^^^^^^^^^^^^^
+
+Dependencies are declared in ``pixi.toml`` and pinned in the committed ``pixi.lock``. Dependency updates are handled by Renovate, which periodically opens PRs refreshing the lock file, so there is no need to hand-edit ``pixi.lock``. If you change ``pixi.toml`` yourself, run ``pixi lock`` afterwards and commit the updated ``pixi.lock`` together with your change. Note that ``exclude-newer = "7d"`` in ``pixi.toml`` enforces a 7-day release-age cooldown at solve time, so a package version released less than a week ago will not be picked up.
 
 .. _create-dev-env-conda:
 
 Creating a development environment with Conda
 ---------------------------------------------
+
+.. note::
+    The CI check jobs use pixi (see :ref:`create-dev-env-pixi`), so ``pixi.toml`` is the reference for the tested dependency set. ``environment.yml`` mirrors it and is still used to build the documentation on readthedocs.
 
 .. note::
     The Python packaging ecosystem is very old and as a result there has been a lot of fragmentation. Here are a few points that might be worthwhile to clarify:
@@ -164,7 +210,7 @@ Maintenance branches for existing releases are named ``rel-vXrY``.
 Installing the local version
 ============================
 
-The locally cloned source code can be installed inside your ``conda`` or ``DIRACOS2`` environment by running the following from inside your local repository:
+The locally cloned source code can be installed inside your environment (``pixi shell``, ``conda`` or ``DIRACOS2``) by running the following from inside your local repository:
 
 .. code-block:: bash
     :linenos:
@@ -172,7 +218,7 @@ The locally cloned source code can be installed inside your ``conda`` or ``DIRAC
     pip install -e ./dirac-common  # Install DIRACCommon first
     pip install -e .[testing]
 
-This creates an *editable* installation meaning any changes you make will be automatically discovered whenever you next ``import DIRAC``. Additionally the ``testing`` extra causes ``pip`` to install useful dependencies such as ``pytest`` and ``pycodestyle``.
+This creates an *editable* installation meaning any changes you make will be automatically discovered whenever you next ``import DIRAC``. Additionally the ``testing`` extra causes ``pip`` to install useful dependencies such as ``pytest`` and ``pycodestyle``. If you use pixi without activating the environment, the same commands can be run as ``pixi run python -m pip install -e ./dirac-common`` etc.
 
 Formatting
 ==========

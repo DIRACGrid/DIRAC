@@ -85,7 +85,7 @@ outside of DIRAC.
 
 For local development the easiest way to build the docs is by running these
 commands from a standard Python 3 DIRAC development environment (see
-:ref:`create-dev-env-conda`.)
+:ref:`create-dev-env-pixi` or :ref:`create-dev-env-conda`.)
 
 .. code-block:: bash
 
