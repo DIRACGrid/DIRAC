@@ -12,11 +12,19 @@ exclude-newer = "7d"
 [feature.py311.dependencies]
 python = "3.11.*"
 
+# Python 3.6 is still tested for the pilot wrapper (used by older pilots):
+# solves to the last conda-forge build of the 3.6 series
+[feature.py36.dependencies]
+python = "3.6.*"
+
 [feature.py314.dependencies]
 python = "3.14.*"
 
 [environments]
 default = { features = ["py311"] }
+# the pilot wrapper test only needs a bare python, so py36 skips the shared
+# dependencies (they require python >= 3.9)
+py36 = { features = ["py36"], no-default-feature = true }
 py314 = { features = ["py314"] }
 
 [dependencies]
