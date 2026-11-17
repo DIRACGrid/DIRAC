@@ -90,4 +90,3 @@ docs/source/_build
 # pixi environments
 .pixi
 *.egg-info
-pixi.lock
