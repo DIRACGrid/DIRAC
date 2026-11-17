@@ -22,6 +22,15 @@ class FTS3File(JSerializable):
         "Not_used",  # From FTS: Transfer not being considered yet, waiting for another one (multihop)
         "Archiving",  # From FTS: file not yet migrated to tape
         "Token_prep",  # From FTS: When using token, used before Submitted until FTS fetched a refresh token
+        "Hop_finished",  # From FTS4
+        "On_hold",  # From FTS4
+        "On_hold_staging",  # From FTS4
+        "Qos_request_submitted",  # From FTS4
+        "Qos_transition",  # From FTS4
+        "Replica_failed",  # From FTS4
+        "Scheduled",  # From FTS4
+        "Scheduled_for_staging",  # From FTS4
+        "Selected",  # From FTS4
     ]
 
     # These are the states that we consider final.
