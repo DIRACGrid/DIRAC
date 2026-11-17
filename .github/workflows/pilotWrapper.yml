@@ -22,8 +22,8 @@ jobs:
         # pixi environment names (see pixi.toml); the exact python versions
         # are pinned by pixi.lock
         python:
+          - default  # py311
           - py36
-          - py311
           - py314
         pilot_branch:
           - master
@@ -53,9 +53,11 @@ jobs:
           PYTHON_ENV: ${{ matrix.python }}
           PILOT_BRANCH: ${{ matrix.pilot_branch }}
         run: |
-          export INVALID_UTF8_VAR=$'\xff'
           cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py .
           # download and extract the pilot artifacts: authenticated with the
           # workflow token, so no rate limits, and no manual zip handling
           gh run download -R DIRACGrid/Pilot -n Pilot_${PILOT_BRANCH} -D ${PILOT_BRANCH}/pilot
-          pixi run -e ${PYTHON_ENV} python Test_GenerateAndExecutePilotWrapper.py file://$GITHUB_WORKSPACE/src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py file://$GITHUB_WORKSPACE/${PILOT_BRANCH}
+          # INVALID_UTF8_VAR is part of the test: the pilot wrapper has to cope
+          # with invalid UTF-8 in the environment. It must be set *inside* the
+          # pixi-spawned shell (pixi itself panics on non-UTF-8 env vars).
+          pixi run -e ${PYTHON_ENV} bash -c 'export INVALID_UTF8_VAR=$(printf "\xff"); exec python Test_GenerateAndExecutePilotWrapper.py "$1" "$2"' _ "file://$GITHUB_WORKSPACE/src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py" "file://$GITHUB_WORKSPACE/${PILOT_BRANCH}"
