@@ -32,7 +32,7 @@ class DatasetManager:
     _tables["FC_MetaDatasetFiles"] = {
         "Fields": {
             "DatasetID": "INT NOT NULL",
-            "FileID": "INT NOT NULL",
+            "FileID": "BIGINT NOT NULL",
         },
         "UniqueIndexes": {"DatasetID_FileID": ["DatasetID", "FileID"]},
     }

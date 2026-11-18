@@ -66,7 +66,7 @@ class FileMetadata:
         valueType = result["Value"]
         req = "CREATE TABLE "
         req += f"FC_FileMeta_{pName} "
-        req += f"(FileID INTEGER NOT NULL, Value {valueType}, PRIMARY KEY (FileID), INDEX (Value))"
+        req += f"(FileID BIGINT NOT NULL, Value {valueType}, PRIMARY KEY (FileID), INDEX (Value))"
         result = self.db._query(req)
         if not result["OK"]:
             return result

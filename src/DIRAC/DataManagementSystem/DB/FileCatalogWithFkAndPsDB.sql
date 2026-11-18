@@ -145,7 +145,7 @@ CREATE TABLE FC_DirectoryClosure (
 -- ------------------------------------------------------------------------------
 
 CREATE TABLE FC_Files(
-    FileID INT AUTO_INCREMENT,
+    FileID BIGINT AUTO_INCREMENT,
     DirID INT NOT NULL,
     Size BIGINT UNSIGNED NOT NULL,
     UID INT NOT NULL,
@@ -181,7 +181,7 @@ CREATE TABLE FC_Files(
 
 CREATE TABLE FC_Replicas (
     RepID BIGINT AUTO_INCREMENT,
-    FileID INT NOT NULL,
+    FileID BIGINT NOT NULL,
     SEID INTEGER NOT NULL,
     Status INTEGER NOT NULL,
     RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master',
@@ -231,7 +231,7 @@ CREATE TABLE FC_DirMeta (
 -- ------------------------------------------------------------------------------
 
 CREATE TABLE FC_FileMeta (
-    FileID INTEGER NOT NULL,
+    FileID BIGINT NOT NULL,
     MetaKey VARCHAR(31) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT 'Noname',
     MetaValue VARCHAR(31) NOT NULL DEFAULT 'Noname',
     PRIMARY KEY (FileID,MetaKey)
@@ -265,8 +265,8 @@ CREATE TABLE FC_MetaSetNames (
 -- ------------------------------------------------------------------------------
 
 CREATE TABLE FC_FileAncestors (
-  FileID INT NOT NULL DEFAULT 0,
-  AncestorID INT NOT NULL DEFAULT 0,
+  FileID BIGINT NOT NULL DEFAULT 0,
+  AncestorID BIGINT NOT NULL DEFAULT 0,
   AncestorDepth INT NOT NULL DEFAULT 0,
   INDEX (FileID),
   INDEX (AncestorID),
@@ -300,9 +300,9 @@ CREATE TABLE FC_MetaDatasets (
 -- ------------------------------------------------------------------------------
 
 CREATE TABLE FC_MetaDatasetFiles (
- MetaDatasetFileID INT AUTO_INCREMENT,
+ MetaDatasetFileID BIGINT AUTO_INCREMENT,
  DatasetID INT NOT NULL,
- FileID INT NOT NULL,
+ FileID BIGINT NOT NULL,
 
  PRIMARY KEY (MetaDatasetFileID),
  FOREIGN KEY (DatasetID) REFERENCES FC_MetaDatasets(DatasetID) ON DELETE CASCADE,
@@ -665,7 +665,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_get_file_id_from_lfn;
 DELIMITER //
 CREATE PROCEDURE ps_get_file_id_from_lfn
-(IN dirName VARCHAR(255), IN fileName VARCHAR(255), OUT file_id INT )
+(IN dirName VARCHAR(255), IN fileName VARCHAR(255), OUT file_id BIGINT )
 BEGIN
   DECLARE done INT;
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
@@ -777,7 +777,7 @@ CREATE PROCEDURE ps_insert_file
  IN status_id INT, IN filename VARCHAR(255), IN GUID VARCHAR(36),
  IN checksum VARCHAR(32), IN checksumtype ENUM('Adler32','MD5'), IN mode SMALLINT )
 BEGIN
-  DECLARE file_id INT DEFAULT 0;
+  DECLARE file_id BIGINT DEFAULT 0;
 
   DECLARE exit handler for sqlexception
     BEGIN
@@ -1009,7 +1009,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_insert_replica;
 DELIMITER //
 CREATE PROCEDURE ps_insert_replica
-(IN file_id INT, IN se_id INT, IN status_id INT,
+(IN file_id BIGINT, IN se_id INT, IN status_id INT,
  IN rep_type ENUM ('Master','Replica') , IN pfn VARCHAR(1024)
 )
 BEGIN
@@ -1105,7 +1105,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_get_replica_id;
 DELIMITER //
 CREATE PROCEDURE ps_get_replica_id
-(IN  file_id INT, IN se_id INT, OUT rep_id BIGINT)
+(IN  file_id BIGINT, IN se_id INT, OUT rep_id BIGINT)
 BEGIN
 
   SELECT SQL_NO_CACHE RepID INTO rep_id FROM FC_Replicas WHERE FileID = file_id AND SEID = se_id;
@@ -1129,7 +1129,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_delete_replica_from_file_and_se_ids;
 DELIMITER //
 CREATE PROCEDURE ps_delete_replica_from_file_and_se_ids
-(IN  file_id INT, IN se_id INT)
+(IN  file_id BIGINT, IN se_id INT)
 BEGIN
   DECLARE file_size BIGINT DEFAULT 0;
   DECLARE dir_id INT DEFAULT 0;
@@ -1165,7 +1165,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_set_replica_status;
 DELIMITER //
 CREATE PROCEDURE ps_set_replica_status
-(IN  file_id INT, IN se_id INT, IN status_id INT)
+(IN  file_id BIGINT, IN se_id INT, IN status_id INT)
 BEGIN
 
   UPDATE FC_Replicas SET Status = status_id WHERE FileID = file_id AND SEID = se_id;
@@ -1188,7 +1188,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_set_replica_host;
 DELIMITER //
 CREATE PROCEDURE ps_set_replica_host
-(IN  file_id INT, IN old_se_id INT, IN new_se_id INT)
+(IN  file_id BIGINT, IN old_se_id INT, IN new_se_id INT)
 BEGIN
   DECLARE file_size BIGINT DEFAULT 0;
   DECLARE dir_id INT DEFAULT 0;
@@ -1223,7 +1223,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_set_file_uid;
 DELIMITER //
 CREATE PROCEDURE ps_set_file_uid
-(IN  file_id INT, IN in_uid INT)
+(IN  file_id BIGINT, IN in_uid INT)
 BEGIN
 
   UPDATE FC_Files SET UID = in_uid, ModificationDate = UTC_TIMESTAMP() where FileID = file_id;
@@ -1244,7 +1244,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_set_file_gid;
 DELIMITER //
 CREATE PROCEDURE ps_set_file_gid
-(IN  file_id INT, IN in_gid INT)
+(IN  file_id BIGINT, IN in_gid INT)
 BEGIN
 
 
@@ -1266,7 +1266,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_set_file_status;
 DELIMITER //
 CREATE PROCEDURE ps_set_file_status
-(IN  file_id INT, IN status_id INT)
+(IN  file_id BIGINT, IN status_id INT)
 BEGIN
 
 
@@ -1288,7 +1288,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_set_file_mode;
 DELIMITER //
 CREATE PROCEDURE ps_set_file_mode
-(IN  file_id INT, IN in_mode SMALLINT UNSIGNED)
+(IN  file_id BIGINT, IN in_mode SMALLINT UNSIGNED)
 BEGIN
 
   UPDATE FC_Files SET Mode = in_mode, ModificationDate = UTC_TIMESTAMP()  WHERE FileID = file_id;
@@ -1312,7 +1312,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_get_all_info_of_replicas;
 DELIMITER //
 CREATE PROCEDURE ps_get_all_info_of_replicas
-(IN file_id INT, IN allStatus BOOLEAN, IN visibleReplicaStatus TEXT)
+(IN file_id BIGINT, IN allStatus BOOLEAN, IN visibleReplicaStatus TEXT)
 BEGIN
 
 
