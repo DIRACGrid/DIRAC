@@ -8,8 +8,36 @@ class ProductionStep:
 
     """Define the Production Step object"""
 
+    _STEP_ATTRIBUTES = {
+        "Name",
+        "Description",
+        "LongDescription",
+        "Type",
+        "Plugin",
+        "AgentType",
+        "FileMask",
+        "ParentStep",
+        "Inputquery",
+        "Outputquery",
+        "GroupSize",
+        "Body",
+    }
+
+    _TRANSFORMATION_ONLY_PARAMETER_NAMES = frozenset(
+        {
+            "TransformationID",
+            "TransformationName",
+            "Status",
+            "TransformationGroup",
+            "InheritedFrom",
+            "MaxNumberOfTasks",
+            "EventsPerTask",
+        }
+    )
+
     def __init__(self, **kwargs):
         """Simple constructor"""
+        object.__setattr__(self, "customParameters", {})
         # Default values for transformation step parameters
         self.Name = ""
         self.Description = "description"
@@ -24,6 +52,20 @@ class ProductionStep:
         self.Outputquery = None
         self.GroupSize = 1
         self.Body = "body"
+
+    def __getattr__(self, name):
+        try:
+            return self.customParameters[name]
+        except KeyError as exc:
+            raise AttributeError(name) from exc
+
+    def __setattr__(self, name, value):
+        if name.startswith("_") or name in self._STEP_ATTRIBUTES or name in self.__dict__ or hasattr(type(self), name):
+            object.__setattr__(self, name, value)
+        elif name in self._TRANSFORMATION_ONLY_PARAMETER_NAMES:
+            raise AttributeError(f"{name} is a transformation parameter, not a custom production-step parameter")
+        else:
+            self.customParameters[name] = value
 
     def getAsDict(self):
         """It returns the Step description as a dictionary"""

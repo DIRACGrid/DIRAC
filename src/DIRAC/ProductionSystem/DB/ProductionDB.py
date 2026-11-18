@@ -385,7 +385,9 @@ class ProductionDB(DB):
         prodDescription = json.loads(res["Value"])
         transIDs = []
         for step in sorted(prodDescription):
-            res = self.ProdTransManager.addTransformationStep(prodDescription[step]["stepID"], prodID)
+            res = self.ProdTransManager.addTransformationStep(
+                prodDescription[step]["stepID"], prodID, prodDescription[step].get("customParameters", {})
+            )
             # If the addition of at least one step failes, clean the already added transformation steps from the TS
             if not res["OK"]:
                 self.ProdTransManager.deleteTransformations(transIDs)
