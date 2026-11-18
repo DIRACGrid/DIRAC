@@ -12,10 +12,12 @@ on:
       version:
         description: "Override the release version number (e.g. 8.0.0a5)"
 
-# Don't cancel: a queued run may be a release waiting to publish.
+# Releases (workflow_dispatch) get their own group, so a later push or PR run
+# can never replace a queued release, and a running release is never
+# cancelled. Push/PR runs only build, so a newer one cancels the older one.
 concurrency:
-  group: ${{ github.workflow }}
-  cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 permissions:
   contents: read
