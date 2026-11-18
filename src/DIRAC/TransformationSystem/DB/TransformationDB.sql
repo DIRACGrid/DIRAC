@@ -53,7 +53,7 @@ CREATE TABLE Transformations(
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS DataFiles;
 CREATE TABLE DataFiles(
-    FileID INTEGER NOT NULL AUTO_INCREMENT,
+    FileID BIGINT NOT NULL AUTO_INCREMENT,
     LFN VARCHAR(255) UNIQUE NOT NULL DEFAULT '',
     Status varchar(32) DEFAULT 'AprioriGood',
     INDEX(Status),
@@ -110,7 +110,7 @@ FOR EACH ROW SET NEW.TaskID = (SELECT @last:= IFNULL(MAX(TaskID) + 1, 1) FROM Tr
 DROP TABLE IF EXISTS TransformationFiles;
 CREATE TABLE TransformationFiles(
     TransformationID INTEGER NOT NULL,
-    FileID INTEGER NOT NULL,
+    FileID BIGINT NOT NULL,
     Status VARCHAR(32) DEFAULT 'Unused',
     ErrorCount INTEGER(4) NOT NULL DEFAULT 0,
     TaskID INTEGER,
@@ -131,7 +131,7 @@ CREATE TABLE TransformationFiles(
 DROP TABLE IF EXISTS TransformationFileTasks;
 CREATE TABLE TransformationFileTasks(
     TransformationID INTEGER NOT NULL,
-    FileID INTEGER NOT NULL,
+    FileID BIGINT NOT NULL,
     TaskID INTEGER NOT NULL,
     PRIMARY KEY(TransformationID, FileID, TaskID),
     FOREIGN KEY(TransformationID) REFERENCES Transformations(TransformationID),
