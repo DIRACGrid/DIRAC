@@ -7,6 +7,8 @@
 
 import datetime
 import errno
+import random
+import time
 from urllib.parse import quote_plus
 
 from sqlalchemy import (
@@ -26,7 +28,7 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.orm import registry, relationship, sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import delete, select, update
@@ -42,6 +44,20 @@ from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3S
 
 metadata = MetaData()
 mapper_registry = registry()
+
+# MySQL error codes for which the transaction should simply be retried
+# https://dev.mysql.com/doc/refman/8.0/en/innodb-deadlocks-handling.html
+# 1205: ER_LOCK_WAIT_TIMEOUT, 1213: ER_LOCK_DEADLOCK
+RETRYABLE_MYSQL_ERRORS = (1205, 1213)
+
+
+def _isRetryableError(exc):
+    """Returns True if the exception is a MySQL deadlock or lock wait timeout"""
+    if not isinstance(exc, OperationalError):
+        return False
+    orig_args = getattr(exc.orig, "args", None)
+    return bool(orig_args) and orig_args[0] in RETRYABLE_MYSQL_ERRORS
+
 
 # Define the default utc_timestampfunction.
 # We overwrite it in the case of sqlite in the tests
@@ -231,35 +247,55 @@ class FTS3DB:
             return S_ERROR(e)
         return S_OK()
 
-    def persistOperation(self, operation):
+    def persistOperation(self, operation, maxAttempts=5):
         """update or insert request into db
             Also release the assignment tag
 
-        :param operation: FTS3Operation instance
-        """
+        It is important that this succeeds: if FTS jobs were just submitted
+        and we fail to record them, the files will be submitted again later,
+        and the original FTS job is never monitored. So the transaction is
+        retried in case of deadlock or lock wait timeout.
+        MySQL says applications should "always be prepared to re-issue a transaction
+        if it fails due to deadlock", but does not recommend a number of attempts:
+        https://dev.mysql.com/doc/refman/8.0/en/innodb-deadlocks-handling.html
 
-        session = self.dbSession(expire_on_commit=False)
+        :param operation: FTS3Operation instance
+        :param maxAttempts: number of attempts in case of deadlock (arbitrary choice, not from MySQL)
+        """
 
         # set the assignment to NULL
         # so that another agent can work on the request
         operation.assignment = None
         # because of the merge we have to explicitely set lastUpdate
         operation.lastUpdate = utc_timestamp()
-        try:
-            # Merge it in case it already is in the DB
-            operation = session.merge(operation)
-            session.add(operation)
-            session.commit()
-            session.expunge_all()
 
-            return S_OK(operation.operationID)
+        for attempt in range(1, maxAttempts + 1):
+            session = self.dbSession(expire_on_commit=False)
+            try:
+                # Merge it in case it already is in the DB.
+                # Note that merge returns a copy and leaves ``operation`` untouched,
+                # so we can safely merge it again in case of retry
+                mergedOperation = session.merge(operation)
+                session.add(mergedOperation)
+                session.commit()
+                session.expunge_all()
 
-        except SQLAlchemyError as e:
-            session.rollback()
-            self.log.exception("persistOperation: unexpected exception", lException=e)
-            return S_ERROR(f"persistOperation: unexpected exception {e}")
-        finally:
-            session.close()
+                return S_OK(mergedOperation.operationID)
+
+            except SQLAlchemyError as e:
+                session.rollback()
+                if _isRetryableError(e) and attempt < maxAttempts:
+                    self.log.warn(
+                        "persistOperation: deadlock, retrying",
+                        f"operationID {operation.operationID}, attempt {attempt}/{maxAttempts}",
+                    )
+                    # Random backoff so that competing transactions do not collide again
+                    time.sleep(random.uniform(0.1, 0.5) * attempt)  # nosec B311
+                    continue
+                self.log.exception("persistOperation: unexpected exception", lException=e)
+                return S_ERROR(f"persistOperation: unexpected exception {e}")
+            finally:
+                session.close()
 
     def getOperation(self, operationID):
         """read request
@@ -325,7 +361,16 @@ class FTS3DB:
                 ftsJobsQuery = ftsJobsQuery.filter(FTS3Job.lastMonitor < lastMonitor)
 
             if jobAssignmentTag:
-                ftsJobsQuery = ftsJobsQuery.with_for_update()
+                # Lock both the Jobs and the Operations rows, so that the Operation can't be
+                # picked concurrently by getNonFinishedOperations.
+                # skip_locked: rows already locked by another transaction (another agent picking
+                # them, or persistOperation writing them) are simply skipped instead of waited for.
+                # Note that InnoDB locks every row it reads, not only the `limit` returned ones,
+                # (all the non final jobs, since the ORDER BY needs to see them all before the LIMIT),
+                # including the gaps of the indexes. Waiting for one of these locks while
+                # persistOperation holds the Operation row and waits to insert in a locked gap
+                # is the deadlock of https://github.com/DIRACGrid/DIRAC/issues/7798
+                ftsJobsQuery = ftsJobsQuery.with_for_update(skip_locked=True)
 
             ftsJobsQuery = ftsJobsQuery.order_by(FTS3Job.lastMonitor.asc())
             ftsJobsQuery = ftsJobsQuery.limit(limit)
@@ -559,7 +604,8 @@ class FTS3DB:
 
             # Block the Operations for other requests
             if operationAssignmentTag:
-                operationIDsQuery = operationIDsQuery.with_for_update()
+                # skip_locked: see getActiveJobs
+                operationIDsQuery = operationIDsQuery.with_for_update(skip_locked=True)
 
             operationIDs = operationIDsQuery.all()
 

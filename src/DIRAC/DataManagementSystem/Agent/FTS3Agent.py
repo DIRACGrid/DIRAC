@@ -382,6 +382,10 @@ class FTS3Agent(AgentModule):
             threadID = current_process().name
             log = gLogger.getLocalSubLogger(f"treatOperation/{operation.operationID}")
 
+            # (ftsJob, context) of the jobs submitted to FTS during this call.
+            # If we fail to persist them, we cancel them (see below)
+            newlySubmittedJobs = []
+
             # If the operation is totally processed
             # we perform the callback
             if operation.isTotallyProcessed():
@@ -510,6 +514,7 @@ class FTS3Agent(AgentModule):
                             continue
 
                         operation.ftsJobs.append(ftsJob)
+                        newlySubmittedJobs.append((ftsJob, context))
 
                         submittedFileIds = res["Value"]
                         log.info(
@@ -522,6 +527,17 @@ class FTS3Agent(AgentModule):
 
             if not res["OK"]:
                 log.error("Could not persist operation", res)
+                # The jobs we just submitted are not recorded in the DB, so nobody will ever monitor them,
+                # and the files (still without ftsGUID in the DB) will be submitted again in a later cycle.
+                # Cancel them to avoid having several FTS jobs transferring the same files (see #7798)
+                for ftsJob, context in newlySubmittedJobs:
+                    log.warn("Canceling unrecorded FTS job", f"{ftsJob.ftsGUID} on {ftsJob.ftsServer}")
+                    cancelRes = ftsJob.cancel(context)
+                    if not cancelRes["OK"]:
+                        log.error(
+                            "Could not cancel unrecorded FTS job",
+                            f"{ftsJob.ftsGUID} on {ftsJob.ftsServer}: {cancelRes['Message']}",
+                        )
 
             return operation, res
 
