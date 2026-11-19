@@ -17,8 +17,17 @@ on:
       - 'README.rst'
       - 'release.notes'
 
+# A new push to the same branch/PR cancels the previous run.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   Integration:
+    name: Integration
     runs-on: ubuntu-latest
     if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
     timeout-minutes: 45
@@ -41,12 +50,14 @@ jobs:
             ARGS: DIRAC_USE_JSON_ENCODE=Yes DIRAC_USE_JSON_DECODE=Yes
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - name: Fail-fast for outdated pipelines
       run: .github/workflows/fail-fast.sh
     - run: |
         git fetch --prune --unshallow
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: '3.11'
     - name: Installing dependencies
@@ -58,7 +69,11 @@ jobs:
             requests \
             typer
     - name: Prepare environment
-      run: ./integration_tests.py prepare-environment ${{ matrix.ARGS }}
+      env:
+        MATRIX_ARGS: ${{ matrix.ARGS }}
+      # Intentionally unquoted: MATRIX_ARGS is a space-separated list of
+      # KEY=VALUE flags and must be word-split into separate arguments
+      run: ./integration_tests.py prepare-environment $MATRIX_ARGS
     - name: Install server
       run: ./integration_tests.py install-server
     - name: Install client
