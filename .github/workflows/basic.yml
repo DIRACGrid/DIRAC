@@ -98,7 +98,7 @@ jobs:
           persist-credentials: false
       - name: Fail-fast for outdated pipelines
         run: .github/workflows/fail-fast.sh
-      - uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3
+      - uses: conda-incubator/setup-miniconda@be893c923ea9cf1cf7cd510fbdde27c7e18cbdcb # v4
         with:
           environment-file: environment.yml
 
@@ -145,7 +145,7 @@ jobs:
       - name: fix python3.14
         run: |
           sed -i "s/python =3.11/python =3.14/g" environment.yml
-      - uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3
+      - uses: conda-incubator/setup-miniconda@be893c923ea9cf1cf7cd510fbdde27c7e18cbdcb # v4
         with:
           environment-file: environment.yml
       - name: Run tests
