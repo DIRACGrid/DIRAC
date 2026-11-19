@@ -7,7 +7,7 @@ from DIRAC.Core.Base.Script import Script
 Script.setUsageMessage(
     "\n".join(
         [
-            __doc__.split("\n")[1],
+            __doc__.strip().split("\n")[0],
             "Usage:",
             f"  {Script.scriptName} [options] ... ComponentType System Component|System/Component",
             "Arguments:",

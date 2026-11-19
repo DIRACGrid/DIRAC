@@ -36,7 +36,7 @@ def main():
     Script.setUsageMessage(
         "\n".join(
             [
-                __doc__.split("\n")[1],
+                __doc__.strip().split("\n")[0],
                 "Usage:",
                 f"  {Script.scriptName} lfn... [local_dir]",
                 "Arguments:",
