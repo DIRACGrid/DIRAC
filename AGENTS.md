@@ -1,6 +1,7 @@
 # DIRAC Agent Guidelines
 
 ## Build/Lint/Test Commands
+- **Environment**: `pixi install` then `pixi shell` (or prefix commands with `pixi run`); dependencies come from `pixi.toml` + the committed `pixi.lock`. Use `pixi run -e py314 ...` for the Python 3.14 environment.
 - **Build**: `pip install -e .`
 - **Lint**: `ruff check src/ && pylint src/`
 - **Test**: `pytest tests/`

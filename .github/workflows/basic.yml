@@ -75,10 +75,6 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
     timeout-minutes: 30
-    defaults:
-      # Activate the conda environment automatically in each step
-      run:
-        shell: bash -l {0}
 
     strategy:
       fail-fast: False
@@ -98,19 +94,19 @@ jobs:
           persist-credentials: false
       - name: Fail-fast for outdated pipelines
         run: .github/workflows/fail-fast.sh
-      - uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3
+      - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e # v0.11.3
         with:
-          environment-file: environment.yml
+          cache: true
 
       - name: Run tests
         run: |
           # FIXME: The unit tests currently only work with editable installs
           # Install DIRACCommon first to ensure dependencies are resolved correctly
-          pip install -e ./dirac-common[testing]
-          pip install -e .[server,testing]
+          pixi run python -m pip install -e ./dirac-common[testing]
+          pixi run python -m pip install -e .[server,testing]
           # eval is needed to re-parse the shell quoting (e.g. -k 'not A and not B')
           # which is lost by the plain $COMMAND expansion
-          eval "$COMMAND"
+          eval "pixi run $COMMAND"
         env:
           REFERENCE_BRANCH: ${{ github['base_ref'] || github['head_ref'] }}
           COMMAND: ${{ matrix.command }}
@@ -120,10 +116,6 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
     timeout-minutes: 30
-    defaults:
-      # Activate the conda environment automatically in each step
-      run:
-        shell: bash -l {0}
 
     strategy:
       fail-fast: False
@@ -142,21 +134,20 @@ jobs:
           persist-credentials: false
       - name: Fail-fast for outdated pipelines
         run: .github/workflows/fail-fast.sh
-      - name: fix python3.14
-        run: |
-          sed -i "s/python =3.11/python =3.14/g" environment.yml
-      - uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3
+      - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e # v0.11.3
         with:
-          environment-file: environment.yml
+          cache: true
+          environments: py314
+
       - name: Run tests
         run: |
           # FIXME: The unit tests currently only work with editable installs
           # Install DIRACCommon first to ensure dependencies are resolved correctly
-          pip install -e ./dirac-common[testing]
-          pip install -e .[server,testing]
+          pixi run -e py314 python -m pip install -e ./dirac-common[testing]
+          pixi run -e py314 python -m pip install -e .[server,testing]
           # eval is needed to re-parse the shell quoting (e.g. -k 'not A and not B')
           # which is lost by the plain $COMMAND expansion
-          eval "$COMMAND"
+          eval "pixi run -e py314 $COMMAND"
         env:
           REFERENCE_BRANCH: ${{ github['base_ref'] || github['head_ref'] }}
           COMMAND: ${{ matrix.command }}
