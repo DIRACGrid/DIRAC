@@ -17,7 +17,7 @@ USE FileCatalogDB;
 
 
 CREATE TABLE FC_Files(
-    FileID INT AUTO_INCREMENT PRIMARY KEY,
+    FileID BIGINT AUTO_INCREMENT PRIMARY KEY,
     DirID INT NOT NULL,
     Size BIGINT UNSIGNED NOT NULL,
     UID SMALLINT UNSIGNED NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE FC_Files(
 -- ------------------------------------------------------------------------------
 
 CREATE TABLE FC_FileInfo (
-    FileID INTEGER NOT NULL PRIMARY KEY,
+    FileID BIGINT NOT NULL PRIMARY KEY,
     INDEX(FileID),
     GUID char(36) NOT NULL,
     INDEX(GUID),
@@ -68,8 +68,8 @@ CREATE TABLE FC_Statuses (
 -- -----------------------------------------------------------------------------
 
 CREATE TABLE FC_Replicas (
-    RepID INT AUTO_INCREMENT PRIMARY KEY,
-    FileID INT NOT NULL,
+    RepID BIGINT AUTO_INCREMENT PRIMARY KEY,
+    FileID BIGINT NOT NULL,
     SEID INTEGER NOT NULL,
     Status SMALLINT UNSIGNED NOT NULL,
     INDEX (FileID),
@@ -81,7 +81,7 @@ CREATE TABLE FC_Replicas (
 -- ------------------------------------------------------------------------------
 
 CREATE TABLE FC_ReplicaInfo (
-    RepID INTEGER NOT NULL AUTO_INCREMENT,
+    RepID BIGINT NOT NULL AUTO_INCREMENT,
     RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master',
     CreationDate DATETIME,
     ModificationDate DATETIME,
@@ -167,7 +167,7 @@ CREATE TABLE FC_DirMeta (
 -- ------------------------------------------------------------------------------
 
 CREATE TABLE FC_FileMeta (
-    FileID INTEGER NOT NULL,
+    FileID BIGINT NOT NULL,
     MetaKey VARCHAR(31) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT 'Noname',
     MetaValue VARCHAR(31) NOT NULL DEFAULT 'Noname',
     PRIMARY KEY (FileID,MetaKey)
@@ -263,8 +263,8 @@ CREATE TABLE FC_MetaSetNames (
 -- ------------------------------------------------------------------------------
 
 CREATE TABLE FC_FileAncestors (
-  FileID INT NOT NULL DEFAULT 0,
-  AncestorID INT NOT NULL DEFAULT 0,
+  FileID BIGINT NOT NULL DEFAULT 0,
+  AncestorID BIGINT NOT NULL DEFAULT 0,
   AncestorDepth INT NOT NULL DEFAULT 0,
   INDEX (FileID),
   INDEX (AncestorID),

@@ -729,7 +729,7 @@ class TransformationDB(DB):
     @convertToReturnValue
     def __addFilesToTransformation(self, transID, fileIDs, connection=False):
         # Create temporary table for FileIDs
-        sqlCmd = "CREATE TEMPORARY TABLE to_query_FileIDs (FileID INT(11) UNSIGNED NOT NULL, PRIMARY KEY (FileID)) ENGINE=MEMORY;"
+        sqlCmd = "CREATE TEMPORARY TABLE to_query_FileIDs (FileID BIGINT NOT NULL, PRIMARY KEY (FileID)) ENGINE=MEMORY;"
         returnValueOrRaise(self._update(sqlCmd, conn=connection))
 
         try:

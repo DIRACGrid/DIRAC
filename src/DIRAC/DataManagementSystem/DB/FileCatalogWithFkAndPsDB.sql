@@ -145,7 +145,7 @@ CREATE TABLE FC_DirectoryClosure (
 -- ------------------------------------------------------------------------------
 
 CREATE TABLE FC_Files(
-    FileID INT AUTO_INCREMENT,
+    FileID BIGINT AUTO_INCREMENT,
     DirID INT NOT NULL,
     Size BIGINT UNSIGNED NOT NULL,
     UID INT NOT NULL,
@@ -180,8 +180,8 @@ CREATE TABLE FC_Files(
 -- do we want the delete on cascade on the SE?
 
 CREATE TABLE FC_Replicas (
-    RepID INT AUTO_INCREMENT,
-    FileID INT NOT NULL,
+    RepID BIGINT AUTO_INCREMENT,
+    FileID BIGINT NOT NULL,
     SEID INTEGER NOT NULL,
     Status INTEGER NOT NULL,
     RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master',
@@ -231,7 +231,7 @@ CREATE TABLE FC_DirMeta (
 -- ------------------------------------------------------------------------------
 
 CREATE TABLE FC_FileMeta (
-    FileID INTEGER NOT NULL,
+    FileID BIGINT NOT NULL,
     MetaKey VARCHAR(31) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL DEFAULT 'Noname',
     MetaValue VARCHAR(31) NOT NULL DEFAULT 'Noname',
     PRIMARY KEY (FileID,MetaKey)
@@ -265,8 +265,8 @@ CREATE TABLE FC_MetaSetNames (
 -- ------------------------------------------------------------------------------
 
 CREATE TABLE FC_FileAncestors (
-  FileID INT NOT NULL DEFAULT 0,
-  AncestorID INT NOT NULL DEFAULT 0,
+  FileID BIGINT NOT NULL DEFAULT 0,
+  AncestorID BIGINT NOT NULL DEFAULT 0,
   AncestorDepth INT NOT NULL DEFAULT 0,
   INDEX (FileID),
   INDEX (AncestorID),
@@ -300,9 +300,9 @@ CREATE TABLE FC_MetaDatasets (
 -- ------------------------------------------------------------------------------
 
 CREATE TABLE FC_MetaDatasetFiles (
- MetaDatasetFileID INT AUTO_INCREMENT,
+ MetaDatasetFileID BIGINT AUTO_INCREMENT,
  DatasetID INT NOT NULL,
- FileID INT NOT NULL,
+ FileID BIGINT NOT NULL,
 
  PRIMARY KEY (MetaDatasetFileID),
  FOREIGN KEY (DatasetID) REFERENCES FC_MetaDatasets(DatasetID) ON DELETE CASCADE,
@@ -336,11 +336,11 @@ DELIMITER //
 CREATE PROCEDURE ps_find_dir
 (IN dirName varchar(255), OUT dir_id INT, OUT dir_lvl INT)
 BEGIN
-  SELECT SQL_NO_CACHE DirID INTO dir_id from FC_DirectoryList where Name = dirName;
+  SELECT DirID INTO dir_id from FC_DirectoryList where Name = dirName;
   IF dir_id IS NULL THEN
     SET dir_id = 0;
   END IF;
-  SELECT  SQL_NO_CACHE max(Depth) INTO dir_lvl FROM FC_DirectoryClosure WHERE ChildID = dir_id;
+  SELECT  max(Depth) INTO dir_lvl FROM FC_DirectoryClosure WHERE ChildID = dir_id;
 END //
 DELIMITER ;
 
@@ -354,7 +354,7 @@ CREATE PROCEDURE ps_find_dirs
 (IN dirNames MEDIUMTEXT)
 BEGIN
 --   SELECT DirID from FC_DirectoryList where Name in (dirNames);
-  SET @sql = CONCAT('SELECT SQL_NO_CACHE Name, DirID from FC_DirectoryList where Name in (', dirNames, ')');
+  SET @sql = CONCAT('SELECT Name, DirID from FC_DirectoryList where Name in (', dirNames, ')');
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
@@ -415,7 +415,7 @@ BEGIN
 
     IF parent_id != 0 THEN
       INSERT INTO FC_DirectoryClosure(ParentID, ChildID, depth)
-        SELECT SQL_NO_CACHE p.ParentID, dir_id, p.depth + 1
+        SELECT p.ParentID, dir_id, p.depth + 1
         FROM FC_DirectoryClosure p
         WHERE p.ChildID = parent_id;
     END IF;
@@ -437,7 +437,7 @@ DELIMITER //
 CREATE PROCEDURE ps_get_dirName_from_id
 (IN dir_id INT, OUT dirName varchar(255) )
 BEGIN
-   SELECT SQL_NO_CACHE Name INTO dirName from FC_DirectoryList where DirID = dir_id;
+   SELECT Name INTO dirName from FC_DirectoryList where DirID = dir_id;
 END //
 DELIMITER ;
 
@@ -451,7 +451,7 @@ CREATE PROCEDURE ps_get_dirNames_from_ids
 (IN dirIds TEXT)
 BEGIN
 --   SELECT DirID from FC_DirectoryList where Name in (dirNames);
-  SET @sql = CONCAT('SELECT SQL_NO_CACHE DirID, Name from FC_DirectoryList where DirID in (', dirIds, ')');
+  SET @sql = CONCAT('SELECT DirID, Name from FC_DirectoryList where DirID in (', dirIds, ')');
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
@@ -469,7 +469,7 @@ DELIMITER //
 CREATE PROCEDURE ps_get_parentIds_from_id
 (IN dir_id INT )
 BEGIN
-   SELECT SQL_NO_CACHE ParentID FROM FC_DirectoryClosure WHERE ChildID = dir_id order by Depth desc;
+   SELECT ParentID FROM FC_DirectoryClosure WHERE ChildID = dir_id order by Depth desc;
 END //
 DELIMITER ;
 
@@ -483,7 +483,7 @@ DELIMITER //
 CREATE PROCEDURE ps_get_direct_children
 (IN dir_id INT )
 BEGIN
-   SELECT SQL_NO_CACHE ChildID FROM FC_DirectoryClosure WHERE ParentID = dir_id and Depth = 1;
+   SELECT ChildID FROM FC_DirectoryClosure WHERE ParentID = dir_id and Depth = 1;
 END //
 DELIMITER ;
 
@@ -503,14 +503,14 @@ CREATE PROCEDURE ps_get_sub_directories
 BEGIN
 
     IF includeParent THEN
-      SELECT SQL_NO_CACHE c1.ChildID, max(c1.Depth) AS lvl
+      SELECT c1.ChildID, max(c1.Depth) AS lvl
       FROM FC_DirectoryClosure c1
       JOIN FC_DirectoryClosure c2 ON c1.ChildID = c2.ChildID
       WHERE c2.ParentID = dir_id
       GROUP BY c1.ChildID
       ORDER BY NULL;
     ELSE
-      SELECT SQL_NO_CACHE c1.ChildID, max(c1.Depth) AS lvl
+      SELECT c1.ChildID, max(c1.Depth) AS lvl
       FROM FC_DirectoryClosure c1
       JOIN FC_DirectoryClosure c2 ON c1.ChildID = c2.ChildID
       WHERE c2.ParentID = dir_id AND c2.Depth != 0
@@ -531,7 +531,7 @@ DELIMITER //
 CREATE PROCEDURE ps_get_multiple_sub_directories
 (IN dirIds TEXT)
 BEGIN
-  SET @sql = CONCAT('select SQL_NO_CACHE distinct(ChildID) from FC_DirectoryClosure where ParentID in (',dirIds ,')');
+  SET @sql = CONCAT('select distinct(ChildID) from FC_DirectoryClosure where ParentID in (',dirIds ,')');
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
@@ -551,7 +551,7 @@ CREATE PROCEDURE ps_count_sub_directories
 (IN dir_id INT, IN includeParent BOOLEAN, OUT countDir INT )
 BEGIN
 
-  SELECT SQL_NO_CACHE count(ChildID) INTO countDir FROM FC_DirectoryClosure WHERE ParentID = dir_id;
+  SELECT count(ChildID) INTO countDir FROM FC_DirectoryClosure WHERE ParentID = dir_id;
 
     IF NOT includeParent THEN
       IF countDir != 0 THEN
@@ -572,7 +572,7 @@ CREATE PROCEDURE ps_count_files_in_dir
 (IN dir_id INT, OUT countFile INT )
 BEGIN
 
-  SELECT SQL_NO_CACHE count(FileID) INTO countFile FROM FC_Files WHERE DirID = dir_id;
+  SELECT count(FileID) INTO countFile FROM FC_Files WHERE DirID = dir_id;
 
 END //
 DELIMITER ;
@@ -609,7 +609,7 @@ BEGIN
   -- We only update if the replica was moved
   IF new.SEID <> old.SEID THEN
 
-    SELECT SQL_NO_CACHE Size, DirID INTO file_size, dir_id FROM FC_Files where FileID = old.FileID;
+    SELECT Size, DirID INTO file_size, dir_id FROM FC_Files where FileID = old.FileID;
 
 
 --     -- Decrease the usage of old storage ...
@@ -641,7 +641,7 @@ CREATE PROCEDURE ps_get_replicas_for_files_in_dir
 (IN dir_id INT, IN allStatus BOOLEAN, IN visibleFileStatus VARCHAR(255), IN visibleReplicaStatus VARCHAR(255) )
 BEGIN
 
-  set @sql = 'select SQL_NO_CACHE f.FileName, f.FileID, s.SEName, r.PFN from FC_Replicas r join FC_Files f on f.FileID = r.FileID join FC_StorageElements s on s.SEID = r.SEID ';
+  set @sql = 'select f.FileName, f.FileID, s.SEName, r.PFN from FC_Replicas r join FC_Files f on f.FileID = r.FileID join FC_StorageElements s on s.SEID = r.SEID ';
 
   IF not allStatus THEN
     SET @sql = CONCAT(@sql, ' join FC_Statuses fst on f.Status = fst.StatusID join FC_Statuses rst on r.Status = rst.StatusID where DirID = ',dir_id ,' and fst.Status  in (',visibleFileStatus,') and rst.Status in (', visibleReplicaStatus, ')');
@@ -665,12 +665,12 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_get_file_id_from_lfn;
 DELIMITER //
 CREATE PROCEDURE ps_get_file_id_from_lfn
-(IN dirName VARCHAR(255), IN fileName VARCHAR(255), OUT file_id INT )
+(IN dirName VARCHAR(255), IN fileName VARCHAR(255), OUT file_id BIGINT )
 BEGIN
   DECLARE done INT;
   DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
 
-  SELECT SQL_NO_CACHE FileID INTO file_id FROM FC_Files f JOIN FC_DirectoryList d ON d.DirID = f.DirID WHERE d.Name = dirName and f.FileName = fileName;
+  SELECT FileID INTO file_id FROM FC_Files f JOIN FC_DirectoryList d ON d.DirID = f.DirID WHERE d.Name = dirName and f.FileName = fileName;
   IF file_id IS NULL THEN
     SET file_id = 0;
   END IF;
@@ -690,7 +690,7 @@ CREATE PROCEDURE ps_get_file_ids_from_dir_id
 (IN dir_id INT, IN file_names MEDIUMTEXT)
 BEGIN
 
-  SET @sql = CONCAT('SELECT SQL_NO_CACHE FileID, FileName FROM FC_Files f WHERE DirID = ', dir_id, ' AND FileName IN (', file_names, ')');
+  SET @sql = CONCAT('SELECT FileID, FileName FROM FC_Files f WHERE DirID = ', dir_id, ' AND FileName IN (', file_names, ')');
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
@@ -717,7 +717,7 @@ CREATE PROCEDURE ps_get_all_info_for_files_in_dir
 (IN dir_id INT, IN specificFiles BOOLEAN, IN file_names MEDIUMTEXT, IN allStatus BOOLEAN, IN visibleFileStatus VARCHAR(255))
 BEGIN
 
-  set @sql = CONCAT('SELECT SQL_NO_CACHE FileName, DirID, f.FileID, Size, f.uid, UserName, f.gid, GroupName, s.Status,
+  set @sql = CONCAT('SELECT FileName, DirID, f.FileID, Size, f.uid, UserName, f.gid, GroupName, s.Status,
                      GUID, Checksum, ChecksumType, Type, CreationDate,ModificationDate, Mode
                     FROM FC_Files f
                     JOIN FC_Users u ON f.UID = u.UID
@@ -752,7 +752,7 @@ CREATE PROCEDURE ps_get_all_info_for_file_ids
 (IN file_ids TEXT)
 BEGIN
 
-  SET @sql = CONCAT('SELECT SQL_NO_CACHE f.FileID, Size, UID, GID, s.Status, GUID, CreationDate
+  SET @sql = CONCAT('SELECT f.FileID, Size, UID, GID, s.Status, GUID, CreationDate
                      FROM FC_Files f
                      JOIN FC_Statuses s ON f.Status = s.StatusID
                      WHERE f.FileID IN (', file_ids, ')');
@@ -777,7 +777,7 @@ CREATE PROCEDURE ps_insert_file
  IN status_id INT, IN filename VARCHAR(255), IN GUID VARCHAR(36),
  IN checksum VARCHAR(32), IN checksumtype ENUM('Adler32','MD5'), IN mode SMALLINT )
 BEGIN
-  DECLARE file_id INT DEFAULT 0;
+  DECLARE file_id BIGINT DEFAULT 0;
 
   DECLARE exit handler for sqlexception
     BEGIN
@@ -830,7 +830,7 @@ BEGIN
 
   SET @sql = CONCAT(
     'INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) ',
-    'SELECT SQL_NO_CACHE f.DirID, 1, SUM(f.Size), COUNT(*) ',
+    'SELECT f.DirID, 1, SUM(f.Size), COUNT(*) ',
     'FROM FC_Files f WHERE ', fileDesc,
     ' GROUP BY f.DirID '
   );
@@ -842,7 +842,7 @@ BEGIN
 
   COMMIT;
 
-  SET @sql = CONCAT('SELECT SQL_NO_CACHE DirID, FileName, FileID FROM FC_Files WHERE ', fileDesc );
+  SET @sql = CONCAT('SELECT DirID, FileName, FileID FROM FC_Files WHERE ', fileDesc );
 
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
@@ -862,7 +862,7 @@ DELIMITER //
 CREATE PROCEDURE ps_get_file_ids_from_guids
 (IN  guids TEXT)
 BEGIN
-  SET @sql = CONCAT('SELECT SQL_NO_CACHE GUID, FileID FROM FC_Files f WHERE GUID IN (', guids, ')');
+  SET @sql = CONCAT('SELECT GUID, FileID FROM FC_Files f WHERE GUID IN (', guids, ')');
 
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
@@ -881,7 +881,7 @@ DELIMITER //
 CREATE PROCEDURE ps_get_lfns_from_guids
 (IN  guids TEXT)
 BEGIN
-  SET @sql = CONCAT('SELECT SQL_NO_CACHE GUID, CONCAT(d.Name, "/", f.FileName) FROM FC_Files f JOIN FC_DirectoryList d on f.DirID = d.DirID WHERE GUID IN (', guids, ')');
+  SET @sql = CONCAT('SELECT GUID, CONCAT(d.Name, "/", f.FileName) FROM FC_Files f JOIN FC_DirectoryList d on f.DirID = d.DirID WHERE GUID IN (', guids, ')');
 
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
@@ -1009,11 +1009,11 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_insert_replica;
 DELIMITER //
 CREATE PROCEDURE ps_insert_replica
-(IN file_id INT, IN se_id INT, IN status_id INT,
+(IN file_id BIGINT, IN se_id INT, IN status_id INT,
  IN rep_type ENUM ('Master','Replica') , IN pfn VARCHAR(1024)
 )
 BEGIN
-  DECLARE replica_id INT DEFAULT 0;
+  DECLARE replica_id BIGINT DEFAULT 0;
 
 
   DECLARE EXIT HANDLER FOR sqlexception BEGIN
@@ -1075,7 +1075,7 @@ BEGIN
 
   SET @sql = CONCAT(
     'INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) ',
-    'SELECT SQL_NO_CACHE f.DirID, r.SEID, SUM(f.Size), COUNT(*) ',
+    'SELECT f.DirID, r.SEID, SUM(f.Size), COUNT(*) ',
     'FROM FC_Files f JOIN FC_Replicas r ON f.FileID = r.FileID WHERE (', replicaDesc,
     ') GROUP BY f.DirID, r.SEID'
   );
@@ -1087,7 +1087,7 @@ BEGIN
 
   COMMIT;
 
-  SET @sql = CONCAT('SELECT SQL_NO_CACHE FileID, SEID, RepID FROM FC_Replicas r WHERE ', replicaDesc );
+  SET @sql = CONCAT('SELECT FileID, SEID, RepID FROM FC_Replicas r WHERE ', replicaDesc );
 
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
@@ -1105,10 +1105,10 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_get_replica_id;
 DELIMITER //
 CREATE PROCEDURE ps_get_replica_id
-(IN  file_id INT, IN se_id INT, OUT rep_id INT)
+(IN  file_id BIGINT, IN se_id INT, OUT rep_id BIGINT)
 BEGIN
 
-  SELECT SQL_NO_CACHE RepID INTO rep_id FROM FC_Replicas WHERE FileID = file_id AND SEID = se_id;
+  SELECT RepID INTO rep_id FROM FC_Replicas WHERE FileID = file_id AND SEID = se_id;
 
   IF rep_id IS NULL THEN
     SET rep_id = 0;
@@ -1129,7 +1129,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_delete_replica_from_file_and_se_ids;
 DELIMITER //
 CREATE PROCEDURE ps_delete_replica_from_file_and_se_ids
-(IN  file_id INT, IN se_id INT)
+(IN  file_id BIGINT, IN se_id INT)
 BEGIN
   DECLARE file_size BIGINT DEFAULT 0;
   DECLARE dir_id INT DEFAULT 0;
@@ -1165,7 +1165,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_set_replica_status;
 DELIMITER //
 CREATE PROCEDURE ps_set_replica_status
-(IN  file_id INT, IN se_id INT, IN status_id INT)
+(IN  file_id BIGINT, IN se_id INT, IN status_id INT)
 BEGIN
 
   UPDATE FC_Replicas SET Status = status_id WHERE FileID = file_id AND SEID = se_id;
@@ -1188,7 +1188,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_set_replica_host;
 DELIMITER //
 CREATE PROCEDURE ps_set_replica_host
-(IN  file_id INT, IN old_se_id INT, IN new_se_id INT)
+(IN  file_id BIGINT, IN old_se_id INT, IN new_se_id INT)
 BEGIN
   DECLARE file_size BIGINT DEFAULT 0;
   DECLARE dir_id INT DEFAULT 0;
@@ -1223,7 +1223,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_set_file_uid;
 DELIMITER //
 CREATE PROCEDURE ps_set_file_uid
-(IN  file_id INT, IN in_uid INT)
+(IN  file_id BIGINT, IN in_uid INT)
 BEGIN
 
   UPDATE FC_Files SET UID = in_uid, ModificationDate = UTC_TIMESTAMP() where FileID = file_id;
@@ -1244,7 +1244,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_set_file_gid;
 DELIMITER //
 CREATE PROCEDURE ps_set_file_gid
-(IN  file_id INT, IN in_gid INT)
+(IN  file_id BIGINT, IN in_gid INT)
 BEGIN
 
 
@@ -1266,7 +1266,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_set_file_status;
 DELIMITER //
 CREATE PROCEDURE ps_set_file_status
-(IN  file_id INT, IN status_id INT)
+(IN  file_id BIGINT, IN status_id INT)
 BEGIN
 
 
@@ -1288,7 +1288,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_set_file_mode;
 DELIMITER //
 CREATE PROCEDURE ps_set_file_mode
-(IN  file_id INT, IN in_mode SMALLINT UNSIGNED)
+(IN  file_id BIGINT, IN in_mode SMALLINT UNSIGNED)
 BEGIN
 
   UPDATE FC_Files SET Mode = in_mode, ModificationDate = UTC_TIMESTAMP()  WHERE FileID = file_id;
@@ -1312,13 +1312,13 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_get_all_info_of_replicas;
 DELIMITER //
 CREATE PROCEDURE ps_get_all_info_of_replicas
-(IN file_id INT, IN allStatus BOOLEAN, IN visibleReplicaStatus TEXT)
+(IN file_id BIGINT, IN allStatus BOOLEAN, IN visibleReplicaStatus TEXT)
 BEGIN
 
 
   IF allStatus THEN
 
-    SELECT SQL_NO_CACHE FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
+    SELECT FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
     FROM FC_Replicas r
     JOIN FC_StorageElements se on r.SEID = se.SEID
     JOIN FC_Statuses st on r.Status = st.StatusID
@@ -1327,7 +1327,7 @@ BEGIN
   ELSE
 
     SET @sql = CONCAT(
-                    'SELECT SQL_NO_CACHE FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
+                    'SELECT FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
                     FROM FC_Replicas r
                     JOIN FC_StorageElements se on r.SEID = se.SEID
                     JOIN FC_Statuses st on r.Status = st.StatusID
@@ -1360,7 +1360,7 @@ BEGIN
 
   IF allStatus THEN
 
-    SET @sql = CONCAT('SELECT SQL_NO_CACHE FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
+    SET @sql = CONCAT('SELECT FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
                       FROM FC_Replicas r
                       JOIN FC_StorageElements se on r.SEID = se.SEID
                       JOIN FC_Statuses st on r.Status = st.StatusID
@@ -1372,7 +1372,7 @@ BEGIN
   ELSE
 
     SET @sql = CONCAT(
-                    'SELECT SQL_NO_CACHE FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
+                    'SELECT FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
                     FROM FC_Replicas r
                     JOIN FC_StorageElements se on r.SEID = se.SEID
                     JOIN FC_Statuses st on r.Status = st.StatusID
@@ -1401,7 +1401,7 @@ CREATE PROCEDURE ps_get_all_directory_info
 (IN dir_name VARCHAR(255))
 BEGIN
 
-    SELECT SQL_NO_CACHE d.DirID, d.UID, u.UserName, d.GID, g.GroupName, d.Status, d.Mode, d.CreationDate, d.ModificationDate
+    SELECT d.DirID, d.UID, u.UserName, d.GID, g.GroupName, d.Status, d.Mode, d.CreationDate, d.ModificationDate
     FROM FC_DirectoryList d
     JOIN FC_Users u on d.UID = u.UID
     JOIN FC_Groups g on d.GID = g.GID
@@ -1423,7 +1423,7 @@ CREATE PROCEDURE ps_get_all_directory_info_from_id
 BEGIN
 
 
-    SELECT SQL_NO_CACHE d.DirID, d.UID, u.UserName, d.GID, g.GroupName, d.Status, d.Mode, d.CreationDate, d.ModificationDate
+    SELECT d.DirID, d.UID, u.UserName, d.GID, g.GroupName, d.Status, d.Mode, d.CreationDate, d.ModificationDate
     FROM FC_DirectoryList d
     JOIN FC_Users u on d.UID = u.UID
     JOIN FC_Groups g on d.GID = g.GID
@@ -1468,7 +1468,7 @@ BEGIN
   DECLARE fileUpdate INT DEFAULT 0;
   DECLARE start_dirId INT DEFAULT 0;
 
-  SELECT SQL_NO_CACHE DirID INTO start_dirId from FC_DirectoryList where Name = dir_name;
+  SELECT DirID INTO start_dirId from FC_DirectoryList where Name = dir_name;
   IF start_dirId IS NULL THEN
     SET start_dirId = 0;
   END IF;
@@ -1531,7 +1531,7 @@ BEGIN
   DECLARE fileUpdate INT DEFAULT 0;
   DECLARE start_dirId INT DEFAULT 0;
 
-  SELECT SQL_NO_CACHE DirID INTO start_dirId from FC_DirectoryList where Name = dir_name;
+  SELECT DirID INTO start_dirId from FC_DirectoryList where Name = dir_name;
   IF start_dirId IS NULL THEN
     SET start_dirId = 0;
   END IF;
@@ -1616,7 +1616,7 @@ BEGIN
   DECLARE fileUpdate INT DEFAULT 0;
   DECLARE start_dirId INT DEFAULT 0;
 
-  SELECT SQL_NO_CACHE DirID INTO start_dirId from FC_DirectoryList where Name = dir_name;
+  SELECT DirID INTO start_dirId from FC_DirectoryList where Name = dir_name;
   IF start_dirId IS NULL THEN
     SET start_dirId = 0;
   END IF;
@@ -1655,7 +1655,7 @@ CREATE PROCEDURE ps_get_files_in_dir
 (IN dir_id INT)
 BEGIN
 
-  SELECT SQL_NO_CACHE FileID, DirID, FileName FROM FC_Files f WHERE DirID = dir_id;
+  SELECT FileID, DirID, FileName FROM FC_Files f WHERE DirID = dir_id;
 
 END //
 DELIMITER ;
@@ -1678,7 +1678,7 @@ BEGIN
 
     IF recursiveSum THEN
 
-      SELECT SQL_NO_CACHE COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles),0) FROM FC_DirectoryUsage u
+      SELECT COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles),0) FROM FC_DirectoryUsage u
       JOIN FC_DirectoryClosure c on c.ChildID = u.DirID
       JOIN FC_StorageElements s ON s.SEID = u.SEID
       WHERE s.SEName = 'FakeSE'
@@ -1686,7 +1686,7 @@ BEGIN
 
     ELSE
 
-      SELECT SQL_NO_CACHE SESize, SEFiles INTO log_size, log_files FROM FC_DirectoryUsage u
+      SELECT SESize, SEFiles INTO log_size, log_files FROM FC_DirectoryUsage u
       JOIN FC_StorageElements s ON s.SEID = u.SEID
       WHERE s.SEName = 'FakeSE'
       AND u.DirID = dir_id;
@@ -1719,7 +1719,7 @@ BEGIN
   IF recursiveSum THEN
 
 
-    SELECT SQL_NO_CACHE COALESCE(SUM(f.Size),0), COUNT(*) INTO log_size, log_files FROM FC_Files f
+    SELECT COALESCE(SUM(f.Size),0), COUNT(*) INTO log_size, log_files FROM FC_Files f
     JOIN FC_DirectoryClosure d ON f.DirID = d.ChildID
     WHERE ParentID = dir_id;
 
@@ -1731,7 +1731,7 @@ BEGIN
 
   ELSE
 
-    SELECT SQL_NO_CACHE COALESCE(SUM(f.Size),0), COUNT(*) INTO log_size, log_files FROM FC_Files f
+    SELECT COALESCE(SUM(f.Size),0), COUNT(*) INTO log_size, log_files FROM FC_Files f
     WHERE DirID = dir_id;
 
   END IF;
@@ -1758,7 +1758,7 @@ CREATE PROCEDURE ps_get_dir_physical_size
 BEGIN
 
   IF recursiveSum THEN
-    SELECT SQL_NO_CACHE SEName, COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles), 0)
+    SELECT SEName, COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles), 0)
     FROM FC_DirectoryUsage u
     JOIN FC_DirectoryClosure c on u.DirID = c.ChildID
     JOIN FC_StorageElements se ON se.SEID = u.SEID
@@ -1770,7 +1770,7 @@ BEGIN
 
   ELSE
 
-    SELECT SQL_NO_CACHE SEName, COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles), 0)
+    SELECT SEName, COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles), 0)
     FROM FC_DirectoryUsage u
     JOIN FC_StorageElements se ON se.SEID = u.SEID
     WHERE u.DirID = dir_id
@@ -1802,7 +1802,7 @@ BEGIN
 
   IF recursiveSum THEN
 
-    SELECT SQL_NO_CACHE se.SEName, COALESCE(SUM(f.Size), 0), count(*)
+    SELECT se.SEName, COALESCE(SUM(f.Size), 0), count(*)
     FROM FC_Replicas r
     JOIN FC_Files f ON f.FileID = r.FileID
     JOIN FC_StorageElements se ON se.SEID = r.SEID
@@ -1812,7 +1812,7 @@ BEGIN
     ORDER BY NULL;
 
   ELSE
-    SELECT SQL_NO_CACHE se.SEName, COALESCE(SUM(f.Size), 0), count(*)
+    SELECT se.SEName, COALESCE(SUM(f.Size), 0), count(*)
     FROM FC_Replicas r
     JOIN FC_Files f ON f.FileID = r.FileID
     JOIN FC_StorageElements se ON se.SEID = r.SEID
@@ -1845,13 +1845,13 @@ BEGIN
   DELETE FROM FC_DirectoryUsage;
 
   INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles)
-    SELECT SQL_NO_CACHE DirID, 1 as SEID, sum(Size) as SESize, count(*) as SEFiles
+    SELECT DirID, 1 as SEID, sum(Size) as SESize, count(*) as SEFiles
     FROM FC_Files
     GROUP BY DirID
     ORDER BY NULL;
 
   INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles)
-    SELECT SQL_NO_CACHE DirID, SEID, sum(Size) as SESize, count(*) as SEFiles
+    SELECT DirID, SEID, sum(Size) as SESize, count(*) as SEFiles
     FROM FC_Replicas r
     JOIN FC_Files f ON r.FileID = f.FileID
     GROUP BY DirID, SEID
@@ -1880,14 +1880,14 @@ BEGIN
   DELETE FROM FC_DirectoryUsage where DirID = dir_id;
 
   INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles)
-    SELECT SQL_NO_CACHE DirID, 1 as SEID, sum(Size) as SESize, count(*) as SEFiles
+    SELECT DirID, 1 as SEID, sum(Size) as SESize, count(*) as SEFiles
     FROM FC_Files
     WHERE DirID = dir_id
     GROUP BY DirID
     ORDER BY NULL;
 
   INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles)
-    SELECT SQL_NO_CACHE DirID, SEID, sum(Size) as SESize, count(*) as SEFiles
+    SELECT DirID, SEID, sum(Size) as SESize, count(*) as SEFiles
     FROM FC_Replicas r
     JOIN FC_Files f ON r.FileID = f.FileID
     WHERE f.DirID = dir_id
@@ -1910,7 +1910,7 @@ CREATE PROCEDURE ps_get_full_lfn_for_file_ids
 (IN file_ids TEXT)
 BEGIN
 
-  SET @sql = CONCAT('SELECT SQL_NO_CACHE f.FileID, CONCAT(d.Name, "/", f.FileName)
+  SET @sql = CONCAT('SELECT f.FileID, CONCAT(d.Name, "/", f.FileName)
                      FROM FC_Files f
                      JOIN FC_DirectoryList d ON f.DirID = d.DirID
                      WHERE f.FileID IN (', file_ids, ')');
