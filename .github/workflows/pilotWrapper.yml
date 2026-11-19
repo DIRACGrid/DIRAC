@@ -19,12 +19,12 @@ jobs:
     strategy:
       fail-fast: False
       matrix:
+        # pixi environment names (see pixi.toml); the exact python versions
+        # are pinned by pixi.lock
         python:
-          # 3.6.8 only exists in the Anaconda `defaults` channel, which Miniforge
-          # deliberately does not use: 3.6.9 is the nearest build on conda-forge
-          - 3.6.9
-          - 3.11.4
-          - 3.14.6
+          - default  # py311
+          - py36
+          - py314
         pilot_branch:
           - master
           - devel
@@ -41,32 +41,23 @@ jobs:
       - name: Fail-fast for outdated pipelines
         run: .github/workflows/fail-fast.sh
 
-      # conda is no longer preinstalled (nor on the PATH) of the ubuntu-latest
-      # runner images; install it explicitly since the next steps rely on it
-      - name: Install conda
-        uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3
+      - uses: prefix-dev/setup-pixi@9936258fee697aff89b3fed6ca1f80a382ef694e # v0.11.3
         with:
-          miniforge-version: latest
-          conda-remove-defaults: "true"
-          auto-update-conda: false
-          activate-environment: ""
+          pixi-version: v0.84.1
+          cache: false
+          environments: ${{ matrix.python }}
 
-      - name: prepare environment
-        env:
-          PYTHON_VERSION: ${{ matrix.python }}
-        run: |
-          conda config --set add_pip_as_python_dependency false
-          conda create -c conda-forge -n python_${PYTHON_VERSION} python=${PYTHON_VERSION}
       - name: run pilot wrapper test
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PYTHON_VERSION: ${{ matrix.python }}
+          PYTHON_ENV: ${{ matrix.python }}
           PILOT_BRANCH: ${{ matrix.pilot_branch }}
         run: |
-          export INVALID_UTF8_VAR=$'\xff'
           cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py .
-          eval "$(conda shell.bash hook)" && conda activate python_${PYTHON_VERSION}
           # download and extract the pilot artifacts: authenticated with the
           # workflow token, so no rate limits, and no manual zip handling
           gh run download -R DIRACGrid/Pilot -n Pilot_${PILOT_BRANCH} -D ${PILOT_BRANCH}/pilot
-          python Test_GenerateAndExecutePilotWrapper.py file://$GITHUB_WORKSPACE/src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py file://$GITHUB_WORKSPACE/${PILOT_BRANCH}
+          # INVALID_UTF8_VAR is part of the test: the pilot wrapper has to cope
+          # with invalid UTF-8 in the environment. It must be set *inside* the
+          # pixi-spawned shell (pixi itself panics on non-UTF-8 env vars).
+          pixi run -e ${PYTHON_ENV} bash -c 'export INVALID_UTF8_VAR=$(printf "\xff"); exec python Test_GenerateAndExecutePilotWrapper.py "$1" "$2"' _ "file://$GITHUB_WORKSPACE/src/DIRAC/WorkloadManagementSystem/Utilities/PilotWrapper.py" "file://$GITHUB_WORKSPACE/${PILOT_BRANCH}"
