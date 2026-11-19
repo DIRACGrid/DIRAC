@@ -8,5 +8,17 @@
     "$default",
     "rel-v9r0",
     "rel-v8r0"
+  ],
+  "packageRules": [
+    {
+      "description": "Conda usage in DIRAC CI is legacy (only deploy_CVMFS keeps it deliberately, and the pilot wrapper tests are moving to pixi): do not churn the setup-miniconda action.",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchDepNames": [
+        "conda-incubator/setup-miniconda"
+      ],
+      "enabled": false
+    }
   ]
 }
