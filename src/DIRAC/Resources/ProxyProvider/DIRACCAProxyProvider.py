@@ -1,35 +1,36 @@
-""" ProxyProvider implementation for the proxy generation using local (DIRAC) CA credentials
+"""ProxyProvider implementation for the proxy generation using local (DIRAC) CA credentials
 
-    This class is a simple, limited CA, its main purpose is to generate a simple proxy for DIRAC users
-    who do not have any certificate register on the fly.
+This class is a simple, limited CA, its main purpose is to generate a simple proxy for DIRAC users
+who do not have any certificate register on the fly.
 
-    Required parameters in the DIRAC configuration for its implementation:
+Required parameters in the DIRAC configuration for its implementation:
 
-    .. literalinclude:: /dirac.cfg
-      :start-after: ## DIRACCA type:
-      :end-before: ##
-      :dedent: 2
-      :caption: /Resources/ProxyProviders section
+.. literalinclude:: /dirac.cfg
+  :start-after: ## DIRACCA type:
+  :end-before: ##
+  :dedent: 2
+  :caption: /Resources/ProxyProviders section
 
-    Also, as an additional feature, this class can read properties from a simple openssl CA configuration file.
-    To do this, just set the path to an existing configuration file as a CAConfigFile parameter. In this case,
-    the distinguished names order in the created proxy will be the same as in the configuration file policy block.
+Also, as an additional feature, this class can read properties from a simple openssl CA configuration file.
+To do this, just set the path to an existing configuration file as a CAConfigFile parameter. In this case,
+the distinguished names order in the created proxy will be the same as in the configuration file policy block.
 
-    The Proxy provider supports the following distinguished names
-    (https://www.cryptosys.net/pki/manpki/pki_distnames.html)::
+The Proxy provider supports the following distinguished names
+(https://www.cryptosys.net/pki/manpki/pki_distnames.html)::
 
-      SN(surname)
-      GN(givenName)
-      C(countryName)
-      CN(commonName)
-      L(localityName)
-      Email(emailAddress)
-      O(organizationName)
-      OU(organizationUnitName)
-      SP,ST(stateOrProvinceName)
-      SERIALNUMBER(serialNumber)
+  SN(surname)
+  GN(givenName)
+  C(countryName)
+  CN(commonName)
+  L(localityName)
+  Email(emailAddress)
+  O(organizationName)
+  OU(organizationUnitName)
+  SP,ST(stateOrProvinceName)
+  SERIALNUMBER(serialNumber)
 
 """
+
 import re
 import time
 import random
@@ -173,7 +174,7 @@ class DIRACCAProxyProvider(ProxyProvider):
             if nid not in self.supplied + self.match + self.optional:
                 return S_ERROR(f"{err} is not found for current CA.")
             if nid in self.match and not self.dnInfoDictCA[field] == values:
-                return S_ERROR(f"{err} must be /{field}={('/%s=' % field).joing(self.dnInfoDictCA[field])}.")
+                return S_ERROR(f"{err} must be /{field}={(f'/{field}=').join(self.dnInfoDictCA[field])}.")
             if nid in self.maxDict:
                 rangeMax = list(range(min(len(values), len(self.maxDict[nid]))))
                 if any([True if len(values[i]) > self.maxDict[nid][i] else False for i in rangeMax]):
