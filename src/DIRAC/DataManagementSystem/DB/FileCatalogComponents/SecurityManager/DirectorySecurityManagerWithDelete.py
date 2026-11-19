@@ -1,6 +1,7 @@
-""" DIRAC FileCatalog Security Manager mix-in class for access check only on the directory level
-    with a special treatment of the Delete operation
+"""DIRAC FileCatalog Security Manager mix-in class for access check only on the directory level
+with a special treatment of the Delete operation
 """
+
 from DIRAC import S_OK
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.DirectorySecurityManager import (
     DirectorySecurityManager,

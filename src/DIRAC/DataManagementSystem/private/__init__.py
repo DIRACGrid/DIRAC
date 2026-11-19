@@ -1,1 +1,1 @@
-""" DIRAC.DataManagementSystem.private package """
+"""DIRAC.DataManagementSystem.private package"""

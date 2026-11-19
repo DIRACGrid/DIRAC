@@ -1,3 +1,3 @@
 """
-   DIRAC.Resources.Computing.BatchSystems.TimeLeft package
+DIRAC.Resources.Computing.BatchSystems.TimeLeft package
 """

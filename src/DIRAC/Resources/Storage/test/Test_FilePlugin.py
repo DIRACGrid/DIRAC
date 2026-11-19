@@ -1,5 +1,4 @@
-""" test File Plugin
-"""
+"""test File Plugin"""
 
 from unittest import mock
 import unittest

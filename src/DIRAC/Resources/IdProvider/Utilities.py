@@ -1,5 +1,5 @@
-""" Utilities for the IdProvider package
-"""
+"""Utilities for the IdProvider package"""
+
 from DIRAC import S_OK, S_ERROR, gConfig
 
 

@@ -3,15 +3,16 @@
 # Date: 2011/12/14 15:07:01
 ########################################################################
 
-""" :mod: PfnTestCase
-    =======================
+""":mod: PfnTestCase
+=======================
 
-    .. module: PfnTestCase
-    :synopsis: test case for Pfn module
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: PfnTestCase
+:synopsis: test case for Pfn module
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    test case for Pfn module
+test case for Pfn module
 """
+
 # #
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2011/12/14 15:07:12

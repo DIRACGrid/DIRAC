@@ -11,6 +11,7 @@ Example:
   $ dirac-admin-sort-cs-sites -C CLOUDS DIRAC
   sort site names by country postfix in '/Resources/Sites/CLOUDS' and '/Resources/Sites/DIRAC' subsection
 """
+
 from datetime import datetime
 
 from DIRAC import gLogger, exit as DIRACExit

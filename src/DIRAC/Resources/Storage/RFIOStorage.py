@@ -1,5 +1,5 @@
-""" This is the RFIO StorageClass
-"""
+"""This is the RFIO StorageClass"""
+
 import re
 import os
 import time

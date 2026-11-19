@@ -1,4 +1,4 @@
-""" The CS! (Configuration Service)
+"""The CS! (Configuration Service)
 
 
 The following options can be set for the Configuration Service.
@@ -10,6 +10,7 @@ The following options can be set for the Configuration Service.
   :caption: Service options
 
 """
+
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security.Properties import CS_ADMINISTRATOR

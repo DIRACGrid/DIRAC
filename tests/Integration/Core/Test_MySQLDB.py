@@ -1,6 +1,7 @@
 """
 This is used to test the MySQLDB module.
 """
+
 import time
 import pytest
 
@@ -8,7 +9,6 @@ import DIRAC
 from DIRAC import gLogger, gConfig
 from DIRAC.Core.Utilities import TimeUtilities
 from DIRAC.Core.Utilities.MySQL import MySQL
-
 
 # Useful methods
 

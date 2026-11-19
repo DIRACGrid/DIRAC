@@ -1,7 +1,8 @@
-""" This is a test of the PublisherHandler
+"""This is a test of the PublisherHandler
 
-    It supposes that the RSS DBs are present, and that the service is running
+It supposes that the RSS DBs are present, and that the service is running
 """
+
 # pylint: disable=wrong-import-position
 
 import DIRAC

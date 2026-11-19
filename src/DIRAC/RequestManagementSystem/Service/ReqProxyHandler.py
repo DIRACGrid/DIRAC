@@ -22,6 +22,7 @@ and they never should be forwarded to the central RequestManager.
   :caption: ReqProxy options
 
 """
+
 # #
 # @file RequestProxyHandler.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

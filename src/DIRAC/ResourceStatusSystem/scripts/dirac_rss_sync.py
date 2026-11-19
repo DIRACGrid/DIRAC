@@ -6,6 +6,7 @@ reason to `Synchronized`. However, it can copy over the status on the CS to
 the RSS. Important: If the StatusType is not defined on the CS, it will set
 it to Active !
 """
+
 from DIRAC import S_OK
 from DIRAC import exit as DIRACExit
 from DIRAC import gLogger

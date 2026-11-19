@@ -1,8 +1,9 @@
-""" CommandCaller
+"""CommandCaller
 
-  Module that loads commands and executes them.
+Module that loads commands and executes them.
 
 """
+
 import copy
 
 from DIRAC import S_OK

@@ -1,4 +1,4 @@
-""" CacheFeederAgent
+"""CacheFeederAgent
 
   This agent feeds the Cache tables with the outputs of the cache commands.
 
@@ -8,6 +8,7 @@
   :dedent: 2
   :caption: CacheFeederAgent options
 """
+
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient

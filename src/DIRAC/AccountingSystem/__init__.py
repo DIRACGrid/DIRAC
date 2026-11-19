@@ -15,4 +15,5 @@ DIRAC Accounting uses a number of predefined Types that must include:
 * bucket definition to set the granularity of the reports
 
 """
+
 __package__ = "DIRAC.AccountingSystem"

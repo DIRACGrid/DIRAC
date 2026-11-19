@@ -2,6 +2,7 @@
 """
 Set the status of the replicas of given files at the provided SE
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

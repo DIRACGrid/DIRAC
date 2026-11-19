@@ -2,6 +2,7 @@
 """
 Create a DIRAC MoveReplica request to be executed by the RMS
 """
+
 import os
 import time
 from hashlib import md5

@@ -1,5 +1,5 @@
-""" This is a test of the creation of the json dump file
-"""
+"""This is a test of the creation of the json dump file"""
+
 import unittest
 import os
 from diraccfg import CFG

@@ -1,6 +1,7 @@
-""" The Script class provides a simple way for users to specify an executable
-    or file to run (and is also a simple example of a workflow module).
+"""The Script class provides a simple way for users to specify an executable
+or file to run (and is also a simple example of a workflow module).
 """
+
 import os
 import re
 import shlex

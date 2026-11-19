@@ -1,9 +1,10 @@
-"""  The SiteSEMapping module performs the necessary CS gymnastics to
-     resolve site and SE combinations.  These manipulations are necessary
-     in several components.
+"""The SiteSEMapping module performs the necessary CS gymnastics to
+resolve site and SE combinations.  These manipulations are necessary
+in several components.
 
-     Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
+Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
 """
+
 from DIRAC import gLogger, S_OK
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers, siteGridName
 

@@ -1,5 +1,5 @@
-""" DIRAC Multi VO FileCatalog plugin class to manage directory metadata for multiple VO.
-"""
+"""DIRAC Multi VO FileCatalog plugin class to manage directory metadata for multiple VO."""
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryMetadata.DirectoryMetadata import DirectoryMetadata

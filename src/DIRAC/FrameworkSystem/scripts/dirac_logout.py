@@ -5,6 +5,7 @@ Logout
 Example:
   $ dirac-logout
 """
+
 import os
 import sys
 

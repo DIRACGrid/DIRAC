@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 """
-  Retrieves job status according to given criteria.
-  Example:
-    $ dstat -a -u your.dirac.username
+Retrieves job status according to given criteria.
+Example:
+  $ dstat -a -u your.dirac.username
 
 """
+
 import datetime
 
 from DIRAC import exit as DIRACExit, S_OK, S_ERROR

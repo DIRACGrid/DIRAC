@@ -1,19 +1,20 @@
-""" The gateway service is used for forwarding service calls to the appropriate services.
+"""The gateway service is used for forwarding service calls to the appropriate services.
 
-    For this to be used, the following CS option is required::
+For this to be used, the following CS option is required::
 
-      DIRAC
-      {
-        Gateways
-        {
-          my.site.org = dips://thisIsAn.url.org:9159/Framework/Gateway
-        }
-      }
+  DIRAC
+  {
+    Gateways
+    {
+      my.site.org = dips://thisIsAn.url.org:9159/Framework/Gateway
+    }
+  }
 
-    At the same time, this same gateway service should be run with option /LocalInstallation/Site
-    which is different from "my.site.org" or whatever is set in the option above, to avoid initialization loops.
+At the same time, this same gateway service should be run with option /LocalInstallation/Site
+which is different from "my.site.org" or whatever is set in the option above, to avoid initialization loops.
 
 """
+
 import sys
 from io import BytesIO
 

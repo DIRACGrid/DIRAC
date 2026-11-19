@@ -1,6 +1,7 @@
 """
 Handling the download of the shifter Proxy
 """
+
 import os
 
 from DIRAC import S_ERROR, S_OK, gLogger

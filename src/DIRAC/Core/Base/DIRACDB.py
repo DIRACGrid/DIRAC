@@ -1,5 +1,5 @@
-""" Class that encapsulate few commonalities of DIRAC DBs
-    (MySQL-based, SQLAlchemy-based, ES-based)
+"""Class that encapsulate few commonalities of DIRAC DBs
+(MySQL-based, SQLAlchemy-based, ES-based)
 """
 
 from DIRAC import gLogger, gConfig

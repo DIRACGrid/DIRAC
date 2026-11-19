@@ -1,4 +1,4 @@
-""" The JobDB class is a front-end to the main WMS database containing
+"""The JobDB class is a front-end to the main WMS database containing
     job definitions and status information. It is used in most of the WMS
     components
 
@@ -11,6 +11,7 @@ The following options can be set in ``Systems/WorkloadManagement/Databases/JobDB
 * *CompressJDLs*:        Enable compression of JDLs when they are stored in the database, default *False*.
 
 """
+
 from __future__ import annotations
 
 import datetime
@@ -188,7 +189,7 @@ class JobDB(DB):
             paramCondition = f" AND Name in ({paramNames})"
         rCounter = ""
         if rescheduleCounter != -1:
-            rCounter = " AND RescheduleCycle=%d" % int(rescheduleCounter)
+            rCounter = f" AND RescheduleCycle={int(rescheduleCounter)}"
         cmd = "SELECT Name, Value, RescheduleCycle from AtticJobParameters"
         cmd += f" WHERE JobID={jobID} {paramCondition} {rCounter}"
         result = self._query(cmd)
@@ -331,12 +332,10 @@ class JobDB(DB):
     #############################################################################
 
     @overload
-    def getInputData(self, jobID: int | str) -> DReturnType[list[str]]:
-        ...
+    def getInputData(self, jobID: int | str) -> DReturnType[list[str]]: ...
 
     @overload
-    def getInputData(self, jobID: list[int | str]) -> DReturnType[dict[int, list[str]]]:
-        ...
+    def getInputData(self, jobID: list[int | str]) -> DReturnType[dict[int, list[str]]]: ...
 
     def getInputData(self, jobID: int | str | list[int | str]) -> DReturnType[list[str] | dict[int, list[str]]]:
         """Get input data for the given job"""

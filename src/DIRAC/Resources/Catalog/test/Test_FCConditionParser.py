@@ -1,5 +1,5 @@
-""" Testing the FCConditionPaserClass
-"""
+"""Testing the FCConditionPaserClass"""
+
 import unittest
 from DIRAC.Resources.Catalog.FCConditionParser import FCConditionParser
 

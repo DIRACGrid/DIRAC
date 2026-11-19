@@ -1,38 +1,39 @@
-""" This helper looks in the /Operations section of the CS, considering its specific nature:
-    the /Operations section is designed in a way that each configuration can be specific to a Setup,
-    while maintaining a default.
+"""This helper looks in the /Operations section of the CS, considering its specific nature:
+the /Operations section is designed in a way that each configuration can be specific to a Setup,
+while maintaining a default.
 
-    So, for example, given the following /Operations section::
+So, for example, given the following /Operations section::
 
-      Operations/
-          Defaults/
-                someOption = someValue
-                aSecondOption = aSecondValue
-          specificVo/
-              someSection/
-                  someOption = someValueInVO
+  Operations/
+      Defaults/
+            someOption = someValue
+            aSecondOption = aSecondValue
+      specificVo/
+          someSection/
+              someOption = someValueInVO
 
-    The following calls would give different results based on the setup::
+The following calls would give different results based on the setup::
 
-      Operations().getValue('someSection/someOption')
-        - someValueInVO if we are in 'specificVo' vo
-        - someValue if we are in any other VO
+  Operations().getValue('someSection/someOption')
+    - someValueInVO if we are in 'specificVo' vo
+    - someValue if we are in any other VO
 
-    It becomes then important for the Operations() objects to know the VO name
-    for which we want the information, and this can be done in the following ways.
+It becomes then important for the Operations() objects to know the VO name
+for which we want the information, and this can be done in the following ways.
 
-    1. by specifying the VO name directly::
+1. by specifying the VO name directly::
 
-         Operations(vo=anotherVOName).getValue('someSectionName/someOptionX')
+     Operations(vo=anotherVOName).getValue('someSectionName/someOptionX')
 
-    2. by give a group name::
+2. by give a group name::
 
-         Operations(group=thisIsAGroupOfVO_X).getValue('someSectionName/someOptionX')
+     Operations(group=thisIsAGroupOfVO_X).getValue('someSectionName/someOptionX')
 
-    3. if no VO nor group is provided, the VO will be guessed from the proxy,
-    but this works iff the object is instantiated by a proxy (and not, e.g., using a server certificate)
+3. if no VO nor group is provided, the VO will be guessed from the proxy,
+but this works iff the object is instantiated by a proxy (and not, e.g., using a server certificate)
 
 """
+
 import _thread
 
 from diraccfg import CFG

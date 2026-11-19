@@ -1,4 +1,4 @@
-""" EmailAgent
+"""EmailAgent
   This agent reads the ResourceStatusCache table of ResourceStatusDB
   for sending emails with aggregated information about state changes,
   and then clears it.
@@ -9,6 +9,7 @@
   :dedent: 2
   :caption: EmailAgent options
 """
+
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
@@ -80,9 +81,7 @@ class EmailAgent(AgentModule):
       </head>
       <body>
         <p class="setup">{setup}</p>
-      """.format(
-                setup=""
-            )
+      """.format(setup="")
 
             for row in records:
                 statusType = row[columnNames.index("StatusType")]

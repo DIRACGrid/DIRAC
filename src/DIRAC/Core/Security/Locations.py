@@ -1,5 +1,5 @@
-""" Collection of utilities for locating certs, proxy, CAs
-"""
+"""Collection of utilities for locating certs, proxy, CAs"""
+
 import os
 
 import DIRAC

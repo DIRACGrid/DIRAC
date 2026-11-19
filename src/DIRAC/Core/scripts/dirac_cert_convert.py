@@ -3,6 +3,7 @@
 Script converts the user certificate in the p12 format into a standard .globus usercert.pem and userkey.pem files.
 Creates the necessary directory, $HOME/.globus, if needed. Backs-up old pem files if any are found.
 """
+
 import os
 import sys
 import shutil

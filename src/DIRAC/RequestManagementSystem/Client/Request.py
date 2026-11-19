@@ -6,6 +6,7 @@
 
 request implementation
 """
+
 # Disable invalid names warning
 # pylint: disable=invalid-name
 # # imports

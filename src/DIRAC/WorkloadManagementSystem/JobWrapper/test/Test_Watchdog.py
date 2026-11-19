@@ -1,5 +1,5 @@
-""" unit test for Watchdog.py
-"""
+"""unit test for Watchdog.py"""
+
 import math
 import os
 from unittest.mock import MagicMock

@@ -18,6 +18,7 @@ Example:
   VOMS         : True
   VOMS fqan    : ['/formation']
 """
+
 import sys
 
 from DIRAC.Core.Base.Script import Script

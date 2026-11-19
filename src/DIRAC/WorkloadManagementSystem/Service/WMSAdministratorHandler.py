@@ -1,6 +1,7 @@
 """
 This is a DIRAC WMS administrator interface.
 """
+
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

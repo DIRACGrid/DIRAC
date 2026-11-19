@@ -1,5 +1,5 @@
-""" Test class for agents
-"""
+"""Test class for agents"""
+
 # pylint: disable=protected-access, missing-docstring, invalid-name, line-too-long
 
 # imports

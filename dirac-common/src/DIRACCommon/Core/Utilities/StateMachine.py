@@ -1,7 +1,8 @@
-""" StateMachine
+"""StateMachine
 
-  This module contains the basic blocks to build a state machine (State and StateMachine)
+This module contains the basic blocks to build a state machine (State and StateMachine)
 """
+
 from DIRACCommon.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
 

@@ -1,11 +1,12 @@
-""" fakeEnvironment
+"""fakeEnvironment
 
-   this module allows to create the documentation without having to do
-   any kind of special installation. The list of mocked modules is:
+this module allows to create the documentation without having to do
+any kind of special installation. The list of mocked modules is:
 
-   GSI
+GSI
 
 """
+
 import sys
 from unittest import mock
 

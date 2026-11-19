@@ -1,11 +1,11 @@
-""" :mod: FileTest
-    =======================
+""":mod: FileTest
+=======================
 
-    .. module: FileTest
-    :synopsis: test cases for Files
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: FileTest
+:synopsis: test cases for Files
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    test cases for Files
+test cases for Files
 """
 
 import pytest

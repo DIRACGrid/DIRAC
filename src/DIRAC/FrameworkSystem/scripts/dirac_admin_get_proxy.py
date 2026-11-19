@@ -10,6 +10,7 @@ Example:
   $ dirac-admin-get-proxy vhamar dirac_user
   Proxy downloaded to /afs/in2p3.fr/home/h/hamar/proxy.vhamar.dirac_user
 """
+
 import os
 
 import DIRAC

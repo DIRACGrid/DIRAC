@@ -1,8 +1,9 @@
-""" The POOL XML Slice class provides a simple plugin module to create
-    an XML file for applications to translate LFNs to TURLs. The input
-    dictionary has LFNs as keys with all associated metadata as key,
-    value pairs.
+"""The POOL XML Slice class provides a simple plugin module to create
+an XML file for applications to translate LFNs to TURLs. The input
+dictionary has LFNs as keys with all associated metadata as key,
+value pairs.
 """
+
 import os
 
 from DIRAC import S_ERROR, S_OK, gLogger

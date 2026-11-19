@@ -2,6 +2,7 @@
 """
 Get summary informations of all productions
 """
+
 import DIRAC
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Base.Script import Script

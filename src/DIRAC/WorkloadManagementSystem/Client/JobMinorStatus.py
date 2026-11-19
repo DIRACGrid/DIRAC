@@ -1,6 +1,7 @@
 """
 This module contains constants and lists for the possible job minor statuses.
 """
+
 #
 APPLICATION = "Application"
 #

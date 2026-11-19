@@ -1,6 +1,7 @@
-""" BaseHistoryCorrector is a base class for correctors of user shares within
-    a given group based on the history of the resources consumption
+"""BaseHistoryCorrector is a base class for correctors of user shares within
+a given group based on the history of the resources consumption
 """
+
 import time as nativetime
 
 from DIRAC import S_OK, S_ERROR, gLogger

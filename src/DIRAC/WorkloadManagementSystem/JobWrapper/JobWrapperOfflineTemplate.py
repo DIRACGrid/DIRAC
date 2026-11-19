@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-""" This template will become the job wrapper that's actually executed.
+"""This template will become the job wrapper that's actually executed.
 
 The JobWrapperOfflineTemplate is completed and invoked by the PushJobAgent and uses functionalities from JobWrapper module.
 It is executed in environment where external connections are not allowed.
 We assume this script is executed in a specific environment where DIRAC is available.
 """
+
 import hashlib
 import json
 import os

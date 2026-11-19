@@ -1,5 +1,5 @@
-""" Test_RSS_Policy_FreeDiskSpacePolicy
-"""
+"""Test_RSS_Policy_FreeDiskSpacePolicy"""
+
 # pylint: disable=protected-access
 
 import unittest

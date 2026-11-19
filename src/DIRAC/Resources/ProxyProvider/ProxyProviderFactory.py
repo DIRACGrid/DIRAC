@@ -3,9 +3,10 @@
 # Author : A.T.
 ########################################################################
 
-"""  The Proxy Provider Factory instantiates ProxyProvider objects
-     according to their configuration
+"""The Proxy Provider Factory instantiates ProxyProvider objects
+according to their configuration
 """
+
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getInfoAboutProviders

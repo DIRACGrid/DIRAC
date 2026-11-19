@@ -1,6 +1,7 @@
-""" Refresh local CS (if needed)
+"""Refresh local CS (if needed)
 Used each time you call gConfig. It keep your configuration up-to-date with the configuration server
 """
+
 import threading
 import time
 import os

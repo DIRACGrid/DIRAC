@@ -1,4 +1,5 @@
 """Module level filter."""
+
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 
 DOT = "."

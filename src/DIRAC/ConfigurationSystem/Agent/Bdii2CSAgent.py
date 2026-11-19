@@ -1,4 +1,4 @@
-""" The Bdii2CSAgent performs checking BDII for availability of CE
+"""The Bdii2CSAgent performs checking BDII for availability of CE
 resources for a given or any configured VO. It detects resources not yet
 present in the CS and notifies the administrators.
 For the CEs already present in the CS, the agent is updating
@@ -12,6 +12,7 @@ The following options can be set for the Bdii2CSAgent.
   :dedent: 2
   :caption: Bdii2CSAgent options
 """
+
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath

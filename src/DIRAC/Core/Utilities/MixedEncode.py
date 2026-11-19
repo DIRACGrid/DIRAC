@@ -1,6 +1,5 @@
-""" Transition methods to allow to move from DEncode to JEncode
+"""Transition methods to allow to move from DEncode to JEncode"""
 
-"""
 import os
 from DIRAC.Core.Utilities import DEncode, JEncode
 

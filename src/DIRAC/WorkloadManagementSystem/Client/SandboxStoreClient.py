@@ -1,6 +1,7 @@
-""" Client for the SandboxStore.
-    Will connect to the WorkloadManagement/SandboxStore service.
+"""Client for the SandboxStore.
+Will connect to the WorkloadManagement/SandboxStore service.
 """
+
 from __future__ import annotations
 
 import hashlib

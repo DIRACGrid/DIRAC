@@ -2,6 +2,7 @@
 """
 Script to update pilot version in CS
 """
+
 from packaging.version import Version
 
 import DIRAC

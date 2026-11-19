@@ -1,15 +1,16 @@
-""" DIPStorage class is the client of the DIRAC Storage Element.
+"""DIPStorage class is the client of the DIRAC Storage Element.
 
-    The following methods are available in the Service interface
+The following methods are available in the Service interface
 
-    getMetadata()
-    get()
-    getDir()
-    put()
-    putDir()
-    remove()
+getMetadata()
+get()
+getDir()
+put()
+putDir()
+remove()
 
 """
+
 import os
 import random
 

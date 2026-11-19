@@ -6,6 +6,7 @@
 """
 Command line administrative interface to DIRAC Accounting DataStore Service
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

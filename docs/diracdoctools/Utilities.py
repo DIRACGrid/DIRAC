@@ -1,6 +1,5 @@
 """Utilities used by the documentation scripts."""
 
-
 import atexit
 import os
 import re
@@ -8,7 +7,6 @@ import sys
 import shlex
 import logging
 import subprocess
-
 
 LOG = logging.getLogger(__name__)
 

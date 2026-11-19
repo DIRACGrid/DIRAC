@@ -1,7 +1,8 @@
-""" MonitoringHistoryCorrector is the implementation class of the BaseHistoryCorrector
-    which gets resources consumption history data from the OpenSearch Monitoring
-    database
+"""MonitoringHistoryCorrector is the implementation class of the BaseHistoryCorrector
+which gets resources consumption history data from the OpenSearch Monitoring
+database
 """
+
 import datetime
 
 from DIRAC import gLogger, S_OK

@@ -1,6 +1,7 @@
 """Unit tests of MQConnectionManager in the DIRAC.Resources.MessageQueue.MConnectionManager
-   Also, test of internal functions for mq connection storage.
+Also, test of internal functions for mq connection storage.
 """
+
 # ignore use of __functions, _functions
 # pylint: disable=no-member, protected-access
 

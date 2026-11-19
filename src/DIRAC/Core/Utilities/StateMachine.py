@@ -6,6 +6,7 @@ triggering DIRAC's global state initialization.
 
 All exports are maintained for backward compatibility.
 """
+
 # Re-export everything from DIRACCommon for backward compatibility
 from DIRACCommon.Core.Utilities.StateMachine import *  # noqa: F401, F403
 

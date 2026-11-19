@@ -1,11 +1,9 @@
-""" Test class for SGEResourceUsage utility
-"""
+"""Test class for SGEResourceUsage utility"""
 
 import pytest
 
 from DIRAC import S_OK
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.SGEResourceUsage import SGEResourceUsage
-
 
 RESULT_FROM_SGE = """==============================================================
 job_number:                 12345

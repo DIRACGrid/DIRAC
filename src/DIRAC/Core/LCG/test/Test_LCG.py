@@ -1,10 +1,9 @@
-""" Few unit tests for LCG clients
-"""
+"""Few unit tests for LCG clients"""
+
 from unittest import mock
 
 from datetime import datetime, timedelta
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
-
 
 mockRSS = mock.MagicMock()
 GOCCli = GOCDBClient()

@@ -1,5 +1,5 @@
-""" DIRAC FileCatalog Security Manager base class
-"""
+"""DIRAC FileCatalog Security Manager base class"""
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.Properties import FC_MANAGEMENT
 

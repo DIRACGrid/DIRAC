@@ -1,7 +1,7 @@
-""" Legend encapsulates a graphical plot legend drawing tool
+"""Legend encapsulates a graphical plot legend drawing tool
 
-    The DIRAC Graphs package is derived from the GraphTool plotting package of the
-    CMS/Phedex Project by ... <to be added>
+The DIRAC Graphs package is derived from the GraphTool plotting package of the
+CMS/Phedex Project by ... <to be added>
 """
 
 from matplotlib.patches import Rectangle

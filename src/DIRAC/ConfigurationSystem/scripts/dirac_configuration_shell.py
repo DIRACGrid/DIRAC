@@ -2,6 +2,7 @@
 """
 Script that emulates the behaviour of a shell to edit the CS config.
 """
+
 from DIRAC.Core.Base.Script import Script
 
 # Invariants:

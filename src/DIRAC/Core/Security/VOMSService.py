@@ -1,5 +1,4 @@
-""" VOMSService class encapsulates connection to the VOMS service for a given VO
-"""
+"""VOMSService class encapsulates connection to the VOMS service for a given VO"""
 
 import requests
 

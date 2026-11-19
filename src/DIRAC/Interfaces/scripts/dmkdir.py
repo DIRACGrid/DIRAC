@@ -9,6 +9,7 @@ Examples:
     $ dmkdir ./some_lfn_dir (relative path)
     $ dmkdir /voname/somesubdir/anotherone/newdir
 """
+
 from DIRAC.Interfaces.Utilities.DCommands import DSession
 from DIRAC.Interfaces.Utilities.DCommands import DCatalog
 from DIRAC.Interfaces.Utilities.DCommands import pathFromArguments

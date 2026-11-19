@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 """
-  Retrieve output sandbox for a DIRAC job
+Retrieve output sandbox for a DIRAC job
 """
+
 import DIRAC
 from DIRAC import S_OK, gLogger
 from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache

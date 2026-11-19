@@ -1,12 +1,13 @@
-""" DIRAC FileCatalog component representing a directory tree with
-    a closure table
+"""DIRAC FileCatalog component representing a directory tree with
+a closure table
 
-    General warning: when we return the number of affected row, if the values did not change
-                     then they are not taken into account, so we might return "Dir does not exist"
-                     while it does.... the timestamp update should prevent this to happen, however if
-                     you do it several times within 1 second, then there will be no changed, and affected = 0
+General warning: when we return the number of affected row, if the values did not change
+                 then they are not taken into account, so we might return "Dir does not exist"
+                 while it does.... the timestamp update should prevent this to happen, however if
+                 you do it several times within 1 second, then there will be no changed, and affected = 0
 
 """
+
 import errno
 import os
 
@@ -130,7 +131,7 @@ class DirectoryClosure(DirectoryTreeBase):
         dirName = result["Value"][0]
 
         if not dirName:
-            return S_ERROR("Directory with id %d not found" % int(dirID))
+            return S_ERROR(f"Directory with id {int(dirID)} not found")
 
         return S_OK(dirName)
 
@@ -351,7 +352,7 @@ class DirectoryClosure(DirectoryTreeBase):
             result = self.db.ugManager.getUserAndGroupID(credDict)
             if not result["OK"]:
                 return result
-            (l_uid, l_gid) = result["Value"]
+            l_uid, l_gid = result["Value"]
 
         # Find the ID of the parent
         res = self.findDir(parentDir)

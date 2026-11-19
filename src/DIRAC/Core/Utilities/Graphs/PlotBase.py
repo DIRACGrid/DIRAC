@@ -1,8 +1,9 @@
-""" PlotBase is a base class for various Graphs plots
+"""PlotBase is a base class for various Graphs plots
 
-    The DIRAC Graphs package is derived from the GraphTool plotting package of the
-    CMS/Phedex Project by ... <to be added>
+The DIRAC Graphs package is derived from the GraphTool plotting package of the
+CMS/Phedex Project by ... <to be added>
 """
+
 # matplotlib dynamicaly defines all the get_xticklabels and the like,
 # so we just ignore it
 # pylint: disable=not-callable

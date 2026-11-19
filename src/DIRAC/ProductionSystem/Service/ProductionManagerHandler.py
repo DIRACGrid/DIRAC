@@ -1,5 +1,4 @@
-""" DISET request handler base class for the ProductionDB.
-"""
+"""DISET request handler base class for the ProductionDB."""
 
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

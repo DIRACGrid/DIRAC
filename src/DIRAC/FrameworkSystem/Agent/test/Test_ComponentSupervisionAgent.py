@@ -1,4 +1,5 @@
 """Test ComponentSupervisionAgent."""
+
 import unittest
 import sys
 from datetime import datetime, timedelta
@@ -671,8 +672,9 @@ class TestComponentSupervisionAgent(unittest.TestCase):
 
         self.restartAgent.sysAdminClient.getOverallStatus.return_value = S_OK(services)
 
-        with patch("DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig", new=gConfigMock), patch(
-            "DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.socket.gethostname", return_value=host
+        with (
+            patch("DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.gConfig", new=gConfigMock),
+            patch("DIRAC.FrameworkSystem.Agent.ComponentSupervisionAgent.socket.gethostname", return_value=host),
         ):
             res = self.restartAgent.checkURLs()
         self.assertTrue(res["OK"])

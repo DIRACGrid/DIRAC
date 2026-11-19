@@ -1,6 +1,7 @@
 """
 MeessageQueue Pilot logging plugin. Just log messages.
 """
+
 import re
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.WorkloadManagementSystem.Client.PilotLoggingPlugins.PilotLoggingPlugin import PilotLoggingPlugin

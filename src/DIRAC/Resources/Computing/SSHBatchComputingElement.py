@@ -1,5 +1,5 @@
-""" SSH (Virtual) Computing Element: For a given list of ip/cores pair it will send jobs
-    directly through ssh
+"""SSH (Virtual) Computing Element: For a given list of ip/cores pair it will send jobs
+directly through ssh
 """
 
 import os

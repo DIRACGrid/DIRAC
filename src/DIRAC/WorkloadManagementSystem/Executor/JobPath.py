@@ -1,10 +1,11 @@
 """
-  The Job Path executor determines the chain of Optimizing Agents that must
-  work on the job prior to the scheduling decision.
+The Job Path executor determines the chain of Optimizing Agents that must
+work on the job prior to the scheduling decision.
 
-  Initially this takes jobs in the received state and starts the jobs on the
-  optimizer chain.
+Initially this takes jobs in the received state and starts the jobs on the
+optimizer chain.
 """
+
 from DIRAC import S_OK
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 

@@ -1,4 +1,5 @@
 """Tests for LogFilters."""
+
 import collections.abc
 import pytest
 

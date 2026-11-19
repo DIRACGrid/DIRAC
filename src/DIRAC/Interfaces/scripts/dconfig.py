@@ -6,6 +6,7 @@ Examples:
     $ dconfig -m (creates minimal config file in ~/dirac/dcommands.conf)
     $ dconfig (lists contents of ~/dirac/dcommands.conf)
 """
+
 import DIRAC
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.Script import Script

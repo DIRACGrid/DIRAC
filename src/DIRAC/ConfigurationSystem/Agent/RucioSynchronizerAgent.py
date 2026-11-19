@@ -1,4 +1,4 @@
-""" :mod: RucioSynchronizer
+""":mod: RucioSynchronizer
 
   Agent that synchronizes Rucio and Dirac
 

@@ -1,14 +1,14 @@
-""" :mod: RequestTask
+""":mod: RequestTask
 
-    =================
+=================
 
-    .. module: RequestTask
+.. module: RequestTask
 
-    :synopsis: request processing task
+:synopsis: request processing task
 
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    request processing task to be used inside ProcessTask created in RequestExecutingAgent
+request processing task to be used inside ProcessTask created in RequestExecutingAgent
 """
 
 import os

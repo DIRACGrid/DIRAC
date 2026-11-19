@@ -1,4 +1,4 @@
-""" OpenNebula XML-RPC (Version 6) Driver
+"""OpenNebula XML-RPC (Version 6) Driver
 
 To use this in DIRAC, on the CE Resource set:
  - CEType = Cloud

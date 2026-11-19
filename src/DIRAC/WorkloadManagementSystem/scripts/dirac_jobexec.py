@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-""" The dirac-jobexec script is equipped to execute workflows that
-    are specified via their XML description.  The main client of
-    this script is the Job Wrapper.
+"""The dirac-jobexec script is equipped to execute workflows that
+are specified via their XML description.  The main client of
+this script is the Job Wrapper.
 """
+
 import os
 import os.path
 import sys

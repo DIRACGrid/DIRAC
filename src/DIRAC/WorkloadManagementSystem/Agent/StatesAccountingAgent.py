@@ -1,4 +1,4 @@
-"""  StatesAccountingAgent sends periodically numbers of jobs and pilots in various states for various
+"""StatesAccountingAgent sends periodically numbers of jobs and pilots in various states for various
      sites to the Monitoring system to create historical plots.
 
 .. literalinclude:: ../ConfigTemplate.cfg
@@ -7,6 +7,7 @@
   :dedent: 2
   :caption: StatesAccountingAgent options
 """
+
 import datetime
 
 from DIRAC import S_ERROR, S_OK, gConfig

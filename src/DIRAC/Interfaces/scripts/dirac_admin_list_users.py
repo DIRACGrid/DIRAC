@@ -13,6 +13,7 @@ Example:
   msapunov
   atsareg
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

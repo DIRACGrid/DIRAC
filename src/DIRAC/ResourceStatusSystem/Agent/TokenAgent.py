@@ -1,4 +1,4 @@
-""" TokenAgent
+"""TokenAgent
 
   This agent inspect all elements, and resets their tokens if necessary.
 
@@ -10,6 +10,7 @@ The following options can be set for the TokenAgent.
   :dedent: 2
   :caption: TokenAgent options
 """
+
 from datetime import datetime, timedelta
 
 from DIRAC import S_OK, S_ERROR
@@ -17,7 +18,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-
 
 AGENT_NAME = "ResourceStatus/TokenAgent"
 

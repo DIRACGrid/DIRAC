@@ -1,6 +1,7 @@
-""" The SLURM TimeLeft utility interrogates the SLURM batch system for the
-    current CPU consumed, as well as its limit.
+"""The SLURM TimeLeft utility interrogates the SLURM batch system for the
+current CPU consumed, as well as its limit.
 """
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import runCommand
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.ResourceUsage import ResourceUsage

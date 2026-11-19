@@ -1,6 +1,7 @@
 """
-  Defines the plugin to return the boolean given as param
+Defines the plugin to return the boolean given as param
 """
+
 from DIRAC.Resources.Catalog.ConditionPlugins.FCConditionBasePlugin import FCConditionBasePlugin
 from DIRAC.Core.Utilities.SaferEval import saferEval
 

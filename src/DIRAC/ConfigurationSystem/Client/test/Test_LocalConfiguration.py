@@ -6,7 +6,6 @@ import random
 from DIRAC import S_OK
 import DIRAC.ConfigurationSystem.Client.LocalConfiguration
 
-
 doc_description = """
 This is an example of a typical team description.
 

@@ -1,7 +1,7 @@
-""" MySQL based WMSHistory accounting.
-    It's suggested to replace this with the OpenSearch based WMSHistory monitoring.
+"""MySQL based WMSHistory accounting.
+It's suggested to replace this with the OpenSearch based WMSHistory monitoring.
 
-    Filled by the agent "WorkloadManagement/StatesAccountingAgent"
+Filled by the agent "WorkloadManagement/StatesAccountingAgent"
 """
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType

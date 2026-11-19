@@ -2,6 +2,7 @@
 """
 Print list replicas for files in the FileCatalog
 """
+
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script

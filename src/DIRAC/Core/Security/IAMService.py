@@ -1,5 +1,4 @@
-""" IAMService class encapsulates connection to the IAM service for a given VO
-"""
+"""IAMService class encapsulates connection to the IAM service for a given VO"""
 
 import requests
 

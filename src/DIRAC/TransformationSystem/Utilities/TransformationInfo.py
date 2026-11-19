@@ -1,4 +1,5 @@
 """TransformationInfo class to be used by ILCTransformation System"""
+
 from collections import OrderedDict, defaultdict
 from itertools import zip_longest
 
@@ -195,7 +196,7 @@ class TransformationInfo:
         :returns: S_OK with result
         :raises: RuntimeError when failing to find jobs
         """
-        attrDict = dict(Status=status, JobGroup="%08d" % int(self.tID))
+        attrDict = dict(Status=status, JobGroup=f"{int(self.tID):08}")
         res = self.jobMon.getJobs(attrDict)
         if res["OK"]:
             self.log.debug(f"Found Trans jobs: {res['Value']}")

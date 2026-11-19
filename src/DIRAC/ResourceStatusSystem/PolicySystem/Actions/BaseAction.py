@@ -1,8 +1,9 @@
-""" BaseAction
+"""BaseAction
 
-  Base class for Actions.
+Base class for Actions.
 
 """
+
 from DIRAC import gLogger
 
 

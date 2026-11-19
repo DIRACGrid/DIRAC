@@ -10,6 +10,7 @@ Example:
   $ dirac-wms-job-delete 12
   Deleted job 12
 """
+
 import datetime
 import os.path
 

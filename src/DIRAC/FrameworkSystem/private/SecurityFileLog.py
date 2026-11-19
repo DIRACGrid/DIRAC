@@ -43,10 +43,8 @@ class SecurityFileLog(threading.Thread):
             logFile = "%s/%s%02d%02d.security.log.csv" % (path, msgTime.year, msgTime.month, msgTime.day)
             if not os.path.isfile(logFile):
                 fd = open(logFile, "w")
-                fd.write(
-                    "Time, Success, Source IP, Source Port, source Identity, destinationIP,\
-           destinationPort, destinationService, action\n"
-                )
+                fd.write("Time, Success, Source IP, Source Port, source Identity, destinationIP,\
+           destinationPort, destinationService, action\n")
             else:
                 fd = open(logFile, "a")
             fd.write(", ".join(str(item).replace(",", "").replace("\n", "") for item in secMsg) + "\n")

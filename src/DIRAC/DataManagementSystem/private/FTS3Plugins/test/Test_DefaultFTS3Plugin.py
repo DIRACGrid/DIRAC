@@ -1,4 +1,4 @@
-""" This modules contains a lot of tests for multiHop. It can be used as a configuration reference"""
+"""This modules contains a lot of tests for multiHop. It can be used as a configuration reference"""
 
 import os
 import tempfile

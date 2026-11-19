@@ -2,6 +2,7 @@
 """
 Do the initial installation and configuration of a DIRAC component
 """
+
 from DIRAC import S_OK
 from DIRAC import exit as DIRACexit
 from DIRAC import gConfig, gLogger

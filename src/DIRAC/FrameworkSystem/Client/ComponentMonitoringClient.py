@@ -1,4 +1,5 @@
 """Class for making requests to a ComponentMonitoring Service."""
+
 from DIRAC.Core.Base.Client import Client, createClient
 
 

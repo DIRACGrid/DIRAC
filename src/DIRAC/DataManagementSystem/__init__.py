@@ -1,3 +1,3 @@
 """
-   DIRAC.DataManagementSystem package
+DIRAC.DataManagementSystem package
 """

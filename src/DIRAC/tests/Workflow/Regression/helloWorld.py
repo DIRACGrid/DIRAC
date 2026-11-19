@@ -1,5 +1,4 @@
-""" simple hello world job
-"""
+"""simple hello world job"""
 
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Interfaces.API.Dirac import Dirac

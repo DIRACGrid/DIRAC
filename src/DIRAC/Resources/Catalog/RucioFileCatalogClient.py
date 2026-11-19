@@ -1,5 +1,5 @@
-""" The RucioFileCatalogClient is a class that allows to interface Dirac with Rucio
-"""
+"""The RucioFileCatalogClient is a class that allows to interface Dirac with Rucio"""
+
 import os
 import uuid
 import datetime

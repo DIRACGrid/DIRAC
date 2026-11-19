@@ -1,5 +1,5 @@
-""" This test only need the JobLoggingDB to be present
-"""
+"""This test only need the JobLoggingDB to be present"""
+
 # pylint: disable=wrong-import-position, missing-docstring
 
 import datetime

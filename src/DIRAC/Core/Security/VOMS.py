@@ -1,5 +1,4 @@
-""" Module for dealing with VOMS (Virtual Organization Membership Service)
-"""
+"""Module for dealing with VOMS (Virtual Organization Membership Service)"""
 
 from datetime import datetime
 import os

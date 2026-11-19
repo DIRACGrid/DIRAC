@@ -1,5 +1,5 @@
-""" Utility for prompting users
-"""
+"""Utility for prompting users"""
+
 from DIRAC import S_OK, S_ERROR
 
 

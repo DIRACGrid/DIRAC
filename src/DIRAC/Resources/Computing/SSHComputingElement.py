@@ -1,4 +1,4 @@
-""" SSH (Virtual) Computing Element
+"""SSH (Virtual) Computing Element
 
 For a given IP/host it will send jobs directly through ssh
 
@@ -62,6 +62,7 @@ SSHType:
 
 **Code Documentation**
 """
+
 import errno
 import json
 import os

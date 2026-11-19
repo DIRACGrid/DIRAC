@@ -6,6 +6,7 @@ directories and files on the physical storage.
 Examples:
     $ drmdir ./some_lfn_directory
 """
+
 from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Interfaces.Utilities.DCommands import DSession

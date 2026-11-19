@@ -6,6 +6,7 @@ Examples:
     $ dcd /dirac/user
     $ dcd
 """
+
 import DIRAC
 from DIRAC.Interfaces.Utilities.DCommands import DSession
 from DIRAC.Interfaces.Utilities.DCommands import DCatalog

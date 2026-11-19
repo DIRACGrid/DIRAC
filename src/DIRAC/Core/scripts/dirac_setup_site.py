@@ -6,6 +6,7 @@
 """
 Initial installation and configuration of a new DIRAC server (DBs, Services, Agents, Web Portal,...)
 """
+
 from DIRAC import S_OK
 from DIRAC.Core.Base.Script import Script
 

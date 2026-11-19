@@ -5,6 +5,7 @@ Add or Modify a Group info in DIRAC
 Example:
   $ dirac-admin-add-group -G dirac_test
 """
+
 # pylint: disable=wrong-import-position
 
 import DIRAC

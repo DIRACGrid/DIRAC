@@ -53,6 +53,7 @@ Requirements/Assumptions:
   removed from the configuration, otherwise no transformations of this type will be treated.
 
 """
+
 from collections import defaultdict
 import time
 import itertools

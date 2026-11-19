@@ -2,6 +2,7 @@
 """
 tests for HTCondorCEComputingElement module
 """
+
 import json
 import uuid
 

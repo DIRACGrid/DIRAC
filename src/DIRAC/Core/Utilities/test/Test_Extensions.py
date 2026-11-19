@@ -1,4 +1,5 @@
 """Tests for the DIRAC.Core.Utilities.Extensions module"""
+
 import DIRAC
 from DIRAC.Core.Utilities.Extensions import (
     findSystems,

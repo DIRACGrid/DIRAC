@@ -1,5 +1,5 @@
-""" DIRAC FileCatalog plugin class to manage file metadata
-"""
+"""DIRAC FileCatalog plugin class to manage file metadata"""
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.TimeUtilities import queryTime
 from DIRAC.Core.Utilities.List import intListToString

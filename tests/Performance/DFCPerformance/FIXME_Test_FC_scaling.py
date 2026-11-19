@@ -3,8 +3,9 @@
 # Author :  Andrei Tsaregorodtsev
 ########################################################################
 """
-  Test suite for a generic File Catalog scalability tests
+Test suite for a generic File Catalog scalability tests
 """
+
 from DIRAC.Core.Base.Script import Script
 from DIRAC import S_OK
 import sys
@@ -12,11 +13,9 @@ import pprint
 import os
 import numpy
 
-Script.setUsageMessage(
-    """
+Script.setUsageMessage("""
   Test suite for a generic File Catalog scalability tests
-"""
-)
+""")
 
 testType = "noTest"
 

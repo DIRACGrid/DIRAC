@@ -1,4 +1,5 @@
 """Basic setuptools script for DIRACDocs."""
+
 import os
 import glob
 

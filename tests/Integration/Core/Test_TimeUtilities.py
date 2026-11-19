@@ -1,5 +1,5 @@
-"""Test for the TimeUtilities module
-"""
+"""Test for the TimeUtilities module"""
+
 import pytest
 
 import datetime, pytz

@@ -76,6 +76,7 @@ Example:
       Reason  : None
       --------------------
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

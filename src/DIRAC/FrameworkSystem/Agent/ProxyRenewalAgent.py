@@ -1,11 +1,12 @@
-"""  ProxyRenewalAgent keeps the proxy repository clean.
+"""ProxyRenewalAgent keeps the proxy repository clean.
 
-    .. literalinclude:: ../ConfigTemplate.cfg
-      :start-after: ##BEGIN ProxyRenewalAgent
-      :end-before: ##END
-      :dedent: 2
-      :caption: ProxyRenewalAgent options
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN ProxyRenewalAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: ProxyRenewalAgent options
 """
+
 from DIRAC import S_OK
 
 from DIRAC.Core.Base.AgentModule import AgentModule

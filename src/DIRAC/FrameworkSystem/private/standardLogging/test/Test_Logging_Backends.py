@@ -1,6 +1,7 @@
 """
 Test backend attachment
 """
+
 import pytest
 
 from DIRAC.FrameworkSystem.private.standardLogging.test.TestLogUtilities import gLogger, gLoggerReset, cleaningLog

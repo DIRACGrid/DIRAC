@@ -1,5 +1,4 @@
-""" Example of ExecutorMindHandler implementation
-"""
+"""Example of ExecutorMindHandler implementation"""
 
 import time
 import random

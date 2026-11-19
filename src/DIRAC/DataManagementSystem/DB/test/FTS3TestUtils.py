@@ -2,6 +2,7 @@
 We define here some tests that are meant to be ran as unit tests
 against an sqlite DB and as integration tests against a MySQL DB
 """
+
 import random
 
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo

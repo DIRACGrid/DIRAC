@@ -1,6 +1,7 @@
 """
 It is used to test the database modules...
 """
+
 import unittest
 
 import DIRAC.MonitoringSystem.private.DBUtils as moduleTested

@@ -6,6 +6,7 @@ Test Levels
 - setLevel
 
 """
+
 import pytest
 
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels

@@ -1,4 +1,4 @@
-""" :mod: RucioRSSAgent
+""":mod: RucioRSSAgent
 
     Agent that synchronizes Rucio and Dirac
 

@@ -9,6 +9,7 @@ Upload proxy.
 Example:
   $ dirac-admin-proxy-upload
 """
+
 from DIRAC import exit as dExit
 from DIRAC.Core.Base.Script import Script
 from DIRAC.FrameworkSystem.Client.ProxyUpload import CLIParams, uploadProxy

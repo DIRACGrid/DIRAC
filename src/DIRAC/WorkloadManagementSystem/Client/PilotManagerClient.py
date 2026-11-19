@@ -1,5 +1,4 @@
-""" Module that contains client access to the Pilots handler.
-"""
+"""Module that contains client access to the Pilots handler."""
 
 from DIRAC.Core.Base.Client import Client, createClient
 

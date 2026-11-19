@@ -28,6 +28,7 @@ Example:
    'OwnerGroup': 'eela_user',
    'Priority': '1'}
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

@@ -1,5 +1,5 @@
-""" Frontend to MySQL DB AccountingDB
-"""
+"""Frontend to MySQL DB AccountingDB"""
+
 import datetime
 import random
 import threading

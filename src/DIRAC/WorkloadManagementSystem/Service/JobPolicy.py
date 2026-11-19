@@ -1,6 +1,7 @@
-""" JobPolicy encapsulates authorization rules for different groups
-    with respect to job related operations
+"""JobPolicy encapsulates authorization rules for different groups
+with respect to job related operations
 """
+
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import (
     getGroupsForUser,

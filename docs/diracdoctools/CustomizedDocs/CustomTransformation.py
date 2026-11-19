@@ -1,4 +1,5 @@
 """Additional docstring for the Transformation module."""
+
 import textwrap
 
 MODULE = "DIRAC.TransformationSystem.Client.Transformation"
@@ -18,8 +19,7 @@ class CustomTransformation:  # pylint: disable=too-few-public-methods
         self.replace = False
         self.doc_string = ""
         # Fill the docstring addition with what we want to add
-        self.doc_string += textwrap.dedent(
-            """
+        self.doc_string += textwrap.dedent("""
                                        Transformation Parameters
                                        -------------------------
 
@@ -27,8 +27,7 @@ class CustomTransformation:  # pylint: disable=too-few-public-methods
                                        to ``setParameterName(parameterValue)``.
 
                                        The following parameters have a special meaning
-                                       """
-        )
+                                       """)
         from DIRAC.TransformationSystem.Client.Transformation import Transformation
 
         trans = Transformation()

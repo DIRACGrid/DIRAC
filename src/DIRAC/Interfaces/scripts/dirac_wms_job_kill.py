@@ -22,6 +22,7 @@ Example:
     status will be marked as 'Killed'
   - otherwise, it will be marked directly as 'Killed'.
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

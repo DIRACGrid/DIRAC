@@ -1,16 +1,17 @@
 """
-    FileCatalogClientBase is a base class for the clients of file catalog-like
-    services built within the DIRAC framework.
+FileCatalogClientBase is a base class for the clients of file catalog-like
+services built within the DIRAC framework.
 
-    The class contains variables defining lists of implemented catalog methods
-    READ_METHODS
-    WRITE_METHODS
-    NO_LFN_METHODS
-    ADMIN_METHODS
+The class contains variables defining lists of implemented catalog methods
+READ_METHODS
+WRITE_METHODS
+NO_LFN_METHODS
+ADMIN_METHODS
 
-    Those lists must be complemented in the derived classes to include specific
-    implemented methods.
+Those lists must be complemented in the derived classes to include specific
+implemented methods.
 """
+
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.ReturnValues import S_OK
 from DIRAC.Resources.Catalog.Utilities import checkCatalogArguments

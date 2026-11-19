@@ -1,5 +1,4 @@
-""" Module that contains simple client access to Matcher service
-"""
+"""Module that contains simple client access to Matcher service"""
 
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
@@ -8,7 +7,6 @@ from DIRAC.Core.Utilities.JEncode import strToIntDict
 
 @createClient("WorkloadManagement/Matcher")
 class MatcherClient(Client):
-
     """Exposes the functionality available in the WorkloadManagement/MatcherHandler
 
     This inherits the DIRAC base Client for direct execution of server functionality.

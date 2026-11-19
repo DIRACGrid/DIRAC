@@ -3,23 +3,24 @@
 # Author : Adria Casajus
 ########################################################################
 """
-  DIRAC class to execute Executors
+DIRAC class to execute Executors
 
-  Executors are an active part of DIRAC.
+Executors are an active part of DIRAC.
 
-  All DIRAC executors must inherit from the basic class ExecutorModule
+All DIRAC executors must inherit from the basic class ExecutorModule
 
-  In the most common case, DIRAC Executors are executed using the dirac-executor command.
-  dirac-execuot accepts a list positional arguments.
+In the most common case, DIRAC Executors are executed using the dirac-executor command.
+dirac-execuot accepts a list positional arguments.
 
-  dirac-executo then:
-  - produces a instance of ExecutorReactor
+dirac-executo then:
+- produces a instance of ExecutorReactor
 
-  Executor modules must be placed under the Executor directory of a DIRAC System.
-  DIRAC Systems are called XXXSystem where XXX is the [DIRAC System Name], and
-  must inherit from the base class ExecutorModule
+Executor modules must be placed under the Executor directory of a DIRAC System.
+DIRAC Systems are called XXXSystem where XXX is the [DIRAC System Name], and
+must inherit from the base class ExecutorModule
 
 """
+
 import time
 import threading
 from DIRAC import S_OK, S_ERROR, gLogger

@@ -9,6 +9,7 @@ Retrieve Site Associated to a given CE
 Example:
   $ dirac-admin-ce-info LCG.IN2P3.fr
 """
+
 from DIRAC import gConfig, gLogger, exit as Dexit
 from DIRAC.Core.Base.Script import Script
 

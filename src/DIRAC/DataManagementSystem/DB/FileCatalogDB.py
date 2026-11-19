@@ -1,4 +1,5 @@
-""" DIRAC FileCatalog Database """
+"""DIRAC FileCatalog Database"""
+
 import errno
 
 from DIRAC import gLogger, S_OK, S_ERROR

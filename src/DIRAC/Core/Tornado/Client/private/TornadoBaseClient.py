@@ -1,23 +1,23 @@
 """
-    TornadoBaseClient contains all the low-levels functionalities and initilization methods
-    It must be instantiated from :py:class:`~DIRAC.Core.Tornado.Client.TornadoClient`
+TornadoBaseClient contains all the low-levels functionalities and initilization methods
+It must be instantiated from :py:class:`~DIRAC.Core.Tornado.Client.TornadoClient`
 
-    Requests library manage itself retry when connection failed, so the __nbOfRetry attribute is removed from DIRAC
-    (For each URL requests manage retries himself, if it still fail, we try next url)
-    KeepAlive lapse is also removed because managed by request,
-    see https://requests.readthedocs.io/en/latest/user/advanced/#keep-alive
+Requests library manage itself retry when connection failed, so the __nbOfRetry attribute is removed from DIRAC
+(For each URL requests manage retries himself, if it still fail, we try next url)
+KeepAlive lapse is also removed because managed by request,
+see https://requests.readthedocs.io/en/latest/user/advanced/#keep-alive
 
-    If necessary this class can be modified to define number of retry in requests, documentation does not give
-    lot of informations but you can see this simple solution from StackOverflow.
-    After some tests request seems to retry 3 times by default.
-    https://stackoverflow.com/questions/15431044/can-i-set-max-retries-for-requests-request
+If necessary this class can be modified to define number of retry in requests, documentation does not give
+lot of informations but you can see this simple solution from StackOverflow.
+After some tests request seems to retry 3 times by default.
+https://stackoverflow.com/questions/15431044/can-i-set-max-retries-for-requests-request
 
-    .. warning::
-      If you use your own certificates, it's like in dips, please take a look at :ref:`using_own_CA`
+.. warning::
+  If you use your own certificates, it's like in dips, please take a look at :ref:`using_own_CA`
 
-    .. warning::
-      Lots of method are copy-paste from :py:class:`~DIRAC.Core.DISET.private.BaseClient`.
-      And some methods are copy-paste AND modifications, for now it permit to fully separate DISET and HTTPS.
+.. warning::
+  Lots of method are copy-paste from :py:class:`~DIRAC.Core.DISET.private.BaseClient`.
+  And some methods are copy-paste AND modifications, for now it permit to fully separate DISET and HTTPS.
 
 
 """

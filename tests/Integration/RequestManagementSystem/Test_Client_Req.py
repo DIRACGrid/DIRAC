@@ -1,7 +1,7 @@
-""" This is a test of the chain
-    ReqClient -> ReqManagerHandler -> ReqDB
+"""This is a test of the chain
+ReqClient -> ReqManagerHandler -> ReqDB
 
-    It supposes that the DB is present, and that the service is running
+It supposes that the DB is present, and that the service is running
 """
 
 # pylint: disable=invalid-name,wrong-import-position

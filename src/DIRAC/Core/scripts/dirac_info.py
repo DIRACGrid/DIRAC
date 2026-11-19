@@ -22,6 +22,7 @@ Example:
   Skip CA Checks         No
   DIRAC version          v7r2-pre33
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

@@ -25,6 +25,7 @@ Example:
   - Seqcode   =  UI=000000:NS=0000000001:WM=000000:BH=0000000000:JSS=000000:LM=000000:LRMS=000000:APP=000000:LBS=000000
   - Source    =  NetworkServer
 """
+
 # pylint: disable=wrong-import-position
 from DIRAC.Core.Base.Script import Script
 

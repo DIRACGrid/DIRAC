@@ -1,4 +1,4 @@
-""" SandboxHandler is the implementation of the Sandbox service
+"""SandboxHandler is the implementation of the Sandbox service
     in the DISET framework
 
 .. literalinclude:: ../ConfigTemplate.cfg
@@ -7,6 +7,7 @@
   :dedent: 2
   :caption: SandboxStore options
 """
+
 import hashlib
 import os
 import tempfile

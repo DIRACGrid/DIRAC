@@ -1,3 +1,3 @@
 """
-   DIRAC.RequestManagementSystem package
+DIRAC.RequestManagementSystem package
 """

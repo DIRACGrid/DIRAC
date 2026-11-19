@@ -21,6 +21,7 @@ The class can be used as the basis for more advanced StorageElement implementati
   :caption: StorageElementHandler options
 
 """
+
 # imports
 import os
 import shutil
@@ -38,7 +39,6 @@ from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.Adler import fileAdler
 
 from DIRAC.Resources.Storage.StorageBase import StorageBase
-
 
 BASE_PATH = "/"  # This is not a constant and it will be set in initializeStorageElementHandler() function
 MAX_STORAGE_SIZE = 0  # This is in bytes, but in MB in the CS

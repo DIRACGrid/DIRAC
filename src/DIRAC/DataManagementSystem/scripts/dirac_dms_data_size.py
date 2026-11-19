@@ -10,6 +10,7 @@ Example:
   1              |            0.0
   ------------------------------
 """
+
 import os
 import DIRAC
 from DIRAC import gLogger
@@ -63,9 +64,9 @@ def main():
         totalFiles += 1
         totalSize += size
     gLogger.notice("-" * 30)
-    gLogger.notice(f"{'Files'.ljust(15)}|{('Size (%s)' % unit).rjust(15)}")
+    gLogger.notice(f"{'Files'.ljust(15)}|{(f'Size ({unit})').rjust(15)}")
     gLogger.notice("-" * 30)
-    gLogger.notice(f"{str(totalFiles).ljust(15)}|{str('%.1f' % (totalSize / scaleFactor)).rjust(15)}")
+    gLogger.notice(f"{str(totalFiles).ljust(15)}|{str(f'{totalSize / scaleFactor:.1f}').rjust(15)}")
     gLogger.notice("-" * 30)
     DIRAC.exit(0)
 

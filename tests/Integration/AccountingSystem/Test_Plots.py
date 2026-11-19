@@ -1,5 +1,4 @@
-""" It is used to test Plotting utilities used to create different plots.
-"""
+"""It is used to test Plotting utilities used to create different plots."""
 
 # pylint: disable=invalid-name,wrong-import-position
 import os

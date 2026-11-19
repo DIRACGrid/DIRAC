@@ -1,3 +1,3 @@
 """
-   DIRAC.Core.Utilities package
+DIRAC.Core.Utilities package
 """

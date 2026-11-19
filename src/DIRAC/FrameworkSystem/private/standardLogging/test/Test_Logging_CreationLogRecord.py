@@ -5,6 +5,7 @@ Test LogRecord Creation
 - debug, verbose, info, warn, notice, error, fatal, always
 
 """
+
 import pytest
 
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels

@@ -1,1 +1,1 @@
-""" The TornadoService scripts package """
+"""The TornadoService scripts package"""

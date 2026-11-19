@@ -1,5 +1,5 @@
-""" Decorators for DIRAC.
-"""
+"""Decorators for DIRAC."""
+
 import os
 import inspect
 import functools

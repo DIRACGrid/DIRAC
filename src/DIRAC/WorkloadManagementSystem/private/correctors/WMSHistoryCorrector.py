@@ -1,7 +1,8 @@
-""" WMSHistoryCorrector is the implementation class of the BaseHistoryCorrector
-    which gets resources consumption history data from the WMSHistory Accounting
-    database
+"""WMSHistoryCorrector is the implementation class of the BaseHistoryCorrector
+which gets resources consumption history data from the WMSHistory Accounting
+database
 """
+
 import datetime
 
 from DIRAC import gLogger, S_OK

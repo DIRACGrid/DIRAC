@@ -4,6 +4,7 @@
 Module that collects utility functions.
 
 """
+
 import fnmatch
 
 from DIRAC import S_OK

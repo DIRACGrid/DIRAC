@@ -6,6 +6,7 @@
 """
 Get WNs for a selection of jobs
 """
+
 import datetime
 from functools import cmp_to_key
 

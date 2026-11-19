@@ -1,13 +1,13 @@
 """
 Test Logger Wrapper
 """
+
 import logging
 from io import StringIO
 
 from DIRAC.FrameworkSystem.private.standardLogging.LoggingRoot import LoggingRoot
 from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging
 from DIRAC.FrameworkSystem.private.standardLogging.Formatter.BaseFormatter import BaseFormatter
-
 
 gLogger = LoggingRoot()
 

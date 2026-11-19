@@ -1,8 +1,9 @@
-""" This is a test of the chain
-    FTS3Client -> FTS3ManagerHandler -> FTS3DB
+"""This is a test of the chain
+FTS3Client -> FTS3ManagerHandler -> FTS3DB
 
-    It supposes that the DB is present, and that the service is running
+It supposes that the DB is present, and that the service is running
 """
+
 import pytest
 
 import DIRAC

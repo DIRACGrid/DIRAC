@@ -1,4 +1,4 @@
-""" Test the context variable logger """
+"""Test the context variable logger"""
 
 from DIRAC import gLogger
 from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging

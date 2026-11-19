@@ -1,6 +1,6 @@
-""" CSAPI exposes update functionalities to the Configuration.
+"""CSAPI exposes update functionalities to the Configuration.
 
-    Most of these functions can only be done by administrators
+Most of these functions can only be done by administrators
 """
 
 import datetime

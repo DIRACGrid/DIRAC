@@ -1,5 +1,5 @@
-""" DIRAC FileCatalog mix-in class to manage users and groups within the FC database
-"""
+"""DIRAC FileCatalog mix-in class to manage users and groups within the FC database"""
+
 import time
 import threading
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """update local cfg"""
+
 import os
 import sys
 

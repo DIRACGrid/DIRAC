@@ -5,6 +5,7 @@ Complete a given production
 Example:
   $ dirac-prod-complete 312
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

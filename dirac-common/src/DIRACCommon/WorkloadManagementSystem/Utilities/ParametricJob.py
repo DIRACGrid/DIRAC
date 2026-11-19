@@ -1,9 +1,10 @@
-""" Utilities to process parametric job definitions and generate
-    bunches of parametric jobs. It exposes the following functions:
+"""Utilities to process parametric job definitions and generate
+bunches of parametric jobs. It exposes the following functions:
 
-    getParameterVectorLength() - to get the total size of the bunch of parametric jobs
-    generateParametricJobs() - to get a list of expanded descriptions of all the jobs
+getParameterVectorLength() - to get the total size of the bunch of parametric jobs
+generateParametricJobs() - to get a list of expanded descriptions of all the jobs
 """
+
 import re
 
 from DIRACCommon.Core.Utilities.ClassAd.ClassAdLight import ClassAd
@@ -55,7 +56,7 @@ def getParameterVectorLength(jobClassAd):
 
 def __updateAttribute(classAd, attribute, parName, parValue):
     # If there is something to do:
-    pattern = r"%%\(%s\)s" % parName
+    pattern = rf"%\({parName}\)s"
     if parName == "0":
         pattern = "%s"
     expr = classAd.get_expression(attribute)

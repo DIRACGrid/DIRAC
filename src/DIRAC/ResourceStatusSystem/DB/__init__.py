@@ -1,2 +1,1 @@
-""" DIRAC.ResourceStatusSystem.DB package
-"""
+"""DIRAC.ResourceStatusSystem.DB package"""

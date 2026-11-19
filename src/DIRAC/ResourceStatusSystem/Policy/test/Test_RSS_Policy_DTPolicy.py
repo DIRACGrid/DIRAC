@@ -1,11 +1,10 @@
-""" Test_RSS_Policy_DTPolicy
-"""
+"""Test_RSS_Policy_DTPolicy"""
+
 from unittest.mock import MagicMock
 import unittest
 
 from DIRAC import gLogger
 import DIRAC.ResourceStatusSystem.Policy.DowntimePolicy as moduleTested
-
 
 ################################################################################
 

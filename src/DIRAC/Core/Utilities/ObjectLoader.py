@@ -2,6 +2,7 @@
 An utility to load modules and objects in DIRAC and extensions,
 being sure that the extensions are considered
 """
+
 import collections
 from importlib import import_module
 import os

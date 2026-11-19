@@ -1,9 +1,10 @@
-""" MacroCommand
+"""MacroCommand
 
-  The MacroCommand class is a macro class for all the macro commands
-  for interacting with multiple commands
+The MacroCommand class is a macro class for all the macro commands
+for interacting with multiple commands
 
 """
+
 from DIRAC import gLogger
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 

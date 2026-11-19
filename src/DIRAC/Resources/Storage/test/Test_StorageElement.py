@@ -1,5 +1,5 @@
-""" test StoragElement
-"""
+"""test StoragElement"""
+
 import itertools
 import os
 import tempfile

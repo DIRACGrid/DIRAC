@@ -1,33 +1,33 @@
-""" :mod: OperationHandlerBase
+""":mod: OperationHandlerBase
 
-    ==========================
+==========================
 
-    .. module: OperationHandlerBase
+.. module: OperationHandlerBase
 
-    :synopsis: request operation handler base class
+:synopsis: request operation handler base class
 
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    RMS Operation handler base class.
+RMS Operation handler base class.
 
-    This should be a functor getting Operation as ctor argument and calling it (executing __call__)
-    should return S_OK/S_ERROR.
+This should be a functor getting Operation as ctor argument and calling it (executing __call__)
+should return S_OK/S_ERROR.
 
-    Helper functions and tools:
+Helper functions and tools:
 
-    * self.rssClient() -- returns RSSClient
-    * self.getProxyForLFN( LFN ) -- sets X509_USER_PROXY environment variable to LFN owner proxy
-    * self.rssSEStatus( SE, status ) returns S_OK(True/False) depending of RSS :status:
+* self.rssClient() -- returns RSSClient
+* self.getProxyForLFN( LFN ) -- sets X509_USER_PROXY environment variable to LFN owner proxy
+* self.rssSEStatus( SE, status ) returns S_OK(True/False) depending of RSS :status:
 
-    Properties:
+Properties:
 
-    * self.shifter -- list of shifters matching request owner (could be empty!!!)
-    * each CS option stored under CS path "RequestExecutingAgent/OperationHandlers/Foo" is exported as read-only property too
-    * self.initialize() -- overwrite it to perform additional initialization
-    * self.log -- own sub logger
-    * self.request, self.operation -- reference to Operation and Request itself
+* self.shifter -- list of shifters matching request owner (could be empty!!!)
+* each CS option stored under CS path "RequestExecutingAgent/OperationHandlers/Foo" is exported as read-only property too
+* self.initialize() -- overwrite it to perform additional initialization
+* self.log -- own sub logger
+* self.request, self.operation -- reference to Operation and Request itself
 
-    In all inherited class one should overwrite __call__ and initialize, when appropriate.
+In all inherited class one should overwrite __call__ and initialize, when appropriate.
 
 """
 

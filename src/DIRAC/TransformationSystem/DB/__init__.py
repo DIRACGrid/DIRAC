@@ -1,1 +1,1 @@
-""" DIRAC.TransformationSystem.DB package """
+"""DIRAC.TransformationSystem.DB package"""

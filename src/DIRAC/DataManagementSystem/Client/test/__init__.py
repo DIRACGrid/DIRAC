@@ -1,3 +1,3 @@
 """
-   DIRAC.DataManagementSystem.Client test package
+DIRAC.DataManagementSystem.Client test package
 """

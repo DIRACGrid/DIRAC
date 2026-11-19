@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-""" This script instantiate a DFC client against a given service,
+"""This script instantiate a DFC client against a given service,
     and hammers it with read request (listDirectory) for a given time.
     It produces two files : time.txt and clock.txt which contain time measurement,
     using time.time and time.clock (see respective doc)
@@ -15,6 +15,7 @@
 
 The depths are to be put in relation with the depths you used to generate the db
 """
+
 import DIRAC
 
 DIRAC.initialize()  # Initialize configuration

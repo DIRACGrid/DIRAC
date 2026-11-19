@@ -2,6 +2,7 @@
 """
 Script to call the DataRecoveryAgent functionality by hand.
 """
+
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.Script import Script
 

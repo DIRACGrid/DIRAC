@@ -1,25 +1,26 @@
 """
-  TornadoClient is equivalent of the RPCClient but in HTTPS.
-  Usage of TornadoClient is the same as RPCClient, you can instantiate TornadoClient with
-  complete url (https://host:port/System/Component) or just "System/Component". Like RPCClient
-  you can use all method defined in your service, your call will be automatically transformed
-  in RPC.
+TornadoClient is equivalent of the RPCClient but in HTTPS.
+Usage of TornadoClient is the same as RPCClient, you can instantiate TornadoClient with
+complete url (https://host:port/System/Component) or just "System/Component". Like RPCClient
+you can use all method defined in your service, your call will be automatically transformed
+in RPC.
 
-  It also exposes the same interface for receiving file as the TransferClient.
+It also exposes the same interface for receiving file as the TransferClient.
 
-  Main changes:
+Main changes:
 
-  - KeepAliveLapse is removed, requests library manages it itself.
-  - nbOfRetry (defined as private attribute) is removed, requests library manage it itself.
-  - Underneath it uses HTTP POST protocol and JSON. See  :ref:`httpsTornado` for details
+- KeepAliveLapse is removed, requests library manages it itself.
+- nbOfRetry (defined as private attribute) is removed, requests library manage it itself.
+- Underneath it uses HTTP POST protocol and JSON. See  :ref:`httpsTornado` for details
 
-  Example::
+Example::
 
-    from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
-    myService = TornadoClient("Framework/MyService")
-    myService.doSomething() #Returns S_OK/S_ERROR
+  from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
+  myService = TornadoClient("Framework/MyService")
+  myService.doSomething() #Returns S_OK/S_ERROR
 
 """
+
 # pylint: disable=broad-except
 
 from DIRAC.Core.Tornado.Client.private.TornadoBaseClient import TornadoBaseClient

@@ -5,6 +5,7 @@ Get the transformations belonging to a given production
 Example:
   $ dirac-prod-get-trans 381
 """
+
 import DIRAC
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.Core.Base.Script import Script

@@ -1,6 +1,7 @@
-""" JobReport class encapsulates various methods of the job status reporting.
-    It's an interface to JobStateUpdateClient, used when bulk submission is needed.
+"""JobReport class encapsulates various methods of the job status reporting.
+It's an interface to JobStateUpdateClient, used when bulk submission is needed.
 """
+
 import datetime
 import decimal
 import math

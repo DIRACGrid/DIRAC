@@ -41,6 +41,7 @@ You can have the following combinations::
   Using sources: IN2P3-User
   Using target: IN2P3-User
 """
+
 import csv
 from collections import defaultdict
 

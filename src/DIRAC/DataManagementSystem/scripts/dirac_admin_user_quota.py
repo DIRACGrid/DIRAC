@@ -12,6 +12,7 @@ Example:
   vhamar         |           None
   ------------------------------
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

@@ -23,6 +23,7 @@ Example:
                                                         'Status': 1,
                                                         'UID': 2}}}
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

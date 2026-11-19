@@ -6,6 +6,7 @@
 """
 This is a script to launch DIRAC services. Mostly internal.
 """
+
 import sys
 
 from DIRAC.FrameworkSystem.Client.Logger import gLogger

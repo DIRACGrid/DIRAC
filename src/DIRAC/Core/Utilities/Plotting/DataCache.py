@@ -1,5 +1,5 @@
-""" Accounting Cache
-"""
+"""Accounting Cache"""
+
 import os
 import threading
 import time

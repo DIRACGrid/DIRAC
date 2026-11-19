@@ -1,5 +1,5 @@
-""" pytest for WorkflowTasks
-"""
+"""pytest for WorkflowTasks"""
+
 # pylint: disable=protected-access,missing-docstring,invalid-name
 
 from unittest.mock import MagicMock

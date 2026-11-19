@@ -1,6 +1,7 @@
-""" This is a test of the AuthDB. Requires authlib
-    It supposes that the DB is present and installed in DIRAC
+"""This is a test of the AuthDB. Requires authlib
+It supposes that the DB is present and installed in DIRAC
 """
+
 import time
 
 import DIRAC

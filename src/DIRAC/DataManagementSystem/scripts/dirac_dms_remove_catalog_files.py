@@ -9,6 +9,7 @@ Example:
   $ dirac-dms-remove-catalog-files   /formation/user/v/vhamar/1/1134/StdOut
   Successfully removed 1 catalog files.
 """
+
 from DIRAC.Core.Base.Script import Script
 from DIRAC import exit as dexit
 from DIRAC import gLogger

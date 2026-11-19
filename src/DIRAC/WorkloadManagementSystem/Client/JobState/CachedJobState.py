@@ -1,8 +1,9 @@
-""" I wish who wrote this would have put some doc...
+"""I wish who wrote this would have put some doc...
 
-    IIUC this is a wrapper around the JobState object. It basically tries to cache
-    everything locally instead of going to the DB.
+IIUC this is a wrapper around the JobState object. It basically tries to cache
+everything locally instead of going to the DB.
 """
+
 import copy
 import datetime
 import time

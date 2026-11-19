@@ -1,4 +1,4 @@
-""" Cache
+"""Cache
 
 This module provides a generic Cache extended to be used on RSS, RSSCache.
 This cache features a lazy update method. It will only be updated if it is
@@ -7,6 +7,7 @@ However, Cache class internal cache: DictCache sets a validity to its entries.
 After that, the cache is empty.
 
 """
+
 import itertools
 import random
 

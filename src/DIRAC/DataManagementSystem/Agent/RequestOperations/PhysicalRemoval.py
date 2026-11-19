@@ -3,18 +3,19 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/02 11:56:10
 ########################################################################
-""" :mod: PhysicalRemoval
+""":mod: PhysicalRemoval
 
-    =====================
+=====================
 
-    .. module: PhysicalRemoval
+.. module: PhysicalRemoval
 
-    :synopsis: PhysicalRemoval operation handler
+:synopsis: PhysicalRemoval operation handler
 
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    PhysicalRemoval operation handler
+PhysicalRemoval operation handler
 """
+
 # #
 # @file PhysicalRemoval.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

@@ -1,2 +1,1 @@
-""" DIRAC.ResourceStatusSystem.Policy package
-"""
+"""DIRAC.ResourceStatusSystem.Policy package"""

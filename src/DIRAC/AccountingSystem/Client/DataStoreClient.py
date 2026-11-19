@@ -1,5 +1,5 @@
-""" Module that holds the DataStore Client class
-"""
+"""Module that holds the DataStore Client class"""
+
 import time
 import random
 import copy

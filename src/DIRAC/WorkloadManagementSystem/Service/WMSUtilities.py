@@ -1,5 +1,5 @@
-""" A set of utilities used in the WMS services
-"""
+"""A set of utilities used in the WMS services"""
+
 import shutil
 from tempfile import mkdtemp
 

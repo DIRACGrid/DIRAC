@@ -1,7 +1,8 @@
 """
-  The InputData Optimizer Executor queries the file catalog for specified job input data and adds the
-  relevant information to the job optimizer parameters to be used during the scheduling decision.
+The InputData Optimizer Executor queries the file catalog for specified job input data and adds the
+relevant information to the job optimizer parameters to be used during the scheduling decision.
 """
+
 import pprint
 import time
 

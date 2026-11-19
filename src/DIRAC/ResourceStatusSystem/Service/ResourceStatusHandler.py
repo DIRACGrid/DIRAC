@@ -1,8 +1,9 @@
-""" ResourceStatusHandler
+"""ResourceStatusHandler
 
-  Module that allows users to access the ResourceStatusDB remotely.
+Module that allows users to access the ResourceStatusDB remotely.
 
 """
+
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader

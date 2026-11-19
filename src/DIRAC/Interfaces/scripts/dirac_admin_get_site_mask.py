@@ -11,6 +11,7 @@ Example:
   LCG.M3PEC.fr
   LCG.MSFG.fr
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

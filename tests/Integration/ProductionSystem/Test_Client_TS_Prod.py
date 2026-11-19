@@ -1,9 +1,10 @@
-""" This is a test of the chain
-    ProductionClient -> ProductionManagerHandler -> ProductionDB
+"""This is a test of the chain
+ProductionClient -> ProductionManagerHandler -> ProductionDB
 
-    It supposes that the ProductionDB, TransformationDB and the FileCatalogDB to be present
-    It supposes the ProductionManager, TransformationManager and that DataManagement/FileCatalog services running
+It supposes that the ProductionDB, TransformationDB and the FileCatalogDB to be present
+It supposes the ProductionManager, TransformationManager and that DataManagement/FileCatalog services running
 """
+
 import DIRAC
 
 DIRAC.initialize()  # Initialize configuration

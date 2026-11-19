@@ -1,10 +1,11 @@
-""" X509Certificate is a class for managing X509 certificates
+"""X509Certificate is a class for managing X509 certificates
 
 Proxy RFC: https://tools.ietf.org/html/rfc38200
 
 X509RFC: https://tools.ietf.org/html/rfc5280
 
 """
+
 import datetime
 import os
 import random

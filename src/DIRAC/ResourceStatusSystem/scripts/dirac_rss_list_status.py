@@ -3,6 +3,7 @@
 Script that dumps the DB information for the elements into the standard output.
 If returns information concerning the StatusType and Status attributes.
 """
+
 from DIRAC import exit as DIRACExit
 from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script

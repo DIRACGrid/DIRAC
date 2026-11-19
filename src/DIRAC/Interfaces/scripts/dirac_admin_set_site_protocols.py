@@ -9,6 +9,7 @@ Defined protocols for each SE for a given site.
 Example:
   $ dirac-admin-set-site-protocols --Site=LCG.IN2P3.fr SRM2
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

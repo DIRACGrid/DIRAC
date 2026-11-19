@@ -1,8 +1,9 @@
-""" PolicyBase
+"""PolicyBase
 
-  The Policy class is a simple base class for all the policies.
+The Policy class is a simple base class for all the policies.
 
 """
+
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 
 

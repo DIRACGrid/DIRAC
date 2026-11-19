@@ -11,6 +11,7 @@
 
 Operation implementation
 """
+
 # Disable invalid names warning
 # pylint: disable=invalid-name
 import datetime

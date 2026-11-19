@@ -9,6 +9,7 @@ Remove User from Configuration
 Example:
   $ dirac-admin-delete-user vhamar
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

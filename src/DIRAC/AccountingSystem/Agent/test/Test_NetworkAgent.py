@@ -1,5 +1,5 @@
-""" Contains unit tests of NetworkAgent module
-"""
+"""Contains unit tests of NetworkAgent module"""
+
 import unittest
 import sys
 

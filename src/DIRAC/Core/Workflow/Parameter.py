@@ -1,8 +1,9 @@
 """
-    This module defines a classs for a generic Workflow Parameter. It also defines
-    a ParameterCollection class as a list of parameters as well as an AttributeCollection
-    class which is the base class for the main Workflow classes.
+This module defines a classs for a generic Workflow Parameter. It also defines
+a ParameterCollection class as a list of parameters as well as an AttributeCollection
+class which is the base class for the main Workflow classes.
 """
+
 from DIRAC.Core.Workflow.Utility import *
 
 # unbound method, returns indentated string

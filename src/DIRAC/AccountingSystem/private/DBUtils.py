@@ -1,5 +1,5 @@
-""" Class that collects utilities used in Accounting and Monitoring systems
-"""
+"""Class that collects utilities used in Accounting and Monitoring systems"""
+
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.Core.Utilities import TimeUtilities
 

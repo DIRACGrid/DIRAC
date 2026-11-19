@@ -1,5 +1,5 @@
-""" Module that contains client access to the WMSAdministrator handler.
-"""
+"""Module that contains client access to the WMSAdministrator handler."""
+
 from DIRAC.Core.Base.Client import Client, createClient
 
 

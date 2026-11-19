@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-""" create rst files for documentation of DIRAC """
+"""create rst files for documentation of DIRAC"""
+
 import os
 import shutil
 import socket
@@ -10,7 +11,6 @@ import glob
 
 from diracdoctools.Utilities import writeLinesToFile, mkdir, makeLogger
 from diracdoctools.Config import Configuration, CLParser as clparser
-
 
 LOG = makeLogger("CodeReference")
 

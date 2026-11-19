@@ -1,5 +1,5 @@
-""" Base class for plugins as used in the transformation system
-"""
+"""Base class for plugins as used in the transformation system"""
+
 import re
 
 from DIRAC import S_ERROR, gLogger

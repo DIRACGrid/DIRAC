@@ -1,5 +1,5 @@
-""" TransferCommand module
-"""
+"""TransferCommand module"""
+
 from datetime import datetime, timedelta
 
 from DIRAC import S_OK, S_ERROR

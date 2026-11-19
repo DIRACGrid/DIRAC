@@ -1,5 +1,5 @@
-""" This is a test of the DIRACCAProxyProvider
-"""
+"""This is a test of the DIRACCAProxyProvider"""
+
 # pylint: disable=invalid-name,wrong-import-position,protected-access
 import os
 import re
@@ -21,7 +21,6 @@ import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.ProxyProvider.DIRACCAProxyProvider import DIRACCAProxyProvider
-
 
 certsPath = os.path.join(os.path.dirname(DIRAC.__file__), "Core/Security/test/certs")
 
@@ -137,7 +136,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
                 result = ca.generateDN(FullName=name, Email=email)
                 text = "Must be ended {}{}".format(
                     "successful" if res else "with error",
-                    ": %s" % result.get("Message", "Error message is absent."),
+                    f": {result.get('Message', 'Error message is absent.')}",
                 )
                 self.assertEqual(result["OK"], res, text)
                 if not res:
@@ -149,7 +148,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
                     result = ca.getProxy(userDN)
                     text = "Must be ended {}{}".format(
                         "successful" if res else "with error",
-                        ": %s" % result.get("Message", "Error message is absent."),
+                        f": {result.get('Message', 'Error message is absent.')}",
                     )
                     self.assertEqual(result["OK"], res, text)
                     if not res:
@@ -175,7 +174,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
                     self.assertFalse(res, e)
                 text = "Must be ended {}{}".format(
                     "successful" if res else "with error",
-                    ": %s" % result.get("Message", "Error message is absent."),
+                    f": {result.get('Message', 'Error message is absent.')}",
                 )
                 self.assertEqual(result["OK"], res, text)
                 if not res:

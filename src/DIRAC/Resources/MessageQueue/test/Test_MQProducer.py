@@ -1,5 +1,5 @@
-"""Unit tests of MQProducer interface in the DIRAC.Resources.MessageQueue.MProducerQ
-"""
+"""Unit tests of MQProducer interface in the DIRAC.Resources.MessageQueue.MProducerQ"""
+
 import unittest
 from DIRAC import S_OK
 from DIRAC.Resources.MessageQueue.MQProducer import MQProducer

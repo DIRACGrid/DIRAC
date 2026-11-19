@@ -1,6 +1,6 @@
-""" This is a test of the FileCatalogDB
+"""This is a test of the FileCatalogDB
 
-    It supposes that the DB is present.
+It supposes that the DB is present.
 """
 
 # pylint: disable=invalid-name,wrong-import-position

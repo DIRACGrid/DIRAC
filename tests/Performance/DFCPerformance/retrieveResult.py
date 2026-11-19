@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
-""" This script retrieves the output of all the jobs of a given
-    test. <jobName> is the path of the directory created by submitMyJob
+"""This script retrieves the output of all the jobs of a given
+test. <jobName> is the path of the directory created by submitMyJob
 """
+
 import DIRAC
 
 DIRAC.initialize()  # Initialize configuration

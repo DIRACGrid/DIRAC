@@ -16,6 +16,7 @@
 
 removeFile operation handler
 """
+
 # #
 # @file RemoveFile.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

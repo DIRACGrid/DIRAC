@@ -1,4 +1,5 @@
 """Test the DataRecoveryAgent"""
+
 import unittest
 from collections import defaultdict
 from unittest.mock import MagicMock as Mock, patch, ANY

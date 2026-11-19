@@ -1,4 +1,4 @@
-""" ResourceStatus
+"""ResourceStatus
 
 Module that acts as a helper for knowing the status of a resource.
 It takes care of switching between the CS and the RSS.

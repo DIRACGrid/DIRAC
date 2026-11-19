@@ -1,12 +1,11 @@
-""" pytest for TransformationClient
-"""
+"""pytest for TransformationClient"""
+
 # pylint: disable=protected-access,missing-docstring,invalid-name
 
 import pytest
 
 # sut
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-
 
 tc = TransformationClient()
 

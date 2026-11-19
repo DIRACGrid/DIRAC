@@ -1,12 +1,12 @@
 """
-  This modules defines two functions that can be used in place of the ``RPCClient`` and
-  ``TransferClient`` to transparently switch to ``https``.
+This modules defines two functions that can be used in place of the ``RPCClient`` and
+``TransferClient`` to transparently switch to ``https``.
 
-  Example::
+Example::
 
-    from DIRAC.Core.Tornado.Client.ClientSelector import RPCClientSelector as RPCClient
-    myService = RPCClient("Framework/MyService")
-    myService.doSomething()
+  from DIRAC.Core.Tornado.Client.ClientSelector import RPCClientSelector as RPCClient
+  myService = RPCClient("Framework/MyService")
+  myService.doSomething()
 """
 
 import functools

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """Module to create command references for DIRAC."""
+
 from concurrent.futures import ThreadPoolExecutor
 import logging
 import os
@@ -9,7 +10,6 @@ from collections import namedtuple
 
 from diracdoctools.Utilities import writeLinesToFile, runCommand, makeLogger
 from diracdoctools.Config import Configuration, CLParser as clparser
-
 
 LOG = makeLogger("CommandReference")
 
@@ -63,8 +63,7 @@ class CommandReference:
         reference = f".. _{sectionDict[PREFIX]}_cmd:" if sectionDict[PREFIX] else ""
         title = f"{sectionDict[TITLE]} Command Reference"
         # Add description
-        sectionIndexRST = textwrap.dedent(
-            f"""
+        sectionIndexRST = textwrap.dedent(f"""
                 {reference}
 
                 {"=" * len(title)}
@@ -75,8 +74,7 @@ class CommandReference:
 
                 In this subsection the {title} commands are collected
 
-            """
-        )
+            """)
 
         # Write commands that were not included in the subgroups
         for name in sectionDict[SCRIPTS]:
@@ -89,16 +87,14 @@ class CommandReference:
             # Add subgroup reference
             ref = f".. _{groupDict[PREFIX]}_cmd:" if groupDict[PREFIX] else ""
             # Add subgroup header
-            sectionIndexRST += textwrap.dedent(
-                f"""
+            sectionIndexRST += textwrap.dedent(f"""
                     {ref}
 
                     {"-" * len(groupDict[TITLE])}
                     {groupDict[TITLE]}
                     {"-" * len(groupDict[TITLE])}
 
-                """
-            )
+                """)
             for name in groupDict[SCRIPTS]:
                 if name in self.scriptDocs:
                     sectionIndexRST += f"   - :ref:`{name}<{name}>`\n"
@@ -108,8 +104,7 @@ class CommandReference:
     def createAllScriptsDocsAndWriteToRST(self):
         """Get all scripts and write it to RST file."""
         # Use `:orphan:` in case you do not need a reference to this document in doctree
-        sectionIndexRST = textwrap.dedent(
-            f"""
+        sectionIndexRST = textwrap.dedent(f"""
                 :orphan:
 
                 .. this page automatically is created in {__name__}
@@ -122,8 +117,7 @@ class CommandReference:
 
                 In this subsection all commands are collected:
 
-            """
-        )
+            """)
 
         futures = []
         # Call all scripts help
@@ -142,16 +136,14 @@ class CommandReference:
         # Write all commands in one RST for each system
         for system in sorted(systems):
             # Write system head
-            sectionIndexRST += textwrap.dedent(
-                f"""
+            sectionIndexRST += textwrap.dedent(f"""
                     .. _{system}_cmd:
 
                     {"-" * len(system)}
                     {system}
                     {"-" * len(system)}
 
-                """
-            )
+                """)
             # Write each system command description
             for script in sorted(self.scriptDocs):
                 if self.scriptDocs[script].system == system:
@@ -184,16 +176,14 @@ class CommandReference:
             self.exitcode = 1
 
         # Script reference
-        fileContent = textwrap.dedent(
-            f"""
+        fileContent = textwrap.dedent(f"""
 
                 .. _{scriptName}:
 
                 {scriptName}
                 {'`' * len(scriptName)}
 
-            """
-        )
+            """)
 
         # Script description payload
         rstLines = []

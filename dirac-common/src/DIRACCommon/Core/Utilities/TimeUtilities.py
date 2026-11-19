@@ -19,6 +19,7 @@ An timeInterval class provides a method to check
 if a give datetime is in the defined interval.
 
 """
+
 import datetime
 import sys
 import time

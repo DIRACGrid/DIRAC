@@ -10,6 +10,7 @@
 
 operation file
 """
+
 # Disable invalid names warning
 # pylint: disable=invalid-name
 # # imports
@@ -24,7 +25,6 @@ from DIRAC.RequestManagementSystem.private.JSONUtils import RMSEncoder
 
 ########################################################################
 class File:
-
     """
      A bag object holding Operation file attributes.
 

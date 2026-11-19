@@ -1,7 +1,7 @@
-""" ProxyManagerClient has the function to "talk" to the ProxyManager service
-    (:mod:`~DIRAC.FrameworkSystem.Service.ProxyManagerHandler`).
-    This inherits the DIRAC base Client for direct execution of server functionality.
-    Client also contain caching of the requested proxy information.
+"""ProxyManagerClient has the function to "talk" to the ProxyManager service
+(:mod:`~DIRAC.FrameworkSystem.Service.ProxyManagerHandler`).
+This inherits the DIRAC base Client for direct execution of server functionality.
+Client also contain caching of the requested proxy information.
 """
 
 import datetime

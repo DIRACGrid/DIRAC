@@ -1,4 +1,4 @@
-""" The TaskQueuesAgent will update TQs
+"""The TaskQueuesAgent will update TQs
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN TaskQueuesAgent
@@ -7,6 +7,7 @@
   :caption: TaskQueuesAgent options
 
 """
+
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB

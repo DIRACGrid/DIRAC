@@ -6,6 +6,7 @@
 """
 Select DIRAC jobs matching the given conditions
 """
+
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
@@ -52,7 +53,7 @@ def main():
         elif switch[0].lower() == "jobgroup":
             for jg in switch[1].split(","):
                 if jg.isdigit():
-                    jobGroups.append("%08d" % int(jg))
+                    jobGroups.append(f"{int(jg):08}")
                 else:
                     jobGroups.append(jg)
         elif switch[0].lower() == "date":

@@ -1,7 +1,7 @@
-""" SQLAlchemyDB:
-    This module provides the BaseRSSDB class for providing standard DB interactions.
+"""SQLAlchemyDB:
+This module provides the BaseRSSDB class for providing standard DB interactions.
 
-    Uses sqlalchemy
+Uses sqlalchemy
 """
 
 import datetime

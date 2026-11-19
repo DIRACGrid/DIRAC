@@ -1,6 +1,7 @@
 """
-    Workflow class is the main container of Steps and Modules
+Workflow class is the main container of Steps and Modules
 """
+
 import os
 import xml.sax
 

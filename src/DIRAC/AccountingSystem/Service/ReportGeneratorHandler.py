@@ -1,4 +1,4 @@
-""" Module that holds the ReportGeneratorHandler class
+"""Module that holds the ReportGeneratorHandler class
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN ReportGenerator
@@ -6,6 +6,7 @@
   :dedent: 2
   :caption: ReportGenerator options
 """
+
 import os
 import datetime
 

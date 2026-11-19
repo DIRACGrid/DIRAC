@@ -1,7 +1,8 @@
 """
-  StorageOccupancyPlotter.__bases__:
-  DIRAC.AccountingSystem.private.Plotters.BaseReporter.BaseReporter
+StorageOccupancyPlotter.__bases__:
+DIRAC.AccountingSystem.private.Plotters.BaseReporter.BaseReporter
 """
+
 from DIRAC import S_OK, gLogger
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 

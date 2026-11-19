@@ -1,4 +1,5 @@
 """Job Information"""
+
 from pprint import pformat
 from itertools import zip_longest
 

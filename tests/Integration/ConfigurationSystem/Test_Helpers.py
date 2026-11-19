@@ -1,5 +1,5 @@
-""" Integration tests for CS helpers. It expects to find a proper structure in the CS
-"""
+"""Integration tests for CS helpers. It expects to find a proper structure in the CS"""
+
 import DIRAC
 
 DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize configuration

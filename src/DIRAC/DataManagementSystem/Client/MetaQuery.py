@@ -5,8 +5,8 @@
 # $HeadID$
 ########################################################################
 
-""" Utilities for managing metadata based queries
-"""
+"""Utilities for managing metadata based queries"""
+
 from DIRAC import S_OK, S_ERROR
 import DIRAC.Core.Utilities.TimeUtilities as TimeUtilities
 

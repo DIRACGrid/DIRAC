@@ -1,8 +1,9 @@
-""" JobCommand
+"""JobCommand
 
-  The JobCommand class is a command class to know about present jobs efficiency
+The JobCommand class is a command class to know about present jobs efficiency
 
 """
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.ResourceStatusSystem.Command.Command import Command

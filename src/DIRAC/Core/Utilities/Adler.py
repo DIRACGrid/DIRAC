@@ -1,14 +1,15 @@
-""" Collection of DIRAC useful adler32 related tools.
-    By default on Error they return None.
+"""Collection of DIRAC useful adler32 related tools.
+ By default on Error they return None.
 
-   .. warning::
+.. warning::
 
-      On error False is returned.
+   On error False is returned.
 
-   .. warning::
+.. warning::
 
-      All exceptions report to the stdout.
+   All exceptions report to the stdout.
 """
+
 from zlib import adler32
 
 

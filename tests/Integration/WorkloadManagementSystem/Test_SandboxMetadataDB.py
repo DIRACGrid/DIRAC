@@ -7,7 +7,6 @@ DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize config
 from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 
-
 gLogger.setLevel("DEBUG")
 
 

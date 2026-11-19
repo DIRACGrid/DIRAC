@@ -1,8 +1,9 @@
-""" PieGraph represents a pie graph
+"""PieGraph represents a pie graph
 
-    The DIRAC Graphs package is derived from the GraphTool plotting package of the
-    CMS/Phedex Project by ... <to be added>
+The DIRAC Graphs package is derived from the GraphTool plotting package of the
+CMS/Phedex Project by ... <to be added>
 """
+
 import numpy
 import math
 import time

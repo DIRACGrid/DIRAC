@@ -1,7 +1,8 @@
 """
-   Collection of DIRAC useful network related modules
-   by default on Error they return None
+Collection of DIRAC useful network related modules
+by default on Error they return None
 """
+
 import socket
 import os
 from urllib import parse

@@ -8,6 +8,7 @@ Examples:
 
 
 """
+
 import os
 import sys
 import tempfile
@@ -17,7 +18,6 @@ import pytest
 
 
 from DIRAC.Core.Base.Script import parseCommandLine
-
 
 argv, sys.argv = sys.argv, ["Dummy"]
 
@@ -29,7 +29,6 @@ from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Core.Utilities.File import getSize
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Utilities.ReturnValues import returnValueOrRaise
-
 
 # pylint: disable=unspecified-encoding
 

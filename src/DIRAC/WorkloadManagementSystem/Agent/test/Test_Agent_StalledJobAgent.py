@@ -1,5 +1,5 @@
-""" Test class for Stalled Job Agent
-"""
+"""Test class for Stalled Job Agent"""
+
 from unittest.mock import MagicMock
 
 import pytest

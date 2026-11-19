@@ -1,5 +1,5 @@
-""" This script submits a test production
-"""
+"""This script submits a test production"""
+
 # pylint: disable=wrong-import-position, protected-access
 
 import os

@@ -1,6 +1,7 @@
 """
 OpenSearch wrapper
 """
+
 import logging
 
 from cmreslogging.handlers import CMRESHandler

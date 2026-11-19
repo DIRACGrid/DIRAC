@@ -1,5 +1,5 @@
-""" Utilities for pretty printing table data and more
-    Author: A.Tsaregorodtsev
+"""Utilities for pretty printing table data and more
+Author: A.Tsaregorodtsev
 """
 
 from io import StringIO

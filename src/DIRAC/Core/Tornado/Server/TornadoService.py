@@ -3,7 +3,6 @@ TornadoService is the base class for your handlers.
 It directly inherits from :py:class:`tornado.web.RequestHandler`
 """
 
-
 import os
 from datetime import datetime
 from tornado.web import url as TornadoURL

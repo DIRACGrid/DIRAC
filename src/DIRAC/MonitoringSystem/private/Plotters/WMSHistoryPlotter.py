@@ -9,7 +9,6 @@ from DIRAC.MonitoringSystem.private.Plotters.BasePlotter import BasePlotter
 
 
 class WMSHistoryPlotter(BasePlotter):
-
     """
     .. class:: WMSHistoryPlotter
 

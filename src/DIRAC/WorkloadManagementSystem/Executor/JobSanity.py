@@ -1,4 +1,5 @@
-""" The Job Sanity executor assigns sandboxes to the job """
+"""The Job Sanity executor assigns sandboxes to the job"""
+
 from DIRAC import S_OK
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor

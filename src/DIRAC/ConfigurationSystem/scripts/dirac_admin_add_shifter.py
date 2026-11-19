@@ -6,6 +6,7 @@
 """
 Adds or modify a shifter, in the operations section of the CS
 """
+
 from DIRAC.Core.Base.Script import Script
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC import exit as DIRACExit, gLogger

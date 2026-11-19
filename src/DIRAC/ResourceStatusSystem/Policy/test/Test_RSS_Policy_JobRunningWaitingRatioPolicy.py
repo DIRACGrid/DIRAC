@@ -1,5 +1,5 @@
-""" Test_RSS_Policy_JobRunningWaitingRatioPolicy
-"""
+"""Test_RSS_Policy_JobRunningWaitingRatioPolicy"""
+
 import unittest
 
 import DIRAC.ResourceStatusSystem.Policy.JobRunningWaitingRatioPolicy as moduleTested

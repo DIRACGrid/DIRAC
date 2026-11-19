@@ -26,15 +26,12 @@ import shutil
 
 from DIRAC.Core.Base.Script import Script
 
-
-Script.setUsageMessage(
-    f"""
+Script.setUsageMessage(f"""
 Test a full DMS workflow against a StorageElement
 \t{Script.scriptName} <SE name> <PluginLists>
 \t<SE name>: mandatory
 \t<plugins>: comma separated list of plugin to test (defautl all)
-"""
-)
+""")
 
 
 Script.parseCommandLine()

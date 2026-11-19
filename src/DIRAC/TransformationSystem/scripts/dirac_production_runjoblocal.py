@@ -4,6 +4,7 @@ Module created to run failed jobs locally on a CVMFS-configured machine.
 It creates the necessary environment, downloads the necessary files, modifies the necessary
 files and runs the job
 """
+
 from importlib import import_module
 import os
 import shutil

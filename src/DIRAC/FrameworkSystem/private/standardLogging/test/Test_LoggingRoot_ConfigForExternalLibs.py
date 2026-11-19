@@ -5,6 +5,7 @@ Test Config for External Libraries:
 - We want to make sure this does not affect the DIRAC logging system based on it
 
 """
+
 import logging
 from io import StringIO
 import pytest

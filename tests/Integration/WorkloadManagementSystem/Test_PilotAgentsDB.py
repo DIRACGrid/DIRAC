@@ -1,8 +1,9 @@
-""" This tests only need the PilotAgentsDB, and connects directly to it
+"""This tests only need the PilotAgentsDB, and connects directly to it
 
-    Suggestion: for local testing, run this with::
-        python -m pytest -c ../pytest.ini  -vv tests/Integration/WorkloadManagementSystem/Test_PilotAgentsDB.py
+Suggestion: for local testing, run this with::
+    python -m pytest -c ../pytest.ini  -vv tests/Integration/WorkloadManagementSystem/Test_PilotAgentsDB.py
 """
+
 # pylint: disable=wrong-import-position
 
 from unittest.mock import patch

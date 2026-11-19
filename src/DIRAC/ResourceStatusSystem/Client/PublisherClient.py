@@ -1,4 +1,4 @@
-""" Class that contains client access to the Publisher handler. """
+"""Class that contains client access to the Publisher handler."""
 
 from DIRAC.Core.Base.Client import Client
 

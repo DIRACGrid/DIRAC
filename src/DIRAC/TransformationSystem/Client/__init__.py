@@ -1,1 +1,1 @@
-""" DIRAC.TransformationSystem.Client package """
+"""DIRAC.TransformationSystem.Client package"""

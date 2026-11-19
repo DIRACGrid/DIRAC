@@ -6,6 +6,7 @@
 """
 This is a script to launch DIRAC agents. Mostly internal.
 """
+
 import os
 import sys
 

@@ -1,5 +1,5 @@
-""" Here, we need some documentation...
-"""
+"""Here, we need some documentation..."""
+
 import threading
 import time
 import selectors

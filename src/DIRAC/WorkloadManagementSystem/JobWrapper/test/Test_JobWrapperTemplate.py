@@ -1,8 +1,9 @@
-""" JobWrapper test
+"""JobWrapper test
 
 Here we test the creation of a job wrapper and make sure it can be executed without crashing.
 We don't test the actual execution of the wrapper or its payload.
 """
+
 import json
 import os
 import re
@@ -14,7 +15,6 @@ import pytest
 
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 import subprocess
-
 
 jobParams = {
     "JobID": "1",

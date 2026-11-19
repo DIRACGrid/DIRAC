@@ -6,6 +6,7 @@ Examples::
 
   $ dirac-dms-find-lfns Path=/lhcb/user "Size>1000" "CreationDate<2015-05-15"
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

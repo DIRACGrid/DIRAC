@@ -7,6 +7,7 @@ Example:
   DIRAC Root Path = /afs/in2p3.fr/home/h/hamar/DIRAC-v5r12
   dirac.in2p3.fr >
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

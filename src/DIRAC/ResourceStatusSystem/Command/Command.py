@@ -1,6 +1,5 @@
-""" Command module contains the base "Command" class, base for all RSS commands
+"""Command module contains the base "Command" class, base for all RSS commands"""
 
-"""
 from DIRAC import gLogger, S_OK
 
 

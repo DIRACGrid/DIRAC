@@ -1,5 +1,5 @@
-""" VOMSSecurityManager class implements access permissions based on VOMS roles
-"""
+"""VOMSSecurityManager class implements access permissions based on VOMS roles"""
+
 import os
 import datetime
 

@@ -5,6 +5,7 @@ Uploads a file to an SE and registers it in the file catalog.
 Uses the default SE specified in $HOME/.dirac/dcommands.conf unless overridden
 on the command line.
 """
+
 import os
 
 import DIRAC
@@ -41,7 +42,7 @@ def main():
     Script.setUsageMessage(
         "\n".join(
             [
-                __doc__.split("\n")[1],
+                __doc__.strip().split("\n")[0],
                 "Usage:",
                 f"  {Script.scriptName} [options] local_path[... lfn]",
                 "Arguments:",

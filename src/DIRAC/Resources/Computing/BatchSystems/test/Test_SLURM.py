@@ -1,5 +1,5 @@
-""" Test SLURM
-"""
+"""Test SLURM"""
+
 import os
 
 import pytest

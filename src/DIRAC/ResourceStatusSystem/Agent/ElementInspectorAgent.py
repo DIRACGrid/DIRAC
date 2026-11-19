@@ -1,4 +1,4 @@
-""" ElementInspectorAgent
+"""ElementInspectorAgent
 
   This agent inspect Resources (or maybe Nodes), and evaluates policies that apply.
 
@@ -11,6 +11,7 @@ The following options can be set for the ElementInspectorAgent.
   :dedent: 2
   :caption: ElementInspectorAgent options
 """
+
 import datetime
 import concurrent.futures
 

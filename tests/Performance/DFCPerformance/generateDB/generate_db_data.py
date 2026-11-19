@@ -1,17 +1,15 @@
-""" WATCH OUT !!! TOTALLY UNTESTED ! I just slightly modified an existing script that was working to make it
-    more generic, but I did not test it
-   This prints the SQL statements necessary to fill in a DB using the config file numbers
-   It also simulates production files and user files by putting the two types at a different depth
-   and with a different amount of files per directories.
+"""WATCH OUT !!! TOTALLY UNTESTED ! I just slightly modified an existing script that was working to make it
+ more generic, but I did not test it
+This prints the SQL statements necessary to fill in a DB using the config file numbers
+It also simulates production files and user files by putting the two types at a different depth
+and with a different amount of files per directories.
 
 
 """
 
-
 import os
 import random
 import config  # pylint: disable=import-error
-
 
 checksumType = "Adler32"
 mode = 777
@@ -42,22 +40,17 @@ for st in config.status:
 def proc_insert_dir(parent_id, child_name, UID, GID, Mode, Status):
     """Print the insertion statement for Directory with the directory closure"""
 
-    print(
-        "INSERT INTO FC_DirectoryList (Name, UID, GID, CreationDate, ModificationDate, Mode, Status)\
-       values ('%s', %s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP(), %s, %s);"
-        % (child_name, UID, GID, Mode, Status)
-    )
+    print("INSERT INTO FC_DirectoryList (Name, UID, GID, CreationDate, ModificationDate, Mode, Status)\
+       values ('{}', {}, {}, UTC_TIMESTAMP(), UTC_TIMESTAMP(), {}, {});".format(child_name, UID, GID, Mode, Status))
     print("SELECT LAST_INSERT_ID() INTO @dir_id;")
 
     print("INSERT INTO FC_DirectoryClosure (ParentID, ChildID, Depth ) VALUES (@dir_id, @dir_id, 0);")
 
     if parent_id:
-        print(
-            f"""INSERT INTO FC_DirectoryClosure(ParentID, ChildID, depth)
+        print(f"""INSERT INTO FC_DirectoryClosure(ParentID, ChildID, depth)
        SELECT p.ParentID, @dir_id, p.depth + 1
        FROM FC_DirectoryClosure p
-       WHERE p.ChildID = {parent_id};"""
-        )
+       WHERE p.ChildID = {parent_id};""")
 
 
 def proc_insert_file(dir_id, size, UID, GID, status_id, filename, GUID, checksum, checksumtype, mode):
@@ -74,11 +67,8 @@ def proc_insert_file(dir_id, size, UID, GID, status_id, filename, GUID, checksum
 def proc_insert_replica(file_id, se_id, status_id, rep_type, pfn):
     """Print the insert replica statement"""
 
-    print(
-        "INSERT INTO FC_Replicas (FileID, SEID, Status, RepType, CreationDate, ModificationDate, PFN)\
-   VALUES (%s, %s, %s,'%s', UTC_TIMESTAMP(), UTC_TIMESTAMP(), '%s');"
-        % (file_id, se_id, status_id, rep_type, pfn)
-    )
+    print("INSERT INTO FC_Replicas (FileID, SEID, Status, RepType, CreationDate, ModificationDate, PFN)\
+   VALUES ({}, {}, {},'{}', UTC_TIMESTAMP(), UTC_TIMESTAMP(), '{}');".format(file_id, se_id, status_id, rep_type, pfn))
 
 
 # Insert the root directory

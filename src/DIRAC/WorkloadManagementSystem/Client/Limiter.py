@@ -1,7 +1,8 @@
-""" Encapsulate here the logic for limiting the matching of jobs
+"""Encapsulate here the logic for limiting the matching of jobs
 
-    Utilities and classes here are used by the Matcher
+Utilities and classes here are used by the Matcher
 """
+
 import collections
 import threading
 import time

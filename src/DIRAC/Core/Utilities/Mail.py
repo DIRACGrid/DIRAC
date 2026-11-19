@@ -1,6 +1,7 @@
 """
-    Extremely simple utility class to send mails
+Extremely simple utility class to send mails
 """
+
 import os
 import socket
 

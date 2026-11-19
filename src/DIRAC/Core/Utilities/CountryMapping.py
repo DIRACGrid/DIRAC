@@ -1,4 +1,5 @@
-"""  The CountryMapping module performs the necessary CS gymnastics to resolve country codes  """
+"""The CountryMapping module performs the necessary CS gymnastics to resolve country codes"""
+
 from DIRAC import gConfig, S_OK, S_ERROR
 
 

@@ -1,11 +1,12 @@
-""" The input data resolution module is a plugin that
-    allows to define VO input data policy in a simple way using existing
-    utilities in DIRAC or extension code supplied by the VO.
+"""The input data resolution module is a plugin that
+allows to define VO input data policy in a simple way using existing
+utilities in DIRAC or extension code supplied by the VO.
 
-    The arguments dictionary from the Job Wrapper includes the file catalogue
-    result and in principle has all the necessary information to resolve input data
-    for applications.
+The arguments dictionary from the Job Wrapper includes the file catalogue
+result and in principle has all the necessary information to resolve input data
+for applications.
 """
+
 from pathlib import Path
 
 import DIRAC

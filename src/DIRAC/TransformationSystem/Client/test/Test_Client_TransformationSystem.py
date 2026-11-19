@@ -1,5 +1,5 @@
-""" unit tests for Transformation Clients
-"""
+"""unit tests for Transformation Clients"""
+
 # pylint: disable=protected-access,missing-docstring
 
 import unittest

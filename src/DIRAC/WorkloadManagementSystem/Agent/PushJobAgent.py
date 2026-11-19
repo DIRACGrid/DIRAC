@@ -1,4 +1,4 @@
-"""  The Push Job Agent class inherits from Job Agent and aims to support job submission in
+"""The Push Job Agent class inherits from Job Agent and aims to support job submission in
      sites with no external connectivity (e.g. some supercomputers).
 
 .. literalinclude:: ../ConfigTemplate.cfg

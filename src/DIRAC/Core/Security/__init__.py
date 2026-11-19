@@ -1,8 +1,8 @@
 """
 Just a selector for X509Certificate
 """
-from pkgutil import extend_path
 
+from pkgutil import extend_path
 
 #####
 # SUPER DISGUSTING HACK

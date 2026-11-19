@@ -1,5 +1,5 @@
 """
-  Service interface adapted to work with tornado, must be used only by tornado service handlers
+Service interface adapted to work with tornado, must be used only by tornado service handlers
 """
 
 from tornado import gen

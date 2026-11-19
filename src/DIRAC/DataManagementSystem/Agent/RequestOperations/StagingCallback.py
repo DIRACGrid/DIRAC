@@ -1,4 +1,5 @@
-""" Callback when a staging operation is finished """
+"""Callback when a staging operation is finished"""
+
 from DIRAC import S_OK
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient

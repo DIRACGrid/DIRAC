@@ -1,6 +1,7 @@
 """
 Unit tests of utility functions in the DIRAC.Resources.MessageQueue.Utilities
 """
+
 import DIRAC.Resources.MessageQueue.Utilities as module
 import unittest
 import queue

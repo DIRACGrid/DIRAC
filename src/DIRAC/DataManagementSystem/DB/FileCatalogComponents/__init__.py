@@ -1,2 +1,1 @@
-""" DIRAC File Catalog components
-"""
+"""DIRAC File Catalog components"""

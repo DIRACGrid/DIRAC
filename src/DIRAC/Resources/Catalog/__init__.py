@@ -1,1 +1,1 @@
-""" DIRAC.Resources.Catalog package """
+"""DIRAC.Resources.Catalog package"""

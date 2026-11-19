@@ -1,4 +1,4 @@
-""" DataStore is the service for inserting accounting reports (rows) in the Accounting DB
+"""DataStore is the service for inserting accounting reports (rows) in the Accounting DB
 
     This service CAN be duplicated iff the first is a "controller" and all the others are workers.
     See the information about :ref:`datastorehelpers`.
@@ -9,6 +9,7 @@
   :dedent: 2
   :caption: DataStore options
 """
+
 import datetime
 
 from DIRAC import S_ERROR, S_OK

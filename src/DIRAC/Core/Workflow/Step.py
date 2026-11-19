@@ -1,5 +1,5 @@
-""" Implementation of a step
-"""
+"""Implementation of a step"""
+
 # pylint: disable=unused-wildcard-import,wildcard-import
 
 import os

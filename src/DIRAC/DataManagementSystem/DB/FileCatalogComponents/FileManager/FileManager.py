@@ -1,5 +1,5 @@
-""" FileManager (add doc here)
-"""
+"""FileManager (add doc here)"""
+
 import os
 
 from DIRAC import S_OK, S_ERROR, gLogger

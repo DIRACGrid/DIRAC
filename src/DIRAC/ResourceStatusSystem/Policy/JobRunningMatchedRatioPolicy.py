@@ -1,12 +1,13 @@
-""" JobRunningMatchedRatioPolicy
+"""JobRunningMatchedRatioPolicy
 
-  Policy that calculates the efficiency following the formula::
+Policy that calculates the efficiency following the formula::
 
-    ( running ) / ( running + matched + received + checking )
+  ( running ) / ( running + matched + received + checking )
 
-  if the denominator is smaller than 10, it does not take any decision.
+if the denominator is smaller than 10, it does not take any decision.
 
 """
+
 from DIRAC import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 

@@ -1,10 +1,9 @@
-""" TokenManagementUtilties contains simple functions used by both TokenManagerClient and TokenManagerHandler."""
+"""TokenManagementUtilties contains simple functions used by both TokenManagerClient and TokenManagerHandler."""
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Resources.IdProvider.IdProviderFactory import IdProviderFactory
-
 
 DEFAULT_RT_EXPIRATION_TIME = 24 * 3600
 DEFAULT_AT_EXPIRATION_TIME = 1200

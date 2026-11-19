@@ -1,5 +1,5 @@
-""" The mind is a service the distributes "task" to executors
-"""
+"""The mind is a service the distributes "task" to executors"""
+
 import pprint
 
 from DIRAC import gLogger

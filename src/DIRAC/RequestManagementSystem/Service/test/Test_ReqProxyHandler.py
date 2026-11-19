@@ -1,4 +1,5 @@
 """Tests for ReqProxyHandler"""
+
 import json
 
 from DIRAC.RequestManagementSystem.Client.File import File

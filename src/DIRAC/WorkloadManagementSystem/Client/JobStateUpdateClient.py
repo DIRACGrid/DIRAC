@@ -1,4 +1,4 @@
-""" Class that contains client access to the JobStateUpdate handler. """
+"""Class that contains client access to the JobStateUpdate handler."""
 
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.WorkloadManagementSystem.FutureClient.JobStateUpdateClient import (

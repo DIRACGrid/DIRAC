@@ -31,6 +31,7 @@ Example:
   SRM PinExpiryTime: None
   SRM PinLength: 43200
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

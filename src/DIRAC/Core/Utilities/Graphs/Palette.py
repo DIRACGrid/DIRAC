@@ -1,8 +1,9 @@
-""" Palette is a tool to generate colors for various Graphs plots and legends
+"""Palette is a tool to generate colors for various Graphs plots and legends
 
-    The DIRAC Graphs package is derived from the GraphTool plotting package of the
-    CMS/Phedex Project by ... <to be added>
+The DIRAC Graphs package is derived from the GraphTool plotting package of the
+CMS/Phedex Project by ... <to be added>
 """
+
 import hashlib
 
 from DIRAC.WorkloadManagementSystem.Client import JobStatus

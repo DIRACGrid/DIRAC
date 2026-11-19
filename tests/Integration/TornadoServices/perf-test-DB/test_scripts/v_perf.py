@@ -1,7 +1,7 @@
 """
- This test is designed to check protocol/server performances with a database
+This test is designed to check protocol/server performances with a database
 
- Configuration and how to run it are explained in the documentation
+Configuration and how to run it are explained in the documentation
 """
 
 from DIRAC.Core.Tornado.Client.ClientSelector import RPCClientSelector

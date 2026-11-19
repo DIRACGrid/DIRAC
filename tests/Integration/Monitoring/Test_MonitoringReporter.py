@@ -48,6 +48,7 @@ Resources
 }
 
 """
+
 # TODO: use WMSHistory_testData.json as in Test_MonitoringDB.py
 
 # pylint: disable=invalid-name,wrong-import-position

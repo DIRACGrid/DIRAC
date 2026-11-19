@@ -1,6 +1,7 @@
-""" DB is a base class for multiple DIRAC databases that are based on MySQL.
-    It uniforms the way the database objects are constructed
+"""DB is a base class for multiple DIRAC databases that are based on MySQL.
+It uniforms the way the database objects are constructed
 """
+
 from DIRAC.Core.Base.DIRACDB import DIRACDB
 from DIRAC.Core.Utilities.MySQL import MySQL
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters

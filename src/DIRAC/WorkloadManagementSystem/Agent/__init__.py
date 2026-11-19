@@ -1,3 +1,3 @@
 """
-   DIRAC.WorkloadManagementSystem.Agent package
+DIRAC.WorkloadManagementSystem.Agent package
 """

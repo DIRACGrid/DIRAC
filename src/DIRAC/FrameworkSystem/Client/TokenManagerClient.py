@@ -1,4 +1,4 @@
-""" The TokenManagerClient is a class representing the client of the DIRAC
+"""The TokenManagerClient is a class representing the client of the DIRAC
 :py:mod:`TokenManager <DIRAC.FrameworkSystem.Service.TokenManagerHandler>` service.
 """
 

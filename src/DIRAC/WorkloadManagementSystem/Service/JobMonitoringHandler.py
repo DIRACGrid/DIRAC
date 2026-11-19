@@ -1,7 +1,7 @@
-""" JobMonitoringHandler is the implementation of the JobMonitoring service
-    in the DISET framework
+"""JobMonitoringHandler is the implementation of the JobMonitoring service
+in the DISET framework
 
-    The following methods are available in the Service interface
+The following methods are available in the Service interface
 """
 
 from DIRAC import S_ERROR, S_OK

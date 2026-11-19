@@ -1,5 +1,5 @@
-""" RPCClient object is used to create RPC connection to services
-"""
+"""RPCClient object is used to create RPC connection to services"""
+
 from DIRAC.Core.DISET.private.InnerRPCClient import InnerRPCClient
 
 

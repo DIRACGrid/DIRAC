@@ -45,6 +45,7 @@ If a Controller Configuration Server is being installed the following Options ca
   /LocalInstallation/VirtualOrganization: Name of the main Virtual Organization (default: None)
 
 """
+
 import glob
 import importlib
 import importlib.util
@@ -1587,28 +1588,20 @@ class ComponentInstaller:
 
         logConfigFile = os.path.join(logDir, "config")
         with open(logConfigFile, "w") as fd:
-            fd.write(
-                textwrap.dedent(
-                    """
+            fd.write(textwrap.dedent("""
                     s10000000
                     n20
-                    """
-                )
-            )
+                    """))
 
         logRunFile = os.path.join(logDir, "run")
         with open(logRunFile, "w") as fd:
-            fd.write(
-                textwrap.dedent(
-                    f"""#!/bin/bash
+            fd.write(textwrap.dedent(f"""#!/bin/bash
 
                     rcfile={os.path.join(self.instancePath, "bashrc")}
                     [[ -e ${{rcfile}} ]] && source ${{rcfile}}
                     #
                     exec svlogd .
-                    """
-                )
-            )
+                    """))
 
         os.chmod(logRunFile, self.gDefaultPerms)
 
@@ -1671,9 +1664,7 @@ class ComponentInstaller:
             with open(runFile, "w") as fd:
                 # Special case for tornado-based master CS
                 if system == "Configuration" and component == "Server":
-                    fd.write(
-                        textwrap.dedent(
-                            f"""#!/bin/bash
+                    fd.write(textwrap.dedent(f"""#!/bin/bash
 
                             rcfile={os.path.join(self.instancePath, 'bashrc')}
                             [[ -e ${{rcfile}} ]] && source ${{rcfile}}
@@ -1685,13 +1676,9 @@ class ComponentInstaller:
                             #
                             #
                             exec tornado-start-CS -ddd
-                            """
-                        )
-                    )
+                            """))
                 else:
-                    fd.write(
-                        textwrap.dedent(
-                            f"""#!/bin/bash
+                    fd.write(textwrap.dedent(f"""#!/bin/bash
 
                             rcfile={os.path.join(self.instancePath, "bashrc")}
                             [[ -e ${{rcfile}} ]] && source ${{rcfile}}
@@ -1702,9 +1689,7 @@ class ComponentInstaller:
                             #{bashVars}
                             #
                             exec dirac-{componentType.replace("-", "_")} {system}/{component} --cfg {componentCfg} < /dev/null
-                        """
-                        )
-                    )
+                        """))
 
             os.chmod(runFile, self.gDefaultPerms)
 
@@ -1715,15 +1700,11 @@ class ComponentInstaller:
                 # This is, e.g., /opt/dirac/control/WorkfloadManagementSystem/Matcher/
                 controlDir = self.runitDir.replace("runit", "control")
                 with open(stopFile, "w") as fd:
-                    fd.write(
-                        textwrap.dedent(
-                            f"""#!/bin/bash
+                    fd.write(textwrap.dedent(f"""#!/bin/bash
 
                             echo {controlDir}/{system}/{component}/stop_{cTypeLower}
                             touch {controlDir}/{system}/{component}/stop_{cTypeLower}
-                            """
-                        )
-                    )
+                            """))
 
                 os.chmod(stopFile, self.gDefaultPerms)
 
@@ -1881,9 +1862,7 @@ class ComponentInstaller:
                 self._createRunitLog(runitWebAppDir)
                 runFile = os.path.join(runitWebAppDir, "run")
                 with open(runFile, "w") as fd:
-                    fd.write(
-                        textwrap.dedent(
-                            f"""#!/bin/bash
+                    fd.write(textwrap.dedent(f"""#!/bin/bash
 
                             rcfile={os.path.join(self.instancePath, 'bashrc')}
                             [[ -e $rcfile ]] && source $rcfile
@@ -1891,9 +1870,7 @@ class ComponentInstaller:
                             exec 2>&1
                             #
                             exec dirac-webapp-run -p < /dev/null
-                            """
-                        )
-                    )
+                            """))
 
                 os.chmod(runFile, self.gDefaultPerms)
             except Exception:
@@ -2296,9 +2273,7 @@ class ComponentInstaller:
 
             runFile = os.path.join(runitCompDir, "run")
             with open(runFile, "w") as fd:
-                fd.write(
-                    textwrap.dedent(
-                        f"""#!/bin/bash
+                fd.write(textwrap.dedent(f"""#!/bin/bash
 
                         rcfile={os.path.join(self.instancePath, 'bashrc')}
                         [ -e $rcfile ] && source $rcfile
@@ -2308,9 +2283,7 @@ class ComponentInstaller:
                         #
                         #
                         exec tornado-start-all
-                        """
-                    )
-                )
+                        """))
 
             os.chmod(runFile, self.gDefaultPerms)
 

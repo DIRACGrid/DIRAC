@@ -3,6 +3,7 @@
 This is a simple script that can be used for synchronizing pilot files
 to the current directory.
 """
+
 import os
 import json
 import hashlib
@@ -10,7 +11,6 @@ import hashlib
 
 from DIRAC import S_OK
 from DIRAC.Core.Base.Script import Script
-
 
 includeMasterCS = True
 

@@ -15,6 +15,7 @@ Example:
   M3PEC-disk                         Active          Active
   ProductionSandboxSE                Active          Active
 """
+
 from DIRAC import S_OK, exit as DIRACexit
 from DIRAC.Core.Base.Script import Script
 

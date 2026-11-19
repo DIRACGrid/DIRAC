@@ -1,4 +1,4 @@
-""" This runs the RMS scenari as unit test for the DB. For that,
+"""This runs the RMS scenari as unit test for the DB. For that,
 it replaces the normal MySQL connection with an inmemory SQLite db
 """
 

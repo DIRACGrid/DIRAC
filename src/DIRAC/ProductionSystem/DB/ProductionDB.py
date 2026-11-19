@@ -1,8 +1,9 @@
-""" DIRAC Production DB
+"""DIRAC Production DB
 
-    Production database is used to collect and serve the necessary information
-    in order to automate the task of transformation preparation for high level productions.
+Production database is used to collect and serve the necessary information
+in order to automate the task of transformation preparation for high level productions.
 """
+
 # # imports
 import json
 import threading
@@ -492,11 +493,8 @@ class ProductionDB(DB):
         :param str prodName: the Production name or ID
         :param list transIDs: the list of transformations to be added to the production
         """
-        gLogger.info(
-            "ProductionDB.addTransformationsToProduction: \
-         Attempting to add %s transformations to production: %s"
-            % (transIDs, prodName)
-        )
+        gLogger.info("ProductionDB.addTransformationsToProduction: \
+         Attempting to add {} transformations to production: {}".format(transIDs, prodName))
 
         if not transIDs:
             return S_ERROR("Zero length transformation list")

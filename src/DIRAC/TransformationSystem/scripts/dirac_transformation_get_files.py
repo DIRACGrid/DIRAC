@@ -3,6 +3,7 @@
 """
 Get the files attached to a transformation
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

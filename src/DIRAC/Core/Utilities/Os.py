@@ -1,7 +1,8 @@
 """
-   Collection of DIRAC useful operating system related modules
-   by default on Error they return None
+Collection of DIRAC useful operating system related modules
+by default on Error they return None
 """
+
 import json
 import os
 import threading

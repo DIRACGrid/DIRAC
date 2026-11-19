@@ -1,5 +1,5 @@
-""" Test_RSS_Policy_JobDoneRatioPolicy
-"""
+"""Test_RSS_Policy_JobDoneRatioPolicy"""
+
 import unittest
 
 import DIRAC.ResourceStatusSystem.Policy.JobDoneRatioPolicy as moduleTested

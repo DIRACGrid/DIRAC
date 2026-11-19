@@ -1,8 +1,9 @@
-""" StateMachine
+"""StateMachine
 
-  This module contains the RSS implementation of StateMachine, using its own states map.
+This module contains the RSS implementation of StateMachine, using its own states map.
 
 """
+
 from DIRAC.Core.Utilities.StateMachine import State, StateMachine
 
 

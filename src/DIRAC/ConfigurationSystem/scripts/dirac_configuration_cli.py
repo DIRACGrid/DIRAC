@@ -6,6 +6,7 @@
 """
 Command line interface to DIRAC Configuration Server
 """
+
 from DIRAC.Core.Base.Script import Script
 from DIRAC.ConfigurationSystem.Client.CSCLI import CSCLI
 

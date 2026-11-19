@@ -1,5 +1,5 @@
-""" This is for transfers what RPCClient is for RPC calls
-"""
+"""This is for transfers what RPCClient is for RPC calls"""
+
 import os
 
 from DIRAC import S_OK, S_ERROR

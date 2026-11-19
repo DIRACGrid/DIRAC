@@ -10,6 +10,7 @@ Example:
   $ dirac-wms-job-reschedule 1
   Rescheduled job 1
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

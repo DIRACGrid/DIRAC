@@ -10,6 +10,7 @@ Example:
   $ dirac-wms-job-status 2
   JobID=2 Status=Done; MinorStatus=Execution Complete; Site=EELA.UTFSM.cl;
 """
+
 import datetime
 import os
 

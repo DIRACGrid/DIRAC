@@ -1,7 +1,8 @@
-""" Soft implementation of a Direct Acyclic Graph (DAG)
+"""Soft implementation of a Direct Acyclic Graph (DAG)
 
-    Nota Bene: It is NOT fully checked if valid (i.e. some cycle can be introduced)!
+Nota Bene: It is NOT fully checked if valid (i.e. some cycle can be introduced)!
 """
+
 import copy
 from DIRAC import gLogger
 

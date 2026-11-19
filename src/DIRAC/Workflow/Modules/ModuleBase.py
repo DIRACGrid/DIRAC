@@ -1,14 +1,15 @@
-""" ModuleBase - contains the base class for workflow modules. Defines several common utility methods.
+"""ModuleBase - contains the base class for workflow modules. Defines several common utility methods.
 
-    The modules defined within this package are developed in a way to be executed by a DIRAC.Core.Worfklow.Worfklow.
-    In particular, a DIRAC.Core.Workflow.Worfklow object will only call the "execute" function, that is defined here.
+The modules defined within this package are developed in a way to be executed by a DIRAC.Core.Worfklow.Worfklow.
+In particular, a DIRAC.Core.Workflow.Worfklow object will only call the "execute" function, that is defined here.
 
-    These modules, inspired by the LHCb experience, give the possibility to define simple user and production jobs.
-    Many VOs might want to extend this package. And actually, for some cases, it will be necessary. For example,
-    defining the LFN output at runtime (within the "UploadOutputs" module is a VO specific operation
+These modules, inspired by the LHCb experience, give the possibility to define simple user and production jobs.
+Many VOs might want to extend this package. And actually, for some cases, it will be necessary. For example,
+defining the LFN output at runtime (within the "UploadOutputs" module is a VO specific operation
 
-    The DIRAC APIs are used to create Jobs that make use of these modules.
+The DIRAC APIs are used to create Jobs that make use of these modules.
 """
+
 import os
 import copy
 

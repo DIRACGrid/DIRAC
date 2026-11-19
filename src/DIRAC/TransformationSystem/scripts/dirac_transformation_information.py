@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-"""This script allows one to print information about a (list of) transformations.
-"""
-
+"""This script allows one to print information about a (list of) transformations."""
 
 from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script

@@ -1,12 +1,13 @@
-""" NOTA BENE: This agent should NOT be run alone. Instead, it serves as a base class for extensions.
+"""NOTA BENE: This agent should NOT be run alone. Instead, it serves as a base class for extensions.
 
-    The TaskManagerAgentBase is the base class to submit tasks to external systems,
-    monitor and update the tasks and file status in the transformation DB.
+The TaskManagerAgentBase is the base class to submit tasks to external systems,
+monitor and update the tasks and file status in the transformation DB.
 
-    This agent is extended in WorkflowTaskAgent and RequestTaskAgent.
-    In case you want to further extend it you are required to follow the note on the
-    initialize method and on the _getClients method.
+This agent is extended in WorkflowTaskAgent and RequestTaskAgent.
+In case you want to further extend it you are required to follow the note on the
+initialize method and on the _getClients method.
 """
+
 import concurrent.futures
 import datetime
 import time
@@ -269,9 +270,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         clients = (
             self._getClients()
             if self.shifterProxy
-            else self._getClients(owner=self.credTuple[0], ownerGroup=self.credTuple[1])
-            if self.credentials
-            else None
+            else self._getClients(owner=self.credTuple[0], ownerGroup=self.credTuple[1]) if self.credentials else None
         )
 
         method = "_execute"

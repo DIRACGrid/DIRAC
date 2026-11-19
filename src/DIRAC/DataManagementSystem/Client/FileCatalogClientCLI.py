@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-""" File Catalog Client Command Line Interface. """
+"""File Catalog Client Command Line Interface."""
+
 import os.path
 import time
 import sys

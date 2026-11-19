@@ -7,6 +7,7 @@
 Report CPU length of queue, in seconds
 This script is used by the dirac-pilot script to set the CPUTime left, which is a limit for the matching
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

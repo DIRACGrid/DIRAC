@@ -1,11 +1,11 @@
-""" Class defining a production step """
+"""Class defining a production step"""
+
 import json
 
 from DIRAC import S_OK, S_ERROR
 
 
 class ProductionStep:
-
     """Define the Production Step object"""
 
     def __init__(self, **kwargs):

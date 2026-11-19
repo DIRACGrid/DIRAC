@@ -1,4 +1,5 @@
-""" Test the FilenamePlugin class"""
+"""Test the FilenamePlugin class"""
+
 import unittest
 from DIRAC.Resources.Catalog.ConditionPlugins.FilenamePlugin import FilenamePlugin
 

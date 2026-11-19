@@ -211,10 +211,12 @@ class TornadoREST(BaseRequestHandler):  # pylint: disable=abstract-method
                         signature.parameters[name].annotation
                         if signature.parameters[name].annotation is not inspect.Parameter.empty
                         # If there is no argument annotation, take the default value type, if any
-                        else type(default)
-                        if default is not inspect.Parameter.empty and default is not None
-                        # If you can not determine the type then leave None
-                        else None
+                        else (
+                            type(default)
+                            if default is not inspect.Parameter.empty and default is not None
+                            # If you can not determine the type then leave None
+                            else None
+                        )
                     )
 
                     # Consider separately the positional arguments

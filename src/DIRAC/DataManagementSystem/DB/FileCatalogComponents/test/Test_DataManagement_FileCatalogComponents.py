@@ -1,5 +1,5 @@
-""" Test class for FileCatalogComponents
-"""
+"""Test class for FileCatalogComponents"""
+
 # pylint: disable=protected-access
 
 # imports

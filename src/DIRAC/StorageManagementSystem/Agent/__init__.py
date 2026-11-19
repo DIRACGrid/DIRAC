@@ -1,3 +1,3 @@
 """
-   DIRAC.StorageManagementSystem.Agent package
+DIRAC.StorageManagementSystem.Agent package
 """

@@ -18,6 +18,7 @@ Example:
   Linux_x86_64_glibc-2.5
 
 """
+
 try:
     from DIRAC.Core.Utilities.Platform import getPlatformString
 except Exception:

@@ -16,7 +16,6 @@ from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 # sut
 from DIRAC.Resources.Computing.SingularityComputingElement import SingularityComputingElement
 
-
 gLogger.setLevel("DEBUG")
 fj = find_all("pilot.json", "../", "tests/Integration/Resources/Computing")[0]
 fc = find_all("pilot.cfg.test", "../", "tests/Integration/Resources/Computing")[0]

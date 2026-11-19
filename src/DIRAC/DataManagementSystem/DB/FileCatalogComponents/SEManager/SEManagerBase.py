@@ -1,4 +1,5 @@
-""" DIRAC FileCatalog Storage Element Manager base class for mix-in classes """
+"""DIRAC FileCatalog Storage Element Manager base class for mix-in classes"""
+
 import threading
 
 from DIRAC import S_ERROR

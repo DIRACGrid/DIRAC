@@ -1,15 +1,14 @@
 """This prints the SQL statements necessary to fill in a DB with approximately
-    * directories: 6 M
-    * files: 13M
-    * replicas: 25M
+ * directories: 6 M
+ * files: 13M
+ * replicas: 25M
 
-   It also simulates production files (10000 per directory at depth 6) and user files (2 per directory at depth 9)
-   This sums up to 13M files (I let you do the math)
+It also simulates production files (10000 per directory at depth 6) and user files (2 per directory at depth 9)
+This sums up to 13M files (I let you do the math)
 
-   And we have 2 replicas per files, which sums up to around 25M replicas.
+And we have 2 replicas per files, which sums up to around 25M replicas.
 
 """
-
 
 import random
 import config  # pylint: disable=import-error
@@ -49,54 +48,37 @@ for st in config.status:
 def proc_insert_dir(parent_id, child_name, UID, GID, Mode, Status):
     """Print the insertion statement for Directory with the directory closure"""
 
-    print(
-        "INSERT INTO FC_DirectoryList (Name, UID, GID, CreationDate, ModificationDate, Mode, Status)\
-   values ('%s', %s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP(), %s, %s);"
-        % (child_name, UID, GID, Mode, Status)
-    )
+    print("INSERT INTO FC_DirectoryList (Name, UID, GID, CreationDate, ModificationDate, Mode, Status)\
+   values ('{}', {}, {}, UTC_TIMESTAMP(), UTC_TIMESTAMP(), {}, {});".format(child_name, UID, GID, Mode, Status))
     print("SELECT LAST_INSERT_ID() INTO @dir_id;")
 
     print("INSERT INTO FC_DirectoryClosure (ParentID, ChildID, Depth ) VALUES (@dir_id, @dir_id, 0);")
 
     if parent_id:
-        print(
-            f"""INSERT INTO FC_DirectoryClosure(ParentID, ChildID, depth)
+        print(f"""INSERT INTO FC_DirectoryClosure(ParentID, ChildID, depth)
        SELECT p.ParentID, @dir_id, p.depth + 1
        FROM FC_DirectoryClosure p
-       WHERE p.ChildID = {parent_id};"""
-        )
+       WHERE p.ChildID = {parent_id};""")
 
 
 def proc_insert_file(dir_id, size, UID, GID, status_id, filename, GUID, checksum, checksumtype, mode):
     """print the insert file statement"""
 
-    print(
-        "INSERT INTO FC_Files (DirID, Size, UID, GID, Status, FileName, GUID, Checksum, CheckSumType,\
-   CreationDate, ModificationDate, Mode) VALUES (%s, %s, %s, %s, %s, '%s', '%s', '%s', '%s', UTC_TIMESTAMP(),\
-    UTC_TIMESTAMP(), %s);"
-        % (dir_id, size, UID, GID, status_id, filename, GUID, checksum, checksumtype, mode)
-    )
-    print(
-        "INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) VALUES (%s, 1, %s, 1)\
-   ON DUPLICATE KEY UPDATE  SESize = SESize + %s, SEFiles = SEFiles + 1;"
-        % (dir_id, size, size)
-    )
+    print("INSERT INTO FC_Files (DirID, Size, UID, GID, Status, FileName, GUID, Checksum, CheckSumType,\
+   CreationDate, ModificationDate, Mode) VALUES ({}, {}, {}, {}, {}, '{}', '{}', '{}', '{}', UTC_TIMESTAMP(),\
+    UTC_TIMESTAMP(), {});".format(dir_id, size, UID, GID, status_id, filename, GUID, checksum, checksumtype, mode))
+    print("INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles) VALUES ({}, 1, {}, 1)\
+   ON DUPLICATE KEY UPDATE  SESize = SESize + {}, SEFiles = SEFiles + 1;".format(dir_id, size, size))
 
 
 def proc_insert_replica(file_id, se_id, status_id, rep_type, pfn):
     """Print the insert replica statement"""
 
-    print(
-        "INSERT INTO FC_Replicas (FileID, SEID, Status, RepType, CreationDate, ModificationDate, PFN)\
-   VALUES (%s, %s, %s,'%s', UTC_TIMESTAMP(), UTC_TIMESTAMP(), '%s');"
-        % (file_id, se_id, status_id, rep_type, pfn)
-    )
-    print(
-        "  INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles)\
-    SELECT DirID, %s, Size, 1 from FC_Files f where f.FileID = %s ON DUPLICATE KEY UPDATE\
-      SESize = SESize + Size, SEFiles = SEFiles + 1;"
-        % (se_id, file_id)
-    )
+    print("INSERT INTO FC_Replicas (FileID, SEID, Status, RepType, CreationDate, ModificationDate, PFN)\
+   VALUES ({}, {}, {},'{}', UTC_TIMESTAMP(), UTC_TIMESTAMP(), '{}');".format(file_id, se_id, status_id, rep_type, pfn))
+    print("  INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles)\
+    SELECT DirID, {}, Size, 1 from FC_Files f where f.FileID = {} ON DUPLICATE KEY UPDATE\
+      SESize = SESize + Size, SEFiles = SEFiles + 1;".format(se_id, file_id))
 
 
 proc_insert_dir(0, "/", 1, 1, 755, 1)

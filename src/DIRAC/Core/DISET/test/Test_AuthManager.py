@@ -1,5 +1,5 @@
-""" Basic unit tests for AuthManager
-"""
+"""Basic unit tests for AuthManager"""
+
 import unittest
 
 from diraccfg import CFG

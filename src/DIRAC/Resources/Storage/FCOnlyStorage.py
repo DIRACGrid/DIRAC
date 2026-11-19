@@ -18,6 +18,7 @@ The 'dfc' protocol also needs to be added to the RegistrationProtocols and Write
 Operations/DataManagement section.
 
 """
+
 from DIRAC import gLogger, S_OK
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 from DIRAC.Resources.Storage.StorageBase import StorageBase

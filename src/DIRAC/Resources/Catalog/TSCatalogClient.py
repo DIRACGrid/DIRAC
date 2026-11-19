@@ -1,6 +1,7 @@
-""" TSCatalogClient class represents the Transformation Manager service
-    as a DIRAC Catalog service
+"""TSCatalogClient class represents the Transformation Manager service
+as a DIRAC Catalog service
 """
+
 from DIRAC import S_OK
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Resources.Catalog.Utilities import checkCatalogArguments
@@ -8,7 +9,6 @@ from DIRAC.Resources.Catalog.FileCatalogClientBase import FileCatalogClientBase
 
 
 class TSCatalogClient(FileCatalogClientBase):
-
     """Exposes the catalog functionality available in the DIRAC/TransformationHandler"""
 
     # List of common File Catalog methods implemented by this client

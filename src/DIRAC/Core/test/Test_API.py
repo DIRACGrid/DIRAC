@@ -1,4 +1,5 @@
 """Test the API class."""
+
 import copy
 
 from DIRAC.Core.Base.API import API

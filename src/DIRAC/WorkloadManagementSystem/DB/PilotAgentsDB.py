@@ -1,22 +1,23 @@
-""" PilotAgentsDB class is a front-end to the Pilot Agent Database.
-    This database keeps track of all the submitted grid pilot jobs.
-    It also registers the mapping of the DIRAC jobs to the pilot
-    agents.
+"""PilotAgentsDB class is a front-end to the Pilot Agent Database.
+This database keeps track of all the submitted grid pilot jobs.
+It also registers the mapping of the DIRAC jobs to the pilot
+agents.
 
-    Available methods are:
+Available methods are:
 
-    addPilotReferences()
-    setPilotStatus()
-    deletePilot()
-    clearPilots()
-    setPilotDestinationSite()
-    storePilotOutput()
-    getPilotOutput()
-    setJobForPilot()
-    getPilotsSummary()
-    getGroupedPilotSummary()
+addPilotReferences()
+setPilotStatus()
+deletePilot()
+clearPilots()
+setPilotDestinationSite()
+storePilotOutput()
+getPilotOutput()
+setJobForPilot()
+getPilotsSummary()
+getGroupedPilotSummary()
 
 """
+
 import datetime
 import decimal
 import threading
@@ -268,11 +269,8 @@ class PilotAgentsDB(DB):
             "SELECT PilotID FROM PilotAgents WHERE SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
             % interval
         )
-        reqList.append(
-            "SELECT PilotID FROM PilotAgents WHERE Status='Aborted' \
-AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)"
-            % aborted_interval
-        )
+        reqList.append("SELECT PilotID FROM PilotAgents WHERE Status='Aborted' \
+AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" % aborted_interval)
 
         idList = None
 

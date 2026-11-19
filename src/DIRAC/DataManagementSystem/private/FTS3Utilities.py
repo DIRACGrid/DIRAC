@@ -1,5 +1,5 @@
-""" Some utilities for FTS3...
-"""
+"""Some utilities for FTS3..."""
+
 import random
 import threading
 

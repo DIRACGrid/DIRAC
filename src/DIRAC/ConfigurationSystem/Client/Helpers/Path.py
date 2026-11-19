@@ -5,6 +5,7 @@
 """
 Some Helper class to build CFG paths from tuples
 """
+
 import os
 
 cfgInstallSection = "LocalInstallation"

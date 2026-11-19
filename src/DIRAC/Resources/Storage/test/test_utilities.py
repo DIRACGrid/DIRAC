@@ -2,7 +2,6 @@ from pytest import fixture, raises
 import gfal2  # pylint: disable=import-error
 from DIRAC.Resources.Storage.GFAL2_StorageBase import setGfalSetting
 
-
 #########################################################################
 
 # The following tests make sure that the setGfalSetting contextmanager

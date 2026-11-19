@@ -1,4 +1,4 @@
-""" Hosts BaseTransport class, which is a base for PlainTransport and SSLTransport
+"""Hosts BaseTransport class, which is a base for PlainTransport and SSLTransport
 
 BaseTransport is used by the client and the service, it describes an opened connection.
 Here a diagram of basic Client/Service exchange

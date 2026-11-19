@@ -1,13 +1,13 @@
-""" This simply invokes DIRAC APIs for creating 2 jobDescription.xml files,
-    one with an application that will end with status 0, and a second with status != 0
+"""This simply invokes DIRAC APIs for creating 2 jobDescription.xml files,
+one with an application that will end with status 0, and a second with status != 0
 """
+
 import DIRAC
 
 DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.tests.Utilities.utils import find_all
 from DIRAC.Interfaces.API.Job import Job
-
 
 # With a script that returns 0
 scriptSHLocation = find_all("script-OK.sh", "..", "/DIRAC/WorkloadManagementSystem/JobWrapper")[0]

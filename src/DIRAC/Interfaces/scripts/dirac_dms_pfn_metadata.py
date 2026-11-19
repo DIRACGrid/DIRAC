@@ -6,6 +6,7 @@
 """
 Retrieve metadata for a PFN given a valid DIRAC SE
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

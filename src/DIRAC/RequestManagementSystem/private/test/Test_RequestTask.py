@@ -1,11 +1,12 @@
-""" :mod: RequestTaskTests
-    =======================
+""":mod: RequestTaskTests
+=======================
 
-    .. module: RequestTaskTests
-    :synopsis: test cases for RequestTask class
+.. module: RequestTaskTests
+:synopsis: test cases for RequestTask class
 
-    test cases for RequestTask class
+test cases for RequestTask class
 """
+
 import datetime
 import unittest
 import importlib

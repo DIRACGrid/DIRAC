@@ -1,8 +1,8 @@
-""" Graph is a class providing layouts for the complete plot images including
-    titles multiple plots and a legend
+"""Graph is a class providing layouts for the complete plot images including
+titles multiple plots and a legend
 
-    The DIRAC Graphs package is derived from the GraphTool plotting package of the
-    CMS/Phedex Project by ... <to be added>
+The DIRAC Graphs package is derived from the GraphTool plotting package of the
+CMS/Phedex Project by ... <to be added>
 """
 
 import datetime

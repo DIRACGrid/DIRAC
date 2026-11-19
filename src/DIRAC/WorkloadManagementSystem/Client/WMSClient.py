@@ -1,6 +1,7 @@
-""" DIRAC Workload Management System Client class encapsulates all the
-    methods necessary to communicate with the Workload Management System
+"""DIRAC Workload Management System Client class encapsulates all the
+methods necessary to communicate with the Workload Management System
 """
+
 import os
 import time
 from io import StringIO

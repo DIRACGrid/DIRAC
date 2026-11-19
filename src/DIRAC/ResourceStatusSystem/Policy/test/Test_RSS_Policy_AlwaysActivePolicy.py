@@ -1,9 +1,8 @@
-""" Test_RSS_Policy_AlwaysActivePolicy
-"""
+"""Test_RSS_Policy_AlwaysActivePolicy"""
+
 import unittest
 
 import DIRAC.ResourceStatusSystem.Policy.AlwaysActivePolicy as moduleTested
-
 
 ################################################################################
 

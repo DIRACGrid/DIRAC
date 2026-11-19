@@ -1,4 +1,5 @@
-""" Test IdProvider Factory"""
+"""Test IdProvider Factory"""
+
 import pytest
 import time
 

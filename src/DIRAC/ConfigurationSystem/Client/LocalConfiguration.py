@@ -101,15 +101,15 @@ class LocalConfiguration:
             if desc:
                 self.__scriptDescription = "\n" + desc.group(1).strip("\n") + "\n"
             # The usage block starts with '\nUsage:\n' or '\nUsage::\n'
-            usage = re.search(r"{}{}".format(r"Usage:+", r), usageMsg, re.DOTALL)
+            usage = re.search(rf"Usage:+{r}", usageMsg, re.DOTALL)
             if usage:
                 self.__helpUsageDoc = "\nUsage:\n" + usage.group(1).strip("\n")
             # The argument block starts with '\Arguments:\n' or '\Arguments::\n'
-            args = re.search(r"{}{}".format(r"Arguments:+", r), usageMsg, re.DOTALL)
+            args = re.search(rf"Arguments:+{r}", usageMsg, re.DOTALL)
             if args:
                 self.__helpArgumentsDoc = "\nArguments:\n" + args.group(1).strip("\n")
             # The example block starts with '\Example:\n' or '\Example::\n'
-            expl = re.search(r"{}{}".format(r"Example:+", r), usageMsg, re.DOTALL)
+            expl = re.search(rf"Example:+{r}", usageMsg, re.DOTALL)
             if expl:
                 self.__helpExampleDoc = "\nExample:\n" + expl.group(1).strip("\n")
 
@@ -399,12 +399,10 @@ class LocalConfiguration:
             self.commandArgList = [arg for arg in args if not arg.endswith(".cfg")]
             if extraCfg:
                 # use error level to make sure users will always see the Warning
-                gLogger.error(
-                    """WARNING: Parsing of '.cfg' files as command line arguments is changing!
+                gLogger.error("""WARNING: Parsing of '.cfg' files as command line arguments is changing!
           Set the environment variable 'export DIRAC_NO_CFG=1' to pass the file as a positional
           argument (this will become the default).
-          To modify the local configuration use '--cfg <configfile>' instead."""
-                )
+          To modify the local configuration use '--cfg <configfile>' instead.""")
                 if os.environ.get("DIRAC_DEPRECATED_FAIL", None):
                     raise NotImplementedError("ERROR: using deprecated config file passing option.")
 

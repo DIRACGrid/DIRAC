@@ -11,6 +11,7 @@ If site is already in the CS with the right name, only new CEs will be added.
 Example:
   $ dirac-admin-add-site LCG.IN2P3.fr IN2P3-Site ce01.in2p3.fr
 """
+
 from DIRAC.Core.Base.Script import Script
 from DIRAC import exit as DIRACExit, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName

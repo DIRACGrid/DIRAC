@@ -2,6 +2,7 @@
 """
 Create a DIRAC RemoveReplica|RemoveFile request to be executed by the RMS
 """
+
 import os
 from hashlib import md5
 import time

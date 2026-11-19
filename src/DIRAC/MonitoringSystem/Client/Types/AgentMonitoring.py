@@ -1,6 +1,7 @@
 """
 AgentMonitoring type used to monitor DIRAC agents.
 """
+
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
 

@@ -1,4 +1,5 @@
 """Echo module based on the GFAL2_StorageBase class."""
+
 import os
 import random
 import time

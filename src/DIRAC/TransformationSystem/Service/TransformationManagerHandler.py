@@ -1,5 +1,5 @@
-""" Service for interacting with TransformationDB
-"""
+"""Service for interacting with TransformationDB"""
+
 import datetime
 
 from DIRAC import S_ERROR, S_OK

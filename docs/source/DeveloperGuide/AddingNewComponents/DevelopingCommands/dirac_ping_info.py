@@ -6,6 +6,7 @@ Example:
   $ dirac-ping-info MySystem
   Ping MySystem!
 """
+
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.Script import Script
 

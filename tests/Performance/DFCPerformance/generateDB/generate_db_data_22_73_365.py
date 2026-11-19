@@ -1,15 +1,14 @@
 """This prints the SQL statements necessary to fill in a DB with approximately
-    * directories: 22 M
-    * files: 73M
-    * replicas: 365M
+ * directories: 22 M
+ * files: 73M
+ * replicas: 365M
 
-   It also simulates production files (10000 per directory at depth 6) and user files (2 per directory at depth 12)
-   This sums up to 73M files (I let you do the math)
+It also simulates production files (10000 per directory at depth 6) and user files (2 per directory at depth 12)
+This sums up to 73M files (I let you do the math)
 
-   And we have between 3 and 7 replicas per files (random), which sums up to around 365M replicas.
+And we have between 3 and 7 replicas per files (random), which sums up to around 365M replicas.
 
 """
-
 
 import os
 import random
@@ -50,22 +49,17 @@ for st in config.status:
 def proc_insert_dir(parent_id, child_name, UID, GID, Mode, Status):
     """Print the insertion statement for Directory with the directory closure"""
 
-    print(
-        "INSERT INTO FC_DirectoryList (Name, UID, GID, CreationDate, ModificationDate, Mode, Status)\
-       values ('%s', %s, %s, UTC_TIMESTAMP(), UTC_TIMESTAMP(), %s, %s);"
-        % (child_name, UID, GID, Mode, Status)
-    )
+    print("INSERT INTO FC_DirectoryList (Name, UID, GID, CreationDate, ModificationDate, Mode, Status)\
+       values ('{}', {}, {}, UTC_TIMESTAMP(), UTC_TIMESTAMP(), {}, {});".format(child_name, UID, GID, Mode, Status))
     print("SELECT LAST_INSERT_ID() INTO @dir_id;")
 
     print("INSERT INTO FC_DirectoryClosure (ParentID, ChildID, Depth ) VALUES (@dir_id, @dir_id, 0);")
 
     if parent_id:
-        print(
-            f"""INSERT INTO FC_DirectoryClosure(ParentID, ChildID, depth)
+        print(f"""INSERT INTO FC_DirectoryClosure(ParentID, ChildID, depth)
        SELECT p.ParentID, @dir_id, p.depth + 1
        FROM FC_DirectoryClosure p
-       WHERE p.ChildID = {parent_id};"""
-        )
+       WHERE p.ChildID = {parent_id};""")
 
 
 def proc_insert_file(dir_id, size, UID, GID, status_id, filename, GUID, checksum, checksumtype, mode):
@@ -82,11 +76,8 @@ def proc_insert_file(dir_id, size, UID, GID, status_id, filename, GUID, checksum
 def proc_insert_replica(file_id, se_id, status_id, rep_type, pfn):
     """Print the insert replica statement"""
 
-    print(
-        "INSERT INTO FC_Replicas (FileID, SEID, Status, RepType, CreationDate, ModificationDate, PFN)\
-   VALUES (%s, %s, %s,'%s', UTC_TIMESTAMP(), UTC_TIMESTAMP(), '%s');"
-        % (file_id, se_id, status_id, rep_type, pfn)
-    )
+    print("INSERT INTO FC_Replicas (FileID, SEID, Status, RepType, CreationDate, ModificationDate, PFN)\
+   VALUES ({}, {}, {},'{}', UTC_TIMESTAMP(), UTC_TIMESTAMP(), '{}');".format(file_id, se_id, status_id, rep_type, pfn))
 
 
 # Insert the root directory

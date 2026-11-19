@@ -1,11 +1,11 @@
 """
 Message Queue wrapper
 """
+
 from DIRAC.FrameworkSystem.private.standardLogging.Handler.MessageQueueHandler import MessageQueueHandler
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 from DIRAC.FrameworkSystem.private.standardLogging.Formatter.MicrosecondJsonFormatter import MicrosecondJsonFormatter
 from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
-
 
 DEFAULT_MQ_LEVEL = "verbose"
 # These are the standard logging fields that we want to see

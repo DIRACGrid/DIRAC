@@ -1,4 +1,4 @@
-""" Tornado-based HTTPs JobManager service.
+"""Tornado-based HTTPs JobManager service.
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN TornadoJobManager
@@ -7,6 +7,7 @@
   :caption: JobManager options
 
 """
+
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.WorkloadManagementSystem.Service.JobManagerHandler import JobManagerHandlerMixin
 

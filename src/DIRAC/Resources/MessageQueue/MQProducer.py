@@ -1,5 +1,5 @@
-""" MQProducer
-"""
+"""MQProducer"""
+
 from DIRAC import gLogger
 from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress, getMQService
 

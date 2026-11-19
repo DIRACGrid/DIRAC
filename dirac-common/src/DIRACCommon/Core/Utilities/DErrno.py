@@ -1,20 +1,21 @@
-""" :mod: DErrno
+""":mod: DErrno
 
-    ==========================
+==========================
 
-    .. module: DErrno
+.. module: DErrno
 
-    :synopsis: Error list and utilities for handling errors in DIRAC
+:synopsis: Error list and utilities for handling errors in DIRAC
 
 
-    This module contains list of errors that can be encountered in DIRAC.
-    It complements the errno module of python.
+This module contains list of errors that can be encountered in DIRAC.
+It complements the errno module of python.
 
-    It also contains utilities to manipulate these errors.
+It also contains utilities to manipulate these errors.
 
-    This is a stateless version extracted to DIRACCommon to avoid circular dependencies.
-    The extension loading functionality has been removed.
+This is a stateless version extracted to DIRACCommon to avoid circular dependencies.
+The extension loading functionality has been removed.
 """
+
 import os
 
 # To avoid conflict, the error numbers should be greater than 1000

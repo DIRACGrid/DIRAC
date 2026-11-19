@@ -2,6 +2,7 @@
 """
 Print file or directory disk usage as recorded in the file catalog.
 """
+
 from signal import signal, SIGPIPE, SIG_DFL
 
 from DIRAC import S_OK
@@ -38,7 +39,7 @@ def main():
     Script.setUsageMessage(
         "\n".join(
             [
-                __doc__.split("\n")[1],
+                __doc__.strip().split("\n")[0],
                 "Usage:",
                 f"  {Script.scriptName} [options] [path]",
                 "Arguments:",

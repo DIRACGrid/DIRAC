@@ -1,11 +1,12 @@
-""" :mod: GFAL2_SRM2Storage
+""":mod: GFAL2_SRM2Storage
 
-    =================
+=================
 
-    .. module: python
+.. module: python
 
-    :synopsis: SRM2 module based on the GFAL2_StorageBase class.
+:synopsis: SRM2 module based on the GFAL2_StorageBase class.
 """
+
 # pylint: disable=invalid-name
 
 

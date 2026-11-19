@@ -6,6 +6,7 @@ Examples:
     $ dchmod 755 ././some_lfn_file
     $ dchmod -R 700 ./
 """
+
 from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache
 from DIRAC.Interfaces.Utilities.DCommands import DSession
 from DIRAC.Interfaces.Utilities.DCommands import pathFromArgument

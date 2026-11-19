@@ -1,7 +1,8 @@
-""" Module that expose the base class for DIRAC Clients.
+"""Module that expose the base class for DIRAC Clients.
 
-    This class exposes possible RPC calls, given a url of a service.
+This class exposes possible RPC calls, given a url of a service.
 """
+
 import ast
 import importlib_resources
 from functools import partial, partialmethod

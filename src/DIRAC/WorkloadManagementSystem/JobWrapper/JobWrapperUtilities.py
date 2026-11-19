@@ -2,6 +2,7 @@
 
 This module contains the functions that are used by the JobWrapperTemplate to execute the JobWrapper.
 """
+
 import errno
 import os
 import signal

@@ -1,6 +1,6 @@
-""" GOCDBClient module is a client for the GOC DB, looking for Downtimes.
+"""GOCDBClient module is a client for the GOC DB, looking for Downtimes.
 
-    WARN: the URL of the GOC DB API is hardcoded, and is: https://goc.egi.eu/gocdbpi/public/
+WARN: the URL of the GOC DB API is hardcoded, and is: https://goc.egi.eu/gocdbpi/public/
 """
 
 import socket
@@ -361,13 +361,13 @@ class GOCDBClient:
                     ] = urls[0]
             except Exception as e:
                 try:
-                    dtDict[
-                        str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + " " + elements["HOSTNAME"]
-                    ] = elements
+                    dtDict[str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + " " + elements["HOSTNAME"]] = (
+                        elements
+                    )
                 except Exception:
-                    dtDict[
-                        str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + " " + elements["SITENAME"]
-                    ] = elements
+                    dtDict[str(dtElement.getAttributeNode("PRIMARY_KEY").nodeValue) + " " + elements["SITENAME"]] = (
+                        elements
+                    )
 
         for dtID in list(dtDict):
             if siteOrRes in ("Site", "Sites"):

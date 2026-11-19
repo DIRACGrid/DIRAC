@@ -1,6 +1,7 @@
 """
-  Defines the plugin to take storage space information given by BDII
+Defines the plugin to take storage space information given by BDII
 """
+
 import os
 
 from DIRAC import S_OK

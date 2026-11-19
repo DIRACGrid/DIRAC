@@ -1,6 +1,7 @@
 """Token class is a front-end to the TokenDB Database.
 Long-term user tokens are stored here, which can be used to obtain new tokens.
 """
+
 import jwt
 import time
 import pprint
@@ -15,7 +16,6 @@ from authlib.integrations.sqla_oauth2 import OAuth2TokenMixin
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
 from DIRAC.FrameworkSystem.private.authorization.utils.Tokens import OAuth2Token
-
 
 Model = declarative_base()
 

@@ -1,5 +1,5 @@
-""" Collection of utilities for finding paths in the CS
-"""
+"""Collection of utilities for finding paths in the CS"""
+
 import re
 from copy import deepcopy
 from collections.abc import Iterable

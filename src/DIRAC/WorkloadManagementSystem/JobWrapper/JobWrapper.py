@@ -1090,7 +1090,7 @@ class JobWrapper:
             pfnGUID = result["Value"]
 
         for oData in outputData:
-            (lfn, localfile) = self.__getLFNfromOutputFile(oData, outputPath)
+            lfn, localfile = self.__getLFNfromOutputFile(oData, outputPath)
             if not os.path.exists(localfile):
                 self.log.error("Missing specified output data file:", oData)
                 continue

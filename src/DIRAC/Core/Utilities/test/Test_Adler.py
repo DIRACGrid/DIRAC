@@ -4,15 +4,16 @@
 # Date: 2011/02/11 09:08:19
 ########################################################################
 
-""" :mod: AdlerTestCase
-    =======================
+""":mod: AdlerTestCase
+=======================
 
-    .. module: AdlerTestCase
-    :synopsis: test case for DIRAC.Core.Utilities.Adler module
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: AdlerTestCase
+:synopsis: test case for DIRAC.Core.Utilities.Adler module
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    test case for DIRAC.Core.Utilities.Adler module
+test case for DIRAC.Core.Utilities.Adler module
 """
+
 ##
 # @file AdlerTestCase.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -35,7 +36,6 @@ from DIRAC.Core.Utilities import Adler
 
 
 class AdlerTestCase(unittest.TestCase):
-
     """
     .. class:: AdlerTestCase
     test case for DIRAC.Core.Utilities.Adler module

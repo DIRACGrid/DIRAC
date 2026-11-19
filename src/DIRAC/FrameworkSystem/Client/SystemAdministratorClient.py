@@ -1,7 +1,8 @@
-""" The SystemAdministratorClient is a class representing the client of the DIRAC
-    SystemAdministrator service. It has also methods to update the Configuration
-    Service with the DIRAC components options
+"""The SystemAdministratorClient is a class representing the client of the DIRAC
+SystemAdministrator service. It has also methods to update the Configuration
+Service with the DIRAC components options
 """
+
 from DIRAC.Core.Base.Client import Client, createClient
 
 SYSADMIN_PORT = 9162

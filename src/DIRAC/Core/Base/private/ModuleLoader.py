@@ -1,5 +1,5 @@
-""" Module invoked for finding and loading DIRAC (and extensions) modules
-"""
+"""Module invoked for finding and loading DIRAC (and extensions) modules"""
+
 import os
 from DIRAC.Core.Utilities import List
 from DIRAC import gConfig, S_ERROR, S_OK, gLogger

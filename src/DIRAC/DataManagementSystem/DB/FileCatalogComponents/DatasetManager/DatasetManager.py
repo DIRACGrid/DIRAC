@@ -1,5 +1,5 @@
-""" DIRAC FileCatalog plug-in class to manage dynamic datasets defined by a metadata query
-"""
+"""DIRAC FileCatalog plug-in class to manage dynamic datasets defined by a metadata query"""
+
 import hashlib
 import os
 

@@ -48,6 +48,7 @@ needed if ``ControlComponents`` is enabled.
   :caption: ComponentSupervisionAgent options
 
 """
+
 # imports
 from collections import defaultdict
 from datetime import datetime

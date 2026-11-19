@@ -4,18 +4,19 @@
 # Date: 2013/03/25 07:43:24
 ########################################################################
 
-""" :mod: PutAndRegister
+""":mod: PutAndRegister
 
-    ====================
+====================
 
-    .. module: PutAndRegister
+.. module: PutAndRegister
 
-    :synopsis: putAndRegister operation handler
+:synopsis: putAndRegister operation handler
 
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    PutAndRegister operation handler
+PutAndRegister operation handler
 """
+
 # #
 # @file PutAndRegister.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

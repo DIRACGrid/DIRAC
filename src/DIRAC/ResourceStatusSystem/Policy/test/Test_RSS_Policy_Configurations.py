@@ -1,9 +1,8 @@
-""" Test_RSS_Policy_Configurations
-"""
+"""Test_RSS_Policy_Configurations"""
+
 import unittest
 
 import DIRAC.ResourceStatusSystem.Policy.Configurations as moduleTested
-
 
 ################################################################################
 

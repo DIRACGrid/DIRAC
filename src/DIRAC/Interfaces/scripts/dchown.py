@@ -6,6 +6,7 @@ Examples:
     $ dchown atsareg ././some_lfn_file
     $ dchown -R pgay ./
 """
+
 from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache
 from DIRAC.Interfaces.Utilities.DCommands import DSession
 from DIRAC.Interfaces.Utilities.DCommands import pathFromArgument

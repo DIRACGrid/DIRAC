@@ -1,4 +1,4 @@
-""" The CS! (Configuration Service)
+"""The CS! (Configuration Service)
 
 Modified to work with Tornado
 Encode data in base64 because of JSON limitations

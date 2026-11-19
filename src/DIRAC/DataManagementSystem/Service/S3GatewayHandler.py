@@ -11,6 +11,7 @@ This service can serve presigned URL for any S3 storage it has the credentials f
   :caption: S3Gateway options
 
 """
+
 import errno
 
 # from DIRAC

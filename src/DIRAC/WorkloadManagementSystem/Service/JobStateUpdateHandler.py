@@ -1,9 +1,9 @@
-""" JobStateUpdateHandler is the implementation of the Job State updating
-    service in the DISET framework
+"""JobStateUpdateHandler is the implementation of the Job State updating
+service in the DISET framework
 
-    The following methods are available in the Service interface
+The following methods are available in the Service interface
 
-    setJobStatus()
+setJobStatus()
 
 """
 

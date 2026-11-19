@@ -1,5 +1,5 @@
-""" DIRAC FileCatalog utilities
-"""
+"""DIRAC FileCatalog utilities"""
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import intListToString
 

@@ -1,5 +1,5 @@
-""" MQConsumer
-"""
+"""MQConsumer"""
+
 import queue
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Resources.MessageQueue.Utilities import getDestinationAddress, getMQService, generateDefaultCallback

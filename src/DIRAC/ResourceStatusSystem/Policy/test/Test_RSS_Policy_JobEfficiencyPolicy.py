@@ -1,5 +1,5 @@
-""" Test_RSS_Policy_JobEfficiencyPolicy
-"""
+"""Test_RSS_Policy_JobEfficiencyPolicy"""
+
 import unittest
 
 import DIRAC.ResourceStatusSystem.Policy.JobEfficiencyPolicy as moduleTested

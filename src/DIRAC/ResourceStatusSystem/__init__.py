@@ -1,3 +1,3 @@
 """
-  DIRAC.ResourceStatusSystem package
+DIRAC.ResourceStatusSystem package
 """

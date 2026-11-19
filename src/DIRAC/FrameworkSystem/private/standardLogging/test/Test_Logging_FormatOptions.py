@@ -1,6 +1,7 @@
 """
 Test properties of log records
 """
+
 import _thread
 import pytest
 

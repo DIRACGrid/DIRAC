@@ -5,6 +5,7 @@ find files in the FileCatalog
 Examples:
     $ dfind . "some_integer_metadata>1"
 """
+
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Interfaces.Utilities.DCommands import DSession
 from DIRAC.Interfaces.Utilities.DCommands import DCatalog

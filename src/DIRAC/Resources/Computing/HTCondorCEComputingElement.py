@@ -1,4 +1,4 @@
-""" HTCondorCE Computing Element
+"""HTCondorCE Computing Element
 
 Allows direct submission to HTCondorCE Computing Elements with a SiteDirector Agent
 
@@ -44,6 +44,7 @@ When using a local condor_schedd look at the HTCondor documentation for enabling
 
 **Code Documentation**
 """
+
 # Note: if you read this documentation in the source code and not via the sphinx
 # created documentation, there should only be one slash when setting the option,
 # but "\n" gets rendered as a linebreak in sphinx
@@ -180,12 +181,10 @@ class HTCondorCEComputingElement(ComputingElement):
         useCredentials = "use_x509userproxy = true"
         # If tokenFile is present, then we transfer it to the worker node
         if tokenFile:
-            useCredentials += textwrap.dedent(
-                f"""
+            useCredentials += textwrap.dedent(f"""
                 use_scitokens = true
                 scitokens_file = {tokenFile.name}
-                """
-            )
+                """)
 
         # Remote schedd options by default
         targetUniverse = "vanilla"

@@ -1,5 +1,5 @@
-""" Test class for Job Agent
-"""
+"""Test class for Job Agent"""
+
 import multiprocessing
 import os
 import time

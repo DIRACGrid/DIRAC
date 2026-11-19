@@ -39,7 +39,6 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
-
 # #### GLOBAL VARIABLES: ################
 
 # Name of the storage element that has to be tested

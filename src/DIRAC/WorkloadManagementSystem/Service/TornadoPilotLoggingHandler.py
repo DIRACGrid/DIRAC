@@ -1,4 +1,4 @@
-""" Tornado-based HTTPs PilotLogging service.
+"""Tornado-based HTTPs PilotLogging service.
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN TornadoPilotLogging

@@ -7,6 +7,7 @@ List of operations:
 #. Check for Migration
 #. Remove all other replicas for these files
 """
+
 import os
 
 from DIRAC import gLogger

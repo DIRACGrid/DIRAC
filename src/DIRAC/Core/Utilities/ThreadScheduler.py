@@ -1,5 +1,5 @@
-""" a scheduler of threads, of course!
-"""
+"""a scheduler of threads, of course!"""
+
 import hashlib
 import threading
 import time

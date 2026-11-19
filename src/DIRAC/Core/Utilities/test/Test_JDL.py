@@ -1,4 +1,4 @@
-""" Unit tests for JDL module"""
+"""Unit tests for JDL module"""
 
 # pylint: disable=protected-access, invalid-name
 

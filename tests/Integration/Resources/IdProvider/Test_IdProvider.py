@@ -1,4 +1,4 @@
-""" Tests for IAMIDProvider interface.
+"""Tests for IAMIDProvider interface.
 
 Prior to run the test, make sure that:
 
@@ -8,6 +8,7 @@ Prior to run the test, make sure that:
 
 It is worth noting the tests will interact with IAM tokens and change their states.
 """
+
 import os
 import pytest
 import requests
@@ -17,7 +18,6 @@ from diraccfg import CFG
 from DIRAC import gConfig
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Resources.IdProvider.IAMIdProvider import IAMIdProvider
-
 
 config = """
 Registry

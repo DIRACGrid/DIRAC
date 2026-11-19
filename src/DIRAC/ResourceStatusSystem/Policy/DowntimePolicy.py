@@ -1,5 +1,5 @@
-""" DowntimePolicy module
-"""
+"""DowntimePolicy module"""
+
 from DIRAC import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 

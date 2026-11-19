@@ -1,6 +1,7 @@
 """
 Test of multi-VO user metadata handling. Assumes a running Dirac instance with the (master?) FileCatalog
 """
+
 import unittest
 import os
 import sys

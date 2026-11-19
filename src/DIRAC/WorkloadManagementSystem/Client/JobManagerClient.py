@@ -1,4 +1,4 @@
-""" Class that contains client access to the JobManager handler. """
+"""Class that contains client access to the JobManager handler."""
 
 from DIRAC.Core.Base.Client import Client, createClient
 

@@ -1,9 +1,10 @@
-""" Main class for doing consistency checks, between files in:
-    - File Catalog
-    - TransformationSystem
+"""Main class for doing consistency checks, between files in:
+- File Catalog
+- TransformationSystem
 
-    Should be extended to include the Storage (in DIRAC)
+Should be extended to include the Storage (in DIRAC)
 """
+
 import os
 import time
 import sys

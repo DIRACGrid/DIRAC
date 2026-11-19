@@ -1,6 +1,7 @@
-""" This is a test of the AuthServer. Requires authlib, pyjwt, dominate
-    It supposes that the AuthDB is present and installed in DIRAC
+"""This is a test of the AuthServer. Requires authlib, pyjwt, dominate
+It supposes that the AuthDB is present and installed in DIRAC
 """
+
 import pytest
 from unittest.mock import MagicMock
 

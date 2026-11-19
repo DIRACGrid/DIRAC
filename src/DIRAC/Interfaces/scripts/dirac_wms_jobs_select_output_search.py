@@ -6,6 +6,7 @@
 """
 Retrieve output sandbox for DIRAC Jobs for the given selection and search for a string in their std.out
 """
+
 import os
 from shutil import rmtree
 

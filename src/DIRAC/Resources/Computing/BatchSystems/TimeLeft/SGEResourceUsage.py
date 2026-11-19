@@ -1,5 +1,5 @@
-""" The SGE TimeLeft utility interrogates the SGE batch system for the
-    current CPU consumed, as well as its limit.
+"""The SGE TimeLeft utility interrogates the SGE batch system for the
+current CPU consumed, as well as its limit.
 """
 
 import os

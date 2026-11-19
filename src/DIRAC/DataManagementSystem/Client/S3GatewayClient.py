@@ -1,4 +1,5 @@
-""" Client to interact with the S3Gateway  """
+"""Client to interact with the S3Gateway"""
+
 from DIRAC.Core.Base.Client import Client, createClient
 
 

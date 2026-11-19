@@ -1,5 +1,5 @@
-""" This script submits a test prodJobuction with filter
-"""
+"""This script submits a test prodJobuction with filter"""
+
 # pylint: disable=wrong-import-position, protected-access
 import time
 import os
@@ -7,7 +7,7 @@ import os
 import json
 from DIRAC.Core.Base.Script import Script
 
-Script.setUsageMessage("\n".join([__doc__.split("\n")[1], "Usage:", f"  {Script.scriptName} test directory"]))
+Script.setUsageMessage("\n".join([__doc__.strip().split("\n")[0], "Usage:", f"  {Script.scriptName} test directory"]))
 
 Script.registerSwitch("", "UseFilter=", "e.g. True/False")
 Script.parseCommandLine()

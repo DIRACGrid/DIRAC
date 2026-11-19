@@ -1,6 +1,7 @@
 """
-  This module manages is a client for the TS and manages the transformations associated to the productions
+This module manages is a client for the TS and manages the transformations associated to the productions
 """
+
 import json
 
 from DIRAC import gLogger, S_OK, S_ERROR

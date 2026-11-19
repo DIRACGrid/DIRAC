@@ -6,6 +6,7 @@ Connects to the BundleDelivery service to obtain the tar balls.
 Example:
   $ dirac-admin-get-CAs
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient

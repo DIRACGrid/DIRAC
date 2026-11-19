@@ -1,4 +1,5 @@
 """Helpers for working with extensions to DIRAC"""
+
 import argparse
 import fnmatch
 import functools

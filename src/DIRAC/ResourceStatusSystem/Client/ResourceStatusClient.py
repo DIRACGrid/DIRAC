@@ -1,6 +1,6 @@
-""" ResourceStatusClient
+"""ResourceStatusClient
 
-  Client to interact with the ResourceStatus service and from it with the DB.
+Client to interact with the ResourceStatus service and from it with the DB.
 """
 
 # pylint: disable=unused-argument

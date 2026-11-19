@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """script to concatenate the dirac.cfg file's Systems sections with the content of the ConfigTemplate.cfg files."""
+
 from collections import OrderedDict
 import logging
 import os
@@ -56,9 +57,7 @@ class ConcatCFG:
         LOG.info("Writing output to %r", diracCfgOutput)
 
         with open(diracCfgOutput, "w") as rst:
-            rst.write(
-                textwrap.dedent(
-                    """
+            rst.write(textwrap.dedent("""
                                 .. _full_configuration_example:
 
                                 ==========================
@@ -69,9 +68,7 @@ class ConcatCFG:
 
                                 Below is a complete example configuration with anotations for some sections::
 
-                                """
-                )
-            )
+                                """))
             # indent the cfg text
             cfgString = "".join("  " + line for line in str(compCfg).splitlines(True))
             # fix the links, add back the # for targets

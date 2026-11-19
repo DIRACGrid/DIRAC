@@ -1,4 +1,5 @@
 """GSIFTP module based on the GFAL2_StorageBase class."""
+
 # from DIRAC
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC import gLogger
@@ -6,7 +7,6 @@ from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 
 
 class GFAL2_GSIFTPStorage(GFAL2_StorageBase):
-
     """.. class:: GFAL2_GSIFTPStorage
 
     GSIFTP interface to StorageElement using gfal2

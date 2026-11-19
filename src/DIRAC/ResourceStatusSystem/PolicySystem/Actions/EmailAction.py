@@ -1,9 +1,10 @@
-""" EmailAction
+"""EmailAction
 
-  This action writes all the necessary data to a cache file ( cache.db ) that
-  will be used later by the EmailAgent in order to send the emails for each site.
+This action writes all the necessary data to a cache file ( cache.db ) that
+will be used later by the EmailAgent in order to send the emails for each site.
 
 """
+
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping

@@ -1,8 +1,9 @@
-""" Handler for logging in security.log.csv files
+"""Handler for logging in security.log.csv files
 
-    This service is kept for installations that are not using ES-based logs management
-    (see https://dirac.readthedocs.io/en/latest/AdministratorGuide/ServerInstallations/centralizedLogging.html)
+This service is kept for installations that are not using ES-based logs management
+(see https://dirac.readthedocs.io/en/latest/AdministratorGuide/ServerInstallations/centralizedLogging.html)
 """
+
 import os
 
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig, rootPath

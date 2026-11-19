@@ -1,4 +1,4 @@
-""" Tornado-based HTTPs WMSAdministrator service.
+"""Tornado-based HTTPs WMSAdministrator service.
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN TornadoWMSAdministrator
@@ -7,6 +7,7 @@
   :caption: WMSAdministrator options
 
 """
+
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.WorkloadManagementSystem.Service.WMSAdministratorHandler import WMSAdministratorHandlerMixin
 

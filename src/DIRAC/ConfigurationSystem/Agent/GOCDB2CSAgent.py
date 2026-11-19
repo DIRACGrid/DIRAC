@@ -12,6 +12,7 @@ The following options can be set for the GOCDB2CSAgent.
   :dedent: 2
   :caption: GOCDB2CSAgent options
 """
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient

@@ -1,25 +1,25 @@
-""" This is a test of using WMSClient and several other functions in WMS
+"""This is a test of using WMSClient and several other functions in WMS
 
-    In order to run this test we need the following DBs installed:
-    - JobDB
-    - JobLoggingDB
-    - TaskQueueDB
-    - SandboxMetadataDB
+In order to run this test we need the following DBs installed:
+- JobDB
+- JobLoggingDB
+- TaskQueueDB
+- SandboxMetadataDB
 
-    And the following services should also be on:
-    - OptimizationMind
-    - JobManager
-    - SandboxStore
-    - JobMonitoring
-    - JobStateUpdate
-    - WMSAdministrator
-    - Matcher
+And the following services should also be on:
+- OptimizationMind
+- JobManager
+- SandboxStore
+- JobMonitoring
+- JobStateUpdate
+- WMSAdministrator
+- Matcher
 
-    A user proxy is also needed to submit,
-    and the Framework/ProxyManager need to be running with a such user proxy already uploaded.
+A user proxy is also needed to submit,
+and the Framework/ProxyManager need to be running with a such user proxy already uploaded.
 
-    Due to the nature of the DIRAC WMS, only a full chain test makes sense,
-    and this also means that this test is not easy to set up.
+Due to the nature of the DIRAC WMS, only a full chain test makes sense,
+and this also means that this test is not easy to set up.
 """
 
 # pylint: disable=protected-access,wrong-import-position,missing-docstring
