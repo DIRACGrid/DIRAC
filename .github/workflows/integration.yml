@@ -59,7 +59,7 @@ jobs:
         git fetch --prune --unshallow
     - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
-        python-version: '3.11'
+        python-version: '3.15'
     - uses: cvmfs-contrib/github-action-cvmfs@d705955b32075b4b0178f3a0160b6fe527483cf8 # v5
     - name: Installing dependencies
       run: |
