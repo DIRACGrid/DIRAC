@@ -11,13 +11,9 @@
   ],
   "packageRules": [
     {
-      "description": "Conda usage in DIRAC CI is legacy (only deploy_CVMFS keeps it deliberately, and the pilot wrapper tests are moving to pixi): do not churn the setup-miniconda action.",
-      "matchManagers": [
-        "github-actions"
-      ],
-      "matchDepNames": [
-        "conda-incubator/setup-miniconda"
-      ],
+      "description": "We use the DIRACGrid forks of tornado and tornado_m2crypto: never bump them from PyPI.",
+      "matchDatasources": ["pypi"],
+      "matchPackageNames": ["tornado", "tornado-m2crypto"],
       "enabled": false
     }
   ]
