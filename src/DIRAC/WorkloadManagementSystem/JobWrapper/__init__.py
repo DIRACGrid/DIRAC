@@ -1,3 +1,3 @@
 """
-   DIRAC.WorkloadManagementSystem.JobWrapper package
+DIRAC.WorkloadManagementSystem.JobWrapper package
 """

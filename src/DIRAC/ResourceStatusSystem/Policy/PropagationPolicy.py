@@ -1,17 +1,18 @@
-""" DIRAC.ResourceStatusSystem.Policy.PropagationPolicy
+"""DIRAC.ResourceStatusSystem.Policy.PropagationPolicy
 
-    The following lines are needed in the CS::
+The following lines are needed in the CS::
 
-      PropagationPolicy
-      {
-        matchParams
-        {
-          element = Site
-        }
-        policyType = PropagationPolicy
-      }
+  PropagationPolicy
+  {
+    matchParams
+    {
+      element = Site
+    }
+    policyType = PropagationPolicy
+  }
 
 """
+
 from DIRAC import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 

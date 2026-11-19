@@ -1,6 +1,7 @@
 """
 Pilot logging plugin abstract class.
 """
+
 from abc import ABC, abstractmethod
 from DIRAC import S_OK, S_ERROR, gLogger
 

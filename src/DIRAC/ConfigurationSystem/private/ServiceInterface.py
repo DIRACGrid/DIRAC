@@ -1,5 +1,5 @@
-""" Threaded implementation of service interface
-"""
+"""Threaded implementation of service interface"""
+
 import time
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed

@@ -9,6 +9,7 @@ Modify a user in the CS.
 Example:
   $ dirac-admin-modify-user vhamar /C=FR/O=Org/CN=User dirac_user
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

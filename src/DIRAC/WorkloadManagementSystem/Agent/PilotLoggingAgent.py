@@ -1,4 +1,4 @@
-""" :mod: PilotLoggingAgent
+""":mod: PilotLoggingAgent
 
     PilotLoggingAgent sends Pilot log files to an SE.
 

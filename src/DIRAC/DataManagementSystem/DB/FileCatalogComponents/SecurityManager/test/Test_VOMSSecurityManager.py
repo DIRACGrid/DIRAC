@@ -1,5 +1,5 @@
-""" VOMSSecurityManager unit tests
-"""
+"""VOMSSecurityManager unit tests"""
+
 # pylint: disable=protected-access,missing-docstring,invalid-name,too-many-lines,no-value-for-parameter
 
 import unittest

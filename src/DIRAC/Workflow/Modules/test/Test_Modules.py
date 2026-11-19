@@ -1,5 +1,5 @@
-""" Unit Test of Workflow Modules
-"""
+"""Unit Test of Workflow Modules"""
+
 import unittest
 import os
 import copy

@@ -161,7 +161,6 @@ from DIRAC.Core.Utilities.Network import getFQDN
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
-
 # Logger
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 

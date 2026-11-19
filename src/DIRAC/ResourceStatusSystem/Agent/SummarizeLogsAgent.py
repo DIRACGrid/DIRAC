@@ -1,4 +1,4 @@
-""" SummarizeLogsAgent module
+"""SummarizeLogsAgent module
 
   This agents scans all the log tables (SiteLog, ResourceLog and NodeLog) on the
   ResourceStatusDB and summarizes them. The results are stored on the History
@@ -18,6 +18,7 @@
   :dedent: 2
   :caption: SummarizeLogsAgent options
 """
+
 from datetime import datetime, timedelta
 
 from DIRAC import S_OK

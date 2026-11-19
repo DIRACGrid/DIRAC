@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ########################################################################
-""" System Administrator Client Command Line Interface """
+"""System Administrator Client Command Line Interface"""
 
 import atexit
 import datetime

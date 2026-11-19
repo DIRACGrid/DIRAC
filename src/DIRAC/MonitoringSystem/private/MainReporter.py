@@ -1,6 +1,7 @@
 """
 It is a helper module which contains the available reports
 """
+
 import hashlib
 import re
 
@@ -11,7 +12,6 @@ from DIRAC.Core.Utilities.ObjectLoader import loadObjects
 
 
 class PlottersList:
-
     """
     Used to determine all available plotters used to create the plots
 

@@ -3,6 +3,7 @@
 Get information on resources available for the given VO: Computing and Storage.
 By default, resources for the VO corresponding to the current user identity are displayed
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

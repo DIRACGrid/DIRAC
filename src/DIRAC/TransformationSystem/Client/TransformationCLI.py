@@ -1,5 +1,5 @@
-""" Transformation Database Client Command Line Interface.
-"""
+"""Transformation Database Client Command Line Interface."""
+
 import DIRAC
 
 DIRAC.initialize()  # Initialize configuration
@@ -404,7 +404,7 @@ class TransformationCLI(CLI, API):
                 print(res["Message"])
                 return
             if not len(res["Value"]) > 0:
-                print("No output files yet for transformation %d" % int(transName))
+                print(f"No output files yet for transformation {int(transName)}")
                 return
             else:
                 for lfn in res["Value"]:

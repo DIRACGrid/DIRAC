@@ -1,5 +1,5 @@
-""" StorageOccupancy records the Storage Elements occupancy over time
-"""
+"""StorageOccupancy records the Storage Elements occupancy over time"""
+
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 
 

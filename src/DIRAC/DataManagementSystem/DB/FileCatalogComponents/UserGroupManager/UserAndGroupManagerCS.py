@@ -1,5 +1,5 @@
-""" DIRAC FileCatalog mix-in class to manage users and groups from the CS Registry
-"""
+"""DIRAC FileCatalog mix-in class to manage users and groups from the CS Registry"""
+
 import time
 import threading
 

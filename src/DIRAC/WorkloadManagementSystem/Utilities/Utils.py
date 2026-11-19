@@ -1,5 +1,5 @@
-""" Utilities for WMS
-"""
+"""Utilities for WMS"""
+
 import os
 from pathlib import Path
 from glob import glob

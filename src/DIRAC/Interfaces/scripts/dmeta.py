@@ -14,6 +14,7 @@ Examples:
       $ dmeta ls ./some_lfn_file",
       $ dmeta rm ./some_lfn_file some_meta",
 """
+
 import DIRAC
 from DIRAC import S_OK, gLogger
 

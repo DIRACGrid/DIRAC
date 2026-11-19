@@ -508,19 +508,16 @@ class TaskQueueDB(DB):
         for field in multiValueDefFields:
             tableName = f"`tq_TQTo{field}`"
             if field in tqDefDict and tqDefDict[field]:
-                firstQuery = (
-                    "SELECT COUNT(%s.Value) \
-                      FROM %s \
-                      WHERE %s.TQId = `tq_TaskQueues`.TQId"
-                    % (tableName, tableName, tableName)
-                )
+                firstQuery = "SELECT COUNT({}.Value) \
+                      FROM {} \
+                      WHERE {}.TQId = `tq_TaskQueues`.TQId".format(tableName, tableName, tableName)
                 grouping = f"GROUP BY {tableName}.TQId"
                 valuesList = List.uniqueElements([value.strip() for value in tqDefDict[field] if value.strip()])
                 numValues = len(valuesList)
                 secondQuery = "{} AND {}.Value in ({})".format(
                     firstQuery,
                     tableName,
-                    ",".join(["%s" % str(value) for value in valuesList]),
+                    ",".join([f"{value!s}" for value in valuesList]),
                 )
                 sqlCondList.append(f"{numValues} = ({firstQuery} {grouping})")
                 sqlCondList.append(f"{numValues} = ({secondQuery} {grouping})")
@@ -582,11 +579,8 @@ class TaskQueueDB(DB):
 
         sqlCmd = "SELECT COUNT( `tq_Jobs`.JobID ), `tq_TaskQueues`.TQId, `tq_TaskQueues`.Enabled \
 FROM `tq_TaskQueues`, `tq_Jobs`"
-        sqlCmd = (
-            "%s WHERE `tq_TaskQueues`.TQId = `tq_Jobs`.TQId AND %s GROUP BY `tq_Jobs`.TQId \
-ORDER BY COUNT( `tq_Jobs`.JobID ) ASC"
-            % (sqlCmd, result["Value"])
-        )
+        sqlCmd = "{} WHERE `tq_TaskQueues`.TQId = `tq_Jobs`.TQId AND {} GROUP BY `tq_Jobs`.TQId \
+ORDER BY COUNT( `tq_Jobs`.JobID ) ASC".format(sqlCmd, result["Value"])
         result = self._query(sqlCmd, conn=connObj)
         if not result["OK"]:
             self.log.error("Can't find task queue", result["Message"])
@@ -957,7 +951,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
             sql2 = sql1 + f" AND {tableName}.Value=''"
         else:
             if isinstance(tagMatchList, (list, tuple)):
-                sql2 = sql1 + f" AND {tableName}.Value in ( {','.join([('%s' % v) for v in tagMatchList])} )"
+                sql2 = sql1 + f" AND {tableName}.Value in ( {','.join([f'{v}' for v in tagMatchList])} )"
             else:
                 sql2 = sql1 + f" AND {tableName}.Value={tagMatchList}"
         sql = "( " + sql1 + " ) = (" + sql2 + " )"
@@ -970,7 +964,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         """
         sql = f"SELECT COUNT({tableName}.Value) FROM {tableName} WHERE {tableName}.TQId=tq.TQId"
         if isinstance(tagMatchList, (list, tuple)):
-            sql = sql + f" AND {tableName}.Value in ( {','.join([('%s' % v) for v in tagMatchList])} )"
+            sql = sql + f" AND {tableName}.Value in ( {','.join([f'{v}' for v in tagMatchList])} )"
             nTags = len(tagMatchList)
         else:
             sql = sql + f" AND {tableName}.Value={tagMatchList}"
@@ -991,8 +985,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         retVal = self._query(
             "SELECT t.TQId, t.Owner, t.OwnerGroup \
 FROM `tq_TaskQueues` t, `tq_Jobs` j \
-WHERE j.JobId = %s AND t.TQId = j.TQId"
-            % jobId,
+WHERE j.JobId = %s AND t.TQId = j.TQId" % jobId,
             conn=connObj,
         )
         if not retVal["OK"]:
@@ -1043,7 +1036,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId"
         return S_OK(retVal["Value"][0])
 
     def __deleteTQIfEmpty(self, args):
-        (tqId, tqOwner, tqOwnerGroup) = args
+        tqId, tqOwner, tqOwnerGroup = args
         retries = 3
         while retries:
             retries -= 1

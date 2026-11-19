@@ -12,6 +12,7 @@ Pilots invoke dirac-wms-cpu-normalization which
       DB12measured = 15.4
     }
 """
+
 from db12 import multiple_dirac_benchmark
 
 import DIRAC

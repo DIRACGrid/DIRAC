@@ -1,5 +1,5 @@
-""" DIRAC FileCatalog Security Manager mix-in class with no access checks
-"""
+"""DIRAC FileCatalog Security Manager mix-in class with no access checks"""
+
 from DIRAC import S_OK
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.SecurityManagerBase import SecurityManagerBase
 

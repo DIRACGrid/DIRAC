@@ -37,7 +37,7 @@ class ConfigCache:
                 return False
             return True
 
-        cachePat = "^" + self.cacheFilePrefix() + r"\.%s\.(?P<pid>[0-9]+)$" % os.getuid()
+        cachePat = "^" + self.cacheFilePrefix() + rf"\.{os.getuid()}\.(?P<pid>[0-9]+)$"
         cacheRe = re.compile(cachePat)
         for fname in os.listdir(self.cacheDir):
             match = cacheRe.match(fname)

@@ -4,15 +4,16 @@
 # Date: 2013/04/18 09:23:05
 ########################################################################
 
-""" :mod: ForwardDISETTests
-    =======================
+""":mod: ForwardDISETTests
+=======================
 
-    .. module: ForwardDISETTests
-    :synopsis: unittest for ForwardDISET handler
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: ForwardDISETTests
+:synopsis: unittest for ForwardDISET handler
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    unittest for ForwardDISET handler
+unittest for ForwardDISET handler
 """
+
 # #
 # @file ForwardDISETTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

@@ -1,20 +1,21 @@
-""" ResourceStatusDB:
-    This module provides definition of the DB tables, and methods to access them.
+"""ResourceStatusDB:
+This module provides definition of the DB tables, and methods to access them.
 
-    Written using sqlalchemy declarative_base
+Written using sqlalchemy declarative_base
 
 
-    For extending the ResourceStatusDB tables:
+For extending the ResourceStatusDB tables:
 
-    1) In the extended module, call:
+1) In the extended module, call:
 
-    from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import rmsBase, TABLESLIST, TABLESLISTWITHID
-    TABLESLIST = TABLESLIST + [list of new table names]
-    TABLESLISTWITHID = TABLESLISTWITHID + [list of new table names]
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import rmsBase, TABLESLIST, TABLESLISTWITHID
+TABLESLIST = TABLESLIST + [list of new table names]
+TABLESLISTWITHID = TABLESLISTWITHID + [list of new table names]
 
-    2) provide a declarative_base definition of the tables (new or extended) in the extension module
+2) provide a declarative_base definition of the tables (new or extended) in the extension module
 
 """
+
 import datetime
 from sqlalchemy.orm import class_mapper
 from sqlalchemy.orm.query import Query
@@ -24,7 +25,6 @@ from sqlalchemy import Column, String, DateTime, exc, BigInteger
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-
 
 TABLESLIST = ["SiteStatus", "ResourceStatus", "NodeStatus"]
 

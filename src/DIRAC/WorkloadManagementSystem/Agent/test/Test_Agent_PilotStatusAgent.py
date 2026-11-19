@@ -1,5 +1,5 @@
-""" Test class for Pilot Status Agent
-"""
+"""Test class for Pilot Status Agent"""
+
 from unittest.mock import MagicMock
 
 import pytest

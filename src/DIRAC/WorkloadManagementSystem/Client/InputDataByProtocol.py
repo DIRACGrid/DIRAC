@@ -1,7 +1,8 @@
-""" The Input Data By Protocol module wraps around the StorageElement
-    components to provide access to datasets by available site protocols as
-    defined in the CS for the VO.
+"""The Input Data By Protocol module wraps around the StorageElement
+components to provide access to datasets by available site protocols as
+defined in the CS for the VO.
 """
+
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient

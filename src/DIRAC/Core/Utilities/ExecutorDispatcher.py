@@ -1,5 +1,5 @@
-""" Used by the executors for dispatching events (IIUC)
-"""
+"""Used by the executors for dispatching events (IIUC)"""
+
 import threading
 import time
 

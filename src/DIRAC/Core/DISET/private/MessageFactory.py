@@ -45,7 +45,7 @@ class MessageFactory:
             return S_ERROR(f"Service name is not valid: {serviceName}")
         sysName = sL[0]
         svcHandlerName = f"{sL[1]}Handler"
-        loadedObjs = loadObjects(f"{sysName}System/Service", reFilter=re.compile(r"^%s\.py$" % svcHandlerName))
+        loadedObjs = loadObjects(f"{sysName}System/Service", reFilter=re.compile(rf"^{svcHandlerName}\.py$"))
         if svcHandlerName not in loadedObjs:
             return S_ERROR(f"Could not find {serviceName} for getting messages definition")
         return S_OK(loadedObjs[svcHandlerName])

@@ -1,5 +1,5 @@
-""" Unit test for ConsistencyInspector
-"""
+"""Unit test for ConsistencyInspector"""
+
 import unittest
 import datetime
 from unittest.mock import MagicMock

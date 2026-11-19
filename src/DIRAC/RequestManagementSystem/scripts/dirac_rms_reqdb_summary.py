@@ -2,6 +2,7 @@
 """
 Show ReqDB summary
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

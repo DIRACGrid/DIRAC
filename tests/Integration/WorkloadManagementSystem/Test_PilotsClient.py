@@ -1,14 +1,15 @@
-""" This is a test of using PilotManagerClient
+"""This is a test of using PilotManagerClient
 
-    In order to run this test we need the following DBs installed:
-    - PilotAgentsDB
+ In order to run this test we need the following DBs installed:
+ - PilotAgentsDB
 
-    And the following services should also be on:
-    - PilotManager
+ And the following services should also be on:
+ - PilotManager
 
-   this is pytest!
+this is pytest!
 
 """
+
 import DIRAC
 
 DIRAC.initialize()  # Initialize configuration

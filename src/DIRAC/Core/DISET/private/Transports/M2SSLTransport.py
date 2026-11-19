@@ -2,6 +2,7 @@
 """
 M2Crypto SSLTransport Library
 """
+
 import os
 import socket
 from M2Crypto import SSL, threading as M2Threading

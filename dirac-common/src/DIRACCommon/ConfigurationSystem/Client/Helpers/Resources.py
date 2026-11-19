@@ -2,6 +2,7 @@
 
 This module provides functions for working with DIRAC platforms and OS compatibility.
 """
+
 import re
 
 from DIRACCommon.Core.Utilities.ReturnValues import S_ERROR, S_OK, DReturnType

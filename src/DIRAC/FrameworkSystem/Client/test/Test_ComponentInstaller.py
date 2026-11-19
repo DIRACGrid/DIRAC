@@ -1,5 +1,5 @@
-""" (pytest) unit test for ComponentInstall.py
-"""
+"""(pytest) unit test for ComponentInstall.py"""
+
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import ComponentInstaller
 
 ci = ComponentInstaller()

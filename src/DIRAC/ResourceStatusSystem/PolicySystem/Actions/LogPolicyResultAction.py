@@ -1,6 +1,5 @@
-""" LogPolicyResultAction
+"""LogPolicyResultAction"""
 
-"""
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction

@@ -1,5 +1,5 @@
-""" Here, we need some documentation...
-"""
+"""Here, we need some documentation..."""
+
 import sys
 import os
 import types

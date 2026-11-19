@@ -1,6 +1,7 @@
-""" X509Request is a class for managing X509 requests with their Pkeys.
+"""X509Request is a class for managing X509 requests with their Pkeys.
 It's main use is for proxy delegation.
 """
+
 import M2Crypto.X509
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.m2crypto import DEFAULT_PROXY_STRENGTH

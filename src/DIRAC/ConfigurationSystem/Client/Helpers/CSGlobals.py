@@ -1,6 +1,7 @@
 """
 Some Helper functions to retrieve common location from the CS
 """
+
 from DIRAC.Core.Utilities.Extensions import extensionsByPriority
 
 

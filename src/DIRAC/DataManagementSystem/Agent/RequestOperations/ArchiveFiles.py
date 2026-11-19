@@ -11,6 +11,7 @@ This operation requires the following arguments:
  * RegisterDescendent: If True the tarball will be registered as a descendent of the LFNs
 
 """
+
 import os
 import shutil
 

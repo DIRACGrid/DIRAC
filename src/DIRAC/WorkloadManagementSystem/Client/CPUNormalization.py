@@ -3,8 +3,8 @@
 # Author :  Ricardo Graciani
 ########################################################################
 
-""" DIRAC Workload Management System Client module that encapsulates all the
-    methods necessary to handle CPU normalization
+"""DIRAC Workload Management System Client module that encapsulates all the
+methods necessary to handle CPU normalization
 """
 
 import DIRAC

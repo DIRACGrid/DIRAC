@@ -1,4 +1,4 @@
-""" This module contains the JobModel class, which is used to validate the job description """
+"""This module contains the JobModel class, which is used to validate the job description"""
 
 # pylint: disable=no-self-argument, no-self-use, invalid-name, missing-function-docstring
 

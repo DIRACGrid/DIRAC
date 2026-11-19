@@ -1,11 +1,12 @@
 """
-  Defines the plugin to take storage space information given by WLCG Accounting Json
-  https://twiki.cern.ch/twiki/bin/view/LCG/AccountingTaskForce#Storage_Space_Accounting
-  https://twiki.cern.ch/twiki/pub/LCG/AccountingTaskForce/storage_service_v4.txt
-  https://docs.google.com/document/d/1yzCvKpxsbcQC5K9MyvXc-vBF1HGPBk4vhjw3MEXoXf8
+Defines the plugin to take storage space information given by WLCG Accounting Json
+https://twiki.cern.ch/twiki/bin/view/LCG/AccountingTaskForce#Storage_Space_Accounting
+https://twiki.cern.ch/twiki/pub/LCG/AccountingTaskForce/storage_service_v4.txt
+https://docs.google.com/document/d/1yzCvKpxsbcQC5K9MyvXc-vBF1HGPBk4vhjw3MEXoXf8
 
-  When this is used, the OccupancyLFN has to be the full path on the storage, and not just the LFN
+When this is used, the OccupancyLFN has to be the full path on the storage, and not just the LFN
 """
+
 import errno
 import json
 import os

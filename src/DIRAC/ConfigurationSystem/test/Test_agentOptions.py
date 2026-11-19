@@ -1,4 +1,5 @@
 """Check options for all agents."""
+
 import logging
 import pytest
 

@@ -9,6 +9,7 @@ Sync users in Configuration with the cfg contents.
 Example:
   $ dirac-admin-sync-users-from-file file_users.cfg
 """
+
 from diraccfg import CFG
 
 import DIRAC

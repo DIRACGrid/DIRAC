@@ -1,4 +1,5 @@
-""" Configuration and utilities for all the X509 unit tests """
+"""Configuration and utilities for all the X509 unit tests"""
+
 import os
 import sys
 

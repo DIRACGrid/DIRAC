@@ -1,11 +1,11 @@
 """HTTPS module based on the GFAL2_StorageBase class."""
+
 # from DIRAC
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC import gLogger
 
 
 class GFAL2_HTTPSStorage(GFAL2_StorageBase):
-
     """.. class:: GFAL2_HTTPSStorage
 
     HTTP interface to StorageElement using gfal2

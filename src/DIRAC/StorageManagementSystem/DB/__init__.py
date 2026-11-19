@@ -1,3 +1,3 @@
 """
-   DIRAC.StorageManagementSystem.DB package
+DIRAC.StorageManagementSystem.DB package
 """

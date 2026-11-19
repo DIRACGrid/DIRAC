@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 """Script to run Executable application"""
+
 from os import system
 import sys
 

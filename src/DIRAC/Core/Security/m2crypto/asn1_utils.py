@@ -1,4 +1,4 @@
-""" This module contains utilities for parsing extensions in general, but mostly the VOMS extensions.
+"""This module contains utilities for parsing extensions in general, but mostly the VOMS extensions.
 It has been done based on the reading of the VOMS standard (https://www.ogf.org/documents/GFD.182.pdf)
 and on the RFC 5755 (http://www.ietf.org/rfc/rfc5755.txt)
 
@@ -14,6 +14,7 @@ This is now pure python, but it might be interesting to wrap the existing
 C library (https://github.com/italiangrid/voms) instead...
 
 """
+
 from functools import lru_cache
 
 from pyasn1.codec.der.decoder import decode as der_decode

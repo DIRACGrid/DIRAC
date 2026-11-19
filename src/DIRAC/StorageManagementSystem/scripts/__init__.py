@@ -1,1 +1,1 @@
-""" The StorageManagement scripts package """
+"""The StorageManagement scripts package"""

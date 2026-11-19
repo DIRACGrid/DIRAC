@@ -1,5 +1,5 @@
-""" Implementation of Module
-"""
+"""Implementation of Module"""
+
 # pylint: disable=unused-wildcard-import,wildcard-import
 
 import copy

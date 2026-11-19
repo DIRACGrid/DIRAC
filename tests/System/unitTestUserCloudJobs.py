@@ -1,5 +1,5 @@
-""" Collection of user jobs for testing purposes
-"""
+"""Collection of user jobs for testing purposes"""
+
 # pylint: disable=wrong-import-position, invalid-name
 import unittest
 import time

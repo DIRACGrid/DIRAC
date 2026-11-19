@@ -489,11 +489,8 @@ class TransformationCleaningAgent(AgentModule):
                 if not res["OK"]:
                     return res
 
-        self.log.info(
-            "Removed %d directories from the catalog \
-      and its files from the storage for transformation %s"
-            % (len(directories), transID)
-        )
+        self.log.info("Removed %d directories from the catalog \
+      and its files from the storage for transformation %s" % (len(directories), transID))
         # Clean ALL the possible remnants found in the metadata catalog
         res = self.cleanMetadataCatalogFiles(transID)
         if not res["OK"]:

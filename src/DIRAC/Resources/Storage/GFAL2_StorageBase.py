@@ -409,10 +409,8 @@ class GFAL2_StorageBase(StorageBase):
             log.debug(f"destSize: {destSize}, sourceSize: {sourceSize}")
             if destSize == sourceSize:
                 return destSize
-            log.debug(
-                "Source and destination file size don't match.\
-                                                            Trying to remove destination file"
-            )
+            log.debug("Source and destination file size don't match.\
+                                                            Trying to remove destination file")
             raise RuntimeError(
                 f"Source and destination file size don't match ({sourceSize} vs {destSize}). Removed destination file"
             )

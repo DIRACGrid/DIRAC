@@ -1,6 +1,7 @@
 """
-   Contains the mechanism to evaluate whether to use or not a catalog
+Contains the mechanism to evaluate whether to use or not a catalog
 """
+
 from pyparsing import infix_notation, opAssoc, Word, printables, Literal, Suppress
 
 from DIRAC import S_OK, gLogger

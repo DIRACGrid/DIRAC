@@ -1,4 +1,4 @@
-""" Unit tests for ClassAdLight module"""
+"""Unit tests for ClassAdLight module"""
 
 # pylint: disable=protected-access, invalid-name
 

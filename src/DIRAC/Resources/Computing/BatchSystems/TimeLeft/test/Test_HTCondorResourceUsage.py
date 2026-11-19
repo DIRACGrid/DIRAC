@@ -1,11 +1,9 @@
-""" Test class for SGEResourceUsage utility
-"""
+"""Test class for SGEResourceUsage utility"""
 
 import pytest
 
 from DIRAC import S_OK
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.HTCondorResourceUsage import HTCondorResourceUsage
-
 
 HTCONDOR_OUT_0 = "86400 3600"
 HTCONDOR_OUT_1 = "undefined 3600"

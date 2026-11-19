@@ -1,6 +1,7 @@
 """
 Class for management of MQ communication
 """
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.DErrno import EMQUKN

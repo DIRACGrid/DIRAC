@@ -1,5 +1,5 @@
-""" Test class for SiteInspectorAgent
-"""
+"""Test class for SiteInspectorAgent"""
+
 # imports
 from unittest.mock import MagicMock
 

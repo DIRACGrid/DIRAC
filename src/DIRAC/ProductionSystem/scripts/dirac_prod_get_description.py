@@ -5,6 +5,7 @@ Get the description of a given production
 Example:
   $ dirac-prod-get-description 381
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

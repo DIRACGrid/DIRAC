@@ -1,12 +1,13 @@
-""" Synchronizer
+"""Synchronizer
 
-  Module that keeps the database synchronized with the CS
-  Module that updates the RSS database ( ResourceStatusDB ) with the information
-  in the Resources section. If there are additions in the CS, those are incorporated
-  to the DB. If there are deletions, entries in RSS tables for those elements are
-  deleted ( except the Logs table ).
+Module that keeps the database synchronized with the CS
+Module that updates the RSS database ( ResourceStatusDB ) with the information
+in the Resources section. If there are additions in the CS, those are incorporated
+to the DB. If there are deletions, entries in RSS tables for those elements are
+deleted ( except the Logs table ).
 
 """
+
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader

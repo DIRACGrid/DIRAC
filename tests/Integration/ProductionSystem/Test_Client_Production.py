@@ -1,8 +1,9 @@
-""" This is a test of the chain
-    ProductionClient -> ProductionManagerHandler -> ProductionDB
+"""This is a test of the chain
+ProductionClient -> ProductionManagerHandler -> ProductionDB
 
-    It supposes that the DB is present, and that the service is running
+It supposes that the DB is present, and that the service is running
 """
+
 import DIRAC
 
 DIRAC.initialize()  # Initialize configuration

@@ -1,6 +1,7 @@
 """
 It is a helper module used to create a certain plot...
 """
+
 from DIRAC import S_OK, S_ERROR
 
 
@@ -25,7 +26,6 @@ def _convertToMilliseconds(interval):
 
 
 class DBUtils:
-
     """
     .. class:: DBUtils
 

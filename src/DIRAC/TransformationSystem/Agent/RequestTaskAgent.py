@@ -19,6 +19,7 @@ The following options can be set for the RequestTaskAgent.
    :ref:`trans-multi-vo`.
 
 """
+
 from DIRAC import S_OK
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations

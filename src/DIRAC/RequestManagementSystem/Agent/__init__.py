@@ -1,3 +1,3 @@
 """
-   DIRAC.RequestManagementSystem.Agent package
+DIRAC.RequestManagementSystem.Agent package
 """

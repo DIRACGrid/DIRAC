@@ -1,3 +1,3 @@
 """
-   DIRAC.StorageManagementSystem package
+DIRAC.StorageManagementSystem package
 """

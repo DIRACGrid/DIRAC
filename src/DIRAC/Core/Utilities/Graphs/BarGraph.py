@@ -1,9 +1,10 @@
-""" BarGraph represents bar graphs with vertical bars both simple
-    and stacked.
+"""BarGraph represents bar graphs with vertical bars both simple
+and stacked.
 
-    The DIRAC Graphs package is derived from the GraphTool plotting package of the
-    CMS/Phedex Project by ... <to be added>
+The DIRAC Graphs package is derived from the GraphTool plotting package of the
+CMS/Phedex Project by ... <to be added>
 """
+
 import datetime
 
 from pylab import setp
@@ -21,7 +22,6 @@ from DIRAC.Core.Utilities.Graphs.GraphUtilities import (
 
 
 class BarGraph(PlotBase):
-
     """
     The BarGraph class is a straightforward bar graph; given a dictionary
     of values, it takes the keys as the independent variable and the values

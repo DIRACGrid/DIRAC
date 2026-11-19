@@ -1,4 +1,5 @@
-""" This class provides authorization server activity. """
+"""This class provides authorization server activity."""
+
 import re
 import json
 import pprint

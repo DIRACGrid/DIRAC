@@ -18,6 +18,7 @@ Example:
   or Upload
     dirac-dms-directory-sync Path LFN SE
 """
+
 import os
 from multiprocessing import Manager
 

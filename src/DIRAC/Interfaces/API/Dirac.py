@@ -1,18 +1,19 @@
 """
-   DIRAC API Class
+DIRAC API Class
 
-   All DIRAC functionality is exposed through the DIRAC API and this
-   serves as a source of documentation for the project via EpyDoc.
+All DIRAC functionality is exposed through the DIRAC API and this
+serves as a source of documentation for the project via EpyDoc.
 
-   The DIRAC API provides the following functionality:
-    - A transparent and secure way for users
-      to submit jobs to the Grid, monitor them and
-      retrieve outputs
-    - Interaction with Grid storage and file catalogues
-      via the DataManagement public interfaces (more to be added)
-    - Local execution of workflows for testing purposes.
+The DIRAC API provides the following functionality:
+ - A transparent and secure way for users
+   to submit jobs to the Grid, monitor them and
+   retrieve outputs
+ - Interaction with Grid storage and file catalogues
+   via the DataManagement public interfaces (more to be added)
+ - Local execution of workflows for testing purposes.
 
 """
+
 import datetime
 import glob
 import io

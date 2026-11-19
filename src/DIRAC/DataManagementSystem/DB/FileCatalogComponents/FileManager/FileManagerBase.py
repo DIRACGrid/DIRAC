@@ -1,5 +1,5 @@
-""" FileManagerBase is a base class for all the specific File Managers
-"""
+"""FileManagerBase is a base class for all the specific File Managers"""
+
 # pylint: disable=protected-access
 
 import os
@@ -171,11 +171,8 @@ class FileManagerBase:
         stringIDs = intListToString(fileIDs)
         treeTable = self.db.dtree.getTreeTable()
 
-        req = (
-            "SELECT F.FileID, CONCAT(D.DirName,'/',F.FileName) from FC_Files as F,\
-        %s as D WHERE F.FileID IN ( %s ) AND F.DirID=D.DirID"
-            % (treeTable, stringIDs)
-        )
+        req = "SELECT F.FileID, CONCAT(D.DirName,'/',F.FileName) from FC_Files as F,\
+        {} as D WHERE F.FileID IN ( {} ) AND F.DirID=D.DirID".format(treeTable, stringIDs)
         result = self.db._query(req)
         if not result["OK"]:
             return result

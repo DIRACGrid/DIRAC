@@ -3,10 +3,11 @@
 # Author :  A.T.
 ########################################################################
 
-"""  The HttpStorageAccessHandler is a http server request handler to provide a secure http
-     access to the DIRAC StorageElement. It is derived from the
-     SimpleHTTPRequestHandler standard python handler
+"""The HttpStorageAccessHandler is a http server request handler to provide a secure http
+access to the DIRAC StorageElement. It is derived from the
+SimpleHTTPRequestHandler standard python handler
 """
+
 import os
 import shutil
 import random

@@ -1,6 +1,7 @@
 """
-  Base class for all agent modules
+Base class for all agent modules
 """
+
 import datetime
 import importlib.metadata
 import inspect

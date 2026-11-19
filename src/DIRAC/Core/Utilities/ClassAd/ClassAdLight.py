@@ -1,5 +1,5 @@
-""" ClassAd Class - a light purely Python representation of the
-    Condor ClassAd library.
+"""ClassAd Class - a light purely Python representation of the
+Condor ClassAd library.
 """
 
 # Import from DIRACCommon for backward compatibility

@@ -1,5 +1,4 @@
-""" Storage plug-ins related utilities
-"""
+"""Storage plug-ins related utilities"""
 
 import errno
 
@@ -12,13 +11,11 @@ T = TypeVar("T")
 
 # mypy doesn't understand default parameter values with generics so use overloads (python/mypy#3737)
 @overload
-def checkArgumentFormat(path: Union[str, list[str]]) -> DReturnType[dict[str, Literal[False]]]:
-    ...
+def checkArgumentFormat(path: Union[str, list[str]]) -> DReturnType[dict[str, Literal[False]]]: ...
 
 
 @overload
-def checkArgumentFormat(path: dict[str, T]) -> DReturnType[dict[str, T]]:
-    ...
+def checkArgumentFormat(path: dict[str, T]) -> DReturnType[dict[str, T]]: ...
 
 
 def checkArgumentFormat(path):  # type: ignore

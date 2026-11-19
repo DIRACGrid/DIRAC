@@ -1,20 +1,21 @@
-""" ResourceManagementDB:
-    This module provides definition of the DB tables, and methods to access them.
+"""ResourceManagementDB:
+This module provides definition of the DB tables, and methods to access them.
 
-    Written using sqlalchemy declarative_base
+Written using sqlalchemy declarative_base
 
 
 
-    For extending the ResourceStatusDB tables:
+For extending the ResourceStatusDB tables:
 
-    1) In the extended module, call:
+1) In the extended module, call:
 
-    from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import rmsBase, TABLESLIST
-    TABLESLIST = TABLESLIST + [list of new table names]
+from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import rmsBase, TABLESLIST
+TABLESLIST = TABLESLIST + [list of new table names]
 
-    2) provide a declarative_base definition of the tables (new or extended) in the extension module
+2) provide a declarative_base definition of the tables (new or extended) in the extension module
 
 """
+
 import datetime
 from sqlalchemy.orm import class_mapper
 from sqlalchemy.orm.query import Query
@@ -67,16 +68,20 @@ class AccountingCache(rmsBase):
         self.plottype = dictionary.get("PlotType", self.plottype)
         self.lastchecktime = dictionary.get(
             "LastCheckTime",
-            self.lastchecktime.replace(microsecond=0)
-            if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            (
+                self.lastchecktime.replace(microsecond=0)
+                if self.lastchecktime
+                else datetime.datetime.utcnow().replace(microsecond=0)
+            ),
         )
         self.result = dictionary.get("Result", self.result)
         self.dateeffective = dictionary.get(
             "DateEffective",
-            self.dateeffective.replace(microsecond=0)
-            if self.dateeffective
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            (
+                self.dateeffective.replace(microsecond=0)
+                if self.dateeffective
+                else datetime.datetime.utcnow().replace(microsecond=0)
+            ),
         )
 
     def toList(self):
@@ -118,15 +123,19 @@ class DowntimeCache(rmsBase):
         self.enddate = dictionary.get("EndDate", self.enddate)
         self.dateeffective = dictionary.get(
             "DateEffective",
-            self.dateeffective.replace(microsecond=0)
-            if self.dateeffective
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            (
+                self.dateeffective.replace(microsecond=0)
+                if self.dateeffective
+                else datetime.datetime.utcnow().replace(microsecond=0)
+            ),
         )
         self.lastchecktime = dictionary.get(
             "LastCheckTime",
-            self.lastchecktime.replace(microsecond=0)
-            if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            (
+                self.lastchecktime.replace(microsecond=0)
+                if self.lastchecktime
+                else datetime.datetime.utcnow().replace(microsecond=0)
+            ),
         )
 
     def toList(self):
@@ -172,9 +181,11 @@ class GGUSTicketsCache(rmsBase):
         self.link = dictionary.get("Link", self.link)
         self.lastchecktime = dictionary.get(
             "LastCheckTime",
-            self.lastchecktime.replace(microsecond=0)
-            if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            (
+                self.lastchecktime.replace(microsecond=0)
+                if self.lastchecktime
+                else datetime.datetime.utcnow().replace(microsecond=0)
+            ),
         )
 
     def toList(self):
@@ -205,9 +216,11 @@ class JobCache(rmsBase):
         self.maskstatus = dictionary.get("MaskStatus", self.maskstatus)
         self.lastchecktime = dictionary.get(
             "LastCheckTime",
-            self.lastchecktime.replace(microsecond=0)
-            if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            (
+                self.lastchecktime.replace(microsecond=0)
+                if self.lastchecktime
+                else datetime.datetime.utcnow().replace(microsecond=0)
+            ),
         )
 
     def toList(self):
@@ -247,9 +260,11 @@ class PilotCache(rmsBase):
         self.pilotsperjob = dictionary.get("PilotsPerJob", self.pilotsperjob)
         self.lastchecktime = dictionary.get(
             "LastCheckTime",
-            self.lastchecktime.replace(microsecond=0)
-            if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            (
+                self.lastchecktime.replace(microsecond=0)
+                if self.lastchecktime
+                else datetime.datetime.utcnow().replace(microsecond=0)
+            ),
         )
 
     def toList(self):
@@ -290,15 +305,19 @@ class PolicyResult(rmsBase):
         self.reason = dictionary.get("Reason", self.reason)
         self.dateeffective = dictionary.get(
             "DateEffective",
-            self.dateeffective.replace(microsecond=0)
-            if self.dateeffective
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            (
+                self.dateeffective.replace(microsecond=0)
+                if self.dateeffective
+                else datetime.datetime.utcnow().replace(microsecond=0)
+            ),
         )
         self.lastchecktime = dictionary.get(
             "LastCheckTime",
-            self.lastchecktime.replace(microsecond=0)
-            if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            (
+                self.lastchecktime.replace(microsecond=0)
+                if self.lastchecktime
+                else datetime.datetime.utcnow().replace(microsecond=0)
+            ),
         )
 
     def toList(self):
@@ -344,9 +363,11 @@ class SpaceTokenOccupancyCache(rmsBase):
         self.total = dictionary.get("Total", self.total)
         self.lastchecktime = dictionary.get(
             "LastCheckTime",
-            self.lastchecktime.replace(microsecond=0)
-            if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            (
+                self.lastchecktime.replace(microsecond=0)
+                if self.lastchecktime
+                else datetime.datetime.utcnow().replace(microsecond=0)
+            ),
         )
 
     def toList(self):
@@ -380,9 +401,11 @@ class TransferCache(rmsBase):
         self.value = dictionary.get("Value", self.value)
         self.lastchecktime = dictionary.get(
             "LastCheckTime",
-            self.lastchecktime.replace(microsecond=0)
-            if self.lastchecktime
-            else datetime.datetime.utcnow().replace(microsecond=0),
+            (
+                self.lastchecktime.replace(microsecond=0)
+                if self.lastchecktime
+                else datetime.datetime.utcnow().replace(microsecond=0)
+            ),
         )
 
     def toList(self):

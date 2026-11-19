@@ -6,6 +6,7 @@
 """
 Decode Accounting plot URLs
 """
+
 import sys
 import pprint
 from urllib import parse

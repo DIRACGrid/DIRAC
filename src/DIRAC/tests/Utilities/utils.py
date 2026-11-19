@@ -1,5 +1,5 @@
-""" few utilities
-"""
+"""few utilities"""
+
 import contextlib
 import os
 import shutil

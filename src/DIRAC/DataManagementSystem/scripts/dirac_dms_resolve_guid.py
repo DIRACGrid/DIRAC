@@ -2,6 +2,7 @@
 """
 Returns the LFN matching given GUIDs
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

@@ -1,6 +1,7 @@
 """Collection of DIRAC useful list related modules.
-   By default on Error they return None.
+By default on Error they return None.
 """
+
 import random
 import sys
 from typing import Any, TypeVar

@@ -6,6 +6,7 @@
 """
 Add resources from the BDII database for a given VO
 """
+
 import signal
 import shlex
 

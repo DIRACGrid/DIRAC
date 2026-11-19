@@ -1,5 +1,4 @@
-""" This tests only need the JobParametersDB, and connects directly to it
-"""
+"""This tests only need the JobParametersDB, and connects directly to it"""
 
 import time
 

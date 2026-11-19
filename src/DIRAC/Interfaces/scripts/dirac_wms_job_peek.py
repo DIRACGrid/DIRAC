@@ -9,6 +9,7 @@ Peek StdOut of the given DIRAC job
 Example:
   $ dirac-wms-job-peek 1
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

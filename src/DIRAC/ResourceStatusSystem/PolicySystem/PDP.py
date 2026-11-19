@@ -1,11 +1,12 @@
-""" PDP
+"""PDP
 
-  PDP ( PolicyDecisionPoint ) is the back-end for the PolicySystem. It discovers
-  the policies, finds the best match, evaluates them, merges their results taking
-  the most penalizing one, computes the set of actions to be triggered and returns
-  all the information to the PEP which will enforce the actions.
+PDP ( PolicyDecisionPoint ) is the back-end for the PolicySystem. It discovers
+the policies, finds the best match, evaluates them, merges their results taking
+the most penalizing one, computes the set of actions to be triggered and returns
+all the information to the PEP which will enforce the actions.
 
 """
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
 from DIRAC.ResourceStatusSystem.PolicySystem.StateMachine import RSSMachine
@@ -274,9 +275,9 @@ class PDP:
 
         # If there are no policyResults, we return Unknown
         if not singlePolicyRes:
-            policyCombined[
-                "Reason"
-            ] = f"No policy applies to {self.decisionParams['element']}, {self.decisionParams['name']}, {self.decisionParams['elementType']}"
+            policyCombined["Reason"] = (
+                f"No policy applies to {self.decisionParams['element']}, {self.decisionParams['name']}, {self.decisionParams['elementType']}"
+            )
             self.log.warn(policyCombined["Reason"])
             return S_OK(policyCombined)
 

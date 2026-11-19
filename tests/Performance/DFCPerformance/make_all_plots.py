@@ -3,7 +3,6 @@ import make_dfc_plots_lib as dfcPlot  # pylint: disable=import-error
 import os
 import sys
 
-
 if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
     print(f"Usage: {sys.argv[0]} <jobName>")
     print("This will generate all the plots for a given performance test")

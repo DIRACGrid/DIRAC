@@ -1,6 +1,7 @@
-""" FileCatalogFactory class to create file catalog client objects according to the
-    configuration description
+"""FileCatalogFactory class to create file catalog client objects according to the
+configuration description
 """
+
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCatalogPath
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader

@@ -1,4 +1,5 @@
 """Additional docstring for the Client module."""
+
 import textwrap
 
 MODULE = "DIRAC.Core.Base.Client"
@@ -13,8 +14,7 @@ class CustomClient:  # pylint: disable=too-few-public-methods
         self.replace = False
         self.doc_string = ""
         # Fill the docstring addition with what we want to add
-        self.doc_string += textwrap.dedent(
-            """
+        self.doc_string += textwrap.dedent("""
             Initialization
             ==============
 
@@ -23,8 +23,7 @@ class CustomClient:  # pylint: disable=too-few-public-methods
             For all other purposes ``DIRAC.initialize`` should be used:
 
             .. autofunction:: DIRAC.initialize
-            """
-        )
+            """)
 
 
 CUSTOMIZED_DOCSTRINGS[MODULE] = CustomClient()  # pylint: disable=undefined-variable

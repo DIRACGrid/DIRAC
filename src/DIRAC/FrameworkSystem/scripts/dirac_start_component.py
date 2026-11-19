@@ -2,6 +2,7 @@
 """
 Start DIRAC component using runsvctrl utility
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

@@ -1,1 +1,1 @@
-""" DIRAC.DataManagementSystem.private.FTS3Plugins package """
+"""DIRAC.DataManagementSystem.private.FTS3Plugins package"""

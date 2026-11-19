@@ -1,6 +1,7 @@
 """
 File cache logging plugin.
 """
+
 import os
 import json
 import re

@@ -1,4 +1,4 @@
-""" Tornado-based HTTPs SandboxStore service.
+"""Tornado-based HTTPs SandboxStore service.
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN TornadoSandboxStore
@@ -7,6 +7,7 @@
   :caption: SandboxStore options
 
 """
+
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.WorkloadManagementSystem.Service.SandboxStoreHandler import SandboxStoreHandlerMixin
 

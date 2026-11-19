@@ -1,11 +1,12 @@
-""" Create and send a combined request for any pending operations at
-    the end of a job:
+"""Create and send a combined request for any pending operations at
+the end of a job:
 
-      * fileReport (for the transformation)
-      * jobReport (for jobs)
-      * accounting
-      * request (for failover)
+  * fileReport (for the transformation)
+  * jobReport (for jobs)
+  * accounting
+  * request (for failover)
 """
+
 from DIRAC import gLogger
 from DIRAC.TransformationSystem.Client import TransformationFilesStatus
 from DIRAC.Workflow.Modules.ModuleBase import ModuleBase, GracefulTermination

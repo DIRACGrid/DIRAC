@@ -1,5 +1,5 @@
-""" DIRAC FileCatalog component representing a directory tree with simple nodes
-"""
+"""DIRAC FileCatalog component representing a directory tree with simple nodes"""
+
 import os
 
 from DIRAC import S_OK, S_ERROR
@@ -118,12 +118,12 @@ class DirectoryNodeTree(DirectoryTreeBase):
 
     def getDirectoryName(self, dirID):
         """Get directory name by directory ID"""
-        req = "SELECT DirName FROM FC_DirectoryTreeM WHERE DirID=%d" % int(dirID)
+        req = f"SELECT DirName FROM FC_DirectoryTreeM WHERE DirID={int(dirID)}"
         result = self.db._query(req)
         if not result["OK"]:
             return result
         if not result["Value"]:
-            return S_ERROR("Directory with id %d not found" % int(dirID))
+            return S_ERROR(f"Directory with id {int(dirID)} not found")
 
         return S_OK(result["Value"][0][0])
 

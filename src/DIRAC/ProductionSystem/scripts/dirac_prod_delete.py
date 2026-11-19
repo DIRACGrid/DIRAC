@@ -3,6 +3,7 @@
 """
 Delete a given production
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

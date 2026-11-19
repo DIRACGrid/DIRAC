@@ -1,14 +1,14 @@
-""" This contains unit tests to make sure that the migration between PyGSI and M2Crypto is as smooth as possible
-    The test covers only the method exposed by the PyGSI version for the time being.
+"""This contains unit tests to make sure that the migration between PyGSI and M2Crypto is as smooth as possible
+The test covers only the method exposed by the PyGSI version for the time being.
 
-    We are not testing:
+We are not testing:
 
-    * generateProxyRequest -> boils down to testing X509Request
-    * setCertificate -> not used anywhere
+* generateProxyRequest -> boils down to testing X509Request
+* setCertificate -> not used anywhere
 
-    We are skipping:
-    * getPublicKey -> no way to test that really
-    * getSerialNumber -> buggy in PyGSI
+We are skipping:
+* getPublicKey -> no way to test that really
+* getSerialNumber -> buggy in PyGSI
 
 """
 

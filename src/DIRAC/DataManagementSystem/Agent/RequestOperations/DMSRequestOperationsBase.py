@@ -1,9 +1,10 @@
-""" :mod: DMSRequestOperationsBase
+""":mod: DMSRequestOperationsBase
 
-    ====================
+====================
 
-    Just a collector of common functions
+Just a collector of common functions
 """
+
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.RequestManagementSystem.Client.Operation import Operation

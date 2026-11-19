@@ -1,5 +1,4 @@
-""" This is the StorageElement module. It implements The StorageElementItem as well as the caching system
-"""
+"""This is the StorageElement module. It implements The StorageElementItem as well as the caching system"""
 
 # # custom duty
 
@@ -260,9 +259,7 @@ class StorageElementItem:
                 else (
                     accessProto
                     if accessProto
-                    else globalStageProto
-                    if globalStageProto
-                    else self.localAccessProtocolList
+                    else globalStageProto if globalStageProto else self.localAccessProtocolList
                 )
             )
             self.log.debug(f"localStageProtocolList {self.localStageProtocolList}")
@@ -1237,11 +1234,8 @@ class StorageElementItem:
         methDefaultArgs = StorageElementItem.__defaultsArguments.get(self.methodName, {})
         for argName in methDefaultArgs:
             if argName not in kwargs:
-                log.debug(
-                    "default argument %s for %s not present.\
-         Setting value %s."
-                    % (argName, self.methodName, methDefaultArgs[argName])
-                )
+                log.debug("default argument {} for {} not present.\
+         Setting value {}.".format(argName, self.methodName, methDefaultArgs[argName]))
                 kwargs[argName] = methDefaultArgs[argName]
 
         res = checkArgumentFormat(lfn)

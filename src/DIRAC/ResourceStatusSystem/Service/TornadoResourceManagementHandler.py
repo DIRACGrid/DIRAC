@@ -1,5 +1,5 @@
-""" Tornado-based HTTPs ResourceManagement service.
-"""
+"""Tornado-based HTTPs ResourceManagement service."""
+
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.ResourceStatusSystem.Service.ResourceManagementHandler import ResourceManagementHandlerMixin
 

@@ -1,5 +1,5 @@
-""" Test_RSS_Policy_PilotEfficiencyPolicy
-"""
+"""Test_RSS_Policy_PilotEfficiencyPolicy"""
+
 import unittest
 import DIRAC.ResourceStatusSystem.Policy.PilotEfficiencyPolicy as moduleTested
 

@@ -1,14 +1,15 @@
-""" The TimeLeft utility allows to calculate the amount of CPU time
-    left for a given batch system slot.  This is essential for the 'Filling
-    Mode' where several VO jobs may be executed in the same allocated slot.
+"""The TimeLeft utility allows to calculate the amount of CPU time
+left for a given batch system slot.  This is essential for the 'Filling
+Mode' where several VO jobs may be executed in the same allocated slot.
 
-    The prerequisites for the utility to run are:
-      - Plugin for extracting information from local batch system
-      - Scale factor for the local site.
+The prerequisites for the utility to run are:
+  - Plugin for extracting information from local batch system
+  - Scale factor for the local site.
 
-    With this information the utility can calculate in normalized units the
-    CPU time remaining for a given slot.
+With this information the utility can calculate in normalized units the
+CPU time remaining for a given slot.
 """
+
 import shlex
 
 import DIRAC

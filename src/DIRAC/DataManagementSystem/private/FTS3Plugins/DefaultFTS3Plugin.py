@@ -1,5 +1,5 @@
 """
-    This module implements the default behavior for the FTS3 system for TPC and source SE selection
+This module implements the default behavior for the FTS3 system for TPC and source SE selection
 """
 
 import random

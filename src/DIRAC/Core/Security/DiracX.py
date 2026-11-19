@@ -37,7 +37,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security.Locations import getDefaultProxyLocation
 from DIRAC.Core.Utilities.ReturnValues import convertToReturnValue, returnValueOrRaise, isReturnStructure
 
-
 PEM_BEGIN = "-----BEGIN DIRACX-----"
 PEM_END = "-----END DIRACX-----"
 RE_DIRACX_PEM = re.compile(rf"{PEM_BEGIN}\n(.*?)\n{PEM_END}", re.DOTALL)

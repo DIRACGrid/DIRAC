@@ -1,5 +1,4 @@
-""" unit test (pytest) of JobAdministration module
-"""
+"""unit test (pytest) of JobAdministration module"""
 
 from unittest.mock import MagicMock
 

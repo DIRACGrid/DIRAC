@@ -1,5 +1,5 @@
-""" Test for Profiler.py
-"""
+"""Test for Profiler.py"""
+
 import time
 from os.path import dirname, join
 from subprocess import Popen

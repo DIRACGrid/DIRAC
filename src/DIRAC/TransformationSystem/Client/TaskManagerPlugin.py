@@ -1,5 +1,5 @@
-""" Container for TaskManager plug-ins, to handle the destination of the tasks
-"""
+"""Container for TaskManager plug-ins, to handle the destination of the tasks"""
+
 from DIRAC import gLogger
 
 from DIRAC.Core.Utilities.List import fromChar

@@ -1,12 +1,13 @@
-""" :mod: OperationTests
-    ====================
+""":mod: OperationTests
+====================
 
-    .. module: OperationTests
-    :synopsis: Operation test cases
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: OperationTests
+:synopsis: Operation test cases
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    Operation test cases
+Operation test cases
 """
+
 import copy
 
 import pytest

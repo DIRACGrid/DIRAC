@@ -1,4 +1,4 @@
-""" Tornado-based HTTPs JobMonitoring service.
+"""Tornado-based HTTPs JobMonitoring service.
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN TornadoJobMonitoring
@@ -7,6 +7,7 @@
   :caption: JobMonitoring options
 
 """
+
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.WorkloadManagementSystem.Service.JobMonitoringHandler import JobMonitoringHandlerMixin
 

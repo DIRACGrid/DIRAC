@@ -1,6 +1,7 @@
-""" Dummy Service is a service for testing new dirac protocol
-  This file must be copied in FrameworkSystem/Service to run tests
+"""Dummy Service is a service for testing new dirac protocol
+This file must be copied in FrameworkSystem/Service to run tests
 """
+
 from DIRAC import S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 

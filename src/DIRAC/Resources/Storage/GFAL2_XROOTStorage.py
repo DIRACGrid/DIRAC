@@ -1,11 +1,12 @@
-""" :mod: GFAL2_XROOTStorage
+""":mod: GFAL2_XROOTStorage
 
-    =================
+=================
 
-    .. module: python
+.. module: python
 
-    :synopsis: XROOT module based on the GFAL2_StorageBase class.
+:synopsis: XROOT module based on the GFAL2_StorageBase class.
 """
+
 import os
 
 # from DIRAC

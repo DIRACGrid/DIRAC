@@ -1,6 +1,7 @@
 """
-  Defines the plugin to perform evaluation on the user in the proxy
+Defines the plugin to perform evaluation on the user in the proxy
 """
+
 import re
 
 

@@ -28,6 +28,7 @@ Example:
    'ScaledCPUTime': '115.6',
    'TotalCPUTime(s)': '0.15'}
 """
+
 import DIRAC
 
 from DIRAC.Core.Base.Script import Script

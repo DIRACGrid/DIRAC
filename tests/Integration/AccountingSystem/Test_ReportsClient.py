@@ -1,11 +1,12 @@
-""" This is a test of the chain
-    ReportsClient -> ReportsGeneratorHandler -> AccountingDB
+"""This is a test of the chain
+ReportsClient -> ReportsGeneratorHandler -> AccountingDB
 
-    It supposes that the DB is present, and that the service is running.
-    Also the service DataStore has to be up and running.
+It supposes that the DB is present, and that the service is running.
+Also the service DataStore has to be up and running.
 
-    this is pytest!
+this is pytest!
 """
+
 # pylint: disable=invalid-name,wrong-import-position
 
 import datetime

@@ -1,7 +1,7 @@
-""" QualityGraph represents a Quality Map of entities as a special color schema
+"""QualityGraph represents a Quality Map of entities as a special color schema
 
-    The DIRAC Graphs package is derived from the GraphTool plotting package of the
-    CMS/Phedex Project by ... <to be added>
+The DIRAC Graphs package is derived from the GraphTool plotting package of the
+CMS/Phedex Project by ... <to be added>
 """
 
 import datetime

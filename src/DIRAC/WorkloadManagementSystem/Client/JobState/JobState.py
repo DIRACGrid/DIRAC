@@ -176,7 +176,7 @@ class JobState:
         data = result["Value"]
         if data:
             return S_OK((data["Status"], data["MinorStatus"]))
-        return S_ERROR("Job %d not found in the JobDB" % int(self.__jid))
+        return S_ERROR(f"Job {int(self.__jid)} not found in the JobDB")
 
     right_getAppStatus = RIGHT_GET_INFO
 

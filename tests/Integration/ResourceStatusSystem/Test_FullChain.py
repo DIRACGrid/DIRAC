@@ -1,57 +1,58 @@
-""" Starting from the PDP object, it makes the full chain of policies
+"""Starting from the PDP object, it makes the full chain of policies
 
-    It requires
+It requires
 
-    ResourceStatus
+ResourceStatus
+{
+  Policies
+  {
+    AlwaysActiveForResource
     {
-      Policies
+      matchParams
       {
-        AlwaysActiveForResource
-        {
-          matchParams
-          {
-            element = Resource
-          }
-          policyType = AlwaysActive
-        }
-        AlwaysBannedForSE1SE2
-        {
-          matchParams
-          {
-            name = SE1,SE2
-          }
-          policyType = AlwaysBanned
-        }
-        AlwaysBannedForSite
-        {
-          matchParams
-          {
-            element = Site
-          }
-          policyType = AlwaysBanned
-        }
-        AlwaysBannedForSite2
-        {
-          matchParams
-          {
-            element = Site
-            domain = test
-          }
-          policyType = AlwaysBanned
-        }
+        element = Resource
       }
-      PolicyActions
-      {
-        LogStatusAction
-        {
-        }
-        LogPolicyResultAction
-        {
-        }
-      }
+      policyType = AlwaysActive
     }
+    AlwaysBannedForSE1SE2
+    {
+      matchParams
+      {
+        name = SE1,SE2
+      }
+      policyType = AlwaysBanned
+    }
+    AlwaysBannedForSite
+    {
+      matchParams
+      {
+        element = Site
+      }
+      policyType = AlwaysBanned
+    }
+    AlwaysBannedForSite2
+    {
+      matchParams
+      {
+        element = Site
+        domain = test
+      }
+      policyType = AlwaysBanned
+    }
+  }
+  PolicyActions
+  {
+    LogStatusAction
+    {
+    }
+    LogPolicyResultAction
+    {
+    }
+  }
+}
 
 """
+
 # pylint: disable=missing-docstring,wrong-import-position
 
 

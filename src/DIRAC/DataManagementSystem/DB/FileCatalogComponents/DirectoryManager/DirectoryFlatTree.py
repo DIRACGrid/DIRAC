@@ -1,5 +1,5 @@
-""" DIRAC FileCatalog component representing a flat directory tree
-"""
+"""DIRAC FileCatalog component representing a flat directory tree"""
+
 # pylint: disable=protected-access
 import os
 import stat
@@ -131,11 +131,8 @@ class DirectoryFlatTree(DirectoryTreeBase):
             return res
         parentID = res["Value"]
 
-        req = (
-            "INSERT INTO DirectoryInfo (Parent,Status,DirName,UID,GID,Mode,CreationDate,ModificationDate)\
-    VALUES (%d,%d,'%s',%d,%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP());"
-            % (parentID, status, path, uid, gid, self.db.umask)
-        )
+        req = "INSERT INTO DirectoryInfo (Parent,Status,DirName,UID,GID,Mode,CreationDate,ModificationDate)\
+    VALUES (%d,%d,'%s',%d,%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP());" % (parentID, status, path, uid, gid, self.db.umask)
         result = self.db._update(req)
         if not result["OK"]:
             self.removeDir(path)
@@ -183,12 +180,12 @@ class DirectoryFlatTree(DirectoryTreeBase):
 
     def getDirectoryPath(self, dirID):
         """Get directory name by directory ID"""
-        req = "SELECT DirName FROM DirectoryInfo WHERE DirID=%d" % int(dirID)
+        req = f"SELECT DirName FROM DirectoryInfo WHERE DirID={int(dirID)}"
         result = self.db._query(req)
         if not result["OK"]:
             return result
         if not result["Value"]:
-            return S_ERROR("Directory with id %d not found" % int(dirID))
+            return S_ERROR(f"Directory with id {int(dirID)} not found")
         return S_OK(result["Value"][0][0])
 
     def getDirectoryName(self, dirID):

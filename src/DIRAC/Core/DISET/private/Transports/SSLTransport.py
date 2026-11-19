@@ -6,7 +6,6 @@ from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security.X509Certificate import X509Certificate  # pylint: disable=import-error
 
-
 # Eventhough SSLTransport is not used in this file, it is imported in other module from there,
 # so do not remove these imports !
 from DIRAC.Core.DISET.private.Transports.M2SSLTransport import SSLTransport

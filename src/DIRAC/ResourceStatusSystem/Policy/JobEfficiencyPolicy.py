@@ -1,12 +1,13 @@
-""" JobEfficiencyPolicy
+"""JobEfficiencyPolicy
 
-  Policy that calculates the efficiency following the formula::
+Policy that calculates the efficiency following the formula::
 
-    ( completed + done ) / ( completed + done + failed )
+  ( completed + done ) / ( completed + done + failed )
 
-  if the denominator is smaller than 10, it does not take any decision.
+if the denominator is smaller than 10, it does not take any decision.
 
 """
+
 from DIRAC import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 

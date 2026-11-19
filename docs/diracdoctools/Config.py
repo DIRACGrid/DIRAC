@@ -1,11 +1,11 @@
 """Configuration for the documentation scripts."""
+
 import os
 import glob
 import logging
 import argparse
 from pprint import pformat
 from configparser import ConfigParser
-
 
 LOG = logging.getLogger(__name__)
 

@@ -1,4 +1,4 @@
-""" Unit tests for JobDBUtils module"""
+"""Unit tests for JobDBUtils module"""
 
 # pylint: disable=protected-access, invalid-name
 

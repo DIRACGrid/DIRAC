@@ -1,6 +1,7 @@
-""" Utility Class for threaded agents (e.g. TransformationAgent)
-    Mostly for logging
+"""Utility Class for threaded agents (e.g. TransformationAgent)
+Mostly for logging
 """
+
 import time
 from DIRAC import gLogger
 

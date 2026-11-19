@@ -1,4 +1,4 @@
-""" DIRAC script.
+"""DIRAC script.
 
 Usage::
 
@@ -10,6 +10,7 @@ Usage::
         Script.parseCommandLine()
         ...
 """
+
 import sys
 import os.path
 import functools

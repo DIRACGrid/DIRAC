@@ -2,6 +2,7 @@
 """
 Command to launch the Transformation Shell
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

@@ -1,6 +1,7 @@
 """
 It used used to create different plots.
 """
+
 import errno
 from io import BytesIO
 

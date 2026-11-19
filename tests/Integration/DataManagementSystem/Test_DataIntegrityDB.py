@@ -1,9 +1,10 @@
-""" This is a test of the IntegrityDB
+"""This is a test of the IntegrityDB
 
-    It supposes that the DB is present.
+It supposes that the DB is present.
 
-    This is pytest!
+This is pytest!
 """
+
 # pylint: disable=invalid-name,wrong-import-position
 import time
 

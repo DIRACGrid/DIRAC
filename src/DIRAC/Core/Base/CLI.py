@@ -3,8 +3,8 @@
 # Author : Andrei Tsaregorodtsev
 ########################################################################
 
-""" CLI is the base class for all the DIRAC consoles ( CLIs ). It contains
-    several utilities and signal handlers of general purpose.
+"""CLI is the base class for all the DIRAC consoles ( CLIs ). It contains
+several utilities and signal handlers of general purpose.
 """
 
 import cmd

@@ -1,5 +1,5 @@
-""" policy that evaluates on how many tickets are open at the moment.
-"""
+"""policy that evaluates on how many tickets are open at the moment."""
+
 from DIRAC import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 

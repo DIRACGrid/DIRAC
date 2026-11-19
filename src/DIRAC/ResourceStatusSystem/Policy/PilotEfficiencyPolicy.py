@@ -1,9 +1,10 @@
-""" PilotEfficiencyPolicy
+"""PilotEfficiencyPolicy
 
-  Policy that gets efficiency from the PilotCommand result and
-  sets the resource status. Efficiency is given in percent.
+Policy that gets efficiency from the PilotCommand result and
+sets the resource status. Efficiency is given in percent.
 
 """
+
 from DIRAC import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 

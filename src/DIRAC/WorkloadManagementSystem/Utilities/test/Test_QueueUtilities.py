@@ -1,5 +1,5 @@
-""" Test class for QueueUtilities
-"""
+"""Test class for QueueUtilities"""
+
 import copy
 from unittest.mock import MagicMock
 

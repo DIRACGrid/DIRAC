@@ -5,6 +5,7 @@ download files from storage element
 Examples:
     $ dget ./some_lfn_file /tmp
 """
+
 import os
 
 import DIRAC

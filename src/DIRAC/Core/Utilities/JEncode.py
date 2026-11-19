@@ -1,9 +1,8 @@
-""" DIRAC Encoding utilities based on json
-"""
+"""DIRAC Encoding utilities based on json"""
+
 from base64 import b64encode, b64decode
 import datetime
 import json
-
 
 # Describes the way date time will be transmetted
 # We do not keep miliseconds

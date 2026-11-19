@@ -30,6 +30,7 @@ Example:
                'ping',
                ())}
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

@@ -1,5 +1,5 @@
-""" This class describe Authorization Code grant type
-"""
+"""This class describe Authorization Code grant type"""
+
 from time import time
 from authlib.jose import JsonWebSignature
 from authlib.oauth2.base import OAuth2Error

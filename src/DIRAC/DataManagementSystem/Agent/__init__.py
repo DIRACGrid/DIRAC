@@ -1,3 +1,3 @@
 """
-   DIRAC.DataManagementSystem.Agent package
+DIRAC.DataManagementSystem.Agent package
 """

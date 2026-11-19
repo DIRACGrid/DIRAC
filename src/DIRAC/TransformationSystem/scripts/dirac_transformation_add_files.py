@@ -2,6 +2,7 @@
 """
 Add files to an existing transformation
 """
+
 import os
 import DIRAC
 from DIRAC.Core.Base.Script import Script

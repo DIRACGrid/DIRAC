@@ -1,7 +1,8 @@
-""" This is a test of the chain
-    SiteStatus ->  ResourceStatusClient -> ResourceStatusDB
-    It supposes that the DB is present, and that the service is running
+"""This is a test of the chain
+SiteStatus ->  ResourceStatusClient -> ResourceStatusDB
+It supposes that the DB is present, and that the service is running
 """
+
 # pylint: disable=wrong-import-position, missing-docstring
 
 from datetime import datetime
@@ -14,7 +15,6 @@ DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-
 
 Datetime = datetime.now()
 

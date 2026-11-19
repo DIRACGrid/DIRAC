@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
-""" This script is used to submit the jobs on the grid.
-    It uses an executable (first argument), creates
-    a directory in which it will store all the job ids (<jobName> args),
-    and submit a configurable amount of jobs.
+"""This script is used to submit the jobs on the grid.
+It uses an executable (first argument), creates
+a directory in which it will store all the job ids (<jobName> args),
+and submit a configurable amount of jobs.
 """
+
 import DIRAC
 
 DIRAC.initialize()  # Initialize configuration

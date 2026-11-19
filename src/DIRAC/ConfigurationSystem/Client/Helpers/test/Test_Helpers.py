@@ -12,7 +12,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import (
     getQueue,
 )
 
-
 mockGCReply = MagicMock()
 
 

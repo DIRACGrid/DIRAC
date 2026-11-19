@@ -1,4 +1,4 @@
-""" LocalComputingElement is a class to handle non-grid computing clusters
+"""LocalComputingElement is a class to handle non-grid computing clusters
 
 Allows direct submission to underlying Batch Systems.
 
@@ -31,6 +31,7 @@ SharedArea:
 
 **Code Documentation**
 """
+
 import os
 import stat
 import shutil

@@ -1,6 +1,7 @@
 """
 Do the initial configuration of a DIRAC component
 """
+
 from DIRAC.Core.Base.Script import Script
 
 Script.setUsageMessage(

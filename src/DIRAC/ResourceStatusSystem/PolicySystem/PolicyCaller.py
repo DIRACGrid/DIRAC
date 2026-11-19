@@ -1,9 +1,10 @@
-""" PolicyCaller
+"""PolicyCaller
 
-  Module used for calling policies. Its class is used for invoking
-  real policies, based on the policy name.
+Module used for calling policies. Its class is used for invoking
+real policies, based on the policy name.
 
 """
+
 from DIRAC import S_ERROR
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ResourceStatusSystem.Command import CommandCaller

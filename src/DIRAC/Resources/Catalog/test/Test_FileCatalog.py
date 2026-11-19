@@ -1,6 +1,7 @@
 """
-   Testing the FileCatalog logic
+Testing the FileCatalog logic
 """
+
 import sys
 import unittest
 from unittest import mock

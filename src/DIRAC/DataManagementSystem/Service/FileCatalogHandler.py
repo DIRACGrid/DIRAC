@@ -41,7 +41,7 @@ class FileCatalogHandlerMixin:
         for configKey in sorted(defaultManagers.keys()):
             defaultValue = defaultManagers[configKey]
             configValue = getServiceOption(serviceInfo, configKey, defaultValue)
-            cls.log.info("%-20s : %-20s" % (str(configKey), str(configValue)))
+            cls.log.info(f"{str(configKey):20} : {str(configValue):20}")
             databaseConfig[configKey] = configValue
 
         # Obtain some general configuration of the database
@@ -60,7 +60,7 @@ class FileCatalogHandlerMixin:
         for configKey in sorted(defaultConfig.keys()):
             defaultValue = defaultConfig[configKey]
             configValue = getServiceOption(serviceInfo, configKey, defaultValue)
-            cls.log.info("%-20s : %-20s" % (str(configKey), str(configValue)))
+            cls.log.info(f"{str(configKey):20} : {str(configValue):20}")
             databaseConfig[configKey] = configValue
         res = cls.fileCatalogDB.setConfig(databaseConfig)
 

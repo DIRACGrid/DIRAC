@@ -1,11 +1,10 @@
-""" Test TimeLeft utility
-"""
+"""Test TimeLeft utility"""
+
 from diraccfg import CFG
 import pytest
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client import ConfigurationData
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
-
 
 CONFIG_UNKNOWN = """
 LocalSite {

@@ -1,5 +1,4 @@
-""" Test for MonitoringDB
-"""
+"""Test for MonitoringDB"""
 
 import json
 import time
@@ -13,7 +12,6 @@ DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize config
 
 from DIRAC import gLogger
 from DIRAC.MonitoringSystem.DB.MonitoringDB import MonitoringDB
-
 
 #############################################
 

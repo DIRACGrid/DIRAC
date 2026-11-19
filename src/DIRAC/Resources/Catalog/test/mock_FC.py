@@ -1,5 +1,5 @@
-""" Module that contains a mock object of the FileCatalog(s)
-"""
+"""Module that contains a mock object of the FileCatalog(s)"""
+
 # pylint: disable=invalid-name, line-too-long
 
 import datetime

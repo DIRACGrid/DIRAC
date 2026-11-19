@@ -1,4 +1,4 @@
-""" DIRAC API Base Class """
+"""DIRAC API Base Class"""
 
 import pprint
 import sys

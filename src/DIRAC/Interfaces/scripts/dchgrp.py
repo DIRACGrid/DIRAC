@@ -6,6 +6,7 @@ Examples:
     $ dchgrp atsareg ././some_lfn_file
     $ dchgrp -R pgay ./
 """
+
 from DIRAC import gLogger, S_OK
 from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache
 from DIRAC.Interfaces.Utilities.DCommands import DSession

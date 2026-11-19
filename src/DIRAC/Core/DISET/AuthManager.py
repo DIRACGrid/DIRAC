@@ -1,5 +1,5 @@
-""" Module that holds DISET Authorization class for services
-"""
+"""Module that holds DISET Authorization class for services"""
+
 from threading import Lock
 
 from cachetools import TTLCache

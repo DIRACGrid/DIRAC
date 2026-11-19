@@ -1,5 +1,5 @@
-""" IdProvider based on OAuth2 protocol
-"""
+"""IdProvider based on OAuth2 protocol"""
+
 from authlib.oauth2.rfc6749.util import scope_to_list
 
 from DIRAC.Resources.IdProvider.OAuth2IdProvider import OAuth2IdProvider

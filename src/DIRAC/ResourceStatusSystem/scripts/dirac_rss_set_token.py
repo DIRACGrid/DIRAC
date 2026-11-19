@@ -7,6 +7,7 @@ If the releaseToken switch is used, no matter what was the previous token, it wi
 If not set, the token will be set to whatever username is defined on the proxy loaded while issuing
 this command. In the second case, the token lasts one day.
 """
+
 from datetime import datetime, timedelta
 
 # DIRAC

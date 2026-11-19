@@ -1,6 +1,7 @@
-"""  The Computing Element Factory has one method that instantiates a given Computing Element
-     from the CEUnique ID specified in the JobAgent configuration section.
+"""The Computing Element Factory has one method that instantiates a given Computing Element
+from the CEUnique ID specified in the JobAgent configuration section.
 """
+
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.Computing.ComputingElement import getCEConfigDict
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader

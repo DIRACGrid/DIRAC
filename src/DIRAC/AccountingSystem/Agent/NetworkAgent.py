@@ -8,6 +8,7 @@ Accounting agent to consume perfSONAR network metrics received via a message que
   :caption: NetworkAgent options
 
 """
+
 from datetime import datetime
 
 from DIRAC import S_OK, S_ERROR, gLogger

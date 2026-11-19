@@ -13,6 +13,7 @@ Example:
   # Return token
   $ dirac-login dirac_user --token
 """
+
 import copy
 import os
 import sys

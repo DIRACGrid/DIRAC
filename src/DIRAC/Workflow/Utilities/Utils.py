@@ -1,5 +1,5 @@
-""" Collection of utilities function
-"""
+"""Collection of utilities function"""
+
 import importlib
 import os
 import time

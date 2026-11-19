@@ -1,5 +1,5 @@
-""" Test class for AccountingDB
-"""
+"""Test class for AccountingDB"""
+
 # pylint: disable=protected-access
 
 # imports
@@ -255,8 +255,7 @@ class MakeQuery(TestCase):
         self.assertTrue(retVal)
         expectedEndTime = retVal
 
-        expectedQuery = (
-            "SELECT `ac_key_DataOperation_Source`.`value`, \
+        expectedQuery = "SELECT `ac_key_DataOperation_Source`.`value`, \
 `ac_bucket_DataOperation`.`startTime`, \
 `ac_bucket_DataOperation`.`bucketLength`, \
 SUM(`ac_bucket_DataOperation`.`TransferOK`), \
@@ -264,13 +263,11 @@ SUM(`ac_bucket_DataOperation`.`TransferTotal`)-\
 SUM(`ac_bucket_DataOperation`.`TransferOK`) \
 FROM `ac_bucket_DataOperation`, \
 `ac_key_DataOperation_Source` \
-WHERE `ac_bucket_DataOperation`.`startTime` >= %s \
-AND `ac_bucket_DataOperation`.`startTime` <= %s \
+WHERE `ac_bucket_DataOperation`.`startTime` >= {} \
+AND `ac_bucket_DataOperation`.`startTime` <= {} \
 AND `ac_bucket_DataOperation`.`Source` = `ac_key_DataOperation_Source`.`id` \
 GROUP BY startTime, `ac_key_DataOperation_Source`.Value, bucketlength \
-ORDER BY startTime"
-            % (expectedStartTime, expectedEndTime)
-        )
+ORDER BY startTime".format(expectedStartTime, expectedEndTime)
         retVal = module._AccountingDB__queryType(
             "DataOperation",  # pylint: disable=no-member
             startTime,
@@ -381,8 +378,7 @@ ORDER BY startTime"
         self.assertTrue(retVal)
         expectedEndTime = retVal
 
-        expectedQuery = (
-            "SELECT `ac_key_DataOperation_Source`.`value`, \
+        expectedQuery = "SELECT `ac_key_DataOperation_Source`.`value`, \
 `ac_bucket_DataOperation`.`startTime`, \
 `ac_bucket_DataOperation`.`bucketLength`, \
 SUM(`ac_bucket_DataOperation`.`TransferOK`), \
@@ -390,13 +386,11 @@ SUM(`ac_bucket_DataOperation`.`TransferTotal`)-\
 SUM(`ac_bucket_DataOperation`.`TransferOK`) \
 FROM `ac_bucket_DataOperation`, \
 `ac_key_DataOperation_Source` \
-WHERE `ac_bucket_DataOperation`.`startTime` >= %s \
-AND `ac_bucket_DataOperation`.`startTime` <= %s \
+WHERE `ac_bucket_DataOperation`.`startTime` >= {} \
+AND `ac_bucket_DataOperation`.`startTime` <= {} \
 AND `ac_bucket_DataOperation`.`Source` = `ac_key_DataOperation_Source`.`id` \
 GROUP BY startTime, `ac_key_DataOperation_Source`.Value, bucketlength \
-ORDER BY startTime"
-            % (expectedStartTime, expectedEndTime)
-        )
+ORDER BY startTime".format(expectedStartTime, expectedEndTime)
 
         retVal = module._AccountingDB__queryType(
             "DataOperation",  # pylint: disable=no-member

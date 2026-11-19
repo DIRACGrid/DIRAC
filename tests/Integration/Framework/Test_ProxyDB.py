@@ -1,6 +1,7 @@
-""" This is a test of the ProxyDB
-    It supposes that the DB is present and installed in DIRAC
+"""This is a test of the ProxyDB
+It supposes that the DB is present and installed in DIRAC
 """
+
 # pylint: disable=invalid-name,wrong-import-position,protected-access
 import os
 import re
@@ -271,9 +272,7 @@ class ProxyDBTestCase(unittest.TestCase):
         nsComment = "OpenSSL Generated Client Certificate"
         keyUsage = critical, nonRepudiation, digitalSignature, keyEncipherment
         extendedKeyUsage = clientAuth
-        """ % (
-                userName
-            )
+        """ % (userName)
             userConfFile = os.path.join(cls.userDir, userName + ".cnf")
             userReqFile = os.path.join(cls.userDir, userName + ".req")
             userKeyFile = os.path.join(cls.userDir, userName + ".key.pem")
@@ -485,7 +484,7 @@ class testDB(ProxyDBTestCase):
             result = db.completeDelegation(resDict["id"], dn, result["Value"])
             text = "Must be ended {}{}".format(
                 "successful" if res else "with error",
-                ": %s" % result.get("Message", "Error message is absent."),
+                f": {result.get('Message', 'Error message is absent.')}",
             )
             self.assertEqual(result["OK"], res, text)
             if not res:
@@ -510,7 +509,7 @@ class testDB(ProxyDBTestCase):
             result = db.getProxy("/C=CC/O=DN/O=DIRAC/CN=user", group, reqtime)
             text = "Must be ended {}{}".format(
                 res and "successful" or "with error",
-                ": %s" % result.get("Message", "Error message is absent."),
+                f": {result.get('Message', 'Error message is absent.')}",
             )
             self.assertEqual(result["OK"], res, text)
             if res:

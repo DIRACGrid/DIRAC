@@ -1,6 +1,7 @@
 """
-  Defines the plugin to perform evaluation on the lfn name
+Defines the plugin to perform evaluation on the lfn name
 """
+
 import ast
 
 from DIRAC.Resources.Catalog.ConditionPlugins.FCConditionBasePlugin import FCConditionBasePlugin

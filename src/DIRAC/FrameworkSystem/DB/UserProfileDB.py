@@ -1,5 +1,4 @@
-""" UserProfileDB class is a front-end to the User Profile Database
-"""
+"""UserProfileDB class is a front-end to the User Profile Database"""
 
 import cachetools
 

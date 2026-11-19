@@ -1,4 +1,5 @@
 """Tests for the CheckMigration Operation"""
+
 import functools
 
 import pytest

@@ -2,6 +2,7 @@
 """
 Get parameters assigned to the CE
 """
+
 import json
 from DIRAC.Core.Base.Script import Script
 

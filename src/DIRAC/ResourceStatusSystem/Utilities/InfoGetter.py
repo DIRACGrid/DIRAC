@@ -1,8 +1,9 @@
-""" InfoGetter
+"""InfoGetter
 
-  Module used to map the policies with the CS.
+Module used to map the policies with the CS.
 
 """
+
 import copy
 
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger

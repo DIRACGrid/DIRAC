@@ -1,12 +1,13 @@
-""" :mod: ProcessPoolTests
-  =======================
+""":mod: ProcessPoolTests
+=======================
 
-  .. module: ProcessPoolTests
-  :synopsis: unit tests for ProcessPool
-  .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: ProcessPoolTests
+:synopsis: unit tests for ProcessPool
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-  unit tests for ProcessPool
+unit tests for ProcessPool
 """
+
 import os
 import sys
 import random

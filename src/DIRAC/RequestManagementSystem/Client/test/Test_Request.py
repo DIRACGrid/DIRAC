@@ -1,11 +1,11 @@
-""" :mod: RequestTests
-    =======================
+""":mod: RequestTests
+=======================
 
-    .. module: RequestTests
-    :synopsis: test cases for Request class
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: RequestTests
+:synopsis: test cases for Request class
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    test cases for Request class
+test cases for Request class
 """
 
 import copy

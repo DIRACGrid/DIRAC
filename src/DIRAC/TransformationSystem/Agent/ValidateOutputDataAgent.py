@@ -1,4 +1,4 @@
-""" Runs few integrity checks
+"""Runs few integrity checks
 
 The following options can be set for the ValidateOutputDataAgent.
 
@@ -8,6 +8,7 @@ The following options can be set for the ValidateOutputDataAgent.
   :dedent: 2
   :caption: ValidateOutputDataAgent options
 """
+
 import re
 import ast
 

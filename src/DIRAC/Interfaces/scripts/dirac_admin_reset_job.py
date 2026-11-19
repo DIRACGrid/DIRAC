@@ -6,6 +6,7 @@ Example:
   $ dirac-admin-reset-job 1848
   Reset Job 1848
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

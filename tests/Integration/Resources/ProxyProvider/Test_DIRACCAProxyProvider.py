@@ -1,5 +1,5 @@
-""" Tests for ProxyProvider modules module
-"""
+"""Tests for ProxyProvider modules module"""
+
 import os
 import sys
 import pytest
@@ -17,17 +17,16 @@ certsPath = os.path.join(os.path.dirname(DIRAC.__file__), "Core/Security/test/ce
 
 localCFGData = ConfigurationData(False)
 mergedCFG = CFG()
-mergedCFG.loadFromBuffer(
-    """
+mergedCFG.loadFromBuffer("""
 Resources
-{
+{{
   ProxyProviders
-  {
+  {{
     DIRAC_TEST_CA
-    {
+    {{
       ProviderType = DIRACCA
-      CertFile = %s
-      KeyFile = %s
+      CertFile = {}
+      KeyFile = {}
       Match =
       Supplied = C, O, OU, CN
       Optional = emailAddress
@@ -35,33 +34,31 @@ Resources
       C = FR
       O = DIRAC
       OU = DIRAC TEST
-    }
-  }
-}
+    }}
+  }}
+}}
 Registry
-{
+{{
   Users
-  {
+  {{
     testuser
-    {
+    {{
       DN = /C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org
-    }
-  }
+    }}
+  }}
   Groups
-  {
+  {{
     dirac_user
-    {
+    {{
       Users = testuser
-    }
+    }}
     dirac_no_user
-    {
+    {{
       Users = nouser
-    }
-  }
-}
-"""
-    % (os.path.join(certsPath, "ca/ca.cert.pem"), os.path.join(certsPath, "ca/ca.key.pem"))
-)
+    }}
+  }}
+}}
+""".format(os.path.join(certsPath, "ca/ca.cert.pem"), os.path.join(certsPath, "ca/ca.key.pem")))
 localCFGData.localCFG = mergedCFG
 localCFGData.remoteCFG = mergedCFG
 localCFGData.mergedCFG = mergedCFG
@@ -94,7 +91,7 @@ def test_getProxy(ppf, dn, res):
     result = pp.getProxy(dn)
     text = "Must be ended {}{}".format(
         "successful" if res else "with error",
-        ": %s" % result.get("Message", "Error message is absent."),
+        f": {result.get('Message', 'Error message is absent.')}",
     )
     assert result["OK"] == res, text
     if res:

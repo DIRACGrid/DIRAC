@@ -1,5 +1,5 @@
-""" Test class for plugins
-"""
+"""Test class for plugins"""
+
 # pylint: disable=protected-access, missing-docstring
 
 import pytest

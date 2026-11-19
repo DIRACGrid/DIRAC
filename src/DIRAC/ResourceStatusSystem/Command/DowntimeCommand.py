@@ -1,8 +1,9 @@
-""" DowntimeCommand module will look into GOC DB to find announced downtimes for RSS-managed sites and resources.
-    If found, downtimes are added to the internal RSS cache using ResourceManagementClient.
+"""DowntimeCommand module will look into GOC DB to find announced downtimes for RSS-managed sites and resources.
+If found, downtimes are added to the internal RSS cache using ResourceManagementClient.
 
-    GOCDB downtimes that are modified or deleted are also synced.
+GOCDB downtimes that are modified or deleted are also synced.
 """
+
 import re
 from datetime import datetime, timedelta
 from operator import itemgetter

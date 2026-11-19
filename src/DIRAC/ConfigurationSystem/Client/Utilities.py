@@ -1,6 +1,7 @@
 """
-  Utilities for managing DIRAC configuration:
+Utilities for managing DIRAC configuration:
 """
+
 from copy import deepcopy
 import socket
 

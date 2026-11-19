@@ -1,5 +1,5 @@
-""" DIRAC FileCatalog Security Manager mix-in class for access check only on the directory level
-"""
+"""DIRAC FileCatalog Security Manager mix-in class for access check only on the directory level"""
+
 import os
 
 from DIRAC import S_OK

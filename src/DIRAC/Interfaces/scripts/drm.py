@@ -6,6 +6,7 @@ Examples:
     $ drm /your/lfn/goes/here
     $ drm -F myfilecontaininglfns.txt
 """
+
 import os
 
 import DIRAC

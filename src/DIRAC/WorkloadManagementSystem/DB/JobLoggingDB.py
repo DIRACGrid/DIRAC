@@ -1,11 +1,12 @@
-""" JobLoggingDB class is a front-end to the Job Logging Database.
-    The following methods are provided
+"""JobLoggingDB class is a front-end to the Job Logging Database.
+The following methods are provided
 
-    addLoggingRecord()
-    getJobLoggingInfo()
-    deleteJob()
-    getWMSTimeStamps()
+addLoggingRecord()
+getJobLoggingInfo()
+deleteJob()
+getWMSTimeStamps()
 """
+
 import datetime
 
 from DIRAC import S_ERROR, S_OK
@@ -128,7 +129,7 @@ class JobLoggingDB(DB):
         if not result["OK"]:
             return result
         if result["OK"] and not result["Value"]:
-            return S_ERROR("No Logging information for job %d" % int(jobID))
+            return S_ERROR(f"No Logging information for job {int(jobID)}")
 
         return_value = []
         status, minor, app = result["Value"][0][:3]
@@ -182,18 +183,18 @@ class JobLoggingDB(DB):
         # self.log.debug('getWMSTimeStamps: Retrieving Timestamps for Job %d' % int(jobID))
 
         result = {}
-        cmd = "SELECT Status,StatusTimeOrder FROM LoggingInfo WHERE JobID=%d ORDER BY StatusTimeOrder" % int(jobID)
+        cmd = f"SELECT Status,StatusTimeOrder FROM LoggingInfo WHERE JobID={int(jobID)} ORDER BY StatusTimeOrder"
         resCmd = self._query(cmd)
         if not resCmd["OK"]:
             return resCmd
         if not resCmd["Value"]:
-            return S_ERROR("No Logging Info for job %d" % int(jobID))
+            return S_ERROR(f"No Logging Info for job {int(jobID)}")
 
         for event, etime in resCmd["Value"]:
             result[event] = str(etime + MAGIC_EPOC_NUMBER)
 
         # Get last date and time
-        cmd = "SELECT MAX(StatusTime) FROM LoggingInfo WHERE JobID=%d" % int(jobID)
+        cmd = f"SELECT MAX(StatusTime) FROM LoggingInfo WHERE JobID={int(jobID)}"
         resCmd = self._query(cmd)
         if not resCmd["OK"]:
             return resCmd

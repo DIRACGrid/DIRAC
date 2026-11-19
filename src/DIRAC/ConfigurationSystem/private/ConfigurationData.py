@@ -1,5 +1,4 @@
-""" ConfigurationData module is the base for cfg files management
-"""
+"""ConfigurationData module is the base for cfg files management"""
 
 import os.path
 import zlib

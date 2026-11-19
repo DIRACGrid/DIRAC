@@ -6,6 +6,7 @@
 """
 Report the summary of the stage task from the DB.
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

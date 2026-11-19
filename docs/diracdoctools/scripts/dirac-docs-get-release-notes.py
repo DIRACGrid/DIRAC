@@ -36,9 +36,7 @@ import requests
 from distutils.version import LooseVersion
 from configparser import ConfigParser
 
-
-G_ERROR = textwrap.dedent(
-    """
+G_ERROR = textwrap.dedent("""
                           ***********************
                           Failed to import GITHUBTOKEN please!
                           Point the pythonpath to your GitTokens.py file which contains
@@ -52,8 +50,7 @@ G_ERROR = textwrap.dedent(
                           ```
                           (without the triple quotes)
                           ***********************
-                          """
-)
+                          """)
 
 SESSION = requests.Session()
 
@@ -262,8 +259,7 @@ class GithubInterface:
             dest="date",
             help="date and optionally time after which PRs are checked (ISO 8601),\
                          accepting 2020-01-08 or 2018-05-20T15:23:45Z,\
-                         default (two weeks ago): %s"
-            % self.startDate,
+                         default (two weeks ago): %s" % self.startDate,
         )
 
         parser.add_argument(

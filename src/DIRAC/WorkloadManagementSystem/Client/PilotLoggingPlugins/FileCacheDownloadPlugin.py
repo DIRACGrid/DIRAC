@@ -1,6 +1,7 @@
 """
 File cache pilot log downloader.
 """
+
 import os
 import tempfile
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig

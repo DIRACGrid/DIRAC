@@ -1,3 +1,3 @@
 """
-   DIRAC.StorageManagementSystem.Client package
+DIRAC.StorageManagementSystem.Client package
 """

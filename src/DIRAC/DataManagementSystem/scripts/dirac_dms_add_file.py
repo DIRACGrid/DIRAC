@@ -32,6 +32,7 @@ Example:
    'Successful': {'/formationes/user/v/vhamar/Example.txt': {'put': 0.70791220664978027,
                                                              'register': 0.61061787605285645}}}
 """
+
 import os
 from DIRAC import S_OK
 from DIRAC.Core.Base.Script import Script

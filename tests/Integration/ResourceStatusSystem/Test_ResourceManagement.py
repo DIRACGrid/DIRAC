@@ -4,6 +4,7 @@ It supposes that the DB is present, and that the service is running
 
 The DB is supposed to be empty when the test starts
 """
+
 # pylint: disable=wrong-import-position, missing-docstring
 
 import datetime

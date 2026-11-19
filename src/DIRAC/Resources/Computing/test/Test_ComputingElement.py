@@ -5,7 +5,6 @@ from DIRAC import gConfig
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
-
 pilotCfg1 = """
 LocalSite
 {

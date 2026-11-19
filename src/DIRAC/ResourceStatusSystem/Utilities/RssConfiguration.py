@@ -4,6 +4,7 @@
 Module that collects utility functions.
 
 """
+
 from DIRAC import S_OK
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations

@@ -6,6 +6,7 @@ Note that only statically defined computing resource parameters are considered a
 can fail matching due to their dynamic state, e.g. occupancy by other jobs. Also input data
 proximity is not taken into account.
 """
+
 from DIRAC import S_OK, gLogger, exit as DIRACExit
 from DIRAC.Core.Base.Script import Script
 

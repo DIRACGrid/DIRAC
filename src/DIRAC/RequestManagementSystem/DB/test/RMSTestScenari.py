@@ -1,4 +1,4 @@
-""" This contains a bunch of tests for the RMS that can be ran
+"""This contains a bunch of tests for the RMS that can be ran
 either as unit test for the DB (Test_RequestDB.py) or as
 integration tests (Test_ReqDB.py)
 """

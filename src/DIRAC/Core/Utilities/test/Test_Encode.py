@@ -1,4 +1,4 @@
-""" Test Encoding function of DIRAC
+"""Test Encoding function of DIRAC
 It contains tests for DISET and JSON.
 Some tests can be passed by both, while some can only be passed by one.
 
@@ -6,6 +6,7 @@ Typically, we know JSON cannot serialize tuples, or integers as dictionary keys.
 On the other hand, it can serialize some objects, while DISET cannot.
 
 """
+
 from string import printable
 import datetime
 import sys

@@ -1,5 +1,4 @@
-""" Within this module is defined the class from which all other accounting types are defined
-"""
+"""Within this module is defined the class from which all other accounting types are defined"""
 
 import datetime
 

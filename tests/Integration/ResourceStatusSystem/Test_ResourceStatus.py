@@ -1,6 +1,6 @@
-""" This is a test of the chain
-    ResourceStatus -> ResourceStatusHandler -> ResourceStatusDB
-    It supposes that the DB is present, and that the service is running
+"""This is a test of the chain
+ResourceStatus -> ResourceStatusHandler -> ResourceStatusDB
+It supposes that the DB is present, and that the service is running
 """
 
 # pylint: disable=wrong-import-position, missing-docstring

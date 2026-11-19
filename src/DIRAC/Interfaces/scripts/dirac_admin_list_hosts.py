@@ -11,6 +11,7 @@ Example:
   dirac.in2p3.fr
   host-dirac.in2p3.fr
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

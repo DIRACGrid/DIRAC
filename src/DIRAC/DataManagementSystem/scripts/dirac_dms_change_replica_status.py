@@ -2,6 +2,7 @@
 """
 Change status of replica of a given file or a list of files at a given Storage Element
 """
+
 from DIRAC import exit as DIRACExit
 from DIRAC.Core.Base.Script import Script
 

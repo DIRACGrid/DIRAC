@@ -1,7 +1,8 @@
 """
-    Workflow Utility module contains a number of functions useful for various
-    workflow operations
+Workflow Utility module contains a number of functions useful for various
+workflow operations
 """
+
 import re
 from DIRAC.Core.Utilities.SaferEval import saferEval
 

@@ -5,6 +5,7 @@ Enable using one or more Storage Elements
 Example:
   $ dirac-admin-allow-se M3PEC-disk
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

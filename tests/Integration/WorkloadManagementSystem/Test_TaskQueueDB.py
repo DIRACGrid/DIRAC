@@ -18,7 +18,6 @@ DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize config
 
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 
-
 gLogger.setLevel("DEBUG")
 tqDB = TaskQueueDB()
 

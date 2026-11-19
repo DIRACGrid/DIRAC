@@ -1,3 +1,3 @@
 """
-   DIRAC.WorkloadManagementSystem package
+DIRAC.WorkloadManagementSystem package
 """

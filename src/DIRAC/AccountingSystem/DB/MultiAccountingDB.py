@@ -1,5 +1,5 @@
-""" Module for handling AccountingDB tables on multiple DBs (e.g. 2 MySQL servers)
-"""
+"""Module for handling AccountingDB tables on multiple DBs (e.g. 2 MySQL servers)"""
+
 from DIRAC import gConfig, S_OK, gLogger
 from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
 from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader

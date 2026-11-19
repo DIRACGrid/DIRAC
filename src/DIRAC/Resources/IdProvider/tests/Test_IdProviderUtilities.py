@@ -1,4 +1,5 @@
-""" Test IdProvider Factory"""
+"""Test IdProvider Factory"""
+
 import pytest
 
 from DIRAC.Resources.IdProvider.Utilities import (
@@ -6,7 +7,6 @@ from DIRAC.Resources.IdProvider.Utilities import (
     getIdProviderIdentifierFromIssuerAndClientID,
 )
 from DIRAC.Resources.IdProvider.tests.IdProviderTestUtilities import setupConfig
-
 
 idProviderValidSection = """
 Resources

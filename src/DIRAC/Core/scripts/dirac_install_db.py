@@ -2,6 +2,7 @@
 """
 Create a new DB in the MySQL server
 """
+
 from DIRAC import exit as DIRACExit
 from DIRAC import gConfig, gLogger
 from DIRAC.Core.Base.Script import Script

@@ -6,7 +6,6 @@ import logging
 
 from DIRAC.FrameworkSystem.private.standardLogging.Formatter.MicrosecondJsonFormatter import MicrosecondJsonFormatter
 
-
 DIRAC_CUSTOM_ATTRS = [
     "spacer",
     "headerIsShown",

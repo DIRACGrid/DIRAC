@@ -1,15 +1,16 @@
-""" PEP
+"""PEP
 
-  PEP ( Policy Enforcement Point ) is the front-end of the whole Policy System.
-  Any interaction with it must go through the PEP to ensure a smooth flow.
+PEP ( Policy Enforcement Point ) is the front-end of the whole Policy System.
+Any interaction with it must go through the PEP to ensure a smooth flow.
 
-  Firstly, it loads the PDP ( Policy Decision Point ) which actually is the
-  module doing all dirty work ( finding policies, running them, merging their
-  results, etc... ). Indeed, the PEP takes the output of the PDP for a given set
-  of parameters ( decisionParams ) and enforces the actions that apply ( also
-  determined by the PDP output ).
+Firstly, it loads the PDP ( Policy Decision Point ) which actually is the
+module doing all dirty work ( finding policies, running them, merging their
+results, etc... ). Indeed, the PEP takes the output of the PDP for a given set
+of parameters ( decisionParams ) and enforces the actions that apply ( also
+determined by the PDP output ).
 
 """
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.PolicySystem.PDP import PDP
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader

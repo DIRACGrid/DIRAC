@@ -1,8 +1,9 @@
-""" This is a test of the chain
-    FileCatalogClient -> FileCatalogHandler -> FileCatalogDB
+"""This is a test of the chain
+FileCatalogClient -> FileCatalogHandler -> FileCatalogDB
 
-    It supposes that the DB is present, and that the service is running
+It supposes that the DB is present, and that the service is running
 """
+
 # pylint: disable=invalid-name,wrong-import-position
 import csv
 import filecmp

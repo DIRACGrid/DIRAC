@@ -6,6 +6,7 @@ Ban one or more Storage Elements for usage
 Example:
   $ dirac-admin-ban-se M3PEC-disk
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

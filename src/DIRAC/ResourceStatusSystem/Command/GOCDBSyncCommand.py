@@ -1,11 +1,12 @@
 """
-  GOCDBSyncCommand module
+GOCDBSyncCommand module
 
-  This command updates the downtime dates from the DowntimeCache table in case they changed
-  after being fetched from GOCDB. In other words, it ensures that all the downtime dates in
-  the database are current.
+This command updates the downtime dates from the DowntimeCache table in case they changed
+after being fetched from GOCDB. In other words, it ensures that all the downtime dates in
+the database are current.
 
 """
+
 import errno
 import xml.dom.minidom as minidom
 from DIRAC import S_OK, S_ERROR, gLogger

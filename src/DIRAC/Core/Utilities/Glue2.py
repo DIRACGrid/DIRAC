@@ -13,6 +13,7 @@ Print outs with "SCHEMA PROBLEM" point -- in my opinion -- to errors in the
 published information, like a foreign key pointing to non-existent entry.
 
 """
+
 from pprint import pformat
 
 from DIRAC import gLogger, gConfig

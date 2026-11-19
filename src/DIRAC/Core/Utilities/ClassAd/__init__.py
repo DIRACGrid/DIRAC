@@ -1,3 +1,3 @@
 """
-   DIRAC.Core.ClassAd package
+DIRAC.Core.ClassAd package
 """

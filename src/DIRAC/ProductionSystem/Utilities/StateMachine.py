@@ -1,6 +1,7 @@
 """
-  This module defines the state machine for the Productions
+This module defines the state machine for the Productions
 """
+
 from DIRAC.Core.Utilities.StateMachine import State, StateMachine
 
 

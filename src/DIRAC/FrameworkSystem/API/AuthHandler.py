@@ -1,11 +1,12 @@
-""" This handler basically provides a REST interface to interact with the OAuth 2 authentication server
+"""This handler basically provides a REST interface to interact with the OAuth 2 authentication server
 
-    .. literalinclude:: ../ConfigTemplate.cfg
-      :start-after: ##BEGIN Auth:
-      :end-before: ##END
-      :dedent: 2
-      :caption: Auth options
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN Auth:
+  :end-before: ##END
+  :dedent: 2
+  :caption: Auth options
 """
+
 import json
 import pprint
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-""" This tests the TransformationManager checkPermission function
-"""
+"""This tests the TransformationManager checkPermission function"""
+
 import functools
 import sys
 import unittest

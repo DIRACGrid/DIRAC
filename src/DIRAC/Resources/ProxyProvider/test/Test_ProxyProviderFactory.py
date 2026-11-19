@@ -6,7 +6,6 @@ import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
-
 certsPath = os.path.join(os.path.dirname(DIRAC.__file__), "Core/Security/test/certs")
 
 
@@ -42,7 +41,7 @@ class ProxyProviderFactoryTest(unittest.TestCase):
             result = proxyProviderObj.generateDN(FullName="test", Email="email@test.org")
             text = "Must be ended {}{}".format(
                 "successful" if resultOfGenerateDN else "with error",
-                ": %s" % result.get("Message", "Error message is absent."),
+                f": {result.get('Message', 'Error message is absent.')}",
             )
             self.assertEqual(result["OK"], resultOfGenerateDN, text)
             if not resultOfGenerateDN:

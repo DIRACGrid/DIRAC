@@ -6,6 +6,7 @@
 """
 Synchronize VOMS user data with the DIRAC Registry
 """
+
 from DIRAC.Core.Base.Script import Script
 from DIRAC import gLogger, exit as DIRACExit, S_OK
 

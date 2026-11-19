@@ -1,4 +1,5 @@
-""" DIRAC FileCatalog Storage Element Manager mix-in class for SE definitions within the FC database"""
+"""DIRAC FileCatalog Storage Element Manager mix-in class for SE definitions within the FC database"""
+
 import time
 import random
 

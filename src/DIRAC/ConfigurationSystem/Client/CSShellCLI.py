@@ -1,5 +1,4 @@
-"""CSShellCmd class emulates the behaviour of a shell to edit the CS config.
-"""
+"""CSShellCmd class emulates the behaviour of a shell to edit the CS config."""
 
 import cmd
 import os

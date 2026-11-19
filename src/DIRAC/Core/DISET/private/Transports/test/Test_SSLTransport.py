@@ -1,4 +1,5 @@
-""" Test the SSLTransport mechanism """
+"""Test the SSLTransport mechanism"""
+
 import os
 import selectors
 import threading

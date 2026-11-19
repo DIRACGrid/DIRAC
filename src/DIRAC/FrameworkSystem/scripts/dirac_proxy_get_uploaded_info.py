@@ -15,6 +15,7 @@ Example:
   | /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar | 2011-06-29 12:04:25 |
   -------------------------------------------------------------------------
 """
+
 import sys
 
 from DIRAC import S_OK, gLogger

@@ -1,6 +1,7 @@
 """
-  This module contains methods for the validation of production definitions
+This module contains methods for the validation of production definitions
 """
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog

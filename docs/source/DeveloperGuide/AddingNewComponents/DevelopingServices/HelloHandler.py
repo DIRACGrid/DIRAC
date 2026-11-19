@@ -1,5 +1,4 @@
-""" Hello Service is an example of how to build services in the DIRAC framework
-"""
+"""Hello Service is an example of how to build services in the DIRAC framework"""
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService

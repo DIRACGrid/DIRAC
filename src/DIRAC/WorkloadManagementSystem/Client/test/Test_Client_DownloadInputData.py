@@ -1,4 +1,5 @@
 """Test for WMS clients."""
+
 # pylint: disable=protected-access, missing-docstring, invalid-name
 
 from pathlib import Path

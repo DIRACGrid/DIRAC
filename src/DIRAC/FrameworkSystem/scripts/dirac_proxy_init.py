@@ -6,6 +6,7 @@ Example:
   $ dirac-proxy-init -g dirac_user
   Enter Certificate password: **************
 """
+
 import datetime
 import glob
 import os

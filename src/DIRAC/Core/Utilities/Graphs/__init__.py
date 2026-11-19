@@ -1,8 +1,8 @@
-""" DIRAC Graphs package provides tools for creation of various plots to provide
-    graphical representation of the DIRAC Monitoring and Accounting data
+"""DIRAC Graphs package provides tools for creation of various plots to provide
+graphical representation of the DIRAC Monitoring and Accounting data
 
-    The DIRAC Graphs package is derived from the GraphTool plotting package of the
-    CMS/Phedex Project by ... <to be added>
+The DIRAC Graphs package is derived from the GraphTool plotting package of the
+CMS/Phedex Project by ... <to be added>
 """
 
 import importlib.resources

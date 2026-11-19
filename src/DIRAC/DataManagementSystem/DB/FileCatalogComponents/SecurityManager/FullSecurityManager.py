@@ -1,5 +1,5 @@
-""" DIRAC FileCatalog Security Manager mix-in class with full access checks
-"""
+"""DIRAC FileCatalog Security Manager mix-in class with full access checks"""
+
 import os
 
 from DIRAC import S_OK

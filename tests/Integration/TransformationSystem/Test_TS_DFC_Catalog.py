@@ -1,36 +1,37 @@
-""" This is an integration test using both the TSCatalog and the FileCatalog plugins
+"""This is an integration test using both the TSCatalog and the FileCatalog plugins
 
-    It supposes that the TransformationDB and the FileCatalogDB are present
-    It supposes the TransformationManager and that DataManagement/FileCatalog services running
+It supposes that the TransformationDB and the FileCatalogDB are present
+It supposes the TransformationManager and that DataManagement/FileCatalog services running
 
-    The TSCatalog and FileCatalog plugins must be configured
-    in the Resources section and set in the Operations CatalogList, e.g.:
+The TSCatalog and FileCatalog plugins must be configured
+in the Resources section and set in the Operations CatalogList, e.g.:
 
-    Operations
+Operations
+{
+    Services
     {
-        Services
+        Catalogs
         {
-            Catalogs
+            CatalogList = FileCatalog, TSCatalog
+            FileCatalog
             {
-                CatalogList = FileCatalog, TSCatalog
-                FileCatalog
-                {
-                    CatalogType = FileCatalog
-                    AccessType = Read-Write
-                    Status = Active
-                    CatalogURL = DataManagement/FileCatalog
-                }
-                TSCatalog
-                {
-                    CatalogType = TSCatalog
-                    AccessType = Write
-                    Status = Active
-                    CatalogURL = Transformation/TransformationManager
-                }
+                CatalogType = FileCatalog
+                AccessType = Read-Write
+                Status = Active
+                CatalogURL = DataManagement/FileCatalog
+            }
+            TSCatalog
+            {
+                CatalogType = TSCatalog
+                AccessType = Write
+                Status = Active
+                CatalogURL = Transformation/TransformationManager
             }
         }
     }
+}
 """
+
 # pylint: disable=invalid-name,wrong-import-position
 
 import unittest

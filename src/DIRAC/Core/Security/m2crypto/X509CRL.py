@@ -1,6 +1,7 @@
-""" X509CRL is a class for managing X509CRL
+"""X509CRL is a class for managing X509CRL
 This class is used to manage the revoked certificates....
 """
+
 import re
 import datetime
 

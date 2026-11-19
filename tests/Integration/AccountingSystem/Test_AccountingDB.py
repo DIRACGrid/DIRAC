@@ -1,5 +1,5 @@
-""" Test for AccountingDB
-"""
+"""Test for AccountingDB"""
+
 import pytest
 
 import DIRAC
@@ -8,7 +8,6 @@ DIRAC.initialize(require_auth=False, host_credentials=True)  # Initialize config
 
 from DIRAC import gLogger
 from DIRAC.AccountingSystem.DB.AccountingDB import AccountingDB
-
 
 gLogger.setLevel("DEBUG")
 

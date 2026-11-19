@@ -1,5 +1,5 @@
-""" Base class for all services
-"""
+"""Base class for all services"""
+
 import os
 import time, datetime
 import psutil

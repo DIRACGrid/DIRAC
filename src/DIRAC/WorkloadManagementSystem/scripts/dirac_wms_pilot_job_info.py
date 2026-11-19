@@ -6,6 +6,7 @@
 """
 Retrieve info about jobs run by the given pilot
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

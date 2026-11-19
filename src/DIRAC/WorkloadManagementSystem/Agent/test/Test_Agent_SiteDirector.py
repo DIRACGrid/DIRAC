@@ -1,4 +1,5 @@
 """Test class for SiteDirector"""
+
 # pylint: disable=protected-access
 
 import datetime

@@ -1,5 +1,5 @@
-""" This module hosts the logic for executing an RPC call.
-"""
+"""This module hosts the logic for executing an RPC call."""
+
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
 from DIRAC.Core.Utilities.ReturnValues import S_OK
 from DIRAC.Core.Utilities.DErrno import cmpError, ENOAUTH

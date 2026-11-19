@@ -1,5 +1,5 @@
-""" Test_RSS_Policy_GGUSTicketsPolicy
-"""
+"""Test_RSS_Policy_GGUSTicketsPolicy"""
+
 import unittest
 
 import DIRAC.ResourceStatusSystem.Policy.GGUSTicketsPolicy as moduleTested

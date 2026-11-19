@@ -1,6 +1,7 @@
-""" The POOL XML File module provides a means to extract the GUID of a file or list
-    of files by searching for an appropriate POOL XML Catalog in the specified directory.
+"""The POOL XML File module provides a means to extract the GUID of a file or list
+of files by searching for an appropriate POOL XML Catalog in the specified directory.
 """
+
 import os
 import glob
 import tarfile

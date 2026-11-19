@@ -1,12 +1,13 @@
-""" :mod: RequestValidatorTests
-    =======================
+""":mod: RequestValidatorTests
+=======================
 
-    .. module: RequestValidatorTests
-    :synopsis: test cases for RequestValidator
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: RequestValidatorTests
+:synopsis: test cases for RequestValidator
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    test cases for RequestValidator
+test cases for RequestValidator
 """
+
 import os
 import pytest
 from unittest.mock import MagicMock

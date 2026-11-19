@@ -1,6 +1,7 @@
 """
 ServiceMonitoring type used to monitor DIRAC services.
 """
+
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
 

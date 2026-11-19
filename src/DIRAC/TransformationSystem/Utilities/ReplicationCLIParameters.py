@@ -1,6 +1,7 @@
 """
 Command Line Parameters for creating the Replication transformations Script
 """
+
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Security.Properties import SecurityProperty

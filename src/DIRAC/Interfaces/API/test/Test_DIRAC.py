@@ -1,5 +1,5 @@
-""" Unit tests for the Dirac interface module
-"""
+"""Unit tests for the Dirac interface module"""
+
 # pylint: disable=no-member, protected-access, missing-docstring
 import logging
 

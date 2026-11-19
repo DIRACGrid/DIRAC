@@ -1,4 +1,4 @@
-""" Logging context module"""
+"""Logging context module"""
 
 # Context variable for the logger (adapted to the request of the pilot reference)
 import contextvars

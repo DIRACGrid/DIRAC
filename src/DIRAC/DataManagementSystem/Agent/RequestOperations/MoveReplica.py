@@ -1,7 +1,8 @@
-""" MoveReplica operation handler
+"""MoveReplica operation handler
 
-    This handler moves replicas from source SEs to target SEs. Replicas are first replicated to target SEs and then removed from the source SEs
+This handler moves replicas from source SEs to target SEs. Replicas are first replicated to target SEs and then removed from the source SEs
 """
+
 # # imports
 import os
 

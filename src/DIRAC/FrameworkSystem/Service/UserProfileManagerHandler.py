@@ -1,5 +1,4 @@
-""" ProfileManager manages web user profiles interfacin to UserProfileDB
-"""
+"""ProfileManager manages web user profiles interfacin to UserProfileDB"""
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import S_OK

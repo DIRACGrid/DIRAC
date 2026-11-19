@@ -1,13 +1,14 @@
-""" :mod: RegisterReplica
+""":mod: RegisterReplica
 
-    ==================
+==================
 
-    .. module: RegisterReplica
+.. module: RegisterReplica
 
-    :synopsis: register replica handler
+:synopsis: register replica handler
 
-    RegisterReplica operation handler
+RegisterReplica operation handler
 """
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
 

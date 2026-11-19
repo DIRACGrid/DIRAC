@@ -1,5 +1,5 @@
-""" Priority corrector for the group and in-group shares
-"""
+"""Priority corrector for the group and in-group shares"""
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations

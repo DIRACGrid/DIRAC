@@ -1,4 +1,5 @@
-""" DIRAC DirectoryTree base class """
+"""DIRAC DirectoryTree base class"""
+
 import errno
 import time
 import threading
@@ -89,7 +90,7 @@ class DirectoryTreeBase:
             result = self.db.ugManager.getUserAndGroupID(credDict)
             if not result["OK"]:
                 return result
-            (l_uid, l_gid) = result["Value"]
+            l_uid, l_gid = result["Value"]
 
         dirDict = {}
         result = self.makeDir(path)
@@ -1141,7 +1142,7 @@ class DirectoryTreeBase:
 
             # Get the physical size
             req = "SELECT SUM(F.Size),COUNT(F.Size),R.SEID from FC_Files as F, FC_Replicas as R "
-            req += "WHERE F.FileID=R.FileID AND F.DirID=%d GROUP BY R.SEID" % int(dirID)
+            req += f"WHERE F.FileID=R.FileID AND F.DirID={int(dirID)} GROUP BY R.SEID"
             result = self.db._query(req)
             if not result["OK"]:
                 return result
@@ -1164,7 +1165,7 @@ class DirectoryTreeBase:
                     return result
 
             # Get the logical size
-            req = "SELECT SUM(Size),COUNT(Size) from FC_Files WHERE DirID=%d " % int(dirID)
+            req = f"SELECT SUM(Size),COUNT(Size) from FC_Files WHERE DirID={int(dirID)} "
             result = self.db._query(req)
             if not result["OK"]:
                 return result

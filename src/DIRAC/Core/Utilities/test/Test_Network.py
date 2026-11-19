@@ -1,5 +1,5 @@
-""" Test case for DIRAC.Core.Utilities.Network module
-"""
+"""Test case for DIRAC.Core.Utilities.Network module"""
+
 import pytest
 
 from DIRAC.Core.Utilities.Network import discoverInterfaces, getFQDN, getIPsForHostName, checkHostsMatch

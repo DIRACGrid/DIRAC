@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 """
-  Retrieve logging information for a DIRAC job
+Retrieve logging information for a DIRAC job
 """
+
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache

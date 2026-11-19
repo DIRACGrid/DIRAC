@@ -4,18 +4,19 @@
 # Date: 2013/03/25 07:45:06
 ########################################################################
 
-""" :mod: RemoveReplica
+""":mod: RemoveReplica
 
-    ===================
+===================
 
-    .. module: RemoveReplica
+.. module: RemoveReplica
 
-    :synopsis: removeReplica operation handler
+:synopsis: removeReplica operation handler
 
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    RemoveReplica operation handler
+RemoveReplica operation handler
 """
+
 # #
 # @file RemoveReplica.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

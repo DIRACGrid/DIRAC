@@ -8,6 +8,7 @@ Example:
   $ dirac-dms-clean-directory /formation/user/v/vhamar/newDir
   Cleaning directory /formation/user/v/vhamar/newDir ...  OK
 """
+
 import os
 
 from DIRAC import exit as DIRACExit, gLogger

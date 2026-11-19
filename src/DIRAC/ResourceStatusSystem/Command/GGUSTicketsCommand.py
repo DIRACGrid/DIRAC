@@ -1,9 +1,10 @@
-""" GGUSTicketsCommand
+"""GGUSTicketsCommand
 
-  The GGUSTickets_Command class is a command class to know about
-  the number of active present opened tickets.
+The GGUSTickets_Command class is a command class to know about
+the number of active present opened tickets.
 
 """
+
 from urllib.error import URLError
 
 from DIRAC import S_ERROR, S_OK

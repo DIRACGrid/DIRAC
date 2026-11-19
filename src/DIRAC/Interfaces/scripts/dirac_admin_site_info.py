@@ -15,6 +15,7 @@ Example:
    'Name': 'IN2P3-CC',
    'SE': 'IN2P3-disk, DIRAC-USER'}
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

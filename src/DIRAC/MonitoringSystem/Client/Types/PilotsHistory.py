@@ -1,5 +1,5 @@
-""" Definition for PilotsHistory Monitoring type.
-    Filled by the agent "WorkloadManagement/StatesAccountingAgent"
+"""Definition for PilotsHistory Monitoring type.
+Filled by the agent "WorkloadManagement/StatesAccountingAgent"
 """
 
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType

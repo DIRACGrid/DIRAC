@@ -8,6 +8,7 @@
 Test cases for DIRACCommon.Core.Utilities.List module.
 
 """
+
 import unittest
 
 # sut

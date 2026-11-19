@@ -20,6 +20,7 @@ The following options can be set for the RequestExecutingAgent. The configuratio
   :caption: RequestExecutingAgent options
 
 """
+
 # #
 # @file RequestExecutingAgent.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
@@ -43,7 +44,6 @@ from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
-
 
 # # agent name
 AGENT_NAME = "RequestManagement/RequestExecutingAgent"

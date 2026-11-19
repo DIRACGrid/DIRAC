@@ -1,6 +1,7 @@
 """
 Test LogLevels module
 """
+
 import logging
 import pytest
 

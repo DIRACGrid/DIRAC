@@ -4,6 +4,7 @@ Submit jobs to DIRAC WMS
 
 Default JDL can be configured from session in the "JDL" option
 """
+
 import os.path
 import sys
 import re

@@ -1,5 +1,5 @@
-""" Test_RSS_Command_GOCDBStatusCommand
-"""
+"""Test_RSS_Command_GOCDBStatusCommand"""
+
 from datetime import datetime, timedelta
 from unittest import mock
 

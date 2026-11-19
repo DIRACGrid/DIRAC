@@ -1,14 +1,13 @@
-""" Definition for WMSHistory Monitoring type.
-    Drop-in replacement for the Accounting/WMSHistory accounting type.
+"""Definition for WMSHistory Monitoring type.
+Drop-in replacement for the Accounting/WMSHistory accounting type.
 
-    Filled by the agent "WorkloadManagement/StatesAccountingAgent"
+Filled by the agent "WorkloadManagement/StatesAccountingAgent"
 """
 
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
 
 class WMSHistory(BaseType):
-
     """
     .. class:: WMSMonitorType
     """

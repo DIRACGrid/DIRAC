@@ -1,5 +1,4 @@
-""" Test class for Job Agent
-"""
+"""Test class for Job Agent"""
 
 # imports
 import os

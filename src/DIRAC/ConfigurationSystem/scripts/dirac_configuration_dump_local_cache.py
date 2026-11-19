@@ -6,6 +6,7 @@
 """
 Dump DIRAC Configuration data
 """
+
 import sys
 import DIRAC
 from DIRAC.Core.Base.Script import Script

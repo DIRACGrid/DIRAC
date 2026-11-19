@@ -6,6 +6,7 @@
 """
 This is a script to launch DIRAC executors
 """
+
 import sys
 
 from DIRAC import gLogger

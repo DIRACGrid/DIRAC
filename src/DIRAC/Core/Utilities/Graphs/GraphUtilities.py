@@ -1,9 +1,10 @@
-""" GraphUtilities is a a collection of utility functions and classes used
-    in the DIRAC Graphs package.
+"""GraphUtilities is a a collection of utility functions and classes used
+in the DIRAC Graphs package.
 
-    The DIRAC Graphs package is derived from the GraphTool plotting package of the
-    CMS/Phedex Project by ... <to be added>
+The DIRAC Graphs package is derived from the GraphTool plotting package of the
+CMS/Phedex Project by ... <to be added>
 """
+
 import os
 import time
 import datetime
@@ -189,7 +190,7 @@ def add_time_to_title(begin, end, metadata={}):
 
     begin_tuple = time.gmtime(begin)
     end_tuple = time.gmtime(end)
-    added_title = "%i %s from " % (int((end - begin) / time_slice), format_name)
+    added_title = f"{int((end - begin) / time_slice)} {format_name} from "
     added_title += time.strftime(f"{format_str} to", begin_tuple)
     if time_slice < 86400:
         add_utc = " UTC"

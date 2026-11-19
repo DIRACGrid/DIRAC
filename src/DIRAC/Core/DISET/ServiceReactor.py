@@ -1,17 +1,17 @@
 """
-  DIRAC class to execute services
+DIRAC class to execute services
 
-  In the most common case, DIRAC services are executed using the dirac-service command.
-  dirac-service accepts a list positional arguments. These arguments have the form:
-  [DIRAC System Name]/[DIRAC Service Name]
-  dirac-service then:
-  - produces a instance of ServiceReactor
-  - loads the required modules using the ServiceReactor.loadAgentModules method
-  - starts the execution loop using the ServiceReactor.serve() method
+In the most common case, DIRAC services are executed using the dirac-service command.
+dirac-service accepts a list positional arguments. These arguments have the form:
+[DIRAC System Name]/[DIRAC Service Name]
+dirac-service then:
+- produces a instance of ServiceReactor
+- loads the required modules using the ServiceReactor.loadAgentModules method
+- starts the execution loop using the ServiceReactor.serve() method
 
-  Service modules must be placed under the Service directory of a DIRAC System.
-  DIRAC Systems are called XXXSystem where XXX is the [DIRAC System Name], and
-  must inherit from the base class RequestHandler
+Service modules must be placed under the Service directory of a DIRAC System.
+DIRAC Systems are called XXXSystem where XXX is the [DIRAC System Name], and
+must inherit from the base class RequestHandler
 
 """
 

@@ -29,6 +29,7 @@ Example:
   SE= GRIDKA-RDST
   You can check their status and progress with dirac-stager-monitor-file <LFN> <SE>
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

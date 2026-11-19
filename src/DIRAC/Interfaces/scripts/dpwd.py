@@ -2,6 +2,7 @@
 """
 Prints the current file datalogue directory.
 """
+
 from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.Interfaces.Utilities.DCommands import DSession

@@ -10,6 +10,7 @@ Example:
   $ dirac-wms-job-submit Simple.jdl
   JobID = 11
 """
+
 import os
 
 import DIRAC

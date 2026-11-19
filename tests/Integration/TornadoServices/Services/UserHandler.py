@@ -1,5 +1,5 @@
-""" Dummy Service is a service for testing new dirac protocol
-  This file must be copied in FrameworkSystem/Service to run tests
+"""Dummy Service is a service for testing new dirac protocol
+This file must be copied in FrameworkSystem/Service to run tests
 """
 
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
@@ -11,7 +11,6 @@ from DIRAC import gConfig
 
 
 class UserHandler(TornadoService):
-
     """
     A handler designed for testing Tornado by implementing a basic access to database
     """

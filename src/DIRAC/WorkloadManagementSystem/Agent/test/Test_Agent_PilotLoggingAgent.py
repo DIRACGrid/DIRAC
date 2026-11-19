@@ -1,5 +1,5 @@
-""" Test class for PilotLoggingAgent Agent
-"""
+"""Test class for PilotLoggingAgent Agent"""
+
 import os
 import tempfile
 import time

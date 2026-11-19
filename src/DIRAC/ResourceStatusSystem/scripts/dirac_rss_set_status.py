@@ -4,6 +4,7 @@ Script that facilitates the modification of a element through the command line.
 However, the usage of this script will set the element token to the command
 issuer with a duration of 1 day.
 """
+
 from datetime import datetime, timedelta
 
 from DIRAC import S_OK, gLogger

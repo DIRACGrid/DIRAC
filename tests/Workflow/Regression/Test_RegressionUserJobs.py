@@ -1,5 +1,5 @@
-""" This module will run some job descriptions defined with an older version of DIRAC
-"""
+"""This module will run some job descriptions defined with an older version of DIRAC"""
+
 # pylint: disable=protected-access, wrong-import-position, missing-docstring
 import os
 import shutil

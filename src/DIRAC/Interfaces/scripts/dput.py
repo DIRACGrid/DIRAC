@@ -5,6 +5,7 @@ Uploads a file to an SE and registers it in the file catalog.
 Uses the default SE specified in $HOME/.dirac/dcommands.conf unless overridden
 on the command line.
 """
+
 import os
 
 import DIRAC

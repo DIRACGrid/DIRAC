@@ -725,8 +725,7 @@ def jobIDPath():
     (p / "result_dir" / "output.txt").touch()
 
     with open(p / "pool_xml_catalog.xml", "w") as f:
-        f.write(
-            """<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+        f.write("""<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <!-- Edited By POOL -->
 <!DOCTYPE POOLFILECATALOG SYSTEM "InMemory">
 <POOLFILECATALOG>
@@ -737,8 +736,7 @@ def jobIDPath():
     <logical/>
   </File>
 
-</POOLFILECATALOG>"""
-        )
+</POOLFILECATALOG>""")
 
     yield int(jobid)
 

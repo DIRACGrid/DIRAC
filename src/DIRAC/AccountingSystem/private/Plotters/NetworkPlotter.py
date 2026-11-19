@@ -6,6 +6,7 @@ Supports:
 * one-way delay, jitter, jitter over one-way delay
 
 """
+
 import numpy as np
 
 from DIRAC import S_OK

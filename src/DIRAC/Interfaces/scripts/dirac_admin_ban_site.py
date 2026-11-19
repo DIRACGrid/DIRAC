@@ -5,6 +5,7 @@ Remove Site from Active mask for current Setup
 Example:
   $ dirac-admin-ban-site LCG.IN2P3.fr "Pilot installation problems"
 """
+
 import time
 
 from DIRAC.Core.Base.Script import Script

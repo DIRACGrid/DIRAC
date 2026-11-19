@@ -1,48 +1,49 @@
-""" File catalog class. This is a simple dispatcher for the file catalog plug-ins.
-    It ensures that all operations are performed on the desired catalogs.
+"""File catalog class. This is a simple dispatcher for the file catalog plug-ins.
+It ensures that all operations are performed on the desired catalogs.
 
-    The File Catalog plug-ins are supposed to implement a certain number of methods of
-    the File Catalog interface. The names of the implemented methods classified in
-    "read", "write" and "no_lfn" categories are reported by each plug-in using
-    getInterfaceMethods() call. The File Catalog collects and memorizes all the
-    method names from all the plug-ins and in each category. Only calls to these
-    methods will be attempted.
+The File Catalog plug-ins are supposed to implement a certain number of methods of
+the File Catalog interface. The names of the implemented methods classified in
+"read", "write" and "no_lfn" categories are reported by each plug-in using
+getInterfaceMethods() call. The File Catalog collects and memorizes all the
+method names from all the plug-ins and in each category. Only calls to these
+methods will be attempted.
 
-    One plug-in can be declared to be a Master in the CS. If the Master plug-in is
-    declared it must implement all the methods collected in the "write" category.
-    When the FileCatalog is called with a given "write" method name, the Master plugin
-    is called first. If it fails, no other plug-in is called to preserve consistency
-    in the states of different catalogs. If no Master plug-in is declared, all the
-    plug-ins are called (in case they implement the method) for the "write" methods.
+One plug-in can be declared to be a Master in the CS. If the Master plug-in is
+declared it must implement all the methods collected in the "write" category.
+When the FileCatalog is called with a given "write" method name, the Master plugin
+is called first. If it fails, no other plug-in is called to preserve consistency
+in the states of different catalogs. If no Master plug-in is declared, all the
+plug-ins are called (in case they implement the method) for the "write" methods.
 
-    For the "read" methods plug-ins are called one by one, starting with the Master
-    plug-in if declared, until getting a successful result.
+For the "read" methods plug-ins are called one by one, starting with the Master
+plug-in if declared, until getting a successful result.
 
-    Most of the catalog plug-in methods are taking the first argument which represents
-    the required LFNS. The LFNs argument can have one of the following forms:
+Most of the catalog plug-in methods are taking the first argument which represents
+the required LFNS. The LFNs argument can have one of the following forms:
 
-    - string: just a single LFN itself
-    - list: a list of LFN strings
-    - dictionary: the keys are LFN strings, the values are LFN specific parameters
-                  needed by the method
+- string: just a single LFN itself
+- list: a list of LFN strings
+- dictionary: the keys are LFN strings, the values are LFN specific parameters
+              needed by the method
 
-    All the methods taking the first LFNs argument are returning a standard DIRAC
-    bulk result structure. If the call is successful, the Successful and Failed
-    dictionaries have LFNs as keys and specific results of operation as values.
-    The LFNs argument before calling these methods is checked to conform to the
-    convention above and modified to take the "dictionary" form. The original LFN names
-    are memorized and restored in the final result.
+All the methods taking the first LFNs argument are returning a standard DIRAC
+bulk result structure. If the call is successful, the Successful and Failed
+dictionaries have LFNs as keys and specific results of operation as values.
+The LFNs argument before calling these methods is checked to conform to the
+convention above and modified to take the "dictionary" form. The original LFN names
+are memorized and restored in the final result.
 
-    Some methods implemented by plug-ins do not have LFNs as the first argument.
-    The names of those methods are reported by the plug-ins as "no_lfn" methods
-    in the getInterfaceMethods() call. For those methods there is obviously no
-    additional check of the structure of the LFNs argument and no corresponding
-    processing of the results.
+Some methods implemented by plug-ins do not have LFNs as the first argument.
+The names of those methods are reported by the plug-ins as "no_lfn" methods
+in the getInterfaceMethods() call. For those methods there is obviously no
+additional check of the structure of the LFNs argument and no corresponding
+processing of the results.
 
-    For the actual methods that can be called vie the File Catalog object, see
-    the documentation of the respective FileCatalog plug-ins ( client classes )
+For the actual methods that can be called vie the File Catalog object, see
+the documentation of the respective FileCatalog plug-ins ( client classes )
 
 """
+
 import re
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR

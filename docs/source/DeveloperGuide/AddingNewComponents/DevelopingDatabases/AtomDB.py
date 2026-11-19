@@ -1,5 +1,5 @@
-""" A test DB in DIRAC, using MySQL as backend
-"""
+"""A test DB in DIRAC, using MySQL as backend"""
+
 from DIRAC.Core.Base.DB import DB
 
 

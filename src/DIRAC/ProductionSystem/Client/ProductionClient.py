@@ -1,4 +1,5 @@
-""" Class that contains client access to the production DB handler. """
+"""Class that contains client access to the production DB handler."""
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.ProductionSystem.Utilities.StateMachine import ProductionsStateMachine

@@ -1,4 +1,5 @@
-""" Test the FTS3Utilities"""
+"""Test the FTS3Utilities"""
+
 import unittest
 
 from unittest import mock

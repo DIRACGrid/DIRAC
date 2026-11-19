@@ -1,5 +1,5 @@
-""" Test for WMS clients
-"""
+"""Test for WMS clients"""
+
 # pylint: disable=protected-access, missing-docstring, invalid-name, line-too-long
 
 import os
@@ -15,7 +15,6 @@ gLogger.setLevel("DEBUG")
 # sut
 from DIRAC.WorkloadManagementSystem.Client.Matcher import Matcher
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
-
 
 pilotAgentsDBMock = MagicMock()
 jobDBMock = MagicMock()

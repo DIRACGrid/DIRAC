@@ -6,6 +6,7 @@
 """
 Do the initial installation of a DIRAC Web portal
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

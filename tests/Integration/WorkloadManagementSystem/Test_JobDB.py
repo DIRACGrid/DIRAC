@@ -1,7 +1,7 @@
-""" This tests only need the JobDB, and connects directly to it
+"""This tests only need the JobDB, and connects directly to it
 
-    Suggestion: for local testing, run this with::
-        python -m pytest -c ../pytest.ini  -vv tests/Integration/WorkloadManagementSystem/Test_JobDB.py
+Suggestion: for local testing, run this with::
+    python -m pytest -c ../pytest.ini  -vv tests/Integration/WorkloadManagementSystem/Test_JobDB.py
 """
 
 # pylint: disable=wrong-import-position, missing-docstring
@@ -149,8 +149,7 @@ def test_getJobJDL_nonOriginal(jobDB: JobDB):
     # Assert
     assert res["OK"], res["Message"]
     print(res["Value"])
-    assert " ".join(res["Value"].split()) == " ".join(
-        f"""[
+    assert " ".join(res["Value"].split()) == " ".join(f"""[
         Arguments = "jobDescription.xml -o LogLevel=info";
         CPUTime = 86400;
         Executable = "dirac-jobexec";
@@ -188,8 +187,7 @@ def test_getJobJDL_nonOriginal(jobDB: JobDB):
         StdError = "std.err";
         StdOutput = "std.out";
         VirtualOrganization = "vo";
-    ]""".split()
-    )
+    ]""".split())
 
 
 def test_getJobsAttributes(jobDB: JobDB):

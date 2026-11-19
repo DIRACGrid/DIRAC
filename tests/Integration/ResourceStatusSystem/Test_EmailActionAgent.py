@@ -1,6 +1,7 @@
-""" This is a test for EmailAction and EmailAgent
-    Requires DB to be present and ResourceStatusHandler to be working
+"""This is a test for EmailAction and EmailAgent
+Requires DB to be present and ResourceStatusHandler to be working
 """
+
 import importlib
 from unittest.mock import MagicMock
 
@@ -14,7 +15,6 @@ DIRAC.initialize()  # Initialize configuration
 
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmailAction import EmailAction
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-
 
 name = "LogStatusAction"
 decisionParams = {

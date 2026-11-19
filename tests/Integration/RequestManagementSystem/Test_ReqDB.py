@@ -1,5 +1,4 @@
-""" This integration test runs the RMS test scenari using the MySQL DB
-"""
+"""This integration test runs the RMS test scenari using the MySQL DB"""
 
 # pylint: disable=invalid-name,wrong-import-position
 import DIRAC

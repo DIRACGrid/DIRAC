@@ -2,6 +2,7 @@
 """
 Create and put 'ReplicateAndRegister' request.
 """
+
 import os
 from DIRAC.Core.Base.Script import Script
 from DIRAC import gLogger

@@ -1,3 +1,3 @@
 """
-   DIRAC.WorkloadManagementSystem.private package
+DIRAC.WorkloadManagementSystem.private package
 """

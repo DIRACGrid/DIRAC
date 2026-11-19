@@ -3,18 +3,19 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/13 18:49:12
 ########################################################################
-""" :mod: ReplicateAndRegister
+""":mod: ReplicateAndRegister
 
-    ==========================
+==========================
 
-    .. module: ReplicateAndRegister
+.. module: ReplicateAndRegister
 
-    :synopsis: ReplicateAndRegister operation handler
+:synopsis: ReplicateAndRegister operation handler
 
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    ReplicateAndRegister operation handler
+ReplicateAndRegister operation handler
 """
+
 # #
 # @file ReplicateAndRegister.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

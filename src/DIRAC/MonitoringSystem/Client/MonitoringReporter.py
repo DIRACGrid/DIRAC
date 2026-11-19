@@ -25,7 +25,6 @@ from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer, createP
 
 
 class MonitoringReporter:
-
     """
     .. class:: MonitoringReporter
 

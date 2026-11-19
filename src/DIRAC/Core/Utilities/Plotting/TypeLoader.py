@@ -1,5 +1,5 @@
-""" Utility for loading plotting types.
-    Works both for Accounting and Monitoring.
+"""Utility for loading plotting types.
+Works both for Accounting and Monitoring.
 """
 
 import re

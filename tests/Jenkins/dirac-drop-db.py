@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-""" Drop DBs from the MySQL server
-"""
+"""Drop DBs from the MySQL server"""
+
 from DIRAC.Core.Base.Script import Script
 
 Script.setUsageMessage(

@@ -13,6 +13,7 @@ Example:
   $ dirac-version
 
 """
+
 import argparse
 
 import DIRAC

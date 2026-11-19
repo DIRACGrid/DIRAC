@@ -1,6 +1,7 @@
 """
 BaseFormatter
 """
+
 import logging
 import time
 

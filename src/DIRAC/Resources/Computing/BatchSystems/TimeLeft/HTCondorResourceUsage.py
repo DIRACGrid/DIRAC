@@ -1,6 +1,7 @@
-""" The HTCondor TimeLeft utility interrogates the HTCondor batch system for the
-    current CPU consumed, as well as its limit.
+"""The HTCondor TimeLeft utility interrogates the HTCondor batch system for the
+current CPU consumed, as well as its limit.
 """
+
 import os
 
 from DIRAC import S_OK, S_ERROR

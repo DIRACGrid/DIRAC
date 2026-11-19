@@ -25,7 +25,7 @@ parser.add_option(
     default=False,
 )
 parser.add_option("-v", "--verbose", dest="verbose", action="store_true", help="Verbose print", default=False)
-(options, args) = parser.parse_args()
+options, args = parser.parse_args()
 print(options)
 if not options.filename:  # if filename is not given
     parser.error("Filename not given")

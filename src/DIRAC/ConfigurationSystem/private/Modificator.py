@@ -1,5 +1,5 @@
-""" This is the guy that actually modifies the content of the CS
-"""
+"""This is the guy that actually modifies the content of the CS"""
+
 import datetime
 import difflib
 import zlib

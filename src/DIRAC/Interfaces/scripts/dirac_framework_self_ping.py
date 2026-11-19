@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
-""" Performs a DIPS ping on a given target and exit with the return code.
+"""Performs a DIPS ping on a given target and exit with the return code.
 It uses the local host certificate
 The target is specified as ""<port>/System/Service"
 The script does not print anything, and just exists with 0 in case of success,
-or 1 in case of error """
+or 1 in case of error"""
 
 import sys
 import os

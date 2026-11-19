@@ -1,5 +1,5 @@
-""" GGUSTicketsClient class is a client for the GGUS Tickets DB.
-"""
+"""GGUSTicketsClient class is a client for the GGUS Tickets DB."""
+
 from urllib.error import URLError
 
 from suds import WebFault

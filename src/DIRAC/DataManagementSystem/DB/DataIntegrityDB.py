@@ -1,5 +1,5 @@
-""" DataIntegrityDB class is a front-end to the Data Integrity Database.
-"""
+"""DataIntegrityDB class is a front-end to the Data Integrity Database."""
+
 from DIRAC import S_OK
 from DIRAC.Core.Base.DB import DB
 

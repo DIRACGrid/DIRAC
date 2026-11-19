@@ -4,7 +4,6 @@ import pytest
 
 from DIRACCommon.ConfigurationSystem.Client.Helpers.Resources import getDIRACPlatform, _platformSortKey
 
-
 MOCK_OS_COMPATIBILITY_DICT = {
     "plat1": {"plat1", "OS1", "OS2", "OS3"},
     "plat2": {"plat2", "OS4", "OS5"},

@@ -1,4 +1,4 @@
-""" Tornado-based HTTPs Monitoring service.
+"""Tornado-based HTTPs Monitoring service.
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN TornadoMonitoring

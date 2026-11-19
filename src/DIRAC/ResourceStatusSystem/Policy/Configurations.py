@@ -1,17 +1,18 @@
-""" Configurations module
+"""Configurations module
 
-  Configuration to use policies.
+Configuration to use policies.
 
-  Follows the schema::
+Follows the schema::
 
-    <PolicyNameInCS> : {
-               'description' : <some human readable description>,
-               'module'      : <policy module name>,
-               'command'     : ( <command module name >, < command class name > ),
-               'args'        : { arguments for the command } or None
-                       }
+  <PolicyNameInCS> : {
+             'description' : <some human readable description>,
+             'module'      : <policy module name>,
+             'command'     : ( <command module name >, < command class name > ),
+             'args'        : { arguments for the command } or None
+                     }
 
 """
+
 POLICIESMETA = {  # DownTime POLICIES
     "DTOngoing": {
         "description": "Ongoing and scheduled down-times",

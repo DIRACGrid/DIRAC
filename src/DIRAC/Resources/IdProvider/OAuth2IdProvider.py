@@ -1,5 +1,5 @@
-""" IdProvider based on OAuth2 protocol
-"""
+"""IdProvider based on OAuth2 protocol"""
+
 import re
 import time
 import pprint

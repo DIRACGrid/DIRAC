@@ -1,28 +1,29 @@
-""" SlackAction
+"""SlackAction
 
-  This action posts the status change to a Slack channel
-  It uses Slack Webhooks.
-  Also compatible with Mattermost, which is an open source alternative to Slack.
-  To create a webhook URL refer the following :
+This action posts the status change to a Slack channel
+It uses Slack Webhooks.
+Also compatible with Mattermost, which is an open source alternative to Slack.
+To create a webhook URL refer the following :
 
-  * Slack : https://api.slack.com/incoming-webhooks
-  * Mattermost : https://docs.mattermost.com/developer/webhooks-incoming.html
+* Slack : https://api.slack.com/incoming-webhooks
+* Mattermost : https://docs.mattermost.com/developer/webhooks-incoming.html
 
-  Add the webhook URL to dirac.cfg at Operations/[]/ResourceStatus/Config/Slack
+Add the webhook URL to dirac.cfg at Operations/[]/ResourceStatus/Config/Slack
 
-  example:
+example:
 
-    Operations/
-      Defaults/
-        ResourceStatus/
-          Config/
-            Slack = https://hooks.slack.com/services/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
-            Mattermost = https://mattermost.web.cern.ch/hooks/axy94k3m1pg5xeyaw3qqb3x8bo
+  Operations/
+    Defaults/
+      ResourceStatus/
+        Config/
+          Slack = https://hooks.slack.com/services/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
+          Mattermost = https://mattermost.web.cern.ch/hooks/axy94k3m1pg5xeyaw3qqb3x8bo
 
-  Even if using Mattermost,the URL is still to be placed at
-  Operations/[]/ResourceStatus/Config/Slack and not Operations/[]/ResourceStatus/Config/Mattermost
+Even if using Mattermost,the URL is still to be placed at
+Operations/[]/ResourceStatus/Config/Slack and not Operations/[]/ResourceStatus/Config/Mattermost
 
 """
+
 import json
 import requests
 

@@ -1,7 +1,8 @@
-""" Executor Module
+"""Executor Module
 
-    Just provides a number of functions used by all executors
+Just provides a number of functions used by all executors
 """
+
 import os
 
 from DIRAC import S_ERROR, S_OK, gConfig, gLogger, rootPath

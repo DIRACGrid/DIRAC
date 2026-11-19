@@ -1,7 +1,8 @@
 """
-  This module contains the necessary tools to discover and load
-  the handlers for serving HTTPS
+This module contains the necessary tools to discover and load
+the handlers for serving HTTPS
 """
+
 from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader

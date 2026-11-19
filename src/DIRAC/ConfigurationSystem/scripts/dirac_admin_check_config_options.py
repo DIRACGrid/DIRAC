@@ -13,6 +13,7 @@ This script should be run by dirac administrators after major updates.
 Usage:
   dirac-admin-check-config-options [options] -[MAUO] [-S <system>]
 """
+
 import os
 from pprint import pformat
 

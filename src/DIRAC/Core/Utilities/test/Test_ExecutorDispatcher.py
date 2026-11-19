@@ -1,11 +1,10 @@
-""" py.test test of ExecutorDispatcher
-"""
+"""py.test test of ExecutorDispatcher"""
+
 # pylint: disable=protected-access
 from DIRAC.Core.Utilities.ExecutorDispatcher import (
     ExecutorState,
     ExecutorQueues,
 )
-
 
 execState = ExecutorState()
 execState.addExecutor(1, "type1", 2)

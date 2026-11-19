@@ -1,4 +1,4 @@
-""" That is probably one of the most convoluted unit test file we have...
+"""That is probably one of the most convoluted unit test file we have...
 It could have been done in a simpler way, but I want to use this test as a "doc"
 as I am sure this trick will show useful one day...
 
@@ -17,6 +17,7 @@ up to date, I have to collect it dynamically. And this is what I do
 Another interesting feature of this test is that I am basing the behavior of the mocks
 (getReplicas, getFileMetadata, etc) on the LFN itself.
 """
+
 import errno
 import json
 import os
@@ -32,7 +33,6 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.Agent.RequestOperations.ReplicateAndRegister import filterReplicas
 
 from DIRAC.RequestManagementSystem.Client.File import File
-
 
 # Although we will in general use regular expression to drive the behavior
 # of the mocks, there are a few very specific files.

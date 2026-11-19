@@ -1,24 +1,25 @@
-""" This contains unit tests to make sure that the migration between PyGSI and M2Crypto is as smooth as possible
-    The test covers only the method exposed by the PyGSI version for the time being.
+"""This contains unit tests to make sure that the migration between PyGSI and M2Crypto is as smooth as possible
+The test covers only the method exposed by the PyGSI version for the time being.
 
-    We are not testing:
-    -> setChain: simple setter
-    -> setPKey: simple setter
+We are not testing:
+-> setChain: simple setter
+-> setPKey: simple setter
 
-    * generateProxyRequest
-    * generateChainFromRequestString
-
-
-    We are skipping:
-    * init with certList as argument, because never used
-    * generateProxyToString: strength (nah....)
+* generateProxyRequest
+* generateChainFromRequestString
 
 
-    We are missing:
-      test proxy from proxy ? Is it a usecase ?
+We are skipping:
+* init with certList as argument, because never used
+* generateProxyToString: strength (nah....)
+
+
+We are missing:
+  test proxy from proxy ? Is it a usecase ?
 
 
 """
+
 # redefined-outer-name is needed because we keep bassing get_X509Chain_class as param
 # pylint: disable=redefined-outer-name
 
@@ -55,7 +56,6 @@ from DIRAC.Core.Security.test.x509TestUtilities import (
     get_X509Request,
     get_X509Chain_from_X509Request,
 )
-
 
 ONE_YEAR_IN_SECS = 3600 * 24 * 365
 TWENTY_YEARS_IN_SEC = 20 * ONE_YEAR_IN_SECS

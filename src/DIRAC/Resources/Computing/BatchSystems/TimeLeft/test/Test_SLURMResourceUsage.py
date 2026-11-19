@@ -1,10 +1,9 @@
-""" Test class for SLURMResourceUsage utility
-"""
+"""Test class for SLURMResourceUsage utility"""
+
 import pytest
 
 from DIRAC import S_OK
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.SLURMResourceUsage import SLURMResourceUsage
-
 
 SLURM_OUT_SUCCESS_0 = "12345,86400,24,3600,03:00:00"
 SLURM_OUT_SUCCESS_1 = "56789,86400,24,3600,4-03:00:00"

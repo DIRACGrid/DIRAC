@@ -9,6 +9,7 @@ Example:
   This is the servicesList: MyService
   We are done with detail report.
 """
+
 from DIRAC import S_OK, S_ERROR, gLogger, exit as DIRACExit
 from DIRAC.Core.Base.Script import Script
 

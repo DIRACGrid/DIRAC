@@ -1,4 +1,5 @@
 """Test for JobReport"""
+
 # pylint: disable=missing-docstring
 
 import decimal

@@ -4,15 +4,16 @@
 # Date: 2013/03/25 08:09:08
 ########################################################################
 
-""" :mod: OperationHandlerBaseTests
-    ===============================
+""":mod: OperationHandlerBaseTests
+===============================
 
-    .. module: OperationHandlerBaseTests
-    :synopsis: unittests for OperationHandlerBase
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: OperationHandlerBaseTests
+:synopsis: unittests for OperationHandlerBase
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    unittests for OperationHandlerBase
+unittests for OperationHandlerBase
 """
+
 # #
 # @file OperationHandlerBaseTests.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

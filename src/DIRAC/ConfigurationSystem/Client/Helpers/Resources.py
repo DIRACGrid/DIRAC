@@ -1,5 +1,5 @@
-""" Helper for the CS Resources section
-"""
+"""Helper for the CS Resources section"""
+
 from urllib import parse
 
 from DIRAC import S_ERROR, S_OK, gConfig, gLogger

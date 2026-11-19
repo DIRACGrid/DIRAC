@@ -1,5 +1,5 @@
-""" Collection of utilities for dealing with security files (i.e. proxy files)
-"""
+"""Collection of utilities for dealing with security files (i.e. proxy files)"""
+
 import os
 import tempfile
 

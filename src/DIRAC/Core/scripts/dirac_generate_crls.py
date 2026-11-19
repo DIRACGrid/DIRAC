@@ -2,6 +2,7 @@
 """
 Generate a single CRLs file
 """
+
 import sys
 
 from DIRAC import gLogger

@@ -6,6 +6,7 @@
 """
 Kill the specified pilot
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

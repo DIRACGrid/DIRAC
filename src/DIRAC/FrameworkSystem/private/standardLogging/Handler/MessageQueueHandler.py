@@ -1,6 +1,7 @@
 """
 Message Queue Handler
 """
+
 import json
 import logging
 import os

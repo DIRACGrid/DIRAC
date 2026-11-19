@@ -1,9 +1,10 @@
-""" PilotCommand
+"""PilotCommand
 
-  The PilotCommand class is a command class to know about present pilots
-  efficiency.
+The PilotCommand class is a command class to know about present pilots
+efficiency.
 
 """
+
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping, getSites
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient

@@ -2,6 +2,7 @@
 """
 Get the given file replica metadata from the File Catalog
 """
+
 import os
 
 from DIRAC import exit as DIRACExit

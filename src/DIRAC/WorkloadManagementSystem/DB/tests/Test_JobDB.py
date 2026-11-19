@@ -1,4 +1,4 @@
-""" tests for the JobDB module """
+"""tests for the JobDB module"""
 
 # pylint: disable=protected-access, invalid-name
 

@@ -3,18 +3,19 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/19 13:55:14
 ########################################################################
-""" :mod: RegisterFile
+""":mod: RegisterFile
 
-    ==================
+==================
 
-    .. module: RegisterFile
+.. module: RegisterFile
 
-    :synopsis: register operation handler
+:synopsis: register operation handler
 
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    RegisterFile operation handler
+RegisterFile operation handler
 """
+
 # #
 # @file RegisterOperation.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

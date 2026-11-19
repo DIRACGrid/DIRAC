@@ -1,9 +1,10 @@
-""" LineGraph represents line graphs both simple and stacked. It includes
-    also cumulative graph functionality.
+"""LineGraph represents line graphs both simple and stacked. It includes
+also cumulative graph functionality.
 
-    The DIRAC Graphs package is derived from the GraphTool plotting package of the
-    CMS/Phedex Project by ... <to be added>
+The DIRAC Graphs package is derived from the GraphTool plotting package of the
+CMS/Phedex Project by ... <to be added>
 """
+
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import (
     to_timestamp,
@@ -17,7 +18,6 @@ import datetime
 
 
 class LineGraph(PlotBase):
-
     """
     The LineGraph class is a straightforward line graph; given a dictionary
     of values, it takes the keys as the independent variable and the values

@@ -10,6 +10,7 @@ exposed by MonitoringDB.
 
 
 """
+
 import datetime
 import os
 
@@ -25,7 +26,6 @@ from DIRAC.MonitoringSystem.private.MainReporter import MainReporter
 
 
 class MonitoringHandlerMixin:
-
     """
     .. class:: MonitoringHandler
 

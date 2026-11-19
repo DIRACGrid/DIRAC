@@ -1,4 +1,4 @@
-""" The WorkflowTaskAgent takes workflow tasks created in the TransformationDB and submits them to the WMS.
+"""The WorkflowTaskAgent takes workflow tasks created in the TransformationDB and submits them to the WMS.
 
 The following options can be set for the WorkflowTaskAgent.
 
@@ -18,6 +18,7 @@ need to be assigned any non-empty value to be activated
    :ref:`trans-multi-vo`.
 
 """
+
 from DIRAC import S_OK
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations

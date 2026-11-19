@@ -1,5 +1,5 @@
-""" DIRAC FileCatalog base class for mix-in classes to manage users and groups
-"""
+"""DIRAC FileCatalog base class for mix-in classes to manage users and groups"""
+
 import time
 import threading
 

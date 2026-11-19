@@ -10,7 +10,6 @@ from cachetools import LRUCache, TTLCache, cached
 from threading import Lock
 from typing import Optional
 
-
 # Requires at least version 3.3.3
 from fts3 import __version__ as fts3_version
 import fts3.rest.client.easy as fts3

@@ -1,5 +1,5 @@
-""" Basic functions for interacting with CS objects
-"""
+"""Basic functions for interacting with CS objects"""
+
 import os
 
 import DIRAC

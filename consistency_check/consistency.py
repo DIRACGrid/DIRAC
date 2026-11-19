@@ -5,7 +5,6 @@ from pathlib import Path
 from typer import colors
 from typing import Annotated
 
-
 RED = colors.RED
 GREEN = colors.GREEN
 

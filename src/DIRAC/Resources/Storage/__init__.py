@@ -1,1 +1,1 @@
-""" DIRAC.Resources.Storage package """
+"""DIRAC.Resources.Storage package"""

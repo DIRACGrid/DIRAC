@@ -1,6 +1,7 @@
-""" TaskManager contains TaskBase, which is inherited by WorkflowTasks and RequestTasks modules,
+"""TaskManager contains TaskBase, which is inherited by WorkflowTasks and RequestTasks modules,
 for managing jobs and requests tasks
 """
+
 # pylint: disable=protected-access
 
 

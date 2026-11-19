@@ -1,12 +1,12 @@
 """
 JSON output on stdout
 """
+
 import logging
 import sys
 
 from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
 from DIRAC.FrameworkSystem.private.standardLogging.Formatter.MicrosecondJsonFormatter import MicrosecondJsonFormatter
-
 
 # These are the standard logging fields that we want to see
 # in the json. All the non default are printed anyway

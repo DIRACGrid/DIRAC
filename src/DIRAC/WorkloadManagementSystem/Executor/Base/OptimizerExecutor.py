@@ -1,5 +1,5 @@
-""" Base class for all the executor modules for Jobs Optimization
-"""
+"""Base class for all the executor modules for Jobs Optimization"""
+
 import threading
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, List

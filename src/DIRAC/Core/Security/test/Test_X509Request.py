@@ -1,20 +1,21 @@
-""" This contains unit tests to make sure that the migration between PyGSI and M2Crypto is as smooth as possible
-    The test covers only the method exposed by the PyGSI version for the time being.
+"""This contains unit tests to make sure that the migration between PyGSI and M2Crypto is as smooth as possible
+The test covers only the method exposed by the PyGSI version for the time being.
 
-    We are not testing:
+We are not testing:
 
-    * generateProxyRequest with bitStrengsh -> I should...
-    * getIssuerDN: does not make any sense here, is never used
-    * generateChainFromResponse: not used
+* generateProxyRequest with bitStrengsh -> I should...
+* getIssuerDN: does not make any sense here, is never used
+* generateChainFromResponse: not used
 
 
-    We are skipping:
-    * init with arguments, because never used
-    * The delegation mechanism (checkChain method)involves also X509Chain so it is in the X509Chain
+We are skipping:
+* init with arguments, because never used
+* The delegation mechanism (checkChain method)involves also X509Chain so it is in the X509Chain
 
 
 
 """
+
 # redefined-outer-name is needed because we keep bassing get_X509Chain_class as param
 # pylint: disable=redefined-outer-name
 

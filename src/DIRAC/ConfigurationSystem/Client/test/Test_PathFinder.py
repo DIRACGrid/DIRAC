@@ -1,5 +1,5 @@
-""" Unit tests for PathFinder only for functions that I added
-"""
+"""Unit tests for PathFinder only for functions that I added"""
+
 import pytest
 from diraccfg import CFG
 
@@ -10,8 +10,7 @@ from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationDat
 
 localCFGData = ConfigurationData(False)
 mergedCFG = CFG()
-mergedCFG.loadFromBuffer(
-    r"""
+mergedCFG.loadFromBuffer(r"""
 DIRAC
 {
   PreferredURLPatterns = dips://.*\.site:.*
@@ -51,8 +50,7 @@ Operations{
     MainServers = gw1, gw2
   }
 }
-"""
-)
+""")
 localCFGData.localCFG = mergedCFG
 localCFGData.remoteCFG = mergedCFG
 localCFGData.mergedCFG = mergedCFG

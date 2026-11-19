@@ -1,34 +1,33 @@
-""" This is a test of using SandboxStoreClient in the WMS
+"""This is a test of using SandboxStoreClient in the WMS
 
-    In order to run this test we need the following DBs installed:
-    - SandboxMetadataDB
+In order to run this test we need the following DBs installed:
+- SandboxMetadataDB
 
-    And the following services should also be on:
-    - SandboxStore
+And the following services should also be on:
+- SandboxStore
 
-    And a SandboxSE should be configured, something like:
-      SandboxStore
+And a SandboxSE should be configured, something like:
+  SandboxStore
+  {
+    LocalSE = FedericoSandboxSE
+    Port = 9196
+    BasePath = /home/toffo/Rumenta/
+    Authorization
+    {
+      Default = authenticated
+      FileTransfer
       {
-        LocalSE = FedericoSandboxSE
-        Port = 9196
-        BasePath = /home/toffo/Rumenta/
-        Authorization
-        {
-          Default = authenticated
-          FileTransfer
-          {
-            Default = all
-          }
-        }
+        Default = all
       }
+    }
+  }
 
-    A user proxy is also needed to submit,
-    and the Framework/ProxyManager need to be running with a such user proxy already uploaded.
+A user proxy is also needed to submit,
+and the Framework/ProxyManager need to be running with a such user proxy already uploaded.
 
-    Suggestion: for local testing, run this with::
-        python -m pytest -c ../pytest.ini  -vv tests/Integration/WorkloadManagementSystem/Test_SandboxStoreClient.py
+Suggestion: for local testing, run this with::
+    python -m pytest -c ../pytest.ini  -vv tests/Integration/WorkloadManagementSystem/Test_SandboxStoreClient.py
 """
-
 
 import DIRAC
 

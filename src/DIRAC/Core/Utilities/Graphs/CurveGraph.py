@@ -1,8 +1,9 @@
-""" CurveGraph represents simple line graphs with markers.
+"""CurveGraph represents simple line graphs with markers.
 
-    The DIRAC Graphs package is derived from the GraphTool plotting package of the
-    CMS/Phedex Project by ... <to be added>
+The DIRAC Graphs package is derived from the GraphTool plotting package of the
+CMS/Phedex Project by ... <to be added>
 """
+
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import (
     darkenColor,
@@ -17,7 +18,6 @@ import datetime
 
 
 class CurveGraph(PlotBase):
-
     """
     The CurveGraph class is a straightforward line graph with markers
     """

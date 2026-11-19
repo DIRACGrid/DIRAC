@@ -5,15 +5,16 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/05/13 18:38:55
 ########################################################################
-""" :mod: FullChainTest
-    ===================
+""":mod: FullChainTest
+===================
 
-    .. module: FullChainTests
-    :synopsis: full chain integration test for DMS operation handlers
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. module: FullChainTests
+:synopsis: full chain integration test for DMS operation handlers
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    unittest for replicateAndRegister operation handler
+unittest for replicateAndRegister operation handler
 """
+
 import random
 import os
 import sys

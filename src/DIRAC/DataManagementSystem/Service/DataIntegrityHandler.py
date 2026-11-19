@@ -8,6 +8,7 @@
   the DISET framework
 
 """
+
 # from DIRAC
 from DIRAC import S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -128,7 +129,7 @@ class DataIntegrityHandlerMixin:
             for prognosis, statusDict in res["Value"].items():
                 self.log.info(f"DataIntegrityHandler.getProblematicsSummary: {prognosis}.")
                 for status, count in statusDict.items():
-                    self.log.info("DataIntegrityHandler.getProblematicsSummary: \t%-10s %-10s." % (status, str(count)))
+                    self.log.info(f"DataIntegrityHandler.getProblematicsSummary: \t{status:10} {str(count):10}.")
         else:
             self.log.error("DataIntegrityHandler.getProblematicsSummary: Failed to get summary.", res["Message"])
         return res

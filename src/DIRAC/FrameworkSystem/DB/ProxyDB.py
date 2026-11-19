@@ -1,13 +1,14 @@
-""" ProxyDB class is a front-end to the ProxyDB MySQL database.
+"""ProxyDB class is a front-end to the ProxyDB MySQL database.
 
-    Database contains the following tables:
+Database contains the following tables:
 
-    * ProxyDB_Requests -- a delegation requests storage table for a given proxy Chain
-    * ProxyDB_CleanProxies -- table for storing proxies in "clean" form, ie without
-      the presence of DIRAC and VOMS extensions.
-    * ProxyDB_VOMSProxies -- proxy storage table with VOMS extension already added.
-    * ProxyDB_Log -- table with logs.
+* ProxyDB_Requests -- a delegation requests storage table for a given proxy Chain
+* ProxyDB_CleanProxies -- table for storing proxies in "clean" form, ie without
+  the presence of DIRAC and VOMS extensions.
+* ProxyDB_VOMSProxies -- proxy storage table with VOMS extension already added.
+* ProxyDB_Log -- table with logs.
 """
+
 import textwrap
 from threading import Lock
 
@@ -333,7 +334,7 @@ class ProxyDB(DB):
             "UserName": self._escapeString(userName)["Value"],
             "UserDN": sUserDN,
             "Pem": self._escapeString(pemChain)["Value"],
-            "ExpirationTime": "TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )" % int(remainingSecs),
+            "ExpirationTime": f"TIMESTAMPADD( SECOND, {int(remainingSecs)}, UTC_TIMESTAMP() )",
         }
         dValues["ProxyProvider"] = f"'{proxyProvider}'"
         if sqlInsert:
@@ -876,9 +877,7 @@ class ProxyDB(DB):
             for field in selDict:
                 qr.append(
                     "(%s)"
-                    % " OR ".join(
-                        ["{}={}".format(field, self._escapeString(str(value))["Value"]) for value in selDict[field]]
-                    )
+                    % " OR ".join([f"{field}={self._escapeString(str(value))['Value']}" for value in selDict[field]])
                 )
             whereStr = f" WHERE {' AND '.join(qr)}"
             cmd += whereStr

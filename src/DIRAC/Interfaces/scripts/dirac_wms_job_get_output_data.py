@@ -6,6 +6,7 @@
 """
 Retrieve the output data files of a DIRAC job
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

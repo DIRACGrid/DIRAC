@@ -5,6 +5,7 @@ Command line tool to remove local and remote proxies
 Example:
   $ dirac-proxy-destroy -a
 """
+
 import os
 
 import DIRAC

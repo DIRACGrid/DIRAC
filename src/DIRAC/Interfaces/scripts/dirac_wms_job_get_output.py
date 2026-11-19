@@ -10,6 +10,7 @@ Example:
   $ dirac-wms-job-get-output 1
   Job output sandbox retrieved in 1/
 """
+
 import os
 import shutil
 import datetime

@@ -1,5 +1,5 @@
-""" Module that holds the ReportsClient Client class
-"""
+"""Module that holds the ReportsClient Client class"""
+
 import tempfile
 
 from DIRAC import S_OK, S_ERROR

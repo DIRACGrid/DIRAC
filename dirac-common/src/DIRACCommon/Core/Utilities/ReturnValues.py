@@ -1,10 +1,11 @@
 """
-   DIRAC return dictionary
+DIRAC return dictionary
 
-   Message values are converted to string
+Message values are converted to string
 
-   keys are converted to string
+keys are converted to string
 """
+
 from __future__ import annotations
 
 import functools
@@ -15,7 +16,6 @@ from typing import Any, Callable, cast, Generic, Literal, overload, Type, TypeVa
 from typing_extensions import TypedDict, ParamSpec, NotRequired
 
 from DIRACCommon.Core.Utilities.DErrno import strerror
-
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -81,13 +81,11 @@ def S_ERROR(*args: Any, **kwargs: Any) -> DErrorReturnType:
 
 # mypy doesn't understand default parameter values with generics so use overloads (python/mypy#3737)
 @overload
-def S_OK() -> DOKReturnType[None]:
-    ...
+def S_OK() -> DOKReturnType[None]: ...
 
 
 @overload
-def S_OK(value: T) -> DOKReturnType[T]:
-    ...
+def S_OK(value: T) -> DOKReturnType[T]: ...
 
 
 def S_OK(value=None):  # type: ignore

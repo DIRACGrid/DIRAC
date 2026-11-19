@@ -1,9 +1,10 @@
 """DIRAC server has various passive components listening to incoming client requests
-   and reacting accordingly by serving requested information,
-   such as **services** or **APIs**.
+and reacting accordingly by serving requested information,
+such as **services** or **APIs**.
 
-   This module is basic for each of these components and describes the basic concept of access to them.
+This module is basic for each of these components and describes the basic concept of access to them.
 """
+
 import time
 import inspect
 import threading

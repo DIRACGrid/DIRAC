@@ -1,5 +1,5 @@
-""" Utilities for the MessageQueue package
-"""
+"""Utilities for the MessageQueue package"""
+
 import queue
 from DIRAC import S_OK, S_ERROR, gConfig
 

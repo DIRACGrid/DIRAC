@@ -1,15 +1,15 @@
-""" Storage Factory Class - creates instances of various Storage plugins from the Core DIRAC or extensions
+"""Storage Factory Class - creates instances of various Storage plugins from the Core DIRAC or extensions
 
-    This Class has three public methods:
+This Class has three public methods:
 
-    getStorageName():  Resolves links in the CS to the target SE name.
+getStorageName():  Resolves links in the CS to the target SE name.
 
-    getStorage():      This creates a single storage stub based on the parameters passed in a dictionary.
-                      This dictionary must have the following keys: 'StorageName','PluginName','Protocol'
-                      Other optional keys are 'Port','Host','Path','SpaceToken'
+getStorage():      This creates a single storage stub based on the parameters passed in a dictionary.
+                  This dictionary must have the following keys: 'StorageName','PluginName','Protocol'
+                  Other optional keys are 'Port','Host','Path','SpaceToken'
 
-    getStorages()      This takes a DIRAC SE definition and creates storage stubs for the protocols found in the CS.
-                      By providing an optional list of protocols it is possible to limit the created stubs.
+getStorages()      This takes a DIRAC SE definition and creates storage stubs for the protocols found in the CS.
+                  By providing an optional list of protocols it is possible to limit the created stubs.
 """
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
@@ -338,11 +338,8 @@ class StorageFactory:
             elif protocolDict["Access"].lower() == "local":
                 self.localProtocolSections.append(protocolSectionName)
             else:
-                errStr = (
-                    "StorageFactory.__getProtocolDetails: The 'Access' option \
-        for %s:%s is neither 'local' or 'remote'."
-                    % (storageName, protocolSectionName)
-                )
+                errStr = "StorageFactory.__getProtocolDetails: The 'Access' option \
+        for {}:{} is neither 'local' or 'remote'.".format(storageName, protocolSectionName)
                 gLogger.warn(errStr)
         return S_OK(self.protocols)
 

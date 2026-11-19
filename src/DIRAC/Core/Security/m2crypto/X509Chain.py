@@ -1,9 +1,10 @@
-""" X509Chain is a class for managing X509 chains with their Pkeys
+"""X509Chain is a class for managing X509 chains with their Pkeys
 
 Link to the RFC 3820: https://tools.ietf.org/html/rfc3820
 In particular, limited proxy: https://tools.ietf.org/html/rfc3820#section-3.8
 
 """
+
 import copy
 import hashlib
 import re

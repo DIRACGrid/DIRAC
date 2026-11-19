@@ -2,6 +2,7 @@
 """
 Tests for Bdii2CSAgent module
 """
+
 import unittest
 from unittest.mock import MagicMock as Mock, patch
 
@@ -24,9 +25,12 @@ ALTBDII = {
 
 class Bdii2CSTests(unittest.TestCase):
     def setUp(self):
-        with patch("DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent.AgentModule.__init__", new=Mock()), patch(
-            "DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent.AgentModule.am_getModuleParam",
-            new=Mock(return_value="fullName"),
+        with (
+            patch("DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent.AgentModule.__init__", new=Mock()),
+            patch(
+                "DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent.AgentModule.am_getModuleParam",
+                new=Mock(return_value="fullName"),
+            ),
         ):
             self.agent = Bdii2CSAgent.Bdii2CSAgent(agentName="Configuration/testing", loadName="Configuration/testing")
         # as we ignore the init from the baseclass some agent variables might not be present so we set them here

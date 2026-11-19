@@ -5,6 +5,7 @@ Stop a given production
 Example:
   $ dirac-prod-stop 381
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

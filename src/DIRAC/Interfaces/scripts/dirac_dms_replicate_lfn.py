@@ -12,6 +12,7 @@ Example:
    'Successful': {'/formation/user/v/vhamar/Test.txt': {'register': 0.50833415985107422,
                                                         'replicate': 11.878520965576172}}}
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

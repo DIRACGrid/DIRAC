@@ -14,6 +14,7 @@ The key of the objects are the LFN without trailing path.
 The Path should be the BucketName
 
 """
+
 import copy
 import errno
 import functools
@@ -31,7 +32,6 @@ from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.DataManagementSystem.Client.S3GatewayClient import S3GatewayClient
 from DIRAC.Resources.Storage.StorageBase import StorageBase
-
 
 LOG = gLogger.getSubLogger(__name__)
 
@@ -701,9 +701,9 @@ class S3Storage(StorageBase):
         """Generic method for unavailable method on S3"""
         return S_ERROR("Functionality not available on S3")
 
-    listDirectory = (
-        isDirectory
-    ) = getDirectory = removeDirectory = getDirectorySize = getDirectoryMetadata = putDirectory = notAvailable
+    listDirectory = isDirectory = getDirectory = removeDirectory = getDirectorySize = getDirectoryMetadata = (
+        putDirectory
+    ) = notAvailable
 
     def getTransportURL(self, urls, protocols):
         """Get a transport URL for given urls

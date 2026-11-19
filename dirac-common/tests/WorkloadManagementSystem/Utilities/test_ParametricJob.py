@@ -1,5 +1,5 @@
-""" This is a test of the parametric job generation tools
-"""
+"""This is a test of the parametric job generation tools"""
+
 # pylint: disable= missing-docstring
 
 import pytest

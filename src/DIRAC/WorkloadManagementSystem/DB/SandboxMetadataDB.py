@@ -1,5 +1,5 @@
-""" SandboxMetadataDB class is a front-end to the metadata for sandboxes
-"""
+"""SandboxMetadataDB class is a front-end to the metadata for sandboxes"""
+
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Base.DB import DB

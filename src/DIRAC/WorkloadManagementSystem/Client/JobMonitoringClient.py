@@ -1,4 +1,4 @@
-""" Class that contains client access to the job monitoring handler. """
+"""Class that contains client access to the job monitoring handler."""
 
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning

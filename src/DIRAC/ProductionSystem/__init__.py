@@ -1,1 +1,1 @@
-""" DIRAC.ProductionSystem package """
+"""DIRAC.ProductionSystem package"""

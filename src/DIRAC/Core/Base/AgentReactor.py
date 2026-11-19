@@ -3,27 +3,28 @@
 # Author : Adria Casajus
 ########################################################################
 """
-  DIRAC class to execute Agents
+DIRAC class to execute Agents
 
-  Agents are the active part any any DIRAC system, they execute in a cyclic
-  manner looking at the state of the system and reacting to it by taken
-  appropriated actions
+Agents are the active part any any DIRAC system, they execute in a cyclic
+manner looking at the state of the system and reacting to it by taken
+appropriated actions
 
-  All DIRAC Agents must inherit from the basic class AgentModule
+All DIRAC Agents must inherit from the basic class AgentModule
 
-  In the most common case, DIRAC Agents are executed using the dirac-agent command.
-  dirac-agent accepts a list positional arguments. These arguments have the form:
-  [DIRAC System Name]/[DIRAC Agent Name]
-  dirac-agent then:
-  - produces a instance of AgentReactor
-  - loads the required modules using the AgentReactor.loadAgentModules method
-  - starts the execution loop using the AgentReactor.go method
+In the most common case, DIRAC Agents are executed using the dirac-agent command.
+dirac-agent accepts a list positional arguments. These arguments have the form:
+[DIRAC System Name]/[DIRAC Agent Name]
+dirac-agent then:
+- produces a instance of AgentReactor
+- loads the required modules using the AgentReactor.loadAgentModules method
+- starts the execution loop using the AgentReactor.go method
 
-  Agent modules must be placed under the Agent directory of a DIRAC System.
-  DIRAC Systems are called XXXSystem where XXX is the [DIRAC System Name], and
-  must inherit from the base class AgentModule
+Agent modules must be placed under the Agent directory of a DIRAC System.
+DIRAC Systems are called XXXSystem where XXX is the [DIRAC System Name], and
+must inherit from the base class AgentModule
 
 """
+
 import time
 
 from DIRAC import S_OK, S_ERROR, gLogger

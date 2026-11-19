@@ -1,5 +1,5 @@
-""" Accounting reporter
-"""
+"""Accounting reporter"""
+
 import hashlib
 import re
 

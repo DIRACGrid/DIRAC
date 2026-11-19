@@ -1,5 +1,5 @@
-""" A mock of the DataManager, used for testing purposes
-"""
+"""A mock of the DataManager, used for testing purposes"""
+
 # pylint: disable=protected-access, missing-docstring, invalid-name, line-too-long
 
 from unittest.mock import MagicMock

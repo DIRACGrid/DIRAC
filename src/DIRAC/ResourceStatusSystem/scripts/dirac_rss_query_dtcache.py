@@ -2,6 +2,7 @@
 """
 Select/Add/Delete a new DownTime entry for a given Site or Service.
 """
+
 import datetime
 
 from DIRAC import exit as DIRACExit

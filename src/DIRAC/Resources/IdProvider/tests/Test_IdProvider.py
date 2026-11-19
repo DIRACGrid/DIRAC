@@ -1,11 +1,11 @@
-""" Test IdProvider Factory"""
+"""Test IdProvider Factory"""
+
 import pytest
 
 from DIRAC.Resources.IdProvider.CheckInIdProvider import CheckInIdProvider
 from DIRAC.Resources.IdProvider.IAMIdProvider import IAMIdProvider
 from DIRAC.Resources.IdProvider.OAuth2IdProvider import OAuth2IdProvider
 from DIRAC.Resources.IdProvider.tests.IdProviderTestUtilities import setupConfig
-
 
 config = """
 Registry

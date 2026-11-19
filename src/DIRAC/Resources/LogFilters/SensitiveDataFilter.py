@@ -1,4 +1,5 @@
 """Logging Filter based on sensitive data."""
+
 import collections.abc
 import re
 

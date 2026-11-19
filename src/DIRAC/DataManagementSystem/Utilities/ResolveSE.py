@@ -1,4 +1,4 @@
-""" This module allows to resolve output SEs for Job based
+"""This module allows to resolve output SEs for Job based
 on SE and site/country association
 """
 

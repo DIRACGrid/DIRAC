@@ -8,6 +8,7 @@ Service handler for FTS3DB using DISET
   :caption: FTS3Manager options
 
 """
+
 from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption

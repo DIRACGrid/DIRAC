@@ -2,6 +2,7 @@
 """
 Generate a single CA file with all the PEMs
 """
+
 import sys
 
 from DIRAC import gLogger

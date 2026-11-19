@@ -1,4 +1,5 @@
-""" Test the ProxyPlugin class"""
+"""Test the ProxyPlugin class"""
+
 import unittest
 from unittest import mock
 from DIRAC import S_OK, S_ERROR

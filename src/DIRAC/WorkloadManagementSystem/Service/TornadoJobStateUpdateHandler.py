@@ -1,4 +1,4 @@
-""" Tornado-based HTTPs JobStateUpdate service.
+"""Tornado-based HTTPs JobStateUpdate service.
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN TornadoJobStateUpdate
@@ -7,6 +7,7 @@
   :caption: JobStateUpdate options
 
 """
+
 from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC.WorkloadManagementSystem.Service.JobStateUpdateHandler import JobStateUpdateHandlerMixin
 

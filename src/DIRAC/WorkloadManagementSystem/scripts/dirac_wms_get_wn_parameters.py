@@ -2,6 +2,7 @@
 """
 Determine number of processors and memory for the worker node
 """
+
 from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script
 from DIRAC.WorkloadManagementSystem.Utilities import JobParameters

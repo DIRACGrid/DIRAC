@@ -3,6 +3,7 @@
 Test cases for DIRAC.Core.Utilities.DAG module.
 
 """
+
 from DIRAC.Core.Utilities.Mail import Mail
 
 

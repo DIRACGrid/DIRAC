@@ -1,5 +1,4 @@
-""" This is a test of the creation of the pilot wrapper
-"""
+"""This is a test of the creation of the pilot wrapper"""
 
 import base64
 import bz2

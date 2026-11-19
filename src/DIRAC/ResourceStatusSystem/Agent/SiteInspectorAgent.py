@@ -1,4 +1,4 @@
-""" SiteInspectorAgent
+"""SiteInspectorAgent
 
   This agent inspect Sites, and evaluates policies that apply.
 
@@ -10,6 +10,7 @@ The following options can be set for the SiteInspectorAgent.
   :dedent: 2
   :caption: SiteInspectorAgent options
 """
+
 import datetime
 import concurrent.futures
 

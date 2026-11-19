@@ -1,4 +1,4 @@
-"""  The Pilot Status Agent updates the status of the pilot jobs in the
+"""The Pilot Status Agent updates the status of the pilot jobs in the
      PilotAgents database.
 
 .. literalinclude:: ../ConfigTemplate.cfg
@@ -7,6 +7,7 @@
   :dedent: 2
   :caption: PilotStatusAgent options
 """
+
 import datetime
 
 from DIRAC import S_OK, gConfig

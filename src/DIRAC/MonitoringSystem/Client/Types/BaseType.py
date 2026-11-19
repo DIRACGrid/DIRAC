@@ -1,11 +1,11 @@
 """
 Helper class for configuring the monitoring service.
 """
+
 ########################################################################
 
 
 class BaseType:
-
     """
     .. class:: BaseType
 

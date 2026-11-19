@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 """
-  Kill or delete DIRAC job
+Kill or delete DIRAC job
 """
+
 import DIRAC
 from DIRAC import gLogger
 from DIRAC.Interfaces.Utilities.DConfigCache import ConfigCache

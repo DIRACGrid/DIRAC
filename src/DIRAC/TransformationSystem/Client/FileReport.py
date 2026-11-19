@@ -1,5 +1,5 @@
-""" FileReport module defines the FileReport class, to report file status to the transformation DB
-"""
+"""FileReport module defines the FileReport class, to report file status to the transformation DB"""
+
 import copy
 
 from DIRAC import S_OK

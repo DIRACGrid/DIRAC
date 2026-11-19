@@ -1,5 +1,5 @@
-""" FileManager for ... ?
-"""
+"""FileManager for ... ?"""
+
 import os
 import datetime
 

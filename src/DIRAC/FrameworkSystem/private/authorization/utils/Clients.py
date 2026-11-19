@@ -7,7 +7,6 @@ from DIRAC import gLogger
 from DIRAC.Core.Security import Locations
 from DIRAC.ConfigurationSystem.Client.Utilities import getAuthorizationServerMetadata
 
-
 # Description of default DIRAC OAuth2 clients
 DEFAULT_CLIENTS = {
     # Description of default public DIRAC client which is installed in the terminal

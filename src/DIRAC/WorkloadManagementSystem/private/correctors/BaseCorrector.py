@@ -1,5 +1,5 @@
-""" Base corrector for the group and ingroup shares
-"""
+"""Base corrector for the group and ingroup shares"""
+
 from DIRAC import S_OK, S_ERROR
 
 

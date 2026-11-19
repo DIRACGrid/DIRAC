@@ -1,10 +1,11 @@
-""" This is a test of the chain
-    DataStoreClient -> DataStoreHandler -> AccountingDB
+"""This is a test of the chain
+DataStoreClient -> DataStoreHandler -> AccountingDB
 
-    It supposes that the DB is present, and that the service is running
+It supposes that the DB is present, and that the service is running
 
-    this is pytest!
+this is pytest!
 """
+
 # pylint: disable=wrong-import-position, missing-docstring
 
 import DIRAC

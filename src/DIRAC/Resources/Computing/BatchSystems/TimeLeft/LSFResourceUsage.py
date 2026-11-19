@@ -1,5 +1,5 @@
-""" The LSF TimeLeft utility interrogates the LSF batch system for the
-    current CPU and Wallclock consumed, as well as their limits.
+"""The LSF TimeLeft utility interrogates the LSF batch system for the
+current CPU and Wallclock consumed, as well as their limits.
 """
 
 import os

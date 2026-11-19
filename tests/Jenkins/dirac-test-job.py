@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-""" Submission of test jobs for use by Jenkins
-"""
+"""Submission of test jobs for use by Jenkins"""
+
 # pylint: disable=wrong-import-position,unused-wildcard-import,wildcard-import
 
 import os.path

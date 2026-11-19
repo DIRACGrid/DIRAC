@@ -1,5 +1,4 @@
-""" Test class for LSFResourceUsage utility
-"""
+"""Test class for LSFResourceUsage utility"""
 
 import pytest
 

@@ -5,6 +5,7 @@ Get informations for a given production
 Example:
   $ dirac-prod-get 381
 """
+
 import DIRAC
 from DIRAC.Core.Base.Script import Script
 

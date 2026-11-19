@@ -1,19 +1,19 @@
-""" Failover Transfer
+"""Failover Transfer
 
-    The failover transfer client exposes the following methods:
-    - transferAndRegisterFile()
-    - transferAndRegisterFileFailover()
+The failover transfer client exposes the following methods:
+- transferAndRegisterFile()
+- transferAndRegisterFileFailover()
 
-    Initially these methods were developed inside workflow modules but
-    have evolved to a generic 'transfer file with failover' client.
+Initially these methods were developed inside workflow modules but
+have evolved to a generic 'transfer file with failover' client.
 
-    The transferAndRegisterFile() method will correctly set registration
-    requests in case of failure.
+The transferAndRegisterFile() method will correctly set registration
+requests in case of failure.
 
-    The transferAndRegisterFileFailover() method will attempt to upload
-    a file to a list of alternative SEs and set appropriate replication
-    to the original target SE as well as the removal request for the
-    temporary replica.
+The transferAndRegisterFileFailover() method will attempt to upload
+a file to a list of alternative SEs and set appropriate replication
+to the original target SE as well as the removal request for the
+temporary replica.
 
 """
 

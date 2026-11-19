@@ -16,6 +16,7 @@ Example:
                                                           'Status': 'Done',
                                                           'SubmissionTime': datetime.datetime(2011, 2, 21, 12, 27, 52)}}
 """
+
 from DIRAC.Core.Base.Script import Script
 
 extendedPrint = False

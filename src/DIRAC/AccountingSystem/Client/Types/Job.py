@@ -1,7 +1,8 @@
-""" Job accounting type.
+"""Job accounting type.
 
-    Filled by the JobWrapper (by the jobs) and by the agent "WorloadManagement/StalledJobAgent"
+Filled by the JobWrapper (by the jobs) and by the agent "WorloadManagement/StalledJobAgent"
 """
+
 import DIRAC
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
 

@@ -3,19 +3,20 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/02 14:24:21
 ########################################################################
-""" :mod: ReTransfer
+""":mod: ReTransfer
 
-    ================
+================
 
 
-    .. module: ReTransfer
+.. module: ReTransfer
 
-    :synopsis: ReTransfer Operation handler
+:synopsis: ReTransfer Operation handler
 
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    ReTransfer Operation handler
+ReTransfer Operation handler
 """
+
 # #
 # @file ReTransfer.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com

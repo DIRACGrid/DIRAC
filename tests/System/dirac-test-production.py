@@ -1,5 +1,5 @@
-""" This script submits a test prodJobuction with filter
-"""
+"""This script submits a test prodJobuction with filter"""
+
 # pylint: disable=wrong-import-position, protected-access
 import time
 import os

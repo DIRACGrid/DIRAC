@@ -1,5 +1,5 @@
-"""Unit tests of MQConsumer interface in the DIRAC.Resources.MessageQueue.MQConsumer
-"""
+"""Unit tests of MQConsumer interface in the DIRAC.Resources.MessageQueue.MQConsumer"""
+
 import unittest
 from DIRAC import S_OK
 from DIRAC.Resources.MessageQueue.MQConsumer import MQConsumer

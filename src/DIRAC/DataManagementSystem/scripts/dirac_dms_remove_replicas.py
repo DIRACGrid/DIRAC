@@ -7,6 +7,7 @@ Example:
   $ dirac-dms-remove-replicas /formation/user/v/vhamar/Test.txt IBCP-disk
   Successfully removed DIRAC-USER replica of /formation/user/v/vhamar/Test.txt
 """
+
 from DIRAC.Core.Base.Script import Script
 
 

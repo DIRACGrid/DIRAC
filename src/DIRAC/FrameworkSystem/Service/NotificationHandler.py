@@ -1,6 +1,7 @@
-""" The Notification service provides a toolkit to contact people via email
-    to trigger some actions.
+"""The Notification service provides a toolkit to contact people via email
+to trigger some actions.
 """
+
 from DIRAC import S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

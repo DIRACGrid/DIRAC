@@ -1,8 +1,9 @@
-""" The Matcher service provides an interface for matching jobs to pilots
+"""The Matcher service provides an interface for matching jobs to pilots
 
-    It uses a Matcher and a Limiter object that encapsulates the matching logic.
-    It connects to JobDB, TaskQueueDB, JobLoggingDB, and PilotAgentsDB.
+It uses a Matcher and a Limiter object that encapsulates the matching logic.
+It connects to JobDB, TaskQueueDB, JobLoggingDB, and PilotAgentsDB.
 """
+
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

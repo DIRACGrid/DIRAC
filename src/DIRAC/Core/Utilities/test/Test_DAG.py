@@ -3,6 +3,7 @@
 Test cases for DIRAC.Core.Utilities.DAG module.
 
 """
+
 import unittest
 
 # sut

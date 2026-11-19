@@ -1,5 +1,5 @@
-""" Test case for DIRAC.Core.Utilities.File module
-"""
+"""Test case for DIRAC.Core.Utilities.File module"""
+
 ##
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2011/01/17 14:01:18

@@ -26,6 +26,7 @@ Example:
    'SubmissionTime': '2011-02-14 10:12:40',
    'UserPriority': '1'}
 """
+
 from DIRAC import exit as dExit
 from DIRAC import gLogger
 from DIRAC.Core.Base.Script import Script

@@ -1011,11 +1011,11 @@ class TransformationDB(DB):
         if not res["OK"]:
             return res
         if not res["Value"]:
-            return S_ERROR("Failed to set Reserved status for job %d - already Reserved" % int(taskID))
+            return S_ERROR(f"Failed to set Reserved status for job {int(taskID)} - already Reserved")
         # The job is reserved, update the time stamp
         res = self.setTaskStatus(transID, taskID, "Reserved", connection=connection)
         if not res["OK"]:
-            return S_ERROR("Failed to set Reserved status for job %d - failed to update the time stamp" % int(taskID))
+            return S_ERROR(f"Failed to set Reserved status for job {int(taskID)} - failed to update the time stamp")
         return S_OK()
 
     def setTaskStatusAndWmsID(self, transName, taskID, status, taskWmsID, connection=False):

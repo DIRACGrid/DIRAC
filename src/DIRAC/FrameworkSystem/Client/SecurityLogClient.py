@@ -1,5 +1,5 @@
-""" For reporting messages to security log service
-"""
+"""For reporting messages to security log service"""
+
 import syslog
 import datetime
 

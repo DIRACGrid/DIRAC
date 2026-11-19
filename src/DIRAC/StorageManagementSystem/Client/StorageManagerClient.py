@@ -1,5 +1,5 @@
-""" Class that contains client access to the StorageManagerDB handler.
-"""
+"""Class that contains client access to the StorageManagerDB handler."""
+
 import random
 import errno
 

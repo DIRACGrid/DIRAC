@@ -1,5 +1,5 @@
-""" Test for StorageManagement clients
-"""
+"""Test for StorageManagement clients"""
+
 # pylint: disable=protected-access,missing-docstring,invalid-name
 
 import unittest

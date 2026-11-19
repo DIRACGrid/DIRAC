@@ -3,6 +3,7 @@
 The AgentOptionsTest can be used to check consistency of options for Agents.
 
 """
+
 import inspect
 import importlib
 import logging
@@ -112,8 +113,10 @@ def AgentOptionsTest(agentPath, options, mocker):
             instrument(self)
 
     patchBase = patch.object(agentClass, "__bases__", (MockAgentModule,))
-    with patchBase, patch(agentPath + ".AgentModule.__init__", new=initMock), patch(
-        "DIRAC.Core.Base.AgentModule.AgentModule.am_getOption", new=getOptionMock
+    with (
+        patchBase,
+        patch(agentPath + ".AgentModule.__init__", new=initMock),
+        patch("DIRAC.Core.Base.AgentModule.AgentModule.am_getOption", new=getOptionMock),
     ):
         patchBase.is_local = True
         agentInstance = agentClass(agentName="sys/name", loadName="sys/name")

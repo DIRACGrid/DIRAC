@@ -1,5 +1,5 @@
-""" pytest of Core.Utilities.Dictionaries
-"""
+"""pytest of Core.Utilities.Dictionaries"""
+
 import pytest
 
 # sut

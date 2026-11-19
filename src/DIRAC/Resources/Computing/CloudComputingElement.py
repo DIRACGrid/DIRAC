@@ -1,4 +1,4 @@
-r""" Cloud Computing Element
+r"""Cloud Computing Element
 
 This allows submission to cloud sites using libcloud (via the standard
 SiteDirector agent). The instances are contextualised using cloud-init.
