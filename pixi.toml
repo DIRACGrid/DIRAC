@@ -1,0 +1,108 @@
+# Pixi environments used by the CI check jobs (.github/workflows/basic.yml).
+# The dependency set mirrors environment.yml (conda packages from the
+# `diracgrid` + `conda-forge` channels, plus the pip-only pieces: the DIRACGrid
+# tornado forks and Authlib). Renovate keeps pixi.lock fresh, and
+# `exclude-newer` enforces the release-age cooldown at solve time.
+
+[workspace]
+channels = ["https://conda.anaconda.org/diracgrid", "https://conda.anaconda.org/conda-forge"]
+platforms = ["linux-64"]
+exclude-newer = "7d"
+
+[feature.py311.dependencies]
+python = "3.11.*"
+
+# Python 3.6 is still tested for the pilot wrapper (used by older pilots):
+# solves to the last conda-forge build of the 3.6 series
+[feature.py36.dependencies]
+python = "3.6.*"
+
+[feature.py314.dependencies]
+python = "3.14.*"
+
+[environments]
+default = { features = ["py311"] }
+# the pilot wrapper test only needs a bare python, so py36 skips the shared
+# dependencies (they require python >= 3.9)
+py36 = { features = ["py36"], no-default-feature = true }
+py314 = { features = ["py314"] }
+
+[dependencies]
+pip = "*"
+apache-libcloud = "*"
+boto3 = "*"
+cachetools = "*"
+certifi = "*"
+cmreshandler = ">1.0.0b4"
+cwltool = "*"
+db12 = "*"
+opensearch-py = "*"
+fts3 = "*"
+gitpython = ">=2.1.0"
+invoke = "*"
+m2crypto = ">=0.50"
+matplotlib = "*"
+numpy = "*"
+pexpect = ">=4.0.1"
+pillow = "*"
+prompt-toolkit = ">=3,<4"
+psutil = ">=4.2.0"
+pyasn1 = ">0.4.1"
+pyasn1-modules = "*"
+pydantic = ">=2"
+python-json-logger = ">=0.1.8"
+pytz = ">=2015.7"
+pyyaml = "*"
+recommonmark = "*"
+requests = ">=2.9.1"
+sqlalchemy = "*"
+"stomp.py" = "*"
+suds = ">=0.6"
+suds-jurko-compat = "*"
+xmltodict = "*"
+pycurl = "*"
+voms = "*"
+python-gfal2 = "*"
+mysqlclient = ">=2.2.0"
+diraccfg = "*"
+ldap3 = "*"
+importlib_resources = "*"
+typing_extensions = ">=4.3.0"
+pre-commit = "*"
+coverage = "*"
+hypothesis = "*"
+ipython = "*"
+mock = "*"
+parameterized = "*"
+pylint = "*"
+pyparsing = ">=2.0.6"
+pytest = ">=3.6"
+pytest-cov = ">=2.2.0"
+pytest-mock = "*"
+pytest-rerunfailures = "*"
+setuptools-scm = "*"
+typer = "*"
+pygments = ">=1.5"
+sphinx = "<9.0.0"
+graphviz = "*"
+sphinx_rtd_theme = "*"
+sphinx-design = "*"
+jinja2 = "*"
+simplejson = ">=3.8.1"
+rucio-clients = ">=34.4.2"
+mypy = ">=0.982"
+types-cachetools = "*"
+types-python-dateutil = "*"
+types-pytz = "*"
+types-pyyaml = "*"
+types-requests = "*"
+types-setuptools = "*"
+
+[pypi-dependencies]
+# >=1.9.0 for CVE-2026-96760 (JWS JSON signature bypass)
+Authlib = ">=1.9.0"
+dominate = "*"
+pyjwt = "*"
+# Forks of tornado used by DIRAC: configurable iostream + M2Crypto SSL support
+tornado = { git = "https://github.com/DIRACGrid/tornado.git", rev = "iostreamConfigurable" }
+tornado-m2crypto = { git = "https://github.com/DIRACGrid/tornado_m2crypto.git" }
