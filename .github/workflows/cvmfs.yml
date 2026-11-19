@@ -3,8 +3,16 @@ name: Deployment_test
 on:
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
 jobs:
   deploy_CVMFS:
+    name: deploy_CVMFS
     runs-on: "ubuntu-latest"
     steps:
     - name: Install system packages
@@ -15,7 +23,7 @@ jobs:
     # conda is no longer preinstalled (nor on the PATH) of the ubuntu-latest
     # runner images; install it explicitly since the next steps rely on it
     - name: Install conda
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@fc2d68f6413eb2d87b895e92f8584b5b94a10167 # v3
       with:
         miniforge-version: latest
         conda-remove-defaults: "true"
@@ -28,6 +36,7 @@ jobs:
     - name: Deploy on CVMFS
       env:
           CVMFS_PROXY_BASE64: ${{ secrets.CVMFS_PROXY_BASE64 }}
+      # zizmor: ignore[secrets-outside-env] no GitHub environment exists for the CVMFS upload
       run: |
         eval "$(conda shell.bash hook)" && conda activate cvmfs-env
           echo "===== conda info ====="
