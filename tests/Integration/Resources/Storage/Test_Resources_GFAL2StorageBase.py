@@ -275,7 +275,7 @@ class basicTest(unittest.TestCase):
         # time.sleep(5)
         res = self.readSE.isFile(isFile)
         self.assertEqual(res["OK"], True)
-        self.assertTrue(all([x for x in res["Value"]["Successful"].values()]))
+        self.assertTrue(all([*res["Value"]["Successful"].values()]))
         # self.assertEqual( res['Value']['Successful'][isFile[0]], True )
         # self.assertEqual( res['Value']['Successful'][isFile[1]], True )
 

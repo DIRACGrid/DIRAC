@@ -28,7 +28,7 @@ class Params:
         if isinstance(values, list):
             self.metaValues = values
         else:
-            self.metaValues = [val for val in values.split(",")]
+            self.metaValues = [*values.split(",")]
         return S_OK()
 
     def setMetaKey(self, key):

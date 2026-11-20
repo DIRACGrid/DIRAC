@@ -242,12 +242,12 @@ def test_storage_element(prepare_seObj_fixture):
     # time.sleep(5)
     res = readSE.isFile(isFile)
     assert res["OK"], res
-    assert all([x for x in res["Value"]["Successful"].values()])
+    assert all([*res["Value"]["Successful"].values()])
 
     # Try on a dir. Should return false
     res = readSE.isFile(createDir)
     assert res["OK"], res
-    assert not any([x for x in res["Value"]["Successful"].values()])
+    assert not any([*res["Value"]["Successful"].values()])
 
     # Try on non existing
     res = readSE.isFile(nonExistingPath)
