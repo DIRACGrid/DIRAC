@@ -26,6 +26,10 @@ This Executor will fail affected jobs meaningfully.
 | *HoldTime*              | How long jobs are held for              | HoldTime = 300                             |
 |                         |                                         |                                            |
 +-------------------------+-----------------------------------------+--------------------------------------------+
+| *MaxHoldTime*           | If larger than HoldTime, each further   | MaxHoldTime = 3600                         |
+|                         | hold of the same job doubles the hold   | (default value is HoldTime: no back-off)   |
+|                         | time, up to this value                  |                                            |
++-------------------------+-----------------------------------------+--------------------------------------------+
 | *StagingStatus*         | Status when staging                     | StagingStatus = Staging                    |
 |                         |                                         |                                            |
 +-------------------------+-----------------------------------------+--------------------------------------------+
