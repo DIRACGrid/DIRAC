@@ -3,6 +3,7 @@
 import errno
 import os
 import requests
+from urllib import parse
 
 from cachetools import LRUCache, TTLCache, cached
 from threading import Lock
@@ -158,11 +159,17 @@ class FTS3Job(JSerializable):
         self.targetSpaceToken = None
         self.jobMetadata = {}
         self.useTokens = False
+        self.involvesTape = False
 
         # temporary used only for accounting
         # it is set by the monitor method
         # when a job is in a final state
         self.accountingDicts = None
+
+    @property
+    def transferProtocols(self) -> set[str]:
+        """Protocols (URL schemes) of all the transfers prepared by :py:meth:`prepareSubmission`"""
+        return {parse.urlparse(trans[key]).scheme for trans in self.transfers for key in ("source", "destination")}
 
     @staticmethod
     @cached(_idp_cache)
@@ -396,6 +403,7 @@ class FTS3Job(JSerializable):
 
         isMultiHop = False
         useTokens = False
+        involvesTape = False
 
         # Check if it is a multiHop transfer
         if self.multiHopSE:
@@ -466,6 +474,7 @@ class FTS3Job(JSerializable):
             # In case of multihop, this is relevant only for the
             # final target, but again, code factorization is more important
             dstIsTape = self.__isTapeSE(hopDstSEName, self.vo)
+            involvesTape = involvesTape or hopSrcIsTape or dstIsTape
             if dstIsTape and destProto in dstSE.localStageProtocolList:
                 archive_timeout = dstSE.options.get("ArchiveTimeout")
 
@@ -659,6 +668,7 @@ class FTS3Job(JSerializable):
         self.targetSpaceToken = target_spacetoken
         self.jobMetadata = job_metadata
         self.useTokens = useTokens
+        self.involvesTape = involvesTape
 
         return S_OK(fileIDsInTheJob)
 

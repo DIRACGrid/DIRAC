@@ -10,7 +10,6 @@ from DIRAC.DataManagementSystem.private import FTS3Utilities
 from DIRAC.DataManagementSystem.private.FTS3Utilities import (
     groupFilesByTarget,
     selectUniqueSource,
-    FTS3ServerPolicy,
     getFTS3Plugin,
 )
 from DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin import DefaultFTS3Plugin
@@ -104,61 +103,6 @@ class TestFileGrouping(unittest.TestCase):
         self.assertTrue(self.f3 in filesInSrc4)
 
 
-class TestFTS3ServerPolicy(unittest.TestCase):
-    """Testing FTS3 ServerPolicy selection"""
-
-    def setUp(self):
-        self.fakeServerDict = {
-            "server_0": "server0.cern.ch",
-            "server_1": "server1.cern.ch",
-            "server_2": "server2.cern.ch",
-        }
-
-    def testCorrectServerPolicyIsUsed(self):
-        "Test correct server policy method is called"
-
-        for policy, methName in (
-            ("Sequence", "_sequenceServerPolicy"),
-            ("Random", "_randomServerPolicy"),
-            ("Failover", "_failoverServerPolicy"),
-            # random policy should be selected for an invalid policy
-            ("InvalidPolicy", "_randomServerPolicy"),
-        ):
-            with mock.patch.object(FTS3ServerPolicy, methName, return_value="server_1") as mockPolicy:
-                obj = FTS3ServerPolicy(self.fakeServerDict, policy)
-                self.assertEqual(obj.chooseFTS3Server(), S_OK("server1.cern.ch"))
-                self.assertTrue(mockPolicy.called)
-
-    def testFailoverServerPolicy(self):
-        """Test if the failover server policy always returns the first server"""
-
-        obj = FTS3ServerPolicy(self.fakeServerDict, "Failover")
-        for _ in range(len(self.fakeServerDict) + 1):
-            self.assertEqual(obj.chooseFTS3Server(), S_OK("server0.cern.ch"))
-
-    def testSequenceServerPolicy(self):
-        """Test if the sequence server policy selects the servers Sequentially"""
-
-        obj = FTS3ServerPolicy(self.fakeServerDict, "Sequence")
-
-        for i in range(len(self.fakeServerDict)):
-            self.assertEqual("server_%d" % i, obj._sequenceServerPolicy())
-
-        self.assertEqual("server_0", obj._sequenceServerPolicy())
-
-    def testRandomServerPolicy(self):
-        """Test if the random server policy only selects configured servers"""
-
-        obj = FTS3ServerPolicy(self.fakeServerDict, "Random")
-        for _ in range(20):
-            self.assertIn(obj._randomServerPolicy(), self.fakeServerDict)
-
-    def testNoServer(self):
-        """Test that an error is returned if there is no server"""
-        obj = FTS3ServerPolicy({}, "Random")
-        self.assertFalse(obj.chooseFTS3Server()["OK"])
-
-
 class FakeFTS3Plugin:
     """Stands for a plugin class loaded by the ObjectLoader"""
 
@@ -234,6 +178,5 @@ class TestGetFTS3Plugin(unittest.TestCase):
 
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestFileGrouping)
-    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestFTS3ServerPolicy))
     suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestGetFTS3Plugin))
     unittest.TextTestRunner(verbosity=2).run(suite)

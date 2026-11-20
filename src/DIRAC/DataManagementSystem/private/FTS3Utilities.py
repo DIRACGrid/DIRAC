@@ -1,6 +1,5 @@
 """ Some utilities for FTS3...
 """
-import random
 import threading
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
@@ -8,7 +7,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as op
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.Core.Utilities.ReturnValues import S_OK
 
 
 def _checkSourceReplicas(ftsFiles, preferDisk=True):
@@ -133,63 +132,3 @@ def getFTS3Plugin(vo=None):
         fts3Plugin = _class["Value"](vo=vo)
         _fts3PluginCache[cacheKey] = (currentVersion, fts3Plugin)
         return fts3Plugin
-
-
-class FTS3ServerPolicy:
-    """
-    This class manages the policy for choosing a server
-    """
-
-    def __init__(self, serverDict, serverPolicy="Random"):
-        """
-        Initialize the list of FTS3 servers and the policy
-
-        :param dict serverDict: {serverName: serverURL}
-        :param str serverPolicy: Random, Sequence or Failover
-        """
-
-        self.log = gLogger.getSubLogger(self.__class__.__name__)
-
-        self._serverDict = serverDict
-        self._serverList = list(serverDict)
-        self._nextServerID = 0
-        self._lock = threading.Lock()
-
-        methName = f"_{serverPolicy.lower()}ServerPolicy"
-        if not hasattr(self, methName):
-            self.log.error(f"Unknown server policy {serverPolicy}. Using Random instead")
-            methName = "_randomServerPolicy"
-
-        self._policyMethod = getattr(self, methName)
-
-    def _failoverServerPolicy(self):
-        """
-        Returns always the first server of the list
-        """
-        return self._serverList[0]
-
-    def _sequenceServerPolicy(self):
-        """
-        Every time the this policy is called, return the next server on the list
-        """
-        with self._lock:
-            fts3server = self._serverList[self._nextServerID]
-            self._nextServerID = (self._nextServerID + 1) % len(self._serverList)
-        return fts3server
-
-    def _randomServerPolicy(self):
-        """
-        return a random server of the list
-        """
-        return random.choice(self._serverList)  # nosec B311
-
-    def chooseFTS3Server(self):
-        """
-        Choose the appropriate FTS3 server depending on the policy
-
-        :returns: S_OK(serverURL)/S_ERROR
-        """
-        if not self._serverList:
-            return S_ERROR("No FTS3 server defined")
-
-        return S_OK(self._serverDict[self._policyMethod()])

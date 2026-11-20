@@ -45,7 +45,6 @@ In order for the transfers to be submitted to the FTS system, the following opti
 Operations configuration
 ========================
 
-  * DataManagement/FTSPlacement/FTS3/ServerPolicy: Policy to choose the FTS server see `FTSServer policy`_.
   * DataManagement/FTSPlacement/FTS3/FTS3Plugin: Plugin to alter the behavior of the FTS3Agent
 
 
@@ -53,14 +52,25 @@ Operations configuration
 FTS servers definition
 ======================
 
-The servers to be used are defined in the ``Resources/FTSEndpoints/FTS3`` section. Example:
+The servers to be used are defined in the ``Resources/FTSEndpoints/FTS3`` and ``Resources/FTSEndpoints/FTS4`` sections, depending on the version of the server. Example:
 
 .. code-block:: python
 
-    CERN-FTS3 = https://fts3.cern.ch:8446
-    RAL-FTS3 = https://lcgfts3.gridpp.rl.ac.uk:8446
+    FTSEndpoints
+    {
+      FTS3
+      {
+        CERN-FTS3 = https://fts3.cern.ch:8446
+        RAL-FTS3 = https://lcgfts3.gridpp.rl.ac.uk:8446
+      }
+      FTS4
+      {
+        CERN-FTS4 = https://fts4.cern.ch:8446
+      }
+    }
 
-The option name is just the server name as used internaly. Note that the port number has to be specified, and should correspond to the REST interface
+The option name is just the server name as used internaly, and must be unique across the sections. Note that the port number has to be specified, and should correspond to the REST interface.
+The section determines the client library used to talk to the server (see :py:mod:`DIRAC.DataManagementSystem.private.FTSRestLibs`): the ``fts3`` python package for FTS3 servers, the ``fts4`` one for FTS4 servers. The ``fts4`` package is only needed if FTS4 servers are defined.
 
 
 FTS3Agent
@@ -99,16 +109,16 @@ The grouping into jobs is done following this logic:
 Once the FTS jobs have been executed, and all the operation is completed, the callback takes place. The callback consists in fetching the RMS request which submitted the FTS3Operation, update the status of the RMS files, and insert a Registration Operation.
 Note that since the multiple targets are grouped in a single RMS operation, failing to transfer one file to one destination will result in the failure of the Operation. However, there is one Registration operation per target, and hence correctly transferred files will be registered.
 
-FTSServer policy
-----------------
+FTS server selection
+--------------------
 
-The FTS server to which the job is sent is chose based on the policy. There are 3 possible policy:
+The storage related parameters of a job (protocols, tokens, staging, ...) are chosen first, and the FTS server is then chosen such that it is compatible with them. By default (see :py:meth:`DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin.DefaultFTS3Plugin.selectFTS3Server`):
 
-  * Random: the default. makes a random choice
-  * Failover: pick one, and stay on that one until it fails
-  * Sequence: take them in turn, always change
+  * xroot transfers can only go to FTS3 servers
+  * transfers using tokens with tape storages can only go to FTS4 servers
+  * a random choice is made amongst the remaining ones
 
-This policy is applied by the default FTS3 plugin (see `FTS3 Plugins`_), and the ``ServerPolicy`` option is read from the Operations section of the VO. A plugin can override this choice (see :py:meth:`DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin.DefaultFTS3Plugin.selectFTS3Server`).
+If no server is compatible, the job is not submitted. A plugin can override this choice (see `FTS3 Plugins`_).
 
 
 FTS3 state machines
