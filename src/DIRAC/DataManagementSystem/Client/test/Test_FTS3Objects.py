@@ -697,3 +697,17 @@ def test_newJob_unknownParameter():
         pytest.skip("No client library for FTS4")
     with pytest.raises(TypeError, match="copy_pin_lifetime"):
         FTSRestLibs._newJob(FTSRestLibs.easy_fts4, transfers=[], copy_pin_lifetime=3600)
+
+
+def test_prepareSubmission_serverSelectionInfo():
+    """prepareSubmission fills what is needed to select the FTS server"""
+    diskJob = generateFTS3Job("CERN-DST", "CNAF-DST", ["/lhcb/f1"])
+    assert diskJob.prepareSubmission(pinTime=3600)["OK"]
+    assert diskJob.transferProtocols == {"https"}
+    assert not diskJob.involvesTape
+
+    # Staging from CTA uses root for the staging hop
+    tapeJob = generateFTS3Job("CERN-RAW", "CNAF-DST", ["/lhcb/f1"])
+    assert tapeJob.prepareSubmission(pinTime=3600)["OK"]
+    assert tapeJob.transferProtocols == {"root", "https"}
+    assert tapeJob.involvesTape

@@ -4,7 +4,7 @@ modules.
 """
 
 from DIRAC import S_OK, gConfig, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping, getFTSServersByFlavour
 from DIRAC.Core.Utilities.SiteSEMapping import getSEParameters
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
@@ -54,13 +54,12 @@ def getStorageElementEndpoint(seName):
 
 def getFTS():
     """
-    Gets all FTS endpoints
+    Gets all FTS endpoints names, for all the flavours (FTS3, FTS4)
     """
-
-    result = gConfig.getOptions("Resources/FTSEndpoints/FTS3")
-    if result["OK"]:
-        return result
-    return S_OK([])
+    names = []
+    for servers in getFTSServersByFlavour()["Value"].values():
+        names.extend(servers)
+    return S_OK(names)
 
 
 def getFileCatalogs():

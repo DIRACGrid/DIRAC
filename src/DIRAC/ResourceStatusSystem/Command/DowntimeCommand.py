@@ -21,7 +21,7 @@ from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import (
     getCESiteMapping,
-    getFTS3Servers,
+    getFTSServers,
     getGOCFTSName,
     getGOCSiteName,
     getGOCSites,
@@ -229,7 +229,7 @@ class DowntimeCommand(Command):
                 gOCDBServiceType = None
             gocSite = getGOCFTSName(elementName)
             if not gocSite["OK"]:
-                self.log.warn("FTS not in Resources/FTSEndpoints/FTS3 ?", elementName)
+                self.log.warn("FTS not in Resources/FTSEndpoints/FTS3 or FTS4 ?", elementName)
             else:
                 elementName = gocSite["Value"]
 
@@ -436,7 +436,7 @@ class DowntimeCommand(Command):
 
         * All GOCDB site names (from ``getGOCSites``).
         * All SE hosts (from ``getStorageElementsHosts``).
-        * All FTS3 server hosts (from ``getFTS3Servers``).
+        * All FTS server hosts (from ``getFTSServers``).
         * All Computing Element names (from ``getCESiteMapping``).
 
         Calls ``doNew`` separately for Sites and Resources. Failures are recorded in
@@ -457,7 +457,7 @@ class DowntimeCommand(Command):
 
         resources = sesHosts if sesHosts else []
 
-        ftsServer = getFTS3Servers(hostOnly=True)
+        ftsServer = getFTSServers(hostOnly=True)
         if ftsServer["OK"] and ftsServer["Value"]:
             resources.extend(ftsServer["Value"])
 

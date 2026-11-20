@@ -10,7 +10,6 @@ from DIRAC.DataManagementSystem.private import FTS3Utilities
 from DIRAC.DataManagementSystem.private.FTS3Utilities import (
     groupFilesByTarget,
     selectUniqueSource,
-    FTS3ServerPolicy,
     getFTS3Plugin,
 )
 from DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin import DefaultFTS3Plugin
@@ -104,113 +103,6 @@ class TestFileGrouping(unittest.TestCase):
         self.assertTrue(self.f3 in filesInSrc4)
 
 
-def mock__failoverServerPolicy(_attempt):
-    return "server_0"
-
-
-def mock__randomServerPolicy(_attempt):
-    return "server_0"
-
-
-def mock__sequenceServerPolicy(_attempt):
-    return "server_0"
-
-
-def mock__OKFTSServerStatus(ftsServer):
-    return S_OK(ftsServer)
-
-
-def mock__ErrorFTSServerStatus(ftsServer):
-    return S_ERROR(ftsServer)
-
-
-class TestFTS3ServerPolicy(unittest.TestCase):
-    """Testing FTS3 ServerPolicy selection"""
-
-    def setUp(self):
-        self.fakeServerDict = {
-            "server_0": "server0.cern.ch",
-            "server_1": "server1.cern.ch",
-            "server_2": "server2.cern.ch",
-        }
-
-    @mock.patch(
-        "DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._getFTSServerStatus",
-        side_effect=mock__OKFTSServerStatus,
-    )
-    @mock.patch(
-        "DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._sequenceServerPolicy",
-        side_effect=mock__sequenceServerPolicy,
-    )
-    @mock.patch(
-        "DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._randomServerPolicy",
-        side_effect=mock__randomServerPolicy,
-    )
-    @mock.patch(
-        "DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._failoverServerPolicy",
-        side_effect=mock__failoverServerPolicy,
-    )
-    def testCorrectServerPolicyIsUsed(self, mockFailoverFunc, mockRandomFunc, mockSequenceFunc, mockFTSServerStatus):
-        "Test correct server policy method is called"
-
-        obj = FTS3ServerPolicy(self.fakeServerDict, "Sequence")
-        obj.chooseFTS3Server()
-        self.assertTrue(mockSequenceFunc.called)
-
-        obj = FTS3ServerPolicy(self.fakeServerDict, "Random")
-        obj.chooseFTS3Server()
-        self.assertTrue(mockRandomFunc.called)
-
-        obj = FTS3ServerPolicy(self.fakeServerDict, "Failover")
-        obj.chooseFTS3Server()
-        self.assertTrue(mockFailoverFunc.called)
-
-        # random policy should be selected for an invalid policy
-        obj = FTS3ServerPolicy(self.fakeServerDict, "InvalidPolicy")
-        obj.chooseFTS3Server()
-        self.assertTrue(mockRandomFunc.called)
-
-    @mock.patch(
-        "DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._getFTSServerStatus",
-        side_effect=mock__ErrorFTSServerStatus,
-    )
-    def testFailoverServerPolicy(self, mockFTSServerStatus):
-        """Test if the failover server policy returns server at a given position"""
-
-        obj = FTS3ServerPolicy(self.fakeServerDict, "Failover")
-        for i in range(len(self.fakeServerDict)):
-            self.assertEqual("server_%d" % i, obj._failoverServerPolicy(i))
-
-    @mock.patch(
-        "DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._getFTSServerStatus",
-        side_effect=mock__ErrorFTSServerStatus,
-    )
-    def testSequenceServerPolicy(self, mockFTSServerStatus):
-        """Test if the sequence server policy selects the servers Sequentially"""
-
-        obj = FTS3ServerPolicy(self.fakeServerDict, "Sequence")
-
-        for i in range(len(self.fakeServerDict)):
-            self.assertEqual("server_%d" % i, obj._sequenceServerPolicy(i))
-
-        self.assertEqual("server_0", obj._sequenceServerPolicy(i))
-
-    @mock.patch(
-        "DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy._getFTSServerStatus",
-        side_effect=mock__ErrorFTSServerStatus,
-    )
-    def testRandomServerPolicy(self, mockFTSServerStatus):
-        """Test if the random server policy does not selects the same server multiple times"""
-
-        obj = FTS3ServerPolicy(self.fakeServerDict, "Random")
-        serverSet = set()
-
-        for i in range(len(self.fakeServerDict)):
-            serverSet.add(obj._randomServerPolicy(i))
-
-        self.assertEqual(len(serverSet), len(self.fakeServerDict))
-
-
 class FakeFTS3Plugin:
     """Stands for a plugin class loaded by the ObjectLoader"""
 
@@ -286,6 +178,5 @@ class TestGetFTS3Plugin(unittest.TestCase):
 
 if __name__ == "__main__":
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestFileGrouping)
-    suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestFTS3ServerPolicy))
     suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TestGetFTS3Plugin))
     unittest.TextTestRunner(verbosity=2).run(suite)

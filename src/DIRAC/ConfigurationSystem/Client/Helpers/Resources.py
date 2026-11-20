@@ -149,35 +149,32 @@ def getGOCFTSName(diracFTSName):
     :returns: S_OK/S_ERROR structure
     """
 
-    gocFTSName = gConfig.getValue(cfgPath(gBaseResourcesSection, "FTSEndpoints", "FTS3", diracFTSName))
-    if not gocFTSName:
-        return S_ERROR(f"No GOC FTS server name for {diracFTSName} in CS (Not a grid site ?)")
-    return S_OK(gocFTSName)
+    for flavour in FTS_FLAVOURS:
+        gocFTSName = gConfig.getValue(cfgPath(gBaseResourcesSection, "FTSEndpoints", flavour, diracFTSName))
+        if gocFTSName:
+            return S_OK(gocFTSName)
+    return S_ERROR(f"No GOC FTS server name for {diracFTSName} in CS (Not a grid site ?)")
 
 
-def getFTS3Servers(hostOnly=False):
-    """get list of FTS3 servers that are in CS
+def getFTSServers(hostOnly=False):
+    """get list of FTS servers that are in CS, for all the flavours (FTS3, FTS4)
 
     :param bool hostOnly: flag for stripping down the protocol and ports
     """
 
-    csPath = cfgPath(gBaseResourcesSection, "FTSEndpoints/FTS3")
-    # We do it in two times to keep the order
-    ftsServerNames = gConfig.getOptions(csPath).get("Value", [])
-
     ftsServers = []
-    for name in ftsServerNames:
-        serverPath = gConfig.getValue(cfgPath(csPath, name))
-        if hostOnly:
-            serverPath = parse.urlparse(serverPath).hostname
-        ftsServers.append(serverPath)
+    for flavour in FTS_FLAVOURS:
+        csPath = cfgPath(gBaseResourcesSection, "FTSEndpoints", flavour)
+        # We do it in two times to keep the order
+        ftsServerNames = gConfig.getOptions(csPath).get("Value", [])
+
+        for name in ftsServerNames:
+            serverPath = gConfig.getValue(cfgPath(csPath, name))
+            if hostOnly:
+                serverPath = parse.urlparse(serverPath).hostname
+            ftsServers.append(serverPath)
 
     return S_OK(ftsServers)
-
-
-def getFTS3ServerDict():
-    """:returns: dict of key = server name and value = server url"""
-    return gConfig.getOptionsDict(cfgPath(gBaseResourcesSection, "FTSEndpoints/FTS3"))
 
 
 def getSiteTier(site):

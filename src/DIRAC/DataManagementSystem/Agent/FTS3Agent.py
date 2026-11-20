@@ -379,26 +379,28 @@ class FTS3Agent(AgentModule):
 
                     for ftsJob in newJobs:
                         try:
-                            ftsServer = operation.fts3Plugin.selectFTS3Server(ftsJob=ftsJob)
-                        except ValueError as e:
-                            log.error("Could not select FTS3 server", repr(e))
-                            continue
-
-                        log.debug(f"Use {ftsServer} server")
-
-                        ftsJob.ftsServer = ftsServer
-
-                        try:
                             tpcProtocols = operation.fts3Plugin.selectTPCProtocols(ftsJob=ftsJob)
                         except ValueError as e:
                             log.error("Could not select TPC list", repr(e))
                             continue
 
-                        # The FTS3Job decides whether to use tokens or not
+                        # The FTS3Job chooses all the storage related parameters
+                        # (protocol, tokens, staging, ...). They take priority over the server choice
                         res = ftsJob.prepareSubmission(protocols=tpcProtocols, tokensEnabled=self.useTokens)
                         if not res["OK"]:
                             log.error("Could not prepare FTS3Job", f"FTS3Operation {operation.operationID} : {res}")
                             continue
+
+                        # The server has to be compatible with what the job needs
+                        try:
+                            ftsServer = operation.fts3Plugin.selectFTS3Server(ftsJob=ftsJob)
+                        except ValueError as e:
+                            log.error("Could not select FTS server", repr(e))
+                            continue
+
+                        log.debug(f"Use {ftsServer} server")
+
+                        ftsJob.ftsServer = ftsServer
 
                         res = self.ftsContexts.getContext(
                             ftsServer, ftsJob.username, ftsJob.userGroup, useTokens=ftsJob.useTokens
