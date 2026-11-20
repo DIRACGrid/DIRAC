@@ -160,7 +160,7 @@ class ExecutorQueues:
         }
 
     def getExecutorList(self):
-        return [eType for eType in self.__queues]
+        return [*self.__queues]
 
     def pushTask(self, eType, taskId, ahead=False):
         self.__log.verbose(f"Pushing task {taskId} into waiting queue for executor {eType}")
