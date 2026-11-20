@@ -6,7 +6,7 @@ from packaging.version import Version
 import requests
 
 
-def make_release(version, commit_hash, release_notes=""):
+def make_release(version, commit_hash, release_notes="", draft_only=False):
     """Create a new GitHub release using the given data
 
     This function always makes a pre-release first to ensure the "latest" release never corresponds
@@ -17,6 +17,7 @@ def make_release(version, commit_hash, release_notes=""):
     :param str version: The version of the new release
     :param str commit_hash: Git revision used for the release
     :param str release_notes: Release notes
+    :param bool draft_only: Stop after creating the draft, for a release manager to publish it
     """
     # Create a draft release
     r = requests.post(
@@ -34,6 +35,8 @@ def make_release(version, commit_hash, release_notes=""):
     r.raise_for_status()
     release_data = r.json()
     print(f"Created draft release at: {release_data['html_url']}")
+    if draft_only:
+        return
 
     # Publish the release
     r = requests.patch(
@@ -56,6 +59,7 @@ if __name__ == "__main__":
     parser.add_argument("--version", required=True)
     parser.add_argument("--rev", required=True)
     parser.add_argument("--release-notes-fn", required=True)
+    parser.add_argument("--draft", action="store_true", help="Only create the draft release")
     args = parser.parse_args()
 
     token = args.token
@@ -69,4 +73,4 @@ if __name__ == "__main__":
     if not args.version.startswith("v"):
         raise ValueError('For consistency versions must start with "v"')
 
-    make_release(args.version, args.rev, release_notes=release_notes)
+    make_release(args.version, args.rev, release_notes=release_notes, draft_only=args.draft)
