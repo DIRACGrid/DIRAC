@@ -28,7 +28,7 @@ class TransportPool:
             return
         tridList = []
         try:
-            tridList = [trid for trid in self.__transports]
+            tridList = [*self.__transports]
         except RuntimeError:
             self.__sendKeepAlives(retries - 1)
         for trid in tridList:

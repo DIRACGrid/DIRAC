@@ -40,7 +40,7 @@ def breakListIntoChunks(aList, chunkSize):
         raise RuntimeError("chunkSize cannot be less than 1")
     if isinstance(aList, (set, dict, tuple)):
         aList = list(aList)
-    return [chunk for chunk in getChunk(aList, chunkSize)]
+    return [*getChunk(aList, chunkSize)]
 
 
 ##############################################################################
