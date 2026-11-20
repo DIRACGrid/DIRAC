@@ -26,7 +26,7 @@ def main():
     switches, args = Script.parseCommandLine(ignoreErrors=True)
     for switch in switches:
         if switch[0] == "Parameters":
-            parameters += [par for par in switch[1].split(",")]
+            parameters += [*switch[1].split(",")]
     parameters = [(i, par.lower()) for i, par in enumerate(parameters) if par]
 
     from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin

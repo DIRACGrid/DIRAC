@@ -108,7 +108,7 @@ def breakListIntoChunks(aList: list, chunkSize: int):
         raise RuntimeError("chunkSize cannot be less than 1")
     if isinstance(aList, (set, dict, tuple, {}.keys().__class__, {}.items().__class__, {}.values().__class__)):
         aList = list(aList)
-    return [chunk for chunk in getChunk(aList, chunkSize)]
+    return [*getChunk(aList, chunkSize)]
 
 
 def getIndexInList(anItem: Any, aList: list) -> int:

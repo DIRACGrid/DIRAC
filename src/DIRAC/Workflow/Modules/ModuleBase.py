@@ -517,7 +517,7 @@ class ModuleBase:
 
         if notPresentFiles:
             self.log.error(f"Output data file list {notPresentFiles} does not exist locally")
-            raise os.error
+            raise OSError
 
     #############################################################################
 
