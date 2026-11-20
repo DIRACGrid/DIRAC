@@ -1,67 +1,72 @@
 name: Deployment
 
+# Releases: "Run workflow" on integration or a release branch creates a draft
+# GitHub release. A release manager publishes it, which creates the tag, and the
+# release event builds and ships it. Nothing is pushed from CI.
 on:
   push:
   pull_request:
   workflow_dispatch:
     inputs:
-      check-ci:
-        description: "Require the CI to have passed for this commit"
-        required: true
-        default: "yes"
       version:
         description: "Override the release version number (e.g. 8.0.0a5)"
+  release:
+    types: [published]
 
-# Releases (workflow_dispatch) get their own group, so a later push or PR run
-# can never replace a queued release, and a running release is never
-# cancelled. Push/PR runs only build, so a newer one cancels the older one.
+# A release is never cancelled; a newer push or PR run cancels the older one.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
-  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+  cancel-in-progress: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
 
 jobs:
-  deploy-pypi:
-    name: PyPI deployment
+  draft-release:
+    name: Draft the release
     runs-on: "ubuntu-latest"
-    if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'DIRACGrid/DIRAC'
     permissions:
-      contents: write  # push the release notes commit and create the GitHub release
-    outputs:
-      conda-forge-version: ${{ steps.check-tag.outputs.conda-forge-version }}
-      create-release: ${{ steps.check-tag.outputs.create-release }}
-      new-version: ${{ steps.check-tag.outputs.new-version }}
+      contents: write  # create the draft GitHub release
     defaults:
       run:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The PAT is required to push the release notes commit to the protected
-          # release branches, and its persisted credentials are used for the push.
-          # zizmor: ignore[secrets-outside-env,artipacked] PAT required to push to the protected release branches
-          token: ${{ secrets.PAT || github.token }}
-      - run: |
-          git fetch --prune --unshallow
-          git config --global user.email "ci@diracgrid.org"
-          git config --global user.name "DIRACGrid CI"
+          fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: '3.11'
       - name: Installing dependencies
         run: |
           python -m pip install \
-              build \
+              packaging \
               python-dateutil \
               pytz \
-              readme_renderer \
               requests \
               setuptools_scm
-      - name: Validate README for PyPI
+      - name: Choose the version
+        id: version
+        env:
+          EVENT_REF: ${{ github.event.ref }}
+          VERSION_INPUT: ${{ github.event.inputs.version }}
         run: |
-          python -m readme_renderer README.rst -o /tmp/README.html
+          set -xeuo pipefail
+          IFS=$'\n\t'
+          if [[ ! "${EVENT_REF}" =~ ^refs/heads/(integration|rel-v([8-9]|[1-9][0-9]+)r[0-9]+)$ ]]; then
+            echo "Releases are made from integration or a release branch, not ${EVENT_REF}"
+            exit 2
+          fi
+          NEW_VERSION="v${VERSION_INPUT}"
+          if [[ "${NEW_VERSION}" == "v" ]]; then
+            # If version wasn't given as an input to the workflow, use setuptools_scm to guess while removing "dev" portion of the version number
+            NEW_VERSION=v$(python -m setuptools_scm | sed 's@Guessed Version @@g' | sed -E 's@(\.dev|\+g).+@@g')
+          fi
+          echo "Release will be named $NEW_VERSION"
+          python .github/workflows/check_release_version.py "${NEW_VERSION}" "${EVENT_REF#refs/heads/}"
+          echo "new-version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
       - name: Prepare release notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -79,66 +84,71 @@ jobs:
               --repo "${GH_REPO}" \
               > release.notes.new
           cat release.notes.new
-      - name: Create tag if required
+      - name: Create the draft release
+        env:
+          NEW_VERSION: ${{ steps.version.outputs.new-version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          .github/workflows/make_release.py \
+            --repo="${GH_REPO}" \
+            --token="${GITHUB_TOKEN}" \
+            --version="${NEW_VERSION}" \
+            --rev="$(git rev-parse HEAD)" \
+            --release-notes-fn="release.notes.new" \
+            --draft
+
+  deploy-pypi:
+    name: Build
+    runs-on: "ubuntu-latest"
+    if: github.event_name == 'pull_request' || github.event_name == 'release' || (github.event_name == 'push' && github.repository == 'DIRACGrid/DIRAC')
+    outputs:
+      conda-forge-version: ${{ steps.check-tag.outputs.conda-forge-version }}
+      create-release: ${{ steps.check-tag.outputs.create-release }}
+      new-version: ${{ steps.check-tag.outputs.new-version }}
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.11'
+      - name: Installing dependencies
+        run: |
+          python -m pip install \
+              build \
+              packaging \
+              readme_renderer \
+              setuptools_scm
+      - name: Validate README for PyPI
+        run: |
+          python -m readme_renderer README.rst -o /tmp/README.html
+      - name: Check the release
         id: check-tag
         env:
           REPO: ${{ github.repository }}
           EVENT_NAME: ${{ github.event_name }}
-          EVENT_REF: ${{ github.event.ref }}
-          VERSION_INPUT: ${{ github.event.inputs.version }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -xeuo pipefail
           IFS=$'\n\t'
-          # Only do a real release for workflow_dispatch events from DIRACGrid/DIRAC for integration for Python 3 compatible branches
-          if [[ "${REPO}" == "DIRACGrid/DIRAC" ]]; then
-            if [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
-              if [[ "${EVENT_REF}" =~ ^refs/heads/(integration|rel-v([8-9]|[1-9][0-9]+)r[0-9]+)$ ]]; then
-                echo "Will create a real release"
-                export NEW_VERSION="v${VERSION_INPUT}"
-                if [[ "${NEW_VERSION}" == "v" ]]; then
-                  # If version wasn't given as an input to the workflow, use setuptools_scm to guess while removing "dev" portion of the version number
-                  NEW_VERSION=v$(python -m setuptools_scm | sed 's@Guessed Version @@g' | sed -E 's@(\.dev|\+g).+@@g')
-                  export NEW_VERSION
-                fi
-                echo "Release will be named $NEW_VERSION"
-                # Validate the version
-                # Ensure the version doesn't look like a PEP-440 "dev release" (which might happen if the automatic version bump has issues)
-                python -c $'from packaging.version import Version; v = Version('"'$NEW_VERSION'"$')\nif v.is_devrelease:\n    raise ValueError(v)'
-                if [[ "${EVENT_REF}" =~ ^refs/heads/integration$ ]]; then
-                  # If we're releasing from integration it must be a pre-release
-                  # This is currently not a requirement
-                  # python -c $'from packaging.version import Version; v = Version('"'$NEW_VERSION'"$')\nif not v.is_prerelease:\n    raise ValueError("integration should only be used for pre-releases")'
-                  echo
-                elif [[ "${EVENT_REF}" != "$(python -c $'from packaging.version import Version; v = Version('"'$NEW_VERSION'"$')\nprint(f"refs/heads/rel-v{v.major}r{v.minor}")')" ]]; then
-                  # If we're not releasing from integration the version should match the rel-vXrY branch name
-                  echo "$NEW_VERSION is an invalid version for ${EVENT_REF}"
-                  exit 2
-                fi
-                # Commit the release notes
-                mv release.notes release.notes.old
-                {
-                  echo -e "[${NEW_VERSION}]" && \
-                  tail -n +2 release.notes.new | perl -0777pe 's/\n+$/\n\n/' && \
-                  cat release.notes.old;
-                } > release.notes
-                git add release.notes
-                git commit -m "docs: Add release notes for $NEW_VERSION"
-                git show
-                # If we're making a release, pin DIRACCommon to exact version
-                python .github/workflows/pin_diraccommon_version.py "$NEW_VERSION"
-                git add setup.cfg
-                git commit -m "chore: Pin DIRACCommon to $NEW_VERSION"
-                git show
-                # Create the tag
-                git tag "$NEW_VERSION"
-                # Output to later steps
-                echo "create-release=true" >> $GITHUB_OUTPUT
-                echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
-                # Expose the version for the conda-forge feedstock, skipping pre-releases
-                CONDA_FORGE_VERSION=$(python -c $'from packaging.version import Version; v = Version('"'$NEW_VERSION'"$')\nprint("" if v.is_prerelease else v)')
-                echo "conda-forge-version=$CONDA_FORGE_VERSION" >> $GITHUB_OUTPUT
-              fi
+          if [[ "${REPO}" == "DIRACGrid/DIRAC" && "${EVENT_NAME}" == "release" ]]; then
+            # The draft can be edited before it is published: check again where the tag ended up
+            if [[ "$(git describe --exact-match --tags HEAD)" != "${RELEASE_TAG}" ]]; then
+              echo "${RELEASE_TAG} is not the tag of the checked-out commit"
+              exit 2
             fi
+            BRANCH=$(python .github/workflows/check_release_version.py "${RELEASE_TAG}")
+            git merge-base --is-ancestor HEAD "origin/${BRANCH}" || git merge-base --is-ancestor HEAD origin/integration
+            echo "create-release=true" >> "$GITHUB_OUTPUT"
+            echo "new-version=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
+            # Expose the version for the conda-forge feedstock, skipping pre-releases
+            CONDA_FORGE_VERSION=$(python -c $'import sys\nfrom packaging.version import Version\nv = Version(sys.argv[1])\nprint("" if v.is_prerelease else v)' "${RELEASE_TAG}")
+            echo "conda-forge-version=$CONDA_FORGE_VERSION" >> "$GITHUB_OUTPUT"
           fi
       - name: Build DIRACCommon distribution
         if: steps.check-tag.outputs.create-release == 'true'
@@ -147,7 +157,15 @@ jobs:
           python -m build
           cd ..
       - name: Build DIRAC distribution
+        env:
+          NEW_VERSION: ${{ steps.check-tag.outputs.new-version }}
         run: |
+          if [[ -n "${NEW_VERSION}" ]]; then
+            # A release depends on the DIRACCommon built from the same tag. The pin is
+            # not committed, so tell setuptools_scm the version of the modified tree.
+            python .github/workflows/pin_diraccommon_version.py "${NEW_VERSION}"
+            export SETUPTOOLS_SCM_PRETEND_VERSION="${NEW_VERSION#v}"
+          fi
           python -m build
       - name: Upload DIRACCommon distribution
         if: steps.check-tag.outputs.create-release == 'true'
@@ -163,26 +181,6 @@ jobs:
           name: dirac-dist
           path: dist/
           retention-days: 5
-      - name: Make release on GitHub
-        if: steps.check-tag.outputs.create-release == 'true'
-        env:
-          NEW_VERSION: ${{ steps.check-tag.outputs.new-version }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-        run: |
-          set -e
-          echo "Pushing tagged release notes to ${GITHUB_REF#refs/heads/}"
-          git push "origin" "${GITHUB_REF#refs/heads/}"
-          echo "Making GitHub release for ${NEW_VERSION}"
-          .github/workflows/make_release.py \
-            --repo="${GH_REPO}" \
-            --token="${GITHUB_TOKEN}" \
-            --version="${NEW_VERSION}" \
-            --rev="$(git rev-parse HEAD)" \
-            --release-notes-fn="release.notes.new"
-          # Revert the pin on DIRACCommon so that future development can continue
-          git revert HEAD --no-edit
-          git push
 
   # Only this job talks to PyPI; the deployment above runs without any PyPI credential.
   publish:
@@ -218,7 +216,7 @@ jobs:
     runs-on: "ubuntu-latest"
     # Wait for the PyPI upload: sync_packages.sh must see the new release.
     # publish is skipped when no release is made; only skip CVMFS if it failed.
-    if: ${{ !failure() && !cancelled() && github.event_name == 'workflow_dispatch' }}
+    if: ${{ !failure() && !cancelled() && github.event_name == 'release' }}
     needs: [deploy-pypi, publish]
     steps:
       - name: install system packages
