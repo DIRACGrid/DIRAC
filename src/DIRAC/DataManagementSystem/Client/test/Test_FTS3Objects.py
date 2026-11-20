@@ -4,10 +4,11 @@ from unittest import mock
 import pytest
 
 import DIRAC
-from DIRAC import S_OK
+from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
+from DIRAC.DataManagementSystem.private import FTSRestLibs
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 from DIRAC.tests.Utilities.utils import generateDIRACConfig
 
@@ -230,27 +231,27 @@ def test_submit_directJob():
 
     assert res["OK"], res
 
-    job, fileIDsInTheJob = res["Value"]
+    fileIDsInTheJob = res["Value"]
 
     # Make sure all the files were submitted
-    assert len(job["files"]) == len(newJob.filesToSubmit)
+    assert len(newJob.transfers) == len(newJob.filesToSubmit)
     # It is not a multihop
-    assert not job["params"]["multihop"]
+    assert not newJob.multihop
     # All fileIDs are returned
     assert fileIDsInTheJob == {f.fileID for f in newJob.filesToSubmit}
 
     # Check the returned transfers
-    f1Trans = job["files"][0]
-    f2Trans = job["files"][1]
+    f1Trans = newJob.transfers[0]
+    f2Trans = newJob.transfers[1]
 
-    assert f1Trans["sources"][0].startswith("https://cerneos")
-    assert f1Trans["destinations"][0].startswith("https://cnafstorm")
+    assert f1Trans["source"].startswith("https://cerneos")
+    assert f1Trans["destination"].startswith("https://cnafstorm")
 
-    assert f2Trans["sources"][0].startswith("https://cerneos")
-    assert f2Trans["destinations"][0].startswith("https://cnafstorm")
+    assert f2Trans["source"].startswith("https://cerneos")
+    assert f2Trans["destination"].startswith("https://cnafstorm")
 
     # Only "real" (i.e. non intermediate hop) have 'FileID' in their metadata and monitored
-    monitoredJob = [f["metadata"] for f in job["files"] if "fileID" in f["metadata"]]
+    monitoredJob = [f["metadata"] for f in newJob.transfers if "fileID" in f["metadata"]]
     assert len(monitoredJob) == 2
 
 
@@ -263,24 +264,24 @@ def test_submit_directJob_secondFailed():
 
     assert res["OK"], res
 
-    job, fileIDsInTheJob = res["Value"]
+    fileIDsInTheJob = res["Value"]
 
     # We expect only one file
-    assert len(job["files"]) == 1
+    assert len(newJob.transfers) == 1
 
     # Check that the submitted fileID is the one with the correct LFN
     assert fileIDsInTheJob == {f.fileID for f in newJob.filesToSubmit if f.lfn == "/lhcb/f1"}
 
     # Not a multihop
-    assert not job["params"]["multihop"]
+    assert not newJob.multihop
 
-    f1Trans = job["files"][0]
+    f1Trans = newJob.transfers[0]
 
-    assert f1Trans["sources"][0].startswith("https://cerneos")
-    assert f1Trans["destinations"][0].startswith("https://cnafstorm")
+    assert f1Trans["source"].startswith("https://cerneos")
+    assert f1Trans["destination"].startswith("https://cnafstorm")
 
     # Only "real" (i.e. non intermediate hop) have 'FileID' in their metadata and monitored
-    monitoredJob = [f["metadata"] for f in job["files"] if "fileID" in f["metadata"]]
+    monitoredJob = [f["metadata"] for f in newJob.transfers if "fileID" in f["metadata"]]
     assert len(monitoredJob) == 1
 
 
@@ -293,24 +294,24 @@ def test_submit_directJob_firstFailed():
 
     assert res["OK"], res
 
-    job, fileIDsInTheJob = res["Value"]
+    fileIDsInTheJob = res["Value"]
 
     # We expect only one file
-    assert len(job["files"]) == 1
+    assert len(newJob.transfers) == 1
 
     # Check that the submitted fileID is the one with the correct LFN
     assert fileIDsInTheJob == {f.fileID for f in newJob.filesToSubmit if f.lfn == "/lhcb/f2"}
 
     # Not a multihop
-    assert not job["params"]["multihop"]
+    assert not newJob.multihop
 
-    f1Trans = job["files"][0]
+    f1Trans = newJob.transfers[0]
 
-    assert f1Trans["sources"][0].startswith("https://cerneos")
-    assert f1Trans["destinations"][0].startswith("https://cnafstorm")
+    assert f1Trans["source"].startswith("https://cerneos")
+    assert f1Trans["destination"].startswith("https://cnafstorm")
 
     # Only "real" (i.e. non intermediate hop) have 'FileID' in their metadata and monitored
-    monitoredJob = [f["metadata"] for f in job["files"] if "fileID" in f["metadata"]]
+    monitoredJob = [f["metadata"] for f in newJob.transfers if "fileID" in f["metadata"]]
     assert len(monitoredJob) == 1
 
 
@@ -345,28 +346,28 @@ def test_submit_multiHopStaging():
     res = newJob._constructTransferJob(3600, [f.lfn for f in newJob.filesToSubmit], "")
     assert res["OK"]
 
-    job, fileIDsInTheJob = res["Value"]
+    fileIDsInTheJob = res["Value"]
 
     # It is a multihop
-    assert job["params"]["multihop"]
+    assert newJob.multihop
 
     # All fileIDs are returned
     assert fileIDsInTheJob == {f.fileID for f in newJob.filesToSubmit}
 
     # It involves two distinct transfers
-    assert len(job["files"]) == 2
+    assert len(newJob.transfers) == 2
 
-    stagingTrans = job["files"][0]
-    copyTrans = job["files"][1]
+    stagingTrans = newJob.transfers[0]
+    copyTrans = newJob.transfers[1]
 
-    assert stagingTrans["sources"][0].startswith("root://cerncta")
-    assert stagingTrans["destinations"][0].startswith("root://cerncta")
+    assert stagingTrans["source"].startswith("root://cerncta")
+    assert stagingTrans["destination"].startswith("root://cerncta")
 
-    assert copyTrans["sources"][0].startswith("https://cerncta")
-    assert copyTrans["destinations"][0].startswith("https://cnafstorm")
+    assert copyTrans["source"].startswith("https://cerncta")
+    assert copyTrans["destination"].startswith("https://cnafstorm")
 
     # Only "real" (i.e. non intermediate hop) have 'FileID' in their metadata and monitored
-    monitoredJob = [f["metadata"] for f in job["files"] if "fileID" in f["metadata"]]
+    monitoredJob = [f["metadata"] for f in newJob.transfers if "fileID" in f["metadata"]]
     assert len(monitoredJob) == 1
 
 
@@ -398,26 +399,26 @@ def test_submit_multiHopTransfer():
     res = newJob._constructTransferJob(3600, [f.lfn for f in newJob.filesToSubmit], "")
     assert res["OK"]
 
-    job, fileIDsInTheJob = res["Value"]
+    fileIDsInTheJob = res["Value"]
 
-    assert job["params"]["multihop"]
+    assert newJob.multihop
 
     # All fileIDs are returned
     assert fileIDsInTheJob == {f.fileID for f in newJob.filesToSubmit}
 
-    assert len(job["files"]) == 2
+    assert len(newJob.transfers) == 2
 
-    firstHop = job["files"][0]
-    secondHop = job["files"][1]
+    firstHop = newJob.transfers[0]
+    secondHop = newJob.transfers[1]
 
-    assert firstHop["sources"][0].startswith("https://cnafstorm")
-    assert firstHop["destinations"][0].startswith("https://cerneos")
+    assert firstHop["source"].startswith("https://cnafstorm")
+    assert firstHop["destination"].startswith("https://cerneos")
 
-    assert secondHop["sources"][0].startswith("root://cerneos")
-    assert secondHop["destinations"][0].startswith("root://ralecho")
+    assert secondHop["source"].startswith("root://cerneos")
+    assert secondHop["destination"].startswith("root://ralecho")
 
     # Only "real" (i.e. non intermediate hop) have 'FileID' in their metadata and monitored
-    monitoredJob = [f["metadata"] for f in job["files"] if "fileID" in f["metadata"]]
+    monitoredJob = [f["metadata"] for f in newJob.transfers if "fileID" in f["metadata"]]
     assert len(monitoredJob) == 1
 
 
@@ -472,32 +473,32 @@ def test_submit_doubleMultiHopStaging():
     res = newJob._constructTransferJob(3600, [f.lfn for f in newJob.filesToSubmit], "")
     assert res["OK"]
 
-    job, fileIDsInTheJob = res["Value"]
+    fileIDsInTheJob = res["Value"]
 
     # It is a multihop
-    assert job["params"]["multihop"]
+    assert newJob.multihop
 
     # All fileIDs are returned
     assert fileIDsInTheJob == {f.fileID for f in newJob.filesToSubmit}
 
     # It involves three (!!!!!) distinct transfers
-    assert len(job["files"]) == 3
+    assert len(newJob.transfers) == 3
 
-    stagingTrans = job["files"][0]
-    hopTrans = job["files"][1]
-    copyTrans = job["files"][2]
+    stagingTrans = newJob.transfers[0]
+    hopTrans = newJob.transfers[1]
+    copyTrans = newJob.transfers[2]
 
-    assert stagingTrans["sources"][0].startswith("root://cerncta")
-    assert stagingTrans["destinations"][0].startswith("root://cerncta")
+    assert stagingTrans["source"].startswith("root://cerncta")
+    assert stagingTrans["destination"].startswith("root://cerncta")
 
-    assert hopTrans["sources"][0].startswith("https://cerncta")
-    assert hopTrans["destinations"][0].startswith("https://cnafstorm")
+    assert hopTrans["source"].startswith("https://cerncta")
+    assert hopTrans["destination"].startswith("https://cnafstorm")
 
-    assert copyTrans["sources"][0].startswith("https://cnafstorm")
-    assert copyTrans["destinations"][0].startswith("https://cerneos")
+    assert copyTrans["source"].startswith("https://cnafstorm")
+    assert copyTrans["destination"].startswith("https://cerneos")
 
     # Only "real" (i.e. non intermediate hop) have 'FileID' in their metadata and monitored
-    monitoredJob = [f["metadata"] for f in job["files"] if "fileID" in f["metadata"]]
+    monitoredJob = [f["metadata"] for f in newJob.transfers if "fileID" in f["metadata"]]
     assert len(monitoredJob) == 1
 
 
@@ -515,3 +516,198 @@ def test_getIdpClient_isCachedPerGroup():
         finally:
             FTS3Job._idp_cache.clear()
     assert getIdProviderClient.call_count == 2
+
+
+class FakeFTSRestLibs:
+    """Replaces the FTSRestLibs module in FTS3Job, to test FTS3Job independently of any library"""
+
+    def __init__(self, jobStatus=None, error=None):
+        self.jobStatus = jobStatus
+        self.error = error
+        self.submitted = []
+
+    @staticmethod
+    def usesTokens(context):
+        return context == "tokenContext"
+
+    def submit(self, context, ftsJob):
+        if self.error:
+            return self.error
+        self.submitted.append(ftsJob)
+        return S_OK("myGUID")
+
+    def getJobStatus(self, context, ftsGUID):
+        return self.error or S_OK(self.jobStatus)
+
+    def cancel(self, context, ftsGUID):
+        return self.error or S_OK({"job_state": "CANCELED"})
+
+
+@pytest.fixture
+def fakeFTSRestLibs(monkeypatch):
+    """Install a FakeFTSRestLibs in FTS3Job, and return a function to configure it"""
+
+    def install(**kwargs):
+        client = FakeFTSRestLibs(**kwargs)
+        monkeypatch.setattr(DIRAC.DataManagementSystem.Client.FTS3Job, "FTSRestLibs", client)
+        return client
+
+    return install
+
+
+def test_submit_withClient(fakeFTSRestLibs):
+    """prepareSubmission + submit go through FTSRestLibs and update the files"""
+    newJob = generateFTS3Job("CERN-DST", "CNAF-DST", ["/lhcb/f1", "/lhcb/f2"])
+    client = fakeFTSRestLibs()
+
+    # Not prepared
+    assert not newJob.submit("x509Context")["OK"]
+
+    res = newJob.prepareSubmission(pinTime=3600)
+    assert res["OK"], res
+    assert not newJob.useTokens
+
+    res = newJob.submit("x509Context")
+    assert res["OK"], res
+    assert res["Value"] == {1, 2}
+    assert client.submitted == [newJob]
+    assert newJob.ftsGUID == "myGUID"
+    for ftsFile in newJob.filesToSubmit:
+        assert ftsFile.ftsGUID == "myGUID"
+        assert ftsFile.status == "Submitted"
+        assert ftsFile.attempt == 1
+
+
+def test_submit_error(fakeFTSRestLibs):
+    newJob = generateFTS3Job("CERN-DST", "CNAF-DST", ["/lhcb/f1"])
+    fakeFTSRestLibs(error=S_ERROR("Error at submission"))
+    assert newJob.prepareSubmission(pinTime=3600)["OK"]
+    res = newJob.submit("x509Context")
+    assert not res["OK"]
+    assert newJob.ftsGUID is None
+
+
+def test_submit_tokenJobNeedsTokenContext(fakeFTSRestLibs):
+    newJob = generateFTS3Job("CERN-DST", "CNAF-DST", ["/lhcb/f1"])
+    assert newJob.prepareSubmission(pinTime=3600)["OK"]
+    newJob.useTokens = True
+    fakeFTSRestLibs()
+    assert not newJob.submit("x509Context")["OK"]
+    assert newJob.submit("tokenContext")["OK"]
+
+
+def test_monitor_notFound(fakeFTSRestLibs):
+    newJob = generateFTS3Job("CERN-DST", "CNAF-DST", ["/lhcb/f1"])
+    newJob.ftsGUID = "myGUID"
+    fakeFTSRestLibs(error=S_ERROR(errno.ESRCH, "not there"))
+    res = newJob.monitor("x509Context")
+    assert cmpError(res, errno.ESRCH)
+    assert newJob.status == "Failed"
+
+
+def test_monitor_withClient(fakeFTSRestLibs):
+    newJob = generateFTS3Job("CERN-DST", "CNAF-DST", ["/lhcb/f1", "/lhcb/f2"])
+    newJob.ftsGUID = "myGUID"
+    newJob.status = "Active"
+    jobStatus = {
+        "job_state": "FINISHEDDIRTY",
+        "reason": "One failed",
+        "job_metadata": {"sourceSE": "CERN-DST", "targetSE": "CNAF-DST"},
+        "files": [
+            {
+                "file_state": "FINISHED",
+                "reason": "",
+                "file_metadata": {"fileID": 1},
+                "filesize": 10,
+                "tx_duration": 2,
+            },
+            {
+                "file_state": "FAILED",
+                "reason": "No space",
+                "file_metadata": {"fileID": 2},
+                "recoverable": False,
+                "filesize": 10,
+                "tx_duration": 0,
+            },
+            # Intermediate staging transfer, ignored
+            {
+                "file_state": "FINISHED",
+                "reason": "",
+                "file_metadata": {"desc": "PreStage 1"},
+                "filesize": None,
+                "tx_duration": None,
+            },
+        ],
+    }
+    fakeFTSRestLibs(jobStatus=jobStatus)
+    res = newJob.monitor("x509Context")
+    assert res["OK"], res
+    assert res["Value"] == {
+        1: {"status": "Finished", "error": "", "ftsGUID": None},
+        2: {"status": "Defunct", "error": "No space", "ftsGUID": None},
+    }
+    assert newJob.status == "Finisheddirty"
+    assert newJob.completeness == 100
+    assert {d["FinalStatus"]: d["TransferTotal"] for d in newJob.accountingDicts} == {"Finished": 1, "Failed": 1}
+
+
+def test_cancel_withClient(fakeFTSRestLibs):
+    newJob = generateFTS3Job("CERN-DST", "CNAF-DST", ["/lhcb/f1"])
+    newJob.ftsGUID = "myGUID"
+    fakeFTSRestLibs()
+    assert newJob.cancel("x509Context")["OK"]
+    assert newJob.status == "Canceled"
+
+    fakeFTSRestLibs(error=S_ERROR(errno.ESRCH, "not there"))
+    assert cmpError(newJob.cancel("x509Context"), errno.ESRCH)
+
+
+@pytest.mark.parametrize("flavour", ["FTS3", "FTS4"])
+def test_buildJob(flavour):
+    """The prepared job is converted into a job of the library of each flavour"""
+    if FTSRestLibs.EASY_FTS[flavour] is None:
+        pytest.skip(f"No client library for {flavour}")
+
+    newJob = generateFTS3Job("CERN-RAW", "CNAF-DST", ["/lhcb/f1"])
+    newJob.priority = 3
+    assert newJob.prepareSubmission(pinTime=3600)["OK"]
+
+    job = FTSRestLibs.buildJob(flavour, newJob)
+
+    assert len(job["files"]) == len(newJob.transfers)
+    for ftsTrans, trans in zip(job["files"], newJob.transfers):
+        assert ftsTrans["sources"] == [trans["source"]]
+        assert ftsTrans["destinations"] == [trans["destination"]]
+        assert ftsTrans["metadata"] == trans["metadata"]
+        assert "source_tokens" not in ftsTrans
+    params = job["params"]
+    assert params["multihop"] is True
+    assert params["bring_online"] == newJob.bringOnline
+    assert params["priority"] == 3
+    assert params["retry"] == 3
+    assert params["job_metadata"] == newJob.jobMetadata
+    assert params["unmanaged_tokens"] is True
+    # SRM parameters only exist in FTS3
+    assert ("copy_pin_lifetime" in params) == (flavour == "FTS3")
+
+
+def test_newJob_unknownParameter():
+    """Parameters a library does not know are refused instead of being silently ignored"""
+    if FTSRestLibs.easy_fts4 is None:
+        pytest.skip("No client library for FTS4")
+    with pytest.raises(TypeError, match="copy_pin_lifetime"):
+        FTSRestLibs._newJob(FTSRestLibs.easy_fts4, transfers=[], copy_pin_lifetime=3600)
+
+
+def test_prepareSubmission_serverSelectionInfo():
+    """prepareSubmission fills what is needed to select the FTS server"""
+    diskJob = generateFTS3Job("CERN-DST", "CNAF-DST", ["/lhcb/f1"])
+    assert diskJob.prepareSubmission(pinTime=3600)["OK"]
+    assert diskJob.transferProtocols == {"https"}
+    assert not diskJob.involvesTape
+
+    # Staging from CTA uses root for the staging hop
+    tapeJob = generateFTS3Job("CERN-RAW", "CNAF-DST", ["/lhcb/f1"])
+    assert tapeJob.prepareSubmission(pinTime=3600)["OK"]
+    assert tapeJob.transferProtocols == {"root", "https"}
+    assert tapeJob.involvesTape

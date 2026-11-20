@@ -45,7 +45,6 @@ In order for the transfers to be submitted to the FTS system, the following opti
 Operations configuration
 ========================
 
-  * DataManagement/FTSPlacement/FTS3/ServerPolicy: Policy to choose the FTS server see `FTSServer policy`_.
   * DataManagement/FTSPlacement/FTS3/FTS3Plugin: Plugin to alter the behavior of the FTS3Agent
 
 
@@ -53,14 +52,25 @@ Operations configuration
 FTS servers definition
 ======================
 
-The servers to be used are defined in the ``Resources/FTSEndpoints/FTS3`` section. Example:
+The servers to be used are defined in the ``Resources/FTSEndpoints/FTS3`` and ``Resources/FTSEndpoints/FTS4`` sections, depending on the version of the server. Example:
 
 .. code-block:: python
 
-    CERN-FTS3 = https://fts3.cern.ch:8446
-    RAL-FTS3 = https://lcgfts3.gridpp.rl.ac.uk:8446
+    FTSEndpoints
+    {
+      FTS3
+      {
+        CERN-FTS3 = https://fts3.cern.ch:8446
+        RAL-FTS3 = https://lcgfts3.gridpp.rl.ac.uk:8446
+      }
+      FTS4
+      {
+        CERN-FTS4 = https://fts4.cern.ch:8446
+      }
+    }
 
-The option name is just the server name as used internaly. Note that the port number has to be specified, and should correspond to the REST interface
+The option name is just the server name as used internaly, and must be unique across the sections. Note that the port number has to be specified, and should correspond to the REST interface.
+The section determines the client library used to talk to the server (see :py:mod:`DIRAC.DataManagementSystem.private.FTSRestLibs`): the ``fts3`` python package for FTS3 servers, the ``fts4`` one for FTS4 servers. The ``fts4`` package is only needed if FTS4 servers are defined.
 
 
 FTS3Agent
@@ -68,14 +78,18 @@ FTS3Agent
 
 This agent is in charge of performing and monitoring all the transfers. Note that this agent can be duplicated as many time as you wish.
 
+The agent downloads the proxy of the users submitting the transfers, and delegates it to the FTS servers. The contexts to the FTS servers are shared by all the threads of the agent during a cycle (see :py:class:`DIRAC.DataManagementSystem.private.FTSRestLibs.FTSContextCache`):
+
+  * the proxies and the tokens are cached by the ProxyManager and TokenManager clients.
+  * one context per FTS server and user and group (or group only for tokens). It is re-created when the proxy or the token changes.
+  * the delegation is checked when a context is created (so once per cycle), and renewed if it is missing or if less than a third of ``ProxyLifetime`` is left. If a server loses it during a cycle, it is delegated again at submission.
+
 See: :py:mod:`~DIRAC.DataManagementSystem.Agent.FTS3Agent` for configuration details.
 
 FTS3 system overview
 --------------------
 
-There are two possible tasks that can be done with the FTS3 system: transferring and staging.
-
-Each of these task is performed by a dedicated ``FTS3Operation``: ``FTS3TransferOperation`` and ``FTS3StagingOperation``. These ``FTS3Operation`` contain a list of ``FTS3File``. An ``FTS3File`` is for a specific targetSE. The ``FTS3Agent`` will take an ``FTS3Operation``, group the files following some criteria (see later) into ``FTS3Jobs``. These ``FTS3Jobs`` will then be submitted to the FTS3 servers to become real FTS3 jobs. These Jobs are regularly monitored by the ``FTS3Agent``. When all the ``FTS3Files`` have reached a final status, the ``FTS3Operation`` callback method is called. This callback method depends on the type of ``FTS3Operation``.
+The FTS3 system performs transfers, through ``FTS3TransferOperation``. These ``FTS3Operation`` contain a list of ``FTS3File``. An ``FTS3File`` is for a specific targetSE. The ``FTS3Agent`` will take an ``FTS3Operation``, group the files following some criteria (see later) into ``FTS3Jobs``. These ``FTS3Jobs`` will then be submitted to the FTS3 servers to become real FTS3 jobs. These Jobs are regularly monitored by the ``FTS3Agent``. When all the ``FTS3Files`` have reached a final status, the ``FTS3Operation`` callback method is called. This callback method depends on the type of ``FTS3Operation``.
 
 Note that by default, the ``FTS3Agent`` is meant to run without shifter proxy. It will however download the proxy of the user submitting the job in order to delegate it to FTS. This also means that it is not able to perform registration in the DFC, and relies on Operation callback for that.
 
@@ -95,26 +109,17 @@ The grouping into jobs is done following this logic:
 Once the FTS jobs have been executed, and all the operation is completed, the callback takes place. The callback consists in fetching the RMS request which submitted the FTS3Operation, update the status of the RMS files, and insert a Registration Operation.
 Note that since the multiple targets are grouped in a single RMS operation, failing to transfer one file to one destination will result in the failure of the Operation. However, there is one Registration operation per target, and hence correctly transferred files will be registered.
 
-====================
-FTS3StagingOperation
-====================
+FTS server selection
+--------------------
 
-.. warning ::
+The storage related parameters of a job (protocols, tokens, staging, ...) are chosen first, and the FTS server is then chosen such that it is compatible with them. By default (see :py:meth:`DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin.DefaultFTS3Plugin.selectFTS3Server`):
 
-   Still in development, not meant to be used
+  * xroot transfers can only go to FTS3 servers
+  * transfers using tokens with tape storages can only go to FTS4 servers
+  * servers which are not Active in the RSS are excluded
+  * a random choice is made amongst the remaining ones
 
-This operation is meant to perform BringOnline. The idea behind that is to replace, if deemed working, the whole StorageSystem of DIRAC.
-
-FTSServer policy
-----------------
-
-The FTS server to which the job is sent is chose based on the policy. There are 3 possible policy:
-
-  * Random: the default. makes a random choice
-  * Failover: pick one, and stay on that one until it fails
-  * Sequence: take them in turn, always change
-
-This policy is applied by the default FTS3 plugin (see `FTS3 Plugins`_), and the ``ServerPolicy`` option is read from the Operations section of the VO. A plugin can override this choice (see :py:meth:`DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin.DefaultFTS3Plugin.selectFTS3Server`).
+If no server is compatible, the job is not submitted. A plugin can override this choice (see `FTS3 Plugins`_).
 
 
 FTS3 state machines

@@ -40,7 +40,7 @@ from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 from DIRAC.Core.Utilities.TimeUtilities import DiracTime
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
-from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3StagingOperation, FTS3TransferOperation
+from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3TransferOperation
 
 metadata = MetaData()
 mapper_registry = registry()
@@ -164,10 +164,6 @@ fts3Operation_mapper = mapper_registry.map_imperatively(
 
 mapper_registry.map_imperatively(
     FTS3TransferOperation, fts3OperationTable, inherits=fts3Operation_mapper, polymorphic_identity="Transfer"
-)
-
-mapper_registry.map_imperatively(
-    FTS3StagingOperation, fts3OperationTable, inherits=fts3Operation_mapper, polymorphic_identity="Staging"
 )
 
 

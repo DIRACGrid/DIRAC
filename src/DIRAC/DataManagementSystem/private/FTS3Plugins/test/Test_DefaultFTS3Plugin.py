@@ -12,8 +12,17 @@ import DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
+from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin import DefaultFTS3Plugin
 from DIRAC.Resources.Storage.StorageBase import StorageBase
+
+FAKE_FTS_SERVERS = {
+    "FTS3": {"fts3_0": "https://fts3-0.cern.ch:8446", "fts3_1": "https://fts3-1.cern.ch:8446"},
+    "FTS4": {"fts4_0": "https://fts4-0.cern.ch:8446"},
+}
+FTS3_SERVERS = set(FAKE_FTS_SERVERS["FTS3"].values())
+FTS4_SERVERS = set(FAKE_FTS_SERVERS["FTS4"].values())
+ALL_SERVERS = FTS3_SERVERS | FTS4_SERVERS
 
 # pylint: disable=redefined-outer-name
 
@@ -438,75 +447,99 @@ def test_copyReturnsSameInstance(fts3Plugin):
     assert copy.deepcopy(fts3Plugin) is fts3Plugin
 
 
-FAKE_FTS3_SERVERS = {
-    "server_0": "https://server0.cern.ch:8446",
-    "server_1": "https://server1.cern.ch:8446",
-}
-
-
 @pytest.fixture(scope="function")
 def mockFTSServers(monkeypatch):
-    """Mock the list of FTS3 servers, and the RSS status of the servers.
+    """Mock the list of FTS servers, and the RSS status of the servers.
 
     Returns the dict of server status, which can be altered by the test
     """
-    serverStatus = dict.fromkeys(FAKE_FTS3_SERVERS, True)
+    serverStatus = {name: "Active" for servers in FAKE_FTS_SERVERS.values() for name in servers}
+
+    def getElementStatus(name, elementType):
+        assert elementType == "FTS"
+        if serverStatus[name] is None:
+            return S_ERROR("RSS error")
+        return S_OK({name: {"all": serverStatus[name]}})
 
     monkeypatch.setattr(
         DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin,
-        "getFTS3ServerDict",
-        lambda: S_OK(FAKE_FTS3_SERVERS),
+        "getFTSServersByFlavour",
+        lambda: S_OK(copy.deepcopy(FAKE_FTS_SERVERS)),
     )
-    monkeypatch.setattr(
-        DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy,
-        "_getFTSServerStatus",
-        lambda self, ftsServer: S_OK(serverStatus[ftsServer]),
-    )
+    rssMock = mock.MagicMock()
+    rssMock.return_value.getElementStatus.side_effect = getElementStatus
+    monkeypatch.setattr(DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin, "ResourceStatus", rssMock)
     return serverStatus
 
 
+def preparedJob(protocols=("https",), useTokens=False, involvesTape=False):
+    """An FTS3Job as it is after prepareSubmission"""
+    job = FTS3Job()
+    job.transfers = [{"source": f"{proto}://src/f", "destination": f"{proto}://dst/f"} for proto in protocols]
+    job.useTokens = useTokens
+    job.involvesTape = involvesTape
+    return job
+
+
+def selectedServers(fts3Plugin, ftsJob, nbTries=50):
+    return {fts3Plugin.selectFTS3Server(ftsJob=ftsJob) for _ in range(nbTries)}
+
+
 def test_selectFTS3Server(fts3Plugin, mockFTSServers):
-    """The selected server is one of the configured ones"""
-    assert fts3Plugin.selectFTS3Server() in FAKE_FTS3_SERVERS.values()
+    """Without constraint, any server can be selected"""
+    assert selectedServers(fts3Plugin, preparedJob()) == ALL_SERVERS
 
 
-def test_selectFTS3Server_policyFromVO(fts3Plugin, mockFTSServers, monkeypatch):
-    """The ServerPolicy is taken from the Operations of the plugin VO"""
-    fts3Plugin.vo = "myVO"
-    opsMock = mock.MagicMock()
-    opsMock.return_value.getValue.return_value = "Sequence"
-    monkeypatch.setattr(DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin, "Operations", opsMock)
+def test_selectFTS3Server_xroot(fts3Plugin, mockFTSServers):
+    """xroot transfers only go to FTS3 servers"""
+    assert selectedServers(fts3Plugin, preparedJob(protocols=("root",))) == FTS3_SERVERS
+    # Even if only one hop uses it
+    assert selectedServers(fts3Plugin, preparedJob(protocols=("root", "https"))) == FTS3_SERVERS
 
-    # Sequence policy: servers are taken in turn
-    assert fts3Plugin.selectFTS3Server() == FAKE_FTS3_SERVERS["server_0"]
-    assert fts3Plugin.selectFTS3Server() == FAKE_FTS3_SERVERS["server_1"]
-    assert fts3Plugin.selectFTS3Server() == FAKE_FTS3_SERVERS["server_0"]
 
-    opsMock.assert_called_once_with(vo="myVO")
-    opsMock.return_value.getValue.assert_called_once_with("DataManagement/FTSPlacement/FTS3/ServerPolicy", "Random")
+def test_selectFTS3Server_tapeTokens(fts3Plugin, mockFTSServers):
+    """Tokens with tape only go to FTS4 servers"""
+    assert selectedServers(fts3Plugin, preparedJob(useTokens=True, involvesTape=True)) == FTS4_SERVERS
+    # Only one of them is not a constraint
+    assert selectedServers(fts3Plugin, preparedJob(useTokens=True)) == ALL_SERVERS
+    assert selectedServers(fts3Plugin, preparedJob(involvesTape=True)) == ALL_SERVERS
+
+
+def test_selectFTS3Server_incompatible(fts3Plugin, mockFTSServers):
+    """xroot + tape + tokens cannot go anywhere"""
+    with pytest.raises(ValueError):
+        fts3Plugin.selectFTS3Server(ftsJob=preparedJob(protocols=("root",), useTokens=True, involvesTape=True))
 
 
 def test_selectFTS3Server_skipInactive(fts3Plugin, mockFTSServers):
-    """Servers that are not active are not selected"""
-    mockFTSServers["server_0"] = False
-    for _ in range(10):
-        assert fts3Plugin.selectFTS3Server() == FAKE_FTS3_SERVERS["server_1"]
+    """Servers that are not active, or for which the RSS fails, are not selected"""
+    mockFTSServers["fts3_0"] = "Banned"
+    mockFTSServers["fts4_0"] = None
+    assert selectedServers(fts3Plugin, preparedJob()) == {FAKE_FTS_SERVERS["FTS3"]["fts3_1"]}
 
 
 def test_selectFTS3Server_noActiveServer(fts3Plugin, mockFTSServers):
-    """ValueError is raised if no server is active"""
-    for server in mockFTSServers:
-        mockFTSServers[server] = False
+    """ValueError is raised if no compatible server is active"""
+    mockFTSServers["fts4_0"] = "Banned"
     with pytest.raises(ValueError):
-        fts3Plugin.selectFTS3Server()
+        fts3Plugin.selectFTS3Server(ftsJob=preparedJob(useTokens=True, involvesTape=True))
 
 
-def test_selectFTS3Server_noServerDict(fts3Plugin, monkeypatch):
-    """ValueError is raised if the servers cannot be obtained"""
+def test_selectFTS3Server_noServer(fts3Plugin, monkeypatch):
+    """ValueError is raised if there are no servers"""
     monkeypatch.setattr(
         DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin,
-        "getFTS3ServerDict",
-        lambda: S_ERROR("No FTS3 endpoints"),
+        "getFTSServersByFlavour",
+        lambda: S_OK({"FTS3": {}, "FTS4": {}}),
     )
     with pytest.raises(ValueError):
-        fts3Plugin.selectFTS3Server()
+        fts3Plugin.selectFTS3Server(ftsJob=preparedJob())
+
+
+def test_getCompatibleFTSServers(fts3Plugin, mockFTSServers):
+    """All the compatible servers are returned, in the CS order, so extensions can order them differently"""
+    allServers = [url for servers in FAKE_FTS_SERVERS.values() for url in servers.values()]
+    assert fts3Plugin.getCompatibleFTSServers(preparedJob()) == allServers
+    assert fts3Plugin.getCompatibleFTSServers(preparedJob(protocols=("root",))) == list(
+        FAKE_FTS_SERVERS["FTS3"].values()
+    )

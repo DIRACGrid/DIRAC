@@ -12,7 +12,7 @@ from DIRAC import gLogger, S_OK
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.SiteSEMapping import getStorageElementsHosts
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getFTS3Servers, getCESiteMapping
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getFTSServers, getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
@@ -179,7 +179,7 @@ class Synchronizer:
 
         resources = sesHosts
 
-        ftsServer = getFTS3Servers(hostOnly=True)
+        ftsServer = getFTSServers(hostOnly=True)
         if ftsServer["OK"]:
             resources.extend(ftsServer["Value"])
 

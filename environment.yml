@@ -19,7 +19,7 @@ dependencies:
   - db12
   - opensearch-py
   - fabric
-  - fts3
+  - fts3 >=3.13
   - gitpython >=2.1.0
   - invoke
   - m2crypto >=0.50
