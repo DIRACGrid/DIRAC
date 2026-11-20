@@ -27,8 +27,10 @@ jobs:
     name: PyPI deployment
     runs-on: "ubuntu-latest"
     if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
+    # Only a release (workflow_dispatch) gets the environment that holds the deploy key.
+    environment: ${{ github.event_name == 'workflow_dispatch' && 'release' || '' }}
     permissions:
-      contents: write  # push the release notes commit and create the GitHub release
+      contents: write  # create the GitHub release on the tag pushed with the deploy key
     outputs:
       conda-forge-version: ${{ steps.check-tag.outputs.conda-forge-version }}
       create-release: ${{ steps.check-tag.outputs.create-release }}
@@ -39,10 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # The PAT is required to push the release notes commit to the protected
-          # release branches, and its persisted credentials are used for the push.
-          # zizmor: ignore[secrets-outside-env,artipacked] PAT required to push to the protected release branches
-          token: ${{ secrets.PAT || github.token }}
+          persist-credentials: false
       - run: |
           git fetch --prune --unshallow
           git config --global user.email "ci@diracgrid.org"
@@ -169,10 +168,19 @@ jobs:
           NEW_VERSION: ${{ steps.check-tag.outputs.new-version }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
+          # Write deploy key: the only actor allowed past the branch and tag rulesets.
+          RELEASE_DEPLOY_KEY: ${{ secrets.RELEASE_DEPLOY_KEY }}
         run: |
           set -e
-          echo "Pushing tagged release notes to ${GITHUB_REF#refs/heads/}"
-          git push "origin" "${GITHUB_REF#refs/heads/}"
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          REMOTE="git@github.com:${GH_REPO}.git"
+          install -m 600 /dev/null "${RUNNER_TEMP}/release_key"
+          printf '%s\n' "${RELEASE_DEPLOY_KEY}" > "${RUNNER_TEMP}/release_key"
+          # GitHub's SSH host key, from https://api.github.com/meta
+          echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" > "${RUNNER_TEMP}/known_hosts"
+          export GIT_SSH_COMMAND="ssh -i ${RUNNER_TEMP}/release_key -o IdentitiesOnly=yes -o UserKnownHostsFile=${RUNNER_TEMP}/known_hosts"
+          echo "Pushing the release notes and the ${NEW_VERSION} tag to ${BRANCH}"
+          git push --atomic "${REMOTE}" "HEAD:refs/heads/${BRANCH}" "refs/tags/${NEW_VERSION}"
           echo "Making GitHub release for ${NEW_VERSION}"
           .github/workflows/make_release.py \
             --repo="${GH_REPO}" \
@@ -182,7 +190,8 @@ jobs:
             --release-notes-fn="release.notes.new"
           # Revert the pin on DIRACCommon so that future development can continue
           git revert HEAD --no-edit
-          git push
+          git push "${REMOTE}" "HEAD:refs/heads/${BRANCH}"
+          rm -f "${RUNNER_TEMP}/release_key"
 
   # Only this job talks to PyPI; the deployment above runs without any PyPI credential.
   publish:
