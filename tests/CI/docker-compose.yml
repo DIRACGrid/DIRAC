@@ -311,8 +311,6 @@ services:
       - DIRACX_DB_URL_PILOTAGENTSDB=mysql+aiomysql://Dirac:Dirac@mysql/PilotAgentsDB
       - DIRACX_DB_URL_TASKQUEUEDB=mysql+aiomysql://Dirac:Dirac@mysql/TaskQueueDB
       - DIRACX_DB_URL_RESOURCESTATUSDB=mysql+aiomysql://Dirac:Dirac@mysql/ResourceStatusDB
-      # The DiracX Transformation System is decoupled from DIRAC: disable its
-      # router so that the diracx service does not need a TransformationDB
       - DIRACX_SERVICE_TRANSFORMATIONS_ENABLED=false
       - DIRACX_SERVICE_AUTH_TOKEN_KEYSTORE=file:///keystore/jwks.json
       - DIRACX_SERVICE_AUTH_TOKEN_ISSUER=http://diracx:8000
