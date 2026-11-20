@@ -8,5 +8,13 @@
     "$default",
     "rel-v9r0",
     "rel-v8r0"
+  ],
+  "packageRules": [
+    {
+      "description": "We use the DIRACGrid forks of tornado and tornado_m2crypto: never bump them from PyPI.",
+      "matchDatasources": ["pypi"],
+      "matchPackageNames": ["tornado", "tornado-m2crypto"],
+      "enabled": false
+    }
   ]
 }
