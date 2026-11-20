@@ -35,10 +35,7 @@ from pytest import mark, approx, raises, fixture, skip
 parametrize = mark.parametrize
 
 # function_scoped_fixture is only used in Python 3 compatible release of hypothesis
-if sys.version_info.major >= 3:
-    function_scoped = (HealthCheck.function_scoped_fixture,)
-else:
-    function_scoped = tuple()
+function_scoped = (HealthCheck.function_scoped_fixture,)
 
 # List of couple (encoding, decoding) functions
 # In order to test a new library, import the encode/decode
