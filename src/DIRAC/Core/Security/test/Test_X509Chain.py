@@ -34,10 +34,7 @@ from pytest import mark, fixture, skip, raises, approx
 parametrize = mark.parametrize
 
 # function_scoped_fixture is only used in Python 3 compatible release of hypothesis
-if sys.version_info.major >= 3:
-    function_scoped = (HealthCheck.function_scoped_fixture,)
-else:
-    function_scoped = tuple()
+function_scoped = (HealthCheck.function_scoped_fixture,)
 
 from DIRAC.Core.Security.test.x509TestUtilities import (
     CERTS,
