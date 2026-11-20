@@ -275,7 +275,6 @@ services:
     environment:
       - DIRACX_DB_URL_AUTHDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXAuthDB
       - DIRACX_DB_URL_TASKDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXTaskDB
-      - DIRACX_DB_URL_TRANSFORMATIONDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXTransformationDB
       # DiracX requires a URL for every registered DB, but the schemas of the
       # DBs shared with DIRAC are created by DIRAC: initialise them in memory
       - 'DIRACX_DB_URL_JOBDB=sqlite+aiosqlite:///:memory:'
@@ -294,8 +293,6 @@ services:
       c.execute(\"GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES,CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE ON DiracXAuthDB.* TO Dirac@\\x27%%\\x27\")
       c.execute(\"CREATE DATABASE DiracXTaskDB\")
       c.execute(\"GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES,CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE ON DiracXTaskDB.* TO Dirac@\\x27%%\\x27\")
-      c.execute(\"CREATE DATABASE DiracXTransformationDB\")
-      c.execute(\"GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES,CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE ON DiracXTransformationDB.* TO Dirac@\\x27%%\\x27\")
       db.commit()
       " && python -m diracx.db init-sql'
     pull_policy: always
@@ -314,7 +311,9 @@ services:
       - DIRACX_DB_URL_PILOTAGENTSDB=mysql+aiomysql://Dirac:Dirac@mysql/PilotAgentsDB
       - DIRACX_DB_URL_TASKQUEUEDB=mysql+aiomysql://Dirac:Dirac@mysql/TaskQueueDB
       - DIRACX_DB_URL_RESOURCESTATUSDB=mysql+aiomysql://Dirac:Dirac@mysql/ResourceStatusDB
-      - DIRACX_DB_URL_TRANSFORMATIONDB=mysql+aiomysql://Dirac:Dirac@mysql/DiracXTransformationDB
+      # The DiracX Transformation System is decoupled from DIRAC: disable its
+      # router so that the diracx service does not need a TransformationDB
+      - DIRACX_SERVICE_TRANSFORMATIONS_ENABLED=false
       - DIRACX_SERVICE_AUTH_TOKEN_KEYSTORE=file:///keystore/jwks.json
       - DIRACX_SERVICE_AUTH_TOKEN_ISSUER=http://diracx:8000
       - DIRACX_SERVICE_AUTH_ALLOWED_REDIRECTS=["http://diracx:8000/docs/oauth2-redirect"]
