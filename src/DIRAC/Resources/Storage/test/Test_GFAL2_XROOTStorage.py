@@ -20,7 +20,6 @@ class XROOTStorage_TestCase(unittest.TestCase):
             Path="/path",
             Host="host",
             Port="",
-            SvcClass="spaceToken",
             WSPath="wspath",
         )
 
@@ -32,13 +31,6 @@ class XROOTStorage_TestCase(unittest.TestCase):
         resource.se.vo = voName
         testLFN = f"/{voName}/path/to/filename"
 
-        # # with spaceToken
-        res = resource.constructURLFromLFN(testLFN)
-        self.assertTrue(res["OK"])
-        self.assertEqual(f"protocol://host//path{testLFN}?svcClass={self.parameterDict['SvcClass']}", res["Value"])
-
-        # # no spaceToken
-        resource.protocolParameters["SvcClass"] = ""
         res = resource.constructURLFromLFN(testLFN)
         self.assertTrue(res["OK"])
         self.assertEqual(f"protocol://host//path{testLFN}", res["Value"])

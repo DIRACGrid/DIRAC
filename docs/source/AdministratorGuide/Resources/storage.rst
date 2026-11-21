@@ -31,8 +31,6 @@ DIRAC provides an abstraction of a SE interface that allows to access different 
         WSUrl = /srm/managerv2?SFN=
         # Path to navigate to the VO namespace on the storage
         Path = /castor/cern.ch/grid
-        # SRM space token
-        SpaceToken = LHCb_USER
         # VO specific path definitions
         VOPath
         {
@@ -57,7 +55,7 @@ Configuration options are:
 * ``RemoveAccess``: default ``True``. Allowed for Remove if no RSS enabled
 * ``OccupancyLFN``: default (``/<vo>/occupancy.json``). LFN where the json file containing the space reporting is to be found
 * ``OccupancyPlugin``: default (``empty``). Plugin to find the occupancy of a given storage.
-* ``SpaceReservation``: just a name of a zone of the physical storage which can have some space reserved. Extends the SRM ``SpaceToken`` concept.
+* ``SpaceReservation``: just a name of a zone of the physical storage which can have some space reserved.
 * ``ArchiveTimeout``: for tape SE only. If set to a value in seconds, enables the `FTS Archive Monitoring feature <https://fts3-docs.web.cern.ch/fts3-docs/docs/archive_monitoring.html>`_
 * ``BringOnlineTimeout``: for tape SE only. If set to a value in seconds, specify the BringOnline parameter for FTS transfers. Otherwise, the default is whatever is in the ``FTS3Job`` class.
 * ``WLCGTokenBasePath``: EXPERIMENTAL Path from which the token should be relative to (only used for FTS transfers for now)
@@ -93,7 +91,6 @@ In order to factorize the configuration, it is possible to use ``BaseSE``, which
           Protocol = srm
           Path = /eos/lhcb/grid/prod
           Access = remote
-          SpaceToken = LHCb-EOS
           WSUrl = /srm/v2/server?SFN=
         }
       }
@@ -112,7 +109,6 @@ In order to factorize the configuration, it is possible to use ``BaseSE``, which
         {
           PluginName = GFAL2_SRM2
           Path = /eos/lhcb/grid/user
-          SpaceToken = LHCb_USER
         }
       }
       GFAL2_XROOT
@@ -122,7 +118,6 @@ In order to factorize the configuration, it is possible to use ``BaseSE``, which
         Protocol = root
         Path = /eos/lhcb/grid/user
         Access = remote
-        SpaceToken = LHCb-EOS
         WSUrl = /srm/v2/server?SFN=
       }
     }
@@ -144,7 +139,6 @@ This definition would be strictly equivalent to::
           Protocol = srm
           Path = /eos/lhcb/grid/prod
           Access = remote
-          SpaceToken = LHCb-EOS
           WSUrl = /srm/v2/server?SFN=
         }
       }
@@ -163,7 +157,6 @@ This definition would be strictly equivalent to::
           Protocol = srm
           Path = /eos/lhcb/grid/prod
           Access = remote
-          SpaceToken = LHCb-EOS
           WSUrl = /srm/v2/server?SFN=
         }
       }
@@ -180,7 +173,6 @@ This definition would be strictly equivalent to::
           Protocol = srm
           Path = /eos/lhcb/grid/user
           Access = remote
-          SpaceToken = LHCb_USER
           WSUrl = /srm/v2/server?SFN=
         }
       }
@@ -192,7 +184,6 @@ This definition would be strictly equivalent to::
         Protocol = root
         Path = /eos/lhcb/grid/user
         Access = remote
-        SpaceToken = LHCb-EOS
         WSUrl = /srm/v2/server?SFN=
       }
     }
@@ -261,7 +252,7 @@ For example::
 
 The LFN of this file is by default `/<vo>/occupancy.json`, but can be overwritten with the ``OccupancyLFN`` option of the SE.
 
-The ``SpaceReservation`` option allows to specify a physical zone of the storage which would have space reservation (for example ``LHCb_USER``, ``LHCb_PROD``, etc). It extends the concept of ``SpaceToken`` that SRM has. This option is only used if the StoragePlugin does not return itself a ``SpaceReservation`` value.
+The ``SpaceReservation`` option allows to specify a physical zone of the storage which would have space reservation (for example ``LHCb_USER``, ``LHCb_PROD``, etc). This option is only used if the StoragePlugin does not return itself a ``SpaceReservation`` value.
 
 The ``OccupancyPlugin`` allows to change the way space occupancy is measured. Several plugins are available (please refer to the module documentation):
 
@@ -311,7 +302,6 @@ You need to define a protocol section with SRM, specifying that a ``file`` URL c
       Path = /disk
       # This is different from the ``standard`` definition
       Access = local
-      SpaceToken = LHCb-Disk
       WSUrl = /srm/managerv2?SFN=
       # This is different from the ``standard`` definition
       OutputProtocols = file, https, gsiftp, root, srm
