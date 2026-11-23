@@ -187,6 +187,9 @@ jobs:
     # publish is skipped when no release is made; only skip CVMFS if it failed.
     if: ${{ !failure() && !cancelled() && github.event_name == 'workflow_dispatch' }}
     needs: [deploy-pypi, publish]
+    # The CVMFS proxy lives in this environment: release branches and tags only,
+    # approved by a release manager.
+    environment: cvmfs
     steps:
       # conda is no longer preinstalled (nor on the PATH) of the ubuntu-latest
       # runner images; install it explicitly since the next steps rely on it
@@ -204,7 +207,6 @@ jobs:
       - name: Deploy on CVMFS
         env:
             CVMFS_PROXY_BASE64: ${{ secrets.CVMFS_PROXY_BASE64 }}
-        # zizmor: ignore[secrets-outside-env] no GitHub environment exists for the CVMFS upload
         run: |
           eval "$(conda shell.bash hook)" && conda activate cvmfs-env
           conda install ca-policy-lcg openssl==3.0.7 gct
@@ -218,11 +220,6 @@ jobs:
           mkdir -p ~/.ssh/ && touch ~/.ssh/known_hosts
           ssh-keyscan cvmfs-upload01.gridpp.rl.ac.uk >> ~/.ssh/known_hosts
           gsissh -p 1975 -t cvmfs-upload01.gridpp.rl.ac.uk /home/diracsgm/admin/sync_packages.sh -v
-      - name: setup tmate session
-        if: ${{ failure() }}
-        uses: mxschmitt/action-tmate@35b54afac29c97fb54faba5b513f8fbd1882f113 # v3
-        with:
-          limit-access-to-actor: true
 
   update-conda-forge:
     name: conda-forge feedstock update
