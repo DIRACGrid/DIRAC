@@ -42,29 +42,31 @@ def main():
             retry = int(switch[1])
 
     # Parse targeted hosts
-    try:
-        with open(hosts) as f:
-            hosts = f.read().splitlines()
-            hosts = [str(host) for host in hosts]
-    except FileNotFoundError:
-        pass  # The user probably supplied one of most hosts directly
-    except Exception as err:
-        gLogger.error(f"Failed to read host list file {hosts}: {str(err)}")
-        DIRAC.exit(1)
+    if hosts:
+        try:
+            with open(hosts) as f:
+                hosts = f.read().splitlines()
+                hosts = [str(host) for host in hosts]
+        except FileNotFoundError:
+            pass  # The user probably supplied one of most hosts directly
+        except Exception as err:
+            gLogger.error(f"Failed to read host list file {hosts}: {str(err)}")
+            DIRAC.exit(1)
 
     if not isinstance(hosts, list):
         hosts = hosts.split(",")
 
     # Parse excluded hosts
-    try:
-        with open(excludeHosts) as f:
-            excludeHosts = f.read().splitlines()
-            excludeHosts = [str(host) for host in excludeHosts]
-    except FileNotFoundError:
-        pass  # The user probably supplied one of most hosts directly
-    except Exception as err:
-        gLogger.error(f"Failed to read excluded host list file {hosts}: {str(err)}")
-        DIRAC.exit(1)
+    if excludeHosts:
+        try:
+            with open(excludeHosts) as f:
+                excludeHosts = f.read().splitlines()
+                excludeHosts = [str(host) for host in excludeHosts]
+        except FileNotFoundError:
+            pass  # The user probably supplied one of most hosts directly
+        except Exception as err:
+            gLogger.error(f"Failed to read excluded host list file {excludeHosts}: {str(err)}")
+            DIRAC.exit(1)
 
     if not isinstance(excludeHosts, list):
         excludeHosts = excludeHosts.split(",")
