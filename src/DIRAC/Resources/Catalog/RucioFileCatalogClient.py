@@ -357,7 +357,7 @@ class RucioFileCatalogClient(FileCatalogClientBase):
                 for meta in self.client.get_metadata_bulk(dids):
                     lfn = str(meta["name"])
                     if meta["did_type"] in ["DATASET", "CONTAINER"]:
-                        nlinks = len([child for child in self.client.list_content(meta["scope"], meta["name"])])
+                        nlinks = len([*self.client.list_content(meta["scope"], meta["name"])])
                         successful[lfn] = {
                             "Checksum": "",
                             "ChecksumType": "",

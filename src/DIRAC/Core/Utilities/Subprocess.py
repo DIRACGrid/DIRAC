@@ -257,7 +257,7 @@ class Subprocess:
         """wait for :pid:"""
         try:
             return os.waitpid(pid, os.WNOHANG)
-        except os.error:
+        except OSError:
             if self.childKilled:
                 return False
             return None
@@ -293,7 +293,7 @@ class Subprocess:
             exitStatus = self.__poll(self.childPID)
         try:
             exitStatus = os.waitpid(self.childPID, 0)
-        except os.error:
+        except OSError:
             pass
         self.childKilled = True
         if exitStatus is None:
