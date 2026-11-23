@@ -205,7 +205,7 @@ class JobState:
             self.__checkType(attDict, dict)
         except TypeError as excp:
             return S_ERROR(str(excp))
-        keys = [key for key in attDict]
+        keys = [*attDict]
         values = [attDict[key] for key in keys]
         return JobState.__db.jobDB.setJobAttributes(self.__jid, keys, values)
 
