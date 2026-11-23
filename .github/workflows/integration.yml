@@ -72,8 +72,9 @@ jobs:
     - name: Prepare environment
       env:
         MATRIX_ARGS: ${{ matrix.ARGS }}
-      # Intentionally unquoted: MATRIX_ARGS is a space-separated list of
-      # KEY=VALUE flags and must be word-split into separate arguments
+      # ARGS is a space-separated list of KEY=VALUE pairs that
+      # integration_tests.py splits itself, so it must not be quoted
+      # shellcheck disable=SC2086
       run: ./integration_tests.py prepare-environment $MATRIX_ARGS
     - name: Install server
       run: ./integration_tests.py install-server
