@@ -24,7 +24,12 @@ jobs:
     - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
       with:
         python-version: '3.11'
-    - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
+    # pre-commit/action is not used because it wraps actions/cache@v4 (by
+    # tag, not SHA), which the organization action policy rejects
+    - name: Install pre-commit
+      run: pip install pre-commit
+    - name: Run pre-commit
+      run: pre-commit run --all-files --show-diff-on-failure
     - uses: pre-commit-ci/lite-action@062bca0919bc9d6e66755cc05074b70c77e111fc # v1.2.0
       if: always()
 
