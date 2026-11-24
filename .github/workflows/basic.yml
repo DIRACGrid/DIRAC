@@ -29,8 +29,6 @@ jobs:
         run: pip install pre-commit==4.7.0
       - name: Run pre-commit
         run: pre-commit run --all-files --show-diff-on-failure --color=always
-      - uses: pre-commit-ci/lite-action@062bca0919bc9d6e66755cc05074b70c77e111fc # v1.2.0
-        if: always()
 
   shellcheck:
     name: shellcheck
