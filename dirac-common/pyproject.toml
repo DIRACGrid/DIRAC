@@ -33,9 +33,11 @@ testing = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/DIRACGrid/DIRAC"
-Documentation = "https://dirac.readthedocs.io/"
-"Source Code" = "https://github.com/DIRACGrid/DIRAC"
+Homepage = "https://diracgrid.org"
+Documentation = "https://dirac.diracgrid.org"
+Repository = "https://github.com/DIRACGrid/DIRAC"
+Issues = "https://github.com/DIRACGrid/DIRAC/issues"
+Security = "https://github.com/DIRACGrid/DIRAC/security/policy"
 
 [tool.hatch.version]
 source = "vcs"
