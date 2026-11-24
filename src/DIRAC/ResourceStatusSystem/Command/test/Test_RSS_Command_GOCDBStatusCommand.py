@@ -388,7 +388,6 @@ def test_doMaster(mocker):
 
     mocker.patch("DIRAC.ResourceStatusSystem.Command.DowntimeCommand.getGOCSites", return_value=S_OK())
     mocker.patch("DIRAC.ResourceStatusSystem.Command.DowntimeCommand.getStorageElementsHosts", return_value=S_OK())
-    mocker.patch("DIRAC.ResourceStatusSystem.Command.DowntimeCommand.getFTS3Servers", return_value=S_OK())
     mocker.patch("DIRAC.ResourceStatusSystem.Command.DowntimeCommand.getGOCSites", return_value=S_OK())
     mocker.patch("DIRAC.ResourceStatusSystem.Command.DowntimeCommand.getCESiteMapping", return_value=S_OK())
 

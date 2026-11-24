@@ -1,6 +1,5 @@
 """ Helper for the CS Resources section
 """
-from urllib import parse
 
 from DIRAC import S_ERROR, S_OK, gConfig, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
@@ -124,40 +123,6 @@ def getDIRACSiteName(gocSiteName):
         return S_OK(diracSites)
 
     return S_ERROR(f"There's no site with GOCDB name = {gocSiteName} in DIRAC CS")
-
-
-def getGOCFTSName(diracFTSName):
-    """
-    Get GOC DB FTS server URL, given the DIRAC FTS server name, as it stored in the CS
-
-    :param str diracFTSName: DIRAC FTS server name (e.g. 'CERN-FTS3')
-    :returns: S_OK/S_ERROR structure
-    """
-
-    gocFTSName = gConfig.getValue(cfgPath(gBaseResourcesSection, "FTSEndpoints", "FTS3", diracFTSName))
-    if not gocFTSName:
-        return S_ERROR(f"No GOC FTS server name for {diracFTSName} in CS (Not a grid site ?)")
-    return S_OK(gocFTSName)
-
-
-def getFTS3Servers(hostOnly=False):
-    """get list of FTS3 servers that are in CS
-
-    :param bool hostOnly: flag for stripping down the protocol and ports
-    """
-
-    csPath = cfgPath(gBaseResourcesSection, "FTSEndpoints/FTS3")
-    # We do it in two times to keep the order
-    ftsServerNames = gConfig.getOptions(csPath).get("Value", [])
-
-    ftsServers = []
-    for name in ftsServerNames:
-        serverPath = gConfig.getValue(cfgPath(csPath, name))
-        if hostOnly:
-            serverPath = parse.urlparse(serverPath).hostname
-        ftsServers.append(serverPath)
-
-    return S_OK(ftsServers)
 
 
 def getFTS3ServerDict():

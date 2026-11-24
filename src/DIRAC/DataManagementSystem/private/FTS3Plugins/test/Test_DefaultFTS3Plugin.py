@@ -446,23 +446,12 @@ FAKE_FTS3_SERVERS = {
 
 @pytest.fixture(scope="function")
 def mockFTSServers(monkeypatch):
-    """Mock the list of FTS3 servers, and the RSS status of the servers.
-
-    Returns the dict of server status, which can be altered by the test
-    """
-    serverStatus = dict.fromkeys(FAKE_FTS3_SERVERS, True)
-
+    """Mock the list of FTS3 servers"""
     monkeypatch.setattr(
         DIRAC.DataManagementSystem.private.FTS3Plugins.DefaultFTS3Plugin,
         "getFTS3ServerDict",
         lambda: S_OK(FAKE_FTS3_SERVERS),
     )
-    monkeypatch.setattr(
-        DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy,
-        "_getFTSServerStatus",
-        lambda self, ftsServer: S_OK(serverStatus[ftsServer]),
-    )
-    return serverStatus
 
 
 def test_selectFTS3Server(fts3Plugin, mockFTSServers):
@@ -484,21 +473,6 @@ def test_selectFTS3Server_policyFromVO(fts3Plugin, mockFTSServers, monkeypatch):
 
     opsMock.assert_called_once_with(vo="myVO")
     opsMock.return_value.getValue.assert_called_once_with("DataManagement/FTSPlacement/FTS3/ServerPolicy", "Random")
-
-
-def test_selectFTS3Server_skipInactive(fts3Plugin, mockFTSServers):
-    """Servers that are not active are not selected"""
-    mockFTSServers["server_0"] = False
-    for _ in range(10):
-        assert fts3Plugin.selectFTS3Server() == FAKE_FTS3_SERVERS["server_1"]
-
-
-def test_selectFTS3Server_noActiveServer(fts3Plugin, mockFTSServers):
-    """ValueError is raised if no server is active"""
-    for server in mockFTSServers:
-        mockFTSServers[server] = False
-    with pytest.raises(ValueError):
-        fts3Plugin.selectFTS3Server()
 
 
 def test_selectFTS3Server_noServerDict(fts3Plugin, monkeypatch):
