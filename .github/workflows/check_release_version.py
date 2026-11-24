@@ -11,7 +11,7 @@ import sys
 from packaging.version import Version
 
 
-def main():
+def main() -> None:
     version = Version(sys.argv[1])
     if version.is_devrelease:
         raise SystemExit(f"{version} is a development version")

@@ -95,8 +95,7 @@ jobs:
             --token="${GITHUB_TOKEN}" \
             --version="${NEW_VERSION}" \
             --rev="$(git rev-parse HEAD)" \
-            --release-notes-fn="release.notes.new" \
-            --draft
+            --release-notes-fn="release.notes.new"
 
   deploy-pypi:
     name: Build
