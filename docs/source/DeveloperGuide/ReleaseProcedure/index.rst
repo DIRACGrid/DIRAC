@@ -56,7 +56,15 @@ From here click "Run workflow" and choose which branch should be used for a rele
 By default the CI will bump the release on the smallest component, i.e. `8.0.0a7` becomes `8.0.0a8` and `8.1.24` becomes `8.1.25`.
 To make a new release series this can be overridden manually.
 
-Release notes are automatically generated from the recently merged PRs and committed before creating the tag.
+The workflow does not publish anything. It generates the release notes from the recently merged PRs and creates
+a *draft* release on the `releases page <https://github.com/DIRACGrid/DIRAC/releases>`_. A draft has no tag yet.
+
+Open the draft, check the version and the notes, then click "Publish release". This creates the tag, which only
+release managers are allowed to do, and starts a second run of the workflow that builds the packages and ships
+them to PyPI, CVMFS and conda-forge. Each of these steps waits for the approval of another release manager,
+on the page of that run ("Review deployments").
+
+The release notes are in the GitHub release only: the ``release.notes`` file is no longer updated.
 
 4. Checking releases
 ====================
