@@ -5,7 +5,7 @@
 # `exclude-newer` enforces the release-age cooldown at solve time.
 
 [workspace]
-channels = ["https://conda.anaconda.org/diracgrid", "https://conda.anaconda.org/conda-forge"]
+channels = ["diracgrid", "conda-forge"]
 platforms = ["linux-64"]
 exclude-newer = "7d"
 
