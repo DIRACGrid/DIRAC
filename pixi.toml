@@ -10,15 +10,15 @@ platforms = ["linux-64"]
 exclude-newer = "7d"
 
 [feature.py311.dependencies]
-python = "3.11.*"
+python = "3.15.*"
 
 # Python 3.6 is still tested for the pilot wrapper (used by older pilots):
 # solves to the last conda-forge build of the 3.6 series
 [feature.py36.dependencies]
-python = "3.6.*"
+python = "3.15.*"
 
 [feature.py314.dependencies]
-python = "3.14.*"
+python = "3.15.*"
 
 [environments]
 default = { features = ["py311"] }
