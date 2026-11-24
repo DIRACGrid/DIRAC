@@ -223,3 +223,17 @@ jobs:
             diracx-cli
       - name: Run pytest
         run: cd diracx && pixi run pytest-diracx-all-one-by-one
+
+  # The one check the branch ruleset requires: its name does not change with the matrices above.
+  basic-ok:
+    name: basic-ok
+    if: always()
+    needs: [pre-commit, shellcheck, pycodestyle, check, check-py314]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail unless every job passed or was skipped
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "${RESULTS}"
+          [[ ! "${RESULTS}" =~ failure|cancelled ]]
