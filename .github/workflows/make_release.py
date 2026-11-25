@@ -20,6 +20,7 @@ def make_release(version: str, commit_hash: str, release_notes: str = "") -> Non
         f"{api_root}/releases",
         json={
             "tag_name": version,
+            "name": version,
             "target_commitish": commit_hash,
             "body": release_notes,
             "draft": True,
