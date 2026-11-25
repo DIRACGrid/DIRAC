@@ -13,37 +13,27 @@ It is in charge of submitting and monitoring all the transfers. It can be duplic
 
 import datetime
 import errno
-import os
 import time
 
-# We use the dummy module because we use the ThreadPool
-from multiprocessing.dummy import current_process
-
-# from threading import current_thread
 from multiprocessing.pool import ThreadPool
 from socket import gethostname
-from urllib import parse
 
 from DIRAC import S_ERROR, S_OK
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
-from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.TimeUtilities import DiracTime, fromString
-from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
+from DIRAC.DataManagementSystem.private.FTSRestLibs import FTSContextCache
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.MonitoringSystem.Client.DataOperationSender import DataOperationSender
-from DIRAC.FrameworkSystem.Client.TokenManagerClient import gTokenManager
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 # pylint: disable=attribute-defined-outside-init
 
 AGENT_NAME = "DataManagement/FTS3Agent"
 
-# Lifetime in seconds of the proxy we download for submission
-# Because we force the redelegation if only a third is left,
+# Lifetime in seconds of the proxy we download and delegate to the FTS servers
+# Because the delegation is renewed when only a third of its lifetime is left,
 # and we want to have a quiet night (~12h)
 # let's make the lifetime 12*3 hours
 PROXY_LIFETIME = 36 * 3600  # 36 hours
@@ -100,14 +90,14 @@ class FTS3Agent(AgentModule):
 
         :return: S_OK()/S_ERROR()
         """
-        self._globalContextCache = {}
-
         # name that will be used in DB for assignment tag
         self.assignmentTag = gethostname().split(".")[0]
 
         self.workDirectory = self.am_getWorkDirectory()
 
         res = self.__readConf()
+
+        self.ftsContexts = FTSContextCache(self.proxyLifetime)
 
         # We multiply by two because of the two threadPools
         self.fts3db = FTS3DB(pool_size=2 * self.maxNumberOfThreads)
@@ -123,83 +113,11 @@ class FTS3Agent(AgentModule):
         :return: S_OK()/S_ERROR()
         """
         self.dataOpSender = DataOperationSender()
-        return self.__readConf()
-
-    def getFTS3Context(self, username, group, ftsServer, threadID):
-        """Returns an fts3 context for a given user, group and fts server
-
-        The context pool is per thread, and there is one context
-        per tuple (user, group, server).
-        We dump the proxy of a user to a file (shared by all the threads),
-        and use it to make the context.
-        The proxy needs a lifetime of self.proxyLifetime, is cached for cacheTime = (2*lifeTime/3) - 10mn,
-        and the lifetime of the context is 45mn
-        The reason for cacheTime to be what it is is because the FTS3 server will ask for a new proxy
-        after 2/3rd of the existing proxy has expired, so we renew it just before
-
-        :param str username: name of the user
-        :param str group: group of the user
-        :param str ftsServer: address of the server
-        :param str threadID: thread ID
-
-        :returns: S_OK with the context object
-
-        """
-
-        log = gLogger.getSubLogger("getFTS3Context")
-
-        contextes = self._globalContextCache.setdefault(threadID, DictCache())
-
-        idTuple = (username, group, ftsServer)
-        log.debug(f"Getting context for {idTuple}")
-
-        # We keep a context in the cache for 45 minutes
-        # (so it needs to be valid at least 15 since we add it for one hour)
-        if not contextes.exists(idTuple, 15 * 60):
-            res = getDNForUsername(username)
-            if not res["OK"]:
-                return res
-            # We take the first DN returned
-            userDN = res["Value"][0]
-
-            log.debug(f"UserDN {userDN}")
-
-            # Chose a meaningful proxy name for easier debugging
-            srvName = parse.urlparse(ftsServer).netloc.split(":")[0]
-            proxyFile = os.path.join(
-                self.workDirectory, f"{int(time.time())}_{username}_{group}_{srvName}_{threadID}.pem"
-            )
-
-            # We dump the proxy to a file.
-            # It has to have a lifetime of self.proxyLifetime
-            # Because the FTS3 servers cache it for 2/3rd of the lifetime
-            # we should make our cache a bit less than 2/3rd of the lifetime
-            cacheTime = int(2 * self.proxyLifetime / 3) - 600
-            res = gProxyManager.downloadVOMSProxyToFile(
-                userDN, group, requiredTimeLeft=self.proxyLifetime, cacheTime=cacheTime, filePath=proxyFile
-            )
-            if not res["OK"]:
-                return res
-
-            proxyFile = res["Value"]
-            log.debug(f"Proxy file {proxyFile}")
-
-            # We generate the context
-            # In practice, the lifetime will be less than proxyLifetime
-            # because we reuse a cached proxy. However, the cached proxy will
-            # never forced a redelegation, because it is recent enough for FTS3 servers.
-            # The delegation is forced when 2/3 rd of the lifetime are left, and we get a fresh
-            # one just before. So no problem
-            res = FTS3Job.generateContext(ftsServer, proxyFile, lifetime=self.proxyLifetime)
-
-            if not res["OK"]:
-                return res
-            context = res["Value"]
-
-            # we add it to the cache for this thread for 1h
-            contextes.add(idTuple, 3600, context)
-
-        return S_OK(contextes.get(idTuple))
+        res = self.__readConf()
+        # No thread is running at this point. The contexts are kept for one cycle only
+        self.ftsContexts.proxyLifetime = self.proxyLifetime
+        self.ftsContexts.clear()
+        return res
 
     def _monitorJob(self, ftsJob):
         """* query the FTS servers
@@ -212,18 +130,15 @@ class FTS3Agent(AgentModule):
         """
         # General try catch to avoid that the tread dies
         try:
-            threadID = current_process().name
             log = gLogger.getLocalSubLogger(f"_monitorJob/{ftsJob.jobID}")
 
-            res = self.getFTS3Context(ftsJob.username, ftsJob.userGroup, ftsJob.ftsServer, threadID=threadID)
+            res = self.ftsContexts.getContext(ftsJob.ftsServer, ftsJob.username, ftsJob.userGroup)
 
             if not res["OK"]:
                 log.error("Error getting context", res)
                 return ftsJob, res
 
-            context = res["Value"]
-
-            res = ftsJob.monitor(context=context)
+            res = ftsJob.monitor(res["Value"])
 
             if not res["OK"]:
                 log.error("Error monitoring job", res)
@@ -290,7 +205,6 @@ class FTS3Agent(AgentModule):
         """
 
         log = gLogger.getSubLogger("monitorJobs")
-        log.debug(f"Size of the context cache {len(self._globalContextCache)}")
 
         # Find the number of loops
         nbOfLoops, mod = divmod(self.jobBulkSize, JOB_MONITORING_BATCH_SIZE)
@@ -379,7 +293,6 @@ class FTS3Agent(AgentModule):
         :return: operation, S_OK()/S_ERROR()
         """
         try:
-            threadID = current_process().name
             log = gLogger.getLocalSubLogger(f"treatOperation/{operation.operationID}")
 
             # (ftsJob, context) of the jobs submitted to FTS during this call.
@@ -443,16 +356,13 @@ class FTS3Agent(AgentModule):
                             log.info("Canceling the associated FTS3 jobs")
 
                             for ftsJob in operation.ftsJobs:
-                                res = self.getFTS3Context(
-                                    ftsJob.username, ftsJob.userGroup, ftsJob.ftsServer, threadID=threadID
-                                )
+                                res = self.ftsContexts.getContext(ftsJob.ftsServer, ftsJob.username, ftsJob.userGroup)
                                 if not res["OK"]:
                                     log.error("Error getting context", res)
                                     continue
 
-                                context = res["Value"]
                                 # We ignore the return on purpose
-                                ftsJob.cancel(context)
+                                ftsJob.cancel(res["Value"])
 
                 if continueOperationProcessing:
                     res = operation.prepareNewJobs(
@@ -469,45 +379,38 @@ class FTS3Agent(AgentModule):
 
                     for ftsJob in newJobs:
                         try:
+                            tpcProtocols = operation.fts3Plugin.selectTPCProtocols(ftsJob=ftsJob)
+                        except ValueError as e:
+                            log.error("Could not select TPC list", repr(e))
+                            continue
+
+                        # The FTS3Job chooses all the storage related parameters
+                        # (protocol, tokens, staging, ...). They take priority over the server choice
+                        res = ftsJob.prepareSubmission(protocols=tpcProtocols, tokensEnabled=self.useTokens)
+                        if not res["OK"]:
+                            log.error("Could not prepare FTS3Job", f"FTS3Operation {operation.operationID} : {res}")
+                            continue
+
+                        # The server has to be compatible with what the job needs
+                        try:
                             ftsServer = operation.fts3Plugin.selectFTS3Server(ftsJob=ftsJob)
                         except ValueError as e:
-                            log.error("Could not select FTS3 server", repr(e))
+                            log.error("Could not select FTS server", repr(e))
                             continue
 
                         log.debug(f"Use {ftsServer} server")
 
                         ftsJob.ftsServer = ftsServer
 
-                        res = self.getFTS3Context(ftsJob.username, ftsJob.userGroup, ftsServer, threadID=threadID)
-
+                        res = self.ftsContexts.getContext(
+                            ftsServer, ftsJob.username, ftsJob.userGroup, useTokens=ftsJob.useTokens
+                        )
                         if not res["OK"]:
                             log.error("Could not get context", res)
                             continue
-
                         context = res["Value"]
 
-                        try:
-                            tpcProtocols = operation.fts3Plugin.selectTPCProtocols(ftsJob=ftsJob)
-                        except ValueError as e:
-                            log.error("Could not select TPC list", repr(e))
-                            continue
-
-                        # If we use token, get an access token with the
-                        # fts scope in it
-                        # The FTS3Job will decide to use it or not
-                        fts_access_token = None
-                        if self.useTokens:
-                            res = gTokenManager.getToken(
-                                userGroup=ftsJob.userGroup,
-                                requiredTimeLeft=3600,
-                                scope=["fts"],
-                            )
-                            if not res["OK"]:
-                                return operation, res
-
-                            fts_access_token = res["Value"]["access_token"]
-
-                        res = ftsJob.submit(context=context, protocols=tpcProtocols, fts_access_token=fts_access_token)
+                        res = ftsJob.submit(context)
 
                         if not res["OK"]:
                             log.error("Could not submit FTS3Job", f"FTS3Operation {operation.operationID} : {res}")
@@ -553,8 +456,6 @@ class FTS3Agent(AgentModule):
         """
 
         log = gLogger.getSubLogger("treatOperations")
-
-        log.debug(f"Size of the context cache {len(self._globalContextCache)}")
 
         log.info("Getting non finished operations")
 

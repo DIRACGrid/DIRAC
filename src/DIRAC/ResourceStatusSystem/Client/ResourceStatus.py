@@ -45,7 +45,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
 
         :param elementName: name of the element or list of element names
         :type elementName: str, list
-        :param elementType: type of the element (StorageElement, ComputingElement, FTS)
+        :param elementType: type of the element (StorageElement, ComputingElement)
         :type elementType: str
         :param statusType: type of the status (meaningful only when elementType==StorageElement)
         :type statusType: None, str, list
@@ -76,7 +76,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
                    'CE2': {'all': 'Banned'}}}
         """
 
-        allowedParameters = ["StorageElement", "ComputingElement", "FTS"]
+        allowedParameters = ["StorageElement", "ComputingElement"]
 
         if elementType not in allowedParameters:
             return S_ERROR(f"{elementType} in not in the list of the allowed parameters: {allowedParameters}")
@@ -87,8 +87,6 @@ class ResourceStatus(metaclass=DIRACSingleton):
                 statusType = ["ReadAccess", "WriteAccess", "CheckAccess", "RemoveAccess"]
             elif elementType == "ComputingElement":
                 statusType = ["all"]
-            elif elementType == "FTS":
-                statusType = ["all"]
 
         return self.__getRSSElementStatus(elementName, elementType, statusType, vO)
 
@@ -97,7 +95,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
 
         :param elementName: name of the element
         :type elementName: str
-        :param elementType: type of the element (StorageElement, ComputingElement, FTS)
+        :param elementType: type of the element (StorageElement, ComputingElement)
         :type elementType: str
         :param statusType: type of the status (meaningful only when elementType==StorageElement)
         :type statusType: str
@@ -154,7 +152,7 @@ class ResourceStatus(metaclass=DIRACSingleton):
 
         :param elementName: name of the element or list of element names
         :type elementName: str, list
-        :param elementType: type of the element (StorageElement, ComputingElement, FTS)
+        :param elementType: type of the element (StorageElement, ComputingElement)
         :type elementType: str
         :param statusType: type of the status (meaningful only when elementType==StorageElement,
                            otherwise it is 'all' or ['all'])

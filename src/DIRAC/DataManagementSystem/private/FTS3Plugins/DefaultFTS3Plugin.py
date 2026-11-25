@@ -4,9 +4,7 @@ This module implements the default behavior for the FTS3 system for TPC, source 
 from __future__ import annotations
 
 import random
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
-from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3ServerPolicy
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTSServersByFlavour
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
@@ -41,6 +39,9 @@ class DefaultFTS3Plugin:
     which shares one instance per VO (re-created when the CS is refreshed).
     Plugins must thus be thread safe and should not keep per operation state."""
 
+    #: Protocols that only FTS3 servers support
+    FTS3_ONLY_PROTOCOLS = {"root", "roots", "xroot"}
+
     def __init__(self, vo=None):
         """The plugin is instanciated once per VO (and per CS refresh),
         so it is a good place to do global initialization
@@ -49,8 +50,6 @@ class DefaultFTS3Plugin:
         """
         self.vo = vo
         self.thirdPartyProtocols = DMSHelpers(vo=vo).getThirdPartyProtocols()
-        # Instantiated lazily, see selectFTS3Server
-        self._serverPolicy = None
 
     # The plugin is shared per VO, so copies should refer to the same instance
     def __copy__(self):
@@ -130,34 +129,59 @@ class DefaultFTS3Plugin:
         randSource = random.choice(list(allowedReplicaSource))  # nosec B311
         return randSource
 
-    def selectFTS3Server(self, ftsJob: FTS3Job | None = None, **kwargs):
+    def selectFTS3Server(self, ftsJob: FTS3Job, **kwargs) -> str:
         """
-        Return the URL of the FTS3 server to which the job should be submitted.
+        Return the FTS server to which the job should be submitted.
 
-        In this default implementation, the choice is made amongst the servers defined in
-        ``Resources/FTSEndpoints/FTS3`` according to the
-        ``DataManagement/FTSPlacement/FTS3/ServerPolicy`` Operations option of the VO
-        (see :py:class:`~DIRAC.DataManagementSystem.private.FTS3Utilities.FTS3ServerPolicy`)
+        It is called after :py:meth:`~DIRAC.DataManagementSystem.Client.FTS3Job.FTS3Job.prepareSubmission`,
+        so all the storage related parameters of the job are known, and take priority:
+        the server has to be compatible with them.
+
+        This default implementation makes a random choice amongst
+        :py:meth:`getCompatibleFTSServers`. Extensions wanting another policy
+        (ordering, weights...) can rely on :py:meth:`getCompatibleFTSServers`
+        and only override this method.
 
         :param ftsJob: :py:class:`~DIRAC.DataManagementSystem.Client.FTS3Job.FTS3Job` to be submitted
 
-        :returns: the URL of the FTS3 server
+        :returns: the URL of the server
         :raise ValueError: in case no server can be selected
         """
-        # getattr in case a subclass does not call our __init__
-        if getattr(self, "_serverPolicy", None) is None:
-            res = getFTS3ServerDict()
-            if not res["OK"]:
-                raise ValueError(f"Could not get the FTS3 servers: {res['Message']}")
-            serverPolicyType = Operations(vo=self.vo).getValue(
-                "DataManagement/FTSPlacement/FTS3/ServerPolicy", "Random"
-            )
-            self._serverPolicy = FTS3ServerPolicy(res["Value"], serverPolicy=serverPolicyType)
+        return random.choice(self.getCompatibleFTSServers(ftsJob))  # nosec B311
 
-        res = self._serverPolicy.chooseFTS3Server()
-        if not res["OK"]:
-            raise ValueError(res["Message"])
-        return res["Value"]
+    def getCompatibleFTSServers(self, ftsJob: FTS3Job) -> list[str]:
+        """
+        Return the FTS servers compatible with a job prepared by
+        :py:meth:`~DIRAC.DataManagementSystem.Client.FTS3Job.FTS3Job.prepareSubmission`
+
+        The candidates are the servers defined in
+        ``Resources/FTSEndpoints/FTS3`` and ``Resources/FTSEndpoints/FTS4``:
+
+        * xroot transfers can only go to FTS3 servers
+        * transfers using tokens with tape storages can only go to FTS4 servers
+
+        :param ftsJob: :py:class:`~DIRAC.DataManagementSystem.Client.FTS3Job.FTS3Job` to be submitted
+
+        :returns: non empty list of server URLs, in the CS order
+        :raise ValueError: in case no server is compatible
+        """
+        flavours = getFTSServersByFlavour()["Value"]
+
+        if ftsJob.transferProtocols & self.FTS3_ONLY_PROTOCOLS:
+            flavours = {flavour: servers for flavour, servers in flavours.items() if flavour == "FTS3"}
+
+        if ftsJob.useTokens and ftsJob.involvesTape:
+            flavours = {flavour: servers for flavour, servers in flavours.items() if flavour == "FTS4"}
+
+        candidates = [url for servers in flavours.values() for url in servers.values()]
+
+        if not candidates:
+            raise ValueError(
+                f"No FTS server compatible with the job (protocols: {ftsJob.transferProtocols}, "
+                f"tokens: {ftsJob.useTokens}, tape: {ftsJob.involvesTape})"
+            )
+
+        return candidates
 
     def inferFTSActivity(self, ftsOperation, rmsRequest, rmsOperation):
         """

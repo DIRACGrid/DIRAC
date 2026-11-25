@@ -9,6 +9,7 @@ from DIRAC.ConfigurationSystem.Client import ConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import (
     getDIRACPlatform,
     getCompatiblePlatforms,
+    getFTSServersByFlavour,
     getQueue,
 )
 
@@ -186,3 +187,34 @@ def test_getQueue():
     }
     assert sorted(result["Value"].pop("Tag")) == sorted(expectedDict.pop("Tag"))
     assert result["Value"] == expectedDict
+
+
+ftsConfig = """
+Resources
+{
+  FTSEndpoints
+  {
+    FTS3
+    {
+      CERN-FTS3 = https://fts3.cern.ch:8446
+    }
+    FTS4
+    {
+      CERN-FTS4 = https://fts4.cern.ch:8446
+    }
+  }
+}
+"""
+
+
+def test_ftsServers():
+    """FTS servers of all the flavours are returned"""
+    ConfigurationData.localCFG = CFG()
+    cfg = CFG()
+    cfg.loadFromBuffer(ftsConfig)
+    gConfig.loadCFG(cfg)
+
+    assert getFTSServersByFlavour()["Value"] == {
+        "FTS3": {"CERN-FTS3": "https://fts3.cern.ch:8446"},
+        "FTS4": {"CERN-FTS4": "https://fts4.cern.ch:8446"},
+    }

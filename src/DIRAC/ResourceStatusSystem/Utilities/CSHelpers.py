@@ -52,17 +52,6 @@ def getStorageElementEndpoint(seName):
     return S_OK(seEndpoints)
 
 
-def getFTS():
-    """
-    Gets all FTS endpoints
-    """
-
-    result = gConfig.getOptions("Resources/FTSEndpoints/FTS3")
-    if result["OK"]:
-        return result
-    return S_OK([])
-
-
 def getFileCatalogs():
     """
     Gets all storage elements from /Resources/FileCatalogs

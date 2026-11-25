@@ -21,8 +21,6 @@ from DIRAC import S_ERROR, S_OK, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import (
     getCESiteMapping,
-    getFTS3Servers,
-    getGOCFTSName,
     getGOCSiteName,
     getGOCSites,
 )
@@ -38,9 +36,6 @@ diracToGOC_conversion = {
     # Computing elements
     "HTCondorCE": "org.opensciencegrid.htcondorce",
     "AREX": "ARC-CE",
-    # FTS
-    "FTS3": "FTS",
-    "FTS": "FTS",
     # Storage elements
     "disk_srm": "srm",
     "tape_srm": "srm.nearline",
@@ -55,7 +50,7 @@ class DowntimeCommand(Command):
     """
     Command that queries GOCDB for downtime information and caches the results.
 
-    Supports Sites, Storage Elements, FTS servers, and Computing Elements.
+    Supports Sites, Storage Elements, and Computing Elements.
     DIRAC resource types are mapped to GOCDB service types via ``diracToGOC_conversion``.
     """
 
@@ -143,7 +138,7 @@ class DowntimeCommand(Command):
 
         * ``name`` (str)        — DIRAC element name.
         * ``element`` (str)     — ``'Site'`` or ``'Resource'``.
-        * ``elementType`` (str) — resource type (e.g. ``StorageElement``, ``ComputingElement``, ``FTS3``).
+        * ``elementType`` (str) — resource type (e.g. ``StorageElement``, ``ComputingElement``).
 
         Optional key:
 
@@ -154,7 +149,6 @@ class DowntimeCommand(Command):
         * **Site** — converted to the GOCDB site name via ``getGOCSiteName``.
         * **StorageElement** — resolved to one or more SE hosts; GOCDB service type
           derived from SE type and access protocol via ``diracToGOC_conversion``.
-        * **FTS / FTS3** — resolved to the GOCDB FTS name via ``getGOCFTSName``.
         * **ComputingElement** — GOCDB service type derived from CE type via ``diracToGOC_conversion``.
 
         :returns: S_OK tuple ``(element, elementName, hours, gOCDBServiceType)`` or S_ERROR.
@@ -221,17 +215,6 @@ class DowntimeCommand(Command):
             if not seHosts:
                 return S_ERROR(f"No seHost(s) for {elementName}")
             elementName = seHosts  # in this case it will return a list, because there might be more than one host only
-
-        elif elementType in ["FTS", "FTS3"]:
-            try:
-                gOCDBServiceType = diracToGOC_conversion[elementType]
-            except KeyError:  # not a GOC type (? how can this happen ?)
-                gOCDBServiceType = None
-            gocSite = getGOCFTSName(elementName)
-            if not gocSite["OK"]:
-                self.log.warn("FTS not in Resources/FTSEndpoints/FTS3 ?", elementName)
-            else:
-                elementName = gocSite["Value"]
 
         elif elementType == "ComputingElement":
             res = getCESiteMapping(elementName)
@@ -436,7 +419,6 @@ class DowntimeCommand(Command):
 
         * All GOCDB site names (from ``getGOCSites``).
         * All SE hosts (from ``getStorageElementsHosts``).
-        * All FTS3 server hosts (from ``getFTS3Servers``).
         * All Computing Element names (from ``getCESiteMapping``).
 
         Calls ``doNew`` separately for Sites and Resources. Failures are recorded in
@@ -456,10 +438,6 @@ class DowntimeCommand(Command):
         sesHosts = sesHosts["Value"]
 
         resources = sesHosts if sesHosts else []
-
-        ftsServer = getFTS3Servers(hostOnly=True)
-        if ftsServer["OK"] and ftsServer["Value"]:
-            resources.extend(ftsServer["Value"])
 
         # TODO: file catalogs need also to use their hosts
 

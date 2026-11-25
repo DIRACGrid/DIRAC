@@ -12,7 +12,7 @@ from DIRAC import gLogger, S_OK
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.Core.Utilities.SiteSEMapping import getStorageElementsHosts
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getFTS3Servers, getCESiteMapping
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
@@ -136,7 +136,7 @@ class Synchronizer:
     def _syncResources(self):
         """
         Sync resources: compares CS with DB and does the necessary modifications.
-        (StorageElements, FTS and ComputingElements)
+        (StorageElements and ComputingElements)
         """
 
         gLogger.info("-- Synchronizing Resources --")
@@ -145,11 +145,6 @@ class Synchronizer:
         ses = self.__syncStorageElements()
         if not ses["OK"]:
             gLogger.error(ses["Message"])
-
-        gLogger.verbose("-> FTS")
-        fts = self.__syncFTS()
-        if not fts["OK"]:
-            gLogger.error(fts["Message"])
 
         gLogger.verbose("-> ComputingElements")
         computingElements = self.__syncComputingElements()
@@ -178,10 +173,6 @@ class Synchronizer:
         sesHosts = sesHosts["Value"]
 
         resources = sesHosts
-
-        ftsServer = getFTS3Servers(hostOnly=True)
-        if ftsServer["OK"]:
-            resources.extend(ftsServer["Value"])
 
         res = getCESiteMapping()
         if res["OK"]:
@@ -254,70 +245,6 @@ class Synchronizer:
             _status = self.defaultStatus
             _reason = "Synchronized"
             _elementType = "ComputingElement"
-
-            query = self.rStatus.addIfNotThereStatusElement(
-                "Resource",
-                "Status",
-                name=_name,
-                statusType=_statusType,
-                status=_status,
-                elementType=_elementType,
-                tokenOwner=self.tokenOwner,
-                reason=_reason,
-            )
-            if not query["OK"]:
-                return query
-
-        return S_OK()
-
-    def __syncFTS(self):
-        """
-        Sync FTS: compares CS with DB and does the necessary modifications.
-        """
-
-        ftsCS = CSHelpers.getFTS()
-        if not ftsCS["OK"]:
-            return ftsCS
-        ftsCS = ftsCS["Value"]
-
-        gLogger.verbose(f"{len(ftsCS)} FTS endpoints found in CS")
-
-        ftsDB = self.rStatus.selectStatusElement("Resource", "Status", elementType="FTS", meta={"columns": ["Name"]})
-        if not ftsDB["OK"]:
-            return ftsDB
-        ftsDB = [fts[0] for fts in ftsDB["Value"]]
-
-        # StorageElements that are in DB but not in CS
-        toBeDeleted = list(set(ftsDB).difference(set(ftsCS)))
-        gLogger.verbose(f"{len(toBeDeleted)} FTS endpoints to be deleted")
-
-        # Delete storage elements
-        for ftsName in toBeDeleted:
-            deleteQuery = self.rStatus._extermineStatusElement("Resource", ftsName)
-
-            gLogger.verbose(f"... {ftsName}")
-            if not deleteQuery["OK"]:
-                return deleteQuery
-
-        result = self.rStatus.selectStatusElement(
-            "Resource", "Status", elementType="FTS", meta={"columns": ["Name", "StatusType"]}
-        )
-        if not result["OK"]:
-            return result
-        sesTuple = [(x[0], x[1]) for x in result["Value"]]
-
-        # For each ( se, statusType ) tuple not present in the DB, add it.
-        ftsStatusTuples = [(se, "all") for se in ftsCS]
-        toBeAdded = list(set(ftsStatusTuples).difference(set(sesTuple)))
-
-        gLogger.verbose(f"{len(toBeAdded)} FTS endpoints entries to be added")
-
-        for ftsTuple in toBeAdded:
-            _name = ftsTuple[0]
-            _statusType = ftsTuple[1]
-            _status = self.defaultStatus
-            _reason = "Synchronized"
-            _elementType = "FTS"
 
             query = self.rStatus.addIfNotThereStatusElement(
                 "Resource",

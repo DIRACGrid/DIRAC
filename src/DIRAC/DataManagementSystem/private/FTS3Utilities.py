@@ -1,6 +1,5 @@
 """ Some utilities for FTS3...
 """
-import random
 import threading
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
@@ -8,8 +7,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as op
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
+from DIRAC.Core.Utilities.ReturnValues import S_OK
 
 
 def _checkSourceReplicas(ftsFiles, preferDisk=True):
@@ -134,113 +132,3 @@ def getFTS3Plugin(vo=None):
         fts3Plugin = _class["Value"](vo=vo)
         _fts3PluginCache[cacheKey] = (currentVersion, fts3Plugin)
         return fts3Plugin
-
-
-class FTS3ServerPolicy:
-    """
-    This class manages the policy for choosing a server
-    """
-
-    def __init__(self, serverDict, serverPolicy="Random"):
-        """
-        Call the init of the parent, and initialize the list of FTS3 servers
-        """
-
-        self.log = gLogger.getSubLogger(self.__class__.__name__)
-
-        self._serverDict = serverDict
-        self._serverList = list(serverDict)
-        self._maxAttempts = len(self._serverList)
-        self._nextServerID = 0
-        self._resourceStatus = ResourceStatus()
-        # The shuffled list used by the Random policy is per thread and per instance,
-        # since several instances (e.g. one per VO) can exist with different server lists
-        self._threadLocal = threading.local()
-
-        methName = f"_{serverPolicy.lower()}ServerPolicy"
-        if not hasattr(self, methName):
-            self.log.error(f"Unknown server policy {serverPolicy}. Using Random instead")
-            methName = "_randomServerPolicy"
-
-        self._policyMethod = getattr(self, methName)
-
-    def _failoverServerPolicy(self, _attempt):
-        """
-        Returns always the server at a given position (normally the first one)
-
-        :param attempt: position of the server in the list
-        """
-        if _attempt >= len(self._serverList):
-            raise Exception("FTS3ServerPolicy.__failoverServerPolicy: attempt to reach non existing server index")
-        return self._serverList[_attempt]
-
-    def _sequenceServerPolicy(self, _attempt):
-        """
-        Every time the this policy is called, return the next server on the list
-        """
-
-        fts3server = self._serverList[self._nextServerID]
-        self._nextServerID = (self._nextServerID + 1) % len(self._serverList)
-        return fts3server
-
-    def _randomServerPolicy(self, _attempt):
-        """
-        return a server from shuffledServerList
-        """
-
-        if getattr(self._threadLocal, "shuffledServerList", None) is None:
-            self._threadLocal.shuffledServerList = self._serverList[:]
-            random.shuffle(self._threadLocal.shuffledServerList)
-
-        fts3Server = self._threadLocal.shuffledServerList[_attempt]
-
-        if _attempt == self._maxAttempts - 1:
-            random.shuffle(self._threadLocal.shuffledServerList)
-
-        return fts3Server
-
-    def _getFTSServerStatus(self, ftsServer):
-        """Fetch the status of the FTS server from RSS"""
-
-        res = self._resourceStatus.getElementStatus(ftsServer, "FTS")
-        if not res["OK"]:
-            return res
-
-        result = res["Value"]
-        if ftsServer not in result:
-            return S_ERROR(f"No FTS Server {ftsServer} known to RSS")
-
-        if result[ftsServer]["all"] == "Active":
-            return S_OK(True)
-
-        return S_OK(False)
-
-    def chooseFTS3Server(self):
-        """
-        Choose the appropriate FTS3 server depending on the policy
-        """
-
-        fts3Server = None
-        attempt = 0
-
-        while not fts3Server and attempt < self._maxAttempts:
-            fts3Server = self._policyMethod(attempt)
-            res = self._getFTSServerStatus(fts3Server)
-
-            if not res["OK"]:
-                self.log.warn(f"Error getting the RSS status for {fts3Server}: {res}")
-                fts3Server = None
-                attempt += 1
-                continue
-
-            ftsServerStatus = res["Value"]
-
-            if not ftsServerStatus:
-                self.log.warn(f"FTS server {fts3Server} is not in good shape. Choose another one")
-                fts3Server = None
-                attempt += 1
-
-        if fts3Server:
-            return S_OK(self._serverDict[fts3Server])
-
-        return S_ERROR("Could not find an FTS3 server (max attempt reached)")

@@ -5,7 +5,7 @@ against an sqlite DB and as integration tests against a MySQL DB
 import random
 
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3TransferOperation, FTS3StagingOperation
+from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3TransferOperation
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 
@@ -15,8 +15,6 @@ def generateOperation(opType, nbFiles, dests, sources=None):
     op = None
     if opType == "Transfer":
         op = FTS3TransferOperation()
-    elif opType == "Staging":
-        op = FTS3StagingOperation()
     # Get the username and group from the proxy
     # if we are in integration test
     try:
