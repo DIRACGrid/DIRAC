@@ -283,6 +283,10 @@ class JobWrapper:
             parameters.append(("AgentLocalSE", ",".join(self.ceArgs["LocalSE"])))
         if "CPUNormalizationFactor" in self.ceArgs:
             parameters.append(("CPUNormalizationFactor", self.ceArgs["CPUNormalizationFactor"]))
+        if "CPUNormalizationFactorHS23" in self.ceArgs:
+            parameters.append(("CPUNormalizationFactorHS23", self.ceArgs["CPUNormalizationFactorHS23"]))
+        if "CPUNormalizationSource" in self.ceArgs:
+            parameters.append(("CPUNormalizationSource", self.ceArgs["CPUNormalizationSource"]))
 
         parameters.append(("PilotAgent", self.diracVersion))
         parameters.append(("JobWrapperPID", self.currentPID))

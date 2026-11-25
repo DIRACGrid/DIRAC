@@ -1,0 +1,81 @@
+name: HS23 table update
+
+# Refreshes the bundled HS23 scores table
+# (src/DIRAC/WorkloadManagementSystem/Client/data/HS23scores.json) from the
+# HEPiX CSV, using the generator maintained in DIRACGrid/management, and opens
+# or updates a PR whenever the derived table changed (new CPU models or score
+# changes). The PR is never merged automatically.
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    if: github.repository == 'DIRACGrid/DIRAC'
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: integration
+
+      - uses: actions/checkout@v6
+        with:
+          repository: DIRACGrid/management
+          ref: master
+          path: management
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate the table snapshot
+        run: |
+          python -m pip install requests
+          python management/hs23-table/generate_hs23_table.py \
+            --output src/DIRAC/WorkloadManagementSystem/Client/data/HS23scores.json
+
+      - name: Open or update the PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          dataFile=src/DIRAC/WorkloadManagementSystem/Client/data/HS23scores.json
+          if git diff --quiet ${dataFile}; then
+            echo "HS23 table unchanged"
+            exit 0
+          fi
+
+          body=$(python - <<'EOF'
+          import json
+
+          table = json.load(open("src/DIRAC/WorkloadManagementSystem/Client/data/HS23scores.json"))
+          entries = table["entries"]
+          print("## Bundled HS23 scores table refresh")
+          print()
+          print(f"- Data as of: {table['data_as_of']}")
+          print(f"- Entries: {len(entries)} (rows: {sum(entry['rows'] for entry in entries)})")
+          print(f"- Source: {table['source']} ({table['source_hash'][:19]}...)")
+          print()
+          print("Review the diff for new CPU models and score changes. Never merged automatically.")
+          EOF
+          )
+
+          git config user.name "DIRACGrid CI"
+          git config user.email "dirac-grid@cern.ch"
+          branch=auto/hs23-table-update
+          git checkout -b $branch
+          git add ${dataFile}
+          git commit -m "chore: refresh the bundled HS23 scores table"
+          git push --force-with-lease origin $branch
+
+          gh pr create \
+            --base integration --head $branch \
+            --title "Refresh the bundled HS23 scores table" \
+            --body "$body" ||
+            gh pr edit $branch --title "Refresh the bundled HS23 scores table" --body "$body"
