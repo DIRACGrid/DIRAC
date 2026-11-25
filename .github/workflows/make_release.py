@@ -6,19 +6,16 @@ from packaging.version import Version
 import requests
 
 
-def make_release(version, commit_hash, release_notes=""):
-    """Create a new GitHub release using the given data
+def make_release(version: str, commit_hash: str, release_notes: str = "") -> None:
+    """Create a draft GitHub release, for a release manager to publish.
 
-    This function always makes a pre-release first to ensure the "latest" release never corresponds
-    to one without artifacts uploaded. If the new version number is not a pre-release, as
-    determined by PEP-440, it is promoted to at full release after the uploads have completed
-    successfully.
+    Publishing the draft creates the tag. A pre-release version, as determined by PEP-440,
+    is marked as a pre-release so that it never becomes the "latest" release.
 
-    :param str version: The version of the new release
-    :param str commit_hash: Git revision used for the release
-    :param str release_notes: Release notes
+    :param version: The version of the new release
+    :param commit_hash: Git revision used for the release
+    :param release_notes: Release notes
     """
-    # Create a draft release
     r = requests.post(
         f"{api_root}/releases",
         json={
@@ -29,22 +26,10 @@ def make_release(version, commit_hash, release_notes=""):
             "prerelease": Version(version).is_prerelease,
         },
         headers=headers,
+        timeout=30,
     )
     r.raise_for_status()
-    release_data = r.json()
-    print(f"Created draft release at: {release_data['html_url']}")
-
-    # Publish the release
-    r = requests.patch(
-        release_data["url"],
-        json={
-            "draft": False,
-        },
-        headers=headers,
-    )
-    r.raise_for_status()
-    release_data = r.json()
-    print(f"Published release at: {release_data['html_url']}")
+    print(f"Created draft release at: {r.json()['html_url']}")
 
 
 if __name__ == "__main__":
