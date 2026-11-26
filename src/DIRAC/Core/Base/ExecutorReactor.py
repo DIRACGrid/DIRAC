@@ -91,9 +91,14 @@ class ExecutorReactor:
             retryCount = 0
             while True:
                 gLogger.notice(f"Trying to reconnect to {self.__mindName}")
-                result = self.__msgClient.connect(
-                    executorTypes=list(self.__modules), maxTasks=self.__maxTasks, extraArgs=self.__extraArgs
-                )
+                # MessageClient.sendMessage also reconnects (e.g. when reporting a processed task):
+                # then connect() fails with "Already connected", but the connection is there
+                if self.__msgClient.connected:
+                    result = S_OK()
+                else:
+                    result = self.__msgClient.connect(
+                        executorTypes=list(self.__modules), maxTasks=self.__maxTasks, extraArgs=self.__extraArgs
+                    )
 
                 if result["OK"]:
                     if retryCount >= self.__reconnectRetries:
