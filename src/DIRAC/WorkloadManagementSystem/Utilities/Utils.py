@@ -1,18 +1,23 @@
 """Utilities for WMS"""
 
+from __future__ import annotations
+
+import json
 import os
-from pathlib import Path
-from glob import glob
 import subprocess
 import sys
-import json
+from glob import glob
+from pathlib import Path
+from typing import TYPE_CHECKING
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
+
+if TYPE_CHECKING:
+    from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+    from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+    from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 
 
 def createJobWrapper(
@@ -189,12 +194,21 @@ def rescheduleJobs(
 
     failedJobs = []
 
-    # Reuse provided DB instances or create new ones
+    # Reuse provided DB instances or create new ones.
+    # The DB classes are imported here and not at module level so that modules
+    # importing this one (e.g. the JobAgent on pilot worker nodes) do not need
+    # the mysql client, which is only useful when actually contacting the DBs.
     if jobDB is None:
+        from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+
         jobDB = JobDB()
     if taskQueueDB is None:
+        from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
+
         taskQueueDB = TaskQueueDB()
     if jobLoggingDB is None:
+        from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+
         jobLoggingDB = JobLoggingDB()
 
     for jobID in jobIDs:
