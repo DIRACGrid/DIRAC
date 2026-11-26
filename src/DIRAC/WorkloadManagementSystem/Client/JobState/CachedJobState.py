@@ -92,7 +92,9 @@ class CachedJobState:
             self.__manifest.clearDirty()
         # Insert into TQ
         if self.__insertIntoTQ:
-            result = self.__jobState.insertIntoTQ()
+            # Pass the manifest when it is known (it has just been saved if it was modified)
+            # rather than having it read back from the JobDB and parsed again
+            result = self.__jobState.insertIntoTQ(self.__manifest or None)
             if not result["OK"]:
                 self.cleanState()
                 for _ in range(5):

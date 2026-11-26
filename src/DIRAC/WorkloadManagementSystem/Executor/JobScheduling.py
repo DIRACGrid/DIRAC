@@ -285,12 +285,34 @@ class JobScheduling(OptimizerExecutor):
         return list(filtered)
 
     def __holdJob(self, jobState: JobState, holdMsg, delay=0):
-        if delay:
-            self.freezeTask(delay)
-        else:
-            self.freezeTask(self.ex_getOption("HoldTime", 300))
-        self.jobLog.info("On hold", holdMsg)
+        if not delay:
+            delay = self.__nextHoldTime()
+        self.freezeTask(delay)
+        self.jobLog.info("On hold", f"{holdMsg} (retry in {delay}s)")
         return jobState.setStatus(appStatus=holdMsg, source=self.ex_optimizerName())
+
+    def __nextHoldTime(self):
+        """Hold time for a job that cannot be scheduled yet
+
+        A job that keeps failing for the same reason (e.g. a site or SE in a long downtime)
+        is re-optimised every HoldTime seconds, costing a full round trip through the
+        OptimizationMind each time. If MaxHoldTime is set above HoldTime, the hold time
+        doubles with each hold of the same job, up to MaxHoldTime. The number of holds is
+        kept as an optimizer parameter; those are removed when a job is rescheduled, which
+        resets the back-off.
+        """
+        holdTime = self.ex_getOption("HoldTime", 300)
+        maxHoldTime = self.ex_getOption("MaxHoldTime", holdTime)
+        if maxHoldTime <= holdTime:
+            return holdTime
+        result = self.retrieveOptimizerParam("HoldCount")
+        try:
+            holdCount = int(result["Value"]) if result["OK"] else 0
+        except (TypeError, ValueError):
+            holdCount = 0
+        self.storeOptimizerParam("HoldCount", holdCount + 1)
+        # Cap the exponent too, so that a large counter cannot overflow the computation
+        return min(holdTime * 2 ** min(holdCount, 32), maxHoldTime)
 
     def __getSitesRequired(self, jobManifest):
         """Returns any candidate sites specified by the job or sites that have been

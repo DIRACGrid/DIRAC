@@ -48,6 +48,54 @@ def test__applySiteFilter(sites, banned, expected):
     assert set(filtered) == set(expected)
 
 
+BACKOFF = {"MaxHoldTime": 6 * 3600}
+
+
+@pytest.mark.parametrize(
+    "storedCount, options, expectedDelay",
+    [
+        (None, BACKOFF, 300),
+        (0, BACKOFF, 300),
+        (1, BACKOFF, 600),
+        (3, BACKOFF, 2400),
+        (6, BACKOFF, 19200),
+        (7, BACKOFF, 6 * 3600),
+        (1000, BACKOFF, 6 * 3600),
+        ("garbage", BACKOFF, 300),
+        (2, {"HoldTime": 60, "MaxHoldTime": 200}, 200),
+    ],
+)
+def test__nextHoldTime(storedCount, options, expectedDelay):
+    js = JobScheduling()
+    stored = {}
+    if storedCount is None:
+        js.retrieveOptimizerParam = MagicMock(return_value={"OK": False, "Message": "Parameter not found"})
+    else:
+        js.retrieveOptimizerParam = MagicMock(return_value={"OK": True, "Value": storedCount})
+    js.storeOptimizerParam = MagicMock(side_effect=lambda name, value: stored.update({name: value}))
+    js.ex_getOption = MagicMock(side_effect=lambda name, default=None: options.get(name, default))
+
+    assert js._JobScheduling__nextHoldTime() == expectedDelay
+    expectedCount = storedCount + 1 if isinstance(storedCount, int) else 1
+    assert stored == {"HoldCount": expectedCount}
+
+
+@pytest.mark.parametrize(
+    "options, expectedDelay",
+    [({}, 300), ({"HoldTime": 120}, 120), ({"HoldTime": 600, "MaxHoldTime": 100}, 600)],
+)
+def test__nextHoldTime_noBackoff(options, expectedDelay):
+    """Without a MaxHoldTime above HoldTime, every hold lasts HoldTime and no counter is kept"""
+    js = JobScheduling()
+    js.retrieveOptimizerParam = MagicMock(return_value={"OK": True, "Value": 5})
+    js.storeOptimizerParam = MagicMock()
+    js.ex_getOption = MagicMock(side_effect=lambda name, default=None: options.get(name, default))
+
+    assert js._JobScheduling__nextHoldTime() == expectedDelay
+    js.retrieveOptimizerParam.assert_not_called()
+    js.storeOptimizerParam.assert_not_called()
+
+
 @pytest.mark.parametrize(
     "manifestOptions, expected",
     [
