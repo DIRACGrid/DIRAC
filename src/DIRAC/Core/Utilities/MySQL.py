@@ -152,18 +152,34 @@ import functools
 import json
 import os
 import re
-import time
 import threading
-import MySQLdb
+import time
 
-from DIRAC import gLogger
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.TimeUtilities import fromString
+from DIRAC import S_ERROR, S_OK, gLogger
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.TimeUtilities import fromString
 
 gInstancesCount = 0
 MAXCONNECTRETRY = 10
 RETRY_SLEEP_DURATION = 5
+
+# The MySQLdb module is imported lazily so that importing this module (directly
+# or transitively, e.g. via DIRAC.Core.Base.DB or for the _quotedList helper)
+# does not require the mysql client to be installed. The client is only needed
+# when an actual connection to a database is attempted, which happens in
+# server-side components only.
+MySQLdb = None
+
+
+def _importMySQLdb():
+    """Import and cache the MySQLdb module on first real use."""
+    global MySQLdb
+    if MySQLdb is None:
+        import MySQLdb as _MySQLdb  # pylint: disable=import-error
+
+        MySQLdb = _MySQLdb
+    return MySQLdb
+
 
 # SQL identifier patterns
 # Identifiers are letter followed by zero or more letters or numbers
@@ -387,6 +403,7 @@ class ConnectionPool:
         return threading.current_thread()
 
     def __newConn(self):
+        _importMySQLdb()
         conn = MySQLdb.connect(host=self.__host, port=self.__port, user=self.__user, passwd=self.__passwd)
 
         self.__execute(conn, "SET AUTOCOMMIT=1")
@@ -552,6 +569,8 @@ class MySQL:
 
         :param debug: unused
         """
+        _importMySQLdb()
+
         global gInstancesCount
         gInstancesCount += 1
 
